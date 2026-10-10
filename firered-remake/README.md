@@ -4,30 +4,26 @@ Goal: a complete, local single-player recreation of the English original-revisio
 
 ## Current recovered state — 2026-10-10
 
-The current continuation reaches **Celadon Gym and Erika's Rainbow Badge**, after
-Lavender, Route8 singles, the east–west underground passage and Celadon center.
-Run `bash scripts/launch-current.sh` (`launch-celadon-gym.sh`); saves are isolated in
-`.play/celadon-gym`. Exact Celadon approach saves use the explicit
-`save upgrade-celadon-gym INPUT NEW_OUTPUT` command. Earlier profile launchers and
-migrations remain available.
+The accepted continuation reaches four badges, Celadon Rocket Hideout's Silph Scope,
+Pokémon Tower's Mr. Fuji/Poké Flute, and the two bounded Route12/16 Snorlax events.
+The source/application checks include capture into party/PC and non-victory callbacks;
+the focused real-window Snorlax check covers No, wake, escape, removal, save and a
+second-process normal Continue. See [Snorlax scope and evidence](docs/snorlax-campaign.md).
 
-Fresh application checks use an unchanged, command-earned Celadon nurse save:
-334 accepted commands through Cut and all seven ordinary Gym trainers, followed
-by a corrected 217-command checkpoint continuation through Erika's three original
-opponents, fourth badge, TM19 teaching, repeat reward refusal, return Cut and nurse,
-and strict save/restore. The explicit prefix/suffix evidence is retained. The new
-profile has114maps/98species/223move records/46items/15machines and279 source-synthesis
-cues. Giga Drain and Ingrain, original trainer medicines and TM19 are usable.
-See [current scope and verification](docs/celadon-gym.md) and
-[presentation verification](docs/celadon-gym-presentation.md).
+The regional-interaction successor adds ordinary NPC branches and shared environmental
+text in25 loaded Celadon/Lavender/Tower/Route7–8/tunnel maps. It retains the complete
+Snorlax gameplay state through the explicit `save upgrade-regional INPUT NEW_OUTPUT`
+command. Run `bash scripts/launch-regional.sh`; its save directory is `.play/regional`.
+Earlier launchers and their isolated saves remain available. See
+[regional coverage](docs/regional-interaction-coverage.md) and
+[profile/migration checks](tests/Game.RegionalProfile.Tests/README.md).
 
-Route8's genuine preset double battle, remaining Celadon city services and Rocket
-Hideout are still pending. No conversion to two single battles is made. Actual Erika victory/save and corrected
-intro/ordinary Continue are verified; physical listening and a fresh GBA Gym
-comparison remain separate, unverified entries.
-Earlier sections retain their original milestone scope. The asset-complete private
-third-stage Drive recovery point is7401a009; source-only GitHub synchronization has
-a separate record. This is an active complete-FireRed project, not a finished game.
+Regional interaction completeness is still in progress. Tea/Eevee and missing interiors,
+Department Store services, Name Rater, coin systems, Itemfinder and Route8's genuine
+preset double battle are separate gaps. Route12/16 access does not open Cycling Road
+or the full southern routes. Source-only GitHub checkpoints and asset-complete private
+Drive packages have separate records; the latest complete Drive base is the four-badge
+223c93 checkpoint. This is an active complete-FireRed project, not a finished game.
 
 ## Earlier first-badge checkpoint
 
@@ -87,7 +83,7 @@ For a desktop with a display:
 ./scripts/launch-export.sh
 ./scripts/launch-export.sh -- --harness
 ./scripts/launch-story.sh          # historical opening profile, requires reference inputs
-bash scripts/launch-current.sh     # current bounded S.S. Anne continuation
+bash scripts/launch-current.sh     # latest accepted bounded continuation
 ```
 
 Probe keys: arrows/Enter produce input evidence, Enter requests a generated 440 Hz test tone, F12 saves the actual rendered viewport, Escape exits. Harness keys: arrows move, B starts the supported basic battle fixture, Enter attacks or claims the one-time reward, F5 saves, F9 loads (both rejected during battle), F12 captures, Escape exits.

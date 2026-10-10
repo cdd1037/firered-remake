@@ -8,7 +8,11 @@ using Game.Domain.Encounters;
 namespace Game.Domain.World;
 public sealed record FieldActorDefinition(string LocalId,int SourceLocalId,string GraphicsId,int X,int Y,int Elevation,string MovementType,string ScriptId,string HideFlag,bool IsClone=false,string TrainerType="TRAINER_TYPE_NONE",int TrainerSight=0);
 public sealed record FieldCoordTrigger(int X,int Y,int Elevation,string Variable,int Expected,string ScriptId);
-public sealed record FieldBackgroundTrigger(int X,int Y,int Elevation,string ScriptId,string? HiddenItem=null,string? HiddenFlag=null,int Quantity=1);
+public sealed record FieldBackgroundTrigger(int X,int Y,int Elevation,string ScriptId,string? HiddenItem=null,string? HiddenFlag=null,int Quantity=1)
+{
+    public Direction? PlayerFacing { get; init; }
+    public bool Underfoot { get; init; }
+}
 public sealed record FieldPickupDefinition(string Id,string MapSymbol,bool Hidden,int? SourceLocalId,int X,int Y,int Elevation,
     string Script,string ItemSymbol,int SourceItemId,ItemId Item,string ItemName,string Pocket,int Quantity,string Flag,int SourceFlagId);
 public sealed record FieldMapPrograms(string? OnTransition,string? OnWarpTable,string? OnFrameTable,string? OnLoad=null,string? OnResume=null);
@@ -32,6 +36,8 @@ public sealed record CampaignRocketDynamicExit(int WarpIndex,int X,int Y,int Ele
 public interface ICampaignCatalog:IStoryCatalog
 {
     string ContentVersion{get;}
+    bool RegionalFlavorEnabled=>false;
+    bool SupportsRegionalFlavor(MapId map)=>false;
     CampaignPokemonContent? PokemonContent=>null;
     CampaignBattleContent? BattleContent=>null;
     OpeningItemsCatalog? OpeningItems=>null;
@@ -111,4 +117,22 @@ public interface ICampaignCatalog:IStoryCatalog
     ImmutableArray<FieldProgramCondition> Conditions(string table);
     ImmutableArray<string> Movement(string program);
     ImmutableArray<string> TextPages(string symbol);
+}
+
+/// <summary>Bounded source GetInteractedMetatileScript flavor subset; service behaviors remain unadmitted.</summary>
+public static class RegionalFlavorRules
+{
+    private static readonly ImmutableDictionary<int,string> Labels = new Dictionary<int,string>
+    {
+        [0x81]="EventScript_Bookshelf", [0x82]="EventScript_PokeMartShelf",
+        [0x86]="EventScript_PlayerFacingTVScreen", [0x87]="EventScript_PokecenterSign",
+        [0x88]="EventScript_PokemartSign", [0x8a]="EventScript_Kitchen",
+        [0x90]="EventScript_Food", [0x98]="EventScript_AdvertisingPoster",
+        [0x9c]="EventScript_PolishedWindow", [0x9d]="EventScript_BeautifulSkyWindow",
+        [0x9f]="EventScript_NeatlyLinedUpTools"
+    }.ToImmutableDictionary();
+    public static IEnumerable<string> Scripts => Labels.Values;
+    public static string? ScriptFor(int behavior, Direction facing) =>
+        !Enum.IsDefined(facing) || behavior is 0x86 or 0x87 or 0x88 && facing != Direction.North
+            ? null : Labels.GetValueOrDefault(behavior);
 }

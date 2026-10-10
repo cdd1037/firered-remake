@@ -375,6 +375,7 @@ public sealed partial class CampaignSession
                 // Resume the existing field context. EnterMap would wrongly clear the starter branch's temp variables.
                 return new(CommandStatus.Accepted,state with{Party=state.Party.SetItem(naming.PartyIndex,mon with{Nickname=name}),Nickname=naming with{Submitted=true},TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",name),ScreenIsBlack=false,PresentationTicks=16,Script=state.Script with{Wait=wait with{Kind=StoryWaitKind.Presentation}}});
             }
+            if(command.Kind is "sign_tick" or "sign_cancel")return DecideRegionalSignWalkaway(state,command);
             if(command.Kind=="button_press")return IsTowerButton(state)?DecideTowerButton(state,command):IsRocketHideoutButton(state)?DecideRocketHideoutButton(state,command):IsBillRocketButton(state)?DecideBillRocketButton(state,command):IsBillButton(state)?DecideBillButton(state,command):IsMtMoonButton(state)?DecideMtMoonButton(state,command):IsRoute22GuardButton(state)?DecideRoute22GuardButton(state,command):DecideOakRatingButton(state,command);
             if(command.Kind=="ack")
             {
@@ -410,7 +411,9 @@ public sealed partial class CampaignSession
                     return new(CommandStatus.Accepted,state with{World=world});
                 }
                 // Source auto-sign interaction is vertical and requires matching facing, before the door hook.
-                if(command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&map.SourceBehaviorAt(x,y)==0x84)
+                if(command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&RegionalWalkIntoSign(state,x,y) is {} regionalSign)
+                    return new(CommandStatus.Accepted,regionalSign);
+                if(!_content.SupportsRegionalFlavor(before.MapId)&&command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&map.SourceBehaviorAt(x,y)==0x84)
                 {
                     var sign=_content.MapDefinition(map.Id).BackgroundTriggers.FirstOrDefault(z=>z.X==x&&z.Y==y);
                     if(sign is not null)return new(CommandStatus.Accepted,Pump(StartStory(state,sign.ScriptId)));
@@ -430,9 +433,9 @@ public sealed partial class CampaignSession
             if(command.Kind=="interact")
             {
                 var p=state.World.Player;var (dx,dy)=Delta(p.Facing);int actorX=p.X+dx,actorY=p.Y+dy;
-                if(_content.PokemonStorageEnabled&&IsSupportedHealingCenter(p.MapId)&&SourceBehavior(state,actorX,actorY)==0x83)
+                if(!_content.SupportsRegionalFlavor(p.MapId)&&_content.PokemonStorageEnabled&&IsSupportedHealingCenter(p.MapId)&&SourceBehavior(state,actorX,actorY)==0x83)
                     return new(CommandStatus.Accepted,Pump(StartStory(state,CenterPcScript)));
-                if(_content.QuestItems is not null&&SourceBehavior(state,actorX,actorY)==0x80){actorX+=dx;actorY+=dy;}
+                if(_content.QuestItems is not null&&SourceBehavior(state,actorX,actorY)==0x80&&(!_content.SupportsRegionalFlavor(p.MapId)||VisibleActorAt(state,actorX,actorY) is null)){actorX+=dx;actorY+=dy;}
                 var actor=VisibleActorAt(state,actorX,actorY);
                 if(actor is not null)
                 {
@@ -447,10 +450,11 @@ public sealed partial class CampaignSession
                     context=BeginItemBall(context,actor);
                     return new(CommandStatus.Accepted,Pump(StartStory(context,actor.ScriptId)));
                 }
-                var sign=_content.MapDefinition(p.MapId).BackgroundTriggers.FirstOrDefault(t=>t.X==p.X+dx&&t.Y==p.Y+dy&&(t.Elevation==0||t.Elevation==p.Elevation));
+                var sign=InteractionBackgroundAt(state,p.X+dx,p.Y+dy,p.Facing);
+                if(_content.SupportsRegionalFlavor(p.MapId))return DecideRegionalInteraction(state,sign,p.X+dx,p.Y+dy);
                 if(sign?.HiddenItem is not null)return BeginHiddenPickup(state,sign);
                 if(sign?.ScriptId==BedroomPcScript&&_content.OpeningItems is not null&&(long.MaxValue-Revision<(1L<<32)||long.MaxValue-state.Script.Revision<(1L<<32)||long.MaxValue-state.Script.EffectSequence<(1L<<32)))return new(CommandStatus.Fault,state,"pc_counter_headroom_required");
-                return sign is null?new(CommandStatus.Rejected,state,"nothing_to_interact"):new(CommandStatus.Accepted,Pump(StartStory(state,sign.ScriptId)));
+                return sign is null?new(CommandStatus.Rejected,state,"nothing_to_interact"):new(CommandStatus.Accepted,Pump(StartBackgroundStory(state,sign)));
             }
             return new(CommandStatus.Rejected,state,"unknown_campaign_command");
         }
@@ -479,6 +483,7 @@ public sealed partial class CampaignSession
             {state=Advance(state,StoryRules.Continue(state.Script,native.CorrelationId,_content));continue;}
             if(state.Script.Wait is not null||!state.Script.Completed)return state;
             state=FinishFieldPickup(state);
+            if(_content.SupportsRegionalFlavor(state.World.Player.MapId)&&state.Dialogue is null&&!state.Script.Locked)state=state with{SignMessage=null};
             if(!state.EntryPrograms.IsEmpty)
             {
                 var next=state.EntryPrograms[0];state=state with{EntryPrograms=state.EntryPrograms.RemoveAt(0)};
@@ -527,6 +532,7 @@ public sealed partial class CampaignSession
             if(TryApplyCeruleanEffect(state,effect,out var ceruleanState)){state=ceruleanState;continue;}
             if(TryApplyMtMoonEffect(state,effect,out var mtMoonState)){state=mtMoonState;continue;}
             if(TryApplyBillEffect(state,effect,out var billState)){state=billState;continue;}
+            if(TryApplyRegionalDialogueEffect(state,effect,out var regionalDialogueState)){state=regionalDialogueState;continue;}
             if(TryApplyMagikarpEffect(state,effect,out var magikarpState)){state=magikarpState;continue;}
             if(TryApplyRoute3Effect(state,effect,out var route3State)){state=route3State;continue;}
             if(TryApplyRoute22Effect(state,effect,out var route22State)){state=route22State;continue;}

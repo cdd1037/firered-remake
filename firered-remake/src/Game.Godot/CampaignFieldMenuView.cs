@@ -42,6 +42,7 @@ public partial class CampaignView
             input is InputEventJoypadButton { ButtonIndex: JoyButton.Start };
         if (!start) return false;
         bool pressed = input is InputEventKey k ? k.Pressed : ((InputEventJoypadButton)input).Pressed;
+        if(TryRegionalSignStart(pressed)){QueueRedraw();GetViewport().SetInputAsHandled();return true;}
         if(TownMapActive)
         {using var key=new InputEventKey{Keycode=Key.Tab,Pressed=pressed};TryTownMapInput(key);QueueRedraw();GetViewport().SetInputAsHandled();return true;}
         if (pressed)
@@ -50,14 +51,16 @@ public partial class CampaignView
             // its in-progress values. The ordinary field overlays retain their toggle.
             if (_fieldMenuMode == "options") { GetViewport().SetInputAsHandled(); return true; }
             if (FieldMenuOpen) ResetFieldMenu();
-            else if (CanOpenFieldMenu)
-            {
-                _fieldMenuMode = "start"; _fieldMenuCursor = Math.Clamp(_fieldMenuCursor, 0, FieldMenuEntries().Length - 1);
-                _held = null; _repeat = 0;
-            }
+            else if (CanOpenFieldMenu) OpenFieldStartMenu();
             QueueRedraw();
         }
         GetViewport().SetInputAsHandled(); return true;
+    }
+
+    private void OpenFieldStartMenu()
+    {
+        _fieldMenuMode = "start"; _fieldMenuCursor = Math.Clamp(_fieldMenuCursor, 0, FieldMenuEntries().Length - 1);
+        _held = null; _repeat = 0;
     }
 
     private bool TryFieldMenuInput(InputEventKey key)

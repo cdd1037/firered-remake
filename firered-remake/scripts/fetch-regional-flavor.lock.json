@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/scripts/flavor_text.inc",
+      "sha256": "3290aee116c25c28710fa3f6bcf2c0ffd00a8a5746b0228940f34d3c6b318991",
+      "gitBlobSha1": "ec0f6224725a48ff8601d2c1984eb8eff676b00f",
+      "destination": "content/raw/regional-flavor/data/scripts/flavor_text.inc"
+    }
+  ]
+}

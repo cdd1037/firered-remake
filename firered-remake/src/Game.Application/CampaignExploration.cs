@@ -81,7 +81,9 @@ public sealed partial class CampaignSession
         bool turn=command.Kind=="turn";
         if(!turn&&_content.SnorlaxEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
         if(TryRocketDynamicExit(state,command) is {} dynamicExit)return dynamicExit;
-        if(!turn&&command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&map.SourceBehaviorAt(x,y)==0x84)
+        if(!turn&&command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&RegionalWalkIntoSign(state,x,y) is {} regionalSign)
+            return new(CommandStatus.Accepted,regionalSign);
+        if(!_content.SupportsRegionalFlavor(before.MapId)&&!turn&&command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&map.SourceBehaviorAt(x,y)==0x84)
         {
             var sign=_content.MapDefinition(map.Id).BackgroundTriggers.FirstOrDefault(z=>z.X==x&&z.Y==y);
             if(sign is not null)return new(CommandStatus.Accepted,Pump(StartStory(state,sign.ScriptId)));
@@ -156,7 +158,8 @@ public sealed partial class CampaignSession
                 if(_content.RepelEnabled)
                 {
                     var p=moved.World.Player;var (sx,sy)=Delta(p.Facing);
-                    var sign=p.Facing is Direction.North or Direction.South&&_content.Maps[p.MapId].SourceBehaviorAt(p.X+sx,p.Y+sy)==0x84
+                    if(RegionalWalkIntoSign(moved,p.X+sx,p.Y+sy) is {} regionalSignAfterStep)return new(CommandStatus.Accepted,regionalSignAfterStep);
+                    var sign=!_content.SupportsRegionalFlavor(p.MapId)&&p.Facing is Direction.North or Direction.South&&_content.Maps[p.MapId].SourceBehaviorAt(p.X+sx,p.Y+sy)==0x84
                         ?_content.MapDefinition(p.MapId).BackgroundTriggers.FirstOrDefault(z=>z.X==p.X+sx&&z.Y==p.Y+sy):null;
                     if(sign is not null)return new(CommandStatus.Accepted,Pump(StartStory(moved,sign.ScriptId)));
                 }

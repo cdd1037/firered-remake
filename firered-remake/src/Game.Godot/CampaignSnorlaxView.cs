@@ -6,7 +6,7 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool SnorlaxProfileRequested => OS.GetEnvironment("FIRERED_SNORLAX")=="1" || OS.GetCmdlineUserArgs().Contains("--story-snorlax");
+    private static bool SnorlaxProfileRequested => RegionalProfileRequested || OS.GetEnvironment("FIRERED_SNORLAX")=="1" || OS.GetCmdlineUserArgs().Contains("--story-snorlax");
 
     private void LoadSnorlaxPresentation()
     {
