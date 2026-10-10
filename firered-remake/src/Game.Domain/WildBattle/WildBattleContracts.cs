@@ -82,6 +82,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledFieldState? CalledField { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool ScriptedSnorlax { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public PokemonTowerBattleKind? TowerBattleKind { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTerrain? Terrain { get; init; }

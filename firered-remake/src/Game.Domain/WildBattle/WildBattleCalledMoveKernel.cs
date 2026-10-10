@@ -114,6 +114,7 @@ public static partial class WildBattleRules
         AddCalledMoveRecipeSupport(move, ref supported);
         AddCalledStatRecoverySupport(move, ref supported);
         AddCalledScalarDamageSupport(move, ref supported);
+        AddCalledFieldEffectSupport(move, ref supported);
         return supported;
     }
 
@@ -122,6 +123,7 @@ public static partial class WildBattleRules
     public static string? ValidateCalledMoveActionState(PokemonCatalog catalog, WildBattleState state)
     {
         if (state.RulesVersion != FuchsiaRulesVersion) return "called_move_base_profile";
+        if (ValidateCalledFieldState(state) is { } fieldError) return fieldError;
         foreach (var mon in new[] { state.Player, state.Opponent })
         {
             if (mon.SourceMoveHistory is not { } h) continue;
@@ -136,12 +138,14 @@ public static partial class WildBattleRules
             foreach (var mirror in new[] { h.LastTakenMove, h.LastTakenFromPlayer, h.LastTakenFromOpponent })
                 if (mirror is { } id && (!catalog.Moves.TryGetValue(id, out var move) || !move.Flags.Contains("FLAG_MIRROR_MOVE_AFFECTED"))) return "called_move_mirror_history";
         }
-        WildBattleCombatant Projection(WildBattleCombatant mon) => mon.SourceMoveHistory is null ? mon : mon with {
-            SourceMoveHistory = null, LastUsedMove = null, LastCalledMove = null, LastLandedMove = null,
+        WildBattleCombatant Projection(WildBattleCombatant mon) => mon with {
+            Status = WildBattleSourceFieldEffects.IsValidToxic(mon.Status) ? WildBattleStatus.Poison : mon.Status,
+            SourceMoveHistory = null, LastUsedMove = mon.SourceMoveHistory is null ? mon.LastUsedMove : null,
+            LastCalledMove = mon.SourceMoveHistory is null ? mon.LastCalledMove : null, LastLandedMove = mon.SourceMoveHistory is null ? mon.LastLandedMove : null,
             BindingMove = mon.BindingMove is { } bind && catalog.Moves.TryGetValue(bind, out var binding) &&
                 MetronomeSourceMoveDefinition.Matches(binding) && binding.Effect == "EFFECT_TRAP" ? new("pret:MOVE_BIND") : mon.BindingMove
         };
-        return Validate(catalog, state with { Player = Projection(state.Player), Opponent = Projection(state.Opponent) });
+        return ValidateCore(catalog, state with { CalledField = null, Player = Projection(state.Player), Opponent = Projection(state.Opponent) }, calledAction: true);
     }
 
     /// <summary>Runs the actual shared executor for an explicitly supplied legal Metronome choice.
@@ -179,6 +183,10 @@ public static partial class WildBattleRules
         internal WildBattleMoveInvocation? activeInvocation;
         // A script may change the effective type without mutating authenticated metadata.
         internal string? invocationEffectiveType;
+        // Exact command-level DOESNT_AFFECT_FOE writes. Historical delegates below
+        // retain their separately audited event mapping until every script owns flags.
+        private bool invocationCommandNoEffect;
+        private bool invocationSkipsMoveEnd;
         private bool invocationCancellerPassed;
         partial void ExecuteAdditionalCalledMoveEffect(PokemonCatalog catalog, WildBattleSide side, int slot,
             PokemonMoveDefinition move, string purpose, ref bool handled);
@@ -236,6 +244,9 @@ public static partial class WildBattleRules
         {
             var side = action.Actor;
             invocationEffectiveType = null;
+            invocationCommandNoEffect = false;
+            invocationSkipsMoveEnd = false;
+            var originalActorLastUsedMove = Get(side).LastUsedMove;
             activeInvocation = new(side, action.ChosenSlot, action.ChosenSlot, chosen.Id, chosen.Id, chosen.Id,
                 null, chosen.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? side : Other(side),
                 WildBattleAttackCancellerPhase.Start, WildBattleInvocationFlags.None);
@@ -257,6 +268,13 @@ public static partial class WildBattleRules
                 Add(n => new WildBattleCalledMoveTransitionEvent(n, State.Turn, activeInvocation));
                 ForestMove(catalog, side, action.ChosenSlot, current);
             }
+            if (invocationSkipsMoveEnd)
+            {
+                // Source end2 skips MOVEEND registers/items/abilities. Only undo the
+                // historical MoveUsed-event helper's premature LastUsedMove write.
+                Set(side, Get(side) with { LastUsedMove = originalActorLastUsedMove });
+                return;
+            }
             if (Route11) Route11DefrostOnFireHit(catalog, side, eventStart);
             if (Vermilion) { VermilionImmunityAbilities(); VermilionMoveEndBerries(); }
             FinishCalledMoveHistory(catalog, eventStart);
@@ -272,10 +290,10 @@ public static partial class WildBattleRules
             var targetSide = emitted.OfType<WildBattleConfusionSelfHitEvent>().Any() ? invocation.Actor : invocation.Target;
             activeInvocation = invocation = invocation with { Target = targetSide };
             bool obeys = invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys);
-            bool noEffect = !obeys || emitted.Any(e => e is WildBattleMoveMissedEvent || e is WildBattleActionBlockedEvent ||
-                e is WildBattleMoveFailedEvent { Reason: not ("already-full-hp" or "already-asleep" or "already-poisoned" or "already-paralyzed" or "already-confused" or "nothing-happened") } ||
+            bool noEffect = invocationCommandNoEffect || !obeys || emitted.Any(e => e is WildBattleMoveMissedEvent || e is WildBattleActionBlockedEvent ||
+                e is WildBattleMoveFailedEvent { Reason: not ("already-full-hp" or "already-asleep" or "already-poisoned" or "already-paralyzed" or "already-confused" or "nothing-happened" or "mist") } ||
                 e is WildBattleStatAtMinimumEvent or WildBattleStatAtMaximumEvent ||
-                e is WildBattleAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE" or "ABILITY_FLASH_FIRE" } ||
+                e is WildBattleAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE" } ||
                 e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect });
             MoveId unavailable = new("pret:MOVE_UNAVAILABLE");
             var history = actor.SourceMoveHistory ?? new();

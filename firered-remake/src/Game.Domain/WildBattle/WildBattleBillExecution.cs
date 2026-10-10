@@ -57,7 +57,7 @@ public static partial class WildBattleRules
             {
                 case WildBattleTerrain.Grass:InflictStatus(catalog,target,WildBattleStatus.Poison,false);break;
                 case WildBattleTerrain.LongGrass:
-                    if(mon.Status==0 && mon.Pokemon.AbilityId is not ("ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT"))
+                    if(mon.Status==0 && !SourceCalledSafeguard(target) && mon.Pokemon.AbilityId is not ("ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT"))
                         ChangeStatus(target,(uint)((Draw($"{purpose}.sleep-duration",4)&3)+2),"move");
                     break;
                 case WildBattleTerrain.Sand:ChangeStage(side,target,WildBattleStat.Accuracy,-1,move,true);break;

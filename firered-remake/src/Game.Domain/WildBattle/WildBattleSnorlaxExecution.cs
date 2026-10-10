@@ -72,7 +72,8 @@ public static partial class WildBattleRules
                 Add(n => new WildBattleAbilityPreventedEvent(n,State.Turn,side,targetSide,move.Id,target.Pokemon.AbilityId));
                 return true;
             }
-            // Substitute, Safeguard and Uproar moves are outside this admitted singles catalog.
+            if (SourceCalledSafeguardBlocks(side, targetSide, move.Id)) return true;
+            // Substitute and Uproar remain separate called-state overlay obligations.
             // NO_ACC_CALC_CHECK_LOCK_ON consumes no accuracy draw and still respects Dig.
             string? failure = target.DigMoveSlot is not null ? "semi-invulnerable" : target.YawnTurnsRemaining != 0 ? "already-drowsy" : target.Status != 0 ? "existing-status" : null;
             if (failure is not null) Add(n => new WildBattleMoveFailedEvent(n,State.Turn,side,targetSide,move.Id,failure));

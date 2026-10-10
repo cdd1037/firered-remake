@@ -7,9 +7,10 @@ namespace Game.Domain.WildBattle;
 
 internal static class ForestBattleDamage
 {
-    // pokemon.c:2385-2652; battle_script_commands.c:1210-1550. No weather, held items or screens. Only Pewter admits the player Attack badge boost.
+    // pokemon.c:2385-2652; battle_script_commands.c:1210-1550. Historical options retain
+    // their original defaults; new Sun/LightScreen/suppression require an authenticated called definition.
     internal static DamageResult Calculate(PokemonCatalog catalog, WildBattleCombatant user,
-        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1)
+        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false)
     {
         route11Rules |= rockTunnelRules;
         if (randomPercent is < 85 or > 100) throw new ArgumentOutOfRangeException(nameof(randomPercent));
@@ -20,10 +21,14 @@ internal static class ForestBattleDamage
             throw new NotSupportedException("called_damage_source_definition");
         if (!struggle && ((!sourceMove && !(rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, move!) : route11Rules ? Route11BattleScope.ValidDefinition(move!) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move!) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move!) : vermilionRules ? VermilionBattleScope.ValidDefinition(move!) : billRules ? BillBattleScope.ValidDefinition(move!) : ceruleanRules ? CeruleanBattleScope.ValidDefinition(move!) : mtMoonRules ? MtMoonBattleScope.ValidDefinition(move!) : route3Rules ? Route3BattleScope.ValidDefinition(move!) : route22Rules ? Route22BattleScope.ValidDefinition(move!) : earlyPartyRules ? EarlyPartyBattleScope.ValidDefinition(move!) : earlyStarterRules ? EarlyStarterBattleScope.ValidDefinition(move!) : pewterRules ? PewterBattleScope.ValidDefinition(move!) : ForestBattleScope.ValidDefinition(move!))) || move!.Power == 0))
             throw new NotSupportedException("wild_battle_damage_move");
-        if (sourceEffectiveType is not null && (!sourceMove || move!.Effect != "EFFECT_HIDDEN_POWER" ||
-            !Enum.IsDefined(sourceEffectiveType.Value) || sourceEffectiveType.Value is ElementType.Normal or ElementType.Mystery))
+        if ((sun || lightScreen || weatherSuppressed) && !sourceMove) throw new NotSupportedException("called_damage_field_context");
+        bool validEffectiveType = sourceEffectiveType is { } effective && Enum.IsDefined(effective) && move!.Effect switch {
+            "EFFECT_HIDDEN_POWER" => effective is not (ElementType.Normal or ElementType.Mystery),
+            "EFFECT_WEATHER_BALL" => effective is ElementType.Normal or ElementType.Water or ElementType.Rock or ElementType.Fire or ElementType.Ice,
+            _ => false };
+        if (sourceEffectiveType is not null && (!sourceMove || !validEffectiveType))
             throw new NotSupportedException("called_damage_effective_type");
-        if (sourceDamageMultiplier != 1 && (!sourceMove || move!.Effect is not ("EFFECT_FACADE" or "EFFECT_SMELLINGSALT") || sourceDamageMultiplier != 2))
+        if (sourceDamageMultiplier != 1 && (!sourceMove || move!.Effect is not ("EFFECT_FACADE" or "EFFECT_SMELLINGSALT" or "EFFECT_WEATHER_BALL") || sourceDamageMultiplier != 2))
             throw new NotSupportedException("called_damage_multiplier");
         if (sourceMove && (move!.Effect is "EFFECT_RETURN" or "EFFECT_FRUSTRATION" or "EFFECT_HIDDEN_POWER" or "EFFECT_ERUPTION" or "EFFECT_PRESENT" or "EFFECT_TRIPLE_KICK") && dynamicPower is null)
             throw new NotSupportedException("called_damage_dynamic_power_required");
@@ -126,11 +131,18 @@ internal static class ForestBattleDamage
         if (rockTunnelRules && reflect && physical && !critical) { value /= 2; steps.Add(new("reflect", value)); }
         if (physical) value = Math.Max(1, value);
         steps.Add(new("physical-minimum-before-plus-two", value));
-        if (route11Rules && rain && !physical)
+        if (sourceMove && lightScreen && !physical && !critical) { value /= 2; steps.Add(new("light-screen", value)); }
+        if (route11Rules && rain && !physical && !weatherSuppressed)
         {
             if (type == ElementType.Fire) value /= 2;
             else if (type == ElementType.Water) value = value * 15 / 10;
             steps.Add(new("rain", value));
+        }
+        if (sourceMove && sun && !physical && !weatherSuppressed)
+        {
+            if (type == ElementType.Fire) value = value * 15 / 10;
+            else if (type == ElementType.Water) value /= 2;
+            steps.Add(new("sun", value));
         }
         if (ssAnneRules && user.FlashFireBoost && type == ElementType.Fire) { value = value * 15 / 10; steps.Add(new("flash-fire", value)); }
         value += 2; steps.Add(new("plus-two", value));

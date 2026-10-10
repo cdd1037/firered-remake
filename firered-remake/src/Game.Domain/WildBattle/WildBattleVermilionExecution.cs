@@ -52,7 +52,7 @@ public static partial class WildBattleRules
             bool status=mon.HeldItem switch {
                 "ITEM_CHERI_BERRY"=>mon.Status==WildBattleStatus.Paralysis,
                 "ITEM_CHESTO_BERRY"=>WildBattleStatus.IsSleeping(mon.Status),
-                "ITEM_PECHA_BERRY"=>mon.Status==WildBattleStatus.Poison,
+                "ITEM_PECHA_BERRY"=>mon.Status==WildBattleStatus.Poison || SourceCalledFieldActive && WildBattleSourceFieldEffects.IsToxic(mon.Status),
                 "ITEM_RAWST_BERRY"=>mon.Status==WildBattleStatus.Burn,
                 "ITEM_ASPEAR_BERRY"=>Route11 && mon.Status==WildBattleStatus.Freeze,
                 _=>false};
