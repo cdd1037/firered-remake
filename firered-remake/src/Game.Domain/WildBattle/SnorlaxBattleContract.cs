@@ -14,7 +14,7 @@ public static class SnorlaxBattleContract
     public static PokemonCreationResult Create(PokemonCatalog catalog, uint originalTrainerId, RngState rng)
     {
         PokemonFactory.ValidateCatalog(catalog);
-        if (catalog.Species.Count != 102) throw new NotSupportedException("snorlax_catalog_required");
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 102) throw new NotSupportedException("snorlax_catalog_required");
         return PokemonFactory.Create(catalog, new(new("pret:SPECIES_SNORLAX"),30,originalTrainerId,IvPolicy.Random,PersonalityPolicy.Random),rng);
     }
     public static bool SourceInitialInstance(PokemonInstance mon) => mon.SourceSpeciesId == 143 && mon.Level == 30 &&
@@ -27,7 +27,7 @@ public static partial class WildBattleRules
     public static WildBattleResult StartSnorlax(PokemonCatalog catalog, WildBattleCombatant player,
         WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain)
     {
-        if (catalog?.Species.Count != 102) return Fail(null,"snorlax_catalog_required");
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 102) return Fail(null,"snorlax_catalog_required");
         if (opponent?.Pokemon is not {} mon || !SnorlaxBattleContract.SourceInitialInstance(mon) || opponent.Status != 0 || opponent.HeldItem != "ITEM_NONE" || opponent.KnockedOffItem is not null)
             return Fail(null,"snorlax_scripted_identity");
         return StartCore(catalog,player,opponent,rng,SnorlaxRulesVersion,terrain,false,null,true);

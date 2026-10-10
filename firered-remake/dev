@@ -203,11 +203,33 @@ def test_regional_campaign(name,checkpoint=None,region='Route11'):
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-snorlax <new-run-name> [legal-checkpoint|--route12|--boundaries]','test-snorlax-modules','test-snorlax-ui [--only awake|sleep|audio|wiring]','test-pokemon-tower <new-run-name> [legal-checkpoint|--boundaries]','test-pokemon-tower-modules','test-pokemon-tower-ui [--only assets|intro|flute-awake|flute-sleep]','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-rocket-hideout <new-run-name> [legal-checkpoint|--boundaries]','test-rocket-hideout-modules <source-preparation>','test-rocket-hideout-ui','test-rocket-hideout-synth','test-rocket-hideout-audit <unique-name>','test-rocket-hideout-native-evidence','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
+ if not args:return output({'commands':['doctor','setup','build','test','test-regional-services <new-run-name> [legal-checkpoint]','test-regional-services-modules','test-regional-services-native-evidence','test-regional-services-ui <new-output-path>','test-regional-services-boundaries <new-run-name>','test-regional-services-catalog <new-run-name>','test-snorlax <new-run-name> [legal-checkpoint|--route12|--boundaries]','test-snorlax-modules','test-snorlax-ui [--only awake|sleep|audio|wiring]','test-pokemon-tower <new-run-name> [legal-checkpoint|--boundaries]','test-pokemon-tower-modules','test-pokemon-tower-ui [--only assets|intro|flute-awake|flute-sleep]','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-rocket-hideout <new-run-name> [legal-checkpoint|--boundaries]','test-rocket-hideout-modules <source-preparation>','test-rocket-hideout-ui','test-rocket-hideout-synth','test-rocket-hideout-audit <unique-name>','test-rocket-hideout-native-evidence','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
  if args==['doctor']:return doctor()
  if args==['setup']:return setup()
  if args==['build']:return build()
  if args==['test']:return test()
+ if args==['test-regional-services-native-evidence']:
+  run(['python3','tests/Game.RegionalServicesNative.Tests/verify_native.py'],'regional-services-native.log');return 0
+ if len(args)==2 and args[0]=='test-regional-services-boundaries':
+  destination=ROOT/'tests/Game.RegionalServicesBoundary.Tests/evidence'/args[1]
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or destination.exists():raise RuntimeError('A unique boundary run name is required.')
+  run([DOTNET,'run','--project','tests/Game.RegionalServicesBoundary.Tests','--no-build','--',ROOT,destination],'regional-services-boundaries.log');return 0
+ if args and args[0]=='test-regional-services-ui':
+  run(['python3','tests/Game.RegionalServicesUi.Tests/run.py',*args[1:]]);return 0
+ if args==['test-regional-services-modules']:
+  for suite,extra in [('Game.RegionalServiceMaps.Tests',[]),('Game.EeveeCatalog.Tests',[ROOT]),('Game.RegionalGiftSource.Tests',[]),('Game.RegionalGiftScript.Tests',[]),('Game.UnsupportedLearning.Tests',[])]:
+   run([DOTNET,'run','--project','tests/'+suite,'--no-build','--',ROOT,*extra],suite+'.log')
+  return 0
+ if len(args) in (2,3) and args[0]=='test-regional-services':
+  suite='Game.RegionalServicesCampaign.Tests';destination=ROOT/'tests'/suite/'evidence'/args[1]
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or destination.exists():raise RuntimeError('A unique regional-services run name is required.')
+  run([DOTNET,'run','--project','tests/'+suite,'--no-build','--',ROOT,destination,*([pathlib.Path(args[2]).resolve()] if len(args)==3 else [])],suite+'.log');return 0
+ if len(args)==2 and args[0]=='test-regional-services-catalog':
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]):raise RuntimeError('A unique catalog run name is required.')
+  disabled=ROOT/'.runtime-tmp'/('regional-disabled-'+args[1]);destination=ROOT/'tests/Game.RegionalServicesCatalog.Tests/evidence'/args[1]
+  if disabled.exists() or destination.exists():raise RuntimeError('Refusing existing catalog fixture or result.')
+  run(['python3','tests/Game.RegionalServicesCatalog.Tests/prepare_disabled_root.py',ROOT,disabled])
+  run([DOTNET,'run','--project','tests/Game.RegionalServicesCatalog.Tests','--no-build','--',ROOT,disabled,destination],'regional-services-catalog.log');return 0
  if len(args) in (2,3) and args[0] in ('test-route11','test-rocktunnel'):
   return test_regional_campaign(args[1],args[2] if len(args)==3 else None,'RockTunnel' if args[0]=='test-rocktunnel' else 'Route11')
  if len(args)==2 and args[0] in ('test-regional-profile','test-regional-ordinary','test-regional-flavor'):

@@ -32,6 +32,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFishing? Fishing{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMoneyBox? MoneyBox{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMagikarpGift? MagikarpGift{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEeveeGift? EeveeGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignGiftDelivery? GiftDelivery{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public EscapeRopeDestination? EscapeDestination{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEscapeRope? EscapeRope{get;init;}
@@ -238,6 +239,8 @@ public sealed partial class CampaignSession
         var optionsError=ValidateOptionsState(s);if(optionsError is not null)return optionsError;
         var storageError=ValidateStorageState(s);if(storageError is not null)return storageError;
         var giftError=ValidateMagikarpGift(s);if(giftError is not null)return giftError;
+        var eeveeError=ValidateEeveeGift(s);if(eeveeError is not null)return eeveeError;
+        var teaError=ValidateRegionalTeaProgress(s);if(teaError is not null)return teaError;
         var parcelError=ValidateParcelState(s);if(parcelError is not null)return parcelError;
         if(!_content.Maps.TryGetValue(s.World.Player.MapId,out var map))return "save_map_missing";
         var flashError=ValidateFieldFlashState(s);if(flashError is not null)return flashError;
@@ -298,7 +301,7 @@ public sealed partial class CampaignSession
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
             var starter=_content.EarlyStarterEnabled?OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
-            if(starter is null||!EvolutionSpeciesMatchesOrigin(state,starter,selected.SourceSpeciesId)||starter.InstanceId!=1||state.NextPokemonId!=(_content.CaptureEnabled?2L+(state.Exploration!.Captured?.Length??0)+(_content.MagikarpEnabled&&state.MagikarpGift is not null?1:0):2)||!seenValid||!state.CaughtSpecies.SetEquals(new[]{selected.SourceSpeciesId}.Concat(_content.CaptureEnabled?state.Exploration!.Captured!.Value.Select(c=>c.SourceSpeciesId):[]).Concat(_content.MagikarpEnabled&&state.MagikarpGift is not null?new[]{129}:[]).Concat(EvolvedSpecies(state))))return "save_starter_identity_inconsistent";
+            if(starter is null||!EvolutionSpeciesMatchesOrigin(state,starter,selected.SourceSpeciesId)||starter.InstanceId!=1||state.NextPokemonId!=(_content.CaptureEnabled?2L+(state.Exploration!.Captured?.Length??0)+GiftCount(state):2)||!seenValid||!state.CaughtSpecies.SetEquals(new[]{selected.SourceSpeciesId}.Concat(_content.CaptureEnabled?state.Exploration!.Captured!.Value.Select(c=>c.SourceSpeciesId):[]).Concat(GiftSourceSpecies(state)).Concat(EvolvedSpecies(state))))return "save_starter_identity_inconsistent";
             if(scene>=4)
             {
                 var trainer=_content.BattleContent!.Trainers.Trainers.Values.Single(t=>t.Party.Single().SourceSpeciesId==selected.RivalSourceSpeciesId).Id.Value;
@@ -533,6 +536,9 @@ public sealed partial class CampaignSession
             if(TryApplyMtMoonEffect(state,effect,out var mtMoonState)){state=mtMoonState;continue;}
             if(TryApplyBillEffect(state,effect,out var billState)){state=billState;continue;}
             if(TryApplyRegionalDialogueEffect(state,effect,out var regionalDialogueState)){state=regionalDialogueState;continue;}
+            if(TryApplyRegionalTeaEffect(state,effect,out var teaState)){state=teaState;continue;}
+            if(TryApplyRegionalGiftEffect(state,effect,out var regionalGiftState)){state=regionalGiftState;continue;}
+            if(TryApplySharedScriptGiftEffect(state,effect,out var scriptGiftState)){state=scriptGiftState;continue;}
             if(TryApplyMagikarpEffect(state,effect,out var magikarpState)){state=magikarpState;continue;}
             if(TryApplyRoute3Effect(state,effect,out var route3State)){state=route3State;continue;}
             if(TryApplyRoute22Effect(state,effect,out var route22State)){state=route22State;continue;}

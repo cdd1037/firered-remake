@@ -25,7 +25,8 @@ public sealed partial class PretCampaignCatalog
 
     public bool RegionalFlavorEnabled { get; }
     public bool SupportsRegionalFlavor(MapId map) => RegionalFlavorEnabled &&
-        SourceMaps.TryGetValue(map, out var source) && RegionalFlavorMaps.Contains(source.SourceMapSymbol);
+        SourceMaps.TryGetValue(map, out var source) && (RegionalFlavorMaps.Contains(source.SourceMapSymbol) ||
+            RegionalServicesEnabled && RegionalServiceMapIds.Contains(map));
 
     private static readonly ImmutableHashSet<string> RegionalFlavorMaps = new[]
     {

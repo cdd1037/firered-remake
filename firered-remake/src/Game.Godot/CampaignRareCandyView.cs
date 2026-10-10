@@ -11,6 +11,8 @@ public partial class CampaignView
         string? key = scene is null ? null : $"{scene.Result.Pokemon.InstanceId}:{scene.Result.Pokemon.Pokemon.Level}:{scene.Stage}:{scene.PageIndex}:{scene.PendingMoves.Length}";
         if (key == _candyViewKey) return;
         _candyViewKey = key; _candyMoveCursor = 0; _candyNotice = null; _held = null;
+        if (scene is { Stage: CampaignRareCandyStage.LearnMove } && MoveLearningUnavailable(scene.PendingMoves[0].Move))
+            _candyMoveCursor = _session.State.Party.Single(p => p.InstanceId == scene.Result.Pokemon.InstanceId).Pokemon.Moves.Length;
     }
 
     private bool RareCandyInput(InputEventKey key)
@@ -29,9 +31,10 @@ public partial class CampaignView
             if (key.Keycode == Key.Down) _candyMoveCursor = Math.Min(count, _candyMoveCursor + 1);
             if (confirm || cancel)
             {
+                if (confirm && _candyMoveCursor < count && MoveLearningUnavailable(scene.PendingMoves[0].Move)) return true;
                 long revision = _session.Revision;
                 Apply(new("rare_candy_learn", MoveSlot: cancel || _candyMoveCursor == count ? -1 : _candyMoveCursor));
-                if (_session.Revision == revision) _candyNotice = _status == "hm_move_cannot_be_forgotten" ? HmCannotForgetText : _status;
+                if (_session.Revision == revision) _candyNotice = MoveLearningError();
             }
         }
         else if ((confirm || cancel) && _fanfareRemaining <= 0)
@@ -66,14 +69,16 @@ public partial class CampaignView
             _battleSkin.DrawStandardFrame(this, new(8, 8, 224, 104));
             for (int i = 0; i <= owned.Pokemon.Moves.Length; i++)
             {
-                SourceText(_sourceNormal, new(28, 14 + i * 16), i == owned.Pokemon.Moves.Length ? "CANCEL" : MoveName(owned.Pokemon.Moves[i].Move));
+                bool unavailable = MoveLearningUnavailable(scene.PendingMoves[0].Move);
+                SourceText(unavailable && i < owned.Pokemon.Moves.Length ? _sourceInactiveCursor : _sourceNormal, new(28, 14 + i * 16),
+                    i == owned.Pokemon.Moves.Length ? unavailable ? "DECLINE" : "CANCEL" : MoveName(owned.Pokemon.Moves[i].Move));
                 if (i == _candyMoveCursor) SourceText(_sourceNormal, new(14, 14 + i * 16), "▶");
             }
         }
         else DrawTexture(_battleArt[(owned.Pokemon.SourceSpeciesId, "front", owned.Pokemon.IsShiny)].Texture, new(88, 24));
         _battleSkin.DrawStandardFrame(this, new(0, 112, 240, 48));
         string text = stats ? $"{owned.Nickname} grew to\nLV. {owned.Pokemon.Level}!"
-            : scene.Stage == CampaignRareCandyStage.LearnMove ? $"Forget which move for\n{MoveName(scene.PendingMoves[0].Move)}?"
+            : scene.Stage == CampaignRareCandyStage.LearnMove ? MoveLearningPrompt(scene.PendingMoves[0].Move)
             : scene.Pages[scene.PageIndex];
         var lines = text.Split('\n');
         for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(10, 119 + i * 16), lines[i]);

@@ -48,7 +48,12 @@ public partial class CampaignView
             mon = storage.Boxes[address.BoxIndex].Slots[address.SlotIndex];
         }
         else mon = naming.PartyIndex >= 0 && naming.PartyIndex < state.Party.Length ? state.Party[naming.PartyIndex] : null;
-        if (mon is null || mon.InstanceId != state.MagikarpGift?.InstanceId || naming.BoxAddress != state.GiftDelivery!.BoxAddress)
+        bool eevee = _catalog.RegionalServicesEnabled &&
+            state.World.Player.MapId.Value == "map.celadon-city-condominiums-roof-room" &&
+            state.LastTalked is {} actor && state.Actors.TryGetValue(actor, out var source) &&
+            source.ScriptId == "CeladonCity_Condominiums_RoofRoom_EventScript_EeveeBall";
+        long? expectedId = eevee ? state.EeveeGift?.InstanceId : state.MagikarpGift?.InstanceId;
+        if (mon is null || mon.InstanceId != expectedId || naming.BoxAddress != state.GiftDelivery!.BoxAddress)
             throw new InvalidDataException("Gift nickname target differs.");
         return mon;
     }

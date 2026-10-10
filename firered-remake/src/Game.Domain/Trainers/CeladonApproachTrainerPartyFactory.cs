@@ -34,7 +34,7 @@ public static class CeladonApproachTrainerPartyFactory
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (towerRules ? (pokemon.Species.Count == 102 ? 102 : 101) : rocketHideoutRules ? 99 : celadonGymRules ? 98 : 94) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (towerRules ? (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 102 ? 102 : 101) : rocketHideoutRules ? 99 : celadonGymRules ? 98 : 94) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("CeladonApproach requires the exact ninety-four-species catalog and one initial source CeladonApproach team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

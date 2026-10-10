@@ -119,7 +119,7 @@ public static class LevelEvolutionRules
                 continue;
             }
             if (pokemon.Moves.Any(slot => slot.Move == move)) continue;
-            if (pokemon.Moves.Length == 4)
+            if (!PokemonMoveRules.IsLearningSupported(content.Catalog, move) || pokemon.Moves.Length == 4)
             {
                 pending.Add(new(pokemon.Level, move));
                 continue;
@@ -167,7 +167,7 @@ public static class LevelEvolutionRules
         bool staticHeldItem = content.Catalog.Species.Count switch
         {
             40 => owned.HeldItem == "ITEM_ORAN_BERRY",
-            102 => Game.Domain.WildBattle.SnorlaxBattleScope.SupportsHeldItem(owned.HeldItem),
+            102 or 103 => Game.Domain.WildBattle.SnorlaxBattleScope.SupportsHeldItem(owned.HeldItem),
             101 => Game.Domain.WildBattle.PokemonTowerBattleScope.SupportsHeldItem(owned.HeldItem),
             99 => Game.Domain.WildBattle.RocketHideoutBattleScope.SupportsHeldItem(owned.HeldItem),
             93 or 94 or 98 => Game.Domain.WildBattle.RockTunnelBattleScope.SupportsHeldItem(owned.HeldItem),

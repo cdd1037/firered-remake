@@ -98,6 +98,8 @@ public sealed partial class CampaignSession
             if(command.MoveSlot is < -1 or >3)return new(CommandStatus.Rejected,state,"wild_learning_slot_invalid");
             if (_content.SsAnneEnabled && command.MoveSlot >= 0 && command.MoveSlot < owned.Pokemon.Moves.Length && PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
                 return new(CommandStatus.Rejected, state, "hm_move_cannot_be_forgotten");
+            if(command.MoveSlot>=0 && !PokemonMoveRules.IsLearningSupported(BattlePokemon,move.Move))
+                return new(CommandStatus.Rejected,state,"pokemon_learning_effect_unsupported");
             if(command.MoveSlot>=0)
             {
                 var learned=PokemonMoveRules.Replace(BattlePokemon,owned.Pokemon.Moves,command.MoveSlot,move.Move);

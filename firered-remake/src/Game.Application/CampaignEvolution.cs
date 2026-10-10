@@ -156,6 +156,8 @@ public sealed partial class CampaignSession
             if (_content.SsAnneEnabled && command.MoveSlot >= 0 && command.MoveSlot < owned.Pokemon.Moves.Length && PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
                 return new(CommandStatus.Rejected, state, "hm_move_cannot_be_forgotten");
             var move = scene.PendingMoves[0];
+            if (command.MoveSlot >= 0 && !PokemonMoveRules.IsLearningSupported(BattlePokemon, move.Move))
+                return new(CommandStatus.Rejected, state, "pokemon_learning_effect_unsupported");
             if (command.MoveSlot >= 0)
                 owned = ReplaceOwnedLevelMove(owned, command.MoveSlot, move.Move);
             string message = command.MoveSlot < 0
@@ -215,7 +217,7 @@ public sealed partial class CampaignSession
         var moves = owned.Pokemon.Moves;
         var definition = BattlePokemon.Moves[move];
         return moves.Any(m => m.Move == move) ? new(MoveLearningOutcome.AlreadyKnown, moves)
-            : moves.Length == 4 ? new(MoveLearningOutcome.NeedsReplacement, moves)
+            : !PokemonMoveRules.IsLearningSupported(BattlePokemon, move) || moves.Length == 4 ? new(MoveLearningOutcome.NeedsReplacement, moves)
             : new(MoveLearningOutcome.Added, moves.Add(new(move, definition.Pp, definition.Pp)));
     }
 
@@ -227,6 +229,8 @@ public sealed partial class CampaignSession
             throw new ArgumentException("Invalid owned level-move replacement.");
         if (_content.SsAnneEnabled && PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[slot].Move))
             throw new ArgumentException("An HM move cannot be forgotten here.");
+        if (!PokemonMoveRules.IsLearningSupported(BattlePokemon, move))
+            throw new NotSupportedException("pokemon_learning_effect_unsupported");
         var definition = BattlePokemon.Moves[move];
         return owned with { Pokemon = owned.Pokemon with
             { Moves = owned.Pokemon.Moves.SetItem(slot, new(move, definition.Pp, definition.Pp)) } };

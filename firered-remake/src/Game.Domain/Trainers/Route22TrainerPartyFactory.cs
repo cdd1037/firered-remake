@@ -36,13 +36,13 @@ public static class Route22TrainerPartyFactory
     {
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
-        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (pokemon.Species.Count is 101 or 102) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers);
         PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) throw new NotSupportedException("The versioned early-rival Pokemon catalog is required.");
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) throw new NotSupportedException("The versioned early-rival Pokemon catalog is required.");
         if (!trainers.Trainers.TryGetValue(trainerId, out var trainer))
             throw new NotSupportedException("Only the three Route22 early rivals are supported.");
         foreach (var member in trainer.Party)

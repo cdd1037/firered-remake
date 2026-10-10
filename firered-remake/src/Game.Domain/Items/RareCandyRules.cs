@@ -42,9 +42,9 @@ public static class RareCandyRules
     /// </summary>
     public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion, bool snorlaxRules = false)
     {
-        if ((content.Catalog.Species.Count == 102) != snorlaxRules) throw new NotSupportedException("Explicit Snorlax Rare Candy profile required.");
+        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) == 102) != snorlaxRules) throw new NotSupportedException("Explicit Snorlax Rare Candy profile required.");
         LevelEvolutionRules.Validate(content, owned);
-        if (content.Catalog.Species.Count is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
             throw new NotSupportedException("Rare Candy requires the verified MtMoon or later Kanto catalog.");
         if (!ValidRegion(currentRegion))
             throw new ArgumentException("A source MAPSEC region is required.", nameof(currentRegion));
@@ -89,7 +89,7 @@ public static class RareCandyRules
             // on that choice. The application rechecks candidates in source order when reached.
             if (pending.Count > 0) { pending.Add(new(level, move)); continue; }
             if (pokemon.Moves.Any(slot => slot.Move == move)) continue;
-            if (pokemon.Moves.Length == 4) { pending.Add(new(level, move)); continue; }
+            if (!PokemonMoveRules.IsLearningSupported(content.Catalog, move) || pokemon.Moves.Length == 4) { pending.Add(new(level, move)); continue; }
             var definition = content.Catalog.Moves[move];
             learned.Add(new(level, move, pokemon.Moves.Length));
             pokemon = pokemon with { Moves = pokemon.Moves.Add(new(move, definition.Pp, definition.Pp)) };

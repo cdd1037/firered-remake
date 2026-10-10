@@ -12,8 +12,11 @@ public sealed partial class CampaignSession
     private static readonly ItemId OldRodId=new("pret:ITEM_OLD_ROD");
     private const string BikeShopSource="data/maps/CeruleanCity_BikeShop/scripts.inc";
     private static bool IsCityServiceItem(ItemId id)=>id==BikeVoucherId||id==BicycleId||id==OldRodId;
-    private InventoryState WithoutCityServiceItems(InventoryState inventory)=>!_content.CityServicesEnabled?inventory:
-        inventory with{KeyItems=inventory.KeyItems is {} keys?keys.Where(s=>!IsCityServiceItem(s.Item)).ToImmutableArray():null};
+    private InventoryState WithoutCityServiceItems(InventoryState inventory)
+    {
+        inventory=WithoutRegionalTea(inventory);
+        return !_content.CityServicesEnabled?inventory:inventory with{KeyItems=inventory.KeyItems is {} keys?keys.Where(s=>!IsCityServiceItem(s.Item)).ToImmutableArray():null};
+    }
 
     private string? ValidateCityServiceInventory(InventoryState inventory)
     {

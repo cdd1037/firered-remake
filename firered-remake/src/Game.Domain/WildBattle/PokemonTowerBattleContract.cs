@@ -48,7 +48,7 @@ public static partial class WildBattleRules
     public static WildBattleResult StartPokemonTower(PokemonCatalog catalog, WildBattleCombatant player,
         WildBattleCombatant opponent, RngState rng, PokemonTowerBattleKind kind, bool snorlaxRules = false)
     {
-        if ((catalog.Species.Count == 102) != snorlaxRules) return Fail(null,"snorlax_catalog_profile");
+        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 102) != snorlaxRules) return Fail(null,"snorlax_catalog_profile");
         if (!Enum.IsDefined(kind)) return Fail(null, "pokemon_tower_battle_kind");
         if (opponent?.Pokemon is null) return Fail(null, "pokemon_tower_opponent_missing");
         if (kind == PokemonTowerBattleKind.DisguisedWild && opponent.Pokemon.SourceSpeciesId is not (92 or 93 or 104))

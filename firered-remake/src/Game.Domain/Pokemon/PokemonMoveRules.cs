@@ -8,6 +8,10 @@ public static class PokemonMoveRules
     /// <summary>Ordinary learning cannot forget HM moves (IsHMMove2 in the original learn-move menu).</summary>
     public static bool IsHiddenMachineMove(MoveId move) => move.Value is "pret:MOVE_CUT" or "pret:MOVE_FLY" or "pret:MOVE_SURF" or "pret:MOVE_STRENGTH" or "pret:MOVE_FLASH" or "pret:MOVE_ROCK_SMASH" or "pret:MOVE_WATERFALL" or "pret:MOVE_DIVE";
 
+    /// <summary>The gift profile keeps every source move as metadata while deferring learning of unimplemented battle effects.</summary>
+    public static bool IsLearningSupported(PokemonCatalog catalog, MoveId move) =>
+        catalog.Species.Count != 103 || Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.SnorlaxRulesVersion);
+
     /// <summary>CreateBoxMon learns in source order. Only initial creation automatically forgets the oldest move.</summary>
     public static ImmutableArray<PokemonMoveSlot> InitialMoves(PokemonCatalog catalog, PokemonSpeciesDefinition species, int level)
     {
@@ -20,7 +24,7 @@ public static class PokemonMoveRules
         foreach (var entry in species.LevelUpMoves)
         {
             if (entry.Level > level) break;
-            var result = TryLearn(catalog, moves, entry.Move);
+            var result = TryLearnCore(catalog, moves, entry.Move, metadataCreation: true);
             moves = result.Outcome == MoveLearningOutcome.NeedsReplacement
                 ? moves.RemoveAt(0).Add(NewSlot(catalog.Moves[entry.Move])) : result.Moves;
         }
@@ -37,13 +41,19 @@ public static class PokemonMoveRules
     }
 
     /// <summary>Actual level-up does not silently FIFO-replace: a full set returns NeedsReplacement unchanged.</summary>
-    public static MoveLearningResult TryLearn(PokemonCatalog catalog, ImmutableArray<PokemonMoveSlot> moves, MoveId move)
+    public static MoveLearningResult TryLearn(PokemonCatalog catalog, ImmutableArray<PokemonMoveSlot> moves, MoveId move) =>
+        TryLearnCore(catalog, moves, move, metadataCreation: false);
+
+    private static MoveLearningResult TryLearnCore(PokemonCatalog catalog, ImmutableArray<PokemonMoveSlot> moves, MoveId move, bool metadataCreation)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ValidateSlots(catalog, moves);
         if (!catalog.Moves.TryGetValue(move, out var definition)) throw new NotSupportedException("Move is outside the imported catalog.");
         if (moves.Any(x => x.Move == move)) return new(MoveLearningOutcome.AlreadyKnown, moves);
-        if (moves.Length == 4) return new(MoveLearningOutcome.NeedsReplacement, moves);
+        // Return an explicit decision even with a spare slot: the player can decline and keep
+        // playing. Never automatically add a move whose remaining PP could prevent Struggle.
+        if ((!metadataCreation && !IsLearningSupported(catalog, move)) || moves.Length == 4)
+            return new(MoveLearningOutcome.NeedsReplacement, moves);
         return new(MoveLearningOutcome.Added, moves.Add(NewSlot(definition)));
     }
 
@@ -54,6 +64,7 @@ public static class PokemonMoveRules
         if (slot < 0 || slot >= moves.Length) throw new ArgumentOutOfRangeException(nameof(slot));
         if (!catalog.Moves.TryGetValue(move, out var definition)) throw new NotSupportedException("Move is outside the imported catalog.");
         if (moves.Any(x => x.Move == move)) throw new ArgumentException("The Pokemon already knows this move.");
+        if (!IsLearningSupported(catalog, move)) throw new NotSupportedException("pokemon_learning_effect_unsupported");
         if (IsHiddenMachineMove(moves[slot].Move)) throw new NotSupportedException("Hidden Machine moves cannot be forgotten through ordinary learning.");
         return moves.SetItem(slot, NewSlot(definition));
     }

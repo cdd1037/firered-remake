@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "profile": "firered-regional-tea-eevee-contract-v1",
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "files": [
+    {
+      "path": "asm/macros/event.inc",
+      "byteLength": 56947,
+      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
+      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+    },
+    {
+      "path": "data/event_scripts.s",
+      "byteLength": 55643,
+      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
+      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27"
+    },
+    {
+      "path": "data/maps/CeladonCity_Condominiums_1F/map.json",
+      "byteLength": 3489,
+      "gitBlobSha1": "f85c9813586a9fb6f88f3af20d86057838d3ec74",
+      "sha256": "eefeb9769049cfe119c2c54b9e3e960650af5a400828820100a24fb010e70f97"
+    },
+    {
+      "path": "data/maps/CeladonCity_Condominiums_1F/scripts.inc",
+      "byteLength": 1713,
+      "gitBlobSha1": "c18a042f04d870c354fa25b78ab6214cd3837cc9",
+      "sha256": "dae67452657319ef042eef63e7fb03019358b1bc3e12f8cec3b04ffa42669c46"
+    },
+    {
+      "path": "data/maps/CeladonCity_Condominiums_1F/text.inc",
+      "byteLength": 1238,
+      "gitBlobSha1": "7689db1b12f4a1bbbd3c570bda416cc5e13f5ab2",
+      "sha256": "de11dc9fd7b69b8122180c34e541dc19a139e0fd5eef8362adb64c550fce02dc"
+    },
+    {
+      "path": "data/maps/CeladonCity_Condominiums_RoofRoom/map.json",
+      "byteLength": 2605,
+      "gitBlobSha1": "f080da01d243549f8955cd7c8817638829543b81",
+      "sha256": "88b8d398fbc4f5dde8c21699f7a83792bdbcc8e7c1436ae67a6eed95b3de49c6"
+    },
+    {
+      "path": "data/maps/CeladonCity_Condominiums_RoofRoom/scripts.inc",
+      "byteLength": 3971,
+      "gitBlobSha1": "72a109cc74b1c2448b62833857edb1cff4fe16ad",
+      "sha256": "1802931ce27a575f96381a78aa81b25d5d77bfd47beb5addf35bd94c49599b19"
+    },
+    {
+      "path": "data/maps/CeladonCity_Condominiums_RoofRoom/text.inc",
+      "byteLength": 2040,
+      "gitBlobSha1": "74112952e1fe47369ef94fa75759d9830e8226a1",
+      "sha256": "a01d38ac90676714d30d80c366b0a6757b171410a7bab0299988038a275a0f8e"
+    },
+    {
+      "path": "data/maps/Route5_SouthEntrance/map.json",
+      "byteLength": 2205,
+      "gitBlobSha1": "650568ac174fae027ee4ab4714b7001ce215b1ed",
+      "sha256": "94b0384b5a76614515134afd56af1c81f2b33d190267b3c631009af812858e96"
+    },
+    {
+      "path": "data/maps/Route5_SouthEntrance/scripts.inc",
+      "byteLength": 2347,
+      "gitBlobSha1": "588a273438371a1de1725adeff151736b4db735f",
+      "sha256": "bb6c697875fe58bb53e0d604093a34511721437e4111396097bbe9be00c435e9"
+    },
+    {
+      "path": "data/maps/Route5_SouthEntrance/text.inc",
+      "byteLength": 811,
+      "gitBlobSha1": "941b17129ea8c8f329ac2de1d386f596d007fe5a",
+      "sha256": "3b30b0a999eff2ae18387b4b5b75e1a99f42edd52887dd6e0e650b5766a76dcc"
+    },
+    {
+      "path": "data/maps/Route6_NorthEntrance/map.json",
+      "byteLength": 2206,
+      "gitBlobSha1": "fb2edae089be9936b9ae7c2863faf11f592e8762",
+      "sha256": "918f996bbe0c77cab076aa4fd7d3d94defeec40008cfe96cc149d4c97d7cb0f7"
+    },
+    {
+      "path": "data/maps/Route6_NorthEntrance/scripts.inc",
+      "byteLength": 2354,
+      "gitBlobSha1": "fb203c9c544fd4e9c02965312e959f2a29556e48",
+      "sha256": "0225f7ad64ca88726d25592d39620bff93670910b4ae48ae9467aeced98ce6c7"
+    },
+    {
+      "path": "data/maps/Route6_NorthEntrance/text.inc",
+      "byteLength": 811,
+      "gitBlobSha1": "bc727ad9713787e6d1306bc3c1d9b99eab342c20",
+      "sha256": "7d0b06985ebe37e79e76c96364007871e8249930c40b3c3d88421ac74931a777"
+    },
+    {
+      "path": "data/maps/Route7_EastEntrance/map.json",
+      "byteLength": 2198,
+      "gitBlobSha1": "4be396210f0382756eb5c1fa50f74f66ad03b836",
+      "sha256": "9b89389ffe5074fa9dd3f9022dff0a4d3d6a6f2989e2e65408e44b37b725a26e"
+    },
+    {
+      "path": "data/maps/Route7_EastEntrance/scripts.inc",
+      "byteLength": 2236,
+      "gitBlobSha1": "07244439ab83128f2d0ae1e6131aefe23443570a",
+      "sha256": "fd31638fa61d27a5a58638dd62ad49fc1623a24146183bfd707164516c9af3f0"
+    },
+    {
+      "path": "data/maps/Route7_EastEntrance/text.inc",
+      "byteLength": 807,
+      "gitBlobSha1": "432525101930bc4d0a7fbe099cd0a5801095f521",
+      "sha256": "fc36370889b9c4d218de820c49ea81af75f8c0943ef1ce88030a24840fdf763a"
+    },
+    {
+      "path": "data/maps/Route8_WestEntrance/map.json",
+      "byteLength": 2200,
+      "gitBlobSha1": "538e467a2dfcaf4733e8ae128a1dc7d606b5fb57",
+      "sha256": "fd23c74dee6c47d0df07c28c6b0362dff4d7684a2dc80abd5ec5ead47614061b"
+    },
+    {
+      "path": "data/maps/Route8_WestEntrance/scripts.inc",
+      "byteLength": 2588,
+      "gitBlobSha1": "2c36cff20b004faa3ed7bf7eff0092629d05279c",
+      "sha256": "2ceb4a0f2c32bdb2fecaa791d4cf295df0afb5bde1a3bbc423d7bc9b9d1cca0a"
+    },
+    {
+      "path": "data/maps/Route8_WestEntrance/text.inc",
+      "byteLength": 807,
+      "gitBlobSha1": "244fbf7971a160036aa6e21a66fd0f302937cb43",
+      "sha256": "5800e3b45638f0b8138906011c0fe1bc1fefa5ff9c1eed79eca3e8cf1c650370"
+    },
+    {
+      "path": "data/scripts/bag_full.inc",
+      "byteLength": 358,
+      "gitBlobSha1": "eaf65c7759f5a760c0524a6ae7a3b5b1724930e3",
+      "sha256": "81db2478b9acaeb2011eea4294b5f24f3c4669e724d75e5aa513ba105c2db267"
+    },
+    {
+      "path": "data/scripts/obtain_item.inc",
+      "byteLength": 5866,
+      "gitBlobSha1": "c904278ae8ed23e295391764dccced6f0692b3d9",
+      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d"
+    },
+    {
+      "path": "data/scripts/pc_transfer.inc",
+      "byteLength": 1256,
+      "gitBlobSha1": "1a71b113612e7239dfb6675634f727671e17ff03",
+      "sha256": "18a78a326dbabed857f1010b8164e22913f44c2ddbcd1da73658a9b270ef3d56"
+    },
+    {
+      "path": "data/text/obtain_item.inc",
+      "byteLength": 1065,
+      "gitBlobSha1": "8d2708166d4d21da3a6c20282e0ebf244ca0d57e",
+      "sha256": "dad5d2666cd24ef854bb1ac7533dd3f53ffdcfee1528a48d436762fe00b2c813"
+    },
+    {
+      "path": "data/text/pc_transfer.inc",
+      "byteLength": 1333,
+      "gitBlobSha1": "8cba666dcecc6e9460875cd33a463978157c45ed",
+      "sha256": "19dbb798107edc01bfe7f79c1d52c9fd7eacf6f2c9e670ae570c078abf91cd28"
+    },
+    {
+      "path": "include/constants/flags.h",
+      "byteLength": 95397,
+      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "path": "include/constants/items.h",
+      "byteLength": 12436,
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "include/constants/species.h",
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "path": "include/constants/vars.h",
+      "byteLength": 17306,
+      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
+      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12"
+    },
+    {
+      "path": "src/data/items.json",
+      "byteLength": 194280,
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "path": "src/data/pokemon/evolution.h",
+      "byteLength": 12282,
+      "gitBlobSha1": "c9b0cf716d6e25cfa054e988115af60f61bd206e",
+      "sha256": "a7d05352fb5b7039b8851049bc9575dc8eaa4450bf9964d03b7857db98c32d3c"
+    },
+    {
+      "path": "src/data/pokemon/level_up_learnsets.h",
+      "byteLength": 182027,
+      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
+      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+    },
+    {
+      "path": "src/data/pokemon/species_info.h",
+      "byteLength": 342600,
+      "gitBlobSha1": "3e36c08ced6dec3d427673d8b2f787221a178aa2",
+      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+    },
+    {
+      "path": "src/event_object_movement.c",
+      "byteLength": 326145,
+      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
+      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254"
+    },
+    {
+      "path": "src/field_specials.c",
+      "byteLength": 77314,
+      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d",
+      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9"
+    },
+    {
+      "path": "src/pokemon.c",
+      "byteLength": 221865,
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "path": "src/script_pokemon_util.c",
+      "byteLength": 5764,
+      "gitBlobSha1": "bc11dc001b4399ecd25b8699e316816e1ebd8058",
+      "sha256": "cfadee8f8c397485b66fc56a9a6e13fef1bbad47b4c6cd83dd42a9c1f8f9cf30"
+    }
+  ]
+}

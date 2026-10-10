@@ -297,6 +297,7 @@ public partial class CampaignView
     private string WildCommandError() => _lastCommandFault ? "The battle step could not\nbe completed." : _status switch
     {
         "hm_move_cannot_be_forgotten" => HmCannotForgetText,
+        "pokemon_learning_effect_unsupported" => UnsupportedLearningText,
         "wild_battle_switch_rooted" or "wild_battle_switch_mean_look" or "celadon_gym_trainer_switch_rooted" or "wild_battle_switch_binding" or "pewter_trainer_switch_binding" => WildName(WildBattleSide.Player)+" can't be switched\nout!",
         "wild_battle_switch_arena_trap" or "route11_trainer_switch_arena_trap" => string.Join('\n',WildSourcePages("gText_PkmnsXPreventsSwitching",("B_BUFF1",WildName(WildBattleSide.Opponent)),("B_LAST_ABILITY","ARENA TRAP"))),
         "wild_battle_run_arena_trap" => string.Join('\n',WildSourcePages("sText_PreventsEscape",("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(WildBattleSide.Opponent)),("B_SCR_ACTIVE_ABILITY","ARENA TRAP"))),
@@ -331,6 +332,11 @@ public partial class CampaignView
     {
         var b = PresentedWildBattle!;
         if (b.PendingMoves.IsEmpty) return;
+        if (MoveLearningUnavailable(b.PendingMoves[0].Move))
+        {
+            _wildPages = []; _wildPage = 0; _wildElapsed = 0; _wildMenu = "learn-moves";
+            _wildCursor = WildRewardRecipient(b).Pokemon.Moves.Length; return;
+        }
         var values = new[] { ("B_BUFF1", WildRewardRecipient(b).Nickname), ("B_BUFF2", MoveName(b.PendingMoves[0].Move)) };
         _wildPages = [.. WildSourcePages("sText_TryToLearnMove1", values), .. WildSourcePages("sText_TryToLearnMove2", values), .. WildSourcePages("sText_TryToLearnMove3", values)];
         _wildPage = 0; _wildElapsed = 0; _wildMenu = "learn-intro"; _wildCursor = 0;
@@ -355,6 +361,7 @@ public partial class CampaignView
             if (key.Keycode is Key.Enter or Key.Backspace)
             {
                 _wildLearningSlot = key.Keycode == Key.Backspace || _wildCursor == WildRewardRecipient(b).Pokemon.Moves.Length ? -1 : _wildCursor;
+                if (_wildLearningSlot >= 0 && MoveLearningUnavailable(b.PendingMoves[0].Move)) return true;
                 _wildMenu = "learn-confirm"; _wildCursor = 1;
             }
             return true;
@@ -364,6 +371,8 @@ public partial class CampaignView
         { _wildMenu = "learn-moves"; _wildCursor = 0; return true; }
         if (key.Keycode == Key.Enter)
         {
+            if (_wildLearningSlot >= 0 && MoveLearningUnavailable(b.PendingMoves[0].Move))
+            { _wildMenu = "learn-moves"; _wildCursor = WildRewardRecipient(b).Pokemon.Moves.Length; return true; }
             if (ApplyWildChoice(new("wild_learn", MoveSlot: _wildLearningSlot)))
             {
                 if (PresentedWildBattle is { PendingMoves.IsEmpty: false } next &&
@@ -582,10 +591,12 @@ public partial class CampaignView
         if (_wildMenu == "learn-moves")
         {
             _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
-            SourceText(_sourceNormal, new(16, 8), "Forget which move?");
-            for (int i = 0; i <= moves.Length; i++) SourceText(_sourceNormal, new(24, 28 + i * 16), i == moves.Length ? "CANCEL" : MoveName(moves[i].Move));
+            bool unavailable = MoveLearningUnavailable(b.PendingMoves[0].Move);
+            SourceText(_sourceNormal, new(16, 8), unavailable ? MoveName(b.PendingMoves[0].Move) : "Forget which move?");
+            for (int i = 0; i <= moves.Length; i++) SourceText(unavailable && i < moves.Length ? _sourceInactiveCursor : _sourceNormal,
+                new(24, 28 + i * 16), i == moves.Length ? unavailable ? "DECLINE" : "CANCEL" : MoveName(moves[i].Move));
             SourceText(_sourceNormal, new(12, 28 + _wildCursor * 16), "▶");
-            WildLines("Learn " + MoveName(b.PendingMoves[0].Move) + "?"); return;
+            WildLines(unavailable ? UnsupportedLearningText : "Learn " + MoveName(b.PendingMoves[0].Move) + "?"); return;
         }
         WildLines(_wildLearningSlot < 0 ? string.Join('\n', WildSourcePages("sText_StopLearningMove", ("B_BUFF2", MoveName(b.PendingMoves[0].Move))))
             : "Forget " + MoveName(moves[_wildLearningSlot].Move) + "\nand learn " + MoveName(b.PendingMoves[0].Move) + "?");

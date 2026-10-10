@@ -10,15 +10,17 @@ The source/application checks include capture into party/PC and non-victory call
 the focused real-window Snorlax check covers No, wake, escape, removal, save and a
 second-process normal Continue. See [Snorlax scope and evidence](docs/snorlax-campaign.md).
 
-The regional-interaction successor adds ordinary NPC branches and shared environmental
-text in25 loaded Celadon/Lavender/Tower/Route7–8/tunnel maps. It retains the complete
-Snorlax gameplay state through the explicit `save upgrade-regional INPUT NEW_OUTPUT`
-command. Run `bash scripts/launch-regional.sh`; its save directory is `.play/regional`.
-Earlier launchers and their isolated saves remain available. See
-[regional coverage](docs/regional-interaction-coverage.md) and
-[profile/migration checks](tests/Game.RegionalProfile.Tests/README.md).
+The current regional-services successor includes the ordinary regional dialogue pass,
+five Celadon condominium maps, Tea delivery and the four shared gate consumers,
+and the rooftop level-25 Eevee gift with party/PC naming. Run
+`bash scripts/launch-current.sh` (or `launch-regional-services.sh`); its isolated
+save directory is `.play/regional-services`. The explicit
+`save upgrade-regional-services INPUT NEW_OUTPUT` command preserves the whole
+previous regional payload and generation. Earlier profiles retain separate saves.
+See [Tea/Eevee scope and proof](docs/regional-tea-eevee.md) and
+[regional coverage](docs/regional-interaction-coverage.md).
 
-Regional interaction completeness is still in progress. Tea/Eevee and missing interiors,
+Regional interaction completeness is still in progress. Missing ordinary interiors,
 Department Store services, Name Rater, coin systems, Itemfinder and Route8's genuine
 preset double battle are separate gaps. Route12/16 access does not open Cycling Road
 or the full southern routes. Source-only GitHub checkpoints and asset-complete private

@@ -49,6 +49,7 @@ public partial class CampaignView
             ExtendMachineQuestPocket(ref document);
             ExtendTownMapQuestPocket(ref document);
             ExtendCityServicesQuestPocket(ref document);
+            ExtendRegionalServicesQuestPocket(ref document);
             _questPocketUi = document;
         }
         catch

@@ -14,6 +14,8 @@ public partial class CampaignView
         string key = $"{scene.BattleId}:{scene.ProposalIndex}:{scene.Stage}:{scene.PageIndex}:{scene.PendingMoves.Length}";
         if (_evolutionViewKey == key) return;
         _evolutionViewKey = key; _evolutionMoveCursor = 0; _held = null;
+        if (scene is { Stage: CampaignEvolutionStage.LearnMove } && MoveLearningUnavailable(scene.PendingMoves[0].Move))
+            _evolutionMoveCursor = _session.State.Party.Single(p => p.InstanceId == scene.Proposal.InstanceId).Pokemon.Moves.Length;
     }
 
     private bool TryEvolutionInput(InputEventKey key)
@@ -44,9 +46,10 @@ public partial class CampaignView
             if (key.Keycode == Key.Down) _evolutionMoveCursor = Math.Min(owned.Pokemon.Moves.Length, _evolutionMoveCursor + 1);
             if (confirm || cancel)
             {
+                if (confirm && _evolutionMoveCursor < owned.Pokemon.Moves.Length && MoveLearningUnavailable(scene.PendingMoves[0].Move)) return true;
                 long revision = _session.Revision;
                 Apply(new("evolution_learn", MoveSlot: cancel || _evolutionMoveCursor == owned.Pokemon.Moves.Length ? -1 : _evolutionMoveCursor));
-                if (_session.Revision == revision) _wildNotice = _status == "hm_move_cannot_be_forgotten" ? HmCannotForgetText : _status;
+                if (_session.Revision == revision) _wildNotice = MoveLearningError();
             }
         }
         return true;
@@ -63,11 +66,11 @@ public partial class CampaignView
             _battleSkin.DrawStandardFrame(this, new(8, 8, 224, 104));
             for (int i = 0; i < owned.Pokemon.Moves.Length; i++)
             {
-                SourceText(_sourceNormal, new(28, 14 + i * 16), MoveName(owned.Pokemon.Moves[i].Move));
+                SourceText(MoveLearningUnavailable(scene.PendingMoves[0].Move) ? _sourceInactiveCursor : _sourceNormal, new(28, 14 + i * 16), MoveName(owned.Pokemon.Moves[i].Move));
                 if (i == _evolutionMoveCursor) SourceText(_sourceNormal, new(14, 14 + i * 16), "▶");
             }
             int y = 14 + owned.Pokemon.Moves.Length * 16;
-            SourceText(_sourceNormal, new(28, y), "CANCEL");
+            SourceText(_sourceNormal, new(28, y), MoveLearningUnavailable(scene.PendingMoves[0].Move) ? "DECLINE" : "CANCEL");
             if (_evolutionMoveCursor == owned.Pokemon.Moves.Length) SourceText(_sourceNormal, new(14, y), "▶");
         }
         else
@@ -79,7 +82,7 @@ public partial class CampaignView
         string text = scene.Stage switch
         {
             CampaignEvolutionStage.Proposal => $"What? {owned.Nickname}\nis evolving!",
-            CampaignEvolutionStage.LearnMove => $"Forget which move for\n{MoveName(scene.PendingMoves[0].Move)}?",
+            CampaignEvolutionStage.LearnMove => MoveLearningPrompt(scene.PendingMoves[0].Move),
             _ => scene.Pages[scene.PageIndex]
         };
         var lines = text.Split('\n');

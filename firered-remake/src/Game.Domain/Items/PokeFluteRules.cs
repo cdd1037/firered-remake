@@ -40,7 +40,7 @@ public static class PokeFluteRules
     internal static string? ValidateUse(EarlyShopCatalog shop, CampaignPokemonContent content,
         InventoryState inventory, ImmutableArray<PartyPokemon> party, bool snorlaxRules = false)
     {
-        if (shop.Profile != PokemonTowerItemRules.Profile || content.Catalog.Species.Count != (snorlaxRules ? 102 : 101))
+        if (shop.Profile != PokemonTowerItemRules.Profile || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) != (snorlaxRules ? 102 : 101))
             return "poke_flute_profile_not_enabled";
         try
         {

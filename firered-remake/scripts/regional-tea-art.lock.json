@@ -1,0 +1,45 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 177,
+      "gitBlobSha1": "8285602d96eff173ce2b83e47c7e95d2df81f80f",
+      "path": "graphics/items/icon_palettes/tea.pal",
+      "sha256": "b2a7ed901ff9149bb368ed4fb979c5ab0a4503dcde2b2c10b476043b4acffb1f"
+    },
+    {
+      "byteLength": 292,
+      "gitBlobSha1": "4d09fd00eb142e0670c7dc1351e9ae597a843048",
+      "path": "graphics/items/icons/tea.png",
+      "sha256": "8133260ee83b8a522a5ef014081ba76821fd3de568a27c52154ff8f105355fa4"
+    },
+    {
+      "byteLength": 46353,
+      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
+      "path": "src/data/graphics/items.h",
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+    },
+    {
+      "byteLength": 30370,
+      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
+      "path": "src/data/item_icon_table.h",
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    },
+    {
+      "byteLength": 194280,
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "path": "src/data/items.json",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "byteLength": 28138,
+      "gitBlobSha1": "954f4821d469a342865875f4e36cd1abec91409f",
+      "path": "src/item_use.c",
+      "sha256": "035ca3bdb70f5708dc8771d2bc6cc5450e775e3144278e7683aacba218cb9c98"
+    }
+  ],
+  "profile": "firered-regional-tea-art-v1",
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

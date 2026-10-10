@@ -463,6 +463,8 @@ public sealed partial class CampaignSession
             return new(CommandStatus.Rejected, state, "trainer_learning_slot_invalid");
             if (_content.SsAnneEnabled && command.MoveSlot >= 0 && command.MoveSlot < owned.Pokemon.Moves.Length && PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
                 return new(CommandStatus.Rejected, state, "hm_move_cannot_be_forgotten");
+        if (command.MoveSlot >= 0 && !PokemonMoveRules.IsLearningSupported(BattlePokemon, b.PendingMoves[0].Move))
+            return new(CommandStatus.Rejected, state, "pokemon_learning_effect_unsupported");
         if (command.MoveSlot >= 0) owned = owned with { Pokemon = owned.Pokemon with
         { Moves = PokemonMoveRules.Replace(BattlePokemon, owned.Pokemon.Moves, command.MoveSlot, b.PendingMoves[0].Move) } };
         var pending = b.PendingMoves.RemoveAt(0);

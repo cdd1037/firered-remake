@@ -13,10 +13,11 @@ public sealed partial class CampaignSession
     private string? ValidateCampaignInventory(InventoryState? inventory)
     {
         if(inventory is null)return "inventory_missing";
+        var teaError=ValidateRegionalTeaInventory(inventory);if(teaError is not null)return teaError;
         var cityError=ValidateCityServiceInventory(inventory);if(cityError is not null)return cityError;
         if(_content.PewterMachines is {} machines){var error=PewterMachineRules.Validate(machines,inventory);if(error is not null)return error;}
         else if(inventory.Machines is not null)return "inventory_machine_profile_missing";
-        if (_content.SsAnneEnabled) { var full=EarlyShopInventoryRules.Validate(_content.EarlyShop!,PewterMachineRules.WithoutMachines(inventory) with { KeyItems=inventory.KeyItems is {} all?all.Where(s=>s.Item!=PewterMachineRules.TmCaseId&&s.Item!=QuestItemRules.TownMapId&&(!_content.CityServicesEnabled||!IsCityServiceItem(s.Item))).ToImmutableArray():null }); if(full is not null)return full; }
+        if (_content.SsAnneEnabled) { var full=EarlyShopInventoryRules.Validate(_content.EarlyShop!,PewterMachineRules.WithoutMachines(inventory) with { KeyItems=inventory.KeyItems is {} all?all.Where(s=>s.Item!=PewterMachineRules.TmCaseId&&s.Item!=QuestItemRules.TownMapId&&(!_content.CityServicesEnabled||!IsCityServiceItem(s.Item))&&(!_content.RegionalServicesEnabled||s.Item!=TeaId)).ToImmutableArray():null }); if(full is not null)return full; }
         else if (inventory.Berries is not null) return "inventory_berry_profile_missing";
         if(_content.QuestItems is {} quests){var error=ValidateQuestInventory(quests,inventory);if(error is not null)return error;}
         var view=ShopInventoryView(inventory);

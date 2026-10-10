@@ -27,12 +27,12 @@ public static class CeruleanTrainerPartyFactory
     {
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
-        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (pokemon.Species.Count is 101 or 102) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || !trainers.Trainers.TryGetValue(trainerId, out var trainer))
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || !trainers.Trainers.TryGetValue(trainerId, out var trainer))
             throw new NotSupportedException("Cerulean requires its complete sixty-five-species catalog and a source trainer.");
         foreach (var member in trainer.Party)
         {

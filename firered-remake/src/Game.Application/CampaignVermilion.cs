@@ -11,8 +11,8 @@ public sealed partial class CampaignSession
     {
         if (!_content.VermilionEnabled) return null;
         // Celadon Tea and the Saffron route are not admitted by this corridor.
-        if (state.Script.Flags.GetValueOrDefault("FLAG_GOT_TEA") ||
-            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE5_ROUTE6_ROUTE7_ROUTE8_GATES") != 0)
+        if (!_content.RegionalServicesEnabled && (state.Script.Flags.GetValueOrDefault("FLAG_GOT_TEA") ||
+            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE5_ROUTE6_ROUTE7_ROUTE8_GATES") != 0))
             return "save_vermilion_saffron_gate_unsupported";
         return null;
     }

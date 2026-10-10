@@ -71,6 +71,8 @@ public sealed partial class CampaignSession
             if (_content.SsAnneEnabled && command.MoveSlot >= 0 && Game.Domain.Pokemon.PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
                 return new(CommandStatus.Rejected,state,"hm_move_cannot_be_forgotten");
             var move = scene.PendingMoves[0];
+            if (command.MoveSlot >= 0 && !PokemonMoveRules.IsLearningSupported(BattlePokemon, move.Move))
+                return new(CommandStatus.Rejected, state, "pokemon_learning_effect_unsupported");
             if (command.MoveSlot >= 0)
                 owned = ReplaceOwnedLevelMove(owned, command.MoveSlot, move.Move);
             string text = command.MoveSlot < 0 ? $"{owned.Nickname} did not learn\n{BattleContent.MoveNames[move.Move.Value]}."
