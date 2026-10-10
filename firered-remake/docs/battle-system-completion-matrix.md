@@ -2,15 +2,15 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
-This is the authorized next-stage inventory, to use after the current Fuchsia/fifth-badge stage closes. It does not declare that stage finished: its Application verification has passed within its own recorded scope, while UI/native closeout is independently owned. Genuine preset doubles remains an explicit implementation gap. Domain, Application and Content were inspected at the product base; presentation also includes ongoing working-tree integration. The JSON records hashes of inspected evidence.
+The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles remains an implementation gap. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
-Read with [source turn integration](source-turn-integration.md), [move implementation plan](called-move-implementation.md) and [implementation roadmap](implementation-roadmap.md). The [machine-readable companion](battle-system-completion-matrix.json) contains every one of the 354 move IDs, all 76 official abilities, source/implementation locations, dependency lists and evidence hashes. No build, test executable, GUI or original ROM was run for this inventory.
+Read with [source turn integration](source-turn-integration.md), [move implementation plan](called-move-implementation.md) and [implementation roadmap](implementation-roadmap.md). The [machine-readable companion](battle-system-completion-matrix.json) contains every one of the 354 move IDs, all 76 official abilities, source/implementation locations, dependency lists and evidence hashes. The initial inventory itself did not execute tests. Later bounded implementation results are identified below and in their test directories.
 
 ## Denominators and status boundaries
 
-- 354 authenticated move definitions; 350 registered singles recipes. Missing recipes: **Sketch, Mimic, Focus Punch and Snatch**.
+- 354 authenticated move definitions and registered singles recipes. Focus Punch, Snatch, Mimic and Sketch have bounded shared singles execution coverage. Registration does not establish complete interactions, doubles or presentation.
 - Metronome: 336 direct candidates and six additional indirect Mirror Move results (Counter, Struggle, Thief, Mirror Coat, Trick, Covet), totaling 342. The other 12 are outside this closure; they are not automatically missing.
-- 76 official Gen III abilities from the 78-entry source table, excluding `ABILITY_NONE` and unused `ABILITY_CACOPHONY`. Current campaign actor admission is still 107 species.
+- 76 official Gen III abilities from the 78-entry source table, excluding `ABILITY_NONE` and unused `ABILITY_CACOPHONY`. Current campaign actor admission is still 107 species. A separate authenticated mechanics catalog now supports 386 real species for explicit fixtures, with individual ability/recipe capability gates.
 - Definition present, recipe registered, source branches tested, complete turn integrated, Application exercised, animation rendered and sound heard are separate claims. The imported `battleEffectImplemented` field and symbol occurrence counts are not execution coverage.
 
 | Status | Meaning |
@@ -19,12 +19,12 @@ Read with [source turn integration](source-turn-integration.md), [move implement
 | `missing` | A required executable branch/state/owner is absent or explicitly rejected in the inspected scope, even when metadata/AI references exist. |
 | `interaction-unverified` | Implementation/helper and/or bounded tests may exist; expanded actor admission, full source branches, combinations or integration have not been established. |
 
-The per-move JSON marks the 350 registered recipes `interaction-unverified` for **complete battle-system acceptance**. It does not erase the bounded tests of their shared effect groups. It deliberately avoids assigning a complete label to every move based on a single registration assertion.
+The initial per-move JSON marked the 350 registered recipes `interaction-unverified` for **complete battle-system acceptance**. It does not erase the bounded tests of their shared effect groups. It deliberately avoids assigning a complete label to every move based on a single registration assertion.
 
 ## Priority and dependency order
 
 1. Preserve the current-stage acceptance boundary and existing regression evidence. Establish explicit capabilities and battler/party identity interfaces only where expansion needs them (C23).
-2. Extend shared ordering, pause/resume, ability hooks and permanent-state projection (C04–C09, C18). Missing Mimic/Sketch and Focus Punch/Snatch plug into those same paths (C02–C03).
+2. Extend shared ordering, pause/resume, ability hooks and permanent-state projection (C04–C09, C18). Mimic/Sketch and Focus Punch/Snatch now use those same singles paths (C02–C03); expanded interactions remain separate.
 3. Deliver genuine four-slot state/action ownership before target redirection, spread moves and ally abilities (C10 → C11 → the doubles portions of C09/C19/C21). This is a substantial independent block, not a cosmetic two-opponent view.
 4. Fill the bounded remaining item/capture/growth/AI gaps by source effect groups (C13–C20). Safari and roamers have their own field/story dependencies and must be reported as independent blocks.
 5. Close chosen cross-state source branches and Application/native scenarios while each corresponding presentation/audio increment is wired (C06, C21–C22). Keep the rule and presentation ledgers separate.
@@ -36,13 +36,13 @@ P0 means enabling contract work, P1 means a dependency needed before wider admis
 | ID | Area | Current status | Priority / shape |
 | --- | --- | --- | --- |
 | [C01](#c01) | Authenticated move definitions and recipe admission | `implemented-with-bounded-tests` | P0 / bounded |
-| [C02](#c02) | Mimic and Sketch | `missing` | P1 / bounded |
-| [C03](#c03) | Focus Punch and Snatch | `missing` | P1 / bounded |
+| [C02](#c02) | Mimic and Sketch | `implemented-with-bounded-tests` | P1 / bounded |
+| [C03](#c03) | Focus Punch and Snatch | `implemented-with-bounded-tests` | P1 / bounded |
 | [C04](#c04) | Singles order, priority, speed and ties | `implemented-with-bounded-tests` | P1 / bounded |
 | [C05](#c05) | Residual and delayed callback scheduling | `implemented-with-bounded-tests` | P1 / bounded |
 | [C06](#c06) | Move effect groups and cross-state interactions | `interaction-unverified` | P2 / bounded |
 | [C07](#c07) | Ability entry, weather and forms | `missing` | P1 / independent-block |
-| [C08](#c08) | Ability damage, absorption, contact and residual gaps | `missing` | P1 / bounded |
+| [C08](#c08) | Ability damage, absorption, contact and residual gaps | `interaction-unverified` | P1 / bounded |
 | [C09](#c09) | Ability blocking and topology gaps | `missing` | P1 / bounded |
 | [C10](#c10) | Genuine four-slot doubles owner | `missing` | P1 / independent-block |
 | [C11](#c11) | Doubles targets and multi-target effects | `missing` | P1 / independent-block |
@@ -56,7 +56,7 @@ P0 means enabling contract work, P1 means a dependency needed before wider admis
 | [C19](#c19) | Trainer AI and legal actions | `interaction-unverified` | P2 / bounded |
 | [C20](#c20) | FireRed field abilities and post-battle Pickup | `implemented-with-bounded-tests` | P2 / bounded |
 | [C21](#c21) | Battle event text, controls and presentation routing | `interaction-unverified` | P2 / bounded |
-| [C22](#c22) | Move/ability animation and audio inventory | `missing` | P2 / independent-block |
+| [C22](#c22) | Move/ability animation and audio inventory | `interaction-unverified` | P2 / independent-block |
 | [C23](#c23) | Useful refactor: shared rule policy and effect hooks | `interaction-unverified` | P0 / bounded-enabling-work |
 
 <a id="c01"></a>
@@ -76,23 +76,23 @@ Next acceptance:
 <a id="c02"></a>
 ### C02 — Mimic and Sketch
 
-Four missing recipe IDs include these two move-copy operations; permanent Sketch and temporary Mimic need distinct persistent and live-slot treatment.
+Implemented through the shared singles invocation kernel. Mimic holds an independent permanent slot while the copied live slot spends temporary PP; Sketch follows the original all-slot controller write. Controlled tests pass 16 groups / 392 assertions / 14 complete turns, including both actor sides, Sleep Talk, switch/faint/escape/capture, Transform, learning and ordinary field save/Continue. This is not natural Smeargle admission or native move-rendering acceptance.
 
 Dependencies: C01, C18.
 
 Evidence: `src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs`, `src/Game.Domain/WildBattle/WildBattleCalledCallerEffects.cs`, `src/Game.Domain/WildBattle/WildBattleTransformationRules.cs`.
-Bounded tests/evidence: `tests/Game.NestedMoveCallers.Tests/Program.cs`.
+Bounded tests/evidence: `tests/Game.CopyMoveRules.Tests/README.md`, `tests/Game.CopyMoveRules.Tests/SOURCE_CONTRACT.md`.
 Pinned source: `data/battle_scripts_1.s:BattleScript_EffectMimic`, `data/battle_scripts_1.s:BattleScript_EffectSketch`, `src/battle_script_commands.c:Cmd_mimicattackcopy`.
 
 Next acceptance:
 
-- Implement authenticated source exclusions, target history, original/copy PP, failed-copy atomicity and copy restoration.
-- Prove Sketch learning persistence and Mimic restoration through switch, faint, Transform, move learning and ordinary field save/Continue.
+- Exercise authentic newly admitted donors through the centralized catalog contract.
+- Carry copy-slot lifetime and history into genuine four-slot execution; verify dedicated presentation separately.
 
 <a id="c03"></a>
 ### C03 — Focus Punch and Snatch
 
-The other two missing recipes require pre-action setup and move interception; a damage/status recipe alone is insufficient.
+Focus Punch preparation and Snatch interception now execute through the shared singles turn owners, with distinct PP ownership and source move-end registers. Focused coverage includes all 44 steal flags, copied short movesets, real canonical Pressure donors, forced switching and suspended-state validation. See `tests/Game.PreparedMoveActions.Tests/README.md`. Genuine four-slot and Truant combinations remain subsequent increments.
 
 Dependencies: C04, C18.
 
@@ -102,8 +102,8 @@ Pinned source: `src/battle_main.c:RunTurnActionsFunctions`, `data/battle_scripts
 
 Next acceptance:
 
-- Place Focus Punch setup at its source turn phase; verify loss of focus, substitute versus actual HP damage, inability, failed action and called-move restrictions.
-- Model Snatch ownership/redirection and PP/history exactly, including multiple eligible interceptors once doubles exists.
+- Integrate the Truant cancellation/preparation hook and verify dedicated rendered cues.
+- Lift the verified singles ownership/PP/history path to multiple eligible interceptors in genuine doubles.
 
 <a id="c04"></a>
 ### C04 — Singles order, priority, speed and ties
@@ -175,7 +175,7 @@ Next acceptance:
 <a id="c08"></a>
 ### C08 — Ability damage, absorption, contact and residual gaps
 
-No runtime branches found for Huge/Pure Power, Marvel Scale, Rough Skin, Flame Body, Speed Boost, Rain Dish or Truant. Volt Absorb appears in AI but not absorption execution. Hustle has accuracy handling without its attack modifier.
+Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Speed Boost, Rain Dish and Truant remain open; full-field and remaining interaction coverage is separate. Real damage donors use independent source-C comparisons. See `docs/source-mechanics-admission.md` and `docs/source-contact-absorb-abilities.md`.
 
 Dependencies: C04, C05, C07.
 
@@ -185,7 +185,7 @@ Pinned source: `src/pokemon.c:CalculateBaseDamage`, `src/battle_util.c:AbilityBa
 
 Next acceptance:
 
-- Implement arithmetic before/after badges, items, stages, Explosion and screens in the source order.
+- Admit authentic new ability donors and verify the implemented arithmetic in complete turns.
 - Reuse contact/HP/status events; distinguish substitute hits, recoil, indirect damage, actor faint and immunity.
 - Add first-turn Speed Boost, weather-suppressed Rain Dish and Truant cancellation/residual counter cases.
 
@@ -406,7 +406,7 @@ Next acceptance:
 <a id="c22"></a>
 ### C22 — Move/ability animation and audio inventory
 
-A full 354-move presentation ledger and corresponding complete animation execution are not established. Existing imported cues, synthesis and portraits are reusable; generic effects are not dedicated original move animations.
+The authenticated 354-root script inventory now records calls, graphics and sound dependencies (`docs/battle-animation-catalog.md`). It is a conservative script graph, not full C callback execution or dedicated animation acceptance. Existing imported cues, synthesis and portraits are reusable; generic effects are not dedicated original move animations.
 
 Dependencies: C21.
 
@@ -416,7 +416,7 @@ Pinned source: `data/battle_anim_scripts.s`, `src/battle_anim.c`, `src/battle_gf
 
 Next acceptance:
 
-- Create per-move animation/script, graphic/palette, sound and timing provenance and implemented/placeholder/unverified status; list required ability cues only where FireRed has them.
+- Extend the authenticated script inventory through C callback execution and actual per-move renderer/sound timing acceptance; list required ability cues only where FireRed has them.
 - Use a dedicated test battle to trigger success/failure/miss/protect/substitute/status/weather/charge/release/contact/faint across body sizes and 1v1/2v2 slots.
 - Wire rules and their corresponding cues in the same bounded increment while reporting rule, rendered animation and audio acceptance separately.
 - Retain the physical-audio blocker; synthesized PCM and Dummy requests are not audible playback proof.
@@ -424,14 +424,14 @@ Next acceptance:
 <a id="c23"></a>
 ### C23 — Useful refactor: shared rule policy and effect hooks
 
-Shared Execution, PP/caller recipes, SourceBattleItemRules, source end-turn cursor and permanent-party projection are valuable existing seams. Count-based historical capability gates and side-as-battler assumptions make expansion costly.
+Shared Execution, PP/caller recipes, SourceBattleItemRules, source end-turn cursor and permanent-party projection remain the shared seams. Explicit authenticated mechanics capability now separates386-species source definitions from107-species campaign admission, reusing existing factory/stat algorithms. Four-slot identity and common recipe migration are the next boundary.
 
 Evidence: `src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs`, `src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs`, `src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs`, `src/Game.Domain/Items/SourceBattleItemRules.cs`, `src/Game.Domain/WildBattle/ForestBattleDamage.cs`, `src/Game.Domain/WildBattle/WildVictoryRewards.cs`.
-No positive execution acceptance is credited for this missing/enabling scope.
+Bounded factory/turn parity is recorded in `docs/source-mechanics-admission.md`; serialized-state value equality is covered by `tests/Game.SourcePartyRoundTrip.Tests/README.md`.
 
 Next acceptance:
 
-- Introduce explicit authenticated capabilities for the new profile instead of spreading further species-count checks; retain historical adapters and unchanged old snapshots.
+- Preserve explicit authenticated capabilities for the new profile instead of spreading further species-count checks; retain historical adapters and unchanged old snapshots.
 - Separate battler slot from side through a narrow state/access interface, then port shared effect helpers once instead of cloning a doubles engine.
 - Consolidate entry/absorption/contact/immunity/move-end/end-turn/field ability and held-item dispatch by source phase; do not create a monolithic rewritten battle engine.
 - Factor shared pause/resume orchestration only where trainer/wild duplication demonstrably causes inconsistent behavior; keep mode-specific AI, capture, EXP and outcomes explicit.
@@ -452,7 +452,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 7 | `ABILITY_LIMBER` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 8 | `ABILITY_SAND_VEIL` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 9 | `ABILITY_STATIC` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 10 | `ABILITY_VOLT_ABSORB` | `missing` | C08 | AI knows the symbol; no runtime Electric absorption/healing branch found. Reuse Water Absorb transaction with source-specific guards. |
+| 10 | `ABILITY_VOLT_ABSORB` | `implemented-with-bounded-tests` | C08 | Both real holder sides, dynamic Electric type, full-HP absorption and shared PP/history verified in canonical singles; no doubles or audible claim. |
 | 11 | `ABILITY_WATER_ABSORB` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 12 | `ABILITY_OBLIVIOUS` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 13 | `ABILITY_CLOUD_NINE` | `interaction-unverified` | C07 | Weather-suppression helper exists, but current authentic roster cannot exercise this ability and full entry/form callbacks are absent. |
@@ -466,7 +466,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 21 | `ABILITY_SUCTION_CUPS` | `missing` | C09 | AI scoring knows the symbol; Roar/Whirlwind execution checks rooting/reserves/level but no Suction Cups branch. |
 | 22 | `ABILITY_INTIMIDATE` | `interaction-unverified` | C07 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 23 | `ABILITY_SHADOW_TAG` | `missing` | C09 | AI trapping references exist; player switch/run execution lacks its branch. |
-| 24 | `ABILITY_ROUGH_SKIN` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 24 | `ABILITY_ROUGH_SKIN` | `implemented-with-bounded-tests` | C08 | Both real holder sides, per-hit actual HP loss, source 1/16 passive damage and faint order verified; no doubles or native effect claim. |
 | 25 | `ABILITY_WONDER_GUARD` | `interaction-unverified` | C06 | Damage/type and copy-restriction branches exist; authentic actor admission and every affected source script are not proven. |
 | 26 | `ABILITY_LEVITATE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 27 | `ABILITY_EFFECT_SPORE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
@@ -479,7 +479,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 34 | `ABILITY_CHLOROPHYLL` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 35 | `ABILITY_ILLUMINATE` | `implemented-with-bounded-tests` | C20 | Field encounter modifier exists with source fixed-point/RNG checks; no battle effect is required by this source. |
 | 36 | `ABILITY_TRACE` | `missing` | C07 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
-| 37 | `ABILITY_HUGE_POWER` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 37 | `ABILITY_HUGE_POWER` | `implemented-with-bounded-tests` | C08 | Real Azumarill source full turn and damage match independently extracted C; four-slot interactions unverified. |
 | 38 | `ABILITY_POISON_POINT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 39 | `ABILITY_INNER_FOCUS` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 40 | `ABILITY_MAGMA_ARMOR` | `interaction-unverified` | C06 | Freeze-prevention/overlay cleanup branch exists; this is not a FireRed egg-hatching speed bonus. |
@@ -491,13 +491,13 @@ Each of the 76 entries below has source and current execution locations in the J
 | 46 | `ABILITY_PRESSURE` | `interaction-unverified` | C09 | PP command helper exists; current authentic roster admission and four-slot counts/targets require validation. |
 | 47 | `ABILITY_THICK_FAT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 48 | `ABILITY_EARLY_BIRD` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 49 | `ABILITY_FLAME_BODY` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 49 | `ABILITY_FLAME_BODY` | `implemented-with-bounded-tests` | C08 | Both real holder sides, raw contact RNG before status/type guards and shared burn projection verified; no doubles or native effect claim. |
 | 50 | `ABILITY_RUN_AWAY` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 51 | `ABILITY_KEEN_EYE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 52 | `ABILITY_HYPER_CUTTER` | `interaction-unverified` | C06 | Attack-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
 | 53 | `ABILITY_PICKUP` | `implemented-with-bounded-tests` | C20 | Original victory-only ordered party checks and item buckets exist; test ownership after newly admitted modes/items. |
 | 54 | `ABILITY_TRUANT` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
-| 55 | `ABILITY_HUSTLE` | `interaction-unverified` | C08 | Accuracy branch exists in WildBattleScalarDamageEffects; attack multiplier absent in ForestBattleDamage. |
+| 55 | `ABILITY_HUSTLE` | `implemented-with-bounded-tests` | C08 | Real Togetic damage and physical-accuracy miss full turns verified; four-slot interactions unverified. |
 | 56 | `ABILITY_CUTE_CHARM` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 57 | `ABILITY_PLUS` | `missing` | C09 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
 | 58 | `ABILITY_MINUS` | `missing` | C09 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
@@ -505,7 +505,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 60 | `ABILITY_STICKY_HOLD` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 61 | `ABILITY_SHED_SKIN` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 62 | `ABILITY_GUTS` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 63 | `ABILITY_MARVEL_SCALE` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 63 | `ABILITY_MARVEL_SCALE` | `implemented-with-bounded-tests` | C08 | Real burned Milotic source defense arithmetic and complete turn verified; four-slot interactions unverified. |
 | 64 | `ABILITY_LIQUID_OOZE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 65 | `ABILITY_OVERGROW` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 66 | `ABILITY_BLAZE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
@@ -516,7 +516,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 71 | `ABILITY_ARENA_TRAP` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 72 | `ABILITY_VITAL_SPIRIT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 73 | `ABILITY_WHITE_SMOKE` | `interaction-unverified` | C06 | Stat-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
-| 74 | `ABILITY_PURE_POWER` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 74 | `ABILITY_PURE_POWER` | `implemented-with-bounded-tests` | C08 | Real Medicham source full turn and damage match independently extracted C; four-slot interactions unverified. |
 | 75 | `ABILITY_SHELL_ARMOR` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 77 | `ABILITY_AIR_LOCK` | `interaction-unverified` | C07 | Weather-suppression helper exists, but current authentic roster cannot exercise this ability and full entry/form callbacks are absent. |
 

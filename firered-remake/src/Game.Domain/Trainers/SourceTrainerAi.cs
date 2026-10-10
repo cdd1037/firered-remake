@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
+using Game.Domain.Battle;
 using Game.Domain.Randomness;
 using Game.Domain.Rules;
 using Game.Domain.WildBattle;
@@ -132,7 +133,7 @@ public static class SourceTrainerAi
     {
         context = null;
         if (catalog is null || state?.Battle is null || state.SourceMoveRulesVersion != ForestTrainerCombatRules.SourceTrainerContractVersion ||
-            catalog.SourceCommit != SourceCommit || catalog.Species.Count != 107) return "source_trainer_ai_contract";
+            !SourceBattleAdmission.IsCurrentCampaignCatalog(catalog)) return "source_trainer_ai_contract";
         if ((replacement ? ForestTrainerCombatRules.ValidateSourceTrainerAiState(catalog, state) : ForestTrainerCombatRules.Validate(catalog, state)) is {} error) return error;
         var actual = state.Battle.CalledParty!;
         var party = actual.Opponent.Select((m,i) => i == actual.OpponentActiveIndex ? state.Battle.Opponent :

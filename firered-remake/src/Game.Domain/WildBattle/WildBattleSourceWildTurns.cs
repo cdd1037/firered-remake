@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Game.Domain.Pokemon;
+using Game.Domain.Battle;
 using Game.Domain.Randomness;
 
 namespace Game.Domain.WildBattle;
@@ -26,8 +27,26 @@ public static partial class WildBattleRules
         int activeIndex, WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain,
         bool oldRodFishing = false, PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false)
     {
-        if (catalog is null || catalog.SourceCommit != SourceCommit || catalog.Species.Count != 107 || catalog.Moves.Count != 354)
-            return Fail(null, "source_wild_catalog");
+        if (!SourceBattleAdmission.IsCurrentCampaignCatalog(catalog)) return Fail(null, "source_wild_catalog");
+        return StartSourceWildCore(catalog, playerParty, activeIndex, opponent, rng, terrain,
+            oldRodFishing, towerKind, scriptedSnorlax);
+    }
+
+    /// <summary>Explicit mechanics-only ordinary singles; this adds no campaign encounter or save eligibility.</summary>
+    public static WildBattleResult StartSourceWild(SourceMechanicsCatalog mechanics, BattleRulesProfile profile,
+        ImmutableArray<WildBattleCombatant> playerParty, int activeIndex, WildBattleCombatant opponent,
+        RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain)
+    {
+        if (SourceBattleAdmission.ValidateEntry(mechanics, profile, playerParty, activeIndex, opponent) is { } error)
+            return Fail(null, error);
+        return StartSourceWildCore(mechanics.Catalog, playerParty, activeIndex, opponent, rng, terrain,
+            false, null, false, profile);
+    }
+
+    private static WildBattleResult StartSourceWildCore(PokemonCatalog catalog, ImmutableArray<WildBattleCombatant> playerParty,
+        int activeIndex, WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain,
+        bool oldRodFishing, PokemonTowerBattleKind? towerKind, bool scriptedSnorlax, BattleRulesProfile? profile = null)
+    {
         if (playerParty.IsDefaultOrEmpty || playerParty.Length > 6 || activeIndex < 0 || activeIndex >= playerParty.Length ||
             playerParty.Any(m => m?.Pokemon is null) || opponent?.Pokemon is null) return Fail(null, "source_wild_party");
         if (!Enum.IsDefined(terrain) || ValidateRng(rng) is not null) return Fail(null, "source_wild_entry_options");
@@ -45,13 +64,14 @@ public static partial class WildBattleRules
         if (towerKind == PokemonTowerBattleKind.OrdinaryWild) towerKind = null;
         if (oldRodFishing && (opponent.Pokemon.SourceSpeciesId != 129 || opponent.Pokemon.Level is < 5 or > 10))
             return Fail(null, "wild_battle_old_rod_context_unsupported");
-        if (!oldRodFishing && !scriptedSnorlax && towerKind is not (PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak) &&
+        if (profile is null && !oldRodFishing && !scriptedSnorlax && towerKind is not (PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak) &&
             !FuchsiaBattleScope.SupportsWildOpponent(opponent.Pokemon.SourceSpeciesId)) return Fail(null, "wild_battle_opponent_species_unsupported");
         var player = playerParty[activeIndex] with { FirstTurnCounter = 2 };
         opponent = opponent with { FirstTurnCounter = 2 };
         WildBattleCalledPartyMember Member(WildBattleCombatant m) => new(m.Pokemon, m.HeldItem, m.Status);
         var state = new WildBattleState(player, opponent, 0, 0, 0, rng, 0, WildBattleOutcome.Ongoing, RulesVersion: FuchsiaRulesVersion)
         { Terrain = terrain, TowerBattleKind = towerKind, ScriptedSnorlax = scriptedSnorlax, SourceWild = new(),
+            SourceMechanicsRulesVersion = profile?.Version,
             CalledParty = new(playerParty.Select(Member).ToImmutableArray(), [Member(opponent)], activeIndex, 0) };
         if (playerParty.Any(m => WildBattleSourceFieldEffects.IsValidToxic(m.Status)) || WildBattleSourceFieldEffects.IsValidToxic(opponent.Status))
             state = state with { CalledField = new() };
@@ -59,7 +79,9 @@ public static partial class WildBattleRules
         return Execute(null, state, context =>
         {
             for (int slot = 0; slot < 4; slot++) context.Draw($"wild-battle.entry.ai-setup.slot-{slot}", 16);
-            if (towerKind != PokemonTowerBattleKind.RevealedMarowak)
+            // The mechanics profile starts a supplied battle fixture, not a campaign encounter.
+            // Its explicit held item is preserved; only real campaign entry rolls wild loot.
+            if (profile is null && towerKind != PokemonTowerBattleKind.RevealedMarowak)
             {
                 int roll = context.Draw("wild-battle.held-item", 100) % 100;
                 string item = opponent.Pokemon.SourceSpeciesId switch
@@ -84,7 +106,9 @@ public static partial class WildBattleRules
 
     public static string? ValidateSourceWild(PokemonCatalog catalog, WildBattleState state)
     {
-        if (catalog.SourceCommit != SourceCommit || catalog.Species.Count != 107 || catalog.Moves.Count != 354) return "source_wild_catalog";
+        if (SourceBattleAdmission.ValidateRulesProfile(catalog, state) is { } profileError) return profileError;
+        if (!SourceBattleAdmission.IsCanonicalSourceState(catalog, state) && !SourceBattleAdmission.IsCurrentCampaignCatalog(catalog))
+            return "source_wild_catalog";
         if (state.SourceWild?.RulesVersion != SourceWildRulesVersion || state.RulesVersion != FuchsiaRulesVersion)
             return "source_wild_version";
         if (state.CalledParty is not { BattleKind: WildBattleCalledBattleKind.Wild, OpponentActiveIndex: 0 } party || party.Opponent.Length != 1)
@@ -113,8 +137,8 @@ public static partial class WildBattleRules
             int opponentSlot = context.ChooseSourceWildOpponent(catalog);
             context.State = context.State with { ForestPlayerMoveSlot = playerSlot,
                 ForestPlayerLastMoveSlot = playerSlot < 0 ? state.ForestPlayerLastMoveSlot : playerSlot };
-            context.PrepareMtMoonTurn(catalog, playerSlot, opponentSlot);
             var first = context.SourceActionsOrder(catalog);
+            context.PrepareMtMoonTurn(catalog, playerSlot, opponentSlot);
             context.SetSourceWildTurn(new(first, playerSlot, opponentSlot));
             context.ResumeSourceWildMoves(catalog);
         });

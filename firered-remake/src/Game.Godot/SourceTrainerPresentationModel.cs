@@ -60,6 +60,24 @@ internal static class SourceTrainerPresentationModel
         SourceTrainerEventDisplay Atk(string symbol, WildBattleSide side) => Text(symbol, ("B_ATK_NAME_WITH_PREFIX", name(side)));
         switch (events[index])
         {
+            case WildBattleAbilityActivatedEvent { Ability: "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_VOLT_ABSORB" }:
+                return Silent;
+            case WildBattleAbilityDamageEvent ability:
+                return Text("sText_PkmnHurtsWith", ("B_DEF_NAME_WITH_PREFIX", name(ability.Holder)),
+                    ("B_DEF_ABILITY", AbilityName(ability.Ability)), ("B_ATK_NAME_WITH_PREFIX", name(ability.Target)));
+            case WildBattleStatusChangedEvent { Reason: "flame-body", After: WildBattleStatus.Burn } burned:
+                return Text("sText_PkmnBurnedBy", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", name(Other(burned.Side))),
+                    ("B_SCR_ACTIVE_ABILITY", "FLAME BODY"), ("B_EFF_NAME_WITH_PREFIX", name(burned.Side)));
+            case WildBattleAbilityPreventedEvent { Ability: "ABILITY_VOLT_ABSORB" } absorb:
+                return index + 1 < events.Count && events[index + 1] is WildBattleRecoveredEvent nextRecovery &&
+                    nextRecovery.Side == absorb.Target && nextRecovery.Move == absorb.Move ? Silent :
+                    Text("sText_PkmnsXMadeYUseless", ("B_DEF_NAME_WITH_PREFIX", name(absorb.Target)),
+                        ("B_DEF_ABILITY", "VOLT ABSORB"), ("B_CURRENT_MOVE", moveName(absorb.Move)));
+            case WildBattleRecoveredEvent recovery when index > 0 &&
+                events[index - 1] is WildBattleAbilityPreventedEvent { Ability: "ABILITY_VOLT_ABSORB" } absorb &&
+                absorb.Target == recovery.Side && absorb.Move == recovery.Move:
+                return Text("sText_PkmnRestoredHPUsing", ("B_DEF_NAME_WITH_PREFIX", name(recovery.Side)),
+                    ("B_DEF_ABILITY", "VOLT ABSORB"));
             case WildBattleAttackStringEvent attack:
                 return PairedMoveUsed(events, index, attack) ? Silent : Text("sText_AttackerUsedX",
                     ("B_ATK_NAME_WITH_PREFIX", name(attack.Actor)), ("B_BUFF2", moveName(attack.CurrentMove) + "!"));
@@ -76,6 +94,20 @@ internal static class SourceTrainerPresentationModel
                 substituteTexts.Add(new("sText_SubstituteDamaged", ("B_DEF_NAME_WITH_PREFIX", name(substitute.Target))));
                 if (substitute.HpAfter == 0) substituteTexts.Add(new("sText_PkmnSubstituteFaded", ("B_DEF_NAME_WITH_PREFIX", name(substitute.Target))));
                 return new(substituteTexts.ToImmutable());
+            case WildBattleMoveCopiedEvent copied:
+                return Text(copied.Permanent ? "sText_PkmnSketchedMove" : "sText_PkmnLearnedMove2",
+                    ("B_ATK_NAME_WITH_PREFIX", name(copied.Actor)), ("B_BUFF1", moveName(copied.CopiedMove)));
+            case WildBattleFocusPunchPreparedEvent focus:
+                return Atk("sText_PkmnTighteningFocus", focus.Actor);
+            case WildBattleFocusPunchLostEvent focus:
+                return Atk("sText_PkmnLostFocus", focus.Actor);
+            case WildBattleSnatchReadyEvent ready:
+                return Atk("sText_PkmnWaitsForTarget", ready.Actor);
+            case WildBattleMoveSnatchedEvent snatched:
+                return Text("sText_PkmnSnatchedMove", ("B_DEF_NAME_WITH_PREFIX", name(snatched.Snatcher)),
+                    ("B_SCR_ACTIVE_NAME_WITH_PREFIX", name(snatched.OriginalActor)));
+            case WildBattleSnatchPressurePpEvent:
+                return Silent;
             case WildBattleGrudgePpEvent grudge:
                 return Text("sText_PkmnLostPPGrudge", ("B_ATK_NAME_WITH_PREFIX", name(grudge.Attacker)), ("B_BUFF1", moveName(grudge.Move)));
             case WildBattleMagicCoatEvent coat:
@@ -166,10 +198,11 @@ internal static class SourceTrainerPresentationModel
             "mist" => Text("sText_PkmnProtectedByMist", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", name(f.Target))),
             "bide-no-energy" or "mirror-move-no-history" or "assist-no-candidates" or "perish-song-already-active" or
             "future-slot-occupied" or "wish-slot-occupied" or "already-tormented" or "already-taunted" or
-            "magic-coat-last-action" or "already-grudge" or "substitute" or "already-type" or "no-different-move-type" or
+            "magic-coat-last-action" or "snatch-last-action" or "already-grudge" or "substitute" or "already-type" or "no-different-move-type" or
             "no-landed-move" or "source-still-multiple-turns" or "no-resistant-type" or "uncopyable-ability" or
             "spikes-at-maximum" or "no-eligible-reserve" or "no-eligible-contributor" or "stats-at-minimum" or
             "no-recyclable-item" or "item-swap-not-allowed" or "already-sun" or "already-hail" or "already-mist" or
+            "copy-transformed" or "copy-forbidden" or "copy-already-known" or
             "already-light-screen" or "already-safeguard" => Text("sText_ButItFailed"),
             _ => null
         };

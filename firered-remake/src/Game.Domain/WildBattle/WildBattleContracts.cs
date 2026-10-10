@@ -33,6 +33,7 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledVolatileState? CalledVolatile { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int FuryCutterCounter { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTransformation? Transform { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCopiedMoves? CopyMoves { get; init; }
     // Source Poké Flute may wake a party member independently of its current Soundproof battler.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public uint? SourcePartyStatusOverride { get; init; }
     // Historical profiles use this only for Sleep Talk. The explicit called-action
@@ -89,6 +90,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? SourceMechanicsRulesVersion { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSourceWildState? SourceWild { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledFieldState? CalledField { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledPartyState? CalledParty { get; init; }
@@ -113,12 +115,18 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleSubstituteDamagedEvent), "substitute-damaged")]
 [JsonDerivedType(typeof(WildBattleCalledDelayedEvent), "called-delayed")]
 [JsonDerivedType(typeof(WildBattleMagicCoatEvent), "magic-coat")]
+[JsonDerivedType(typeof(WildBattleFocusPunchPreparedEvent), "focus-punch-prepared")]
+[JsonDerivedType(typeof(WildBattleFocusPunchLostEvent), "focus-punch-lost")]
+[JsonDerivedType(typeof(WildBattleSnatchReadyEvent), "snatch-ready")]
+[JsonDerivedType(typeof(WildBattleMoveSnatchedEvent), "move-snatched")]
+[JsonDerivedType(typeof(WildBattleSnatchPressurePpEvent), "snatch-pressure-pp")]
 [JsonDerivedType(typeof(WildBattleGrudgePpEvent), "grudge-pp")]
 [JsonDerivedType(typeof(WildBattleCallerSelectionEvent), "caller-selection")]
 [JsonDerivedType(typeof(WildBattleCalledMoveTransitionEvent), "called-move-transition")]
 [JsonDerivedType(typeof(WildBattleAttackStringEvent), "attack-string")]
 [JsonDerivedType(typeof(WildBattlePpCommandEvent), "pp-command")]
 [JsonDerivedType(typeof(WildBattleTransformedEvent), "transformed")]
+[JsonDerivedType(typeof(WildBattleMoveCopiedEvent), "move-copied")]
 [JsonDerivedType(typeof(WildBattleYawnEvent), "yawn")]
 [JsonDerivedType(typeof(WildBattleSleepTalkEvent), "sleep-talk")]
 [JsonDerivedType(typeof(WildBattlePokeFluteEvent), "poke-flute")]
@@ -175,6 +183,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleInfatuationChangedEvent), "infatuation-changed")]
 [JsonDerivedType(typeof(WildBattleInfatuationBlockedEvent), "infatuation-blocked")]
 [JsonDerivedType(typeof(WildBattleAbilityActivatedEvent), "ability-activated")]
+[JsonDerivedType(typeof(WildBattleAbilityDamageEvent), "ability-damage")]
 [JsonDerivedType(typeof(WildBattleHeldItemConsumedEvent), "held-item-consumed")]
 [JsonDerivedType(typeof(WildBattleMtMoonVolatileEvent), "mtmoon-volatile")]
 [JsonDerivedType(typeof(WildBattleEncoreChangedEvent), "encore-changed")]
@@ -307,6 +316,11 @@ public sealed record WildBattleInfatuationBlockedEvent(long Sequence, int Turn, 
     WildBattleSide Source, MoveId Move) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleAbilityActivatedEvent(long Sequence, int Turn, WildBattleSide Side,
     string Ability) : WildBattleEvent(Sequence, Turn);
+/// <summary>Passive ability damage, separate from move damage and recoil. Does not feed Counter,
+/// Bide, Rage, Destiny Bond, or contact triggers. Damage is the clamped HP loss.</summary>
+public sealed record WildBattleAbilityDamageEvent(long Sequence, int Turn, WildBattleSide Holder,
+    WildBattleSide Target, MoveId TriggeringMove, string Ability, int HpBefore, int HpAfter,
+    int Damage) : WildBattleEvent(Sequence, Turn);
 /// <summary>Source Oran Berry end-turn healing and one-time consumption; no RNG is consumed.</summary>
 public sealed record WildBattleHeldItemConsumedEvent(long Sequence, int Turn, WildBattleSide Side,
     string Item, int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn);

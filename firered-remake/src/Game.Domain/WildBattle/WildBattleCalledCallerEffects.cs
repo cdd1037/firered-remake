@@ -32,7 +32,7 @@ public sealed record WildBattleCallerSelectionEvent(long Sequence, int Turn, Wil
 public static partial class WildBattleRules
 {
     private static bool HasCalledCallerRecipe(string effect) => effect is "EFFECT_METRONOME" or
-        "EFFECT_MIRROR_MOVE" or "EFFECT_NATURE_POWER" or "EFFECT_ASSIST" or "EFFECT_SLEEP_TALK" or "EFFECT_COUNTER" or "EFFECT_MIRROR_COAT";
+        "EFFECT_MIRROR_MOVE" or "EFFECT_NATURE_POWER" or "EFFECT_ASSIST" or "EFFECT_SLEEP_TALK" or "EFFECT_COUNTER" or "EFFECT_MIRROR_COAT" or "EFFECT_MIMIC" or "EFFECT_SKETCH";
     private static void AddCalledCallerSupport(PokemonMoveDefinition move, ref bool supported)
     { if (MetronomeSourceMoveDefinition.Matches(move) && HasCalledCallerRecipe(move.Effect)) supported = true; }
 
@@ -135,6 +135,7 @@ public static partial class WildBattleRules
             invocationCommandNoEffect = false;
             invocationSkipsMoveEnd = false;
             var originalActorLastUsedMove = Get(side).LastUsedMove;
+            BeginPreparedMoveInvocation(originalActorLastUsedMove);
             activeInvocation = new(side, action.ChosenSlot, action.ChosenSlot, chosen.Id, chosen.Id, chosen.Id,
                 null, chosen.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? side : Other(side),
                 WildBattleAttackCancellerPhase.Start, WildBattleInvocationFlags.None);
@@ -167,6 +168,7 @@ public static partial class WildBattleRules
             invocationCommandNoEffect = false;
             invocationSkipsMoveEnd = false;
             var originalActorLastUsedMove = Get(side).LastUsedMove;
+            BeginPreparedMoveInvocation(originalActorLastUsedMove);
             activeInvocation = new(side, chosenPosition, StruggleSlot, current.Id, current.Id, current.Id, null,
                 Other(side), WildBattleAttackCancellerPhase.Start, WildBattleInvocationFlags.NoPpDeduct);
             int eventStart = Events.Count;
@@ -199,6 +201,8 @@ public static partial class WildBattleRules
             if (!HasCalledCallerRecipe(move.Effect)) return;
             if (activeInvocation is null || !MetronomeSourceMoveDefinition.Matches(move)) throw new UnsupportedAction("called_caller_source_definition");
             handled = true;
+            if (move.Effect is "EFFECT_MIMIC" or "EFFECT_SKETCH")
+            { CalledCopyMove(catalog, side, move); return; }
             if (move.Effect == "EFFECT_SLEEP_TALK")
             { CalledSleepTalk(catalog, side, move, purpose); return; }
             if (move.Effect is "EFFECT_COUNTER" or "EFFECT_MIRROR_COAT")

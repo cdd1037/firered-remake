@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
+using Game.Domain.Battle;
 using Game.Domain.Randomness;
 
 namespace Game.Domain.WildBattle;
@@ -17,7 +18,16 @@ public enum WildBattleInvocationFlags
 /// <summary>Action-local source registers. CurrentMove need not occupy any learned slot.</summary>
 public sealed record WildBattleMoveInvocation(WildBattleSide Actor, int ChosenSlot, int PpSlot,
     MoveId OriginalChosenMove, MoveId ChosenMove, MoveId CurrentMove, MoveId? CalledMove,
-    WildBattleSide Target, WildBattleAttackCancellerPhase CancellerPhase, WildBattleInvocationFlags Flags);
+    WildBattleSide Target, WildBattleAttackCancellerPhase CancellerPhase, WildBattleInvocationFlags Flags)
+{
+    /// <summary>The originally selected actor owns PP even when Snatch changes the script attacker.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? PpOwnerOverride { get; init; }
+    [JsonIgnore] public WildBattleSide PpOwner
+    {
+        get => PpOwnerOverride ?? Actor;
+        init => PpOwnerOverride = value == Actor ? null : value;
+    }
+}
 
 /// <summary>The history registers not representable by the historical chosen/landed fields.</summary>
 public sealed record WildBattleSourceMoveHistory
@@ -48,7 +58,15 @@ public sealed record WildBattlePpReduction(int Before, int After, int CommandCos
 public sealed record WildBattleCalledMoveTransitionEvent(long Sequence, int Turn, WildBattleMoveInvocation Invocation) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleAttackStringEvent(long Sequence, int Turn, WildBattleSide Actor, MoveId ChosenMove, MoveId CurrentMove) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattlePpCommandEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target,
-    int PpSlot, MoveId ChosenMove, MoveId CurrentMove, int Before, int After, int CommandCost, ulong RngCursor) : WildBattleEvent(Sequence, Turn);
+    int PpSlot, MoveId ChosenMove, MoveId CurrentMove, int Before, int After, int CommandCost, ulong RngCursor) : WildBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? PpOwnerOverride { get; init; }
+    [JsonIgnore] public WildBattleSide PpOwner
+    {
+        get => PpOwnerOverride ?? Actor;
+        init => PpOwnerOverride = value == Actor ? null : value;
+    }
+}
 
 /// <summary>Source commands shared by called-action dispatch. These never register move effects.</summary>
 public static class WildBattleSourceCommands
@@ -122,6 +140,7 @@ public static partial class WildBattleRules
         AddCalledFieldEffectSupport(move, ref supported);
         AddCalledPartyEffectSupport(move, ref supported);
         AddCalledCallerSupport(move, ref supported);
+        AddPreparedMoveSupport(move, ref supported);
         return supported;
     }
 
@@ -130,12 +149,14 @@ public static partial class WildBattleRules
     public static string? ValidateCalledMoveActionState(PokemonCatalog catalog, WildBattleState state)
     {
         if (state.RulesVersion != FuchsiaRulesVersion) return "called_move_base_profile";
+        if (SourceBattleAdmission.ValidateRulesProfile(catalog, state) is { } profileError) return profileError;
         foreach (var mon in new[] { state.Player, state.Opponent })
             if (mon.SourcePartyStatusOverride is { } partyStatus &&
                 (state.CalledParty is null || mon.Pokemon.CurrentHp == 0 || mon.Transform?.PartyStatusOverride is not null ||
                  !(partyStatus == 0 && WildBattleStatus.IsSleeping(mon.Status) ||
                    WildBattleStatus.IsSleeping(partyStatus) && mon.Status == 0)))
                 return "source_party_status_override";
+        if (ValidateCopiedMoveState(catalog, state) is { } copyError) return copyError;
         if (ValidateCalledDamageState(state) is { } damageError) return damageError;
         if (ValidateCalledFieldState(state) is { } fieldError) return fieldError;
         if (ValidateCalledPartyState(catalog, state) is { } partyError) return partyError;
@@ -217,7 +238,7 @@ public static partial class WildBattleRules
         private bool DeferInvocationProtection(PokemonMoveDefinition? move)
         {
             if (activeInvocation is null || move is null) return false;
-            bool deferred = HasCalledPartyRecipe(move.Effect) || move.Effect is "EFFECT_EXPLOSION" or "EFFECT_SPIT_UP" || HasCalledTurnLockRecipe(move.Effect);
+            bool deferred = move.Effect == "EFFECT_FOCUS_PUNCH" || HasCalledPartyRecipe(move.Effect) || move.Effect is "EFFECT_EXPLOSION" or "EFFECT_SPIT_UP" or "EFFECT_MIMIC" or "EFFECT_SKETCH" || HasCalledTurnLockRecipe(move.Effect);
             DeferCalledScalarProtection(move, ref deferred);
             return deferred;
         }
@@ -249,7 +270,7 @@ public static partial class WildBattleRules
             var invocation = activeInvocation! with { Target = targetSide };
             activeInvocation = invocation;
             bool printed = printAttackString && PrintInvocationAttackString(); invocation = activeInvocation!;
-            var actor = Get(side); int slot = invocation.PpSlot;
+            var actor = Get(invocation.PpOwner); int slot = invocation.PpSlot;
             bool realSlot = slot >= 0 && slot < actor.Pokemon.Moves.Length;
             if (!realSlot && (invocation.Flags & (WildBattleInvocationFlags.NoPpDeduct | WildBattleInvocationFlags.NoAttackString)) == 0)
                 throw new UnsupportedAction("called_pp_slot");
@@ -257,11 +278,11 @@ public static partial class WildBattleRules
             int otherPressure = WildBattleEffective.Ability(Get(Other(side))) == "ABILITY_PRESSURE" ? 1 : 0;
             var reduction = WildBattleSourceCommands.ReducePp(pp, move.Target, side, targetSide,
                 WildBattleEffective.Ability(Get(targetSide)), otherPressure, otherPressure, invocation.Flags);
-            if (realSlot) Set(side, actor with { Pokemon = actor.Pokemon with { Moves = actor.Pokemon.Moves.SetItem(slot,
+            if (realSlot) Set(invocation.PpOwner, actor with { Pokemon = actor.Pokemon with { Moves = actor.Pokemon.Moves.SetItem(slot,
                 actor.Pokemon.Moves[slot] with { CurrentPp = reduction.After }) } });
             activeInvocation = invocation with { Flags = reduction.FlagsAfter };
             if (printed) Add(n => new WildBattleMoveUsedEvent(n, State.Turn, side, targetSide, slot, move.Id, pp, reduction.After));
-            Add(n => new WildBattlePpCommandEvent(n, State.Turn, side, targetSide, slot, invocation.ChosenMove, move.Id, pp, reduction.After, reduction.CommandCost, State.Rng.Cursor));
+            Add(n => new WildBattlePpCommandEvent(n, State.Turn, side, targetSide, slot, invocation.ChosenMove, move.Id, pp, reduction.After, reduction.CommandCost, State.Rng.Cursor) { PpOwner = invocation.PpOwner });
         }
 
         internal void ExecuteCalledMoveAction(PokemonCatalog catalog, WildBattleCalledMoveAction action,
@@ -273,6 +294,7 @@ public static partial class WildBattleRules
             invocationCommandNoEffect = false;
             invocationSkipsMoveEnd = false;
             var originalActorLastUsedMove = Get(side).LastUsedMove;
+            BeginPreparedMoveInvocation(originalActorLastUsedMove);
             activeInvocation = new(side, action.ChosenSlot, action.ChosenSlot, chosen.Id, chosen.Id, chosen.Id,
                 null, chosen.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? side : Other(side),
                 WildBattleAttackCancellerPhase.Start, WildBattleInvocationFlags.None);
@@ -314,6 +336,8 @@ public static partial class WildBattleRules
         {
             RecordCalledDamageHistory(catalog, eventStart);
             SourceCalledMoveEndSubstitute();
+            // Snatch's swap marker is reversed at MOVEEND_UPDATE_LAST_MOVES, after effects.
+            FinishPreparedMoveRegisters();
             var invocation = activeInvocation!;
             var emitted = Events.Skip(eventStart).ToArray();
             if (emitted.OfType<WildBattleTransformedEvent>().Any())

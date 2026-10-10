@@ -127,6 +127,8 @@ public static partial class WildBattleRules
             // all delayed scripts. The full-turn owner still owns Ready/turn+1/randomTurnNumber.
             SourceCalledClearMagicCoat(WildBattleSide.Player);
             SourceCalledClearMagicCoat(WildBattleSide.Opponent);
+            SourceClearSnatch(WildBattleSide.Player);
+            SourceClearSnatch(WildBattleSide.Opponent);
             SourceCalledResetDamageTurn();
             SourceCalledSynchronizeParties();
             return cursor with { Stage = WildBattleSourceEndTurnStage.Complete, NextBattler = 2,

@@ -3,8 +3,8 @@
   "inventoryDateUtc": "2026-10-10",
   "baseCommit": "67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba",
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
-  "scope": "Read-only next-stage inventory after current Fuchsia/fifth-badge acceptance; not an implementation or completion claim.",
-  "snapshotNote": "Domain/Application/Content inspected against base commit; presentation includes ongoing working-tree integration. Evidence hashes record inspected bytes. Other agents own current-stage edits.",
+  "scope": "Living battle-completion matrix. Initial inventory is bound to baseCommit; later implementation updates identify their own tested scope.",
+  "snapshotNote": "Initial inspectedFiles and evidence hashes remain the 67c89d3 inventory. Subsequent implementationUpdates are additive and do not relabel those historical hashes as current.",
   "statusDefinitions": {
     "implemented-with-bounded-tests": "An identified implementation and bounded retained tests exist. Only the stated scope is credited; no exhaustive coverage or fresh run is implied.",
     "missing": "A required executable branch/state/owner is absent or explicitly rejected in the inspected scope, even when metadata/AI references exist.",
@@ -12,13 +12,8 @@
   },
   "denominators": {
     "moves": 354,
-    "registeredSinglesRecipes": 350,
-    "missingRecipeIds": [
-      "pret:MOVE_FOCUS_PUNCH",
-      "pret:MOVE_MIMIC",
-      "pret:MOVE_SKETCH",
-      "pret:MOVE_SNATCH"
-    ],
+    "registeredSinglesRecipes": 354,
+    "missingRecipeIds": [],
     "metronomeDirect": 336,
     "metronomeIndirectExtra": 6,
     "metronomeClosure": 342,
@@ -29,11 +24,12 @@
       "ABILITY_CACOPHONY"
     ],
     "currentSpeciesAdmission": 107,
-    "warning": "Counts describe inventory/admission only; no completion percentage is inferred."
+    "warning": "Counts describe inventory/admission only; no completion percentage is inferred.",
+    "authenticatedMechanicsSpecies": 386
   },
   "gates": {
-    "currentStage": "Fifth-badge Application verification reported passed by parent; current UI/native closeout remains independently owned/pending. Preset genuine doubles remains an explicit gap.",
-    "newStageStart": "After the current authorized stage is closed; the matrix does not interrupt that work.",
+    "currentStage": "Fifth-badge singles checkpoint accepted at 5a5b6f7, including actual Godot Koga route and separate two-process native save/Continue. Preset genuine doubles remains an explicit gap.",
+    "newStageStart": "Active after checkpoint 5a5b6f7; battle-system completion precedes the next region.",
     "doublesDeviation": "Only KO replacement is to be postponed to end of turn under the approved doubles rule. Ordinary voluntary switching and Roar/Whirlwind timing remain original; no other Gen IV/later-generation mechanics are proposed.",
     "preservedDecisions": "Existing separately documented approved behavior remains unchanged. This inventory does not infer new permissions or silently rewrite historical profiles.",
     "playerSaves": "Stable field only; diagnostic battle serialization is not a player feature."
@@ -44,7 +40,7 @@
       "title": "Authenticated move definitions and recipe admission",
       "status": "implemented-with-bounded-tests",
       "priority": "P0",
-      "scope": "354 authenticated definitions; 350 registered singles recipes; 336 direct Metronome choices plus six distinct indirect Mirror Move results. Admission is not effect/interaction/campaign completeness.",
+      "scope": "354 authenticated definitions and registered singles recipes. This is admission, not complete cross-state, doubles, campaign or presentation acceptance; 336 direct Metronome choices plus six indirect results remain unchanged.",
       "implementationEvidence": [
         "src/Game.Content/PretMetronomeMoveCatalog.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
@@ -69,16 +65,19 @@
     {
       "id": "C02",
       "title": "Mimic and Sketch",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "Four missing recipe IDs include these two move-copy operations; permanent Sketch and temporary Mimic need distinct persistent and live-slot treatment.",
+      "scope": "Source Mimic and Sketch share the singles invocation kernel, with temporary live-slot masks and permanent projection. Controlled full-turn and field save/Continue tests pass; natural species admission and native effect rendering remain separate.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledCallerEffects.cs",
-        "src/Game.Domain/WildBattle/WildBattleTransformationRules.cs"
+        "src/Game.Domain/WildBattle/WildBattleTransformationRules.cs",
+        "src/Game.Domain/WildBattle/WildBattleCopyMoveEffects.cs"
       ],
       "testEvidence": [
-        "tests/Game.NestedMoveCallers.Tests/Program.cs"
+        "tests/Game.CopyMoveRules.Tests/README.md",
+        "tests/Game.CopyMoveRules.Tests/SOURCE_CONTRACT.md",
+        "tests/Game.CopyMoveRules.Tests/evidence/integrated-5a5/result.json"
       ],
       "sourceEvidence": [
         "data/battle_scripts_1.s:BattleScript_EffectMimic",
@@ -86,8 +85,8 @@
         "src/battle_script_commands.c:Cmd_mimicattackcopy"
       ],
       "nextAcceptance": [
-        "Implement authenticated source exclusions, target history, original/copy PP, failed-copy atomicity and copy restoration.",
-        "Prove Sketch learning persistence and Mimic restoration through switch, faint, Transform, move learning and ordinary field save/Continue."
+        "Exercise authentic newly admitted donors when canonical species admission is integrated.",
+        "Carry copy-slot lifetime and history into genuine four-slot execution; retain dedicated presentation coverage."
       ],
       "dependsOn": [
         "C01",
@@ -98,9 +97,9 @@
     {
       "id": "C03",
       "title": "Focus Punch and Snatch",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "The other two missing recipes require pre-action setup and move interception; a damage/status recipe alone is insufficient.",
+      "scope": "Focus Punch preparation and Snatch interception execute through shared singles owners. Exact PP owner, copied short movesets, source history and 44 steal flags have focused complete-turn coverage; Truant and four-slot interaction remain later increments.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledCallerEffects.cs",
@@ -108,7 +107,9 @@
         "src/Game.Domain/WildBattle/WildBattleSourceWildTurns.cs"
       ],
       "testEvidence": [
-        "tests/Game.NestedMoveCallers.Tests/Program.cs"
+        "tests/Game.PreparedMoveActions.Tests/README.md",
+        "tests/Game.PreparedMoveActions.Tests/SOURCE_CONTRACT.md",
+        "evidence/battle-prepared-contact-integration/prepared/result.json"
       ],
       "sourceEvidence": [
         "src/battle_main.c:RunTurnActionsFunctions",
@@ -118,8 +119,8 @@
         "src/battle_script_commands.c:Cmd_trysetsnatch"
       ],
       "nextAcceptance": [
-        "Place Focus Punch setup at its source turn phase; verify loss of focus, substitute versus actual HP damage, inability, failed action and called-move restrictions.",
-        "Model Snatch ownership/redirection and PP/history exactly, including multiple eligible interceptors once doubles exists."
+        "Carry invocation and PP-owner identity into genuine four-slot execution and preserve source interceptor order.",
+        "Integrate the separately implemented Truant cancellation/preparation hook and render the dedicated cues."
       ],
       "dependsOn": [
         "C04",
@@ -264,9 +265,9 @@
     {
       "id": "C08",
       "title": "Ability damage, absorption, contact and residual gaps",
-      "status": "missing",
+      "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "No runtime branches found for Huge/Pure Power, Marvel Scale, Rough Skin, Flame Body, Speed Boost, Rain Dish or Truant. Volt Absorb appears in AI but not absorption execution. Hustle has accuracy handling without its attack modifier.",
+      "scope": "Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Speed Boost, Rain Dish and Truant remain open; full-field and remaining interaction coverage is separate.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
         "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
@@ -276,7 +277,10 @@
       ],
       "testEvidence": [
         "tests/Game.CalledScalarDamage.Tests/README.md",
-        "tests/Game.SourceEndTurn.Tests/README.md"
+        "tests/Game.SourceEndTurn.Tests/README.md",
+        "tests/Game.DamageAbilityGaps.Tests/README.md",
+        "tests/Game.SourceMechanicsAdmission.Tests/Program.cs",
+        "tests/Game.SourceContactAbsorb.Tests/Program.cs"
       ],
       "sourceEvidence": [
         "src/pokemon.c:CalculateBaseDamage",
@@ -284,7 +288,7 @@
         "src/battle_util.c:AtkCanceller_UnableToUseMove"
       ],
       "nextAcceptance": [
-        "Implement arithmetic before/after badges, items, stages, Explosion and screens in the source order.",
+        "Admit authentic ability donors through the centralized catalog contract and verify the implemented arithmetic in complete turns.",
         "Reuse contact/HP/status events; distinguish substitute hits, recoil, indirect damage, actor faint and immunity.",
         "Add first-turn Speed Boost, weather-suppressed Rain Dish and Truant cancellation/residual counter cases."
       ],
@@ -718,9 +722,9 @@
     {
       "id": "C22",
       "title": "Move/ability animation and audio inventory",
-      "status": "missing",
+      "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "A full 354-move presentation ledger and corresponding complete animation execution are not established. Existing imported cues, synthesis and portraits are reusable; generic effects are not dedicated original move animations.",
+      "scope": "All 354 source animation roots have an authenticated conservative script/call/graphic/sound inventory. Dedicated animation execution, native timing and audible playback are separately incomplete; C callback dependencies exceed the script-only graph.",
       "implementationEvidence": [
         "src/Game.Godot/CampaignAudioView.cs",
         "src/Game.Godot/SynthSourceAudioPlayer.cs",
@@ -731,7 +735,9 @@
       ],
       "testEvidence": [
         "tests/Game.FuchsiaGymPresentation.Tests/README.md",
-        "docs/source-ui-integration.md"
+        "docs/source-ui-integration.md",
+        "tests/Game.BattleAnimationInventory.Tests/verify.py",
+        "docs/battle-animation-catalog.md"
       ],
       "sourceEvidence": [
         "data/battle_anim_scripts.s",
@@ -755,7 +761,7 @@
       "title": "Useful refactor: shared rule policy and effect hooks",
       "status": "interaction-unverified",
       "priority": "P0",
-      "scope": "Shared Execution, PP/caller recipes, SourceBattleItemRules, source end-turn cursor and permanent-party projection are valuable existing seams. Count-based historical capability gates and side-as-battler assumptions make expansion costly.",
+      "scope": "Authenticated 386-species mechanics capabilities and current 107-species campaign admission are separate. New factory/stat/validation paths share existing algorithms and retain old creation/turn hashes. Four-slot identity and common recipe migration remain in progress.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
@@ -764,7 +770,11 @@
         "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
         "src/Game.Domain/WildBattle/WildVictoryRewards.cs"
       ],
-      "testEvidence": [],
+      "testEvidence": [
+        "tests/Game.SourceMechanicsAdmission.Tests/Program.cs",
+        "tests/Game.SourceMechanicsParity.Tests/Program.cs",
+        "tests/Game.SourcePartyRoundTrip.Tests/README.md"
+      ],
       "sourceEvidence": [],
       "nextAcceptance": [
         "Introduce explicit authenticated capabilities for the new profile instead of spreading further species-count checks; retain historical adapters and unchanged old snapshots.",
@@ -1136,9 +1146,9 @@
     {
       "id": 10,
       "symbol": "ABILITY_VOLT_ABSORB",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "AI knows the symbol; no runtime Electric absorption/healing branch found. Reuse Water Absorb transaction with source-specific guards.",
+      "assessment": "Both real holder sides, dynamic Electric type, full-HP absorption and shared PP/history verified in canonical singles; no doubles or audible claim.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -1147,7 +1157,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": [
+        "docs/source-contact-absorb-abilities.md"
+      ]
     },
     {
       "id": 11,
@@ -1782,9 +1795,9 @@
     {
       "id": 24,
       "symbol": "ABILITY_ROUGH_SKIN",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "Both real holder sides, per-hit actual HP loss, source 1/16 passive damage and faint order verified; no doubles or native effect claim.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -1793,7 +1806,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": [
+        "docs/source-contact-absorb-abilities.md"
+      ]
     },
     {
       "id": 25,
@@ -2304,10 +2320,15 @@
     {
       "id": 37,
       "symbol": "ABILITY_HUGE_POWER",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
-      "implementationBranchLocations": [],
+      "assessment": "Real Azumarill source full turn and damage match independently extracted C; four-slot interactions unverified.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
+          "method": "Calculate"
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "src/pokemon.c",
@@ -2315,7 +2336,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": [
+        "docs/source-mechanics-admission.md"
+      ]
     },
     {
       "id": 38,
@@ -2777,9 +2801,9 @@
     {
       "id": 49,
       "symbol": "ABILITY_FLAME_BODY",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "Both real holder sides, raw contact RNG before status/type guards and shared burn projection verified; no doubles or native effect claim.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -2788,7 +2812,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": [
+        "docs/source-contact-absorb-abilities.md"
+      ]
     },
     {
       "id": 50,
@@ -2985,13 +3012,13 @@
     {
       "id": 55,
       "symbol": "ABILITY_HUSTLE",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "Accuracy branch exists in WildBattleScalarDamageEffects; attack multiplier absent in ForestBattleDamage.",
+      "assessment": "Real Togetic damage and physical-accuracy miss full turns verified; four-slot interactions unverified.",
       "implementationBranchLocations": [
         {
-          "path": "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
-          "line": 74
+          "path": "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
+          "method": "Calculate"
         }
       ],
       "sourceOccurrenceLocations": [
@@ -3005,7 +3032,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": [
+        "docs/source-mechanics-admission.md"
+      ]
     },
     {
       "id": 56,
@@ -3267,10 +3297,15 @@
     {
       "id": 63,
       "symbol": "ABILITY_MARVEL_SCALE",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
-      "implementationBranchLocations": [],
+      "assessment": "Real burned Milotic source defense arithmetic and complete turn verified; four-slot interactions unverified.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
+          "method": "Calculate"
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "src/pokemon.c",
@@ -3278,7 +3313,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": [
+        "docs/source-mechanics-admission.md"
+      ]
     },
     {
       "id": 64,
@@ -3624,10 +3662,15 @@
     {
       "id": 74,
       "symbol": "ABILITY_PURE_POWER",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
-      "implementationBranchLocations": [],
+      "assessment": "Real Medicham source full turn and damage match independently extracted C; four-slot interactions unverified.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
+          "method": "Calculate"
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "src/pokemon.c",
@@ -3635,7 +3678,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": [
+        "docs/source-mechanics-admission.md"
+      ]
     },
     {
       "id": 75,
@@ -5715,10 +5761,10 @@
       "effect": "EFFECT_MIMIC",
       "target": "MOVE_TARGET_SELECTED",
       "definitionPresent": true,
-      "recipeRegistered": false,
-      "recipeRegistrationEvidence": "tests/Game.NestedMoveCallers.Tests/Program.cs:runtime, authentic recipes and historical admission",
-      "status": "missing",
-      "statusScope": "Complete battle-system acceptance; registration is recorded separately, not converted into complete execution coverage.",
+      "recipeRegistered": true,
+      "recipeRegistrationEvidence": "tests/Game.CopyMoveRules.Tests/Program.cs",
+      "status": "implemented-with-bounded-tests",
+      "statusScope": "Controlled source singles execution, 14 full turns across both roles, permanent projection and ordinary field save/Continue; doubles and native move presentation not accepted.",
       "metronomePath": "outside-metronome-closure",
       "workPackage": "C02",
       "sourceDefinition": {
@@ -6995,10 +7041,10 @@
       "effect": "EFFECT_SKETCH",
       "target": "MOVE_TARGET_SELECTED",
       "definitionPresent": true,
-      "recipeRegistered": false,
-      "recipeRegistrationEvidence": "tests/Game.NestedMoveCallers.Tests/Program.cs:runtime, authentic recipes and historical admission",
-      "status": "missing",
-      "statusScope": "Complete battle-system acceptance; registration is recorded separately, not converted into complete execution coverage.",
+      "recipeRegistered": true,
+      "recipeRegistrationEvidence": "tests/Game.CopyMoveRules.Tests/Program.cs",
+      "status": "implemented-with-bounded-tests",
+      "statusScope": "Controlled source singles execution, 14 full turns across both roles, permanent projection and ordinary field save/Continue; doubles and native move presentation not accepted.",
       "metronomePath": "outside-metronome-closure",
       "workPackage": "C02",
       "sourceDefinition": {
@@ -8955,10 +9001,10 @@
       "effect": "EFFECT_FOCUS_PUNCH",
       "target": "MOVE_TARGET_SELECTED",
       "definitionPresent": true,
-      "recipeRegistered": false,
-      "recipeRegistrationEvidence": "tests/Game.NestedMoveCallers.Tests/Program.cs:runtime, authentic recipes and historical admission",
-      "status": "missing",
-      "statusScope": "Complete battle-system acceptance; registration is recorded separately, not converted into complete execution coverage.",
+      "recipeRegistered": true,
+      "recipeRegistrationEvidence": "tests/Game.PreparedMoveActions.Tests/Program.cs",
+      "status": "interaction-unverified",
+      "statusScope": "Registered shared singles effect with complete-turn tests; genuine four-slot and dedicated audiovisual acceptance remain separate.",
       "metronomePath": "outside-metronome-closure",
       "workPackage": "C03",
       "sourceDefinition": {
@@ -9455,10 +9501,10 @@
       "effect": "EFFECT_SNATCH",
       "target": "MOVE_TARGET_DEPENDS",
       "definitionPresent": true,
-      "recipeRegistered": false,
-      "recipeRegistrationEvidence": "tests/Game.NestedMoveCallers.Tests/Program.cs:runtime, authentic recipes and historical admission",
-      "status": "missing",
-      "statusScope": "Complete battle-system acceptance; registration is recorded separately, not converted into complete execution coverage.",
+      "recipeRegistered": true,
+      "recipeRegistrationEvidence": "tests/Game.PreparedMoveActions.Tests/Program.cs",
+      "status": "interaction-unverified",
+      "statusScope": "Registered shared singles effect with complete-turn tests; genuine four-slot and dedicated audiovisual acceptance remain separate.",
       "metronomePath": "outside-metronome-closure",
       "workPackage": "C03",
       "sourceDefinition": {
@@ -11170,6 +11216,26 @@
     {
       "path": "tests/Game.WildRewards.Tests/Program.cs",
       "sha256": "5d6245b23ba3f2d72398d3a96cf4035cfd48f48d6d238f8f84b198d25b2b5325"
+    }
+  ],
+  "implementationUpdates": [
+    {
+      "dateUtc": "2026-10-10",
+      "baseCommit": "5a5b6f7e0b567841e6929bd0c056795dcf27834a",
+      "scope": "Mimic/Sketch singles and four damage ability arithmetic branches",
+      "moveEvidence": "tests/Game.CopyMoveRules.Tests/README.md",
+      "abilityEvidence": "tests/Game.DamageAbilityGaps.Tests/README.md",
+      "acceptanceLimits": "No doubles, natural new ability donor admission or new native effect/real-audio claim."
+    },
+    {
+      "dateUtc": "2026-10-10",
+      "baseCommit": "84b3249",
+      "scope": "M00 canonical mechanics admission, source party structural synchronization, Focus Punch/Snatch and three contact/absorption abilities",
+      "moveEvidence": "tests/Game.PreparedMoveActions.Tests/README.md",
+      "abilityEvidence": "docs/source-contact-absorb-abilities.md",
+      "catalogEvidence": "docs/source-mechanics-admission.md",
+      "animationInventoryEvidence": "docs/battle-animation-catalog.md",
+      "acceptanceLimits": "354 recipe registrations are not full battle completion. Campaign stays at107 species; doubles, remaining ability handlers and dedicated audiovisual acceptance remain incomplete."
     }
   ]
 }

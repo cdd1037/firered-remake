@@ -72,6 +72,12 @@ public static class PokemonFactory
     {
         // Preflight every fallible content/policy operation before consuming even a tentative draw.
         ValidateCatalog(catalog);
+        return CreateCore(catalog, request, rng);
+    }
+
+    internal static PokemonCreationResult CreateCore(PokemonCatalog catalog, CreatePokemonRequest request,
+        RngState rng, SourceMechanicsCatalog? mechanics = null)
+    {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Ivs);
         ArgumentNullException.ThrowIfNull(request.Personality);
@@ -88,7 +94,7 @@ public static class PokemonFactory
         int draws = (request.Personality.Mode == PersonalityMode.Random ? 2 : 0) + (request.Ivs.Mode == IvMode.Random ? 2 : 0);
         if (rng.Cursor > ulong.MaxValue - (ulong)draws) throw new OverflowException("RNG cursor cannot accommodate creation.");
         uint experience = GrowthRules.ExperienceAtLevel(species.GrowthRate, request.Level);
-        var moves = PokemonMoveRules.InitialMoves(catalog, species, request.Level);
+        var moves = PokemonMoveRules.InitialMovesCore(catalog, species, request.Level);
         var trace = ImmutableArray.CreateBuilder<RandomTrace>(draws);
         ushort Draw(string purpose)
         {
@@ -110,12 +116,7 @@ public static class PokemonFactory
                 (int)(second & 31), (int)((second >> 5) & 31), (int)((second >> 10) & 31));
         }
         var nature = (Nature)(personality % 25);
-        int Other(int b, int iv, Stat stat) => StatRules.CalculateOther(b, iv, 0, request.Level, nature, stat);
-        var b = species.BaseStats;
-        var stats = new BattleStats(StatRules.CalculateHp(b.Hp, ivs.Hp, 0, request.Level),
-            Other(b.Attack, ivs.Attack, Stat.Attack), Other(b.Defense, ivs.Defense, Stat.Defense),
-            Other(b.SpecialAttack, ivs.SpecialAttack, Stat.SpecialAttack), Other(b.SpecialDefense, ivs.SpecialDefense, Stat.SpecialDefense),
-            Other(b.Speed, ivs.Speed, Stat.Speed));
+        var stats = PokemonStatCalculation.Calculate(species, request.Level, nature, ivs, SixStats.Zero, mechanics);
         int slot = species.Ability2 == "ABILITY_NONE" ? 0 : (int)(personality & 1);
         var pokemon = new PokemonInstance(species.Id, species.SourceSpeciesId, request.Level, experience,
             request.OriginalTrainerId, personality, nature, ivs, SixStats.Zero, stats, stats.MaxHp,

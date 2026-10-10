@@ -24,18 +24,18 @@ public sealed record WildBattleTransformedEvent(long Sequence, int Turn, WildBat
 public static class WildBattleTransformationRules
 {
     public static PokemonInstance PersistentPokemon(WildBattleCombatant mon) => mon.Transform is { } transform
-        ? transform.OriginalPokemon with { CurrentHp = mon.Pokemon.CurrentHp } : mon.Pokemon;
+        ? transform.OriginalPokemon with { CurrentHp = mon.Pokemon.CurrentHp } : WildBattleCopyMoveRules.PersistentPokemon(mon);
 
     public static uint PersistentStatus(WildBattleCombatant mon) => SourcePartyStatusRules.FromBattle(
         mon.SourcePartyStatusOverride ?? mon.Transform?.PartyStatusOverride ?? mon.Status);
 
-    public static WildBattleCombatant Restore(WildBattleCombatant mon) => mon.Transform is null && mon.SourcePartyStatusOverride is null ? mon :
-        mon with { Pokemon = PersistentPokemon(mon), Status = PersistentStatus(mon), Transform = null, CalledOverlay = null, SourcePartyStatusOverride = null };
+    public static WildBattleCombatant Restore(WildBattleCombatant mon) => mon.Transform is null && mon.CopyMoves is null && mon.SourcePartyStatusOverride is null ? mon :
+        mon with { Pokemon = PersistentPokemon(mon), Status = PersistentStatus(mon), Transform = null, CopyMoves = null, CalledOverlay = null, SourcePartyStatusOverride = null };
 
     /// <summary>Apply a validated party medicine/EXP update without replacing copied moves. A level gain uses the source stat refresh.</summary>
     public static WildBattleCombatant ApplyPersistentPokemon(WildBattleCombatant mon, PokemonInstance pokemon)
     {
-        if (mon.Transform is not { } transform) return mon with { Pokemon = pokemon };
+        if (mon.Transform is not { } transform) return WildBattleCopyMoveRules.ApplyPersistentPokemon(mon, pokemon);
         bool levelUp = pokemon.Level != transform.OriginalPokemon.Level && mon.Pokemon.CurrentHp > 0;
         var updated = transform with { OriginalPokemon = pokemon, LevelUpStats = levelUp ? pokemon.Stats : transform.LevelUpStats };
         var view = mon.Pokemon with {
@@ -63,7 +63,7 @@ public static class WildBattleTransformationRules
             return new PokemonMoveSlot(slot.Move, Math.Min(5, pp), pp + pp * 20 * bonuses[i] / 100, bonuses[i]);
         }).ToImmutableArray();
         var view = BuildView(catalog, transformation, moves, actor.Pokemon.CurrentHp);
-        return actor with { Pokemon = view, Transform = transformation, CalledOverlay = target.CalledOverlay,
+        return actor with { Pokemon = view, Transform = transformation, CopyMoves = null, CalledOverlay = target.CalledOverlay,
             AttackStage = target.AttackStage, DefenseStage = target.DefenseStage, SpeedStage = target.SpeedStage,
             AccuracyStage = target.AccuracyStage, EvasionStage = target.EvasionStage,
             SpecialAttackStageDelta = target.SpecialAttackStageDelta, SpecialDefenseStageDelta = target.SpecialDefenseStageDelta,
@@ -83,10 +83,10 @@ public static class WildBattleTransformationRules
 
     internal static string? Validate(PokemonCatalog? catalog, WildBattleCombatant mon, bool enabled)
     {
-        if (mon.Transform is not { } transform) return PokemonStateValidator.Validate(catalog, mon.Pokemon);
+        if (mon.Transform is not { } transform) return SourcePokemonValidator.ValidateForBattle(catalog, mon.Pokemon);
         if (!enabled) return "transform_profile";
-        if (PokemonStateValidator.Validate(catalog, transform.OriginalPokemon) is { } originalError) return "transform_original_" + originalError;
-        if (PokemonStateValidator.Validate(catalog, transform.CopiedPokemon) is { } targetError) return "transform_target_" + targetError;
+        if (SourcePokemonValidator.ValidateForBattle(catalog, transform.OriginalPokemon) is { } originalError) return "transform_original_" + originalError;
+        if (SourcePokemonValidator.ValidateForBattle(catalog, transform.CopiedPokemon) is { } targetError) return "transform_target_" + targetError;
         if (transform.PartyStatusOverride is { } partyStatus && !(
             partyStatus == 0 && WildBattleStatus.IsSleeping(mon.Status) ||
             WildBattleStatus.IsSleeping(partyStatus) && mon.Status == 0)) return "transform_party_status";

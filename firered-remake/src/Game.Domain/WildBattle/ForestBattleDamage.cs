@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
+using Game.Domain.Battle;
 using Game.Domain.Rules;
 
 namespace Game.Domain.WildBattle;
@@ -13,6 +14,7 @@ internal static class ForestBattleDamage
         WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false, bool sourceSolarBeamWeakWeather = false)
     {
         route11Rules |= rockTunnelRules;
+        bool canonicalSource = SourceBattleAdmission.HasCapability(catalog, SourceBattleCapability.SourceMoveRecipes);
         if (randomPercent is < 85 or > 100) throw new ArgumentOutOfRangeException(nameof(randomPercent));
         bool struggle = moveId == WildBattleRules.StruggleMove;
         var move = sourceDefinition ?? (struggle ? null : catalog.Moves[moveId]);
@@ -64,7 +66,8 @@ internal static class ForestBattleDamage
         if (mtMoonRules && move?.Effect == "EFFECT_DRAGON_RAGE") return new(40, category, [new("fixed-damage", 40)]);
         if (mtMoonRules && move?.Effect == "EFFECT_MAGNITUDE" && dynamicPower is null) throw new NotSupportedException("mtmoon_magnitude_power_required");
         int power = struggle ? 50 : route22Rules && move!.Effect == "EFFECT_LOW_KICK"
-            ? Route22BattleData.LowKickPower(rockTunnelRules ? catalog.Species.Count == 107 && target.Pokemon.SourceSpeciesId is 83 or 84 or 85 or 132 ? FuchsiaBattleScope.WeightHectograms(target.Pokemon.SourceSpeciesId) : catalog.Species.Count is 103 or 107 && target.Pokemon.SourceSpeciesId == 133 ? 65 : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 102 or 107 && target.Pokemon.SourceSpeciesId == 143 ? 4600 : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107 && target.Pokemon.SourceSpeciesId is 92 or 93 ? 1 : RockTunnelBattleData.WeightHectograms(target.Pokemon.Species) : route11Rules ? Route11BattleData.WeightHectograms(target.Pokemon.Species) : vermilionGymRules ? VermilionGymBattleData.WeightHectograms(target.Pokemon.Species) : ssAnneRules ? SsAnneBattleData.WeightHectograms(target.Pokemon.Species) : vermilionRules ? VermilionBattleData.WeightHectograms(target.Pokemon.Species) : billRules ? BillBattleData.WeightHectograms(target.Pokemon.Species) : ceruleanRules ? CeruleanBattleData.WeightHectograms(target.Pokemon.Species) : mtMoonRules ? MtMoonBattleData.WeightHectograms(target.Pokemon.Species) : route3Rules ? Route3BattleData.WeightHectograms(target.Pokemon.Species) : Route22BattleData.WeightHectograms(target.Pokemon.Species)) : move!.Power;
+            ? Route22BattleData.LowKickPower(SourceMechanicsCatalog.For(catalog) is { } sourceMechanics
+                ? sourceMechanics.SpeciesMechanics[target.Pokemon.Species].WeightHectograms : rockTunnelRules ? (canonicalSource || catalog.Species.Count == 107) && target.Pokemon.SourceSpeciesId is 83 or 84 or 85 or 132 ? FuchsiaBattleScope.WeightHectograms(target.Pokemon.SourceSpeciesId) : catalog.Species.Count is 103 or 107 && target.Pokemon.SourceSpeciesId == 133 ? 65 : (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 102 or 107) && target.Pokemon.SourceSpeciesId == 143 ? 4600 : (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107) && target.Pokemon.SourceSpeciesId is 92 or 93 ? 1 : RockTunnelBattleData.WeightHectograms(target.Pokemon.Species) : route11Rules ? Route11BattleData.WeightHectograms(target.Pokemon.Species) : vermilionGymRules ? VermilionGymBattleData.WeightHectograms(target.Pokemon.Species) : ssAnneRules ? SsAnneBattleData.WeightHectograms(target.Pokemon.Species) : vermilionRules ? VermilionBattleData.WeightHectograms(target.Pokemon.Species) : billRules ? BillBattleData.WeightHectograms(target.Pokemon.Species) : ceruleanRules ? CeruleanBattleData.WeightHectograms(target.Pokemon.Species) : mtMoonRules ? MtMoonBattleData.WeightHectograms(target.Pokemon.Species) : route3Rules ? Route3BattleData.WeightHectograms(target.Pokemon.Species) : Route22BattleData.WeightHectograms(target.Pokemon.Species)) : move!.Power;
         if (rockTunnelRules && move?.Effect == "EFFECT_FLAIL")
         {
             int fraction = user.Pokemon.CurrentHp * 48 / user.Pokemon.Stats.MaxHp;
@@ -73,7 +76,7 @@ internal static class ForestBattleDamage
         if (route3Rules && move?.Effect == "EFFECT_ROLLOUT" && dynamicPower is null)
             power *= (1 << (user.RolloutTurnsRemaining == 0 ? 0 : 5 - user.RolloutTurnsRemaining)) * (user.DefenseCurled ? 2 : 1);
         if (!sourceMove && billRules && target.DigMoveSlot is not null && move?.Effect=="EFFECT_MAGNITUDE") power*=2;
-        if (catalog.Species.Count == 107 && move?.Effect == "EFFECT_FURY_CUTTER" && dynamicPower is null) power = WildBattleRules.NextFuryCutterPower(user.FuryCutterCounter);
+        if ((canonicalSource || catalog.Species.Count == 107) && move?.Effect == "EFFECT_FURY_CUTTER" && dynamicPower is null) power = WildBattleRules.NextFuryCutterPower(user.FuryCutterCounter);
         if (dynamicPower is { } overridden)
         {
             bool sourcePower = sourceMove && move!.Effect switch {
@@ -86,7 +89,7 @@ internal static class ForestBattleDamage
                 "EFFECT_ROLLOUT" => overridden is 30 or 60 or 120 or 240 or 480 or 960,
                 _ => false
             };
-            if (!sourcePower && !(rockTunnelRules && catalog.Species.Count == 107 && moveId.Value == "pret:MOVE_FURY_CUTTER" && overridden is 10 or 20 or 40 or 80 or 160) && !(mtMoonRules && moveId.Value == "pret:MOVE_MAGNITUDE" && overridden is 10 or 30 or 50 or 70 or 90 or 110 or 150) && (!route3Rules || moveId.Value != "pret:MOVE_ROLLOUT" || overridden is < 30 or > 960)) throw new NotSupportedException("route3_dynamic_power");
+            if (!sourcePower && !(rockTunnelRules && (canonicalSource || catalog.Species.Count == 107) && moveId.Value == "pret:MOVE_FURY_CUTTER" && overridden is 10 or 20 or 40 or 80 or 160) && !(mtMoonRules && moveId.Value == "pret:MOVE_MAGNITUDE" && overridden is 10 or 30 or 50 or 70 or 90 or 110 or 150) && (!route3Rules || moveId.Value != "pret:MOVE_ROLLOUT" || overridden is < 30 or > 960)) throw new NotSupportedException("route3_dynamic_power");
             power = overridden * (!sourceMove && billRules && target.DigMoveSlot is not null && move?.Effect=="EFFECT_MAGNITUDE" ? 2 : 1);
         }
         if (pursuitSwitch && (!route22Rules || moveId.Value != "pret:MOVE_PURSUIT"))
@@ -94,13 +97,21 @@ internal static class ForestBattleDamage
         int attack = physical ? user.Pokemon.Stats.Attack : user.Pokemon.Stats.SpecialAttack;
         int defense = physical ? target.Pokemon.Stats.Defense : target.Pokemon.Stats.SpecialDefense;
         var steps = ImmutableArray.CreateBuilder<DamageStep>();
+        // The authenticated source-definition contract is shared by ordinary and called
+        // source actions. Historical profiles do not opt into these ability arithmetic rules.
+        if (sourceMove && physical && WildBattleEffective.Ability(user) is "ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER")
+        {
+            // pokemon.c:2437 precedes the attack badge's independent integer division.
+            attack *= 2;
+            steps.Add(new("huge-pure-power", attack));
+        }
         if (pewterRules && physical && user.AttackBadgeBoost)
         {
             // pokemon.c:2440 precedes Guts (2490) and stat stages; preserve both integer divisions.
             attack = attack * 110 / 100;
             steps.Add(new("attack-badge", attack));
         }
-        if (rockTunnelRules && catalog.Species.Count == 107 && catalog.Moves.Count == 354 && physical && target.DefenseBadgeBoost)
+        if (rockTunnelRules && (canonicalSource || catalog.Species.Count == 107) && (canonicalSource || catalog.Moves.Count == 354) && physical && target.DefenseBadgeBoost)
         {
             // pokemon.c:2442 applies the player's fifth badge before held items, abilities,
             // Explosion's defense halving and stat stages. Keep its own integer truncation.
@@ -108,15 +119,19 @@ internal static class ForestBattleDamage
             steps.Add(new("defense-badge", defense));
         }
         if (rockTunnelRules && user.HeldItem == "ITEM_HARD_STONE" && type == ElementType.Rock) { attack = attack * 110 / 100; steps.Add(new("hard-stone", attack)); }
-        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 99 or 101 or 102 or 107 && user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) { attack = attack * 110 / 100; steps.Add(new("black-glasses", attack)); }
-        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107 && user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) { attack = attack * 110 / 100; steps.Add(new("spell-tag", attack)); }
-        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107 && physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) { attack *= 2; steps.Add(new("thick-club", attack)); }
-        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 102 or 107 && WildBattleEffective.Ability(target) == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice)
+        if (rockTunnelRules && (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 99 or 101 or 102 or 107) && user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) { attack = attack * 110 / 100; steps.Add(new("black-glasses", attack)); }
+        if (rockTunnelRules && (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107) && user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) { attack = attack * 110 / 100; steps.Add(new("spell-tag", attack)); }
+        if (rockTunnelRules && (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107) && physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) { attack *= 2; steps.Add(new("thick-club", attack)); }
+        if (rockTunnelRules && (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 102 or 107) && WildBattleEffective.Ability(target) == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice)
         { attack /= 2; steps.Add(new("thick-fat",attack)); }
-        if (rockTunnelRules && catalog.Species.Count == 107 && physical && target.HeldItem == "ITEM_METAL_POWDER" && target.Pokemon.SourceSpeciesId == 132)
+        if (rockTunnelRules && (canonicalSource || catalog.Species.Count == 107) && physical && target.HeldItem == "ITEM_METAL_POWDER" && target.Pokemon.SourceSpeciesId == 132)
         { defense *= 2; steps.Add(new("metal-powder", defense)); }
+        if (sourceMove && physical && WildBattleEffective.Ability(user) == "ABILITY_HUSTLE")
+        { attack = attack * 150 / 100; steps.Add(new("hustle", attack)); }
         if (physical && WildBattleEffective.Ability(user) == "ABILITY_GUTS" && user.Status != 0)
             attack = attack * 150 / 100;
+        if (sourceMove && physical && WildBattleEffective.Ability(target) == "ABILITY_MARVEL_SCALE" && target.Status != 0)
+        { defense = defense * 150 / 100; steps.Add(new("marvel-scale", defense)); }
         if (ceruleanRules && type == ElementType.Fire && (user.WaterSport || target.WaterSport)) power /= 2;
         if (mtMoonRules && type == ElementType.Electric && (user.MudSport || target.MudSport)) power /= 2;
         if (mtMoonRules && move?.Effect == "EFFECT_EXPLOSION") defense = Math.Max(1, defense / 2);

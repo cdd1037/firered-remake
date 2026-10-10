@@ -18,6 +18,8 @@ public sealed record WildBattleCalledVolatileState
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Tormented { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int TauntTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool MagicCoat { get; init; }
+    /// <summary>Retained action-order position of this turn's armed Snatch; cleared on consumption/departure.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? SnatchOrderIndex { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Grudge { get; init; }
 }
 
@@ -58,7 +60,7 @@ public static partial class WildBattleRules
             if (mon.CalledVolatile is not { } v) continue;
             if (v.RulesVersion != CalledMoveKernelRulesVersion) return "called_volatile_version";
             if (v.SubstituteHp is < 0 or > 255 || v.StockpileCount is < 0 or > 3 || v.PerishSongTimer is < 0 or > 3 ||
-                v.TauntTurnsRemaining is < 0 or > 2) return "called_volatile_counter";
+                v.TauntTurnsRemaining is < 0 or > 2 || v.SnatchOrderIndex is < 0 or > 0) return "called_volatile_counter";
             if (mon.Pokemon.CurrentHp == 0 && v != new WildBattleCalledVolatileState()) return "called_volatile_fainted";
         }
         if (state.CalledDelayed is not { } d) return null;
@@ -109,7 +111,7 @@ public static partial class WildBattleRules
             // Future attacks iterate battler positions; Perish Song follows the supplied speed order.
             foreach (var side in new[] { WildBattleSide.Player, WildBattleSide.Opponent }) context.SourceCalledFutureResidual(catalog, side);
             foreach (var side in order) context.SourceCalledPerishResidual(side);
-            foreach (var side in order) context.SourceCalledClearMagicCoat(side);
+            foreach (var side in order) { context.SourceCalledClearMagicCoat(side); context.SourceClearSnatch(side); }
             context.ForestOutcome(true);
             context.State = context.State with { Revision = checked(state.Revision + 1) };
         });
@@ -153,11 +155,11 @@ public static partial class WildBattleRules
             }
             if (move.Effect == "EFFECT_SUBSTITUTE")
             {
-                int before = Get(side).Pokemon.Moves[activeInvocation.PpSlot].CurrentPp;
+                int before = Get(activeInvocation.PpOwner).Pokemon.Moves[activeInvocation.PpSlot].CurrentPp;
                 SpendInvocationPp(side, target, move, printAttackString: false);
                 bool printed = PrintInvocationAttackString();
                 if (printed) Add(n => new WildBattleMoveUsedEvent(n, State.Turn, side, target, slot, move.Id,
-                    before, Get(side).Pokemon.Moves[activeInvocation!.PpSlot].CurrentPp));
+                    before, Get(activeInvocation!.PpOwner).Pokemon.Moves[activeInvocation.PpSlot].CurrentPp));
             }
             else SpendEarlyPartyPp(side, target, slot, move);
             var v = Get(side).CalledVolatile ?? new();
@@ -289,14 +291,19 @@ public static partial class WildBattleRules
 
         // One datahpupdate boundary, also used by inherited admitted hit recipes. Passive damage,
         // self-cost scripts and healing retain their explicit IGNORE_SUBSTITUTE paths.
+        // Action-local receipt for contact abilities. Never serialized or reconstructed from events.
+        private (WildBattleSide Actor, WildBattleSide Target, MoveId Move, int HpLost)? sourceContactDamage;
+
         private int SourceGenericApplyDamage(WildBattleSide side, WildBattleSide targetSide, MoveId move,
             int damage, bool critical, int percent, bool criticalMessageOnZero = false, bool applyEndure = true)
         {
+            sourceContactDamage = null;
             if (SourceCalledConsumeSubstituteDamage(side, targetSide, move, damage, critical, percent, out int substituteLost))
                 return substituteLost;
             if (applyEndure) damage = RockTunnelAdjustDamage(targetSide, damage);
             var target = Get(targetSide);
             int before = target.Pokemon.CurrentHp, after = Math.Max(0, before - damage);
+            sourceContactDamage = (side, targetSide, move, before - after);
             Set(targetSide, target with { Pokemon = target.Pokemon with { CurrentHp = after } });
             Add(n => new WildBattleHpChangedEvent(n, State.Turn, side, targetSide, move, before, after, damage, critical, percent));
             if (critical && (damage > 0 || criticalMessageOnZero)) Add(n => new WildBattleCriticalHitEvent(n, State.Turn, side, targetSide));
@@ -368,7 +375,7 @@ public static partial class WildBattleRules
             SetCalledVolatile(reflector, coat with { MagicCoat = false });
             SpendEarlyPartyPp(original, reflector, slot, move);
             Add(n => new WildBattleMagicCoatEvent(n, State.Turn, original, reflector, move.Id));
-            activeInvocation = activeInvocation! with { Actor = reflector, Target = original,
+            activeInvocation = activeInvocation! with { Actor = reflector, Target = original, PpOwner = invocation.PpOwner,
                 Flags = activeInvocation!.Flags | WildBattleInvocationFlags.AttackStringPrinted | WildBattleInvocationFlags.NoPpDeduct | WildBattleInvocationFlags.AllowNoPp };
             side = reflector;
             return true;

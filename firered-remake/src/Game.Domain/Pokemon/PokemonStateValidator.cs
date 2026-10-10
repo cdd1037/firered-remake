@@ -117,7 +117,7 @@ public static class PokemonStateValidator
         return null;
     }
 
-    private static string? ValidateInstance(PokemonCatalog catalog, PokemonInstance? p)
+    internal static string? ValidateInstance(PokemonCatalog catalog, PokemonInstance? p, SourceMechanicsCatalog? mechanics = null)
     {
         if (p is null) return "pokemon_missing";
         if (!ValidSymbol(p.Species.Value, "pret:SPECIES_") || !catalog.Species.TryGetValue(p.Species, out var species))
@@ -136,14 +136,7 @@ public static class PokemonStateValidator
         if (statEvs.Values.Any(x => x is < 0 or > 255) || statEvs.Values.Sum() > 510 ||
             statEvs.Values.Where((value, index) => value > p.Evs.Values[index]).Any())
             return "pokemon_stat_calculation_evs";
-        var b = species.BaseStats;
-        int Other(int baseValue, int iv, int ev, Stat stat) => StatRules.CalculateOther(baseValue, iv, ev, p.Level, p.Nature, stat);
-        var expected = new BattleStats(StatRules.CalculateHp(b.Hp, p.Ivs.Hp, statEvs.Hp, p.Level),
-            Other(b.Attack, p.Ivs.Attack, statEvs.Attack, Stat.Attack),
-            Other(b.Defense, p.Ivs.Defense, statEvs.Defense, Stat.Defense),
-            Other(b.SpecialAttack, p.Ivs.SpecialAttack, statEvs.SpecialAttack, Stat.SpecialAttack),
-            Other(b.SpecialDefense, p.Ivs.SpecialDefense, statEvs.SpecialDefense, Stat.SpecialDefense),
-            Other(b.Speed, p.Ivs.Speed, statEvs.Speed, Stat.Speed));
+        var expected = PokemonStatCalculation.Calculate(species, p.Level, p.Nature, p.Ivs, statEvs, mechanics);
         if (p.Stats != expected) return "pokemon_stats";
         if (p.CurrentHp < 0 || p.CurrentHp > expected.MaxHp) return "pokemon_hp";
         if (!Enum.IsDefined(p.Gender) || p.Gender != PokemonFactory.GenderFromPersonality(species.GenderRatio, p.Personality))

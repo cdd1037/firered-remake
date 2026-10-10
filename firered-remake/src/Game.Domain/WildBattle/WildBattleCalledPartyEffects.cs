@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
+using Game.Domain.Battle;
 using Game.Domain.Rules;
 
 namespace Game.Domain.WildBattle;
@@ -87,6 +88,10 @@ public static class WildBattleSourcePartyEffects
         mon with { PersistentHeldItemOverride = item == (mon.KnockedOffItem ?? mon.HeldItem) ? null : item };
     internal static bool SamePokemon(PokemonInstance a, PokemonInstance b) =>
         a with { Moves = [] } == b with { Moves = [] } && a.Moves.SequenceEqual(b.Moves);
+    // ImmutableArray record equality compares backing-array identity. State restored from JSON
+    // has different arrays even when the permanent party data is unchanged.
+    internal static bool SameMember(WildBattleCalledPartyMember a, WildBattleCalledPartyMember b) =>
+        a with { Pokemon = b.Pokemon } == b && SamePokemon(a.Pokemon, b.Pokemon);
     public static int SpikesDamage(int maxHp, int layers) => layers is >= 1 and <= 3 && maxHp > 0
         ? Math.Max(1, maxHp / ((5 - layers) * 2)) : throw new ArgumentOutOfRangeException(nameof(layers));
     public static int BeatUpBaseDamage(PokemonCatalog catalog, WildBattleCalledPartyMember contributor,
@@ -121,7 +126,8 @@ public static class WildBattleSourcePartyEffects
         string persistentItem = before.HeldItem != mon.HeldItem && before.KnockedOffItem == mon.KnockedOffItem ? mon.HeldItem : PersistentHeldItem(before);
         var after = before with { Pokemon = WildBattleTransformationRules.PersistentPokemon(mon),
             Status = WildBattleTransformationRules.PersistentStatus(mon), HeldItem = mon.HeldItem, KnockedOffItem = mon.KnockedOffItem };
-        return SetParty(state, side, party.SetItem(index, WithPersistentHeldItem(after, persistentItem)));
+        after = WithPersistentHeldItem(after, persistentItem);
+        return SameMember(before, after) ? state : SetParty(state, side, party.SetItem(index, after));
     }
 }
 
@@ -166,7 +172,8 @@ public static partial class WildBattleRules
                 if (active < 0 || active >= party.Length) return "called_party_active_index";
                 foreach (var mon in party)
                 {
-                    if (mon?.Pokemon is null || PokemonStateValidator.Validate(catalog, mon.Pokemon) is not null) return "called_party_member";
+                    if (mon?.Pokemon is null || SourcePokemonValidator.ValidateForBattle(catalog, mon.Pokemon) is not null) return "called_party_member";
+                    if (SourceBattleAdmission.ValidatePokemonCapabilities(catalog, mon.Pokemon) is { } capabilityError) return capabilityError;
                     if (!FuchsiaBattleScope.SupportsHeldItem(mon.HeldItem) || !FuchsiaBattleScope.SupportsHeldItem(WildBattleSourcePartyEffects.PersistentHeldItem(mon))) return "called_party_item";
                     if (mon.KnockedOffItem is { } knocked && (knocked == "ITEM_NONE" || !FuchsiaBattleScope.SupportsHeldItem(knocked))) return "called_party_knocked_off";
                     if (mon.Status != 0 && mon.Status is not (WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
@@ -201,7 +208,7 @@ public static partial class WildBattleRules
                 var active = pending.Side == WildBattleSide.Player ? state.Player : state.Opponent;
                 if (pending.Kind == WildBattleCalledSwitchKind.FaintedReplacement && pending.Invocation is not null) return "called_party_pending_invocation";
                 if ((pending.Kind == WildBattleCalledSwitchKind.FaintedReplacement) != (active.Pokemon.CurrentHp == 0)) return "called_party_pending_hp";
-                if (pending.Kind == WildBattleCalledSwitchKind.BatonPass && (pending.Invocation is not { } invocation || invocation.Actor != pending.Side ||
+                if (pending.Kind == WildBattleCalledSwitchKind.BatonPass && (pending.Invocation is not { } invocation || invocation.Actor != pending.Side || invocation.PpOwner != pending.Side ||
                     invocation.CurrentMove.Value != "pret:MOVE_BATON_PASS" || invocation.Target != pending.Side ||
                     invocation.PpSlot < 0 || invocation.PpSlot >= active.Pokemon.Moves.Length || invocation.ChosenSlot < 0 || invocation.ChosenSlot >= active.Pokemon.Moves.Length ||
                     active.Pokemon.Moves[invocation.ChosenSlot].Move != invocation.OriginalChosenMove ||
@@ -302,7 +309,7 @@ public static partial class WildBattleRules
                 Pokemon = WildBattleTransformationRules.PersistentPokemon(mon), Status = WildBattleTransformationRules.PersistentStatus(mon),
                 HeldItem = mon.HeldItem, KnockedOffItem = mon.KnockedOffItem }, item);
             State = State with { CalledParty = WildBattleSourcePartyEffects.SetParty(context, side, party.SetItem(index, after)) };
-            if (before != after) Add(n => new WildBattleCalledPartyChangedEvent(n, State.Turn, side, index, reason, before, after));
+            if (!WildBattleSourcePartyEffects.SameMember(before, after)) Add(n => new WildBattleCalledPartyChangedEvent(n, State.Turn, side, index, reason, before, after));
         }
         internal void SourceCalledSynchronizeParties()
         {
@@ -313,7 +320,7 @@ public static partial class WildBattleRules
                 var before = WildBattleSourcePartyEffects.Party(party, side)[index];
                 party = WildBattleSourcePartyEffects.Synchronize(party, side, Get(side));
                 var after = WildBattleSourcePartyEffects.Party(party, side)[index];
-                if (before != after) Add(n => new WildBattleCalledPartyChangedEvent(n, State.Turn, side, index, "active-sync", before, after));
+                if (!WildBattleSourcePartyEffects.SameMember(before, after)) Add(n => new WildBattleCalledPartyChangedEvent(n, State.Turn, side, index, "active-sync", before, after));
             }
             State = State with { CalledParty = party };
         }
@@ -444,7 +451,7 @@ public static partial class WildBattleRules
                     continue;
                 }
                 var after = before with { Status = 0 }; party = party.SetItem(index, after);
-                if (before != after) Add(n => new WildBattleCalledPartyChangedEvent(n, State.Turn, side, index, bell ? "heal-bell" : "aromatherapy", before, after));
+                if (!WildBattleSourcePartyEffects.SameMember(before, after)) Add(n => new WildBattleCalledPartyChangedEvent(n, State.Turn, side, index, bell ? "heal-bell" : "aromatherapy", before, after));
                 if (index == active) { ChangeStatus(side, 0, bell ? "heal-bell" : "aromatherapy"); Set(side, Get(side) with { Nightmare = false, Transform = Get(side).Transform is { } form ? form with { PartyStatusOverride = null } : null }); }
             }
             State = State with { CalledParty = WildBattleSourcePartyEffects.SetParty(State.CalledParty!, side, party) };

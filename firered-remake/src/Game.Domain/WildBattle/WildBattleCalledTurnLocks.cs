@@ -206,6 +206,7 @@ public static partial class WildBattleRules
             invocationCommandNoEffect = false;
             invocationSkipsMoveEnd = false;
             var originalActorLastUsedMove = Get(side).LastUsedMove;
+            BeginPreparedMoveInvocation(originalActorLastUsedMove);
             int eventStart = Events.Count;
             earlyPartyActed.Add(side);
             ForestMove(catalog, side, locked.PpSlot, current);

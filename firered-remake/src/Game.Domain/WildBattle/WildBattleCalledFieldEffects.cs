@@ -234,7 +234,8 @@ public static partial class WildBattleRules
             if (!hit) { SourceGenericMiss(side, targetSide, move); return; }
             if (move.Effect == "EFFECT_BRICK_BREAK") SourceCalledBreakScreens(side);
             var effectiveMove = move.Effect == "EFFECT_WEATHER_BALL" ? move with { Type = invocationEffectiveType! } : move;
-            if (Route11WaterAbsorb(side, targetSide, effectiveMove) || SsAnneFlashFire(side, targetSide, effectiveMove)) return;
+            if (Route11WaterAbsorb(side, targetSide, move, move.Effect == "EFFECT_WEATHER_BALL" ? invocationEffectiveType : null) ||
+                SsAnneFlashFire(side, targetSide, effectiveMove)) return;
             bool critical = SourceGenericCritical(Get(side), Get(targetSide), move, purpose);
             int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
             int damage = ScalarDamage(catalog, side, targetSide, move, critical, percent,

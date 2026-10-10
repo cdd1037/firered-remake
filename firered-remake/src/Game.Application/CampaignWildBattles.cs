@@ -171,10 +171,12 @@ public sealed partial class CampaignSession
             void Update(WildBattleSide side,Func<PokemonInstance,PokemonInstance> update){b=side==WildBattleSide.Player?b with{DisplayPlayer=update(b.DisplayPlayer)}:b with{DisplayOpponent=update(b.DisplayOpponent)};}
             switch(e)
             {
-                case WildBattlePpCommandEvent pp:Update(pp.Actor,p=>p with{Moves=p.Moves.SetItem(pp.PpSlot,p.Moves[pp.PpSlot] with{CurrentPp=pp.After})});break;
+                case WildBattlePpCommandEvent pp when pp.PpSlot>=0:Update(pp.PpOwner,p=>p with{Moves=p.Moves.SetItem(pp.PpSlot,p.Moves[pp.PpSlot] with{CurrentPp=pp.After})});break;
+                case WildBattleSnatchPressurePpEvent pp:Update(pp.Snatcher,p=>p with{Moves=p.Moves.SetItem(pp.Slot,p.Moves[pp.Slot] with{CurrentPp=pp.After})});break;
                 case WildBattleGrudgePpEvent grudge:Update(grudge.Attacker,p=>p with{Moves=p.Moves.SetItem(grudge.ChosenSlot,p.Moves[grudge.ChosenSlot] with{CurrentPp=0})});break;
                 case WildBattleWeatherDamageEvent weather:Update(weather.Side,p=>p with{CurrentHp=weather.HpAfter});break;
                 case WildBattleDrainEvent drain:Update(drain.Actor,p=>p with{CurrentHp=drain.HpAfter});break;
+                case WildBattleMoveCopiedEvent copied:Update(copied.Actor,p=>p with{Moves=p.Moves.SetItem(copied.MoveSlot,copied.Replacement)});break;
                 case WildBattleTransformedEvent transformed:b=ApplyTransformDisplay(b,transformed);break;
                 case WildBattlePlayerSwitchedEvent changed:b=b with{DisplayPlayer=BattleDisplayPokemon(changed.Replacement),DisplayPlayerAppearance=null};break;
                 case WildBattleMoveUsedEvent used when used.Slot>=0:Update(used.Actor,p=>p with{Moves=p.Moves.SetItem(used.Slot,p.Moves[used.Slot] with{CurrentPp=used.PpAfter})});break;
@@ -187,6 +189,7 @@ public sealed partial class CampaignSession
                 case WildBattlePotionRecoveredEvent potion:Update(potion.Side,p=>p with{CurrentHp=potion.HpAfter});break;
                 case WildBattleMedicineAppliedEvent {ActiveTarget:true} medicine:Update(WildBattleSide.Player,p=>p with{CurrentHp=medicine.HpAfter});break;
                 case WildBattleRecoilEvent recoil:Update(recoil.Actor,p=>p with{CurrentHp=recoil.HpAfter});break;
+                case WildBattleAbilityDamageEvent ability:Update(ability.Target,p=>p with{CurrentHp=ability.HpAfter});break;
                 case WildBattleConfusionSelfHitEvent self:Update(self.Side,p=>p with{CurrentHp=self.HpAfter});break;
                 case WildBattleLeechSeedDrainEvent seed:Update(seed.DrainedSide,p=>p with{CurrentHp=seed.HpAfter});Update(seed.ReceivingSide,p=>p with{CurrentHp=seed.ReceiverHpAfter});break;
                 case WildBattleBindingDamageEvent bind:Update(bind.Side,p=>p with{CurrentHp=bind.HpAfter});break;

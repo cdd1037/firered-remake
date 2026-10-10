@@ -163,6 +163,7 @@ public partial class CampaignView
             WildBattleHeldItemConsumedEvent item when item.Side == side => (item.HpBefore, item.HpAfter),
             WildBattleMedicineAppliedEvent {ActiveTarget:true} medicine when side==WildBattleSide.Player=>(medicine.HpBefore,medicine.HpAfter),
             WildBattleRecoilEvent recoil when recoil.Actor == side => (recoil.HpBefore, recoil.HpAfter),
+            WildBattleAbilityDamageEvent ability when ability.Target == side => (ability.HpBefore, ability.HpAfter),
             WildBattleConfusionSelfHitEvent self when self.Side == side => (self.HpBefore, self.HpAfter),
             WildBattleBindingDamageEvent bind when bind.Side == side => (bind.HpBefore, bind.HpAfter),
             WildBattleStatusDamageEvent damage when damage.Side == side => (damage.HpBefore, damage.HpAfter),

@@ -16,6 +16,11 @@ public static class PokemonMoveRules
     public static ImmutableArray<PokemonMoveSlot> InitialMoves(PokemonCatalog catalog, PokemonSpeciesDefinition species, int level)
     {
         PokemonFactory.ValidateCatalog(catalog);
+        return InitialMovesCore(catalog, species, level);
+    }
+
+    internal static ImmutableArray<PokemonMoveSlot> InitialMovesCore(PokemonCatalog catalog, PokemonSpeciesDefinition species, int level)
+    {
         if (level is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(level));
         ArgumentNullException.ThrowIfNull(species);
         if (!catalog.Species.TryGetValue(species.Id, out var registered) || registered != species)
