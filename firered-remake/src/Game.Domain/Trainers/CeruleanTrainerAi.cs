@@ -14,17 +14,17 @@ public static class CeruleanTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-cerulean-trainer-ai-semantic-v1";
 
-    public static CeruleanTrainerAiDecision Choose(PokemonCatalog catalog, CeruleanTrainerAiInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false)
+    public static CeruleanTrainerAiDecision Choose(PokemonCatalog catalog, CeruleanTrainerAiInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false)
     {
         CeruleanTrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
             new(code, "Input is outside the bounded Cerulean trainer AI profile."));
-        ssAnneRules |= vermilionGymRules;
+        vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
-        string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules);
+        string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("cerulean_trainer_ai_rng_algorithm");
-        bool Usable(int slot) => WildBattleRules.IsMoveSelectable(input.User, slot);
+        bool Usable(int slot) => WildBattleRules.IsMoveSelectable(input.User, slot) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move));
         if (!Enumerable.Range(0, 4).Any(Usable)) return Fault("cerulean_trainer_ai_struggle_required");
         var current = rng;
         var trace = ImmutableArray.CreateBuilder<RandomTrace>();
@@ -39,7 +39,7 @@ public static class CeruleanTrainerAi
         {
             // Cmd_get_ability consults side history, then reveals actual trapping abilities,
             // otherwise independently guesses a dual ability on every script instruction.
-            bool trappedAbility = input.Target.Pokemon.AbilityId == "ABILITY_MAGNET_PULL";
+            bool trappedAbility = input.Target.Pokemon.AbilityId == "ABILITY_MAGNET_PULL" || route11Rules && input.Target.Pokemon.AbilityId == "ABILITY_ARENA_TRAP";
             bool guess = input.KnownTargetAbility is null && !trappedAbility && targetSpecies.Ability2 != "ABILITY_NONE";
             string ability = input.KnownTargetAbility ?? (guess
                 ? Draw($"cerulean-trainer.ai.slot.{slot}.ability.{reason}", 2) != 0 ? targetSpecies.Ability1 : targetSpecies.Ability2
@@ -58,7 +58,7 @@ public static class CeruleanTrainerAi
             for (int slot = 0; slot < input.User.Pokemon.Moves.Length; slot++)
             {
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot]);
+                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain);
             }
             void Score(int slot, int change) => scores[slot] = Math.Max(0, scores[slot] + change);
             for (int slot = 0; slot < 4; slot++)
@@ -83,6 +83,10 @@ public static class CeruleanTrainerAi
                 { Score(slot, -10); continue; }
                 switch (move.Effect)
                 {
+                    case "EFFECT_WILL_O_WISP" when route11Rules:
+                        if (Ability(slot, "burn-immunity") == "ABILITY_WATER_VEIL" || input.Target.Status != 0 ||
+                            TypeEffectiveness(move.Type, targetSpecies) is 0 or 5 or 2) Score(slot, -10);
+                        break;
                     case "EFFECT_SLEEP":
                         if (Ability(slot, "sleep-immunity") is "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT" || input.Target.Status != 0) Score(slot, -10);
                         break;
@@ -190,7 +194,7 @@ public static class CeruleanTrainerAi
                     int Roll(string reason) => Draw($"cerulean-trainer.ai.viability.slot.{slot}.{reason}", 256);
                     bool TargetFaster()
                     {
-                        int u = Speed(input.User), t = Speed(input.Target);
+                        int u = Speed(input.User, route11Rules && rain), t = Speed(input.Target, route11Rules && rain);
                         // GetWhoStrikesFirst returns 0/2 on ties; ==1 is false for either.
                         if (u == t) _ = Draw($"cerulean-trainer.ai.viability.slot.{slot}.speed-tie", 2);
                         return t > u;
@@ -311,26 +315,26 @@ public static class CeruleanTrainerAi
             value = value * effect.MultiplierTenths / 10;
         return value;
     }
-    private static string? Validate(PokemonCatalog? catalog, CeruleanTrainerAiInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules)
+    private static string? Validate(PokemonCatalog? catalog, CeruleanTrainerAiInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules)
     {
         if (input is null) return "cerulean_trainer_ai_input_missing";
         if (input.AiFlags is not (1 or 7)) return "cerulean_trainer_ai_flags_unsupported";
-        if (catalog?.Species.Count != (ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65)) return "cerulean_trainer_ai_catalog_scope";
+        if (catalog?.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65)) return "cerulean_trainer_ai_catalog_scope";
         foreach (var (name, mon) in new[] { ("user", input.User), ("target", input.Target) })
         {
-            string? error = ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules);
+            string? error = ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
             if (error is not null) return "cerulean_trainer_ai_" + name + "_" + error;
             if (mon.Pokemon.CurrentHp == 0) return "cerulean_trainer_ai_" + name + "_fainted";
         }
-        if (!(vermilionGymRules && VermilionGymTrainerPartyFactory.SupportedTrainers.Any(id => VermilionGymTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || ssAnneRules && SsAnneTrainerPartyFactory.SupportedTrainers.Any(id => SsAnneTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || vermilionRules && VermilionTrainerPartyFactory.SupportedTrainers.Any(id => VermilionTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || (billRules ? BillTrainerPartyFactory.SupportedTrainers.Any(id => BillTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || ValidUser(catalog,input.User.Pokemon,input.AiFlags) : ValidUser(catalog,input.User.Pokemon,input.AiFlags))) || input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost || input.User.HeldItem != "ITEM_NONE") return "cerulean_trainer_ai_user_roster";
+        if (!(route11Rules && Route11TrainerPartyFactory.SupportedTrainers.Any(id => Route11TrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || vermilionGymRules && VermilionGymTrainerPartyFactory.SupportedTrainers.Any(id => VermilionGymTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || ssAnneRules && SsAnneTrainerPartyFactory.SupportedTrainers.Any(id => SsAnneTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || vermilionRules && VermilionTrainerPartyFactory.SupportedTrainers.Any(id => VermilionTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || (billRules ? BillTrainerPartyFactory.SupportedTrainers.Any(id => BillTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || ValidUser(catalog,input.User.Pokemon,input.AiFlags) : ValidUser(catalog,input.User.Pokemon,input.AiFlags))) || input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost || input.User.HeldItem != "ITEM_NONE") return "cerulean_trainer_ai_user_roster";
         foreach (var slot in input.User.Pokemon.Moves)
-            if (!(vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : vermilionRules ? VermilionBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : billRules ? BillBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : CeruleanBattleScope.ValidDefinition(catalog.Moves[slot.Move]))) return "cerulean_trainer_ai_move_definition";
-        if (input.KnownTargetAbility is { } known && !(ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : SupportsAbility(known))) return "cerulean_trainer_ai_ability_history";
+            if (!(route11Rules ? Route11BattleScope.ValidDefinition(catalog.Moves[slot.Move]) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : vermilionRules ? VermilionBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : billRules ? BillBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : CeruleanBattleScope.ValidDefinition(catalog.Moves[slot.Move]))) return "cerulean_trainer_ai_move_definition";
+        if (input.KnownTargetAbility is { } known && !(route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : SupportsAbility(known))) return "cerulean_trainer_ai_ability_history";
         return null;
     }
-    internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false) =>
-        WildBattleRules.ValidateCombatant(catalog!, mon!, "cerulean-ai", true, true, true, true, true, true, true, ceruleanRules: true, billRules: billRules, vermilionRules: vermilionRules, ssAnneRules: ssAnneRules, vermilionGymRules: vermilionGymRules) ??
-        (!(ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon!.Pokemon.Species])) ? "cerulean_ai_species_type_ability" : null);
+    internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false) =>
+        WildBattleRules.ValidateCombatant(catalog!, mon!, "cerulean-ai", true, true, true, true, true, true, true, ceruleanRules: true, billRules: billRules, vermilionRules: vermilionRules, ssAnneRules: ssAnneRules, vermilionGymRules: vermilionGymRules, route11Rules: route11Rules) ??
+        (!(route11Rules ? Route11BattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon!.Pokemon.Species])) ? "cerulean_ai_species_type_ability" : null);
 
     internal static bool ValidUser(PokemonCatalog catalog, PokemonInstance mon, uint? flags = null) =>
         CeruleanTrainerPartyFactory.SupportedTrainers.Any(id => ValidPartyMember(catalog, mon, id, flags));
@@ -368,9 +372,9 @@ public static class CeruleanTrainerAi
     private static bool IsSoundMove(MoveId move) => MtMoonTrainerAi.IsSoundMove(move);
     private static bool PhysicalHeuristicType(string type) => type is "TYPE_NORMAL" or "TYPE_FIGHTING" or "TYPE_GROUND" or "TYPE_ROCK" or "TYPE_BUG" or "TYPE_STEEL";
     private static ElementType ParseType(string type) => Enum.Parse<ElementType>(type[5..], true);
-    private static int Speed(WildBattleCombatant mon)
+    private static int Speed(WildBattleCombatant mon, bool rain = false)
     {
-        int speed = WildBattleDamage.Stat(mon.Pokemon.Stats.Speed, mon.SpeedStage);
+        int speed = WildBattleDamage.Stat(mon.Pokemon.Stats.Speed * (rain && mon.Pokemon.AbilityId == "ABILITY_SWIFT_SWIM" ? 2 : 1), mon.SpeedStage);
         if (mon.SpeedBadgeBoost) speed = speed * 110 / 100;
         return mon.Status == WildBattleStatus.Paralysis ? speed / 4 : speed;
     }
@@ -378,14 +382,14 @@ public static class CeruleanTrainerAi
     // AI_CalcDmg uses base power, without execution's variable-power preprocessing. TypeCalc
     // applies STAB but Levitate only sets a discarded local flag, leaving damage nonzero.
     internal static int Predict(PokemonCatalog catalog, WildBattleCombatant user, WildBattleCombatant target,
-        PokemonMoveDefinition move, int percent, bool clearUserAbility = false)
+        PokemonMoveDefinition move, int percent, bool clearUserAbility = false, bool rain = false)
     {
-        int value = BasePrediction(user, target, move.Power, ParseType(move.Type), move.Effect, clearUserAbility);
+        int value = BasePrediction(user, target, move.Power, ParseType(move.Type), move.Effect, clearUserAbility, rain);
         value = TypePrediction(catalog, user, target, move, value);
         return Math.Max(1, value * percent / 100);
     }
     internal static int BasePrediction(WildBattleCombatant user, WildBattleCombatant target, int power, ElementType type,
-        string? effect, bool clearUserAbility = false)
+        string? effect, bool clearUserAbility = false, bool rain = false)
     {
         bool physical = TypeRules.Category(type) == DamageCategory.Physical;
         int attack = physical ? user.Pokemon.Stats.Attack : user.Pokemon.Stats.SpecialAttack;
@@ -404,6 +408,8 @@ public static class CeruleanTrainerAi
         int value = checked(attack * power * (2 * user.Pokemon.Level / 5 + 2)) / defense / 50;
         if (physical && user.Status == WildBattleStatus.Burn && ability != "ABILITY_GUTS") value /= 2;
         if (physical) value = Math.Max(1, value);
+        if (rain && type == ElementType.Fire) value /= 2;
+        if (rain && type == ElementType.Water) value = value * 15 / 10;
         if (user.FlashFireBoost && type == ElementType.Fire) value = value * 15 / 10;
         value += 2;
         if (user.ChargeTurnsRemaining > 0 && type == ElementType.Electric) value *= 2;

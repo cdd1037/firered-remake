@@ -10,7 +10,7 @@ public sealed partial class CampaignSession
             fishing.Map!=state.World.Player.MapId||!_content.OldRodEncounters!.TryGetValue(fishing.Map,out var table))
             throw new InvalidDataException("fishing_encounter_context_invalid");
         var candidate=OldRodEncounterRules.GenerateCandidate(table,fishing,state.World.Rng);
-        var generated=OldRodPokemonFactory.Generate(BattlePokemon,candidate.Candidate,candidate.GlobalRng,state.TrainerId);
+        var generated=OldRodPokemonFactory.Generate(BattlePokemon,candidate.Candidate,candidate.GlobalRng,state.TrainerId,route11Rules:_content.Route11Enabled);
         var stats=state.GameStats??ImmutableSortedDictionary<string,int>.Empty;
         var next=state with{Fishing=null,ItemMenu=null,Exploration=ResetEncounterModifiers(state.Exploration!),GameStats=stats.SetItem("GAME_STAT_FISHING_CAPTURES",Math.Min(0xffffff,stats.GetValueOrDefault("GAME_STAT_FISHING_CAPTURES")+1))};
         // WildBattleRules.Start owns the original AI-init, held-item and initial order draws.

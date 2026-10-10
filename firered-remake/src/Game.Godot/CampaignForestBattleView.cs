@@ -121,7 +121,7 @@ public partial class CampaignView
     private string ForestStatusName(uint status) => _battleText[status switch
     {
         >=1 and <=5 => "gText_Sleep",
-        WildBattleStatus.Poison => "gText_Poison", WildBattleStatus.Burn => "gText_Burn", WildBattleStatus.Paralysis => "gText_Paralysis",
+        WildBattleStatus.Freeze => "gText_Ice", WildBattleStatus.Poison => "gText_Poison", WildBattleStatus.Burn => "gText_Burn", WildBattleStatus.Paralysis => "gText_Paralysis",
         _ => throw new InvalidDataException("Unsupported forest status name.")
     }];
 
@@ -144,7 +144,7 @@ public partial class CampaignView
                     case WildBattlePlayerSwitchedEvent change when side == WildBattleSide.Player: status = change.Previous.Status; break;
                     case WildBattlePlayerReplacedEvent change when side == WildBattleSide.Player: status = change.Previous.Status; break;
                 }
-        if (!WildBattleStatus.IsSupported(status,_catalog.EarlyStarterEnabled)) throw new InvalidDataException("Unsupported displayed forest status.");
+        if (!WildBattleStatus.IsSupported(status,_catalog.EarlyStarterEnabled,_catalog.Route11Enabled)) throw new InvalidDataException("Unsupported displayed forest status.");
         return status;
     }
 
@@ -174,7 +174,7 @@ public partial class CampaignView
     private static string ForestStatusId(uint status) => status switch
     {
         >=1 and <=5 => "sleep",
-        WildBattleStatus.Poison => "poison", WildBattleStatus.Burn => "burn", WildBattleStatus.Paralysis => "paralysis",
+        WildBattleStatus.Freeze => "freeze", WildBattleStatus.Poison => "poison", WildBattleStatus.Burn => "burn", WildBattleStatus.Paralysis => "paralysis",
         _ => throw new InvalidDataException("Unsupported forest status icon.")
     };
 

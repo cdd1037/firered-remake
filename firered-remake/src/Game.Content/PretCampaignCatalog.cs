@@ -108,8 +108,9 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
     public bool RegionEnabled{get;}
     public PretViridianRegion? ViridianRegion{get;}
     public IReadOnlyDictionary<MapId,ConnectedFieldMap>? ConnectedFieldMaps{get;}
-    private PretCampaignCatalog(ImmutableDictionary<MapId,PretWorldMap> maps,PretStoryCompilation scripts,ImmutableDictionary<string,string> text,string version,CampaignPokemonContent? pokemonContent,CampaignBattleContent? battleContent,OpeningItemsCatalog? openingItems,PretViridianRegion? region,QuestItemsCatalog? questItems=null,PretMartMetatiles? metatiles=null,bool captureEnabled=false,PretViridianCenter? center=null,PretOldManTutorialContent? oldMan=null,bool partyTraining=false,PretForestRegion? forest=null,PretForestPokemon? forestPokemon=null,bool forestTrainers=false,PretPewterRegion? pewter=null,PretPewterPokemon? pewterPokemon=null,PewterMachineCatalog? machines=null,PretEarlyShopDocument? earlyShop=null,bool earlyStarter=false,bool earlyParty=false,PretPokemonStorageSource? pokemonStorage=null,PretEarlyPickups? fieldPickups=null,PretEarlyRepelDocument? repel=null,PretTownMap? townMap=null,PretOakRating? oakRating=null,PretPokedexMenu? oakPokedex=null,PretRoute22Region? route22=null,PretRoute22Pokemon? route22Pokemon=null,PretRoute3Region? route3=null,PretRoute3Pokemon? route3Pokemon=null,PretMagikarpContract? magikarp=null,PretMtMoonRegion? mtMoon=null,PretMtMoonPokemon? mtMoonPokemon=null,PretMtMoonItemsDocument? mtMoonItems=null,PretCeruleanRegion? cerulean=null,PretCeruleanPokemon? ceruleanPokemon=null,PretBillRegion? bill=null,PretBillPokemon? billPokemon=null,PretBillItemsDocument? billItems=null,BillTrainerCatalog? billTrainers=null,PretVermilionRegion? vermilion=null,PretVermilionPokemon? vermilionPokemon=null,VermilionTrainerCatalog? vermilionTrainers=null,PretSsAnneRegion? ssAnne=null,PretSsAnnePokemon? ssAnnePokemon=null,SsAnneTrainerCatalog? ssAnneTrainers=null,PretSsAnneItemsDocument? ssAnneItems=null,PretVermilionGymRegion? vermilionGym=null,VermilionGymTrainerCatalog? vermilionGymTrainers=null,PretCityServices? cityServices=null,PretOldRod? oldRod=null)
+    private PretCampaignCatalog(ImmutableDictionary<MapId,PretWorldMap> maps,PretStoryCompilation scripts,ImmutableDictionary<string,string> text,string version,CampaignPokemonContent? pokemonContent,CampaignBattleContent? battleContent,OpeningItemsCatalog? openingItems,PretViridianRegion? region,QuestItemsCatalog? questItems=null,PretMartMetatiles? metatiles=null,bool captureEnabled=false,PretViridianCenter? center=null,PretOldManTutorialContent? oldMan=null,bool partyTraining=false,PretForestRegion? forest=null,PretForestPokemon? forestPokemon=null,bool forestTrainers=false,PretPewterRegion? pewter=null,PretPewterPokemon? pewterPokemon=null,PewterMachineCatalog? machines=null,PretEarlyShopDocument? earlyShop=null,bool earlyStarter=false,bool earlyParty=false,PretPokemonStorageSource? pokemonStorage=null,PretEarlyPickups? fieldPickups=null,PretEarlyRepelDocument? repel=null,PretTownMap? townMap=null,PretOakRating? oakRating=null,PretPokedexMenu? oakPokedex=null,PretRoute22Region? route22=null,PretRoute22Pokemon? route22Pokemon=null,PretRoute3Region? route3=null,PretRoute3Pokemon? route3Pokemon=null,PretMagikarpContract? magikarp=null,PretMtMoonRegion? mtMoon=null,PretMtMoonPokemon? mtMoonPokemon=null,PretMtMoonItemsDocument? mtMoonItems=null,PretCeruleanRegion? cerulean=null,PretCeruleanPokemon? ceruleanPokemon=null,PretBillRegion? bill=null,PretBillPokemon? billPokemon=null,PretBillItemsDocument? billItems=null,BillTrainerCatalog? billTrainers=null,PretVermilionRegion? vermilion=null,PretVermilionPokemon? vermilionPokemon=null,VermilionTrainerCatalog? vermilionTrainers=null,PretSsAnneRegion? ssAnne=null,PretSsAnnePokemon? ssAnnePokemon=null,SsAnneTrainerCatalog? ssAnneTrainers=null,PretSsAnneItemsDocument? ssAnneItems=null,PretVermilionGymRegion? vermilionGym=null,VermilionGymTrainerCatalog? vermilionGymTrainers=null,PretCityServices? cityServices=null,PretOldRod? oldRod=null,PretRoute11Region? route11=null,PretRoute11Pokemon? route11Pokemon=null,PretRoute11ItemsDocument? route11Items=null,PretRoute11Encounters? route11Encounters=null,Route11TrainerCatalog? route11Trainers=null)
     {
+        Route11Region=route11;Route11Pokemon=route11Pokemon;Route11Items=route11Items;Route11Encounters=route11Encounters;Route11Trainers=route11Trainers;
         CityServices=cityServices;OldRod=oldRod;
         VermilionGymRegion=vermilionGym;VermilionGymTrainers=vermilionGymTrainers;
         SsAnneRegion=ssAnne;SsAnnePokemon=ssAnnePokemon;SsAnneTrainers=ssAnneTrainers;
@@ -126,6 +127,8 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(mtMoonItems is not null)FieldPickups=FieldPickups.AddRange(MtMoonPickupDefinitions(mtMoonItems,earlyShop!.Catalog,machines!,scripts));
         if(billItems is not null)FieldPickups=FieldPickups.AddRange(BillPickupDefinitions(billItems,machines!,scripts));
         if(ssAnneItems is not null)FieldPickups=FieldPickups.AddRange(SsAnnePickupDefinitions(ssAnneItems,machines!,earlyShop!.Catalog,scripts));
+        if(route11Items is not null)FieldPickups=FieldPickups.AddRange(Route11PickupDefinitions(route11Items,scripts));
+        if(route11Encounters is not null)LandEncounters=LandEncounters!.ToImmutableDictionary().AddRange(route11Encounters.Tables);
         var metatileDefinitions=metatiles?.Definitions.ToDictionary(x=>x.Key,x=>new FieldMetatileDefinition(x.Key,x.Value.Behavior,x.Value.Terrain,x.Value.EncounterType,x.Value.LayerType));
         if(vermilionGym is not null)
         {
@@ -136,11 +139,12 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
                 metatileDefinitions.TryAdd(id,new(id,tile.Behavior,tile.Terrain,tile.EncounterType,tile.LayerType));
         }
         MetatileDefinitions=metatileDefinitions;
-        ConnectedFieldMaps=RegionEnabled?maps.ToImmutableDictionary(x=>x.Key,x=>vermilionGym is not null&&x.Key.Value=="map.vermilion-city-gym"?PretVermilionGymRegion.ConnectedMap(x.Value):ssAnne is not null?PretSsAnneRegion.ConnectedMap(x.Value):vermilion is not null?PretVermilionRegion.ConnectedMap(x.Value):bill is not null?PretBillRegion.ConnectedMap(x.Value):cerulean is not null?PretCeruleanRegion.ConnectedMap(x.Value):mtMoon is not null?PretMtMoonRegion.ConnectedMap(x.Value):route3 is not null?PretRoute3Region.ConnectedMap(x.Value):route22 is not null?PretRoute22Region.ConnectedMap(x.Value):pewter is not null?PretPewterRegion.ConnectedMap(x.Value):forest is null?PretViridianRegion.ConnectedMap(x.Value):PretForestRegion.ConnectedMap(x.Value)):null;
+        ConnectedFieldMaps=RegionEnabled?maps.ToImmutableDictionary(x=>x.Key,x=>vermilionGym is not null&&x.Key.Value=="map.vermilion-city-gym"?PretVermilionGymRegion.ConnectedMap(x.Value):route11 is not null?PretRoute11Region.ConnectedMap(x.Value):ssAnne is not null?PretSsAnneRegion.ConnectedMap(x.Value):vermilion is not null?PretVermilionRegion.ConnectedMap(x.Value):bill is not null?PretBillRegion.ConnectedMap(x.Value):cerulean is not null?PretCeruleanRegion.ConnectedMap(x.Value):mtMoon is not null?PretMtMoonRegion.ConnectedMap(x.Value):route3 is not null?PretRoute3Region.ConnectedMap(x.Value):route22 is not null?PretRoute22Region.ConnectedMap(x.Value):pewter is not null?PretPewterRegion.ConnectedMap(x.Value):forest is null?PretViridianRegion.ConnectedMap(x.Value):PretForestRegion.ConnectedMap(x.Value)):null;
         _definitions=maps.ToImmutableDictionary(x=>x.Key,x=>Definition(x.Value));
     }
-    public static PretCampaignCatalog Load(string projectRoot,bool includeStarterEvents=false,bool includeFirstBattle=false,bool includeOpeningItems=false,bool includeViridianRegion=false,bool includeParcelQuest=false,bool includeCapture=false,bool includeViridianCenter=false,bool includeOldManTutorial=false,bool includePartyTraining=false,bool includeForest=false,bool includeForestTrainers=false,bool includePewter=false,bool includeEarlyShop=false,bool includeEarlyStarter=false,bool includeEarlyParty=false,bool includePokemonStorage=false,bool includeFieldPickups=false,bool includeRepel=false,bool includeTownMap=false,bool includeOakRating=false,bool includeRoute22=false,bool useCompactMapData=false,bool includeRoute3=false,bool includeMagikarp=false,bool includeMtMoon=false,bool includeCerulean=false,bool includeBill=false,bool includeVermilion=false,bool includeSsAnne=false,bool includeVermilionGym=false,bool includeCityServices=false)
+    public static PretCampaignCatalog Load(string projectRoot,bool includeStarterEvents=false,bool includeFirstBattle=false,bool includeOpeningItems=false,bool includeViridianRegion=false,bool includeParcelQuest=false,bool includeCapture=false,bool includeViridianCenter=false,bool includeOldManTutorial=false,bool includePartyTraining=false,bool includeForest=false,bool includeForestTrainers=false,bool includePewter=false,bool includeEarlyShop=false,bool includeEarlyStarter=false,bool includeEarlyParty=false,bool includePokemonStorage=false,bool includeFieldPickups=false,bool includeRepel=false,bool includeTownMap=false,bool includeOakRating=false,bool includeRoute22=false,bool useCompactMapData=false,bool includeRoute3=false,bool includeMagikarp=false,bool includeMtMoon=false,bool includeCerulean=false,bool includeBill=false,bool includeVermilion=false,bool includeSsAnne=false,bool includeVermilionGym=false,bool includeCityServices=false,bool includeRoute11=false)
     {
+        if(includeRoute11&&!includeCityServices)throw new ArgumentException("Route11 requires the complete City services profile.");
         if(includeCityServices&&!includeVermilionGym)throw new ArgumentException("City services require the complete Vermilion Gym profile.");
         if(includeVermilionGym&&!includeSsAnne)throw new ArgumentException("Vermilion Gym requires the complete S.S. Anne profile.");
         if(includeSsAnne&&!includeVermilion)throw new ArgumentException("S.S. Anne requires the complete Vermilion profile.");
@@ -151,7 +155,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(includeMagikarp&&!includeRoute3)throw new ArgumentException("Magikarp requires the complete Route3 profile.");
         var magikarp=includeMagikarp?PretMagikarpContract.Load(projectRoot):null;
         if(includeRoute3&&!includeRoute22)throw new ArgumentException("Route3 requires the complete Route22 profile.");
-        var runtimeMaps=useCompactMapData?PretRuntimeMapCatalog.Load(Path.Combine(projectRoot,includeCityServices?PretCityServicesRuntimeMaps.DirectoryName:includeVermilionGym?PretVermilionGymRuntimeMaps.DirectoryName:includeSsAnne?"content/generated/runtime-ssanne-maps":includeVermilion?"content/generated/runtime-vermilion-maps":includeBill?"content/generated/bill-region/runtime-maps":includeCerulean?"content/generated/cerulean-region/runtime-maps":includeMtMoon?"content/generated/mtmoon-region/runtime-maps":includeRoute3?"content/generated/runtime-maps-route3":"content/generated/runtime-maps"),includeCityServices?PretCityServicesRuntimeMaps.ManifestSha256:includeVermilionGym?PretVermilionGymRuntimeMaps.ManifestSha256:includeSsAnne?PretSsAnneRuntimeMaps.ManifestSha256:includeVermilion?PretVermilionRegion.RuntimeManifestSha256:includeBill?PretRuntimeMapCatalog.BillManifestSha256:includeCerulean?PretRuntimeMapCatalog.CeruleanManifestSha256:includeMtMoon?PretRuntimeMapCatalog.MtMoonManifestSha256:includeRoute3?PretRuntimeMapCatalog.Route3ManifestSha256:PretRuntimeMapCatalog.PinnedManifestSha256):null;
+        var runtimeMaps=useCompactMapData?PretRuntimeMapCatalog.Load(Path.Combine(projectRoot,includeRoute11?PretRoute11RegionRuntimeMaps.DirectoryName:includeCityServices?PretCityServicesRuntimeMaps.DirectoryName:includeVermilionGym?PretVermilionGymRuntimeMaps.DirectoryName:includeSsAnne?"content/generated/runtime-ssanne-maps":includeVermilion?"content/generated/runtime-vermilion-maps":includeBill?"content/generated/bill-region/runtime-maps":includeCerulean?"content/generated/cerulean-region/runtime-maps":includeMtMoon?"content/generated/mtmoon-region/runtime-maps":includeRoute3?"content/generated/runtime-maps-route3":"content/generated/runtime-maps"),includeRoute11?PretRoute11RegionRuntimeMaps.ManifestSha256:includeCityServices?PretCityServicesRuntimeMaps.ManifestSha256:includeVermilionGym?PretVermilionGymRuntimeMaps.ManifestSha256:includeSsAnne?PretSsAnneRuntimeMaps.ManifestSha256:includeVermilion?PretVermilionRegion.RuntimeManifestSha256:includeBill?PretRuntimeMapCatalog.BillManifestSha256:includeCerulean?PretRuntimeMapCatalog.CeruleanManifestSha256:includeMtMoon?PretRuntimeMapCatalog.MtMoonManifestSha256:includeRoute3?PretRuntimeMapCatalog.Route3ManifestSha256:PretRuntimeMapCatalog.PinnedManifestSha256):null;
         if(includeRoute22&&!includeOakRating)throw new ArgumentException("Route22 requires the complete Oak rating profile.");
         if(includeOakRating&&!includeTownMap)throw new ArgumentException("Oak rating requires the complete Town Map profile.");
         var route22=includeRoute22?PretRoute22Region.Load(projectRoot,runtimeMaps):null;
@@ -160,6 +164,11 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         var route22Pokemon=includeRoute22?PretRoute22Pokemon.Load(projectRoot,includeSourceCryWaves:false,pokedexMenu:oakPokedex):null;
         var route3Pokemon=includeRoute3?PretRoute3Pokemon.Load(projectRoot,pokedexMenu:oakPokedex):null;
         var ceruleanPokemon=includeCerulean?PretCeruleanPokemon.Load(projectRoot,pokedexMenu:oakPokedex):null;
+        var route11=includeRoute11?PretRoute11Region.Load(projectRoot,runtimeMaps):null;
+        var route11Pokemon=includeRoute11?PretRoute11Pokemon.Load(projectRoot,pokedexMenu:oakPokedex):null;
+        var route11Items=includeRoute11?PretRoute11Items.LoadProject(projectRoot):null;
+        var route11Encounters=includeRoute11?PretRoute11Encounters.Load(projectRoot):null;
+        var route11Trainers=includeRoute11?PretRoute11Trainers.Load(projectRoot):null;
         var cityServices=includeCityServices?PretCityServices.Load(projectRoot,runtimeMaps):null;
         var oldRod=includeCityServices?PretOldRod.Load(projectRoot):null;
         var vermilionGym=includeVermilionGym?PretVermilionGymRegion.Load(projectRoot,runtimeMaps):null;
@@ -215,6 +224,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(ssAnne is not null)maps=maps.AddRange(ssAnne.NewMaps);
         if(vermilionGym is not null)maps=maps.AddRange(vermilionGym.NewMaps);
         if(cityServices is not null)maps=maps.AddRange(cityServices.NewMaps);
+        if(route11 is not null)maps=maps.AddRange(route11.NewMaps);
         var sources=new List<PretSourceScriptFile>();var textFiles=new List<string>();var constants=new Dictionary<string,int>(StringComparer.Ordinal);
         foreach(var map in maps.Values.OrderBy(x=>x.Id.Value,StringComparer.Ordinal))
         {
@@ -517,6 +527,25 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
                 constants[symbol]=value;
             }
         }
+        if(route11 is not null)
+        {
+            hashes.AddRange(route11.AdditionalSourceHashes);
+            hashes.AddRange(route11Encounters!.AdditionalSourceHashes);
+            hashes.Add("route11-application:fr-route11-campaign-v1");
+            var paths=sources.ToDictionary(x=>x.Path,StringComparer.Ordinal);
+            foreach(var source in route11.Scripts)
+            {
+                if(paths.TryGetValue(source.Path,out var prior))
+                {if(prior.SourceRef.Sha256!=source.SourceRef.Sha256||prior.Text!=source.Text)throw new InvalidDataException("Conflicting Route11 source: "+source.Path);continue;}
+                paths.Add(source.Path,source);sources.Add(source);textFiles.Add(source.Text);
+            }
+            foreach(var text in route11.TextSources.Values)if(!textFiles.Contains(text,StringComparer.Ordinal))textFiles.Add(text);
+            foreach(var (symbol,value) in route11.Constants)
+            {
+                if(constants.TryGetValue(symbol,out var prior)&&prior!=value)throw new InvalidDataException("Conflicting Route11 constant: "+symbol);
+                constants[symbol]=value;
+            }
+        }
         CampaignPokemonContent? pokemonContent=null;
         if(includeStarterEvents)
         {
@@ -622,15 +651,23 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
             hashes.Add("ssanne-trainers:"+PretSsAnneTrainers.LockSha256+":"+PretSsAnneTrainers.GeneratedSha256);
             foreach(var (symbol,value) in ssAnnePokemon.Constants)constants[symbol]=value;
         }
+        if(route11Pokemon is not null)
+        {
+            pokemonContent=pokemonContent! with{Catalog=route11Pokemon.Catalog,SpeciesNames=route11Pokemon.SpeciesNames,AllowFreezeStatus=true};
+            hashes.AddRange(route11Pokemon.AdditionalSourceHashes);
+            hashes.Add("route11-trainers:"+PretRoute11Trainers.LockSha256+":"+PretRoute11Trainers.GeneratedSha256);
+            foreach(var (symbol,value) in route11Pokemon.Constants)constants[symbol]=value;
+        }
         if(includeVermilionGym)
         {
-            pokemonContent=pokemonContent! with{Catalog=PretVermilionGymTrainers.ExtendPokemon(projectRoot,ssAnnePokemon!.Catalog)};
+            pokemonContent=pokemonContent! with{Catalog=PretVermilionGymTrainers.ExtendPokemon(projectRoot,route11Pokemon?.Catalog??ssAnnePokemon!.Catalog,route11Rules:includeRoute11)};
             hashes.Add("vermilion-gym-trainers:"+PretVermilionGymTrainers.LockSha256+":"+PretVermilionGymTrainers.GeneratedSha256);
         }
         var mtMoonItems=includeMtMoon?PretMtMoonItems.LoadProject(projectRoot):null;
         if(mtMoonItems is not null)hashes.Add("mtmoon-items:"+PretMtMoonItems.GeneratedSha256+":"+PretMtMoonItems.LockSha256);
         var machines=includeSsAnne?PretSsAnneMachines.LoadCatalogProject(projectRoot):includeVermilion?PretVermilionMachines.LoadCatalogProject(projectRoot):includeBill?PretBillMachines.LoadCatalogProject(projectRoot):includeCerulean?PretCeruleanMachines.LoadCatalogProject(projectRoot):includeMtMoon?PretPewterMachines.LoadMtMoonProject(projectRoot):includeRoute3?PretPewterMachines.LoadRoute3Project(projectRoot):includeRoute22?PretPewterMachines.LoadRoute22Project(projectRoot):includePewter?PretPewterMachines.LoadProject(projectRoot):null;
         if(vermilionGymAssets is not null)machines=vermilionGymAssets.ExtendMachines(machines!);
+        if(includeRoute11){machines=PretRoute11Machines.LoadCatalogProject(projectRoot);hashes.Add("route11-machines:"+PretRoute11Machines.GeneratedSha256+":"+PretRoute11Machines.LockSha256);}
         if(includeSsAnne)hashes.Add("ssanne-machines:"+PretSsAnneMachines.GeneratedSha256+":"+PretSsAnneMachines.LockSha256);
         if(includeVermilion)hashes.Add("vermilion-machines:"+PretVermilionMachines.GeneratedSha256+":"+PretVermilionMachines.LockSha256);
         if(includeBill)hashes.Add("bill-machines:"+PretBillMachines.GeneratedSha256+":"+PretBillMachines.LockSha256);
@@ -666,6 +703,11 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
             if(pewterPokemon is not null)foreach(var (move,name) in pewterPokemon.MoveNames)names[move.Value]=name;
             if(route3Pokemon is not null)foreach(var (move,name) in route3Pokemon.MoveNames)names[move.Value]=name;
             if(mtMoonPokemon is not null)foreach(var (move,name) in mtMoonPokemon.MoveNames)names[move.Value]=name;
+            if(route11Pokemon is not null)foreach(var (move,name) in route11Pokemon.MoveNames)
+            {
+                if(names.TryGetValue(move.Value,out var prior)&&prior!=name)throw new InvalidDataException("Conflicting Route11 move name: "+move.Value);
+                names[move.Value]=name;
+            }
             if(includeVermilionGym)foreach(var (move,name) in PretVermilionGymTrainers.LoadMoveNames(projectRoot))
             {
                 if(names.TryGetValue(move.Value,out var prior)&&prior!=name)throw new InvalidDataException("Conflicting Vermilion Gym move name: "+move.Value);
@@ -732,6 +774,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(mtMoonItems is not null)earlyShop=earlyShop! with{Catalog=includeBill?PretBillItems.LoadShopProject(projectRoot):includeCerulean?PretCeruleanItems.LoadShopProject(projectRoot):PretMtMoonItems.LoadShopProject(projectRoot)};
         if(vermilion is not null)earlyShop=earlyShop! with{Catalog=VermilionShop(earlyShop.Catalog,vermilion)};
         if(ssAnne is not null){earlyShop=earlyShop! with{Catalog=PretSsAnneItems.LoadShopProject(projectRoot,earlyShop.Catalog)};hashes.Add("ssanne-items:"+PretSsAnneItems.GeneratedSha256+":"+PretSsAnneItems.LockSha256);}
+        if(includeRoute11){earlyShop=earlyShop! with{Catalog=PretRoute11Items.LoadShopProject(projectRoot,earlyShop.Catalog)};hashes.Add("route11-items:"+PretRoute11Items.GeneratedSha256+":"+PretRoute11Items.LockSha256);}
         if(earlyShop is not null)hashes.Add("early-shop:"+PretEarlyShop.GeneratedSha256);
         if(includeCerulean)hashes.Add("cerulean-items:"+PretCeruleanItems.GeneratedSha256+":"+PretCeruleanItems.LockSha256);
         if(includeBill)hashes.Add("bill-items:"+PretBillItems.GeneratedSha256+":"+PretBillItems.LockSha256);
@@ -833,7 +876,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
             foreach(var label in magikarp.RequiredCommonTextLabels)if(!bank.ContainsKey(label))throw new InvalidDataException("magikarp_common_text_missing: "+label);
         }
         var version=Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n",hashes))));
-        return new(maps,compiled,bank.ToImmutable(),version,pokemonContent,battleContent,openingItems,region,questItems,metatiles,includeCapture,center,oldMan,includePartyTraining,forest,forestPokemon,includeForestTrainers,pewter,pewterPokemon,machines,earlyShop,includeEarlyStarter,includeEarlyParty,pokemonStorage,fieldPickups,repel,townMap,oakRating,oakPokedex,route22,route22Pokemon,route3,route3Pokemon,magikarp,mtMoon,mtMoonPokemon,mtMoonItems,cerulean,ceruleanPokemon,bill,billPokemon,billItems,billTrainers,vermilion,vermilionPokemon,vermilionTrainers,ssAnne,ssAnnePokemon,ssAnneTrainers,ssAnneItems,vermilionGym,vermilionGymTrainers,cityServices,oldRod);
+        return new(maps,compiled,bank.ToImmutable(),version,pokemonContent,battleContent,openingItems,region,questItems,metatiles,includeCapture,center,oldMan,includePartyTraining,forest,forestPokemon,includeForestTrainers,pewter,pewterPokemon,machines,earlyShop,includeEarlyStarter,includeEarlyParty,pokemonStorage,fieldPickups,repel,townMap,oakRating,oakPokedex,route22,route22Pokemon,route3,route3Pokemon,magikarp,mtMoon,mtMoonPokemon,mtMoonItems,cerulean,ceruleanPokemon,bill,billPokemon,billItems,billTrainers,vermilion,vermilionPokemon,vermilionTrainers,ssAnne,ssAnnePokemon,ssAnneTrainers,ssAnneItems,vermilionGym,vermilionGymTrainers,cityServices,oldRod,route11,route11Pokemon,route11Items,route11Encounters,route11Trainers);
     }
     private FieldMapDefinition Definition(PretWorldMap map)
     {
@@ -857,7 +900,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
     public bool AllowsCycling(MapId map)=>SourceMaps.TryGetValue(map,out var source)&&source.Events.GetProperty("allow_cycling").GetBoolean();
     public FieldMapDefinition MapDefinition(MapId id)=>_definitions[id];
     public MapId MapFromSourceSymbol(string symbol)=>SourceMaps.Values.FirstOrDefault(x=>x.SourceMapSymbol==symbol)?.Id
-        ?? (VermilionGymEnabled&&symbol=="MAP_VERMILION_CITY_GYM"?new MapId("map.vermilion-city-gym"):SsAnneEnabled?PretSsAnneRegion.MapIdFromSourceSymbol(symbol):BillEnabled?PretBillRegion.MapIdFromSourceSymbol(symbol):CeruleanEnabled?PretCeruleanRegion.MapIdFromSourceSymbol(symbol):MtMoonEnabled?PretMtMoonRegion.MapIdFromSourceSymbol(symbol):Route3Enabled?PretRoute3Region.MapIdFromSourceSymbol(symbol):Route22Enabled?PretRoute22Region.MapIdFromSourceSymbol(symbol):PewterEnabled?PretPewterRegion.MapIdFromSourceSymbol(symbol):ForestEnabled?PretForestRegion.MapIdFromSourceSymbol(symbol):ViridianCenterEnabled?PretViridianCenter.MapIdFromSourceSymbol(symbol):RegionEnabled?PretViridianRegion.MapIdFromSourceSymbol(symbol):throw new InvalidDataException("Source map is not loaded: "+symbol));
+        ?? (VermilionGymEnabled&&symbol=="MAP_VERMILION_CITY_GYM"?new MapId("map.vermilion-city-gym"):Route11Enabled?PretRoute11Region.MapIdFromSourceSymbol(symbol):SsAnneEnabled?PretSsAnneRegion.MapIdFromSourceSymbol(symbol):BillEnabled?PretBillRegion.MapIdFromSourceSymbol(symbol):CeruleanEnabled?PretCeruleanRegion.MapIdFromSourceSymbol(symbol):MtMoonEnabled?PretMtMoonRegion.MapIdFromSourceSymbol(symbol):Route3Enabled?PretRoute3Region.MapIdFromSourceSymbol(symbol):Route22Enabled?PretRoute22Region.MapIdFromSourceSymbol(symbol):PewterEnabled?PretPewterRegion.MapIdFromSourceSymbol(symbol):ForestEnabled?PretForestRegion.MapIdFromSourceSymbol(symbol):ViridianCenterEnabled?PretViridianCenter.MapIdFromSourceSymbol(symbol):RegionEnabled?PretViridianRegion.MapIdFromSourceSymbol(symbol):throw new InvalidDataException("Source map is not loaded: "+symbol));
     public ImmutableArray<FieldProgramCondition> Conditions(string table)=>_scripts.MapConditions.TryGetValue(table,out var list)?list.Select(x=>new FieldProgramCondition(x.Variable,int.Parse(x.Expected,System.Globalization.CultureInfo.InvariantCulture),x.Target)).ToImmutableArray():[];
     public ImmutableArray<string> Movement(string program)=>_scripts.Movements.TryGetValue(program,out var list)?list.Select(x=>x.Opcode).ToImmutableArray():throw new InvalidDataException("Missing movement program: "+program);
     public StoryProgram? FindProgram(string id)=>_scripts.FindProgram(id);

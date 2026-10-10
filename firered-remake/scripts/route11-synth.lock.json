@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "priorManifest": {
+    "path": "content/generated/synth-audio/manifest.json",
+    "byteLength": 88374,
+    "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df",
+    "cueCount": 246
+  },
+  "files": [
+    {
+      "path": "data/maps/DiglettsCave_B1F/map.json",
+      "byteLength": 847,
+      "sha256": "329777a717cccb8a139dd74e7a6b4eb2b508dd0f181e09471a8f9557e7d4c5b5",
+      "gitBlobSha1": "081e09b457bc946d2045c311ea268f1036921b97"
+    },
+    {
+      "path": "data/maps/DiglettsCave_NorthEntrance/map.json",
+      "byteLength": 1257,
+      "sha256": "6e7a37b76da2a80c95b0c69e5a286f725f9a0314ad17e366627c919ecaa25674",
+      "gitBlobSha1": "8c3705955c8c272f2d8eda3fdda5e16d1f395ba4"
+    },
+    {
+      "path": "data/maps/DiglettsCave_SouthEntrance/map.json",
+      "byteLength": 1263,
+      "sha256": "4e4c942bc48ac11bb7f1737f1436c5a837edae0a11d2df7b7764df81a28d1e85",
+      "gitBlobSha1": "c1758eeaecabe04d9e28cb0b4ce2eb3896b5ed8d"
+    },
+    {
+      "path": "data/maps/Route11/map.json",
+      "byteLength": 6893,
+      "sha256": "9626c6641d153831486cec66e04e91e846f66982aab569fed1e23269475cf826",
+      "gitBlobSha1": "8bceede4321b4a0d7980c60b1db0910db8a33754"
+    },
+    {
+      "path": "data/maps/Route11_EastEntrance_1F/map.json",
+      "byteLength": 2014,
+      "sha256": "83f039a9264897da1a69c654d19f99d89727c8da48f04ad64643eaf1075e3c7e",
+      "gitBlobSha1": "e6a85b2a25b00bd00fe55e2136cebc5c39412469"
+    },
+    {
+      "path": "data/maps/Route11_EastEntrance_2F/map.json",
+      "byteLength": 1957,
+      "sha256": "5a9908abe3b39d46f369e72559bed8deec0689b977452b8ec099d1722df5950e",
+      "gitBlobSha1": "50a7c6f587cddb0d5ecdff057e2bed5819c9dd64"
+    },
+    {
+      "path": "data/maps/Route2/map.json",
+      "byteLength": 5182,
+      "sha256": "2562e3736b600c95b8c0a4c2a1bb3fb062f5c50208bebc43cd4303328ccda7ea",
+      "gitBlobSha1": "3f232d8d16b4a96ec74b41a28a0ec401c38a2ba8"
+    },
+    {
+      "path": "data/maps/Route2_EastBuilding/map.json",
+      "byteLength": 1858,
+      "sha256": "e331bbdde97690384edcf634958ff6196713e7ffa81772b44fb33313691c4b70",
+      "gitBlobSha1": "e7d96be6e2e681b9edd3d44d95f74f812cc7ee97"
+    },
+    {
+      "path": "data/maps/Route2_House/map.json",
+      "byteLength": 1690,
+      "sha256": "b91c1bcebd5fb5c931427db85091996ad4130ee892e868474b43342b71625328",
+      "gitBlobSha1": "a688bf7800822299d166e72c468a01b92097ff6b"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "byteLength": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+    },
+    {
+      "path": "include/constants/sound.h",
+      "byteLength": 2051,
+      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
+      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee"
+    },
+    {
+      "path": "include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+    },
+    {
+      "path": "sound/cry_tables.inc",
+      "byteLength": 16533,
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
+      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/diglett.wav",
+      "byteLength": 9728,
+      "sha256": "8a00bdcce959359aab06f7c2b8bf4c59693224cf2a0cc80381b08c8aacb16925",
+      "gitBlobSha1": "ba098f64a65007c04252e26c6ec88253a1d3237f"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/dugtrio.wav",
+      "byteLength": 9718,
+      "sha256": "12722d5756e3c2aceffaf5213e7b355b8c2ffe264afb6a85705f647914996e4c",
+      "gitBlobSha1": "59be4c5a7fca28395b5c0bb55a22aa3d1683de8e"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/magneton.wav",
+      "byteLength": 11946,
+      "sha256": "1aba430c0e37831639a91618b6885a86a364a3418d5f1aa31e847b0e055328e9",
+      "gitBlobSha1": "12513343d80803c1b3de287199ee8499db194c1d"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/poliwag.wav",
+      "byteLength": 5594,
+      "sha256": "7ea279a6fbedbefe8f68caf154037b320af8d4611628ef3c13928dfe99119e3a",
+      "gitBlobSha1": "64fe686c9367ad16d0df20f62c2952fa6e231e77"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/poliwhirl.wav",
+      "byteLength": 3386,
+      "sha256": "448c13391bb4694b1a97e7637213aadf0787e5236a0c73f29c39236f8f3f9de8",
+      "gitBlobSha1": "924bb457cddde30d74a1804d50305adf1eb82706"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/vulpix.wav",
+      "byteLength": 11902,
+      "sha256": "b922ff8f19598b75d3186c59d33024506bd878dc38cb2bb5859a31fb2dad69d0",
+      "gitBlobSha1": "895bf7f3581d9a84082e7e88b95bdc0f00d150f9"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "byteLength": 9204,
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+    },
+    {
+      "path": "sound/songs/midi/mus_route11.mid",
+      "byteLength": 9427,
+      "sha256": "c167b80ff820ce72025fac24793c97c639bf40f7b326b58cf882df5fb9967af0",
+      "gitBlobSha1": "3fe21c381230ca984cefd24289a3816dd401dd80"
+    },
+    {
+      "path": "src/sound.c",
+      "byteLength": 15232,
+      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958",
+      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "content/generated/synth-audio/firered.pack",
+      "byteLength": 2565436,
+      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+    },
+    {
+      "path": "content/generated/synth-audio/manifest.json",
+      "byteLength": 88374,
+      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
+    },
+    {
+      "path": "content/generated/synth-audio/normal-cries.bin",
+      "byteLength": 6188,
+      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+    },
+    {
+      "path": "scripts/audit-early-audio.py",
+      "byteLength": 21672,
+      "sha256": "e7db8de67b65dcc69dc6d7c41153340c9204913bcb5a3d35f585b5e9ab8525c5"
+    },
+    {
+      "path": "scripts/synth-route11-cues.json",
+      "byteLength": 2653,
+      "sha256": "0631c99d955f0eddaea29dbc65b56df14e14847ee1c9bc5d072c7ccaf39bf4b1"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Cry.cs",
+      "byteLength": 4642,
+      "sha256": "5e674c5eea1afe62a0e669b6398ba3b48dcbc572cc06c3e9141b044a9a6602d7"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_CryCatalog.cs",
+      "byteLength": 2705,
+      "sha256": "0e86f47bb0a7ba4e1f3e0fa0dcf447aedc880c789305071c68c9111db3bf9e3b"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Profiles.cs",
+      "byteLength": 2372,
+      "sha256": "8f71ddb91c0039221beeda005861d2c1e4f8cfeab417f1fd545970a21e3ec413"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_PsgSynth.cs",
+      "byteLength": 4767,
+      "sha256": "665bcf8d58959b5d5ca51ab4771b77d20a4c23ca946d9acce3caee34bab7988e"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Resources.cs",
+      "byteLength": 2676,
+      "sha256": "0846dccd72f2c0f446aaa82fc2c5846ea9e6b58eaa66cae9ea653d71c1f26295"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Sequence.cs",
+      "byteLength": 9512,
+      "sha256": "3cba6ead2cf1828211b2257a163ae8657d39cab36de223fef46a65e4ebb9f7b3"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Synth.cs",
+      "byteLength": 37803,
+      "sha256": "7cd6f81faed247aad4245b9d79c3dc954904ec3d57b515aafee1929ad815832e"
+    },
+    {
+      "path": "src/Game.Godot/SynthManifestIdentity.cs",
+      "byteLength": 394,
+      "sha256": "1cc01c4c0830e1de0feccee7d14101e0db493cdb28d4b50a28725b6564fb477f"
+    }
+  ]
+}

@@ -12,6 +12,7 @@ public sealed partial class CampaignSession
         {
             _ when _content.SsAnneEnabled && sourceMap.StartsWith("SSAnne_",StringComparison.Ordinal)=>_content.MapFromSourceSymbol("MAP_"+System.Text.RegularExpressions.Regex.Replace(sourceMap,"([a-z])([A-Z])","$1_$2").ToUpperInvariant()),
             "VermilionCity_Gym" when _content.VermilionGymEnabled=>new("map.vermilion-city-gym"),
+            "Route11" when _content.Route11Enabled=>new("map.route-11"),
             "Route6" when _content.VermilionEnabled=>new("map.route-6"),
             "Route24"=>new("map.route-24"),"Route25"=>new("map.route-25"),
             "CeruleanCity"=>new("map.cerulean-city"),"CeruleanCity_Gym"=>new("map.cerulean-city-gym"),

@@ -9,7 +9,7 @@ internal static class Route11BattleScope
         "pret:MOVE_IMPRISON" or "pret:MOVE_MUD_SLAP" or "pret:MOVE_TRI_ATTACK" or "pret:MOVE_WILL_O_WISP" or "pret:MOVE_FLASH" or "pret:MOVE_RAIN_DANCE" or "pret:MOVE_SAND_TOMB" or "pret:MOVE_CONFUSE_RAY" or "pret:MOVE_FLAMETHROWER";
     internal static bool SupportsSpecies(SpeciesId species) => VermilionGymBattleScope.SupportsSpecies(species) || species.Value is
         "pret:SPECIES_DIGLETT" or "pret:SPECIES_DUGTRIO" or "pret:SPECIES_MAGNETON" or "pret:SPECIES_POLIWAG" or "pret:SPECIES_POLIWHIRL" or "pret:SPECIES_VULPIX";
-    internal static bool SupportsWildOpponent(int species) => VermilionBattleScope.SupportsWildOpponent(species) || species is 50 or 51;
+    internal static bool SupportsWildOpponent(int species) => VermilionBattleScope.SupportsWildOpponent(species) || species is 50 or 51 or 96;
     internal static bool SupportsHeldItem(string item) => SsAnneBattleScope.SupportsHeldItem(item) || item == "ITEM_X_DEFEND";
     internal static bool SupportsAbility(string ability) => SsAnneBattleScope.SupportsAbility(ability) || ability is "ABILITY_ARENA_TRAP" or "ABILITY_WATER_ABSORB" or "ABILITY_DAMP";
     internal static bool ValidSpecies(PokemonSpeciesDefinition s) => VermilionGymBattleScope.ValidSpecies(s) || s.SourceSpeciesId switch

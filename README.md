@@ -1,16 +1,14 @@
-# FireRed remake — source-only snapshot
+# FireRed remake: source-only private snapshots
 
-This private code archive exports fixed source snapshots, without the original repositories’ Git history:
+Current fixed source commits:
 
-- `firered-remake/`: `a08317fe445d44b12cc4100b645091f2427d2254`
+- `firered-remake/`: `52b9e8192ccedc78e5ac8d3d4ea6b07e26b6fcc8`
 - `firered-audio-player/`: `38b3b6ef421e3b3e3e3ced5cafa0d505859bdb26`
 
-Both projects are preserved as adjacent directories. Source code and project references are unchanged. Run project commands from their own directory; start with `firered-remake/README.md` and `firered-remake/dev`. The custom audio player’s core, command-line player, demo, source tools, and technical specifications are included. The game also includes its committed `OriginalAudioCore_*.cs` adapter sources.
+Both projects remain adjacent, with unchanged source logic and paths. Start in each project's README; run game commands from `firered-remake/`.
 
-## Resources and reproducibility
+This is not a runnable packaged game. Raw/generated resources, media, ROMs, saves, generated fixtures, recorded evidence, binaries, caches and old Git history are excluded. Restore required resources from the private stage backup or use available import recipes where supported. The resource reconstruction workflow is incomplete; this export does not promise full reproducibility or grant third-party resource rights. Some source tests cannot run without omitted inputs. No build or visible GUI verification is claimed by the export process.
 
-This is a source-only archive, not a runnable packaged game. Raw/generated game content, graphics, images, sound/music samples, ROMs, save files, recorded evidence, generated fixtures, caches, compiled binaries, and previous Git history are excluded. Some tests depend on intentionally omitted fixtures or resources and cannot run from this archive alone.
+`SOURCE_MANIFEST.json` indexes immutable baseline parts and ordered delta files. Resolve baseline records, remove each delta's deleted paths, then replace/add its upserted records. Unchanged records keep their original source commit; the top-level repositories map identifies this snapshot. Each source record includes exact size, SHA-256 and Git blob identity. Prior project documentation can refer to absent assets, local paths or historical commits.
 
-Restore required resources from the private stage backup, or rebuild the content using the pinned source-lock files and import recipes where available, before attempting full builds, gameplay or integration tests. This archive does not grant rights to obtain or distribute third-party game resources. Existing project documentation may describe files or historical commits absent from this snapshot; those references are retained for technical context.
-
-`SOURCE_MANIFEST.json` indexes `source-manifest/*.json`, which record source commit, original path, Git blob identity, size and SHA-256 for every unchanged exported source file. This README and the manifest are export metadata and do not attest to a successful build. No source logic was refactored for this export.
+`tools/source-sync/source_sync.py` performs offline fixed-object exports and incremental upload planning. It never uploads or stores credentials. See its README before use.

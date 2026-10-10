@@ -272,7 +272,7 @@ public partial class CampaignView
             _wildMenu == "medicine-target" && _session.BattleMedicineEnabled)
             return PointerRows(point, direction, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
         return _wildMenu is "actions" or "moves" && PointerGrid(point, direction, ref _wildCursor, _wildMenu == "moves",
-            _wildMenu == "actions" ? 4 : WildBattleRules.RequiresStruggle(battle.State.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
+            _wildMenu == "actions" ? 4 : WildBattleRules.RequiresStruggle(battle.State, Game.Domain.WildBattle.WildBattleSide.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
     }
 
     private bool MouseKey(Key key = Key.Enter)
@@ -434,6 +434,6 @@ public partial class CampaignView
             return MouseSelect(point,ref _wildCursor,_session.State.Party.Length+1,8,8,224,14);
         if (_wildMenu is "party" or "medicine-target") return MouseConfirm(point, new Rect2(8, 8, 224, 16));
         return _wildMenu is "actions" or "moves" && MouseGrid(point, ref _wildCursor, _wildMenu == "moves",
-            _wildMenu == "actions" ? 4 : WildBattleRules.RequiresStruggle(battle.State.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
+            _wildMenu == "actions" ? 4 : WildBattleRules.RequiresStruggle(battle.State, Game.Domain.WildBattle.WildBattleSide.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
     }
 }

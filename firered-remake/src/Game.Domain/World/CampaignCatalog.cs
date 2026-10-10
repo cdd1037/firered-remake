@@ -47,6 +47,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool CeruleanEnabled=>false;
     bool CityServicesEnabled=>false;
     bool Route11Enabled=>false;
+    Route11TrainerCatalog? Route11Trainers=>null;
     ImmutableArray<PewterMachineItem> CityServiceItems=>[];
     IReadOnlyDictionary<MapId,OldRodEncounterTable>? OldRodEncounters=>null;
     int? TerrainAt(MapId map,int x,int y)=>null;

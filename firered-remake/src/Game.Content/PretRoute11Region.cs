@@ -66,7 +66,7 @@ public sealed class PretRoute11Region
         "MAP_ROUTE11_EAST_ENTRANCE_1F" => new("map.route-11-east-entrance-1f"),
         "MAP_ROUTE11_EAST_ENTRANCE_2F" => new("map.route-11-east-entrance-2f"),
         "MAP_ROUTE12" => new("map.route-12"),
-        _ => PretVermilionRegion.MapIdFromSourceSymbol(symbol)
+        _ => PretSsAnneRegion.MapIdFromSourceSymbol(symbol)
     };
 
     public static Game.Domain.World.ConnectedFieldMap ConnectedMap(PretWorldMap map)

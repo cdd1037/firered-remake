@@ -40,12 +40,18 @@ public sealed partial class CampaignSession
 
     private CampaignActor? AdjacentFieldCutTree(CampaignState state)
     {
-        if(state.World.Player.MapId.Value!=FieldCutMap)return null;
-        var p=state.World.Player;var (dx,dy)=Delta(p.Facing);
-        return state.Actors.Values.SingleOrDefault(a=>a.SourceLocalId==7&&a.Active&&!a.Invisible&&
-            a.GraphicsId=="OBJ_EVENT_GFX_CUT_TREE"&&a.ScriptId=="EventScript_CutTree"&&a.HideFlag=="FLAG_TEMP_12"&&
-            a.X==19&&a.Y==24&&a.Elevation==3&&a.X==p.X+dx&&a.Y==p.Y+dy&&
-            (p.Elevation==0||p.Elevation==a.Elevation)&&!state.Script.Flags.GetValueOrDefault(a.HideFlag));
+        var p=state.World.Player;
+        if(p.MapId.Value!=FieldCutMap&&!(_content.Route11Enabled&&p.MapId.Value=="map.route-2"))return null;
+        bool Admitted(CampaignActor actor)=>p.MapId.Value==FieldCutMap
+            ? actor.SourceLocalId==7&&actor.X==19&&actor.Y==24&&actor.Elevation==3&&actor.HideFlag=="FLAG_TEMP_12"
+            : (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is
+                (1,16,62,3,"FLAG_TEMP_14") or (2,15,69,3,"FLAG_TEMP_13") or
+                (3,11,13,3,"FLAG_TEMP_15") or (4,18,26,3,"FLAG_TEMP_16");
+        var (dx,dy)=Delta(p.Facing);
+        return state.Actors.Values.SingleOrDefault(a=>Admitted(a)&&a.Active&&!a.Invisible&&
+            a.GraphicsId=="OBJ_EVENT_GFX_CUT_TREE"&&a.ScriptId=="EventScript_CutTree"&&
+            a.X==p.X+dx&&a.Y==p.Y+dy&&(p.Elevation==0||a.Elevation==0||p.Elevation==a.Elevation)&&
+            !state.Script.Flags.GetValueOrDefault(a.HideFlag));
     }
 
     private string? FieldCutCommandError(CampaignState state,int partyIndex)
@@ -130,7 +136,7 @@ public sealed partial class CampaignSession
                 RequireTree();if(state.CutEffect?.Phase!=FieldCutSourcePresentation.ShowMon)throw new InvalidDataException("field_cut_wait_without_effect");return true;
             case "applymovement":
                 RequireTree();
-                if(a.Length!=2||Value(a[0])!=7||a[1]!="Movement_CutTreeDown"||state.CutEffect?.Phase!=FieldCutSourcePresentation.TreeReady||
+                if(a.Length!=2||Value(a[0])!=AdjacentFieldCutTree(state)!.SourceLocalId||a[1]!="Movement_CutTreeDown"||state.CutEffect?.Phase!=FieldCutSourcePresentation.TreeReady||
                     !_content.Movement(a[1]).SequenceEqual(new[]{"cut_tree","step_end"}))throw new InvalidDataException("field_cut_movement_invalid");
                 var actor=state.Actors[state.CutEffect.ActorId];var position=new TilePosition(state.World.Player.MapId,actor.X,actor.Y,actor.Elevation,actor.Facing);
                 next=state with

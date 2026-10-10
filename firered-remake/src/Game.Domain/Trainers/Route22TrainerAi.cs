@@ -26,20 +26,20 @@ public static class Route22TrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-route22-rival-ai-semantic-v1";
 
-    public static Route22TrainerAiDecision Choose(PokemonCatalog catalog, Route22TrainerAiInput input, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false)
+    public static Route22TrainerAiDecision Choose(PokemonCatalog catalog, Route22TrainerAiInput input, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false)
     {
         Route22TrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
             new(code, "Input is outside the bounded Route22 early-rival AI profile."));
-        ssAnneRules |= vermilionGymRules;
+        vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
         ceruleanRules |= billRules;
         mtMoonRules |= ceruleanRules;
         route3Rules |= mtMoonRules;
-        string? error = Validate(catalog, input, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules);
+        string? error = Validate(catalog, input, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("route22_trainer_ai_rng_algorithm");
-        bool Usable(int slot) => route3Rules ? WildBattleRules.IsMoveSelectable(input.User, slot) : slot < input.User.Pokemon.Moves.Length && input.User.Pokemon.Moves[slot].CurrentPp > 0;
+        bool Usable(int slot) => route3Rules ? WildBattleRules.IsMoveSelectable(input.User, slot) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move)) : slot < input.User.Pokemon.Moves.Length && input.User.Pokemon.Moves[slot].CurrentPp > 0;
         if (!Enumerable.Range(0, 4).Any(Usable)) return Fault("route22_trainer_ai_struggle_required");
         var current = rng;
         var trace = ImmutableArray.CreateBuilder<RandomTrace>();
@@ -53,7 +53,7 @@ public static class Route22TrainerAi
         string Ability(int slot, string reason)
         {
             // Every get_ability instruction independently guesses; no accidental per-turn memoization.
-            bool trappedAbility = mtMoonRules && input.Target.Pokemon.AbilityId == "ABILITY_MAGNET_PULL";
+            bool trappedAbility = mtMoonRules && input.Target.Pokemon.AbilityId == "ABILITY_MAGNET_PULL" || route11Rules && input.Target.Pokemon.AbilityId == "ABILITY_ARENA_TRAP";
             bool guessed = input.KnownTargetAbility is null && !trappedAbility && targetSpecies.Ability2 != "ABILITY_NONE";
             string ability = input.KnownTargetAbility ?? (guessed
                 ? Draw($"route22-trainer.ai.slot.{slot}.ability.{reason}", 2) != 0 ? targetSpecies.Ability1 : targetSpecies.Ability2
@@ -73,7 +73,7 @@ public static class Route22TrainerAi
             for (int slot = 0; slot < input.User.Pokemon.Moves.Length; slot++)
             {
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1) predictions[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot]);
+                if (move.Power > 1) predictions[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain);
             }
             void Score(int slot, int change) => scores[slot] = Math.Max(0, scores[slot] + change);
             for (int slot = 0; slot < 4; slot++)
@@ -162,13 +162,16 @@ public static class Route22TrainerAi
         "TYPE_NORMAL" or "TYPE_FIGHTING" or "TYPE_GROUND" or "TYPE_ROCK" or "TYPE_BUG" or "TYPE_STEEL";
 
     private static int Predict(PokemonCatalog catalog, WildBattleCombatant user, WildBattleCombatant target,
-        PokemonMoveDefinition move, int percent)
+        PokemonMoveDefinition move, int percent, bool rain = false)
     {
         int attack = WildBattleDamage.Stat(user.Pokemon.Stats.Attack, user.AttackStage);
         int defense = WildBattleDamage.Stat(target.Pokemon.Stats.Defense, target.DefenseStage);
         int value = checked(attack * move.Power * (2 * user.Pokemon.Level / 5 + 2)) / defense / 50;
         if (user.Status == WildBattleStatus.Burn) value /= 2;
-        value = Math.Max(1, value) + 2;
+        value = Math.Max(1, value);
+        if (rain && move.Type == "TYPE_FIRE") value /= 2;
+        if (rain && move.Type == "TYPE_WATER") value = value * 15 / 10;
+        value += 2;
         ElementType Type(string symbol) => Enum.Parse<ElementType>(symbol[5..], true);
         var type = Type(move.Type);
         var a = catalog.Species[user.Pokemon.Species]; var d = catalog.Species[target.Pokemon.Species];
@@ -181,14 +184,14 @@ public static class Route22TrainerAi
         return Math.Max(1, value * percent / 100);
     }
 
-    private static string? Validate(PokemonCatalog? catalog, Route22TrainerAiInput? input, bool route3Rules, bool mtMoonRules, bool ceruleanRules, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules)
+    private static string? Validate(PokemonCatalog? catalog, Route22TrainerAiInput? input, bool route3Rules, bool mtMoonRules, bool ceruleanRules, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules)
     {
         if (input is null) return "route22_trainer_ai_input_missing";
-        if (catalog?.Species.Count != (ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) return "route22_trainer_ai_catalog_scope";
+        if (catalog?.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) return "route22_trainer_ai_catalog_scope";
         if (input.AiFlags != 7) return "route22_trainer_ai_flags_unsupported";
         foreach (var (name, mon) in new[] { ("user", input.User), ("target", input.Target) })
         {
-            string? error = ValidateCombatant(catalog, mon, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules);
+            string? error = ValidateCombatant(catalog, mon, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
             if (error is not null) return "route22_trainer_ai_" + name + "_" + error;
             if (mon.Pokemon.CurrentHp == 0) return "route22_trainer_ai_" + name + "_fainted";
         }
@@ -197,13 +200,13 @@ public static class Route22TrainerAi
         if (input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost) return "route22_trainer_ai_enemy_badge";
         foreach (var slot in input.User.Pokemon.Moves)
             if (!ValidMove(catalog!.Moves[slot.Move])) return "route22_trainer_ai_move_definition";
-        if (input.KnownTargetAbility is { } known && !(ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "route22_trainer_ai_ability_history";
+        if (input.KnownTargetAbility is { } known && !(route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "route22_trainer_ai_ability_history";
         return null;
     }
 
-    internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false)
+    internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false)
     {
-        if (ceruleanRules) return CeruleanTrainerAi.ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules);
+        if (ceruleanRules) return CeruleanTrainerAi.ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
         if (mtMoonRules) return MtMoonTrainerAi.ValidateCombatant(catalog, mon);
         if (route3Rules) return Route3TrainerAi.ValidateCombatant(catalog, mon);
         if (mon is null) return "missing";

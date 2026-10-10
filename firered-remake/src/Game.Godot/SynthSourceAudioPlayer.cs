@@ -41,7 +41,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false)
     {
         string directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/synth-audio");
         string pack = Path.Combine(directory, "firered.pack");
@@ -62,8 +62,24 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         if (manifest.SchemaVersion != 1 || manifest.SourceCommit != SynthManifestIdentity.SourceCommit
             || manifest.Cues.Length != SynthManifestIdentity.CueCount)
             throw new InvalidDataException("Synth manifest contract differs.");
+        var cues = manifest.Cues;
+        if (includeRoute11)
+        {
+            string extraPath = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/route11-synth-audio/manifest.json");
+            if (new FileInfo(extraPath).Length != Route11SynthManifestIdentity.Bytes)
+                throw new InvalidDataException("Route11 synth manifest length differs.");
+            byte[] extraBytes = File.ReadAllBytes(extraPath);
+            if (Convert.ToHexStringLower(SHA256.HashData(extraBytes)) != Route11SynthManifestIdentity.Sha256)
+                throw new InvalidDataException("Route11 synth manifest identity differs.");
+            var extra = JsonSerializer.Deserialize<SynthManifest>(extraBytes, options)
+                ?? throw new InvalidDataException("Missing Route11 synth manifest.");
+            if (extra.SchemaVersion != 1 || extra.SourceCommit != manifest.SourceCommit ||
+                extra.SourceCommit != Route11SynthManifestIdentity.SourceCommit || extra.Cues.Length != Route11SynthManifestIdentity.CueCount)
+                throw new InvalidDataException("Route11 synth manifest contract differs.");
+            cues = [.. cues, .. extra.Cues];
+        }
         _catalog = new(StringComparer.Ordinal);
-        foreach (var cue in manifest.Cues)
+        foreach (var cue in cues)
         {
             if (string.IsNullOrWhiteSpace(cue.Id) || cue.Id.Length > 100 || cue.SourcePlayer is < 0 or > 4
                 || cue.Priority is < 0 or > 255 || cue.SourceCounter is < 0 or > 36000

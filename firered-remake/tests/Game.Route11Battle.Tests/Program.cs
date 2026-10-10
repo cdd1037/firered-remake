@@ -32,6 +32,15 @@ Test("explicit scope and unsupported higher-level metadata",()=>{
 Test("every actual default move for six species levels1 through31",()=>{
  foreach(string species in new[]{"DIGLETT","DUGTRIO","MAGNETON","POLIWAG","POLIWHIRL","VULPIX"})for(int level=1;level<=31;level++)foreach(var slot in Mon(species,level).Moves){Check(WildBattleRules.IsMoveSupported(slot.Move,version),$"{species} Lv{level} {slot.Move}");Accepted(WildBattleRules.ResolveMove(catalog,Pair(slot.Move.Value[10..],actor:species,actorLevel:level,targetLevel:100),0));}
 });
+Test("all authenticated Route11 and cave wild slots enter a battle",()=>{
+ foreach(var table in PretRoute11Encounters.Load(root).Tables.Values)
+ foreach(var slot in table.Slots)
+ for(int level=slot.MinimumLevel;level<=slot.MaximumLevel;level++)
+ {
+  var opponent=PokemonFactory.Create(catalog,new(slot.Species,level,42,IvPolicy.Fixed(0),PersonalityPolicy.Fixed(255)),new(0)).Pokemon;
+  Accepted(WildBattleRules.Start(catalog,new(Mon("CHARMELEON",30)),new(opponent),new(42),version,terrain:table.Map.Value=="map.digletts-cave-b1f"?WildBattleTerrain.Cave:WildBattleTerrain.Grass));
+ }
+});
 Test("sixteen independent fixed source branch and RNG vectors",()=>{
  foreach(var v in vectors){string kind=v.GetProperty("kind").GetString()!;uint seed=v.GetProperty("seed").GetUInt32();var s=kind switch{
  "wisp"=>Pair("WILL_O_WISP",seed),"tri"=>Pair("TRI_ATTACK",seed,"MAGNETON"),"mud"=>Pair("MUD_SLAP",seed,"DIGLETT"),"sand"=>Pair("SAND_TOMB",seed,"DUGTRIO"),"confuse"=>Pair("CONFUSE_RAY",seed),"absorb"=>Pair("WATER_GUN",seed,"SQUIRTLE","POLIWAG",targetPid:254),"damp"=>Pair("SELF_DESTRUCT",seed,"GEODUDE","POLIWAG"),"rain"=>Pair("RAIN_DANCE",seed,"POLIWHIRL",actorLevel:27),_=>Pair("SPLASH",seed)};

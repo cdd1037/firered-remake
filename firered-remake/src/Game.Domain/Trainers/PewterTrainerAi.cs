@@ -27,11 +27,11 @@ public static class PewterTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-pewter-trainer-ai-semantic-v1";
 
-    public static PewterTrainerAiDecision Choose(PokemonCatalog catalog, PewterTrainerAiInput input, RngState rng, bool earlyStarterRules = false, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false)
+    public static PewterTrainerAiDecision Choose(PokemonCatalog catalog, PewterTrainerAiInput input, RngState rng, bool earlyStarterRules = false, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false)
     {
         PewterTrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
             new(code, "Input is outside the supported Pewter trainer AI profile."));
-        ssAnneRules |= vermilionGymRules;
+        vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
         ceruleanRules |= billRules;
@@ -39,10 +39,10 @@ public static class PewterTrainerAi
         route3Rules |= mtMoonRules;
         route22Rules |= route3Rules;
         earlyStarterRules |= route22Rules;
-        string? error = Validate(catalog, input, earlyStarterRules, route22Rules, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules);
+        string? error = Validate(catalog, input, earlyStarterRules, route22Rules, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("pewter_trainer_ai_rng_algorithm");
-        bool Usable(int slot) => route3Rules ? WildBattleRules.IsMoveSelectable(input.User, slot) : slot < input.User.Pokemon.Moves.Length && input.User.Pokemon.Moves[slot].CurrentPp > 0;
+        bool Usable(int slot) => route3Rules ? WildBattleRules.IsMoveSelectable(input.User, slot) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move)) : slot < input.User.Pokemon.Moves.Length && input.User.Pokemon.Moves[slot].CurrentPp > 0;
         if (!Enumerable.Range(0, 4).Any(Usable)) return Fault("pewter_trainer_ai_struggle_required");
         var current = rng;
         var trace = ImmutableArray.CreateBuilder<RandomTrace>();
@@ -57,7 +57,7 @@ public static class PewterTrainerAi
         {
             // Each script get_ability independently guesses. A known history value takes precedence
             // over the present species and actual ability, even following a player switch.
-            bool trappedAbility = mtMoonRules && input.Target.Pokemon.AbilityId == "ABILITY_MAGNET_PULL";
+            bool trappedAbility = mtMoonRules && input.Target.Pokemon.AbilityId == "ABILITY_MAGNET_PULL" || route11Rules && input.Target.Pokemon.AbilityId == "ABILITY_ARENA_TRAP";
             bool guess = input.KnownTargetAbility is null && !trappedAbility && targetSpecies.Ability2 != "ABILITY_NONE";
             string ability = input.KnownTargetAbility ?? (guess
                 ? Draw($"pewter-trainer.ai.slot.{slot}.ability.{reason}", 2) != 0 ? targetSpecies.Ability1 : targetSpecies.Ability2
@@ -78,7 +78,7 @@ public static class PewterTrainerAi
             for (int slot = 0; slot < input.User.Pokemon.Moves.Length; slot++)
             {
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot]);
+                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain);
             }
             void Score(int slot, int change) => scores[slot] = Math.Max(0, scores[slot] + change);
             // Bit 0: CHECK_BAD_MOVE. Normal/Rock cannot be immune against the closed 29 species;
@@ -112,7 +112,7 @@ public static class PewterTrainerAi
                 for (int slot = 0; slot < 4; slot++)
                 {
                     if (!Usable(slot) || input.User.Pokemon.Moves[slot].Move.Value != "pret:MOVE_ROCK_TOMB") continue;
-                    int userSpeed = Speed(input.User), targetSpeed = Speed(input.Target);
+                    int userSpeed = Speed(input.User, route11Rules && rain), targetSpeed = Speed(input.Target, route11Rules && rain);
                     if (userSpeed == targetSpeed)
                     {
                         // GetWhoStrikesFirst returns 0 or 2 on ties. if_target_faster compares ==1,
@@ -150,9 +150,9 @@ public static class PewterTrainerAi
         catch (OverflowException) { return Fault("pewter_trainer_ai_rng_exhausted"); }
     }
 
-    private static int Speed(WildBattleCombatant mon)
+    private static int Speed(WildBattleCombatant mon, bool rain = false)
     {
-        int speed = WildBattleDamage.Stat(mon.Pokemon.Stats.Speed, mon.SpeedStage);
+        int speed = WildBattleDamage.Stat(mon.Pokemon.Stats.Speed * (rain && mon.Pokemon.AbilityId == "ABILITY_SWIFT_SWIM" ? 2 : 1), mon.SpeedStage);
         if (mon.SpeedBadgeBoost) speed = speed * 110 / 100;
         return mon.Status == WildBattleStatus.Paralysis ? speed / 4 : speed;
     }
@@ -161,7 +161,7 @@ public static class PewterTrainerAi
     // no admitted user ability modifies attack or the Normal/Rock base power. Kept separate from
     // execution because prediction uses no hit/critical rolls and considers depleted slots.
     private static int Predict(PokemonCatalog catalog, WildBattleCombatant user,
-        WildBattleCombatant target, PokemonMoveDefinition move, int percent)
+        WildBattleCombatant target, PokemonMoveDefinition move, int percent, bool rain = false)
     {
         int attack = WildBattleDamage.Stat(user.Pokemon.Stats.Attack, user.AttackStage);
         int defense = WildBattleDamage.Stat(target.Pokemon.Stats.Defense, target.DefenseStage);
@@ -180,12 +180,12 @@ public static class PewterTrainerAi
         return Math.Max(1, value * percent / 100);
     }
 
-    private static string? Validate(PokemonCatalog? catalog, PewterTrainerAiInput? input, bool earlyStarterRules, bool route22Rules, bool route3Rules, bool mtMoonRules, bool ceruleanRules, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules)
+    private static string? Validate(PokemonCatalog? catalog, PewterTrainerAiInput? input, bool earlyStarterRules, bool route22Rules, bool route3Rules, bool mtMoonRules, bool ceruleanRules, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules)
     {
         if (input is null) return "pewter_trainer_ai_input_missing";
         if (input.AiFlags is not (1 or 7)) return "pewter_trainer_ai_flags_unsupported";
         if (route3Rules && (input.User is { AttackBadgeBoost: true } or { SpeedBadgeBoost: true })) return "trainer_ai_enemy_badge";
-        if (mtMoonRules && catalog?.Species.Count != (ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : 56)) return "mtmoon_trainer_ai_catalog_scope";
+        if (mtMoonRules && catalog?.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : 56)) return "mtmoon_trainer_ai_catalog_scope";
         if (route3Rules && !mtMoonRules && catalog?.Species.Count != 40) return "route3_trainer_ai_catalog_scope";
         if (route22Rules && !route3Rules && catalog?.Species.Count != 32) return "route22_trainer_ai_catalog_scope";
         foreach (var (name, mon) in new[] { ("user", input.User), ("target", input.Target) })
@@ -195,17 +195,17 @@ public static class PewterTrainerAi
             if (invalid is not null) return "pewter_trainer_ai_" + name + "_" + invalid;
             if (mon.Pokemon.CurrentHp == 0) return "pewter_trainer_ai_" + name + "_fainted";
             if (!route3Rules && !WildBattleRules.Route3Neutral(mon)) return "trainer_ai_route3_volatile_unsupported";
-            if (mon.HeldItem != "ITEM_NONE" && !(name == "target" && (ssAnneRules ? SsAnneBattleScope.SupportsHeldItem(mon.HeldItem) : vermilionRules ? VermilionBattleScope.SupportsHeldItem(mon.HeldItem) : route3Rules && mon.HeldItem == "ITEM_ORAN_BERRY"))) return "pewter_trainer_ai_held_item_unsupported";
-            if (!WildBattleStatus.IsSupported(mon.Status, earlyStarterRules)) return "pewter_trainer_ai_status_unsupported";
+            if (mon.HeldItem != "ITEM_NONE" && !(name == "target" && (route11Rules ? Route11BattleScope.SupportsHeldItem(mon.HeldItem) : ssAnneRules ? SsAnneBattleScope.SupportsHeldItem(mon.HeldItem) : vermilionRules ? VermilionBattleScope.SupportsHeldItem(mon.HeldItem) : route3Rules && mon.HeldItem == "ITEM_ORAN_BERRY"))) return "pewter_trainer_ai_held_item_unsupported";
+            if (!WildBattleStatus.IsSupported(mon.Status, earlyStarterRules, route11Rules)) return "pewter_trainer_ai_status_unsupported";
             if (mon.AttackStage is < 0 or > 12 || mon.DefenseStage is < 0 or > 12 || mon.SpeedStage is < 0 or > 12 ||
                 mon.AccuracyStage is < 0 or > 12 || mon.EvasionStage is < 0 or > 12) return "pewter_trainer_ai_stat_stage";
-            if (!(ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ceruleanRules ? CeruleanTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : mtMoonRules ? MtMoonTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route3Rules ? Route3TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route22Rules ? Route22TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon.Pokemon.Species]))) return "pewter_trainer_ai_species_type_ability";
+            if (!(route11Rules ? Route11BattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ceruleanRules ? CeruleanTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : mtMoonRules ? MtMoonTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route3Rules ? Route3TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route22Rules ? Route22TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon.Pokemon.Species]))) return "pewter_trainer_ai_species_type_ability";
         }
-        if (route22Rules && (Route22TrainerAi.ValidateCombatant(catalog, input.User, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules) is not null || Route22TrainerAi.ValidateCombatant(catalog, input.Target, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules) is not null)) return "pewter_trainer_ai_route22_combatant";
+        if (route22Rules && (Route22TrainerAi.ValidateCombatant(catalog, input.User, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules) is not null || Route22TrainerAi.ValidateCombatant(catalog, input.Target, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules) is not null)) return "pewter_trainer_ai_route22_combatant";
         if (!ValidUser(input.User.Pokemon, input.AiFlags)) return "pewter_trainer_ai_user_roster";
         foreach (var slot in input.User.Pokemon.Moves)
             if (!ValidMove(catalog!.Moves[slot.Move])) return "pewter_trainer_ai_move_definition";
-        if (input.KnownTargetAbility is { } known && !(ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : route22Rules ? Route22BattleScope.SupportsAbility(known) : SupportsAbility(known))) return "pewter_trainer_ai_ability_history";
+        if (input.KnownTargetAbility is { } known && !(route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : route22Rules ? Route22BattleScope.SupportsAbility(known) : SupportsAbility(known))) return "pewter_trainer_ai_ability_history";
         return null;
     }
 
