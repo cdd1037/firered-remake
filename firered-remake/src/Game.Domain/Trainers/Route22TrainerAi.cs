@@ -26,8 +26,9 @@ public static class Route22TrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-route22-rival-ai-semantic-v1";
 
-    public static Route22TrainerAiDecision Choose(PokemonCatalog catalog, Route22TrainerAiInput input, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false)
+    public static Route22TrainerAiDecision Choose(PokemonCatalog catalog, Route22TrainerAiInput input, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
     {
+        towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
         rockTunnelRules |= celadonGymRules;
@@ -40,7 +41,7 @@ public static class Route22TrainerAi
         ceruleanRules |= billRules;
         mtMoonRules |= ceruleanRules;
         route3Rules |= mtMoonRules;
-        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("route22_trainer_ai_rng_algorithm");
@@ -206,7 +207,7 @@ public static class Route22TrainerAi
         if (input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost) return "route22_trainer_ai_enemy_badge";
         foreach (var slot in input.User.Pokemon.Moves)
             if (!ValidMove(catalog!.Moves[slot.Move])) return "route22_trainer_ai_move_definition";
-        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 102 ? SnorlaxBattleScope.SupportsAbility(known) : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 ? RocketHideoutBattleScope.SupportsAbility(known) : RocketHideoutBattleScope.SupportsAbilityForCatalog(catalog, known)) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "route22_trainer_ai_ability_history";
+        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? (catalog?.Species.Count == 107 ? FuchsiaBattleScope.SupportsAbility(known) : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 102 ? SnorlaxBattleScope.SupportsAbility(known) : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107 ? RocketHideoutBattleScope.SupportsAbility(known) : RocketHideoutBattleScope.SupportsAbilityForCatalog(catalog, known)) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "route22_trainer_ai_ability_history";
         return null;
     }
 
@@ -218,7 +219,7 @@ public static class Route22TrainerAi
         if (route3Rules) return Route3TrainerAi.ValidateCombatant(catalog, mon);
         if (mon is null) return "missing";
         if (!WildBattleRules.Route3Neutral(mon)) return "route3_volatile_unsupported";
-        string? invalid = PokemonStateValidator.Validate(catalog, mon.Pokemon);
+        string? invalid = WildBattleTransformationRules.Validate(catalog, mon, catalog?.Species.Count == 107);
         if (invalid is not null) return invalid;
         if (mon.HeldItem != "ITEM_NONE") return "held_item_unsupported";
         if (!WildBattleStatus.IsSupported(mon.Status, true)) return "status_unsupported";

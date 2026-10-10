@@ -10,7 +10,7 @@ public static class PokemonMoveRules
 
     /// <summary>The gift profile keeps every source move as metadata while deferring learning of unimplemented battle effects.</summary>
     public static bool IsLearningSupported(PokemonCatalog catalog, MoveId move) =>
-        catalog.Species.Count != 103 || Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.SnorlaxRulesVersion);
+        catalog.Species.Count == 107 ? Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.FuchsiaRulesVersion) : catalog.Species.Count != 103 || Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.SnorlaxRulesVersion);
 
     /// <summary>CreateBoxMon learns in source order. Only initial creation automatically forgets the oldest move.</summary>
     public static ImmutableArray<PokemonMoveSlot> InitialMoves(PokemonCatalog catalog, PokemonSpeciesDefinition species, int level)

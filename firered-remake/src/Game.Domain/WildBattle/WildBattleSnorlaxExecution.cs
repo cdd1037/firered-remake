@@ -11,7 +11,7 @@ public static partial class WildBattleRules
 {
     internal sealed partial class Execution
     {
-        internal bool Snorlax => State.RulesVersion == SnorlaxRulesVersion;
+        internal bool Snorlax => State.RulesVersion is SnorlaxRulesVersion or FuchsiaRulesVersion;
         // Source NO_PPDEDUCT and the persistent attack-canceller tracker belong to this atomic action.
         // They are intentionally neither serialized nor retained into the next selected action.
         private bool snorlaxCalledMove;
@@ -19,7 +19,7 @@ public static partial class WildBattleRules
         {
             if (!Snorlax) return;
             foreach (var side in new[] { WildBattleSide.Player, WildBattleSide.Opponent })
-                if (WildBattleStatus.IsSleeping(Get(side).Status)) CancelRoute3Rollout(side, "sleep");
+                if (WildBattleStatus.IsSleeping(Get(side).Status) && (State.RulesVersion != FuchsiaRulesVersion || Get(side).DigMoveSlot is not null || Get(side).RolloutTurnsRemaining > 0 || Get(side).RampageTurnsRemaining > 0)) CancelRoute3Rollout(side, "sleep");
         }
         internal void SnorlaxEndTurnItems()
         {
@@ -60,7 +60,7 @@ public static partial class WildBattleRules
                 try { ForestMove(catalog,side,called); }
                 finally { snorlaxCalledMove = false; }
                 // MOVEEND_LAST_MOVES retains gChosenMove; the called effect only changes resulting/landed move.
-                if (Get(side).Pokemon.CurrentHp > 0) Set(side, Get(side) with { LastUsedMove = move.Id, LastCalledMove = selected.Id });
+                if (Get(side).Pokemon.CurrentHp > 0) Set(side, Get(side) with { LastUsedMove = selected.Effect == "EFFECT_TRANSFORM" ? new("pret:MOVE_UNAVAILABLE") : move.Id, LastCalledMove = selected.Effect == "EFFECT_TRANSFORM" ? null : selected.Id });
                 return true;
             }
             if (move.Effect != "EFFECT_YAWN") return false;

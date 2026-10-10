@@ -161,7 +161,8 @@ public partial class CampaignView
     private bool DrawPokemonTowerOpponent(CampaignWildBattle b)
     {
         var appearance=TowerOpponentAppearance();if(appearance is null)return false;
-        Texture2D texture=appearance.GhostSprite?_towerGhost!:_battleArt[(b.DisplayOpponent.SourceSpeciesId,"front",b.DisplayOpponent.IsShiny)].Texture;
+        var transformed=FuchsiaBattleAppearance(b,WildBattleSide.Opponent,b.DisplayOpponent);
+        Texture2D texture=appearance.GhostSprite?_towerGhost!:_battleArt[(transformed.Species,"front",transformed.Shiny)].Texture;
         int block=1;
         if(TowerRevealing(b))block=_towerRevealTicks<47?Math.Clamp(1+(int)_towerRevealTicks/3,1,16):Math.Clamp(16-(int)(_towerRevealTicks-47)/3,1,16);
         if(block>1)

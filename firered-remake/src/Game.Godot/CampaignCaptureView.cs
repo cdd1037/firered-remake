@@ -4,6 +4,7 @@ using System.Text.Json;
 using Game.Application;
 using Game.Content;
 using Game.Domain.Items;
+using Game.Domain.WildBattle;
 using Godot;
 
 /// <summary>Capture-only presentation. Application state owns every ball, RNG draw,
@@ -179,7 +180,8 @@ public partial class CampaignView
             {
                 DrawRect(new(0, 0, 240, 160), Colors.Black);
                 _battleSkin.DrawBackground(this); DrawTexture(CurrentWildBattleTerrain, Vector2.Zero);
-                var player = _battleArt[(battle.DisplayPlayer.SourceSpeciesId, "back", battle.DisplayPlayer.IsShiny)];
+                var playerAppearance = FuchsiaBattleAppearance(battle, WildBattleSide.Player, battle.DisplayPlayer);
+                var player = _battleArt[(playerAppearance.Species, "back", playerAppearance.Shiny)];
                 DrawTexture(player.Texture, player.Position);
                 DrawWildHealth(battle.DisplayPlayer, Game.Domain.WildBattle.WildBattleSide.Player, battle.DisplayPlayer.CurrentHp);
                 _battleSkin.DrawBattleMessage(this);
@@ -201,7 +203,8 @@ public partial class CampaignView
             else
             {
                 _battleSkin.DrawBackground(this); DrawTexture(CurrentWildBattleTerrain, Vector2.Zero);
-                var asset = _battleArt[(battle.DisplayOpponent.SourceSpeciesId, "front", battle.DisplayOpponent.IsShiny)];
+                var opponentAppearance = FuchsiaBattleAppearance(battle, WildBattleSide.Opponent, battle.DisplayOpponent);
+                var asset = _battleArt[(opponentAppearance.Species, "front", opponentAppearance.Shiny)];
                 DrawTexture(asset.Texture, asset.Position); DrawWildHealth(battle.DisplayOpponent, Game.Domain.WildBattle.WildBattleSide.Opponent, battle.DisplayOpponent.CurrentHp);
                 _battleSkin.DrawBattleMessage(this); WildLines(string.Join('\n', WildSourcePages("sText_UseNextPkmn"))); DrawCaptureYesNo();
             }

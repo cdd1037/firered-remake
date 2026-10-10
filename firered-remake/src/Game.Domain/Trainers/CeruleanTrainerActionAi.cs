@@ -11,15 +11,16 @@ namespace Game.Domain.Trainers;
 /// even when no switch results. No source party here can have an absorption or Natural Cure ability.</summary>
 public static class CeruleanTrainerActionAi
 {
-    public static CeruleanTrainerSwitchDecision DecideSwitch(PokemonCatalog catalog, CeruleanTrainerSwitchInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false)
+    public static CeruleanTrainerSwitchDecision DecideSwitch(PokemonCatalog catalog, CeruleanTrainerSwitchInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
     {
+        towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
         rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         CeruleanTrainerSwitchDecision Fault(string code) => new(TransitionStatus.Fault,null,rng,[],new(code,"Invalid Cerulean trainer switch context."));
-        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         if (input is null || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input.Party.IsDefaultOrEmpty || input.Party.Length > 6 ||
             input.ActiveIndex < 0 || input.ActiveIndex >= input.Party.Length || input.PlayerPartyIndex is < 0 or > 5 ||
             input.Party.Any(m => m is null || m.Pokemon is null)) return Fault("cerulean_switch_party");

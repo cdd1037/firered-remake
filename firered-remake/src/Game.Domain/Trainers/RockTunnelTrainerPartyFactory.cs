@@ -48,13 +48,14 @@ public static class RockTunnelTrainerPartyFactory
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(RockTunnelTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false)
+    public static TrainerPartyCreationResult Create(RockTunnelTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
     {
+        towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
-        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != (towerRules && !fuchsiaRules) || (pokemon.Species.Count == 107) != fuchsiaRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (towerRules ? (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 102 ? 102 : 101) : rocketHideoutRules ? 99 : celadonGymRules ? 98 : celadonApproachRules ? 94 : 93) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (fuchsiaRules ? 107 : towerRules ? (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 102 ? 102 : 101) : rocketHideoutRules ? 99 : celadonGymRules ? 98 : celadonApproachRules ? 94 : 93) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("RockTunnel requires the exact ninety-three-species catalog and one initial source RockTunnel team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

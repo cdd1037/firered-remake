@@ -166,6 +166,7 @@ public static class LevelEvolutionRules
         // In particular, Enigma Berry can obtain that effect from save data not represented here.
         bool staticHeldItem = content.Catalog.Species.Count switch
         {
+            107 => Game.Domain.WildBattle.FuchsiaBattleScope.SupportsHeldItem(owned.HeldItem),
             40 => owned.HeldItem == "ITEM_ORAN_BERRY",
             102 or 103 => Game.Domain.WildBattle.SnorlaxBattleScope.SupportsHeldItem(owned.HeldItem),
             101 => Game.Domain.WildBattle.PokemonTowerBattleScope.SupportsHeldItem(owned.HeldItem),

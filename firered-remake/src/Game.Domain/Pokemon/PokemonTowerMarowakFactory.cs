@@ -6,10 +6,10 @@ namespace Game.Domain.Pokemon;
 public static class PokemonTowerMarowakFactory
 {
     public const string SourceCommit = PokemonFactory.SourceCommit;
-    public static PokemonCreationResult Create(PokemonCatalog catalog, uint originalTrainerId, RngState rng, bool snorlaxRules = false)
+    public static PokemonCreationResult Create(PokemonCatalog catalog, uint originalTrainerId, RngState rng, bool snorlaxRules = false, bool fuchsiaRules = false)
     {
         PokemonFactory.ValidateCatalog(catalog);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (snorlaxRules ? 102 : 101)) throw new NotSupportedException("pokemon_tower_catalog_required");
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (fuchsiaRules ? 107 : snorlaxRules ? 102 : 101)) throw new NotSupportedException("pokemon_tower_catalog_required");
         var trace = ImmutableArray.CreateBuilder<RandomTrace>();
         ushort Draw(string purpose) { var draw = Gen3Rng.Next(rng, purpose); rng = draw.State; trace.Add(draw.Trace); return draw.Value; }
         uint personality;

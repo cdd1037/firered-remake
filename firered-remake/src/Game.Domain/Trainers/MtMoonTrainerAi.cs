@@ -14,8 +14,9 @@ public static class MtMoonTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-mtmoon-trainer-ai-semantic-v1";
 
-    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false)
+    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
     {
+        towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
         rockTunnelRules |= celadonGymRules;
@@ -26,7 +27,7 @@ public static class MtMoonTrainerAi
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
         ceruleanRules |= billRules;
-        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("mtmoon_trainer_ai_rng_algorithm");
@@ -191,7 +192,7 @@ public static class MtMoonTrainerAi
         if (!ValidUser(catalog, input.User.Pokemon) || input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost || input.User.HeldItem != "ITEM_NONE") return "mtmoon_trainer_ai_user_roster";
         foreach (var slot in input.User.Pokemon.Moves)
             if (!MtMoonBattleScope.ValidDefinition(catalog.Moves[slot.Move])) return "mtmoon_trainer_ai_move_definition";
-        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 102 ? SnorlaxBattleScope.SupportsAbility(known) : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 ? RocketHideoutBattleScope.SupportsAbility(known) : RocketHideoutBattleScope.SupportsAbilityForCatalog(catalog, known)) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "mtmoon_trainer_ai_ability_history";
+        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? (catalog?.Species.Count == 107 ? FuchsiaBattleScope.SupportsAbility(known) : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 102 ? SnorlaxBattleScope.SupportsAbility(known) : Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107 ? RocketHideoutBattleScope.SupportsAbility(known) : RocketHideoutBattleScope.SupportsAbilityForCatalog(catalog, known)) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "mtmoon_trainer_ai_ability_history";
         return null;
     }
     internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false) =>

@@ -75,3 +75,18 @@ interaction is complete; see the per-floor coverage ledger. Next is a bounded
 Route12 south → Route13/14/15 → Fuchsia Center connection, then Koga/fifth badge
 and the associated ordinary facilities. Safari and its HM/story dependencies are
 planned separately; no fifth-badge acceptance is claimed by this closeout.
+
+## 2026-10-10 Fuchsia arrival increment
+
+The southern corridor now reaches the original Fuchsia Center through a retained
+1,046-command natural lineage, including eleven ordinary trainer wins and the
+actual Route12 Snorlax removal. Transform's permanent identity, capture/PC and
+battle-only projection have separate controlled regressions. The precise current
+boundary and evidence are in [Fuchsia arrival](fuchsia-arrival.md).
+
+The next blockers are genuine Metronome closure, preset two-versus-two battles
+and Koga's new rules/city services. Source metadata and isolated called-action
+recipes are being implemented for reuse by ordinary learned moves; they do not
+activate a partial random pool. Region pickups and facilities remain recorded
+work rather than being implied by map rendering. This node is an arrival
+checkpoint, not fifth-badge or whole-route completion.

@@ -36,7 +36,7 @@ public static class ConnectedFieldRules
 
     public static ConnectedFieldTransition Complete(WorldSnapshot state, ConnectedFieldIntent intent,
         IReadOnlyDictionary<MapId, ConnectedFieldMap> maps,bool enableCaveGround=false,bool enableSand=false,bool biking=false,
-        bool enableSpinTiles=false,RocketSpinState? activeSpin=null)
+        bool enableSpinTiles=false,RocketSpinState? activeSpin=null,bool enableCardinalLedges=false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(intent);
@@ -122,21 +122,30 @@ public static class ConnectedFieldRules
         if (biking && front.SourceBehavior == 0x0a) return Blocked("bicycle-terrain-collision");
         if (front.SourceBehavior == 0x69 && intent.Direction == Direction.North && state.Player.Facing == Direction.North)
             return Fail("field-warp-handler-required", "Dispatch the north-facing front door before ordinary walking.");
-        if (!WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles) && front.SourceBehavior is not (0x3b or 0x69 or 0x80 or 0x84 or 0x87 or 0x88 or 0x8f))
+        if (!WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles) && front.SourceBehavior is not (0x3b or 0x69 or 0x80 or 0x84 or 0x87 or 0x88 or 0x8f) &&
+            !(enableCardinalLedges && front.SourceBehavior is >=0x38 and <=0x3a))
             return Fail(BehaviorFault(front.SourceBehavior), $"Target source behavior 0x{front.SourceBehavior:x2}.");
 
-        if (front.SourceBehavior == 0x3b && intent.Direction == Direction.South)
+        bool matchingLedge=(front.SourceBehavior,intent.Direction) switch
+        {
+            (0x3b,Direction.South)=>true,
+            (0x38,Direction.East) or (0x39,Direction.West) or (0x3a,Direction.North)=>enableCardinalLedges,
+            _=>false
+        };
+        if (matchingLedge)
         {
             // Source ShouldJumpLedge overrides the intermediate tile's ordinary collision/elevation result.
-            // Route 1 uses two-cell jumps within a single map. Other ledge topologies are explicitly unimplemented.
+            // GetLedgeJumpDirection uses the matching cardinal metatile predicate. Preserve the old
+            // south-only admission unless the caller selects the later route profile explicitly.
             if (crosses) return Fail("unsupported-ledge-connection", "A ledge cannot straddle maps in this bounded profile.");
-            int landingY = y + 1;
-            var landing = map.CellAt(x, landingY);
+            int landingX=x+dx,landingY=y+dy;
+            var landing = map.CellAt(landingX, landingY);
             if (landing is null || !ValidCell(landing) || !WalkableBehavior(landing.SourceBehavior,enableCaveGround,enableSand) ||
                 landing.Collision != 0 || landing.Occupied || landing.Elevation == 15)
                 return Fail("unsupported-ledge-landing", "Expected a loaded, free ordinary landing cell.");
             return Accepted(ConnectedFieldEventKind.JumpedLedge,
-                new(map.Id, x, landingY, landing.Elevation, intent.Direction), 1, "south-ledge-completed");
+                new(map.Id, landingX, landingY, landing.Elevation, intent.Direction), 1,
+                intent.Direction.ToString().ToLowerInvariant()+"-ledge-completed");
         }
         if (front.Collision != 0) return Blocked("collision");
         if (BlocksEdge(here.SourceBehavior, intent.Direction) || BlocksEdge(front.SourceBehavior, Opposite(intent.Direction)))

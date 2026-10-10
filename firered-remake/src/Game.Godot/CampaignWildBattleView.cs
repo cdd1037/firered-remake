@@ -22,7 +22,7 @@ public partial class CampaignView
         if(_catalog.PokemonTowerEnabled&&PokemonTowerPresentationModel.UsesTowerTerrain(mapId.Value))return _towerTerrain??throw new InvalidDataException("Tower terrain missing.");
         if (_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId)==true&&_catalog.SourceMaps[mapId].Events.GetProperty("battle_scene").GetString()=="MAP_BATTLE_SCENE_INDOOR_2")
             return _rocketIndoorTerrain??throw new InvalidDataException("Rocket Indoor2 terrain was not loaded.");
-        if (_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.CeladonApproachRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
+        if (_catalog.FuchsiaRouteRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.CeladonApproachRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
         {
             if (mapId.Value is "map.rock-tunnel-1f" or "map.rock-tunnel-b1f" or "map.digletts-cave-south-entrance" or "map.digletts-cave-b1f" or "map.digletts-cave-north-entrance")
                 return _mtMoonTerrain ?? throw new InvalidDataException("Diglett cave terrain was not loaded.");
@@ -195,7 +195,7 @@ public partial class CampaignView
             if (ForestTrainerEventPages(Source)) { _wildPages = pages.ToImmutable(); return; }
             var current = WildCurrentEvent(b) ?? throw new InvalidDataException("Battle event missing.");
             if(current is WildBattleInfatuationBlockedEvent love) Source("sText_PkmnInLove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(love.Side)),("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(love.Source)));
-            var forestMessage = SnorlaxWildMessage(current) ?? PokemonTowerWildMessage(current) ?? RocketHideoutWildMessage(current) ?? CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
+            var forestMessage = FuchsiaRouteWildMessage(current) ?? SnorlaxWildMessage(current) ?? PokemonTowerWildMessage(current) ?? RocketHideoutWildMessage(current) ?? CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
             if (forestMessage is { } message)
             {
                 if (message.Symbol.Length > 0) Source(message.Symbol, message.Values);
@@ -406,7 +406,7 @@ public partial class CampaignView
         if (_wildMenu.StartsWith("learn-", StringComparison.Ordinal)) return WildLearningInput(key);
         if (b.Phase != CampaignBattlePhase.ChooseMove)
         {
-            if (key.Keycode == Key.Enter && _wildElapsed > (b.Phase == CampaignBattlePhase.Events &&
+            if (key.Keycode == Key.Enter && !FuchsiaTransformCuePending(b) && _wildElapsed > (b.Phase == CampaignBattlePhase.Events &&
                 WildCurrentEvent(b) is WildBattleWeatherDamageEvent or WildBattleStatusDamageEvent or WildBattleBindingDamageEvent or WildBattleConfusionSelfHitEvent or WildBattleTowerHpEvent ? .45 : .1))
             {
                 if (WildStatsPage(b) && !_wildStatsTotals) { _wildStatsTotals = true; _wildElapsed = 0; Write("wildBattleStatsPage", new { page = 2 }); }
@@ -531,7 +531,8 @@ public partial class CampaignView
             bool faintShown = mon.CurrentHp == 0 && (b.Phase == CampaignBattlePhase.Results || b.Phase == CampaignBattlePhase.Events && b.Events.Take(b.EventIndex + 1).OfType<WildBattleFaintedEvent>().Any(f => f.Side == side));
             if (!faintShown)
             {
-                var asset = _battleArt[(mon.SourceSpeciesId, side == WildBattleSide.Player ? "back" : "front", mon.IsShiny)];
+                var appearance=FuchsiaBattleAppearance(b,side,mon);
+                var asset = _battleArt[(appearance.Species, side == WildBattleSide.Player ? "back" : "front", appearance.Shiny)];
                 if(side!=WildBattleSide.Opponent||!DrawPokemonTowerOpponent(b))DrawTexture(asset.Texture, asset.Position);
             }
             int hp = WildDisplayedHp(b, mon, side);

@@ -9,8 +9,9 @@ namespace Game.Domain.Trainers;
 /// active-stat and byte best-damage source bugs. Voluntary switching uses CeruleanTrainerActionAi.</summary>
 public static class CeruleanTrainerAiReplacement
 {
-    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false)
+    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
     {
+        towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
         rockTunnelRules |= celadonGymRules;
@@ -18,7 +19,7 @@ public static class CeruleanTrainerAiReplacement
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         ForestTrainerReplacementDecision Fault(string code) => new(TransitionStatus.Fault, null, [],
             new(code, "Input is outside the bounded MtMoon trainer replacement profile."));
-        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         var active = input.FaintedActive.Pokemon;
@@ -92,7 +93,7 @@ public static class CeruleanTrainerAiReplacement
     private static string? Validate(PokemonCatalog? catalog, ForestTrainerReplacementInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
     {
         route11Rules |= rockTunnelRules;
-        if (catalog is null || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 && rockTunnelRules ? 6 : 4) ||
+        if (catalog is null || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107 && rockTunnelRules ? 6 : 4) ||
             input.FaintedPartyIndex < 0 || input.FaintedPartyIndex >= input.Party.Length || input.FaintedActive is null || input.Target is null)
             return "cerulean_trainer_replacement_input";
         if (input.Party.Any(mon => mon is null || mon.HeldItem != "ITEM_NONE" || mon.AttackBadgeBoost || mon.SpeedBadgeBoost) || input.FaintedActive.HeldItem != "ITEM_NONE")
@@ -121,7 +122,20 @@ public static class CeruleanTrainerAiReplacement
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         if (party.IsDefaultOrEmpty || party.Any(p => p is null)) return false;
-        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102)
+        party = party.Select(WildBattleTransformationRules.Restore).ToImmutableArray();
+        if (rockTunnelRules && catalog.Species.Count == 107)
+        {
+            foreach (var id in FuchsiaRouteTrainerPartyFactory.SupportedTrainers)
+            {
+                if (trainerId is { } selected && selected != id) continue;
+                var e = FuchsiaRouteTrainerPartyFactory.Expected[id];
+                if (party.Length == e.Party.Length &&
+                    party.Select(p => (p.Pokemon.SourceSpeciesId, p.Pokemon.Level)).SequenceEqual(e.Party.Select(p => (p.Source, p.Level))) &&
+                    party.All(p => FuchsiaRouteTrainerPartyFactory.ValidPartyMember(catalog, p.Pokemon, id))) return true;
+            }
+            if (trainerId is { } fuchsia && FuchsiaRouteTrainerPartyFactory.SupportedTrainers.Contains(fuchsia)) return false;
+        }
+        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107)
         {
             foreach (var id in PokemonTowerTrainerPartyFactory.SupportedTrainers)
             {
@@ -130,7 +144,7 @@ public static class CeruleanTrainerAiReplacement
                 if (party.Length == e.Party.Length && party.All(p => PokemonTowerTrainerPartyFactory.ValidPartyMember(catalog, p.Pokemon, id))) return true;
             }
         }
-        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 99 or 101 or 102)
+        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 99 or 101 or 102 or 107)
         {
             foreach (var id in RocketHideoutTrainerPartyFactory.SupportedTrainers)
             {
@@ -139,11 +153,11 @@ public static class CeruleanTrainerAiReplacement
                 if (party.Length == e.Party.Length && party.All(p => RocketHideoutTrainerPartyFactory.ValidPartyMember(catalog,p.Pokemon,id))) return true;
             }
         }
-        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102)
+        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107)
         {
             foreach (var id in CeladonGymTrainerPartyFactory.SupportedTrainers)
         {
-            if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is not (98 or 99 or 101 or 102) || trainerId is {} requested && requested != id) continue;
+            if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is not (98 or 99 or 101 or 102 or 107) || trainerId is {} requested && requested != id) continue;
             var e = CeladonGymTrainerPartyFactory.Expected[id];
             if (party.Length == e.Party.Length && party.All(p => CeladonGymTrainerPartyFactory.ValidPartyMember(catalog,p.Pokemon,id))) return true;
         }

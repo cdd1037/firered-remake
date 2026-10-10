@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -39,6 +39,7 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
                     SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
                     sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.FuchsiaRouteEnabled)Write("fuchsiaRouteAudioCatalog",new{FuchsiaRouteSynthManifestIdentity.Sha256,FuchsiaRouteSynthManifestIdentity.CueCount,priorCueCount=299,audibleOutputVerified=false});
                 if(_catalog.SnorlaxEnabled)Write("snorlaxAudioCatalog",new{SnorlaxSynthManifestIdentity.Sha256,SnorlaxSynthManifestIdentity.CueCount,priorCueCount=297,encounterCryMode=2,audibleOutputVerified=false});
                 if(_catalog.PokemonTowerEnabled)Write("pokemonTowerAudioCatalog",new{PokemonTowerSynthManifestIdentity.Sha256,PokemonTowerSynthManifestIdentity.CueCount,priorCueCount=286,audibleOutputVerified=false});
                 if(_catalog.RocketHideoutEnabled)Write("rocketHideoutAudioCatalog",new{RocketHideoutSynthManifestIdentity.Sha256,RocketHideoutSynthManifestIdentity.CueCount,priorCueCount=279,audibleOutputVerified=false});
@@ -271,6 +272,7 @@ public partial class CampaignView
             }
         }
         SourceMusic(DesiredSourceMusic(after));
+        if(IsFuchsiaLedgeStep(before,after))SourceSound("SE_LEDGE");
     }
 
     private bool SourceAudioWaitReady()
@@ -293,6 +295,7 @@ public partial class CampaignView
     private void ProcessSourceBattleAudio()
     {
         if(_sourceAudio is null)return;
+        ProcessFuchsiaTransformAudio();
         ProcessSourceLeaderIntroAudio();
         ProcessSourceLeaderBadgeAudio();
         if(_session.State.Battle is {Phase:CampaignBattlePhase.Events} lab&&lab.EventIndex<lab.Events.Length)

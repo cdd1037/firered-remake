@@ -164,7 +164,7 @@ public partial class CampaignView
         { DrawCaptureParty(battle, true); _battleSkin.DrawBattleMessage(this); WildLines("Choose a POKéMON."); }
         else
         {
-            var mon = WildDisplayPlayer(battle); var asset = _battleArt[(mon.SourceSpeciesId, "back", mon.IsShiny)];
+            var mon = WildDisplayPlayer(battle); var appearance = FuchsiaBattleAppearance(battle, WildBattleSide.Player, mon); var asset = _battleArt[(appearance.Species, "back", appearance.Shiny)];
             DrawTexture(asset.Texture, asset.Position); DrawWildHealth(mon, WildBattleSide.Player, mon.CurrentHp);
             _battleSkin.DrawBattleMessage(this); WildLines(_wildPages[_wildPage]);
             if (_wildPage + 1 == _wildPages.Length) DrawCaptureYesNo();

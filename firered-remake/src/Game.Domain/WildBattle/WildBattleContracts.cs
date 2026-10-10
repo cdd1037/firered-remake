@@ -24,7 +24,13 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FocusEnergy = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Flinched = false)
 {
-    // Overrides gLastMoves only for the resulting move of the preceding Sleep Talk action.
+    // Opt-in called-action history. Historical battle profiles reject this extension;
+    // use the versioned called-action contract to validate and resume its result.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSourceMoveHistory? SourceMoveHistory { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int FuryCutterCounter { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTransformation? Transform { get; init; }
+    // Historical profiles use this only for Sleep Talk. The explicit called-action
+    // contract also carries an unlearned result, authenticated by SourceMoveHistory.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? LastCalledMove { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int YawnTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Cursed { get; init; }
@@ -40,6 +46,7 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int EncoreTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? EncoreMoveSlot { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? EncoredMove { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool RampageUnableToMove { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int RampageTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? RampageMoveSlot { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Rage { get; init; }
@@ -86,6 +93,10 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 }
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildBattleCalledMoveTransitionEvent), "called-move-transition")]
+[JsonDerivedType(typeof(WildBattleAttackStringEvent), "attack-string")]
+[JsonDerivedType(typeof(WildBattlePpCommandEvent), "pp-command")]
+[JsonDerivedType(typeof(WildBattleTransformedEvent), "transformed")]
 [JsonDerivedType(typeof(WildBattleYawnEvent), "yawn")]
 [JsonDerivedType(typeof(WildBattleSleepTalkEvent), "sleep-talk")]
 [JsonDerivedType(typeof(WildBattlePokeFluteEvent), "poke-flute")]
@@ -188,7 +199,7 @@ public sealed record WildBattleRunAttemptEvent(long Sequence, int Turn, int Atte
 public sealed record WildBattleBallThrownEvent(long Sequence, int Turn, WildBattleSide Actor,
     WildBattleSide Target, CaptureBall Ball) : WildBattleEvent(Sequence, Turn);
 /// <summary>AnimationCode 4 means three-shake success, not four visible shakes. The captured instance
-/// remains State.Opponent.Pokemon; ownership, inventory and Pokédex effects belong to the caller.</summary>
+/// is WildBattleTransformationRules.PersistentPokemon(State.Opponent); ownership, inventory and Pokédex effects belong to the caller.</summary>
 public sealed record WildBattleCaptureResultEvent(long Sequence, int Turn, CaptureBall Ball,
     CaptureOutcome Outcome, CaptureDecisionBranch Branch, CaptureCalculation Calculation,
     int ChecksPassed, int AnimationCode) : WildBattleEvent(Sequence, Turn);

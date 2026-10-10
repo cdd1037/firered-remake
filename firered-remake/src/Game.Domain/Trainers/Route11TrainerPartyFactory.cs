@@ -32,11 +32,12 @@ public static class Route11TrainerPartyFactory
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(Route11TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false)
+    public static TrainerPartyCreationResult Create(Route11TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
     {
+        towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
-        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) is 101 or 102) != (towerRules && !fuchsiaRules) || (pokemon.Species.Count == 107) != fuchsiaRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         rockTunnelRules |= celadonGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
         if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : 79) || !trainers.Trainers.TryGetValue(id, out var trainer))

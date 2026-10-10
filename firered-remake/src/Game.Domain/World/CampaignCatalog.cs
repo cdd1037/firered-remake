@@ -71,6 +71,9 @@ public interface ICampaignCatalog:IStoryCatalog
     CeladonGymTrainerCatalog? CeladonGymTrainers=>null;
     bool RegionalServicesEnabled=>false;
     bool RegionalInteriorServicesEnabled=>false;
+    bool FuchsiaRouteEnabled=>false;
+    FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>null;
+    bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;
     string? DeferredRegionalServiceReason(MapId map,string script)=>null;
     NameRaterSourceContent? NameRaterSource=>null;
     DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock=>null;

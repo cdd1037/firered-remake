@@ -14,7 +14,7 @@ public sealed partial class PretCampaignCatalog
     public bool SnorlaxEnabled => SnorlaxRegion is not null;
 
     public bool IsSnorlaxStablePosition(MapId map, int x, int y) =>
-        SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsFootDestination(map, x, y);
+        FuchsiaRouteEnabled&&map.Value=="map.route-12" || SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsFootDestination(map, x, y);
 
     public bool IsSnorlaxWarpAllowed(MapId map, int sourceWarpId) =>
         SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsWarp(map, sourceWarpId);

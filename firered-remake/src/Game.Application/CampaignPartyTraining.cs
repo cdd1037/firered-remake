@@ -21,7 +21,7 @@ public sealed partial class CampaignSession
         if(_content.Route22Enabled&&turn.Events.OfType<WildBattlePlayerSwitchedEvent>().SingleOrDefault() is {} switched)
         {
             b=RememberKnockedOff(b,outgoing.InstanceId,switched.Previous);
-            var preserved=outgoing with{Pokemon=switched.Previous.Pokemon,Status=switched.Previous.Status,HeldItem=OwnedBattleHeldItem(switched.Previous)};
+            var preserved=outgoing with{Pokemon=WildBattleTransformationRules.PersistentPokemon(switched.Previous),Status=WildBattleTransformationRules.PersistentStatus(switched.Previous),HeldItem=OwnedBattleHeldItem(switched.Previous)};
             var fainted=b.FaintedMembers??ImmutableSortedSet<long>.Empty;
             if(preserved.Pokemon.CurrentHp==0&&!fainted.Contains(preserved.InstanceId))
             {preserved=preserved with{Pokemon=preserved.Pokemon with{Friendship=Math.Max(0,preserved.Pokemon.Friendship-1)}};fainted=fainted.Add(preserved.InstanceId);}
@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
         var next=b with{State=turn.State!,ActivePartyIndex=index,OwnedBefore=incoming,ParticipatingMembers=b.ParticipatingMembers!.Add(incoming.InstanceId),OpponentHpAtLastSwitch=hp,
             LastSwitch=new(outgoing,withdrawal,send),Events=turn.Events,EventIndex=0,Phase=CampaignBattlePhase.Events,RandomTrace=turn.Trace};
         return new(CommandStatus.Accepted,PrepareWildPresentation(PenalizeWildFaint(state with{WildBattle=next,
-            Party=state.Party.SetItem(index,incoming with{Pokemon=turn.State!.Player.Pokemon,Status=turn.State.Player.Status,HeldItem=OwnedBattleHeldItem(turn.State.Player)}),World=state.World with{Rng=turn.State!.Rng}})));
+            Party=state.Party.SetItem(index,incoming with{Pokemon=WildBattleTransformationRules.PersistentPokemon(turn.State!.Player),Status=WildBattleTransformationRules.PersistentStatus(turn.State.Player),HeldItem=OwnedBattleHeldItem(turn.State.Player)}),World=state.World with{Rng=turn.State!.Rng}})));
     }
 
     private CampaignState SettleWildTrainingVictory(CampaignState state)
@@ -48,8 +48,8 @@ public sealed partial class CampaignSession
         // Preflight every receiver before publishing the first reward. Each receiver's state is
         // installed only when its source-ordered presentation/learning segment starts.
         foreach(int i in indices)
-            receivers.Add(new(i,WildVictoryRewards.Apply(BattlePokemon,state.Party[i],b.State.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,indices.Length,forestRules:_content.ForestEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled)));
-        var history=new CampaignWildHistory(b.Id,b.State.Opponent.Pokemon.SourceSpeciesId,b.State.Opponent.Pokemon.Level,b.State.Outcome,receivers.Sum(r=>r.Result.ExperienceGained)){ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute,ScriptedMarowak=b.ScriptedMarowak};
+            receivers.Add(new(i,WildVictoryRewards.Apply(BattlePokemon,state.Party[i],b.State.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,indices.Length,forestRules:_content.ForestEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled,defeatedBattleView:b.State.Opponent)));
+        var history=new CampaignWildHistory(b.Id,WildBattleTransformationRules.PersistentPokemon(b.State.Opponent).SourceSpeciesId,b.State.Opponent.Pokemon.Level,b.State.Outcome,receivers.Sum(r=>r.Result.ExperienceGained)){ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute,ScriptedMarowak=b.ScriptedMarowak};
         var next=state with{Exploration=state.Exploration! with{Battles=state.Exploration.Battles.Add(history)},WildBattle=b with{RewardReceivers=receivers.ToImmutable(),RewardReceiverIndex=0,Phase=CampaignBattlePhase.Results}};
         return StartWildRewardReceiver(next);
     }

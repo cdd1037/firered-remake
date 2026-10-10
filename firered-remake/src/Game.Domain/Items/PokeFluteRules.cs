@@ -21,9 +21,9 @@ public static class PokeFluteRules
     public const string FieldNoEffectMessage = "gText_PlayedPokeFluteCatchy";
 
     public static PokeFluteFieldResult UseField(EarlyShopCatalog shop, CampaignPokemonContent content,
-        InventoryState inventory, ImmutableArray<PartyPokemon> party, bool snorlaxRules = false)
+        InventoryState inventory, ImmutableArray<PartyPokemon> party, bool snorlaxRules = false, bool fuchsiaRules = false)
     {
-        var error = ValidateUse(shop, content, inventory, party, snorlaxRules);
+        var error = ValidateUse(shop, content, inventory, party, snorlaxRules, fuchsiaRules);
         if (error is not null) return new(false, party, [], error);
         var changed = party;
         var awakened = ImmutableArray.CreateBuilder<int>();
@@ -38,9 +38,9 @@ public static class PokeFluteRules
     }
 
     internal static string? ValidateUse(EarlyShopCatalog shop, CampaignPokemonContent content,
-        InventoryState inventory, ImmutableArray<PartyPokemon> party, bool snorlaxRules = false)
+        InventoryState inventory, ImmutableArray<PartyPokemon> party, bool snorlaxRules = false, bool fuchsiaRules = false)
     {
-        if (shop.Profile != PokemonTowerItemRules.Profile || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) != (snorlaxRules ? 102 : 101))
+        if (shop.Profile != PokemonTowerItemRules.Profile || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) != (fuchsiaRules ? 107 : snorlaxRules ? 102 : 101))
             return "poke_flute_profile_not_enabled";
         try
         {
@@ -66,7 +66,7 @@ public static class PokeFluteRules
     {
         if (activeIndex < 0 || activeIndex >= party.Length) return "poke_flute_active_index";
         var owned = party[activeIndex];
-        return SamePokemon(owned.Pokemon, active.Pokemon) && owned.Status == active.Status &&
+        return SamePokemon(owned.Pokemon, WildBattleTransformationRules.PersistentPokemon(active)) && owned.Status == WildBattleTransformationRules.PersistentStatus(active) &&
             owned.HeldItem == (active.KnockedOffItem ?? active.HeldItem) ? null : "poke_flute_active_projection";
     }
 
@@ -77,7 +77,17 @@ public static class PokeFluteRules
         WildBattleStatus.IsSleeping(mon.Status) && mon.Pokemon.AbilityId != "ABILITY_SOUNDPROOF";
     internal static bool BattleWakes(WildBattleCombatant mon) =>
         WildBattleStatus.IsSleeping(mon.Status) && mon.Pokemon.AbilityId != "ABILITY_SOUNDPROOF";
+    internal static bool PartyWakes(WildBattleCombatant mon) => WildBattleStatus.IsSleeping(WildBattleTransformationRules.PersistentStatus(mon)) &&
+        WildBattleTransformationRules.PersistentPokemon(mon).AbilityId != "ABILITY_SOUNDPROOF";
     // Active battlers clear only sleep plus Nightmare, including an already awake battler.
-    internal static WildBattleCombatant ClearActive(WildBattleCombatant mon) =>
-        mon.Pokemon.AbilityId == "ABILITY_SOUNDPROOF" ? mon : mon with { Status = mon.Status & ~7u, Nightmare = false };
+    internal static WildBattleCombatant ClearActive(WildBattleCombatant mon)
+    {
+        bool soundproof = mon.Pokemon.AbilityId == "ABILITY_SOUNDPROOF";
+        uint battleStatus = soundproof ? mon.Status : mon.Status & ~7u;
+        if (mon.Transform is not { } transform) return soundproof ? mon : mon with { Status = battleStatus, Nightmare = false };
+        uint partyStatus = WildBattleTransformationRules.PersistentStatus(mon);
+        if (transform.OriginalPokemon.AbilityId != "ABILITY_SOUNDPROOF") partyStatus &= ~7u;
+        return mon with { Status = battleStatus, Nightmare = soundproof && mon.Nightmare,
+            Transform = transform with { PartyStatusOverride = partyStatus == battleStatus ? null : partyStatus } };
+    }
 }

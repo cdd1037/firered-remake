@@ -54,11 +54,11 @@ public sealed partial class CampaignSession
         var consumed = EarlyInventoryAddRules.Remove(shop, ShopInventoryView(state.Inventory), MtMoonItemRules.MoonStoneId, 1);
         if (!consumed.Succeeded) return No(consumed.Error!);
         var owned = state.Party[command.PartyIndex];
-        var proposal = ItemEvolutionRules.Eligibility(_content.PokemonContent!, owned);
+        var proposal = ItemEvolutionRules.Eligibility(_content.PokemonContent!, owned,fuchsiaRules:_content.FuchsiaRouteEnabled);
         if (proposal is null)
             return new(CommandStatus.Accepted, state with { ItemMenu = menu with
                 { View = "message", MessageSymbol = "gText_WontHaveEffect", ReturnView = "bag" } });
-        var evolved = ItemEvolutionRules.Apply(_content.PokemonContent!, owned, proposal);
+        var evolved = ItemEvolutionRules.Apply(_content.PokemonContent!, owned, proposal,fuchsiaRules:_content.FuchsiaRouteEnabled);
         int target = evolved.Pokemon.Pokemon.SourceSpeciesId;
         var pages = ImmutableArray.CreateBuilder<string>();
         pages.Add($"Congratulations! Your {owned.Nickname}\nevolved into {_content.PokemonContent!.SpeciesNames[target]}!");

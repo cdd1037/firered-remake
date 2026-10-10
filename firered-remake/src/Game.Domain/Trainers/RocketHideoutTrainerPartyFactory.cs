@@ -32,10 +32,11 @@ public static class RocketHideoutTrainerPartyFactory
     public static TrainerId Giovanni { get; } = new("pret:TRAINER_BOSS_GIOVANNI");
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(RocketHideoutTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool towerRules = false)
+    public static TrainerPartyCreationResult Create(RocketHideoutTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool towerRules = false, bool fuchsiaRules = false)
     {
+        towerRules |= fuchsiaRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (towerRules ? (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 102 ? 102 : 101) : 99) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) != (fuchsiaRules ? 107 : towerRules ? (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(pokemon) == 102 ? 102 : 101) : 99) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("RocketHideout requires the exact ninety-nine-species catalog and one initial source RocketHideout team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

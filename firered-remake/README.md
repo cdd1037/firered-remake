@@ -10,38 +10,56 @@ The source/application checks include capture into party/PC and non-victory call
 the focused real-window Snorlax check covers No, wake, escape, removal, save and a
 second-process normal Continue. See [Snorlax scope and evidence](docs/snorlax-campaign.md).
 
-The current regional-services successor includes the ordinary regional dialogue pass,
-five Celadon condominium maps, Tea delivery and the four shared gate consumers,
-and the rooftop level-25 Eevee gift with party/PC naming. Run
-`bash scripts/launch-current.sh` (or `launch-regional-services.sh`); its isolated
-save directory is `.play/regional-services`. The explicit
-`save upgrade-regional-services INPUT NEW_OUTPUT` command preserves the whole
-previous regional payload and generation. Earlier profiles retain separate saves.
-See [Tea/Eevee scope and proof](docs/regional-tea-eevee.md) and
-[regional coverage](docs/regional-interaction-coverage.md).
+The regional-services continuation includes Tea/four gates, the rooftop Eevee gift,
+ordinary Department Store 2F purchases, store stairs/elevator, ordinary interiors
+and Lavender Name Rater. The next accepted arrival reaches Fuchsia Center through
+Route12–15 with eleven actual source trainer wins and complete nurse/save recovery.
+It adds Ditto/Transform with permanent capture identity retained, plus Farfetch'd,
+Doduo and Dodrio. See [Fuchsia scope and proof](docs/fuchsia-arrival.md) and the
+[per-service regional ledger](docs/regional-interaction-coverage.md).
 
-Regional interaction completeness is still in progress. Missing ordinary interiors,
-Department Store services, Name Rater, coin systems, Itemfinder and Route8's genuine
-preset double battle are separate gaps. Route12/16 access does not open Cycling Road
-or the full southern routes. Source-only GitHub checkpoints and asset-complete private
-Drive packages have separate records; the latest complete Drive base is the four-badge
-223c93 checkpoint. This is an active complete-FireRed project, not a finished game.
+Run `bash scripts/launch-current.sh` (or `launch-fuchsia-route.sh`); its isolated
+save directory is `.play/fuchsia-route`. The explicit
+`save upgrade-fuchsia-route INPUT NEW_OUTPUT` accepts the Regional Interiors
+profile, preserves generation and changes only the documented encounter tag in
+the gameplay payload. Earlier profiles keep separate saves and upgrade commands.
+
+Two new singles still require complete Metronome, and three new preset doubles
+require genuine two-versus-two execution; their rosters are not substituted.
+Koga/fifth badge, Safari, Cycling Road, new-route pickups and ordinary city
+services remain next work. The store's TM/tutor/stone/vitamin/drink services,
+coin systems, Itemfinder and Route8 Twins are also explicit gaps. The latest
+asset-complete Drive base is the bounded regional closeout `2c04c7df`; subsequent
+source-only GitHub checkpoints have their own records. This is an unfinished
+complete-FireRed project.
 
 ## Earlier first-badge checkpoint
 
 The current launcher now exposes functional New Game/Continue, canonical player/rival names and gender, a source Green walking avatar, validated backup recovery and a first-save different-adventure confirmation. The source catalogs, isolated Godot input/file checks, and a fixed-executable native two-process New Game/save/Continue check pass. Original title/Oak introduction, original naming keyboard and persistent play time remain open. See [entry flow](docs/player-entry-application.md). Battle medicine now includes five ordinary items on current/reserve members; [focused native Potion proof](evidence/battle-medicine-native-review.md) retains actual exit/restart recovery.
 
-This is an active implementation, not a completed FireRed game. The current playable profile reaches Pewter/Brock from the original opening with all three starter branches, bounded early party growth/moves, field menus and 14×30 PC storage. Actual native checks cover seventh capture, storage deposit/withdrawal and separate-process file recovery. The basic menus include a numerical regional Pokédex, trainer-card front, persisted text speed/battle style/frame options and real field text printing; source/application/headless and focused two-process native checks pass. Full menu modes and broader original presentation remain unfinished. See [current first-badge gaps](docs/first-badge-progress.md).
+The earlier first-badge profile reaches Pewter/Brock from the original opening with all three starter branches, bounded early party growth/moves, field menus and 14×30 PC storage. Actual native checks cover seventh capture, storage deposit/withdrawal and separate-process file recovery. The basic menus include a numerical regional Pokédex, trainer-card front, persisted text speed/battle style/frame options and real field text printing; source/application/headless and focused two-process native checks pass. Full menu modes and broader original presentation remain unfinished. See [first-badge gaps](docs/first-badge-progress.md).
 
 The earlier Route22 profile includes Daisy's Town Map, Oak/PC rating, the early Route22 rival and new wild species, and the bounded Boulder/Cascade guards in Route23. Four actual native processes verified the rival, guards, Continue and captured-Mankey menus; see [Route22 integration](docs/route22-application.md) and [retained native summary](evidence/route22-native-review.md). This does not open the later badge gates or northern Route23.
 
 Historical profile checkpoints retain their original rules. Use `dotnet run --project src/Game.Tooling -- save upgrade-route22 OLD-OAK-RATING-SAVE NEW-SAVE` for the explicit full-payload-preserving upgrade to a new file. Earlier `upgrade-oak-rating`, `upgrade-town-map`, `upgrade-repel` and `upgrade-field-pickups` commands remain available for their exact source profiles. Saves are never silently relabeled.
 
-The latest launcher enables [compact map data](docs/runtime-map-data.md) and [bounded shared textures](docs/map-resource-cache.md). The 24 map descriptions are 449,579 B including metadata registry, compared with 16,100,416 B of rich development JSON. Original source evidence remains available for rebuilding. Current map textures use a three-map/24 MiB soft budget, with active/last-frame pins preserved; source region rectangles and source pixels remain unchanged. This is not a TileMap or wholesale atlas conversion.
+The launcher enables [compact map data](docs/runtime-map-data.md) and [bounded shared textures](docs/map-resource-cache.md). The original 24-map measurement reduced descriptions to 449,579 B including the registry from 16,100,416 B of rich development JSON; it is not the size of today's 153-map composition. Original source evidence remains available for rebuilding. Map textures use a three-map/24 MiB soft budget, with active/last-frame pins preserved; source regions and source pixels remain unchanged.
 
-The user-selected default audio backend now synthesizes original sequences/samples in C#, using a 2,623,222 B private resource package. [Audio integration](docs/synth-audio-integration.md) documents 144 admitted current-route IDs, source counters, buffering, approximations and exact validation limits. `FIRERED_AUDIO=0` disables presentation audio; `FIRERED_AUDIO_BACKEND=recorded` is an explicit local comparison requiring the old separately retained recordings. Default gameplay does not silently fall back to those recordings. The next recovery package excludes pre-rendered/converted audio; necessary original samples, their hashes, source code and rebuild instructions remain. Godot PCM/control and command-state comparisons pass; physical audible listening remains unverified. Two real default-synth processes have now saved and continued with identical state/file hashes; see [the native evidence](evidence/synth-audio-native.md). Final compressed-package recovery is a separate gate.
+The default audio backend synthesizes original sequences/samples in C#, using the
+2,623,222 B private resource package. The [original integration](docs/synth-audio-integration.md)
+documents its 144-ID first cohort; successive manifests now admit 303 IDs in the
+Fuchsia profile. `FIRERED_AUDIO=0` disables presentation audio. The explicit
+`recorded` backend is optional local historical comparison; default gameplay does
+not fall back to it. Backups exclude prerendered/converted recordings and retain
+necessary original samples, hashes, code and rebuild instructions. PCM/control
+checks and real default-synth save/Continue processes have passed within their
+documented bounds; physical audible listening remains unverified.
 
-The [current recovery contract](docs/current-checkpoint-recovery.md) separates the selected final checks, historical native evidence and upcoming archive restore. [Menu pointer controls](docs/menu-pointer-controls.md) now add hover, wheel and context-aware right-click; Tab remains available.
+The [earlier recovery contract](docs/current-checkpoint-recovery.md) retains its
+historical first-badge acceptance scope. Current backups verify structure and
+uploaded hashes without repeating gameplay/builds solely for packaging.
+[Menu pointer controls](docs/menu-pointer-controls.md) include hover, wheel and
+context-aware right-click; Tab remains available.
 
 The foundation milestones below retain their original scope; later increments are described in the current gap ledger.
 

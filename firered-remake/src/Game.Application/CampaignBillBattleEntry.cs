@@ -14,6 +14,7 @@ public sealed partial class CampaignSession
             "VermilionCity_Gym" when _content.VermilionGymEnabled=>new("map.vermilion-city-gym"),
             _ when _content.PokemonTowerEnabled&&sourceMap.StartsWith("PokemonTower_",StringComparison.Ordinal)=>new("map.pokemon-tower-"+sourceMap.Split('_')[1].ToLowerInvariant()),
             "Route11" when _content.Route11Enabled=>new("map.route-11"),
+            "Route12" or "Route13" or "Route14" or "Route15" when _content.FuchsiaRouteEnabled=>new("map.route-"+sourceMap[5..]),
             "CeladonCity_GameCorner" when _content.RocketHideoutEnabled=>new("map.celadon-city-game-corner"),
             _ when _content.RocketHideoutEnabled&&sourceMap.StartsWith("RocketHideout_",StringComparison.Ordinal)=>new("map.rocket-hideout-"+sourceMap.Split('_')[1].ToLowerInvariant()),
             "CeladonCity_Gym" when _content.CeladonGymEnabled=>new("map.celadon-city-gym"),

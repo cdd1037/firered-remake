@@ -23,10 +23,10 @@ public static partial class WildBattleRules
 
     internal sealed partial class Execution
     {
-        public bool Tower => State.RulesVersion is TowerRulesVersion or SnorlaxRulesVersion;
+        public bool Tower => State.RulesVersion is TowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion;
         private readonly Dictionary<WildBattleSide, WildBattleSide> towerDestinyKnockouts = [];
 
-        internal void ClearTowerDestinyForItem() => SetTowerFlag(WildBattleSide.Player, "destiny-bond", false, "non-move-action");
+        internal void ClearTowerDestinyForItem() { FuchsiaCancelPhysicalChain(WildBattleSide.Player, "non-move-action"); SetTowerFlag(WildBattleSide.Player, "destiny-bond", false, "non-move-action"); }
         private void SetTowerFlag(WildBattleSide side, string effect, bool value, string reason)
         {
             var mon = Get(side);

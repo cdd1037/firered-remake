@@ -11,10 +11,10 @@ public static class SnorlaxBattleContract
     public const int AiSetupDrawCount = 4;
     public const int HeldItemDrawCount = 1;
     public static string WildHeldItem(int roll) => roll is >= 0 and < 100 ? "ITEM_CHESTO_BERRY" : throw new ArgumentOutOfRangeException(nameof(roll));
-    public static PokemonCreationResult Create(PokemonCatalog catalog, uint originalTrainerId, RngState rng)
+    public static PokemonCreationResult Create(PokemonCatalog catalog, uint originalTrainerId, RngState rng, bool fuchsiaRules = false)
     {
         PokemonFactory.ValidateCatalog(catalog);
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 102) throw new NotSupportedException("snorlax_catalog_required");
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (fuchsiaRules ? 107 : 102)) throw new NotSupportedException("snorlax_catalog_required");
         return PokemonFactory.Create(catalog, new(new("pret:SPECIES_SNORLAX"),30,originalTrainerId,IvPolicy.Random,PersonalityPolicy.Random),rng);
     }
     public static bool SourceInitialInstance(PokemonInstance mon) => mon.SourceSpeciesId == 143 && mon.Level == 30 &&
@@ -25,12 +25,12 @@ public static class SnorlaxBattleContract
 public static partial class WildBattleRules
 {
     public static WildBattleResult StartSnorlax(PokemonCatalog catalog, WildBattleCombatant player,
-        WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain)
+        WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain, bool fuchsiaRules = false)
     {
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != 102) return Fail(null,"snorlax_catalog_required");
+        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (fuchsiaRules ? 107 : 102)) return Fail(null,"snorlax_catalog_required");
         if (opponent?.Pokemon is not {} mon || !SnorlaxBattleContract.SourceInitialInstance(mon) || opponent.Status != 0 || opponent.HeldItem != "ITEM_NONE" || opponent.KnockedOffItem is not null)
             return Fail(null,"snorlax_scripted_identity");
-        return StartCore(catalog,player,opponent,rng,SnorlaxRulesVersion,terrain,false,null,true);
+        return StartCore(catalog,player,opponent,rng,fuchsiaRules ? FuchsiaRulesVersion : SnorlaxRulesVersion,terrain,false,null,true);
     }
     internal static bool SnorlaxSleepTalkCandidate(PokemonCatalog catalog, WildBattleCombatant mon, WildBattleCombatant? foe, int slot)
     {
@@ -45,7 +45,7 @@ public static partial class WildBattleRules
     }
     private static string? ValidateSnorlaxKind(WildBattleState state)
     {
-        if (state.RulesVersion != SnorlaxRulesVersion && (state.ScriptedSnorlax || state.Player.YawnTurnsRemaining != 0 || state.Opponent.YawnTurnsRemaining != 0)) return "snorlax_state_profile";
+        if (state.RulesVersion is not (SnorlaxRulesVersion or FuchsiaRulesVersion) && (state.ScriptedSnorlax || state.Player.YawnTurnsRemaining != 0 || state.Opponent.YawnTurnsRemaining != 0)) return "snorlax_state_profile";
         if (!state.ScriptedSnorlax) return null;
         if (state.TowerBattleKind is not null || state.Opponent.Pokemon.SourceSpeciesId != 143 || state.Opponent.Pokemon.Level != 30) return "snorlax_scripted_identity";
         return null;

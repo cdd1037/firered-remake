@@ -41,8 +41,9 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false)
     {
+        if(includeFuchsiaRoute&&!includeSnorlax)throw new ArgumentException("Fuchsia route audio requires Snorlax.");
         if(includeSnorlax&&!includePokemonTower)throw new ArgumentException("Snorlax audio requires Pokemon Tower.");
         if(includePokemonTower&&!includeRocketHideout)throw new ArgumentException("Pokemon Tower audio requires Rocket Hideout.");
         if(includeRocketHideout&&!includeCeladonGym)throw new ArgumentException("Rocket Hideout audio requires Celadon Gym.");
@@ -142,6 +143,16 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=SnorlaxSynthManifestIdentity.Sha256)throw new InvalidDataException("Snorlax synth manifest identity differs.");
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Snorlax synth manifest.");
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=SnorlaxSynthManifestIdentity.SourceCommit||extension.Cues.Length!=SnorlaxSynthManifestIdentity.CueCount)throw new InvalidDataException("Snorlax synth manifest contract differs.");
+            cues=[..cues,..extension.Cues];
+        }
+        if(includeFuchsiaRoute)
+        {
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/fuchsia-route-synth-audio/manifest.json");
+            if(new FileInfo(path).Length!=FuchsiaRouteSynthManifestIdentity.Bytes)throw new InvalidDataException("Fuchsia route cry manifest length differs.");
+            byte[] extensionBytes=File.ReadAllBytes(path);
+            if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=FuchsiaRouteSynthManifestIdentity.Sha256)throw new InvalidDataException("Fuchsia route cry manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Fuchsia route cry manifest.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=FuchsiaRouteSynthManifestIdentity.CueCount)throw new InvalidDataException("Fuchsia route cry manifest contract differs.");
             cues=[..cues,..extension.Cues];
         }
         _catalog = new(StringComparer.Ordinal);

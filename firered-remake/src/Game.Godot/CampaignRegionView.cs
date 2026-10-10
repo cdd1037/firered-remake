@@ -68,7 +68,7 @@ public partial class CampaignView
     {
         if(graphics!="OBJ_EVENT_GFX_VAR_0")return graphics;
         var value=_session.State.Script.Variables.GetValueOrDefault("VAR_OBJ_GFX_ID_0");
-        foreach(var candidate in new[]{"OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN","OBJ_EVENT_GFX_OLD_MAN_1"})if(_catalog.TryConstant(candidate,out var id)&&id==value)return candidate;
+        foreach(var candidate in new[]{"OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN","OBJ_EVENT_GFX_OLD_MAN_1","OBJ_EVENT_GFX_OMANYTE","OBJ_EVENT_GFX_KABUTO"})if(_catalog.TryConstant(candidate,out var id)&&id==value)return candidate;
         throw new InvalidDataException("unsupported_dynamic_npc_graphics:"+value);
     }
     private bool IsConnectedNeighborCell(int x,int y)

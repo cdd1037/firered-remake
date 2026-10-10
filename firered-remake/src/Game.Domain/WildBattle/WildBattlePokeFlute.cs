@@ -22,13 +22,13 @@ public static partial class WildBattleRules
         ImmutableArray<PartyPokemon> party, int activeIndex)
     {
         WildBattlePokeFluteResult Reject(string error) => new(Fail(state, error), party);
-        if (state.RulesVersion is not (TowerRulesVersion or SnorlaxRulesVersion)) return Reject("poke_flute_battle_profile_not_enabled");
+        if (state.RulesVersion is not (TowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion)) return Reject("poke_flute_battle_profile_not_enabled");
         var error = ValidateAction(content.Catalog, state) ?? ValidateRoute3NonMoveAction(state) ??
-            PokeFluteRules.ValidateUse(shop, content, inventory, party, state.RulesVersion == SnorlaxRulesVersion) ??
+            PokeFluteRules.ValidateUse(shop, content, inventory, party, state.RulesVersion == SnorlaxRulesVersion, state.RulesVersion == FuchsiaRulesVersion) ??
             PokeFluteRules.ValidateActive(party, activeIndex, state.Player);
         if (error is not null) return Reject(error);
         var playerIndices = Enumerable.Range(0, party.Length).Where(i => PokeFluteRules.BattleWakes(party[i])).ToImmutableArray();
-        ImmutableArray<int> opponentIndices = PokeFluteRules.BattleWakes(state.Opponent) ? [0] : [];
+        ImmutableArray<int> opponentIndices = PokeFluteRules.PartyWakes(state.Opponent) ? [0] : [];
         var awakened = party;
         foreach (int i in playerIndices) awakened = awakened.SetItem(i, awakened[i] with { Status = 0 });
         var battle = Execute(state, state, context =>
