@@ -97,9 +97,10 @@ public static partial class WildBattleRules
                 context.State = context.State with { Opponent = context.State.Opponent with { HeldItem = item } };
             }
             context.Add(n => new WildBattleStartedEvent(n, 0));
-            context.Order(WildBattleOrderPhase.Entry);
-            context.ApplyRoute3EntryAbility(WildBattleSide.Player);
-            context.ApplyRoute3EntryAbility(WildBattleSide.Opponent);
+            var first = context.Order(WildBattleOrderPhase.Entry);
+            context.SourceWeatherInitialEntry(first);
+            context.ApplyRoute3EntryAbility(WildBattleSide.Player, weather: false);
+            context.ApplyRoute3EntryAbility(WildBattleSide.Opponent, weather: false);
             context.Ready(false);
         });
     }

@@ -80,8 +80,8 @@ public static partial class WildBattleRules
                 critical, percent, true, true, true, true, route3Rules: true, dynamicPower: power,
                 mtMoonRules: true, ceruleanRules: true, billRules: true, vermilionRules: true,
                 ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
-                rain: State.RainTurnsRemaining > 0, rockTunnelRules: true,
-                reflect: RockTunnelReflects(targetSide), sourceDefinition: activeInvocation is null ? null : catalog.Moves[move.Id], sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide), weatherSuppressed: SourceCalledWeatherSuppressed).Damage;
+                rain: SourceCalledRain, rockTunnelRules: true,
+                reflect: RockTunnelReflects(targetSide), sourceDefinition: activeInvocation is null ? null : catalog.Moves[move.Id], sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide), weatherSuppressed: SourceDamageWeatherSuppressed).Damage;
 
             // typecalc precedes adjustnormaldamage. Its no-effect jump revisits
             // furycuttercalc, clears the counter, and skips the damage/secondary draws.

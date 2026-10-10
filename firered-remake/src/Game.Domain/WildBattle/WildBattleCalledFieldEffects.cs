@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Game.Domain.Ids;
+using Game.Domain.Battle;
 using Game.Domain.Pokemon;
 using Game.Domain.Rules;
 
@@ -77,11 +78,15 @@ public static partial class WildBattleRules
     internal sealed partial class Execution
     {
         private bool SourceCalledFieldActive => activeInvocation is not null || State.CalledField is not null || State.CalledDelayed is not null || State.Player.CalledVolatile is not null || State.Opponent.CalledVolatile is not null;
-        private bool SourceCalledSun => (State.CalledField?.SunTurnsRemaining ?? 0) > 0;
+        private bool SourceCalledRain => SourceWeatherRules.HasRain(State);
+        private bool SourceCalledSandstorm => SourceWeatherRules.HasSandstorm(State);
+        private bool SourceCalledSun => SourceWeatherRules.HasSun(State);
         private bool SourceCalledWeatherPresent => SourceCalledSun || (State.CalledField?.HailTurnsRemaining ?? 0) > 0 ||
-            State.RainTurnsRemaining > 0 || State.SandstormTurnsRemaining > 0;
-        private bool SourceCalledWeatherSuppressed => SourceCalledFieldActive && new[] { State.Player, State.Opponent }
-            .Any(m => m.Pokemon.CurrentHp > 0 && WildBattleEffective.Ability(m) is "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK");
+            SourceCalledRain || SourceCalledSandstorm;
+        private bool SourceCalledWeatherSuppressed => (SourceCalledFieldActive || SourceWeatherAbilitiesEnabled) &&
+            SourceWeatherRules.IsSuppressed([State.Player, State.Opponent]);
+        private bool SourceDamageWeatherSuppressed => SourceWeatherAbilitiesEnabled
+            ? SourceWeatherRules.IsSuppressed([State.Player, State.Opponent], includeFainted: true) : SourceCalledWeatherSuppressed;
         private bool SourceCalledLightScreen(WildBattleSide side) => (side == WildBattleSide.Player
             ? State.CalledField?.PlayerLightScreenTurnsRemaining : State.CalledField?.OpponentLightScreenTurnsRemaining) > 0;
         private bool SourceCalledMist(WildBattleSide side) => (side == WildBattleSide.Player
@@ -142,12 +147,14 @@ public static partial class WildBattleRules
                 "EFFECT_RAIN_DANCE" => "rain", _ => "sandstorm" };
             before = weather switch { "sun" => field.SunTurnsRemaining, "hail" => field.HailTurnsRemaining,
                 "rain" => State.RainTurnsRemaining, _ => State.SandstormTurnsRemaining };
+            if (State.PermanentWeather is { } permanent && weather == (permanent.Kind switch {
+                SourcePermanentWeatherKind.Rain => "rain", SourcePermanentWeatherKind.Sun => "sun", _ => "sandstorm" })) before = 1;
             if (before == 0)
             {
                 // Forecast must gain an authenticated form/ability overlay before it is representable.
                 if (new[] { State.Player, State.Opponent }.Any(m => WildBattleEffective.Ability(m) == "ABILITY_FORECAST"))
                     throw new UnsupportedAction("called_field_forecast_overlay_required");
-                State = State with { RainTurnsRemaining = weather == "rain" ? 5 : 0,
+                State = State with { PermanentWeather = null, RainTurnsRemaining = weather == "rain" ? 5 : 0,
                     SandstormTurnsRemaining = weather == "sandstorm" ? 5 : 0,
                     CalledField = field with { SunTurnsRemaining = weather == "sun" ? 5 : 0, HailTurnsRemaining = weather == "hail" ? 5 : 0 } };
             }
@@ -221,12 +228,12 @@ public static partial class WildBattleRules
             ElementType type = ScalarType(move.Type); int multiplier = 1;
             if (move.Effect == "EFFECT_WEATHER_BALL")
             {
-                (type, multiplier) = WildBattleSourceFieldEffects.WeatherBall(State.RainTurnsRemaining > 0,
-                    State.SandstormTurnsRemaining > 0, SourceCalledSun, (State.CalledField?.HailTurnsRemaining ?? 0) > 0, SourceCalledWeatherSuppressed);
+                (type, multiplier) = WildBattleSourceFieldEffects.WeatherBall(SourceCalledRain,
+                    SourceCalledSandstorm, SourceCalledSun, (State.CalledField?.HailTurnsRemaining ?? 0) > 0, SourceCalledWeatherSuppressed);
                 invocationEffectiveType = "TYPE_" + type.ToString().ToUpperInvariant();
             }
             bool hit;
-            if (move.Effect == "EFFECT_THUNDER" && State.RainTurnsRemaining > 0 && !SourceCalledWeatherSuppressed)
+            if (move.Effect == "EFFECT_THUNDER" && SourceCalledRain && !SourceCalledWeatherSuppressed)
                 hit = ScalarAccuracy(side, targetSide, move, purpose, type);
             else hit = ScalarAccuracy(side, targetSide, move.Effect == "EFFECT_THUNDER" && SourceCalledSun && !SourceCalledWeatherSuppressed
                 ? move with { Accuracy = 50 } : move, purpose, type);

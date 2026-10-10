@@ -69,9 +69,8 @@ public static partial class WildBattleRules
                 var mon = Get(side);
                 if (slot < 0 || slot >= mon.Pokemon.Moves.Length || mon.Pokemon.CurrentHp == 0) continue;
                 var chosen = catalog.Moves[mon.Pokemon.Moves[slot].Move];
-                // The admitted roster has no Truant user. Its future ability owner supplies that
-                // distinct register to the source predicate; status/PP are not substitutes for it.
-                if (!WildBattleSourcePreparedMoves.FocusPunchSetup(chosen.Id, mon.Status, false, false, runMarker)) continue;
+                // Source tests the raw register even after an ability change removed Truant.
+                if (!WildBattleSourcePreparedMoves.FocusPunchSetup(chosen.Id, mon.Status, mon.TruantLoafing, false, runMarker)) continue;
                 Add(n => new WildBattleFocusPunchPreparedEvent(n, State.Turn, side, slot,
                     WildBattleSourcePartyEffects.ActiveIndex(party, side)));
             }

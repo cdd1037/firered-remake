@@ -261,7 +261,7 @@ public static partial class WildBattleRules
         {
             var other = action.Side == WildBattleSide.Player ? state.Opponent : state.Player;
             string opposingAbility = WildBattleEffective.Ability(other);
-            if (other.Pokemon.CurrentHp > 0 && (opposingAbility == "ABILITY_MAGNET_PULL" && WildBattleEffective.HasType(catalog, actor, "TYPE_STEEL") ||
+            if (SourceShadowTagTrapped(state, action.Side) || other.Pokemon.CurrentHp > 0 && (opposingAbility == "ABILITY_MAGNET_PULL" && WildBattleEffective.HasType(catalog, actor, "TYPE_STEEL") ||
                 opposingAbility == "ABILITY_ARENA_TRAP" && WildBattleEffective.Ability(actor) != "ABILITY_LEVITATE" && !WildBattleEffective.HasType(catalog, actor, "TYPE_FLYING")))
                 error = "called_party_switch_ability_trapped";
         }
@@ -645,7 +645,11 @@ public static partial class WildBattleRules
                 Add(n => new WildBattleHpChangedEvent(n, State.Turn, otherSide, side, new("pret:MOVE_SPIKES"), before, after, damage, false, 100));
                 if (after == 0) ForestFaint(side);
             }
-            if (Get(side).Pokemon.CurrentHp > 0) ApplyRoute3EntryAbility(side);
+            if (Get(side).Pokemon.CurrentHp > 0)
+            {
+                SourceTurnCycleSwitchIn(side);
+                ApplyRoute3EntryAbility(side);
+            }
             // BattleScript_ActionSwitch explicitly runs only the immunity and Mirror Move end cases.
             if (kind == WildBattleCalledSwitchKind.Voluntary) VermilionImmunityAbilities();
             if (suspended is not null)

@@ -1,0 +1,119 @@
+using System.Collections.Immutable;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
+using Game.Domain.Randomness;
+using Game.Domain.WildBattle;
+
+namespace Game.Domain.Battle;
+
+/// <summary>An action after target resolution. Target selection/redirection and the four-action owner
+/// are separate contracts; callers must not infer a unique opposing battler.</summary>
+public sealed record SourceResolvedMoveAction(OccupantToken Actor, long Revision, int ChosenSlot,
+    BattlerSlot Target, int ActionOrderIndex = 0);
+public sealed record SourceKernelResult(SourceBattleFrame State, ImmutableArray<SourceBattleEvent> Events,
+    ImmutableArray<RandomTrace> Trace, SourceMoveInvocation? Invocation, string? Fault)
+{
+    public bool Succeeded => Fault is null;
+}
+
+/// <summary>Bounded source action kernel, not general doubles/campaign admission. Every rejected
+/// branch returns the identical immutable input and empty event/RNG arrays.</summary>
+public static class SourceBattleKernel
+{
+    public const string Version = "firered-shared-recipe-slice-v1";
+    public static string? ValidateAction(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action)
+    {
+        // Do not enter permanent-state projection/SequenceEqual with truncated deserialized
+        // nested objects. The structural identity validator is intentionally not a move validator.
+        if (catalog is null || catalog.Species is null || catalog.Moves is null || frame is null || action is null)
+            return "source_kernel_missing_input";
+        static bool PokemonShape(PokemonInstance? pokemon) => pokemon is not null && pokemon.Stats is not null &&
+            pokemon.Ivs is not null && pokemon.Evs is not null && !pokemon.Moves.IsDefault && pokemon.Moves.All(m => m is not null);
+        if (!frame.Parties.IsDefault && frame.Parties.Any(p => p is not null && !p.Members.IsDefault && p.Members.Any(m => m is not null && !PokemonShape(m.Pokemon))) ||
+            !frame.Slots.IsDefault && frame.Slots.Any(c => c?.Body is { } body && !PokemonShape(body.Pokemon)))
+            return "source_kernel_nested_pokemon_shape";
+        if (!frame.Slots.IsDefault && frame.Slots.Any(c => c?.Body is { } body && (body.Transform is not null || body.CopyMoves is not null)))
+            return "source_kernel_volatile_not_migrated";
+        if (SourceBattleIdentityRules.Validate(frame) is { } shape) return shape;
+        if (frame.Layout == SourceBattleLayout.PresetDoubles && SourceMechanicsCatalog.For(catalog) is null)
+            return "source_kernel_authenticated_catalog_required";
+        foreach (var party in frame.Parties)
+            foreach (var member in party.Members)
+                if (SourcePokemonValidator.ValidateForBattle(catalog, member.Pokemon) is not null)
+                    return "source_kernel_party_pokemon";
+        if (frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion) return "source_kernel_profile";
+        if (action.Revision != frame.Revision || !frame.IsCurrent(action.Actor)) return "source_kernel_stale_action";
+        if (!frame.CanAct(action.Actor.Slot) || !frame.CanAct(action.Target) || frame.Outcome != WildBattleOutcome.Ongoing ||
+            !frame.PendingSwitches.IsEmpty || action.ActionOrderIndex < 0 || action.ActionOrderIndex >= frame.BattlerCount)
+            return "source_kernel_action_phase";
+        var actor = frame.Get(action.Actor.Slot).Body!;
+        if (action.ChosenSlot < 0 || action.ChosenSlot >= actor.Pokemon.Moves.Length) return "source_kernel_move_slot";
+        if (!catalog.Moves.TryGetValue(actor.Pokemon.Moves[action.ChosenSlot].Move, out var move) ||
+            !MetronomeSourceMoveDefinition.Matches(move)) return "source_kernel_move_definition";
+        if (!SupportsRecipe(move)) return "source_kernel_recipe_not_migrated";
+        if (move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" && action.Target != action.Actor.Slot ||
+            move.Target == "MOVE_TARGET_SELECTED" && action.Target == action.Actor.Slot)
+            return "source_kernel_target_mode";
+        if (new[] { frame.Field.RainTurnsRemaining, frame.Field.SunTurnsRemaining, frame.Field.SandstormTurnsRemaining, frame.Field.HailTurnsRemaining }.Count(t => t > 0) > 1)
+            return "source_kernel_weather_conflict";
+        // These source branches still belong to the compatibility executor. Reject the whole
+        // transaction before RNG, costs, cancellation or any recipe reaches them.
+        foreach (var cell in frame.Slots.Take(frame.BattlerCount))
+        {
+            if (cell.Body is not { } body) continue;
+            if (SourcePokemonValidator.ValidateForBattle(catalog, WildBattleTransformationRules.PersistentPokemon(body)) is { })
+                return "source_kernel_pokemon";
+            if (body.Status != 0 && !WildBattleStatus.IsSleeping(body.Status) && body.Status is not (WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
+                !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) return "source_kernel_status";
+            if (new[] { body.AttackStage, body.DefenseStage, body.SpeedStage, body.AccuracyStage, body.EvasionStage,
+                6 + body.SpecialAttackStageDelta, 6 + body.SpecialDefenseStageDelta }.Any(stage => stage is < 0 or > 12))
+                return "source_kernel_stat_stage";
+            if (body.Transform is not null || body.CopyMoves is not null || body.CalledVolatile is not null || body.CalledOverlay is not null || body.DestinyBond || body.Nightmare || body.Cursed || body.Rooted || body.YawnTurnsRemaining != 0 || body.ChargeTurnsRemaining != 0 || body.Minimized || body.Imprison || body.SourcePartyStatusOverride is not null ||
+                cell.Registers.Turn?.Lock is not null || body.Protected || body.Enduring || body.Rage ||
+                body.Flinched || body.ConfusionTurnsRemaining != 0 || body.BindTurnsRemaining != 0 ||
+                body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
+                body.EncoreMoveSlot is not null || body.DisabledMove is not null ||
+                cell.Registers.InfatuationSource is not null || cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null || cell.Registers.WrappedBy is not null || body.HeldItem != "ITEM_NONE" || body.WaterSport || body.MudSport)
+                return "source_kernel_volatile_not_migrated";
+            string ability = WildBattleEffective.Ability(body);
+            if (!FuchsiaBattleScope.SupportsAbility(ability) && ability is not ("ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or "ABILITY_VOLT_ABSORB" or "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK"))
+                return "source_kernel_ability_not_migrated";
+            if (body.Status == WildBattleStatus.Burn && ability == "ABILITY_WATER_VEIL" ||
+                body.Status == WildBattleStatus.Paralysis && ability == "ABILITY_LIMBER" ||
+                (body.Status == WildBattleStatus.Poison || WildBattleSourceFieldEffects.IsToxic(body.Status)) && ability == "ABILITY_IMMUNITY")
+                return "source_kernel_move_end_immunity_not_migrated";
+            if (ability is "ABILITY_LIGHTNING_ROD" or "ABILITY_TRUANT" or "ABILITY_COLOR_CHANGE" or
+                "ABILITY_HUSTLE" or "ABILITY_POISON_POINT" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_EFFECT_SPORE" or "ABILITY_CUTE_CHARM")
+                return "source_kernel_ability_not_migrated";
+        }
+        if (WildBattleStatus.IsSleeping(actor.Status) || actor.Status is WildBattleStatus.Freeze or WildBattleStatus.Paralysis)
+            return "source_kernel_canceller_not_migrated";
+        if (frame.Sides.Any(s => s.FollowMeTimer != 0)) return "source_kernel_redirection_not_migrated";
+        if (frame.Layout == SourceBattleLayout.PresetDoubles && move.Power > 0 &&
+            frame.Sides.Any(s => s.ReflectTurnsRemaining != 0 || s.LightScreenTurnsRemaining != 0))
+            return "source_kernel_screen_topology_not_migrated";
+        return null;
+    }
+
+    public static bool SupportsRecipe(PokemonMoveDefinition move) => MetronomeSourceMoveDefinition.Matches(move) &&
+        move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" &&
+        (SourceRecipeContext.HasGenericRecipe(move.Effect) && move.Effect is not
+            ("EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT" or "EFFECT_CONFUSE" or "EFFECT_MEAN_LOOK" or "EFFECT_TRAP" or "EFFECT_MULTI_HIT" or "EFFECT_EXPLOSION") ||
+         SourceRecipeContext.HasStatRecoveryRecipe(move.Effect));
+
+    public static SourceKernelResult ResolveAction(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action)
+    {
+        if (ValidateAction(catalog, frame, action) is { } error) return new(frame, [], [], null, error);
+        try
+        {
+            var execution = new FrameRecipeContext(catalog, frame, action);
+            execution.Run();
+            if (SourceBattleIdentityRules.Validate(execution.Frame) is { } invalid)
+                return new(frame, [], [], null, "source_kernel_result_" + invalid);
+            return new(execution.Frame, execution.Events.ToImmutable(), execution.Trace.ToImmutable(), execution.Invocation, null);
+        }
+        catch (SourceRecipeUnsupported ex) { return new(frame, [], [], null, ex.Message); }
+        catch (OverflowException) { return new(frame, [], [], null, "source_kernel_counter_exhausted"); }
+        catch (ArgumentException) { return new(frame, [], [], null, "source_kernel_invalid_calculation"); }
+    }
+}

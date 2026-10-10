@@ -234,16 +234,18 @@
       "title": "Ability entry, weather and forms",
       "status": "missing",
       "priority": "P1",
-      "scope": "Intimidate and ability/type overlays exist. Drizzle, Drought, Sand Stream, Trace and Color Change lack executable branches; Forecast explicitly rejects its missing form overlay. Cloud Nine/Air Lock have partial suppression helpers.",
+      "scope": "Authenticated permanent Drizzle/Drought/Sand Stream, Rain Dish and distinct source weather suppression queries have bounded canonical singles coverage. Trace, Forecast and Color Change remain separate unfinished blocks; four-slot entry/form phases are not enabled.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledFieldEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
-        "src/Game.Domain/WildBattle/WildBattleTransformationRules.cs"
+        "src/Game.Domain/WildBattle/WildBattleTransformationRules.cs",
+        "src/Game.Domain/Battle/SourceWeatherRules.cs"
       ],
       "testEvidence": [
         "tests/Game.CalledFieldEffects.Tests/README.md",
-        "tests/Game.CalledPartyEffects.Tests/README.md"
+        "tests/Game.CalledPartyEffects.Tests/README.md",
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
       ],
       "sourceEvidence": [
         "src/battle_util.c:AbilityBattleEffects",
@@ -251,7 +253,7 @@
         "src/battle_main.c:TryDoEventsBeforeFirstTurn"
       ],
       "nextAcceptance": [
-        "Add authenticated permanent weather state distinct from five-turn moves, source entry ordering and weather suppression without erasing weather.",
+        "Carry the tested weather register and shared queries into full four-slot entry and residual ownership without duplicating recipes.",
         "Implement Trace/Color Change/Forecast with actual battle identity and source immunity/cleanup hooks; prove role-play/skill-swap/Transform interactions.",
         "Admit authentic ability fixtures without fabricating ability provenance or silently unlocking unrelated campaign species."
       ],
@@ -267,7 +269,7 @@
       "title": "Ability damage, absorption, contact and residual gaps",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Speed Boost, Rain Dish and Truant remain open; full-field and remaining interaction coverage is separate.",
+      "scope": "Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Truant and Speed Boost now have authentic-donor complete-turn and lifecycle tests; Rain Dish remains open; full-field and remaining interaction coverage is separate.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
         "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
@@ -304,7 +306,7 @@
       "title": "Ability blocking and topology gaps",
       "status": "missing",
       "priority": "P1",
-      "scope": "Suction Cups and Shadow Tag have AI references without player execution branches. Lightning Rod is admitted species data but has no four-slot redirection. Plus/Minus have no runtime branch.",
+      "scope": "Shadow Tag and Suction Cups have authenticated canonical singles execution and source-order tests. Lightning Rod has no four-slot redirect executor; Plus/Minus and full-field trapping/presence interactions remain open.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleEarlyPartyExecution.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceWildSwitches.cs",
@@ -312,7 +314,9 @@
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
         "src/Game.Domain/Trainers/CeruleanTrainerActionAi.cs"
       ],
-      "testEvidence": [],
+      "testEvidence": [
+        "docs/source-trapping-abilities.md"
+      ],
       "sourceEvidence": [
         "data/battle_scripts_1.s:BattleScript_EffectRoar",
         "src/battle_main.c:IsRunningFromBattleImpossible",
@@ -333,24 +337,34 @@
     {
       "id": "C10",
       "title": "Genuine four-slot doubles owner",
-      "status": "missing",
+      "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "Current state is two active combatants, Player/Opponent; action index validation and end-turn loops are limited to two. Preset trainer metadata and singles Follow Me/Helping Hand are not doubles.",
+      "scope": "M01 identities, M02 shared slot-typed hit/stat/status/recovery actions and M03 clean four-action turns are integrated. KO actions expose exact EXP and end-turn replacement boundaries; unported phases, targeting/spread, AI and campaign admission remain explicit gaps.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleContracts.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
         "src/Game.Domain/Trainers/SourceTrainerExecution.cs",
-        "src/Game.Domain/Trainers/FuchsiaRouteTrainerCombatValidation.cs"
+        "src/Game.Domain/Trainers/FuchsiaRouteTrainerCombatValidation.cs",
+        "src/Game.Domain/Battle/SourceBattleFrame.cs",
+        "src/Game.Domain/Battle/SourceBattleIdentityRules.cs",
+        "src/Game.Domain/Battle/SinglesBattleAdapter.cs",
+        "src/Game.Domain/Battle/SourceBattleKernel.cs",
+        "src/Game.Domain/Battle/SourceFourActionTurns.cs"
       ],
-      "testEvidence": [],
+      "testEvidence": [
+        "tests/Game.SourceBattleIdentity.Tests/README.md",
+        "evidence/battle-four-slot-identity/result.json",
+        "tests/Game.SourceSharedKernel.Tests/README.md",
+        "tests/Game.FourActionTurns.Tests/README.md"
+      ],
       "sourceEvidence": [
         "include/constants/battle.h",
         "src/battle_main.c:SetActionsAndBattlersTurnOrder",
         "src/battle_util.c:HandleFaintedMonActions"
       ],
       "nextAcceptance": [
-        "Separate side, active battler slot and permanent party member identity; own two legal player selections and two actual opposing actions.",
+        "Use the canonical slot/party/occupant substrate in the shared execution kernel; own two legal player selections and two actual opposing actions.",
         "Implement authentic preset roster entry, duplicate-party-selection rejection, per-slot locks and whole-team outcomes.",
         "Apply the user-approved KO replacement at end of turn as one explicit policy; retain original voluntary switching and Roar/Whirlwind timing.",
         "Carry EXP, simultaneous faint, delayed attacks and pending replacements through four-slot Application/presentation states."
@@ -816,9 +830,9 @@
     {
       "id": 2,
       "symbol": "ABILITY_DRIZZLE",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "Authenticated canonical singles permanent-rain entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -827,15 +841,24 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-weather-abilities.md",
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+      ]
     },
     {
       "id": 3,
       "symbol": "ABILITY_SPEED_BOOST",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
-      "implementationBranchLocations": [],
+      "assessment": "Authentic Ninjask complete-turn tests cover lead versus switched-in timing, stage cap, faint/status order, copied/acquired ability and frame/JSON continuation. Four-slot ordering remains unverified.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/WildBattle/WildBattleTurnCycleAbilities.cs",
+          "line": 11
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "src/battle_util.c",
@@ -1259,9 +1282,9 @@
     {
       "id": 13,
       "symbol": "ABILITY_CLOUD_NINE",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Weather-suppression helper exists, but current authentic roster cannot exercise this ability and full entry/form callbacks are absent.",
+      "assessment": "Authentic canonical donor and all-body versus living-body suppression queries tested; shared recipes consume the same queries. Full doubles weather phases remain pending.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleCalledFieldEffects.cs",
@@ -1279,7 +1302,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-weather-abilities.md",
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+      ]
     },
     {
       "id": 14,
@@ -1706,10 +1733,15 @@
     {
       "id": 21,
       "symbol": "ABILITY_SUCTION_CUPS",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C09",
-      "assessment": "AI scoring knows the symbol; Roar/Whirlwind execution checks rooting/reserves/level but no Suction Cups branch.",
-      "implementationBranchLocations": [],
+      "assessment": "Authentic Octillery/Lileep/Cradily cover Roar/Whirlwind after PP and before Rooted/accuracy, effective ability changes and full source turn continuation; canonical trainer admission remains separate.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/WildBattle/WildBattleEarlyPartyExecution.cs",
+          "line": 1
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "data/battle_scripts_1.s",
@@ -1775,10 +1807,15 @@
     {
       "id": 23,
       "symbol": "ABILITY_SHADOW_TAG",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C09",
-      "assessment": "AI trapping references exist; player switch/run execution lacks its branch.",
-      "implementationBranchLocations": [],
+      "assessment": "Authenticated Wobbuffet/Wynaut and real ability-changing moves cover Run, Teleport, voluntary switch, Baton, forced and faint replacement distinctions; no Gen IV Ghost/self exemption. Four-slot field scan remains separate.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/WildBattle/WildBattleSourceTrappingAbilities.cs",
+          "line": 1
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "src/battle_main.c",
@@ -2670,9 +2707,9 @@
     {
       "id": 44,
       "symbol": "ABILITY_RAIN_DISH",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "Authentic canonical donor heals in the sole source ability phase, with suppression, poison order and JSON tests; four-turn residual dispatch remains pending.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -2685,14 +2722,18 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-weather-abilities.md",
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+      ]
     },
     {
       "id": 45,
       "symbol": "ABILITY_SAND_STREAM",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "Authenticated canonical singles permanent-sand entry, source order, suppression and residual tests pass; four-turn entry remains pending.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -2701,7 +2742,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-weather-abilities.md",
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+      ]
     },
     {
       "id": 46,
@@ -2984,10 +3029,15 @@
     {
       "id": 54,
       "symbol": "ABILITY_TRUANT",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
-      "implementationBranchLocations": [],
+      "assessment": "Authentic Slakoth/Slaking complete-turn tests cover raw loafing register, cancellation precedence, ability changes, switches, prepared actions, recharge expiry and serialized continuation. Four-slot and campaign admission remain separate.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/WildBattle/WildBattleTurnCycleAbilities.cs",
+          "line": 11
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "src/battle_util.c",
@@ -3503,9 +3553,9 @@
     {
       "id": 70,
       "symbol": "ABILITY_DROUGHT",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "Authenticated canonical singles permanent-sun entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -3514,7 +3564,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-weather-abilities.md",
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+      ]
     },
     {
       "id": 71,
@@ -3711,9 +3765,9 @@
     {
       "id": 77,
       "symbol": "ABILITY_AIR_LOCK",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Weather-suppression helper exists, but current authentic roster cannot exercise this ability and full entry/form callbacks are absent.",
+      "assessment": "Authentic canonical donor and all-body versus living-body suppression queries tested; shared recipes consume the same queries. Full doubles weather phases remain pending.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleCalledFieldEffects.cs",
@@ -3731,7 +3785,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-weather-abilities.md",
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+      ]
     }
   ],
   "moves": [
@@ -11236,6 +11294,20 @@
       "catalogEvidence": "docs/source-mechanics-admission.md",
       "animationInventoryEvidence": "docs/battle-animation-catalog.md",
       "acceptanceLimits": "354 recipe registrations are not full battle completion. Campaign stays at107 species; doubles, remaining ability handlers and dedicated audiovisual acceptance remain incomplete."
+    },
+    {
+      "dateUtc": "2026-10-10",
+      "baseCommit": "4cc28be",
+      "scope": "M01 canonical identity plus Truant/Speed Boost source lifecycle",
+      "evidence": "evidence/battle-turn-cycle-integration/result.json",
+      "acceptanceLimits": "Identity conversion and canonical singles ability tests only; genuine four-slot execution and broader campaign admission remain unfinished."
+    },
+    {
+      "dateUtc": "2026-10-10",
+      "baseCommit": "12fad11",
+      "scope": "M02 shared recipe kernel, bounded M03 four-action owner and canonical permanent weather abilities",
+      "evidence": "evidence/battle-kernel-weather-integration/result.json",
+      "acceptanceLimits": "No general preset-doubles, EXP/entry continuation, AI or campaign admission. Genuine four-action clean turns and source ordering are bounded foundations. Dedicated weather ability presentation remains pending."
     }
   ]
 }

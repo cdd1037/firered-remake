@@ -104,7 +104,16 @@ public static class WildBattleSourceCommands
         WildBattleSide target, string targetAbility, int otherSidePressureCount, int otherBattlerPressureCount,
         WildBattleInvocationFlags flags = WildBattleInvocationFlags.None)
     {
-        if (pp is < 0 or > 255 || !Enum.IsDefined(actor) || !Enum.IsDefined(target) || otherSidePressureCount is < 0 or > 2 || otherBattlerPressureCount is < 0 or > 3)
+        if (!Enum.IsDefined(actor) || !Enum.IsDefined(target)) throw new ArgumentOutOfRangeException(nameof(actor));
+        return ReducePp(pp, targetMode, SinglesBattleAdapter.Slot(actor), SinglesBattleAdapter.Slot(target), targetAbility,
+            otherSidePressureCount, otherBattlerPressureCount, flags);
+    }
+
+    public static WildBattlePpReduction ReducePp(int pp, string targetMode, BattlerSlot actor,
+        BattlerSlot target, string targetAbility, int otherSidePressureCount, int otherBattlerPressureCount,
+        WildBattleInvocationFlags flags = WildBattleInvocationFlags.None)
+    {
+        if (pp is < 0 or > 255 || otherSidePressureCount is < 0 or > 2 || otherBattlerPressureCount is < 0 or > 3)
             throw new ArgumentOutOfRangeException(nameof(pp));
         int cost = 1;
         if (!flags.HasFlag(WildBattleInvocationFlags.PpNotAffectedByPressure))
@@ -342,33 +351,18 @@ public static partial class WildBattleRules
             var emitted = Events.Skip(eventStart).ToArray();
             if (emitted.OfType<WildBattleTransformedEvent>().Any())
                 activeInvocation = invocation = invocation with { ChosenMove = new("pret:MOVE_UNAVAILABLE") };
-            var actor = Get(invocation.Actor);
             var targetSide = emitted.OfType<WildBattleConfusionSelfHitEvent>().Any() ? invocation.Actor : invocation.Target;
             activeInvocation = invocation = invocation with { Target = targetSide };
-            bool obeys = invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys);
-            bool noEffect = invocationCommandNoEffect || !obeys || emitted.Any(e => e is WildBattleMoveMissedEvent || e is WildBattleActionBlockedEvent ||
-                e is WildBattleMoveFailedEvent { Reason: not ("already-full-hp" or "already-asleep" or "already-poisoned" or "already-paralyzed" or "already-confused" or "nothing-happened" or "mist" or "already-substitute" or "substitute-insufficient-hp" or "stockpile-empty") } ||
-                e is WildBattleStatAtMinimumEvent or WildBattleStatAtMaximumEvent ||
-                e is WildBattleAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE" } ||
-                e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect });
-            MoveId unavailable = new("pret:MOVE_UNAVAILABLE");
-            var history = actor.SourceMoveHistory ?? new();
-            Set(invocation.Actor, actor with { LastUsedMove = obeys ? invocation.ChosenMove : unavailable,
-                LastCalledMove = obeys && emitted.OfType<WildBattleCalledMoveTransitionEvent>().Any() && invocation.ChosenMove != unavailable ? invocation.CurrentMove : null,
-                SourceMoveHistory = history with {
-                    LastPrintedMove = invocation.Flags.HasFlag(WildBattleInvocationFlags.AttackStringPrinted) ? invocation.ChosenMove : history.LastPrintedMove,
-                    LastResultingMove = obeys ? invocation.CurrentMove : unavailable } });
-            var target = Get(targetSide); var targetHistory = target.SourceMoveHistory ?? new();
-            bool landed = !noEffect && invocation.ChosenMove != unavailable;
-            bool mirror = landed && target.Pokemon.CurrentHp > 0 && targetSide != invocation.Actor &&
-                catalog.Moves[invocation.OriginalChosenMove].Flags.Contains("FLAG_MIRROR_MOVE_AFFECTED");
-            Set(targetSide, target with { LastLandedMove = landed ? invocation.CurrentMove : unavailable,
-                LastHitBy = target.Pokemon.CurrentHp > 0 ? invocation.Actor : target.LastHitBy,
-                SourceMoveHistory = targetHistory with {
-                    LastHitByType = landed ? invocationEffectiveType ?? (invocation.CurrentMove.Value == "pret:MOVE_NONE" ? "TYPE_NORMAL" : catalog.Moves[invocation.CurrentMove].Type) : targetHistory.LastHitByType,
-                    LastTakenMove = mirror ? invocation.ChosenMove : targetHistory.LastTakenMove,
-                    LastTakenFromPlayer = mirror && invocation.Actor == WildBattleSide.Player ? invocation.ChosenMove : targetHistory.LastTakenFromPlayer,
-                    LastTakenFromOpponent = mirror && invocation.Actor == WildBattleSide.Opponent ? invocation.ChosenMove : targetHistory.LastTakenFromOpponent } });
+            SourceMoveHistoryReducer.Apply(catalog, State.Turn, SinglesBattleAdapter.ImportInvocation(invocation),
+                emitted.Select(SourceBattleEventAdapter.Import).ToImmutableArray(), invocationCommandNoEffect,
+                slot => {
+                    var side = SinglesBattleAdapter.Side(slot);
+                    int index = State.CalledParty is { } party ? WildBattleSourcePartyEffects.ActiveIndex(party, side) : 0;
+                    return SinglesBattleAdapter.ImportSlot(slot, new(slot.Side, index), 1, Get(side));
+                },
+                (slot, cell) => Set(SinglesBattleAdapter.Side(slot), SinglesBattleAdapter.ExportBody(cell.Body!, cell.Registers)),
+                invocationEffectiveType, recordDamage: false);
+
         }
     }
 }

@@ -235,9 +235,9 @@ public static partial class WildBattleRules
             ForestBattleDamage.Calculate(catalog, Get(side), Get(target), move.Id, false, 100,
                 true, true, true, true, route3Rules: true, mtMoonRules: true, ceruleanRules: true, billRules: true,
                 vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
-                rain: State.RainTurnsRemaining > 0, rockTunnelRules: true, reflect: RockTunnelReflects(target),
+                rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(target),
                 sourceDefinition: move, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(target),
-                weatherSuppressed: SourceCalledWeatherSuppressed).Steps.Single(s => s.Operation == "plus-two").Value;
+                weatherSuppressed: SourceDamageWeatherSuppressed).Steps.Single(s => s.Operation == "plus-two").Value;
 
         private void SourceCalledSpitUp(PokemonCatalog catalog, WildBattleSide side, WildBattleSide target, int slot,
             PokemonMoveDefinition move, string purpose)

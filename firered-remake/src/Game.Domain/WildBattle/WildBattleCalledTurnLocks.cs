@@ -62,7 +62,8 @@ public static partial class WildBattleRules
             if (mon.DigMoveSlot is not null || mon.RolloutTurnsRemaining != 0 || mon.RampageTurnsRemaining != 0) return "called_turn_competing_lock";
             bool valid = locked.Kind switch {
                 WildBattleCalledLockKind.Charge => move.Effect is "EFFECT_RAZOR_WIND" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_SOLAR_BEAM" or "EFFECT_SKULL_BASH" or "EFFECT_SKY_ATTACK" && locked.TurnsRemaining == 1,
-                WildBattleCalledLockKind.Recharge => move.Effect == "EFFECT_RECHARGE" && locked.TurnsRemaining == 1,
+                WildBattleCalledLockKind.Recharge => move.Effect == "EFFECT_RECHARGE" &&
+                    (locked.TurnsRemaining == 1 || state.SourceMechanicsRulesVersion == Game.Domain.Battle.BattleRulesProfile.CanonicalSourceSinglesVersion && locked.TurnsRemaining == 2),
                 WildBattleCalledLockKind.Rampage => move.Effect == "EFFECT_RAMPAGE" && locked.TurnsRemaining is >= 1 and <= 3,
                 WildBattleCalledLockKind.Rollout => move.Effect == "EFFECT_ROLLOUT" && locked.TurnsRemaining is >= 1 and <= 4,
                 WildBattleCalledLockKind.Uproar => move.Effect == "EFFECT_UPROAR" && locked.TurnsRemaining is >= 1 and <= 5,
@@ -324,7 +325,7 @@ public static partial class WildBattleRules
             ScalarReportType(catalog, side, target, move, ScalarType(move.Type));
             bool effective = !ScalarTypeResult(catalog, target, ScalarType(move.Type)).Immune;
             if (move.Effect == "EFFECT_RECHARGE" && effective)
-                StartCalledLock(side, move, WildBattleCalledLockKind.Recharge, 1); // MOVE_EFFECT_CERTAIN: no chance draw.
+                StartCalledLock(side, move, WildBattleCalledLockKind.Recharge, SourceTurnCycleEnabled ? 2 : 1); // Source rechargeTimer=2; MOVE_EFFECT_CERTAIN has no chance draw.
             else
             {
                 int roll = Draw($"{purpose}.secondary-effect", 100) % 100;

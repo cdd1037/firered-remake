@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Game.Domain.Capture;
+using Game.Domain.Battle;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
@@ -46,6 +47,8 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? MeanLookSource { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Rooted { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int FirstTurnCounter { get; init; }
+    // Raw DisableStruct register; ability changes do not reset it. Switch/faint does.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool TruantLoafing { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool SpeedBadgeBoost { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool DefenseBadgeBoost { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SpecialAttackStageDelta { get; init; }
@@ -90,6 +93,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourcePermanentWeather? PermanentWeather { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? SourceMechanicsRulesVersion { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSourceWildState? SourceWild { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledFieldState? CalledField { get; init; }
@@ -106,6 +110,8 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 }
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildBattlePermanentWeatherChangedEvent), "permanent-weather-changed")]
+[JsonDerivedType(typeof(WildBattleAbilityRecoveredEvent), "ability-recovered")]
 [JsonDerivedType(typeof(WildBattleCalledOverlayChangedEvent), "called-party-overlaychanged")]
 [JsonDerivedType(typeof(WildBattleCalledPartyChangedEvent), "called-party-partychanged")]
 [JsonDerivedType(typeof(WildBattleCalledPartySwitchRequiredEvent), "called-party-partyswitchrequired")]
@@ -354,3 +360,8 @@ public sealed record WildBattleIngrainHealEvent(long Sequence, int Turn, WildBat
 public sealed record WildBattleTowerGhostActionEvent(long Sequence, int Turn, WildBattleSide Side, string StringId) : WildBattleEvent(Sequence, Turn);
 /// <summary>Source BALL_GHOST_DODGE, then the opponent action. Caller spends the authorized ball.</summary>
 public sealed record WildBattleTowerBallDodgedEvent(long Sequence, int Turn, CaptureBall Ball) : WildBattleEvent(Sequence, Turn);
+
+public sealed record WildBattlePermanentWeatherChangedEvent(long Sequence, int Turn, WildBattleSide Side, string Ability,
+    SourcePermanentWeatherKind? Before, SourcePermanentWeatherKind After) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleAbilityRecoveredEvent(long Sequence, int Turn, WildBattleSide Side, string Ability,
+    int HpBefore, int HpAfter, int Recovered) : WildBattleEvent(Sequence, Turn);

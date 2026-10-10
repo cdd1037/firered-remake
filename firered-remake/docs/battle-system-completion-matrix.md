@@ -44,7 +44,7 @@ P0 means enabling contract work, P1 means a dependency needed before wider admis
 | [C07](#c07) | Ability entry, weather and forms | `missing` | P1 / independent-block |
 | [C08](#c08) | Ability damage, absorption, contact and residual gaps | `interaction-unverified` | P1 / bounded |
 | [C09](#c09) | Ability blocking and topology gaps | `missing` | P1 / bounded |
-| [C10](#c10) | Genuine four-slot doubles owner | `missing` | P1 / independent-block |
+| [C10](#c10) | Genuine four-slot doubles owner | `interaction-unverified` | P1 / independent-block |
 | [C11](#c11) | Doubles targets and multi-target effects | `missing` | P1 / independent-block |
 | [C12](#c12) | Switch, Baton Pass, phasing and faint ownership | `implemented-with-bounded-tests` | P2 / bounded |
 | [C13](#c13) | Run and ordinary capture transaction | `implemented-with-bounded-tests` | P2 / bounded |
@@ -142,7 +142,7 @@ Next acceptance:
 <a id="c06"></a>
 ### C06 — Move effect groups and cross-state interactions
 
-Parameterized damage/status/stages/recovery, fields, turn locks, delayed/volatile and party recipes have focused source tests. All combinations of 350 registered moves are not verified.
+Parameterized damage/status/stages/recovery, fields, turn locks, delayed/volatile and party recipes have focused source tests. All combinations of 354 registered moves are not verified.
 
 Dependencies: C01, C02, C03, C07, C08, C09.
 
@@ -158,7 +158,7 @@ Next acceptance:
 <a id="c07"></a>
 ### C07 — Ability entry, weather and forms
 
-Intimidate and ability/type overlays exist. Drizzle, Drought, Sand Stream, Trace and Color Change lack executable branches; Forecast explicitly rejects its missing form overlay. Cloud Nine/Air Lock have partial suppression helpers.
+Authenticated permanent Drizzle/Drought/Sand Stream, Rain Dish and distinct source weather suppression queries now have bounded canonical singles coverage. Trace, Forecast and Color Change remain separate unfinished blocks; four-slot entry/form phases are not enabled. See `docs/source-weather-abilities.md`.
 
 Dependencies: C01, C05, C18.
 
@@ -168,14 +168,14 @@ Pinned source: `src/battle_util.c:AbilityBattleEffects`, `src/battle_util.c:Cast
 
 Next acceptance:
 
-- Add authenticated permanent weather state distinct from five-turn moves, source entry ordering and weather suppression without erasing weather.
+- Carry the tested weather register and shared queries into full four-slot entry and residual ownership without duplicating recipes.
 - Implement Trace/Color Change/Forecast with actual battle identity and source immunity/cleanup hooks; prove role-play/skill-swap/Transform interactions.
 - Admit authentic ability fixtures without fabricating ability provenance or silently unlocking unrelated campaign species.
 
 <a id="c08"></a>
 ### C08 — Ability damage, absorption, contact and residual gaps
 
-Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Speed Boost, Rain Dish and Truant remain open; full-field and remaining interaction coverage is separate. Real damage donors use independent source-C comparisons. See `docs/source-mechanics-admission.md` and `docs/source-contact-absorb-abilities.md`.
+Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Truant and Speed Boost now have authentic-donor complete-turn and lifecycle tests; Rain Dish remains open; full-field and remaining interaction coverage is separate. Real damage donors use independent source-C comparisons. See `docs/source-mechanics-admission.md` and `docs/source-contact-absorb-abilities.md`.
 
 Dependencies: C04, C05, C07.
 
@@ -192,7 +192,7 @@ Next acceptance:
 <a id="c09"></a>
 ### C09 — Ability blocking and topology gaps
 
-Suction Cups and Shadow Tag have AI references without player execution branches. Lightning Rod is admitted species data but has no four-slot redirection. Plus/Minus have no runtime branch.
+Shadow Tag and Suction Cups now have authenticated canonical singles execution and source-order tests. Lightning Rod has no four-slot redirect executor; Plus/Minus and full-field trapping/presence interactions remain open.
 
 Dependencies: C10, C11.
 
@@ -209,7 +209,9 @@ Next acceptance:
 <a id="c10"></a>
 ### C10 — Genuine four-slot doubles owner
 
-Current state is two active combatants, Player/Opponent; action index validation and end-turn loops are limited to two. Preset trainer metadata and singles Follow Me/Helping Hand are not doubles.
+M01 bounded evidence: `tests/Game.SourceBattleIdentity.Tests/README.md` and `evidence/battle-four-slot-identity/result.json`. This does not complete the owner.
+
+M01 provides four fixed battler slots, party/occupant identities, reservations and distinct absence/KO masks. M02 executes shared slot-typed hit/stat/status/recovery actions; the same recipes serve existing singles. M03 executes real four-action clean turns and pauses at explicit KO EXP/replacement boundaries. Full residuals, entry/rewards, target redirection/spread, AI and campaign admission remain unfinished. See `docs/source-shared-battle-kernel.md` and `tests/Game.FourActionTurns.Tests/README.md`.
 
 Dependencies: C04, C05, C18.
 
@@ -219,7 +221,7 @@ Pinned source: `include/constants/battle.h`, `src/battle_main.c:SetActionsAndBat
 
 Next acceptance:
 
-- Separate side, active battler slot and permanent party member identity; own two legal player selections and two actual opposing actions.
+- Use the canonical slot/party/occupant substrate in the shared execution kernel; own two legal player selections and two actual opposing actions.
 - Implement authentic preset roster entry, duplicate-party-selection rejection, per-slot locks and whole-team outcomes.
 - Apply the user-approved KO replacement at end of turn as one explicit policy; retain original voluntary switching and Roar/Whirlwind timing.
 - Carry EXP, simultaneous faint, delayed attacks and pending replacements through four-slot Application/presentation states.
@@ -424,7 +426,7 @@ Next acceptance:
 <a id="c23"></a>
 ### C23 — Useful refactor: shared rule policy and effect hooks
 
-Shared Execution, PP/caller recipes, SourceBattleItemRules, source end-turn cursor and permanent-party projection remain the shared seams. Explicit authenticated mechanics capability now separates386-species source definitions from107-species campaign admission, reusing existing factory/stat algorithms. Four-slot identity and common recipe migration are the next boundary.
+Shared Execution, PP/caller recipes, SourceBattleItemRules, source end-turn cursor and permanent-party projection remain the shared seams. Explicit authenticated mechanics capability now separates386-species source definitions from107-species campaign admission, reusing existing factory/stat algorithms. Four-slot identity, bounded shared recipes and clean turn ownership now exist. Remaining effect/phase migration consumes these shared interfaces.
 
 Evidence: `src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs`, `src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs`, `src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs`, `src/Game.Domain/Items/SourceBattleItemRules.cs`, `src/Game.Domain/WildBattle/ForestBattleDamage.cs`, `src/Game.Domain/WildBattle/WildVictoryRewards.cs`.
 Bounded factory/turn parity is recorded in `docs/source-mechanics-admission.md`; serialized-state value equality is covered by `tests/Game.SourcePartyRoundTrip.Tests/README.md`.
@@ -444,8 +446,8 @@ Each of the 76 entries below has source and current execution locations in the J
 | ID | Ability | Status | Work | Specific boundary |
 | --- | --- | --- | --- | --- |
 | 1 | `ABILITY_STENCH` | `implemented-with-bounded-tests` | C20 | Field encounter modifier exists and has bounded fixed-point/RNG tests. FireRed Stench does not gain a later-generation flinch effect. |
-| 2 | `ABILITY_DRIZZLE` | `missing` | C07 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
-| 3 | `ABILITY_SPEED_BOOST` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 2 | `ABILITY_DRIZZLE` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-rain entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending. |
+| 3 | `ABILITY_SPEED_BOOST` | `implemented-with-bounded-tests` | C08 | Authentic Ninjask complete-turn tests cover lead versus switched-in timing, stage cap, faint/status order, copied/acquired ability and frame/JSON continuation. Four-slot ordering remains unverified. |
 | 4 | `ABILITY_BATTLE_ARMOR` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 5 | `ABILITY_STURDY` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 6 | `ABILITY_DAMP` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
@@ -455,7 +457,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 10 | `ABILITY_VOLT_ABSORB` | `implemented-with-bounded-tests` | C08 | Both real holder sides, dynamic Electric type, full-HP absorption and shared PP/history verified in canonical singles; no doubles or audible claim. |
 | 11 | `ABILITY_WATER_ABSORB` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 12 | `ABILITY_OBLIVIOUS` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 13 | `ABILITY_CLOUD_NINE` | `interaction-unverified` | C07 | Weather-suppression helper exists, but current authentic roster cannot exercise this ability and full entry/form callbacks are absent. |
+| 13 | `ABILITY_CLOUD_NINE` | `implemented-with-bounded-tests` | C07 | Authentic canonical donor and all-body versus living-body suppression queries tested; shared recipes consume the same queries. Full doubles weather phases remain pending. |
 | 14 | `ABILITY_COMPOUND_EYES` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 15 | `ABILITY_INSOMNIA` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 16 | `ABILITY_COLOR_CHANGE` | `missing` | C07 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
@@ -463,9 +465,9 @@ Each of the 76 entries below has source and current execution locations in the J
 | 18 | `ABILITY_FLASH_FIRE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 19 | `ABILITY_SHIELD_DUST` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 20 | `ABILITY_OWN_TEMPO` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 21 | `ABILITY_SUCTION_CUPS` | `missing` | C09 | AI scoring knows the symbol; Roar/Whirlwind execution checks rooting/reserves/level but no Suction Cups branch. |
+| 21 | `ABILITY_SUCTION_CUPS` | `implemented-with-bounded-tests` | C09 | Authentic Octillery/Lileep/Cradily cover Roar/Whirlwind after PP and before Rooted/accuracy, effective ability changes and full source turn continuation; canonical trainer admission remains separate. |
 | 22 | `ABILITY_INTIMIDATE` | `interaction-unverified` | C07 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 23 | `ABILITY_SHADOW_TAG` | `missing` | C09 | AI trapping references exist; player switch/run execution lacks its branch. |
+| 23 | `ABILITY_SHADOW_TAG` | `implemented-with-bounded-tests` | C09 | Authenticated Wobbuffet/Wynaut and real ability-changing moves cover Run, Teleport, voluntary switch, Baton, forced and faint replacement distinctions; no Gen IV Ghost/self exemption. Four-slot field scan remains separate. |
 | 24 | `ABILITY_ROUGH_SKIN` | `implemented-with-bounded-tests` | C08 | Both real holder sides, per-hit actual HP loss, source 1/16 passive damage and faint order verified; no doubles or native effect claim. |
 | 25 | `ABILITY_WONDER_GUARD` | `interaction-unverified` | C06 | Damage/type and copy-restriction branches exist; authentic actor admission and every affected source script are not proven. |
 | 26 | `ABILITY_LEVITATE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
@@ -486,8 +488,8 @@ Each of the 76 entries below has source and current execution locations in the J
 | 41 | `ABILITY_WATER_VEIL` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 42 | `ABILITY_MAGNET_PULL` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 43 | `ABILITY_SOUNDPROOF` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 44 | `ABILITY_RAIN_DISH` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
-| 45 | `ABILITY_SAND_STREAM` | `missing` | C07 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 44 | `ABILITY_RAIN_DISH` | `implemented-with-bounded-tests` | C08 | Authentic canonical donor heals in the sole source ability phase, with suppression, poison order and JSON tests; four-turn residual dispatch remains pending. |
+| 45 | `ABILITY_SAND_STREAM` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-sand entry, source order, suppression and residual tests pass; four-turn entry remains pending. |
 | 46 | `ABILITY_PRESSURE` | `interaction-unverified` | C09 | PP command helper exists; current authentic roster admission and four-slot counts/targets require validation. |
 | 47 | `ABILITY_THICK_FAT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 48 | `ABILITY_EARLY_BIRD` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
@@ -496,7 +498,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 51 | `ABILITY_KEEN_EYE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 52 | `ABILITY_HYPER_CUTTER` | `interaction-unverified` | C06 | Attack-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
 | 53 | `ABILITY_PICKUP` | `implemented-with-bounded-tests` | C20 | Original victory-only ordered party checks and item buckets exist; test ownership after newly admitted modes/items. |
-| 54 | `ABILITY_TRUANT` | `missing` | C08 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 54 | `ABILITY_TRUANT` | `implemented-with-bounded-tests` | C08 | Authentic Slakoth/Slaking complete-turn tests cover raw loafing register, cancellation precedence, ability changes, switches, prepared actions, recharge expiry and serialized continuation. Four-slot and campaign admission remain separate. |
 | 55 | `ABILITY_HUSTLE` | `implemented-with-bounded-tests` | C08 | Real Togetic damage and physical-accuracy miss full turns verified; four-slot interactions unverified. |
 | 56 | `ABILITY_CUTE_CHARM` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 57 | `ABILITY_PLUS` | `missing` | C09 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
@@ -512,13 +514,13 @@ Each of the 76 entries below has source and current execution locations in the J
 | 67 | `ABILITY_TORRENT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 68 | `ABILITY_SWARM` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 69 | `ABILITY_ROCK_HEAD` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 70 | `ABILITY_DROUGHT` | `missing` | C07 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 70 | `ABILITY_DROUGHT` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-sun entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending. |
 | 71 | `ABILITY_ARENA_TRAP` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 72 | `ABILITY_VITAL_SPIRIT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
 | 73 | `ABILITY_WHITE_SMOKE` | `interaction-unverified` | C06 | Stat-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
 | 74 | `ABILITY_PURE_POWER` | `implemented-with-bounded-tests` | C08 | Real Medicham source full turn and damage match independently extracted C; four-slot interactions unverified. |
 | 75 | `ABILITY_SHELL_ARMOR` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 77 | `ABILITY_AIR_LOCK` | `interaction-unverified` | C07 | Weather-suppression helper exists, but current authentic roster cannot exercise this ability and full entry/form callbacks are absent. |
+| 77 | `ABILITY_AIR_LOCK` | `implemented-with-bounded-tests` | C07 | Authentic canonical donor and all-body versus living-body suppression queries tested; shared recipes consume the same queries. Full doubles weather phases remain pending. |
 
 ## Guardrails and exit evidence
 
@@ -540,3 +542,7 @@ Each of the 76 entries below has source and current execution locations in the J
 - `tests/Game.CalledPartyEffects.Tests/evidence/result.json`: Focused action/switch evidence; retains a separately documented Conversion 2 policy. This inventory neither changes nor newly authorizes that existing policy..
 
 The remaining work should close these named gaps and interaction classes. Further catalog or species admission requires updating this matrix and authenticating the newly reachable branches; it is not permission to widen historical profiles silently.
+
+Truant/Speed Boost bounded integration: `docs/source-turn-cycle-abilities.md` and `evidence/battle-turn-cycle-integration/result.json`. Existing source singles and all old golden outputs remain covered; this does not enable canonical species in player saves or four-action turns.
+
+Shared kernel/weather integration: `evidence/battle-kernel-weather-integration/result.json`. Permanent weather uses the same recipe queries across the singles bridge and canonical action context. The four-action owner currently rejects weather and other nonempty end-turn phases; no general doubles battle is claimed.

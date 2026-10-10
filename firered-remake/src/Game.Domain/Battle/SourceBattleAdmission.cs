@@ -50,14 +50,17 @@ public static class SourceBattleAdmission
         HasCapability(catalog, SourceBattleCapability.CanonicalSpecies);
 
     internal static string? ValidateRulesProfile(PokemonCatalog? catalog, WildBattleState state) =>
-        SourceMechanicsCatalog.For(catalog) is not null || state.SourceMechanicsRulesVersion is not null
-            ? IsCanonicalSourceState(catalog, state) ? null : "source_mechanics_rules_profile" : null;
+        SourceWeatherRules.Validate(state) ?? (SourceMechanicsCatalog.For(catalog) is not null || state.SourceMechanicsRulesVersion is not null
+            ? IsCanonicalSourceState(catalog, state) ? null : "source_mechanics_rules_profile" : null);
 
     internal static bool SupportsAbility(PokemonCatalog catalog, string ability) =>
         SourceMechanicsCatalog.For(catalog) is { } proof && proof.Abilities.ContainsKey(ability) &&
         (FuchsiaBattleScope.SupportsAbility(ability) || ability is "ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or
             "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or
-            "ABILITY_VOLT_ABSORB" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY");
+            "ABILITY_VOLT_ABSORB" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or
+            "ABILITY_TRUANT" or "ABILITY_SPEED_BOOST" or "ABILITY_SHADOW_TAG" or "ABILITY_SUCTION_CUPS" or
+            "ABILITY_DRIZZLE" or "ABILITY_DROUGHT" or "ABILITY_SAND_STREAM" or "ABILITY_RAIN_DISH" or
+            "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK");
 
     internal static string? ValidatePokemonCapabilities(PokemonCatalog catalog, PokemonInstance pokemon)
     {

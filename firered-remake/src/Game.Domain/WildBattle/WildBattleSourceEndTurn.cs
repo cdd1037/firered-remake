@@ -153,7 +153,7 @@ public static partial class WildBattleRules
             int Speed(WildBattleCombatant mon)
             {
                 bool boosted = !SourceCalledWeatherSuppressed &&
-                    (WildBattleEffective.Ability(mon) == "ABILITY_SWIFT_SWIM" && State.RainTurnsRemaining > 0 ||
+                    (WildBattleEffective.Ability(mon) == "ABILITY_SWIFT_SWIM" && SourceCalledRain ||
                      WildBattleEffective.Ability(mon) == "ABILITY_CHLOROPHYLL" && SourceCalledSun);
                 int value = WildBattleDamage.Stat(mon.Pokemon.Stats.Speed * (boosted ? 2 : 1), mon.SpeedStage);
                 if (mon.SpeedBadgeBoost) value = value * 110 / 100;
@@ -261,6 +261,7 @@ public static partial class WildBattleRules
 
         private void SourceEndTurnAbility(WildBattleSide side)
         {
+            if (SourceWeatherEndTurnAbility(side) || SourceTurnCycleEndTurnAbility(side)) return;
             var mon = Get(side);
             if (mon.Pokemon.CurrentHp == 0 || mon.Status == 0 || WildBattleEffective.Ability(mon) != "ABILITY_SHED_SKIN") return;
             if (Draw($"wild-battle.{side.ToString().ToLowerInvariant()}.shed-skin", 3) % 3 != 0) return;
