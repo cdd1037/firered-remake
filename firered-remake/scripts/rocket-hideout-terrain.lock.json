@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "files": [
+    {
+      "path": "data/maps/CeladonCity_GameCorner/map.json",
+      "byteLength": 13572,
+      "sha256": "e0924467ae57d2fce051f3959bf1526bcb0befce6a6c39a51162aa2089f555ee",
+      "gitBlobSha1": "3d2a43c7f5fbf65f2a6124269e52dd48453fde36"
+    },
+    {
+      "path": "data/maps/RocketHideout_B1F/map.json",
+      "byteLength": 4711,
+      "sha256": "29ba997e9bc1a96276c8988c14a3d51f7746ca1ed7b202f360b7d61ac9cd4f59",
+      "gitBlobSha1": "86b9070542336505362e9d8aa82b0f4181b35377"
+    },
+    {
+      "path": "data/maps/RocketHideout_B2F/map.json",
+      "byteLength": 3470,
+      "sha256": "752bd46e5ba811b3051936c7459341f68f1b1e28334da9a68bf82e884b82994f",
+      "gitBlobSha1": "6b465505d50e4f67cd056f6c8285fd5c874b83c9"
+    },
+    {
+      "path": "data/maps/RocketHideout_B3F/map.json",
+      "byteLength": 3279,
+      "sha256": "bab8e306f05ad3a7ef46050e05f20dc593581b9d99d1652e77a3e060b7c4bef4",
+      "gitBlobSha1": "a606996ed3d26030cf42d85456a600c8f06750f8"
+    },
+    {
+      "path": "data/maps/RocketHideout_B4F/map.json",
+      "byteLength": 5493,
+      "sha256": "2a40922d464585b7fdf3d6bfaaf54458586488ade634303953a8339168148235",
+      "gitBlobSha1": "5c2631279e61f3049906dab71a92c51581d0a9f4"
+    },
+    {
+      "path": "data/maps/RocketHideout_Elevator/map.json",
+      "byteLength": 1057,
+      "sha256": "360e74d08dee0f7689b01f2ec9c2a51262134dd46e89c507e5588146b588497d",
+      "gitBlobSha1": "223fa0497cba04a2cff458b02a70469a1c4052c7"
+    },
+    {
+      "path": "graphics/battle_terrain/indoor/2.pal",
+      "byteLength": 515,
+      "sha256": "cf0d20eb56522d7186e30b74b6750080e6c0e183c3f1c0b5e758b797bcf4401f",
+      "gitBlobSha1": "a1bc6b60ce6258752140bd1cd27ecdb739cd1463"
+    },
+    {
+      "path": "graphics/battle_terrain/indoor/terrain.bin",
+      "byteLength": 4096,
+      "sha256": "b3aa7db1dd6d4973b20f4934dc1215b7c442228414b145fe5de7014778d5aef0",
+      "gitBlobSha1": "0710427da9da44534ea120d1e752aa97d9200fb5"
+    },
+    {
+      "path": "graphics/battle_terrain/indoor/terrain.png",
+      "byteLength": 706,
+      "sha256": "f14b6d4e136a611193f1f644107f7227df7a0e7d6eeb1378d7cf8385928e5389",
+      "gitBlobSha1": "1cbb7c63bc6e9818d50fd76c8d36b57d7b99ae2d"
+    },
+    {
+      "path": "graphics_file_rules.mk",
+      "byteLength": 14859,
+      "sha256": "bd56e518ab9527f844642230673ce27a5bae73c7208d917d3288b073859fb685",
+      "gitBlobSha1": "39b952cd45b6a34eb98318a76aa531fcafff134d"
+    },
+    {
+      "path": "include/constants/battle.h",
+      "byteLength": 16440,
+      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
+      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1"
+    },
+    {
+      "path": "src/battle_bg.c",
+      "byteLength": 39359,
+      "sha256": "9e608837b0f13ba6782d8f3d4f2590ee273b5c7fb8b6275514c89cd780b474f0",
+      "gitBlobSha1": "3bcc500805622febd3892580da14f65ea2746a6f"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/import-lab-battle-ui.py",
+      "byteLength": 13082,
+      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+    },
+    {
+      "path": "scripts/fetch-lab-battle-ui.py",
+      "byteLength": 5843,
+      "sha256": "805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32"
+    }
+  ]
+}

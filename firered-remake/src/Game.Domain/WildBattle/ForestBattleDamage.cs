@@ -62,6 +62,7 @@ internal static class ForestBattleDamage
             steps.Add(new("attack-badge", attack));
         }
         if (rockTunnelRules && user.HeldItem == "ITEM_HARD_STONE" && type == ElementType.Rock) { attack = attack * 110 / 100; steps.Add(new("hard-stone", attack)); }
+        if (rockTunnelRules && catalog.Species.Count == 99 && user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) { attack = attack * 110 / 100; steps.Add(new("black-glasses", attack)); }
         if (physical && user.Pokemon.AbilityId == "ABILITY_GUTS" && user.Status != 0)
             attack = attack * 150 / 100;
         if (ceruleanRules && type == ElementType.Fire && (user.WaterSport || target.WaterSport)) power /= 2;

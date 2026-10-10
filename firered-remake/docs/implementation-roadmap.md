@@ -45,3 +45,16 @@ P0 缺少音频设备、真实输入或原生运行证据时，保留准确阻�
 ## Authorized resource optimization after Route22
 
 The user explicitly approved handling atlases, caches and JSON together. After freezing the current Route22 gameplay milestone, implement compact runtime map data with development provenance separated, a bounded map/texture cache with ownership of patched layers, and consistent asset IDs, paths, source regions and reproducible importers; separate baked UI text from background art where localization needs it. Keep atlases grouped by actual use and measure loading/render costs before packing. A move from current precomposed map layers to TileMapLayer is a separate evaluation, not part of the current Route22 increment. Original English title and the five identified interface PNGs remain unchanged per the user’s decision.
+
+## 2026-10-10 region-completion schedule
+
+A main-route pass and a complete region interaction set are separate statuses.
+After Rocket Hideout and Pokémon Tower, prioritize Celadon, Lavender and their
+connecting routes: ordinary NPC dialogue, signs, bookshelves/computers, visible
+and hidden pickups, doors and mechanisms. Add each region’s shops, services,
+gifts, in-game trades and side rooms according to their dependencies. Recheck
+earlier towns in the same pass. Reuse the authenticated script interpreter and
+common environment-text dispatch before writing per-object special cases.
+High-cost minigames remain explicit later work; imported maps/warps do not count
+as implemented interactions. The current inventory is in
+[regional-interaction-coverage.md](regional-interaction-coverage.md).

@@ -108,8 +108,9 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
     public bool RegionEnabled{get;}
     public PretViridianRegion? ViridianRegion{get;}
     public IReadOnlyDictionary<MapId,ConnectedFieldMap>? ConnectedFieldMaps{get;}
-    private PretCampaignCatalog(ImmutableDictionary<MapId,PretWorldMap> maps,PretStoryCompilation scripts,ImmutableDictionary<string,string> text,string version,CampaignPokemonContent? pokemonContent,CampaignBattleContent? battleContent,OpeningItemsCatalog? openingItems,PretViridianRegion? region,QuestItemsCatalog? questItems=null,PretMartMetatiles? metatiles=null,bool captureEnabled=false,PretViridianCenter? center=null,PretOldManTutorialContent? oldMan=null,bool partyTraining=false,PretForestRegion? forest=null,PretForestPokemon? forestPokemon=null,bool forestTrainers=false,PretPewterRegion? pewter=null,PretPewterPokemon? pewterPokemon=null,PewterMachineCatalog? machines=null,PretEarlyShopDocument? earlyShop=null,bool earlyStarter=false,bool earlyParty=false,PretPokemonStorageSource? pokemonStorage=null,PretEarlyPickups? fieldPickups=null,PretEarlyRepelDocument? repel=null,PretTownMap? townMap=null,PretOakRating? oakRating=null,PretPokedexMenu? oakPokedex=null,PretRoute22Region? route22=null,PretRoute22Pokemon? route22Pokemon=null,PretRoute3Region? route3=null,PretRoute3Pokemon? route3Pokemon=null,PretMagikarpContract? magikarp=null,PretMtMoonRegion? mtMoon=null,PretMtMoonPokemon? mtMoonPokemon=null,PretMtMoonItemsDocument? mtMoonItems=null,PretCeruleanRegion? cerulean=null,PretCeruleanPokemon? ceruleanPokemon=null,PretBillRegion? bill=null,PretBillPokemon? billPokemon=null,PretBillItemsDocument? billItems=null,BillTrainerCatalog? billTrainers=null,PretVermilionRegion? vermilion=null,PretVermilionPokemon? vermilionPokemon=null,VermilionTrainerCatalog? vermilionTrainers=null,PretSsAnneRegion? ssAnne=null,PretSsAnnePokemon? ssAnnePokemon=null,SsAnneTrainerCatalog? ssAnneTrainers=null,PretSsAnneItemsDocument? ssAnneItems=null,PretVermilionGymRegion? vermilionGym=null,VermilionGymTrainerCatalog? vermilionGymTrainers=null,PretCityServices? cityServices=null,PretOldRod? oldRod=null,PretRoute11Region? route11=null,PretRoute11Pokemon? route11Pokemon=null,PretRoute11ItemsDocument? route11Items=null,PretRoute11Encounters? route11Encounters=null,Route11TrainerCatalog? route11Trainers=null,PretRockTunnelRegion? rockTunnel=null,PretRockTunnelPokemon? rockTunnelPokemon=null,PretRockTunnelItemsDocument? rockTunnelItems=null,PretRockTunnelEncounters? rockTunnelEncounters=null,RockTunnelTrainerCatalog? rockTunnelTrainers=null,PretCeladonApproachRegion? celadonApproach=null,PretCeladonApproachPokemon? celadonApproachPokemon=null,PretCeladonApproachItemsDocument? celadonApproachItems=null,PretCeladonApproachEncounters? celadonApproachEncounters=null,CeladonApproachTrainerCatalog? celadonApproachTrainers=null,PretCeladonGymRegion? celadonGym=null,PretCeladonGymPokemon? celadonGymPokemon=null,PretCeladonGymItemsDocument? celadonGymItems=null,CeladonGymTrainerCatalog? celadonGymTrainers=null)
+    private PretCampaignCatalog(ImmutableDictionary<MapId,PretWorldMap> maps,PretStoryCompilation scripts,ImmutableDictionary<string,string> text,string version,CampaignPokemonContent? pokemonContent,CampaignBattleContent? battleContent,OpeningItemsCatalog? openingItems,PretViridianRegion? region,QuestItemsCatalog? questItems=null,PretMartMetatiles? metatiles=null,bool captureEnabled=false,PretViridianCenter? center=null,PretOldManTutorialContent? oldMan=null,bool partyTraining=false,PretForestRegion? forest=null,PretForestPokemon? forestPokemon=null,bool forestTrainers=false,PretPewterRegion? pewter=null,PretPewterPokemon? pewterPokemon=null,PewterMachineCatalog? machines=null,PretEarlyShopDocument? earlyShop=null,bool earlyStarter=false,bool earlyParty=false,PretPokemonStorageSource? pokemonStorage=null,PretEarlyPickups? fieldPickups=null,PretEarlyRepelDocument? repel=null,PretTownMap? townMap=null,PretOakRating? oakRating=null,PretPokedexMenu? oakPokedex=null,PretRoute22Region? route22=null,PretRoute22Pokemon? route22Pokemon=null,PretRoute3Region? route3=null,PretRoute3Pokemon? route3Pokemon=null,PretMagikarpContract? magikarp=null,PretMtMoonRegion? mtMoon=null,PretMtMoonPokemon? mtMoonPokemon=null,PretMtMoonItemsDocument? mtMoonItems=null,PretCeruleanRegion? cerulean=null,PretCeruleanPokemon? ceruleanPokemon=null,PretBillRegion? bill=null,PretBillPokemon? billPokemon=null,PretBillItemsDocument? billItems=null,BillTrainerCatalog? billTrainers=null,PretVermilionRegion? vermilion=null,PretVermilionPokemon? vermilionPokemon=null,VermilionTrainerCatalog? vermilionTrainers=null,PretSsAnneRegion? ssAnne=null,PretSsAnnePokemon? ssAnnePokemon=null,SsAnneTrainerCatalog? ssAnneTrainers=null,PretSsAnneItemsDocument? ssAnneItems=null,PretVermilionGymRegion? vermilionGym=null,VermilionGymTrainerCatalog? vermilionGymTrainers=null,PretCityServices? cityServices=null,PretOldRod? oldRod=null,PretRoute11Region? route11=null,PretRoute11Pokemon? route11Pokemon=null,PretRoute11ItemsDocument? route11Items=null,PretRoute11Encounters? route11Encounters=null,Route11TrainerCatalog? route11Trainers=null,PretRockTunnelRegion? rockTunnel=null,PretRockTunnelPokemon? rockTunnelPokemon=null,PretRockTunnelItemsDocument? rockTunnelItems=null,PretRockTunnelEncounters? rockTunnelEncounters=null,RockTunnelTrainerCatalog? rockTunnelTrainers=null,PretCeladonApproachRegion? celadonApproach=null,PretCeladonApproachPokemon? celadonApproachPokemon=null,PretCeladonApproachItemsDocument? celadonApproachItems=null,PretCeladonApproachEncounters? celadonApproachEncounters=null,CeladonApproachTrainerCatalog? celadonApproachTrainers=null,PretCeladonGymRegion? celadonGym=null,PretCeladonGymPokemon? celadonGymPokemon=null,PretCeladonGymItemsDocument? celadonGymItems=null,CeladonGymTrainerCatalog? celadonGymTrainers=null,PretRocketHideoutRegion? rocketHideout=null,PretRocketHideoutPokemon? rocketHideoutPokemon=null,PretRocketHideoutItemsDocument? rocketHideoutItems=null,PretRocketHideoutPickupsDocument? rocketHideoutPickups=null,RocketHideoutTrainerCatalog? rocketHideoutTrainers=null)
     {
+        RocketHideoutRegion=rocketHideout;RocketHideoutPokemon=rocketHideoutPokemon;RocketHideoutItems=rocketHideoutItems;RocketHideoutPickups=rocketHideoutPickups;RocketHideoutTrainers=rocketHideoutTrainers;
         CeladonGymRegion=celadonGym;CeladonGymPokemon=celadonGymPokemon;CeladonGymItems=celadonGymItems;CeladonGymTrainers=celadonGymTrainers;
         CeladonApproachRegion=celadonApproach;CeladonApproachPokemon=celadonApproachPokemon;CeladonApproachItems=celadonApproachItems;CeladonApproachEncounters=celadonApproachEncounters;CeladonApproachTrainers=celadonApproachTrainers;
         RockTunnelRegion=rockTunnel;RockTunnelPokemon=rockTunnelPokemon;RockTunnelItems=rockTunnelItems;RockTunnelEncounters=rockTunnelEncounters;RockTunnelTrainers=rockTunnelTrainers;
@@ -136,6 +137,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(rockTunnelEncounters is not null)LandEncounters=LandEncounters!.ToImmutableDictionary().AddRange(rockTunnelEncounters.Tables);
         if(celadonApproachItems is not null)FieldPickups=FieldPickups.AddRange(CeladonApproachPickupDefinitions(celadonApproachItems,earlyShop!.Catalog,machines!,scripts));
         if(celadonApproachEncounters is not null)LandEncounters=LandEncounters!.ToImmutableDictionary().AddRange(celadonApproachEncounters.Tables);
+        if(rocketHideoutPickups is not null)FieldPickups=FieldPickups.AddRange(RocketHideoutPickupDefinitions(rocketHideoutPickups,earlyShop!.Catalog,machines!,rocketHideout!,scripts));
         var metatileDefinitions=metatiles?.Definitions.ToDictionary(x=>x.Key,x=>new FieldMetatileDefinition(x.Key,x.Value.Behavior,x.Value.Terrain,x.Value.EncounterType,x.Value.LayerType));
         if(vermilionGym is not null)
         {
@@ -146,11 +148,12 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
                 metatileDefinitions.TryAdd(id,new(id,tile.Behavior,tile.Terrain,tile.EncounterType,tile.LayerType));
         }
         MetatileDefinitions=metatileDefinitions;
-        ConnectedFieldMaps=RegionEnabled?maps.ToImmutableDictionary(x=>x.Key,x=>vermilionGym is not null&&x.Key.Value=="map.vermilion-city-gym"?PretVermilionGymRegion.ConnectedMap(x.Value):celadonGym is not null?PretCeladonGymRegion.ConnectedMap(x.Value):celadonApproach is not null?PretCeladonApproachRegion.ConnectedMap(x.Value):rockTunnel is not null?PretRockTunnelRegion.ConnectedMap(x.Value):route11 is not null?PretRoute11Region.ConnectedMap(x.Value):ssAnne is not null?PretSsAnneRegion.ConnectedMap(x.Value):vermilion is not null?PretVermilionRegion.ConnectedMap(x.Value):bill is not null?PretBillRegion.ConnectedMap(x.Value):cerulean is not null?PretCeruleanRegion.ConnectedMap(x.Value):mtMoon is not null?PretMtMoonRegion.ConnectedMap(x.Value):route3 is not null?PretRoute3Region.ConnectedMap(x.Value):route22 is not null?PretRoute22Region.ConnectedMap(x.Value):pewter is not null?PretPewterRegion.ConnectedMap(x.Value):forest is null?PretViridianRegion.ConnectedMap(x.Value):PretForestRegion.ConnectedMap(x.Value)):null;
+        ConnectedFieldMaps=RegionEnabled?maps.ToImmutableDictionary(x=>x.Key,x=>vermilionGym is not null&&x.Key.Value=="map.vermilion-city-gym"?PretVermilionGymRegion.ConnectedMap(x.Value):rocketHideout is not null?PretRocketHideoutRegion.ConnectedMap(x.Value):celadonGym is not null?PretCeladonGymRegion.ConnectedMap(x.Value):celadonApproach is not null?PretCeladonApproachRegion.ConnectedMap(x.Value):rockTunnel is not null?PretRockTunnelRegion.ConnectedMap(x.Value):route11 is not null?PretRoute11Region.ConnectedMap(x.Value):ssAnne is not null?PretSsAnneRegion.ConnectedMap(x.Value):vermilion is not null?PretVermilionRegion.ConnectedMap(x.Value):bill is not null?PretBillRegion.ConnectedMap(x.Value):cerulean is not null?PretCeruleanRegion.ConnectedMap(x.Value):mtMoon is not null?PretMtMoonRegion.ConnectedMap(x.Value):route3 is not null?PretRoute3Region.ConnectedMap(x.Value):route22 is not null?PretRoute22Region.ConnectedMap(x.Value):pewter is not null?PretPewterRegion.ConnectedMap(x.Value):forest is null?PretViridianRegion.ConnectedMap(x.Value):PretForestRegion.ConnectedMap(x.Value)):null;
         _definitions=maps.ToImmutableDictionary(x=>x.Key,x=>Definition(x.Value));
     }
-    public static PretCampaignCatalog Load(string projectRoot,bool includeStarterEvents=false,bool includeFirstBattle=false,bool includeOpeningItems=false,bool includeViridianRegion=false,bool includeParcelQuest=false,bool includeCapture=false,bool includeViridianCenter=false,bool includeOldManTutorial=false,bool includePartyTraining=false,bool includeForest=false,bool includeForestTrainers=false,bool includePewter=false,bool includeEarlyShop=false,bool includeEarlyStarter=false,bool includeEarlyParty=false,bool includePokemonStorage=false,bool includeFieldPickups=false,bool includeRepel=false,bool includeTownMap=false,bool includeOakRating=false,bool includeRoute22=false,bool useCompactMapData=false,bool includeRoute3=false,bool includeMagikarp=false,bool includeMtMoon=false,bool includeCerulean=false,bool includeBill=false,bool includeVermilion=false,bool includeSsAnne=false,bool includeVermilionGym=false,bool includeCityServices=false,bool includeRoute11=false,bool includeRockTunnel=false,bool includeCeladonApproach=false,bool includeCeladonGym=false)
+    public static PretCampaignCatalog Load(string projectRoot,bool includeStarterEvents=false,bool includeFirstBattle=false,bool includeOpeningItems=false,bool includeViridianRegion=false,bool includeParcelQuest=false,bool includeCapture=false,bool includeViridianCenter=false,bool includeOldManTutorial=false,bool includePartyTraining=false,bool includeForest=false,bool includeForestTrainers=false,bool includePewter=false,bool includeEarlyShop=false,bool includeEarlyStarter=false,bool includeEarlyParty=false,bool includePokemonStorage=false,bool includeFieldPickups=false,bool includeRepel=false,bool includeTownMap=false,bool includeOakRating=false,bool includeRoute22=false,bool useCompactMapData=false,bool includeRoute3=false,bool includeMagikarp=false,bool includeMtMoon=false,bool includeCerulean=false,bool includeBill=false,bool includeVermilion=false,bool includeSsAnne=false,bool includeVermilionGym=false,bool includeCityServices=false,bool includeRoute11=false,bool includeRockTunnel=false,bool includeCeladonApproach=false,bool includeCeladonGym=false,bool includeRocketHideout=false)
     {
+        if(includeRocketHideout&&!includeCeladonGym)throw new ArgumentException("Rocket Hideout requires the complete Celadon Gym profile.");
         if(includeCeladonGym&&!includeCeladonApproach)throw new ArgumentException("Celadon Gym requires the complete Celadon approach profile.");
         if(includeCeladonApproach&&!includeRockTunnel)throw new ArgumentException("Celadon approach requires the complete RockTunnel profile.");
         if(includeRockTunnel&&!includeRoute11)throw new ArgumentException("RockTunnel requires the complete Route11 profile.");
@@ -165,7 +168,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(includeMagikarp&&!includeRoute3)throw new ArgumentException("Magikarp requires the complete Route3 profile.");
         var magikarp=includeMagikarp?PretMagikarpContract.Load(projectRoot):null;
         if(includeRoute3&&!includeRoute22)throw new ArgumentException("Route3 requires the complete Route22 profile.");
-        var runtimeMaps=useCompactMapData?PretRuntimeMapCatalog.Load(Path.Combine(projectRoot,includeCeladonGym?PretCeladonGymRuntimeMaps.DirectoryName:includeCeladonApproach?PretCeladonApproachRuntimeMaps.DirectoryName:includeRockTunnel?PretRockTunnelRuntimeMaps.DirectoryName:includeRoute11?PretRoute11RegionRuntimeMaps.DirectoryName:includeCityServices?PretCityServicesRuntimeMaps.DirectoryName:includeVermilionGym?PretVermilionGymRuntimeMaps.DirectoryName:includeSsAnne?"content/generated/runtime-ssanne-maps":includeVermilion?"content/generated/runtime-vermilion-maps":includeBill?"content/generated/bill-region/runtime-maps":includeCerulean?"content/generated/cerulean-region/runtime-maps":includeMtMoon?"content/generated/mtmoon-region/runtime-maps":includeRoute3?"content/generated/runtime-maps-route3":"content/generated/runtime-maps"),includeCeladonGym?PretCeladonGymRuntimeMaps.ManifestSha256:includeCeladonApproach?PretCeladonApproachRuntimeMaps.ManifestSha256:includeRockTunnel?PretRockTunnelRuntimeMaps.ManifestSha256:includeRoute11?PretRoute11RegionRuntimeMaps.ManifestSha256:includeCityServices?PretCityServicesRuntimeMaps.ManifestSha256:includeVermilionGym?PretVermilionGymRuntimeMaps.ManifestSha256:includeSsAnne?PretSsAnneRuntimeMaps.ManifestSha256:includeVermilion?PretVermilionRegion.RuntimeManifestSha256:includeBill?PretRuntimeMapCatalog.BillManifestSha256:includeCerulean?PretRuntimeMapCatalog.CeruleanManifestSha256:includeMtMoon?PretRuntimeMapCatalog.MtMoonManifestSha256:includeRoute3?PretRuntimeMapCatalog.Route3ManifestSha256:PretRuntimeMapCatalog.PinnedManifestSha256):null;
+        var runtimeMaps=useCompactMapData?PretRuntimeMapCatalog.Load(Path.Combine(projectRoot,includeRocketHideout?PretRocketHideoutRuntimeMaps.DirectoryName:includeCeladonGym?PretCeladonGymRuntimeMaps.DirectoryName:includeCeladonApproach?PretCeladonApproachRuntimeMaps.DirectoryName:includeRockTunnel?PretRockTunnelRuntimeMaps.DirectoryName:includeRoute11?PretRoute11RegionRuntimeMaps.DirectoryName:includeCityServices?PretCityServicesRuntimeMaps.DirectoryName:includeVermilionGym?PretVermilionGymRuntimeMaps.DirectoryName:includeSsAnne?"content/generated/runtime-ssanne-maps":includeVermilion?"content/generated/runtime-vermilion-maps":includeBill?"content/generated/bill-region/runtime-maps":includeCerulean?"content/generated/cerulean-region/runtime-maps":includeMtMoon?"content/generated/mtmoon-region/runtime-maps":includeRoute3?"content/generated/runtime-maps-route3":"content/generated/runtime-maps"),includeRocketHideout?PretRocketHideoutRuntimeMaps.ManifestSha256:includeCeladonGym?PretCeladonGymRuntimeMaps.ManifestSha256:includeCeladonApproach?PretCeladonApproachRuntimeMaps.ManifestSha256:includeRockTunnel?PretRockTunnelRuntimeMaps.ManifestSha256:includeRoute11?PretRoute11RegionRuntimeMaps.ManifestSha256:includeCityServices?PretCityServicesRuntimeMaps.ManifestSha256:includeVermilionGym?PretVermilionGymRuntimeMaps.ManifestSha256:includeSsAnne?PretSsAnneRuntimeMaps.ManifestSha256:includeVermilion?PretVermilionRegion.RuntimeManifestSha256:includeBill?PretRuntimeMapCatalog.BillManifestSha256:includeCerulean?PretRuntimeMapCatalog.CeruleanManifestSha256:includeMtMoon?PretRuntimeMapCatalog.MtMoonManifestSha256:includeRoute3?PretRuntimeMapCatalog.Route3ManifestSha256:PretRuntimeMapCatalog.PinnedManifestSha256):null;
         if(includeRoute22&&!includeOakRating)throw new ArgumentException("Route22 requires the complete Oak rating profile.");
         if(includeOakRating&&!includeTownMap)throw new ArgumentException("Oak rating requires the complete Town Map profile.");
         var route22=includeRoute22?PretRoute22Region.Load(projectRoot,runtimeMaps):null;
@@ -174,6 +177,11 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         var route22Pokemon=includeRoute22?PretRoute22Pokemon.Load(projectRoot,includeSourceCryWaves:false,pokedexMenu:oakPokedex):null;
         var route3Pokemon=includeRoute3?PretRoute3Pokemon.Load(projectRoot,pokedexMenu:oakPokedex):null;
         var ceruleanPokemon=includeCerulean?PretCeruleanPokemon.Load(projectRoot,pokedexMenu:oakPokedex):null;
+        var rocketHideout=includeRocketHideout?PretRocketHideoutRegion.Load(projectRoot,runtimeMaps):null;
+        var rocketHideoutPokemon=includeRocketHideout?PretRocketHideoutPokemon.Load(projectRoot,pokedexMenu:oakPokedex):null;
+        var rocketHideoutItems=includeRocketHideout?PretRocketHideoutItems.LoadProject(projectRoot):null;
+        var rocketHideoutPickups=includeRocketHideout?PretRocketHideoutItems.LoadPickupsProject(projectRoot):null;
+        var rocketHideoutTrainers=includeRocketHideout?PretRocketHideoutTrainers.Load(projectRoot):null;
         var celadonGym=includeCeladonGym?PretCeladonGymRegion.Load(projectRoot,runtimeMaps):null;
         var celadonGymPokemon=includeCeladonGym?PretCeladonGymPokemon.Load(projectRoot,pokedexMenu:oakPokedex):null;
         var celadonGymItems=includeCeladonGym?PretCeladonGymItems.LoadProject(projectRoot):null;
@@ -252,6 +260,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(rockTunnel is not null)maps=maps.AddRange(rockTunnel.NewMaps);
         if(celadonApproach is not null)maps=maps.AddRange(celadonApproach.NewMaps);
         if(celadonGym is not null)maps=maps.AddRange(celadonGym.NewMaps);
+        if(rocketHideout is not null)maps=maps.AddRange(rocketHideout.NewMaps);
         var sources=new List<PretSourceScriptFile>();var textFiles=new List<string>();var constants=new Dictionary<string,int>(StringComparer.Ordinal);
         foreach(var map in maps.Values.OrderBy(x=>x.Id.Value,StringComparer.Ordinal))
         {
@@ -629,6 +638,33 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
                 constants[symbol]=value;
             }
         }
+        if(rocketHideout is not null)
+        {
+            hashes.AddRange(rocketHideout.AdditionalSourceHashes);
+            hashes.Add("rocket-hideout-application:fr-rocket-hideout-campaign-v1");
+            var paths=sources.ToDictionary(x=>x.Path,StringComparer.Ordinal);
+            foreach(var source in rocketHideout.Scripts)
+            {
+                if(paths.TryGetValue(source.Path,out var prior))
+                {if(prior.SourceRef.Sha256!=source.SourceRef.Sha256||prior.Text!=source.Text)throw new InvalidDataException("Conflicting Rocket Hideout source: "+source.Path);continue;}
+                paths.Add(source.Path,source);sources.Add(source);textFiles.Add(source.Text);
+            }
+            foreach(var text in rocketHideout.TextSources.Values)if(!textFiles.Contains(text,StringComparer.Ordinal))textFiles.Add(text);
+            foreach(var (symbol,value) in rocketHideout.Constants)
+            {
+                if(constants.TryGetValue(symbol,out var prior)&&prior!=value)throw new InvalidDataException("Conflicting Rocket Hideout constant: "+symbol);
+                constants[symbol]=value;
+            }
+            // Metatile labels use mixed case, unlike the source region's uppercase
+            // numeric constant inventory. Resolve only the authenticated patch atlas.
+            foreach(var tile in rocketHideout.SourceContract.GetProperty("patchAtlas").EnumerateArray())
+            {
+                string symbol=tile.GetProperty("symbol").GetString()!;
+                int value=tile.GetProperty("metatileId").GetInt32();
+                if(constants.TryGetValue(symbol,out var prior)&&prior!=value)throw new InvalidDataException("Conflicting Rocket Hideout metatile constant: "+symbol);
+                constants[symbol]=value;
+            }
+        }
         CampaignPokemonContent? pokemonContent=null;
         if(includeStarterEvents)
         {
@@ -767,6 +803,13 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
             hashes.Add("celadon-gym-trainers:"+PretCeladonGymTrainers.LockSha256+":"+PretCeladonGymTrainers.GeneratedSha256);
             foreach(var (symbol,value) in celadonGymPokemon.Constants)constants[symbol]=value;
         }
+        if(rocketHideoutPokemon is not null)
+        {
+            pokemonContent=pokemonContent! with{Catalog=RocketHideoutCampaignPokemon(rocketHideoutPokemon.Catalog,pokemonContent!.Catalog),SpeciesNames=rocketHideoutPokemon.SpeciesNames};
+            hashes.AddRange(rocketHideoutPokemon.AdditionalSourceHashes);
+            hashes.Add("rocket-hideout-trainers:"+PretRocketHideoutTrainers.LockSha256+":"+PretRocketHideoutTrainers.GeneratedSha256);
+            foreach(var (symbol,value) in rocketHideoutPokemon.Constants)constants[symbol]=value;
+        }
         var mtMoonItems=includeMtMoon?PretMtMoonItems.LoadProject(projectRoot):null;
         if(mtMoonItems is not null)hashes.Add("mtmoon-items:"+PretMtMoonItems.GeneratedSha256+":"+PretMtMoonItems.LockSha256);
         var machines=includeSsAnne?PretSsAnneMachines.LoadCatalogProject(projectRoot):includeVermilion?PretVermilionMachines.LoadCatalogProject(projectRoot):includeBill?PretBillMachines.LoadCatalogProject(projectRoot):includeCerulean?PretCeruleanMachines.LoadCatalogProject(projectRoot):includeMtMoon?PretPewterMachines.LoadMtMoonProject(projectRoot):includeRoute3?PretPewterMachines.LoadRoute3Project(projectRoot):includeRoute22?PretPewterMachines.LoadRoute22Project(projectRoot):includePewter?PretPewterMachines.LoadProject(projectRoot):null;
@@ -775,6 +818,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(includeRockTunnel){machines=PretRockTunnelMachines.LoadCatalogProject(projectRoot);hashes.Add("rocktunnel-machines:"+PretRockTunnelMachines.GeneratedSha256+":"+PretRockTunnelMachines.LockSha256);}
         if(includeCeladonApproach){machines=PretCeladonApproachMachines.LoadCatalogProject(projectRoot);hashes.Add("celadon-approach-machines:"+PretCeladonApproachMachines.GeneratedSha256+":"+PretCeladonApproachItems.LockSha256);}
         if(includeCeladonGym){machines=PretCeladonGymMachines.LoadCatalogProject(projectRoot);hashes.Add("celadon-gym-machines:"+PretCeladonGymMachines.GeneratedSha256+":"+PretCeladonGymItems.LockSha256);}
+        if(includeRocketHideout){machines=PretRocketHideoutMachines.LoadCatalogProject(projectRoot);hashes.Add("rocket-hideout-machines:"+PretRocketHideoutMachines.GeneratedSha256+":"+PretRocketHideoutItems.LockSha256);}
         if(includeSsAnne)hashes.Add("ssanne-machines:"+PretSsAnneMachines.GeneratedSha256+":"+PretSsAnneMachines.LockSha256);
         if(includeVermilion)hashes.Add("vermilion-machines:"+PretVermilionMachines.GeneratedSha256+":"+PretVermilionMachines.LockSha256);
         if(includeBill)hashes.Add("bill-machines:"+PretBillMachines.GeneratedSha256+":"+PretBillMachines.LockSha256);
@@ -828,6 +872,11 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
             if(celadonGymPokemon is not null)foreach(var (move,name) in celadonGymPokemon.MoveNames)
             {
                 if(names.TryGetValue(move.Value,out var prior)&&prior!=name)throw new InvalidDataException("Conflicting CeladonGym move name: "+move.Value);
+                names[move.Value]=name;
+            }
+            if(rocketHideoutPokemon is not null)foreach(var (move,name) in rocketHideoutPokemon.MoveNames)
+            {
+                if(names.TryGetValue(move.Value,out var prior)&&prior!=name)throw new InvalidDataException("Conflicting Rocket Hideout move name: "+move.Value);
                 names[move.Value]=name;
             }
             if(includeVermilionGym)foreach(var (move,name) in PretVermilionGymTrainers.LoadMoveNames(projectRoot))
@@ -900,10 +949,11 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(includeRockTunnel){earlyShop=earlyShop! with{Catalog=PretRockTunnelItems.LoadShopProject(projectRoot,earlyShop.Catalog)};hashes.Add("rocktunnel-items:"+PretRockTunnelItems.GeneratedSha256+":"+PretRockTunnelItems.LockSha256);}
         if(includeCeladonApproach){earlyShop=earlyShop! with{Catalog=PretCeladonApproachItems.LoadShopProject(projectRoot,earlyShop.Catalog)};hashes.Add("celadon-approach-items:"+PretCeladonApproachItems.GeneratedSha256+":"+PretCeladonApproachItems.LockSha256);}
         if(includeCeladonGym){earlyShop=earlyShop! with{Catalog=PretCeladonGymItems.LoadShopProject(projectRoot,earlyShop.Catalog)};hashes.Add("celadon-gym-items:"+PretCeladonGymItems.GeneratedSha256+":"+PretCeladonGymItems.LockSha256);}
+        if(includeRocketHideout){earlyShop=earlyShop! with{Catalog=PretRocketHideoutItems.LoadShopProject(projectRoot,earlyShop.Catalog)};hashes.Add("rocket-hideout-items:"+PretRocketHideoutItems.GeneratedSha256+":"+PretRocketHideoutItems.LockSha256+":"+PretRocketHideoutItems.ManifestSha256+":"+PretRocketHideoutItems.PickupsSha256);}
         if(earlyShop is not null)hashes.Add("early-shop:"+PretEarlyShop.GeneratedSha256);
         if(includeCerulean)hashes.Add("cerulean-items:"+PretCeruleanItems.GeneratedSha256+":"+PretCeruleanItems.LockSha256);
         if(includeBill)hashes.Add("bill-items:"+PretBillItems.GeneratedSha256+":"+PretBillItems.LockSha256);
-        var compiled=PretStoryCompiler.Compile(sources,constants,includeGiftOpcodes:includeMagikarp,includeRoute3Opcodes:includeRoute3,includeMtMoonOpcodes:includeMtMoon,includeBillOpcodes:includeBill,includeSsAnneOpcodes:includeSsAnne,includeVermilionGymOpcodes:includeVermilionGym,includeRockTunnelOpcodes:includeRockTunnel);
+        var compiled=PretStoryCompiler.Compile(sources,constants,includeGiftOpcodes:includeMagikarp,includeRoute3Opcodes:includeRoute3,includeMtMoonOpcodes:includeMtMoon,includeBillOpcodes:includeBill,includeSsAnneOpcodes:includeSsAnne,includeVermilionGymOpcodes:includeVermilionGym,includeRockTunnelOpcodes:includeRockTunnel,includeRocketHideoutOpcodes:includeRocketHideout);
         if(pokemonContent is not null)
         {
             var lab=maps.Values.Single(x=>x.SourceMapSymbol=="MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB");
@@ -1001,7 +1051,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
             foreach(var label in magikarp.RequiredCommonTextLabels)if(!bank.ContainsKey(label))throw new InvalidDataException("magikarp_common_text_missing: "+label);
         }
         var version=Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n",hashes))));
-        return new(maps,compiled,bank.ToImmutable(),version,pokemonContent,battleContent,openingItems,region,questItems,metatiles,includeCapture,center,oldMan,includePartyTraining,forest,forestPokemon,includeForestTrainers,pewter,pewterPokemon,machines,earlyShop,includeEarlyStarter,includeEarlyParty,pokemonStorage,fieldPickups,repel,townMap,oakRating,oakPokedex,route22,route22Pokemon,route3,route3Pokemon,magikarp,mtMoon,mtMoonPokemon,mtMoonItems,cerulean,ceruleanPokemon,bill,billPokemon,billItems,billTrainers,vermilion,vermilionPokemon,vermilionTrainers,ssAnne,ssAnnePokemon,ssAnneTrainers,ssAnneItems,vermilionGym,vermilionGymTrainers,cityServices,oldRod,route11,route11Pokemon,route11Items,route11Encounters,route11Trainers,rockTunnel,rockTunnelPokemon,rockTunnelItems,rockTunnelEncounters,rockTunnelTrainers,celadonApproach,celadonApproachPokemon,celadonApproachItems,celadonApproachEncounters,celadonApproachTrainers,celadonGym,celadonGymPokemon,celadonGymItems,celadonGymTrainers);
+        return new(maps,compiled,bank.ToImmutable(),version,pokemonContent,battleContent,openingItems,region,questItems,metatiles,includeCapture,center,oldMan,includePartyTraining,forest,forestPokemon,includeForestTrainers,pewter,pewterPokemon,machines,earlyShop,includeEarlyStarter,includeEarlyParty,pokemonStorage,fieldPickups,repel,townMap,oakRating,oakPokedex,route22,route22Pokemon,route3,route3Pokemon,magikarp,mtMoon,mtMoonPokemon,mtMoonItems,cerulean,ceruleanPokemon,bill,billPokemon,billItems,billTrainers,vermilion,vermilionPokemon,vermilionTrainers,ssAnne,ssAnnePokemon,ssAnneTrainers,ssAnneItems,vermilionGym,vermilionGymTrainers,cityServices,oldRod,route11,route11Pokemon,route11Items,route11Encounters,route11Trainers,rockTunnel,rockTunnelPokemon,rockTunnelItems,rockTunnelEncounters,rockTunnelTrainers,celadonApproach,celadonApproachPokemon,celadonApproachItems,celadonApproachEncounters,celadonApproachTrainers,celadonGym,celadonGymPokemon,celadonGymItems,celadonGymTrainers,rocketHideout,rocketHideoutPokemon,rocketHideoutItems,rocketHideoutPickups,rocketHideoutTrainers);
     }
     private FieldMapDefinition Definition(PretWorldMap map)
     {
@@ -1019,13 +1069,15 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
     {
         if(VermilionGymRegion is not null&&map.Value=="map.vermilion-city-gym")
             return VermilionGymRegion.BeamDefinitions.TryGetValue(id,out var tile)?new(id,tile.Behavior,tile.Terrain,tile.EncounterType,tile.LayerType):null;
+        if(RocketHideoutRegion?.NewMaps.ContainsKey(map)==true)
+            return RocketHideoutMetatileDefinition(map,id);
         return MetatileDefinitions?.GetValueOrDefault(id);
     }
     public int? TerrainAt(MapId map,int x,int y)=>SourceMaps.TryGetValue(map,out var source)?source.GetSourceCell(x,y)?.Terrain:null;
     public bool AllowsCycling(MapId map)=>SourceMaps.TryGetValue(map,out var source)&&source.Events.GetProperty("allow_cycling").GetBoolean();
     public FieldMapDefinition MapDefinition(MapId id)=>_definitions[id];
     public MapId MapFromSourceSymbol(string symbol)=>SourceMaps.Values.FirstOrDefault(x=>x.SourceMapSymbol==symbol)?.Id
-        ?? (VermilionGymEnabled&&symbol=="MAP_VERMILION_CITY_GYM"?new MapId("map.vermilion-city-gym"):CeladonGymEnabled?PretCeladonGymRegion.MapIdFromSourceSymbol(symbol):CeladonApproachEnabled?PretCeladonApproachRegion.MapIdFromSourceSymbol(symbol):RockTunnelEnabled?PretRockTunnelRegion.MapIdFromSourceSymbol(symbol):Route11Enabled?PretRoute11Region.MapIdFromSourceSymbol(symbol):SsAnneEnabled?PretSsAnneRegion.MapIdFromSourceSymbol(symbol):BillEnabled?PretBillRegion.MapIdFromSourceSymbol(symbol):CeruleanEnabled?PretCeruleanRegion.MapIdFromSourceSymbol(symbol):MtMoonEnabled?PretMtMoonRegion.MapIdFromSourceSymbol(symbol):Route3Enabled?PretRoute3Region.MapIdFromSourceSymbol(symbol):Route22Enabled?PretRoute22Region.MapIdFromSourceSymbol(symbol):PewterEnabled?PretPewterRegion.MapIdFromSourceSymbol(symbol):ForestEnabled?PretForestRegion.MapIdFromSourceSymbol(symbol):ViridianCenterEnabled?PretViridianCenter.MapIdFromSourceSymbol(symbol):RegionEnabled?PretViridianRegion.MapIdFromSourceSymbol(symbol):throw new InvalidDataException("Source map is not loaded: "+symbol));
+        ?? (VermilionGymEnabled&&symbol=="MAP_VERMILION_CITY_GYM"?new MapId("map.vermilion-city-gym"):RocketHideoutEnabled?PretRocketHideoutRegion.MapIdFromSourceSymbol(symbol):CeladonGymEnabled?PretCeladonGymRegion.MapIdFromSourceSymbol(symbol):CeladonApproachEnabled?PretCeladonApproachRegion.MapIdFromSourceSymbol(symbol):RockTunnelEnabled?PretRockTunnelRegion.MapIdFromSourceSymbol(symbol):Route11Enabled?PretRoute11Region.MapIdFromSourceSymbol(symbol):SsAnneEnabled?PretSsAnneRegion.MapIdFromSourceSymbol(symbol):BillEnabled?PretBillRegion.MapIdFromSourceSymbol(symbol):CeruleanEnabled?PretCeruleanRegion.MapIdFromSourceSymbol(symbol):MtMoonEnabled?PretMtMoonRegion.MapIdFromSourceSymbol(symbol):Route3Enabled?PretRoute3Region.MapIdFromSourceSymbol(symbol):Route22Enabled?PretRoute22Region.MapIdFromSourceSymbol(symbol):PewterEnabled?PretPewterRegion.MapIdFromSourceSymbol(symbol):ForestEnabled?PretForestRegion.MapIdFromSourceSymbol(symbol):ViridianCenterEnabled?PretViridianCenter.MapIdFromSourceSymbol(symbol):RegionEnabled?PretViridianRegion.MapIdFromSourceSymbol(symbol):throw new InvalidDataException("Source map is not loaded: "+symbol));
     public ImmutableArray<FieldProgramCondition> Conditions(string table)=>_scripts.MapConditions.TryGetValue(table,out var list)?list.Select(x=>new FieldProgramCondition(x.Variable,int.Parse(x.Expected,System.Globalization.CultureInfo.InvariantCulture),x.Target)).ToImmutableArray():[];
     public ImmutableArray<string> Movement(string program)=>_scripts.Movements.TryGetValue(program,out var list)?list.Select(x=>x.Opcode).ToImmutableArray():throw new InvalidDataException("Missing movement program: "+program);
     public StoryProgram? FindProgram(string id)=>_scripts.FindProgram(id);

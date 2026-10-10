@@ -21,6 +21,14 @@ public sealed record FieldMapDefinition(MapId Id,string SourceMapSymbol,Immutabl
 }
 public sealed record CampaignBattleContent(TrainerCatalog Trainers,ImmutableSortedDictionary<string,string> MoveNames);
 public sealed record CampaignOakRatingProjection(int Seen,int Caught,string RatingTextSymbol,bool KantoComplete);
+public sealed record CampaignMapMetatileCell(int X,int Y,int SourceMetatileId,int Collision,int Elevation,
+    uint RawAttributes,string AtlasPath,int AtlasX,int AtlasY);
+public sealed record CampaignMapMetatilePatch(string Label,MapId MapId,ImmutableArray<CampaignMapMetatileCell> Cells);
+public sealed record CampaignRocketElevatorFloor(int MenuIndex,string Label,int SourceFloorValue,MapId DestinationMapId,
+    int X,int Y,int Elevation,int DestinationWarpId);
+public sealed record CampaignRocketElevatorEntrance(MapId SourceMapId,int SourceWarpId,int ElevatorWarpId,
+    int ReturnX,int ReturnY,int ReturnElevation);
+public sealed record CampaignRocketDynamicExit(int WarpIndex,int X,int Y,int Elevation,int SourceWarpId);
 public interface ICampaignCatalog:IStoryCatalog
 {
     string ContentVersion{get;}
@@ -50,6 +58,14 @@ public interface ICampaignCatalog:IStoryCatalog
     bool Route11Enabled=>false;
     bool CeladonGymEnabled=>false;
     CeladonGymTrainerCatalog? CeladonGymTrainers=>null;
+    bool RocketHideoutEnabled=>false;
+    RocketHideoutTrainerCatalog? RocketHideoutTrainers=>null;
+    ImmutableArray<int> RocketHideoutInitiallySetFlags=>[];
+    ImmutableArray<CampaignMapMetatilePatch> RocketHideoutMetatilePatches=>[];
+    ImmutableArray<CampaignRocketElevatorFloor> RocketHideoutElevatorFloors=>[];
+    ImmutableArray<CampaignRocketElevatorEntrance> RocketHideoutElevatorEntrances=>[];
+    ImmutableArray<CampaignRocketDynamicExit> RocketHideoutDynamicExits=>[];
+    ImmutableArray<CampaignMapMetatilePatch> RocketHideoutInitialPatches(bool entranceOpened,bool b1GuardDefeated,bool bothB4GuardsDefeated)=>[];
     bool CeladonApproachEnabled=>false;
     CeladonApproachTrainerCatalog? CeladonApproachTrainers=>null;
     bool RockTunnelEnabled=>false;

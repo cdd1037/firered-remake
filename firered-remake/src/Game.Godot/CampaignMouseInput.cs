@@ -77,7 +77,7 @@ public partial class CampaignView
             if (_session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
                 _session.State.ItemMenu is not null || _session.State.Pc is not null ||
                 ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
-                _session.State.Battle is not null || FieldDialogueVisible || BillPcMenuActive || BillPcPictureActive ||
+                _session.State.Battle is not null || FieldDialogueVisible || RocketElevatorMenuActive || BillPcMenuActive || BillPcPictureActive ||
                 _session.State.Repel?.Phase == CampaignRepelPhase.WoreOff)
             { MouseKey(Key.Backspace); QueueRedraw(); GetViewport().SetInputAsHandled(); }
             else if (CanOpenFieldMenu)
@@ -93,6 +93,7 @@ public partial class CampaignView
             : _session.State.Pc is not null ? MouseStorage(point)
             : ForestTrainerCombatVisible || _session.State.WildBattle is not null ? MouseWild(point)
             : _session.State.Battle is not null ? MouseLabBattle(point)
+            : RocketElevatorMenuActive ? MouseRocketElevator(point)
             : BillPcMenuActive||BillPcPictureActive ? MouseBillPc(point) : MouseFieldDialogue(point);
         if (acted) { QueueRedraw(); GetViewport().SetInputAsHandled(); }
         return true;
@@ -175,6 +176,7 @@ public partial class CampaignView
                 _battleMenu == "actions" ? 4 : FirstBattleRules.RequiresStruggle(battle.State.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
         }
         if (!FieldDialogueVisible || !FieldTextComplete) return false;
+        if(RocketElevatorMenuActive)return NavigateRocketPointer(point,direction);
         if(BillPcMenuActive||BillPcPictureActive)return NavigateBillPcPointer(point,direction);
         if(BikeShopMenuActive)return NavigateBikeShopPointer(point,direction);
         var wait = _session.State.Script.Wait;

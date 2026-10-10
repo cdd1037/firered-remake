@@ -32,9 +32,10 @@ public static class Route11TrainerPartyFactory
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(Route11TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool rockTunnelRules = false, bool celadonGymRules = false)
+    public static TrainerPartyCreationResult Create(Route11TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
     {
-        if ((pokemon.Species.Count == 98) != celadonGymRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        celadonGymRules |= rocketHideoutRules;
+        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != rocketHideoutRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         rockTunnelRules |= celadonGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
         if (pokemon.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : 79) || !trainers.Trainers.TryGetValue(id, out var trainer))

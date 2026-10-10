@@ -59,6 +59,10 @@ public static class StoryRules
             if(program is not null&&index>=0&&index<program.Instructions.Length)
             {
                 var instruction=program.Instructions[index];
+                if(instruction.Op==StoryOp.Multichoice&&instruction.Opcode=="multichoicedefault"&&
+                    instruction.Source.Path=="data/maps/RocketHideout_Elevator/scripts.inc"&&instruction.Args.Length==5&&
+                    instruction.Args[2]=="MULTICHOICE_ROCKET_HIDEOUT_ELEVATOR"&&instruction.Args[4]=="FALSE")
+                    return choice is >=0 and <=3 or 127;
                 if(instruction.Op==StoryOp.Multichoice&&instruction.Source.Path=="data/maps/Route25_SeaCottage/scripts.inc"&&
                     instruction.Source.Symbol=="Route25_SeaCottage_EventScript_BillsMonList"&&
                     instruction.Args.SequenceEqual(new[]{"0","0","MULTICHOICE_EEVEELUTIONS","FALSE"}))
@@ -93,7 +97,7 @@ public static class StoryRules
         bool Compare(string op,int a,int b)=>op switch{"eq"=>a==b,"ne"=>a!=b,"lt"=>a<b,"le"=>a<=b,"gt"=>a>b,"ge"=>a>=b,_=>throw new InvalidDataException("Unknown comparison: "+op)};
         void Effect(StoryInstruction instruction,StoryWaitKind wait=StoryWaitKind.None)
         {
-            var seq=checked(state.EffectSequence+1);effects.Add(new(seq,instruction.Opcode,instruction.Args.Select((a,index)=>a.StartsWith("VAR_",StringComparison.Ordinal)&&!(instruction.Opcode=="getplayerxy"||instruction.Opcode is "specialvar" or "subvar"&&index==0)?Value(a).ToString(System.Globalization.CultureInfo.InvariantCulture):a).ToImmutableArray(),instruction.Source));state=state with{EffectSequence=seq};
+            var seq=checked(state.EffectSequence+1);effects.Add(new(seq,instruction.Opcode,instruction.Args.Select((a,index)=>a.StartsWith("VAR_",StringComparison.Ordinal)&&!(instruction.Opcode=="getplayerxy"||instruction.Opcode is "specialvar" or "subvar" or "addvar"&&index==0)?Value(a).ToString(System.Globalization.CultureInfo.InvariantCulture):a).ToImmutableArray(),instruction.Source));state=state with{EffectSequence=seq};
             if(wait!=StoryWaitKind.None)state=state with{Wait=new(wait,"event:"+seq)};
         }
         try

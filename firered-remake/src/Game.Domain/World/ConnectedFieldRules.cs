@@ -35,13 +35,16 @@ public static class ConnectedFieldRules
     public const int MaximumMapDimension = short.MaxValue - 7;
 
     public static ConnectedFieldTransition Complete(WorldSnapshot state, ConnectedFieldIntent intent,
-        IReadOnlyDictionary<MapId, ConnectedFieldMap> maps,bool enableCaveGround=false,bool enableSand=false,bool biking=false)
+        IReadOnlyDictionary<MapId, ConnectedFieldMap> maps,bool enableCaveGround=false,bool enableSand=false,bool biking=false,
+        bool enableSpinTiles=false,RocketSpinState? activeSpin=null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(intent);
         ArgumentNullException.ThrowIfNull(maps);
         ConnectedFieldTransition Fail(string code, string message, TransitionStatus status = TransitionStatus.Fault) =>
             new(status, state, [], false, false, new(code, message));
+        if (activeSpin is not null)
+            return Fail("spin-controls-locked", "Ordinary player actions are unavailable until spin presentation completes.", TransitionStatus.Rejected);
         if (state.RulesVersion != RulesVersion)
             return Fail("unsupported-connected-field-profile", RulesVersion);
         if (state.Player is null || !StableId.IsValid(state.Player.MapId.Value) || !Enum.IsDefined(state.Player.Facing) ||
@@ -60,14 +63,15 @@ public static class ConnectedFieldRules
         if (here is null || !ValidCell(here) || here.Collision != 0 || here.Occupied ||
             (here.Elevation != 15 && here.Elevation != state.Player.Elevation))
             return Fail("invalid-connected-current-cell", "Current cell is absent, blocked, malformed, or has inconsistent elevation.");
-        if (!WalkableBehavior(here.SourceBehavior,enableCaveGround,enableSand))
+        if (!WalkableBehavior(here.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles))
             return Fail(BehaviorFault(here.SourceBehavior), $"Current source behavior 0x{here.SourceBehavior:x2}.");
 
         ConnectedFieldTransition Accepted(ConnectedFieldEventKind kind, TilePosition position, int steps, string reason)
         {
             var next = state with { Revision = state.Revision + 1, StepCount = state.StepCount + steps, Player = position };
             return new(TransitionStatus.Accepted, next, [new(intent.CommandId, kind, state.Player, position, steps, reason)],
-                position.MapId != state.Player.MapId, kind is ConnectedFieldEventKind.Walked or ConnectedFieldEventKind.Turned or ConnectedFieldEventKind.JumpedLedge, null);
+                position.MapId != state.Player.MapId, (kind is ConnectedFieldEventKind.Walked or ConnectedFieldEventKind.Turned or ConnectedFieldEventKind.JumpedLedge) &&
+                (!enableSpinTiles || !RocketSpinRules.IsArrow(maps[position.MapId].CellAt(position.X,position.Y)!.SourceBehavior)), null);
         }
         ConnectedFieldTransition Blocked(string reason) => Accepted(ConnectedFieldEventKind.Blocked,
             state.Player with { Facing = intent.Direction }, 0, reason);
@@ -118,7 +122,7 @@ public static class ConnectedFieldRules
         if (biking && front.SourceBehavior == 0x0a) return Blocked("bicycle-terrain-collision");
         if (front.SourceBehavior == 0x69 && intent.Direction == Direction.North && state.Player.Facing == Direction.North)
             return Fail("field-warp-handler-required", "Dispatch the north-facing front door before ordinary walking.");
-        if (!WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand) && front.SourceBehavior is not (0x3b or 0x69 or 0x80 or 0x84 or 0x87 or 0x88 or 0x8f))
+        if (!WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles) && front.SourceBehavior is not (0x3b or 0x69 or 0x80 or 0x84 or 0x87 or 0x88 or 0x8f))
             return Fail(BehaviorFault(front.SourceBehavior), $"Target source behavior 0x{front.SourceBehavior:x2}.");
 
         if (front.SourceBehavior == 0x3b && intent.Direction == Direction.South)
@@ -141,14 +145,14 @@ public static class ConnectedFieldRules
             return Blocked("elevation");
         if (front.Occupied) return Blocked("object-collision");
         // A zero-collision ledge/sign/door would need a separately audited action; do not quietly call it floor.
-        if (!WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand))
+        if (!WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles))
             return Fail("unsupported-passable-special-cell", $"Source behavior 0x{front.SourceBehavior:x2} is not an ordinary landing.");
         int elevation = front.Elevation == 15 ? state.Player.Elevation : front.Elevation;
-        return Accepted(ConnectedFieldEventKind.Walked, new(destination.Id, x, y, elevation, intent.Direction), 1,
+        return Accepted(ConnectedFieldEventKind.Walked, new(destination.Id, x, y, elevation, intent.Direction), enableSpinTiles && RocketSpinRules.IsArrow(front.SourceBehavior) ? 0 : 1,
             crosses ? "connection-walk-completed" : "walk-completed");
     }
 
-    private static Diagnostic? ValidateMap(ConnectedFieldMap map, MapId expected)
+    internal static Diagnostic? ValidateMap(ConnectedFieldMap map, MapId expected)
     {
         if (map.Id != expected || !StableId.IsValid(map.Id.Value) || map.Width is <= 0 or > MaximumMapDimension ||
             map.Height is <= 0 or > MaximumMapDimension || map.Cells.IsDefault || (long)map.Width * map.Height != map.Cells.Length ||
@@ -161,21 +165,21 @@ public static class ConnectedFieldRules
                 return new("unsupported-connection-definition", "Only one valid non-self connection per cardinal side is supported.");
         return null;
     }
-    private static bool ValidCell(ConnectedFieldCell cell) => cell.SourceBehavior is >= 0 and <= 255 &&
+    internal static bool ValidCell(ConnectedFieldCell cell) => cell.SourceBehavior is >= 0 and <= 255 &&
         cell.Collision is >= 0 and <= 3 && cell.Elevation is >= 0 and <= 15;
-    private static bool WalkableBehavior(int behavior,bool enableCaveGround=false,bool enableSand=false) => behavior is 0x00 or 0x02 or >= 0x30 and <= 0x37 || enableCaveGround&&behavior is 0x08 or 0x2a or 0x2b || enableSand&&behavior==0x21;
+    private static bool WalkableBehavior(int behavior,bool enableCaveGround=false,bool enableSand=false,bool enableSpinTiles=false) => behavior is 0x00 or 0x02 or >= 0x30 and <= 0x37 || enableCaveGround&&behavior is 0x08 or 0x2a or 0x2b || enableSand&&behavior==0x21 || enableSpinTiles&&behavior is >=0x54 and <=0x58;
     private static string BehaviorFault(int behavior) => behavior switch
     {
         0x10 or 0x11 or 0x12 or 0x13 or 0x15 or 0x16 or 0x17 or 0x19 or 0x1a or 0x1b or >= 0x50 and <= 0x53 => "unsupported-water-movement",
         >= 0x60 and <= 0x71 => "field-warp-handler-required",
         _ => "unsupported-source-behavior"
     };
-    private static Direction Opposite(Direction direction) => direction switch
+    internal static Direction Opposite(Direction direction) => direction switch
     {
         Direction.North => Direction.South, Direction.South => Direction.North,
         Direction.East => Direction.West, _ => Direction.East
     };
-    private static bool BlocksEdge(int behavior, Direction edge) => edge switch
+    internal static bool BlocksEdge(int behavior, Direction edge) => edge switch
     {
         Direction.East => behavior is 0x30 or 0x34 or 0x36,
         Direction.West => behavior is 0x31 or 0x35 or 0x37,

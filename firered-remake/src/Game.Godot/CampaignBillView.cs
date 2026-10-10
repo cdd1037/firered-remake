@@ -161,6 +161,7 @@ public partial class CampaignView
     private void DrawBillMapLayer(Texture2D original, Vector2 camera, int layer)
     {
         if (layer is < 0 or > 2) throw new ArgumentOutOfRangeException(nameof(layer));
+        if (DrawRocketElevatorLayer(original,camera,layer)) return;
         if (_session.State.World.Player.MapId.Value != BillSourcePresentation.Cottage || _billTimeline.Cells.Count == 0)
         { DrawTexture(original, -camera); return; }
         // Replace all three cell layers, including transparent pixels. Alpha-overpainting

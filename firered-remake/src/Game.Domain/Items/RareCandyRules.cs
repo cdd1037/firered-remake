@@ -43,7 +43,7 @@ public static class RareCandyRules
     public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion)
     {
         LevelEvolutionRules.Validate(content, owned);
-        if (content.Catalog.Species.Count is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98))
+        if (content.Catalog.Species.Count is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99))
             throw new NotSupportedException("Rare Candy requires the verified MtMoon or later Kanto catalog.");
         if (!ValidRegion(currentRegion))
             throw new ArgumentException("A source MAPSEC region is required.", nameof(currentRegion));

@@ -14,8 +14,9 @@ public static class ForestTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-forest-trainer-ai-semantic-v1";
 
-    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool pewterRules = false, bool earlyStarterRules = false, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false)
+    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool pewterRules = false, bool earlyStarterRules = false, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
     {
+        celadonGymRules |= rocketHideoutRules;
         rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         ForestTrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
@@ -28,7 +29,7 @@ public static class ForestTrainerAi
         route3Rules |= mtMoonRules;
         route22Rules |= route3Rules;
         earlyStarterRules |= route22Rules;
-        if (catalog is null || (catalog.Species.Count == 98) != celadonGymRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || (catalog.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (catalog.Species.Count == 99) != rocketHideoutRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, pewterRules || earlyStarterRules, earlyStarterRules, route22Rules, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("forest_trainer_ai_rng_algorithm");
@@ -144,12 +145,12 @@ public static class ForestTrainerAi
             if (invalid is not null) return "forest_trainer_ai_" + name + "_" + invalid;
             if (mon.Pokemon.CurrentHp == 0) return "forest_trainer_ai_" + name + "_fainted";
             if (!route3Rules && !WildBattleRules.Route3Neutral(mon)) return "trainer_ai_route3_volatile_unsupported";
-            if (mon.HeldItem != "ITEM_NONE" && !(name == "target" && (rockTunnelRules ? RockTunnelBattleScope.SupportsHeldItem(mon.HeldItem) : route11Rules ? Route11BattleScope.SupportsHeldItem(mon.HeldItem) : ssAnneRules ? SsAnneBattleScope.SupportsHeldItem(mon.HeldItem) : vermilionRules ? VermilionBattleScope.SupportsHeldItem(mon.HeldItem) : route3Rules && mon.HeldItem == "ITEM_ORAN_BERRY"))) return "forest_trainer_ai_held_item_unsupported";
+            if (mon.HeldItem != "ITEM_NONE" && !(name == "target" && (rockTunnelRules ? RocketHideoutBattleScope.SupportsHeldItemForCatalog(catalog, mon.HeldItem) : route11Rules ? Route11BattleScope.SupportsHeldItem(mon.HeldItem) : ssAnneRules ? SsAnneBattleScope.SupportsHeldItem(mon.HeldItem) : vermilionRules ? VermilionBattleScope.SupportsHeldItem(mon.HeldItem) : route3Rules && mon.HeldItem == "ITEM_ORAN_BERRY"))) return "forest_trainer_ai_held_item_unsupported";
             if (!WildBattleStatus.IsSupported(mon.Status, earlyStarterRules, route11Rules)) return "forest_trainer_ai_status_unsupported";
             if (mon.AttackStage is < 0 or > 12 || mon.DefenseStage is < 0 or > 12 || mon.SpeedStage is < 0 or > 12 ||
                 mon.AccuracyStage is < 0 or > 12 || mon.EvasionStage is < 0 or > 12)
                 return "forest_trainer_ai_stat_stage";
-            if (!(rockTunnelRules ? CeladonGymBattleScope.ValidSharedSpecies(catalog!.Species[mon.Pokemon.Species]) : route11Rules ? Route11BattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ceruleanRules ? CeruleanTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : mtMoonRules ? MtMoonTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route3Rules ? Route3TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route22Rules ? Route22TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : pewterRules ? PewterTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon.Pokemon.Species]))) return "forest_trainer_ai_species_type_ability";
+            if (!(rockTunnelRules ? RocketHideoutBattleScope.ValidSharedSpecies(catalog!.Species[mon.Pokemon.Species]) : route11Rules ? Route11BattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ceruleanRules ? CeruleanTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : mtMoonRules ? MtMoonTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route3Rules ? Route3TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route22Rules ? Route22TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : pewterRules ? PewterTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon.Pokemon.Species]))) return "forest_trainer_ai_species_type_ability";
         }
         if (route22Rules && (Route22TrainerAi.ValidateCombatant(catalog, input.User, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) is not null || Route22TrainerAi.ValidateCombatant(catalog, input.Target, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) is not null)) return "forest_trainer_ai_route22_combatant";
         if (input.User.Pokemon.SourceSpeciesId is not (10 or 11 or 13 or 14)) return "forest_trainer_ai_user_species";
@@ -161,7 +162,7 @@ public static class ForestTrainerAi
                 return "forest_trainer_ai_move_definition";
         // RecordAbilityBattle stores by side and source has no per-switch history clear.
         // A previously revealed Static is still consulted after a switch to Rattata.
-        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? RockTunnelBattleScope.SupportsAbility(known) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : route22Rules ? Route22BattleScope.SupportsAbility(known) : pewterRules ? PewterBattleScope.SupportsAbility(known) : ForestBattleScope.SupportsAbility(known)))
+        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? RocketHideoutBattleScope.SupportsAbilityForCatalog(catalog, known) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : route22Rules ? Route22BattleScope.SupportsAbility(known) : pewterRules ? PewterBattleScope.SupportsAbility(known) : ForestBattleScope.SupportsAbility(known)))
             return "forest_trainer_ai_ability_history";
         return null;
     }

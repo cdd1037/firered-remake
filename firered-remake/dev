@@ -203,13 +203,39 @@ def test_regional_campaign(name,checkpoint=None,region='Route11'):
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
+ if not args:return output({'commands':['doctor','setup','build','test','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-rocket-hideout <new-run-name> [legal-checkpoint|--boundaries]','test-rocket-hideout-modules <source-preparation>','test-rocket-hideout-ui','test-rocket-hideout-synth','test-rocket-hideout-audit <unique-name>','test-rocket-hideout-native-evidence','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
  if args==['doctor']:return doctor()
  if args==['setup']:return setup()
  if args==['build']:return build()
  if args==['test']:return test()
  if len(args) in (2,3) and args[0] in ('test-route11','test-rocktunnel'):
   return test_regional_campaign(args[1],args[2] if len(args)==3 else None,'RockTunnel' if args[0]=='test-rocktunnel' else 'Route11')
+ if len(args) in (2,3) and args[0]=='test-rocket-hideout':
+  output_dir=ROOT/'tests/Game.RocketHideoutCampaign.Tests/evidence'/args[1]
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or output_dir.exists():raise RuntimeError('A unique Rocket Hideout run name is required.')
+  command=[DOTNET,'run','--project','tests/Game.RocketHideoutCampaign.Tests','--no-build','--',ROOT,output_dir]
+  if len(args)==3:command.append(args[2] if args[2]=='--boundaries' else pathlib.Path(args[2]).resolve())
+  run(command,'rocket-hideout-campaign.log');return 0
+ if len(args)==2 and args[0]=='test-rocket-hideout-modules':
+  preparation=pathlib.Path(args[1]).resolve()
+  if not (preparation/'assets/maps').is_dir():raise RuntimeError('Pass the authenticated Rocket source preparation directory.')
+  run([DOTNET,'run','--project','tests/Game.RocketHideoutRegion.Tests','--no-build','--',ROOT,ROOT,preparation],'Game.RocketHideoutRegion.Tests.json')
+  for module in ['Catalog','Items']:
+   suite='Game.RocketHideout'+module+'.Tests'
+   run([DOTNET,'run','--project','tests/'+suite,'--no-build','--',ROOT],suite+'.json')
+  run([DOTNET,'run','--project','tests/Game.RocketHideoutDomain.Tests','--no-build','--',ROOT,ROOT],'Game.RocketHideoutDomain.Tests.json')
+  run([DOTNET,'run','--project','tests/Game.RocketSpin.Tests','--no-build','--',preparation],'Game.RocketSpin.Tests.json')
+  return 0
+ if args==['test-rocket-hideout-ui']:
+  run(['python3','tests/Game.RocketHideoutUi.Tests/verify_godot.py',ROOT/'tests/Game.CeladonGymCampaign.Tests/Fixtures/fourth-badge-healed.json'],'rocket-hideout-ui.log');return 0
+ if args==['test-rocket-hideout-native-evidence']:
+  run(['python3','tests/Game.RocketHideoutNative.Tests/verify_native.py'],'rocket-hideout-native-evidence.json');return 0
+ if len(args)==2 and args[0]=='test-rocket-hideout-audit':
+  output_dir=ROOT/'tests/Game.RocketHideoutAudit.Tests/evidence'/args[1]
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or output_dir.exists():raise RuntimeError('A unique Rocket audit output name is required.')
+  run([DOTNET,'run','--project','tests/Game.RocketHideoutAudit.Tests','--no-build','--',ROOT,output_dir],'rocket-hideout-audit.log');return 0
+ if args==['test-rocket-hideout-synth']:
+  run([DOTNET,'run','--project','tests/Game.RocketHideoutSynthAudio.Tests','--no-build','--',ROOT],'rocket-hideout-synth.json');return 0
  if len(args) in (2,3) and args[0]=='test-celadon-gym':
   output_dir=ROOT/'tests/Game.CeladonGymCampaign.Tests/evidence'/args[1]
   if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or output_dir.exists():raise RuntimeError('A unique Celadon Gym run name is required.')

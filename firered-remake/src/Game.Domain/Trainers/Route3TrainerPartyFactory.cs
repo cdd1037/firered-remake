@@ -17,9 +17,10 @@ public static class Route3TrainerPartyFactory
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = new[] {
         "YOUNGSTER_BEN", "YOUNGSTER_CALVIN", "BUG_CATCHER_COLTON", "BUG_CATCHER_GREG", "BUG_CATCHER_JAMES",
         "LASS_JANICE", "LASS_SALLY", "LASS_ROBIN" }.Select(x => new TrainerId("pret:TRAINER_" + x)).ToImmutableArray();
-    public static TrainerPartyCreationResult Create(Route3TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId trainerId, RngState rng, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false)
+    public static TrainerPartyCreationResult Create(Route3TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId trainerId, RngState rng, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
     {
-        if ((pokemon.Species.Count == 98) != celadonGymRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        celadonGymRules |= rocketHideoutRules;
+        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != rocketHideoutRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;

@@ -25,7 +25,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -96,14 +96,14 @@ public static partial class PretStoryCompiler
                     var args=split.Length==1?ImmutableArray<string>.Empty:split[1].Split(',').Select(s=>Alias(s.Trim())).ToImmutableArray();
                     // GNU assembler macro arguments may be separated by whitespace; the
                     // pinned nurse script uses `case 1 Label` without a comma.
-                    if(op=="case"&&args.Length==1)
+                    if((op=="case"||includeRocketHideoutOpcodes&&op is "call_if_defeated" or "call_if_not_defeated")&&args.Length==1)
                     {
                         var spaced=Regex.Match(args[0],@"^(\S+)\s+([A-Za-z_][A-Za-z0-9_]*)$",RegexOptions.CultureInvariant);
                         if(spaced.Success)args=[Alias(spaced.Groups[1].Value),Alias(spaced.Groups[2].Value)];
                     }
                     void Emit(string opcode,ImmutableArray<string> operands)
                     {
-                        var (kind,min,max)=Shape(opcode,includeGiftOpcodes,includeRoute3Opcodes,includeMtMoonOpcodes,includeBillOpcodes,includeSsAnneOpcodes,includeVermilionGymOpcodes,includeRockTunnelOpcodes);
+                        var (kind,min,max)=Shape(opcode,includeGiftOpcodes,includeRoute3Opcodes,includeMtMoonOpcodes,includeBillOpcodes,includeSsAnneOpcodes,includeVermilionGymOpcodes,includeRockTunnelOpcodes,includeRocketHideoutOpcodes);
                         if(kind!=StoryOp.Unsupported&&(operands.Length<min||operands.Length>max))throw ContentJson.Error("story_opcode_arity",$"{file.Path}:{lineNumber}",$"{opcode} requires {min}..{max} arguments.");
                         if(kind==StoryOp.Unsupported)unsupported.Add(new("opcode_unsupported",$"{file.Path}:{lineNumber}",opcode));
                         instructions.Add(new(kind,opcode,operands,new(file.Path,label,lineNumber)));
@@ -143,8 +143,11 @@ public static partial class PretStoryCompiler
         }
         return new(programs.ToImmutable(),headers.ToImmutable(),conditions.ToImmutable(),movements.ToImmutable(),unsupported.ToImmutable(), (constants ?? new Dictionary<string,int>()).ToImmutableDictionary(StringComparer.Ordinal));
     }
-    private static (StoryOp,int,int) Shape(string op,bool includeGiftOpcodes,bool includeRoute3Opcodes,bool includeMtMoonOpcodes,bool includeBillOpcodes,bool includeSsAnneOpcodes,bool includeVermilionGymOpcodes,bool includeRockTunnelOpcodes)
+    private static (StoryOp,int,int) Shape(string op,bool includeGiftOpcodes,bool includeRoute3Opcodes,bool includeMtMoonOpcodes,bool includeBillOpcodes,bool includeSsAnneOpcodes,bool includeVermilionGymOpcodes,bool includeRockTunnelOpcodes,bool includeRocketHideoutOpcodes)
     {
+        if(includeRocketHideoutOpcodes&&op=="multichoicedefault")return(StoryOp.Multichoice,5,5);
+        if(includeRocketHideoutOpcodes&&op is "call_if_defeated" or "call_if_not_defeated" or "addvar")return(StoryOp.Special,2,2);
+        if(includeRocketHideoutOpcodes&&op=="setdynamicwarp")return(StoryOp.Special,4,4);
         // Only the Rock Tunnel successor admits the source Flash script.
         if(includeRockTunnelOpcodes&&op=="animateflash")return(StoryOp.ScreenFade,1,1);
         if(includeRockTunnelOpcodes&&op=="setflashlevel")return(StoryOp.Special,1,1);

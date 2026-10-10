@@ -29,16 +29,17 @@ public static class CeladonApproachTrainerPartyFactory
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(CeladonApproachTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool celadonGymRules = false)
+    public static TrainerPartyCreationResult Create(CeladonApproachTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool celadonGymRules = false, bool rocketHideoutRules = false)
     {
+        celadonGymRules |= rocketHideoutRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (celadonGymRules ? 98 : 94) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count != (rocketHideoutRules ? 99 : celadonGymRules ? 98 : 94) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("CeladonApproach requires the exact ninety-four-species catalog and one initial source CeladonApproach team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)
         {
             var member=trainer.Party[i];
-            if (!pokemon.Species.TryGetValue(member.Species, out var species) || !CeladonGymBattleScope.ValidSharedSpecies(species))
+            if (!pokemon.Species.TryGetValue(member.Species, out var species) || !RocketHideoutBattleScope.ValidSharedSpecies(species))
                 throw new NotSupportedException("CeladonApproach trainer species differs.");
             var moves=expected.Party[i].Moves.TakeWhile(x=>x!="NONE").Select(x=>new MoveId("pret:MOVE_"+x));
             if (trainer.PartyFlags==0 && !PokemonMoveRules.InitialMoves(pokemon,species,member.Level).Select(x=>x.Move).SequenceEqual(moves))

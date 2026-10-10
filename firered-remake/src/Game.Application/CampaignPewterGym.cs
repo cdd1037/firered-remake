@@ -63,6 +63,7 @@ public sealed partial class CampaignSession
     private InventoryState LegacyQuestInventory(InventoryState inventory)
     {
         var view=WithoutCityServiceItems(_content.PewterEnabled?PewterMachineRules.WithoutMachines(inventory):inventory);
+        if(_content.RocketHideoutEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item.Value is not("pret:ITEM_LIFT_KEY" or "pret:ITEM_SILPH_SCOPE")).ToImmutableArray(),Balls=view.Balls?.Where(s=>s.Item.Value is not("pret:ITEM_NET_BALL" or "pret:ITEM_NEST_BALL")).ToImmutableArray()};
         if(_content.SsAnneEnabled)view=view with{Berries=null,Balls=view.Balls is {} balls?balls.Where(s=>s.Item!=SsAnneItemRules.GreatBallId).ToImmutableArray():null,KeyItems=view.KeyItems is {} shipKeys?shipKeys.Where(s=>s.Item!=SsAnneItemRules.BerryPouchId).ToImmutableArray():null};
         if(_content.BillEnabled)view=view with{KeyItems=view.KeyItems is {} billKeys?billKeys.Where(s=>s.Item!=BillItemRules.FameCheckerId&&s.Item!=BillItemRules.SsTicketId).ToImmutableArray():null};
         return _content.MtMoonEnabled?view with{KeyItems=view.KeyItems is {} keys?keys.Where(s=>s.Item!=MtMoonItemRules.HelixFossilId&&s.Item!=MtMoonItemRules.DomeFossilId).ToImmutableArray():null}:view;

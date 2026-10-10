@@ -88,7 +88,7 @@ public sealed class PretWorldMap : IFieldMap
     public ImmutableArray<PretWorldWarp> Warps => Events.GetProperty("warp_events").EnumerateArray().Select((e, index) =>
         new PretWorldWarp(index, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
             _mapIdFromSymbol(e.GetProperty("dest_map").GetString()!),
-            int.Parse(e.GetProperty("dest_warp_id").GetString()!, System.Globalization.CultureInfo.InvariantCulture))).ToImmutableArray();
+            PretRocketHideoutRegion.ParseWarpId(Metadata.FullSourceHash, SourceMapSymbol, e))).ToImmutableArray();
     public static ImmutableDictionary<MapId, PretWorldMap> LoadCatalog(string collectionRoot) => PretWorldCatalog.Load(collectionRoot);
     public string DirectoryPath { get; }
     public string TexturePath => Path.Combine(DirectoryPath, _data.TexturePath);

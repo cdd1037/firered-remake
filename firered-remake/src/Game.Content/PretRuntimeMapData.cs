@@ -65,6 +65,7 @@ public sealed class PretRuntimeMapCatalog
         bool vermilion = expectedManifestSha256 == PretVermilionRegion.RuntimeManifestSha256;
         bool ssAnne = expectedManifestSha256 == PretSsAnneRuntimeMaps.ManifestSha256;
         bool vermilionGym = expectedManifestSha256 == PretVermilionGymRuntimeMaps.ManifestSha256;
+        bool rocketHideout = expectedManifestSha256 == PretRocketHideoutRuntimeMaps.ManifestSha256;
         bool celadonGym = expectedManifestSha256 == PretCeladonGymRuntimeMaps.ManifestSha256;
         bool celadonApproach = expectedManifestSha256 == PretCeladonApproachRuntimeMaps.ManifestSha256;
         bool rockTunnel = expectedManifestSha256 == PretRockTunnelRuntimeMaps.ManifestSha256;
@@ -72,9 +73,9 @@ public sealed class PretRuntimeMapCatalog
         bool cityServices = expectedManifestSha256 == PretCityServicesRuntimeMaps.ManifestSha256;
         bool bill = expectedManifestSha256 == BillManifestSha256;
         PretRuntimeMapValidation.Require(manifest.SchemaVersion == 1 && manifest.ConverterVersion == ConverterVersion &&
-            manifest.ConverterSha256 == (celadonGym ? PretCeladonGymRuntimeMaps.ConverterSha256 : celadonApproach ? PretCeladonApproachRuntimeMaps.ConverterSha256 : rockTunnel ? PretRockTunnelRuntimeMaps.ConverterSha256 : route11 ? PretRoute11RegionRuntimeMaps.ConverterSha256 : cityServices ? PretCityServicesRuntimeMaps.ConverterSha256 : vermilionGym ? PretVermilionGymRuntimeMaps.ConverterSha256 : ssAnne ? PretSsAnneRuntimeMaps.ConverterSha256 : vermilion ? PretVermilionRegion.RuntimeConverterSha256 : bill ? BillConverterSha256 : cerulean ? CeruleanConverterSha256 : mtMoon ? MtMoonConverterSha256 : route3 ? Route3ConverterSha256 : PinnedConverterSha256) && manifest.SourceCommit == PretWorldMap.SourceCommit,
+            manifest.ConverterSha256 == (rocketHideout ? PretRocketHideoutRuntimeMaps.ConverterSha256 : celadonGym ? PretCeladonGymRuntimeMaps.ConverterSha256 : celadonApproach ? PretCeladonApproachRuntimeMaps.ConverterSha256 : rockTunnel ? PretRockTunnelRuntimeMaps.ConverterSha256 : route11 ? PretRoute11RegionRuntimeMaps.ConverterSha256 : cityServices ? PretCityServicesRuntimeMaps.ConverterSha256 : vermilionGym ? PretVermilionGymRuntimeMaps.ConverterSha256 : ssAnne ? PretSsAnneRuntimeMaps.ConverterSha256 : vermilion ? PretVermilionRegion.RuntimeConverterSha256 : bill ? BillConverterSha256 : cerulean ? CeruleanConverterSha256 : mtMoon ? MtMoonConverterSha256 : route3 ? Route3ConverterSha256 : PinnedConverterSha256) && manifest.SourceCommit == PretWorldMap.SourceCommit,
             "Runtime map manifest version/converter/source differs.");
-        PretRuntimeMapValidation.Require(!manifest.Maps.IsDefault && manifest.Maps.Length == (celadonGym ? 114 : celadonApproach ? 113 : rockTunnel ? 98 : route11 ? 91 : cityServices ? 83 : vermilionGym ? 81 : ssAnne ? 80 : vermilion ? 54 : bill ? 44 : cerulean ? 41 : mtMoon ? 30 : route3 ? 27 : 24),
+        PretRuntimeMapValidation.Require(!manifest.Maps.IsDefault && manifest.Maps.Length == (rocketHideout ? 120 : celadonGym ? 114 : celadonApproach ? 113 : rockTunnel ? 98 : route11 ? 91 : cityServices ? 83 : vermilionGym ? 81 : ssAnne ? 80 : vermilion ? 54 : bill ? 44 : cerulean ? 41 : mtMoon ? 30 : route3 ? 27 : 24),
             "Runtime map collection is incomplete.");
         if (ssAnne) PretSsAnneRuntimeMaps.ValidatePackage(directory, manifest.Maps);
         if (vermilionGym) PretVermilionGymRuntimeMaps.ValidatePackage(directory, manifest.Maps);
@@ -83,6 +84,7 @@ public sealed class PretRuntimeMapCatalog
         if (rockTunnel) PretRockTunnelRuntimeMaps.ValidatePackage(directory, manifest.Maps);
         if (celadonApproach) PretCeladonApproachRuntimeMaps.ValidatePackage(directory, manifest.Maps);
         if (celadonGym) PretCeladonGymRuntimeMaps.ValidatePackage(directory, manifest.Maps);
+        if (rocketHideout) PretRocketHideoutRuntimeMaps.ValidatePackage(directory, manifest.Maps);
         var baseMetadata = LoadBaseMetadata(directory, manifest.SourceRegistry);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretRuntimeMapData>();
         var paths = new HashSet<string>(StringComparer.Ordinal);
@@ -180,7 +182,7 @@ public sealed class PretRuntimeMapData : IFieldMap
     public ImmutableArray<FieldWarp> FieldWarps => Events.GetProperty("warp_events").EnumerateArray().Select((e, index) =>
         new FieldWarp(index, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
             _mapIdFromSymbol(e.GetProperty("dest_map").GetString()!),
-            int.Parse(e.GetProperty("dest_warp_id").GetString()!, CultureInfo.InvariantCulture))).ToImmutableArray();
+            PretRocketHideoutRegion.ParseWarpId(FullSourceHash, SourceRef.Symbol, e))).ToImmutableArray();
 
     private PretRuntimeMapData(PretRuntimeMapDocument data, ImmutableArray<ushort> blocks,
         ImmutableArray<ushort> borderBlocks, ImmutableDictionary<int, (uint Attributes, SourceRef Source)> metatiles,
@@ -209,6 +211,7 @@ public sealed class PretRuntimeMapData : IFieldMap
             PretRockTunnelRegion.FullSourceHash => PretRockTunnelRegion.MapIdFromSourceSymbol,
             PretCeladonApproachRegion.FullSourceHash => PretCeladonApproachRegion.MapIdFromSourceSymbol,
             PretCeladonGymRegion.FullSourceHash => PretCeladonGymRegion.MapIdFromSourceSymbol,
+            PretRocketHideoutRegion.FullSourceHash => PretRocketHideoutRegion.MapIdFromSourceSymbol,
             _ => throw new InvalidDataException("Unknown runtime map source profile.")
         };
     }
@@ -341,7 +344,7 @@ public sealed class PretRuntimeMapData : IFieldMap
         var cells = DecodeBlocks(d.Blocks, d.Width * d.Height);
         var border = DecodeBlocks(d.BorderBlocks, d.BorderWidth * d.BorderHeight);
         Require(cells.Concat(border).Select(v => (int)(v & 1023)).ToHashSet().SetEquals(metatiles.Keys), "Unused runtime metatile definition.");
-        ValidateEvents(d.Events, source.Symbol, d.Width, d.Height);
+        ValidateEvents(d.Events, source.Symbol, d.Width, d.Height, d.FullSourceHash);
         if (d.TechnicalSpawn is { } spawn)
         {
             Require(spawn.X >= 0 && spawn.X < d.Width && spawn.Y >= 0 && spawn.Y < d.Height && spawn.Elevation is >= 0 and <= 15 &&
@@ -374,7 +377,7 @@ public sealed class PretRuntimeMapData : IFieldMap
         return new(d, cells, border, metatiles.ToImmutable(), behaviors.ToImmutable());
     }
 
-    private static void ValidateEvents(JsonElement events, string symbol, int width, int height)
+    private static void ValidateEvents(JsonElement events, string symbol, int width, int height, string fullSourceHash)
     {
         void Require(bool condition, string message) => PretRuntimeMapValidation.Require(condition, message);
         Require(events.ValueKind == JsonValueKind.Object && events.GetProperty("id").GetString() == symbol, "Runtime event identity differs.");
@@ -393,8 +396,7 @@ public sealed class PretRuntimeMapData : IFieldMap
                 if (name == "warp_events")
                 {
                     Require(e.GetProperty("dest_map").GetString() is { Length: > 0 }, "Missing runtime warp destination.");
-                    Require(int.TryParse(e.GetProperty("dest_warp_id").GetString(), NumberStyles.None, CultureInfo.InvariantCulture, out var id) &&
-                        id is >= 0 and <= 255, "Runtime warp index out of bounds.");
+                    _ = PretRocketHideoutRegion.ParseWarpId(fullSourceHash, symbol, e);
                 }
             }
         }

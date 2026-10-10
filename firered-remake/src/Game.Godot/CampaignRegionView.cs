@@ -26,7 +26,7 @@ public partial class CampaignView
         if(state.MapEdits is not {Count:>0}){_art=original;ReleaseMapEdits();_mapEditKey=key;return;}
         var definitions=state.World.Player.MapId.Value=="map.vermilion-city-gym"
             ?_catalog.VermilionGymRegion?.BeamDefinitions:_catalog.MartMetatiles?.Definitions;
-        if(definitions is null)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
+        if(definitions is null&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
         var replacement=_mapResources.CreateOwner("map-edits");
         using var tiles=_mapResources.CreateOwner("map-edit-tiles");
         Texture2D Patch(Texture2D texture,int layer)
@@ -34,7 +34,8 @@ public partial class CampaignView
             using var canvas=texture.GetImage();
             foreach(var edit in state.MapEdits.Values)
             {
-                var d=definitions[edit.SourceMetatileId];var path=layer==0?d.BottomTexturePath:layer==1?d.MiddleTexturePath:d.TopTexturePath;
+                if(TryRocketPatch(canvas,edit,layer,state.World.Player.MapId.Value))continue;
+                var d=definitions![edit.SourceMetatileId];var path=layer==0?d.BottomTexturePath:layer==1?d.MiddleTexturePath:d.TopTexturePath;
                 using var tile=tiles.Texture(path).GetImage();canvas.BlitRect(tile,new(0,0,16,16),new(edit.X*16,edit.Y*16));
             }
             return replacement.FromImage(canvas);

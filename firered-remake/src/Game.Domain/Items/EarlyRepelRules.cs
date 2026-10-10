@@ -24,18 +24,19 @@ public static class EarlyRepelRules
     /// <summary>Commit the returned inventory and counter together, after the source use sound completes.
     /// An active effect does not refresh, stack, or consume an item. No battle action is admitted.</summary>
     public static EarlyRepelUseResult Use(EarlyShopCatalog catalog, InventoryState inventory,
-        ushort steps, PotionUseContext context, ItemId? item = null, bool celadonApproachRules = false, bool celadonGymRules = false)
+        ushort steps, PotionUseContext context, ItemId? item = null, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
     {
+        celadonGymRules |= rocketHideoutRules;
         ArgumentNullException.ThrowIfNull(inventory);
         ValidateSteps(steps, celadonApproachRules || celadonGymRules);
         EarlyRepelUseResult Fail(string error) => new(inventory, steps, false, 0, error);
         var error = EarlyShopInventoryRules.Validate(catalog, inventory);
         if (error is not null) return Fail(error);
-        if (celadonGymRules ? catalog.Profile != CeladonGymItemRules.Profile : celadonApproachRules && catalog.Profile != LavenderItemRules.Profile)
+        if (rocketHideoutRules ? catalog.Profile != RocketHideoutItemRules.Profile : celadonGymRules ? catalog.Profile != CeladonGymItemRules.Profile : celadonApproachRules && catalog.Profile != LavenderItemRules.Profile)
             throw new NotSupportedException("Super Repel rules require the authenticated Lavender item profile.");
         if (context != PotionUseContext.Field) return Fail("repel_field_only");
         var selected = item ?? Item;
-        if (selected != Item && !((celadonGymRules && catalog.Profile == CeladonGymItemRules.Profile || celadonApproachRules && catalog.Profile == LavenderItemRules.Profile) &&
+        if (selected != Item && !((rocketHideoutRules && catalog.Profile == RocketHideoutItemRules.Profile || celadonGymRules && catalog.Profile == CeladonGymItemRules.Profile || celadonApproachRules && catalog.Profile == LavenderItemRules.Profile) &&
             selected == LavenderItemRules.SuperRepelId)) return Fail("repel_item_unsupported");
         var definition = catalog.Items.Single(i => i.Id == selected);
         int count = OpeningInventoryRules.Quantity(inventory.BagItems, selected);
@@ -51,8 +52,9 @@ public static class EarlyRepelRules
     /// and preempts the entire encounter check, including cooldown/RNG, on that final step.</summary>
     public static EarlyRepelStepResult AdvanceStep(ushort steps, EncounterCheckTrigger trigger,
         bool forcedMovement = false, bool forcedMovementTile = false,
-        bool inUnionRoom = false, bool questLogPlayback = false, bool celadonApproachRules = false, bool celadonGymRules = false)
+        bool inUnionRoom = false, bool questLogPlayback = false, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
     {
+        celadonGymRules |= rocketHideoutRules;
         ValidateSteps(steps, celadonApproachRules || celadonGymRules);
         if (!Enum.IsDefined(trigger)) throw new NotSupportedException("Unknown field step trigger.");
         if (trigger != EncounterCheckTrigger.WalkingStepCompleted || forcedMovement || forcedMovementTile ||
@@ -65,8 +67,9 @@ public static class EarlyRepelRules
     /// <summary>Source order is party order, skipping zero HP and eggs; equality is permitted.
     /// This projection does not enable egg gameplay or change the authoritative party validator.</summary>
     public static bool IsWildLevelAllowed(ushort steps, int wildLevel, ImmutableArray<EarlyRepelPartyMember> party,
-        bool celadonApproachRules = false, bool celadonGymRules = false)
+        bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
     {
+        celadonGymRules |= rocketHideoutRules;
         ValidateSteps(steps, celadonApproachRules || celadonGymRules);
         if (wildLevel is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(wildLevel));
         ValidateParty(party);
@@ -84,7 +87,7 @@ public static class EarlyRepelRules
         ImmutableArray<EarlyRepelPartyMember> party, RngState globalRng)
     {
         ArgumentNullException.ThrowIfNull(profile);
-        bool celadonApproachRules = profile.RulesVersion is EarlyLandEncounterRules.CeladonApproachRulesVersion or EarlyLandEncounterRules.CeladonGymRulesVersion;
+        bool celadonApproachRules = profile.RulesVersion is EarlyLandEncounterRules.CeladonApproachRulesVersion or EarlyLandEncounterRules.CeladonGymRulesVersion or EarlyLandEncounterRules.RocketHideoutRulesVersion;
         ValidateSteps(profile.RepelSteps, celadonApproachRules);
         ValidateParty(party);
         var result = EarlyLandEncounterRules.Check(state, table, check, profile with { RepelSteps = 0 }, globalRng);
@@ -101,8 +104,9 @@ public static class EarlyRepelRules
         };
     }
 
-    public static void ValidateSteps(ushort steps, bool celadonApproachRules = false, bool celadonGymRules = false)
+    public static void ValidateSteps(ushort steps, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
     {
+        celadonGymRules |= rocketHideoutRules;
         if (steps > (celadonApproachRules || celadonGymRules ? SuperDuration : Duration))
             throw new NotSupportedException(celadonApproachRules
                 ? "Only REPEL and the 200-step SUPER REPEL are admitted by this profile."

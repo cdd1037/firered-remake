@@ -28,16 +28,16 @@ public static class CeladonGymTrainerPartyFactory
     public static TrainerId Mary { get; } = new("pret:TRAINER_COOLTRAINER_MARY");
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(CeladonGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng)
+    public static TrainerPartyCreationResult Create(CeladonGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool rocketHideoutRules = false)
     {
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != 98 || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count != (rocketHideoutRules ? 99 : 98) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("CeladonGym requires the exact ninety-eight-species catalog and one initial source CeladonGym team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)
         {
             var member=trainer.Party[i];
-            if (!pokemon.Species.TryGetValue(member.Species, out var species) || !CeladonGymBattleScope.ValidSharedSpecies(species))
+            if (!pokemon.Species.TryGetValue(member.Species, out var species) || !RocketHideoutBattleScope.ValidSharedSpecies(species))
                 throw new NotSupportedException("CeladonGym trainer species differs.");
             var moves=expected.Party[i].Moves.TakeWhile(x=>x!="NONE").Select(x=>new MoveId("pret:MOVE_"+x));
             if (trainer.PartyFlags==0 && !PokemonMoveRules.InitialMoves(pokemon,species,member.Level).Select(x=>x.Move).SequenceEqual(moves))

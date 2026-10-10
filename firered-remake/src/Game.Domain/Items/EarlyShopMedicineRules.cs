@@ -21,12 +21,12 @@ public static class EarlyShopMedicineRules
         error = PokemonStateValidator.ValidateParty(pokemonContent, pokemon);
         if (error is not null) return Fail(error);
         var definition = EarlyShopInventoryRules.Find(catalog, item);
-        bool awakening=pokemonContent.AllowSleepStatus&&(definition?.SourceItemSymbol=="ITEM_AWAKENING" || catalog.Profile is (SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile) && definition?.SourceItemSymbol=="ITEM_CHESTO_BERRY")&&definition.UseSupport==EarlyShopUseSupport.DeferredSleep;
+        bool awakening=pokemonContent.AllowSleepStatus&&(definition?.SourceItemSymbol=="ITEM_AWAKENING" || catalog.Profile is (SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile or RocketHideoutItemRules.Profile) && definition?.SourceItemSymbol=="ITEM_CHESTO_BERRY")&&definition.UseSupport==EarlyShopUseSupport.DeferredSleep;
         if (definition is null || !awakening&&definition.UseSupport is not (EarlyShopUseSupport.Potion or EarlyShopUseSupport.StatusCure))
             return Fail("medicine_effect_unsupported");
         int count = OpeningInventoryRules.Quantity(EarlyShopInventoryRules.Pocket(inventory, definition), item);
         if (count == 0) return Fail("medicine_not_in_bag");
-        if ((catalog.Profile is CeruleanItemRules.Profile or BillItemRules.Profile or VermilionItemRules.Profile or SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile) && item == CeruleanItemRules.SuperPotionId || catalog.Profile is (SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile) && item == SsAnneItemRules.HyperPotionId)
+        if ((catalog.Profile is CeruleanItemRules.Profile or BillItemRules.Profile or VermilionItemRules.Profile or SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile or RocketHideoutItemRules.Profile) && item == CeruleanItemRules.SuperPotionId || catalog.Profile is (SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile or RocketHideoutItemRules.Profile) && item == SsAnneItemRules.HyperPotionId)
         {
             var target = pokemon.Pokemon;
             if (target.CurrentHp == 0 || target.CurrentHp == target.Stats.MaxHp)

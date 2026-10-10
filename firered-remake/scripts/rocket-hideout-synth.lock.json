@@ -1,0 +1,247 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "files": [
+    {
+      "path": "data/battle_anim_scripts.s",
+      "byteLength": 406484,
+      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068"
+    },
+    {
+      "path": "data/maps/CeladonCity_GameCorner/map.json",
+      "byteLength": 13572,
+      "sha256": "e0924467ae57d2fce051f3959bf1526bcb0befce6a6c39a51162aa2089f555ee",
+      "gitBlobSha1": "3d2a43c7f5fbf65f2a6124269e52dd48453fde36"
+    },
+    {
+      "path": "data/maps/CeladonCity_GameCorner/scripts.inc",
+      "byteLength": 14326,
+      "sha256": "1e05d3520f34fa7a6bad3542e0f99b205d0308cdb9d9e812c33a8f0b71498da5",
+      "gitBlobSha1": "dddd0aefab1d3d8c2972a66aed7490810d201ee2"
+    },
+    {
+      "path": "data/maps/RocketHideout_B1F/map.json",
+      "byteLength": 4711,
+      "sha256": "29ba997e9bc1a96276c8988c14a3d51f7746ca1ed7b202f360b7d61ac9cd4f59",
+      "gitBlobSha1": "86b9070542336505362e9d8aa82b0f4181b35377"
+    },
+    {
+      "path": "data/maps/RocketHideout_B1F/scripts.inc",
+      "byteLength": 2629,
+      "sha256": "41538cfb6491283391b4cd1cd0725a7182cbe944f4b7099a192b392cd2720f8b",
+      "gitBlobSha1": "6d9a2df9dd131e942c08ca1620e7ef4fa213a596"
+    },
+    {
+      "path": "data/maps/RocketHideout_B2F/map.json",
+      "byteLength": 3470,
+      "sha256": "752bd46e5ba811b3051936c7459341f68f1b1e28334da9a68bf82e884b82994f",
+      "gitBlobSha1": "6b465505d50e4f67cd056f6c8285fd5c874b83c9"
+    },
+    {
+      "path": "data/maps/RocketHideout_B2F/scripts.inc",
+      "byteLength": 271,
+      "sha256": "093eb59853ad564b097ee43fbec476836ba9c8ae73ed23c6126861b7943a3406",
+      "gitBlobSha1": "0b12d3cbb08a3004aa42ef06940fb06b9e3513c9"
+    },
+    {
+      "path": "data/maps/RocketHideout_B3F/map.json",
+      "byteLength": 3279,
+      "sha256": "bab8e306f05ad3a7ef46050e05f20dc593581b9d99d1652e77a3e060b7c4bef4",
+      "gitBlobSha1": "a606996ed3d26030cf42d85456a600c8f06750f8"
+    },
+    {
+      "path": "data/maps/RocketHideout_B3F/scripts.inc",
+      "byteLength": 510,
+      "sha256": "d20953664b3da9fb2b316dbb26f894a10e2a6435fc06117673fb49dde4be1a6c",
+      "gitBlobSha1": "8ca9a57d99ba075ce4a9f032c8e428ed26f694b3"
+    },
+    {
+      "path": "data/maps/RocketHideout_B4F/map.json",
+      "byteLength": 5493,
+      "sha256": "2a40922d464585b7fdf3d6bfaaf54458586488ade634303953a8339168148235",
+      "gitBlobSha1": "5c2631279e61f3049906dab71a92c51581d0a9f4"
+    },
+    {
+      "path": "data/maps/RocketHideout_B4F/scripts.inc",
+      "byteLength": 4576,
+      "sha256": "b9cf991e65b8699b113904604fae31d20e9b9b3459c606b2968b981ee9d282a2",
+      "gitBlobSha1": "54cda4f4825029562ac09a0f318102590f6ce85b"
+    },
+    {
+      "path": "data/maps/RocketHideout_Elevator/map.json",
+      "byteLength": 1057,
+      "sha256": "360e74d08dee0f7689b01f2ec9c2a51262134dd46e89c507e5588146b588497d",
+      "gitBlobSha1": "223fa0497cba04a2cff458b02a70469a1c4052c7"
+    },
+    {
+      "path": "data/maps/RocketHideout_Elevator/scripts.inc",
+      "byteLength": 3052,
+      "sha256": "6d7c06b9ebc8a003eddfe680f52536ce71975c97c30ba44b4fa33effbf46ec8e",
+      "gitBlobSha1": "00a0dd894da897a52ad599e96f8afee0ab3655c9"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "byteLength": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+    },
+    {
+      "path": "include/constants/sound.h",
+      "byteLength": 2051,
+      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
+      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee"
+    },
+    {
+      "path": "include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+    },
+    {
+      "path": "sound/cry_tables.inc",
+      "byteLength": 16533,
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
+      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/kangaskhan.wav",
+      "byteLength": 9364,
+      "sha256": "752e2f97da40a8c11e2a42a7429933782dbf9ac5fceecb170a443b9a8a4bfba1",
+      "gitBlobSha1": "32a12fcbc243209ad28983183a315a5b2e6e9601"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "byteLength": 9204,
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+    },
+    {
+      "path": "sound/songs/midi/mus_game_corner.mid",
+      "byteLength": 12395,
+      "sha256": "c060de11801461db3ea3216aa18c29b5189e3041c3d553136da0ae4b854ab411",
+      "gitBlobSha1": "24668ec684ab10252dc445ef95551eeb01265332"
+    },
+    {
+      "path": "sound/songs/midi/mus_rocket_hideout.mid",
+      "byteLength": 19485,
+      "sha256": "9985e95f394574fe51c77f05909b6d49d927e70e4da28d95349c91a36ab7e9f2",
+      "gitBlobSha1": "1e1fff0f671f71e65b587fa1c66ae3455e2809b2"
+    },
+    {
+      "path": "sound/songs/midi/se_ding_dong.mid",
+      "byteLength": 130,
+      "sha256": "67cd977c224c4ee9abfad101c5e864662bb196d81a879f4f70a055101bcfca68",
+      "gitBlobSha1": "924dafda5ec57ba2ec5740c46a832921e6c73aa6"
+    },
+    {
+      "path": "sound/songs/midi/se_elevator.mid",
+      "byteLength": 104,
+      "sha256": "6cbf515786c4a4f031268f4fe2a0028c80c2d64b000e01d9ac34a1710ea154c9",
+      "gitBlobSha1": "66ee5fd1fc7ae20bbdff305b154c7c2d31f7d868"
+    },
+    {
+      "path": "sound/songs/midi/se_m_metronome.mid",
+      "byteLength": 176,
+      "sha256": "4c210a95daa4084fb876642e08d3c2d197beb1e072c27531ec0922fb0923258d",
+      "gitBlobSha1": "850a1d6fcfd55dc112b17c389d02ee311609ab90"
+    },
+    {
+      "path": "sound/songs/midi/se_m_reversal.mid",
+      "byteLength": 970,
+      "sha256": "c79689ce86865cd762214c8528afe2a474b6be297bfdd0104f145d2327fbf38e",
+      "gitBlobSha1": "0dc1414be88555b920d0cff754d2fa7a4681f731"
+    },
+    {
+      "path": "src/field_specials.c",
+      "byteLength": 77314,
+      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9",
+      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d"
+    },
+    {
+      "path": "src/sound.c",
+      "byteLength": 15232,
+      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958",
+      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "content/generated/celadon-approach-synth-audio/manifest.json",
+      "byteLength": 1177,
+      "sha256": "783f665e6660198e64eb3ea04510d138072b448a63d1581d393b47ef1a6bb5b2"
+    },
+    {
+      "path": "content/generated/celadon-gym-synth-audio/manifest.json",
+      "byteLength": 3007,
+      "sha256": "9583fd815f1aaa9a0f91be461c244d28fc563416ec3f333c46d1a2cc8901af87"
+    },
+    {
+      "path": "content/generated/rocktunnel-synth-audio/manifest.json",
+      "byteLength": 5587,
+      "sha256": "478237a8683d31438da6a5504272e76a52313d1417133767e08fa83a4cc0a621"
+    },
+    {
+      "path": "content/generated/route11-synth-audio/manifest.json",
+      "byteLength": 2653,
+      "sha256": "0631c99d955f0eddaea29dbc65b56df14e14847ee1c9bc5d072c7ccaf39bf4b1"
+    },
+    {
+      "path": "content/generated/synth-audio/firered.pack",
+      "byteLength": 2565436,
+      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+    },
+    {
+      "path": "content/generated/synth-audio/manifest.json",
+      "byteLength": 88374,
+      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
+    },
+    {
+      "path": "content/generated/synth-audio/normal-cries.bin",
+      "byteLength": 6188,
+      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+    },
+    {
+      "path": "scripts/audit-early-audio.py",
+      "byteLength": 21672,
+      "sha256": "e7db8de67b65dcc69dc6d7c41153340c9204913bcb5a3d35f585b5e9ab8525c5"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Cry.cs",
+      "byteLength": 4642,
+      "sha256": "5e674c5eea1afe62a0e669b6398ba3b48dcbc572cc06c3e9141b044a9a6602d7"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_CryCatalog.cs",
+      "byteLength": 2705,
+      "sha256": "0e86f47bb0a7ba4e1f3e0fa0dcf447aedc880c789305071c68c9111db3bf9e3b"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Profiles.cs",
+      "byteLength": 2372,
+      "sha256": "8f71ddb91c0039221beeda005861d2c1e4f8cfeab417f1fd545970a21e3ec413"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_PsgSynth.cs",
+      "byteLength": 4767,
+      "sha256": "665bcf8d58959b5d5ca51ab4771b77d20a4c23ca946d9acce3caee34bab7988e"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Resources.cs",
+      "byteLength": 2676,
+      "sha256": "0846dccd72f2c0f446aaa82fc2c5846ea9e6b58eaa66cae9ea653d71c1f26295"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Sequence.cs",
+      "byteLength": 9512,
+      "sha256": "3cba6ead2cf1828211b2257a163ae8657d39cab36de223fef46a65e4ebb9f7b3"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Synth.cs",
+      "byteLength": 37803,
+      "sha256": "7cd6f81faed247aad4245b9d79c3dc954904ec3d57b515aafee1929ad815832e"
+    }
+  ]
+}
