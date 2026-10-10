@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -39,6 +39,7 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
                     SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
                     sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.CeladonGymEnabled)Write("celadonGymAudioCatalog",new{CeladonGymSynthManifestIdentity.Sha256,CeladonGymSynthManifestIdentity.CueCount,priorCueCount=271,audibleOutputVerified=false});
                 if(_catalog.CeladonApproachEnabled)Write("celadonApproachAudioCatalog",new{CeladonApproachSynthManifestIdentity.Sha256,CeladonApproachSynthManifestIdentity.CueCount,priorCueCount=268,audibleOutputVerified=false});
                 if(_catalog.RockTunnelEnabled)Write("rockTunnelAudioCatalog",new{RockTunnelSynthManifestIdentity.Sha256,RockTunnelSynthManifestIdentity.CueCount,priorCueCount=253,audibleOutputVerified=false});
                 if(_catalog.Route11Enabled)Write("route11AudioCatalog",new{Route11SynthManifestIdentity.Sha256,
@@ -201,11 +202,13 @@ public partial class CampaignView
     {
         if(s.OldManTutorial is not null)return s.Music;
         if(s.ForestTrainerBattle is {Stage:CampaignForestTrainerStage.Intro} intro)
-            return intro.Trainer==PewterTrainerPartyFactory.Brock?_catalog.MapDefinition(s.World.Player.MapId).Music:s.Music;
+            return s.Dialogue is {} dialogue&&_audioTrainerOneShots.Contains($"{intro.Id}:intro-text:{dialogue.Page}")
+                ? "MUS_ENCOUNTER_GYM_LEADER"
+                : intro.Trainer==PewterTrainerPartyFactory.Brock?_catalog.MapDefinition(s.World.Player.MapId).Music:s.Music;
         if(s.Battle is {} lab)return lab.Phase==CampaignBattlePhase.Results&&lab.State.Outcome==FirstBattleOutcome.Won?"MUS_VICTORY_TRAINER":"MUS_VS_TRAINER";
         if(s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer)
         {
-            bool leader=trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge;
+            bool leader=trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA";
             bool victory=trainer.Combat.Phase==ForestTrainerCombatPhase.Ended&&trainer.Combat.Battle.Outcome==WildBattleOutcome.Won;
             return victory?(leader?"MUS_VICTORY_GYM_LEADER":"MUS_VICTORY_TRAINER"):(leader?"MUS_VS_GYM_LEADER":"MUS_VS_TRAINER");
         }
@@ -282,6 +285,7 @@ public partial class CampaignView
     private void ProcessSourceBattleAudio()
     {
         if(_sourceAudio is null)return;
+        ProcessSourceLeaderIntroAudio();
         ProcessSourceLeaderBadgeAudio();
         if(_session.State.Battle is {Phase:CampaignBattlePhase.Events} lab&&lab.EventIndex<lab.Events.Length)
         {
@@ -325,12 +329,30 @@ public partial class CampaignView
             if(e is WildBattleMedicineAppliedEvent&&_wildPage==0)SourceSound("SE_USE_ITEM");
         }
     }
+    private void ProcessSourceLeaderIntroAudio()
+    {
+        if(_sourceAudio is null||_audioFaulted||!_catalog.PewterEnabled||!FieldDialogueVisible||
+            _session.State.ForestTrainerBattle is not {Stage:CampaignForestTrainerStage.Intro} trainer||
+            _session.State.Dialogue is not {} dialogue||
+            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||
+              trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"))return;
+        // All four pinned intro controls are at page end. Waiting for the printer's
+        // EOS step includes its final glyph delay; page entry or last glyph is too early.
+        string raw=dialogue.Pages[dialogue.Page];
+        if(!raw.EndsWith("{PLAY_BGM}{MUS_ENCOUNTER_GYM_LEADER}",StringComparison.Ordinal)&&
+            !raw.EndsWith("{PLAY_BGM MUS_ENCOUNTER_GYM_LEADER}",StringComparison.Ordinal))return;
+        if(FieldTextProgressEnabled&&(_fieldPrintedDialogue!=dialogue||!FieldTextComplete))return;
+        if(_audioTrainerOneShots.Add($"{trainer.Id}:intro-text:{dialogue.Page}"))
+            SourceMusic("MUS_ENCOUNTER_GYM_LEADER");
+        // This presentation cue neither acknowledges text nor changes campaign Music.
+    }
+
     private void ProcessSourceLeaderBadgeAudio()
     {
         if(!_catalog.VermilionGymEnabled||_session.State.ForestTrainerBattle is not
             {Stage:CampaignForestTrainerStage.Finished,Combat.Battle.Outcome:WildBattleOutcome.Won} trainer||
             trainer.Presentation is not {Phase:CampaignBattlePhase.Results} battle||battle.PageIndex<0||battle.PageIndex>=battle.Pages.Length||
-            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge))return;
+            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"))return;
         string raw=battle.Pages[battle.PageIndex].Text;
         int cue=raw.IndexOf("{PLAY_BGM}{MUS_OBTAIN_BADGE}",StringComparison.Ordinal);
         if(cue<0||!raw.Contains("{PAUSE_MUSIC}",StringComparison.Ordinal)||!raw.Contains("{RESUME_MUSIC}",StringComparison.Ordinal))return;

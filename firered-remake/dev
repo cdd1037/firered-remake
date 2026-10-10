@@ -203,13 +203,36 @@ def test_regional_campaign(name,checkpoint=None,region='Route11'):
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
+ if not args:return output({'commands':['doctor','setup','build','test','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
  if args==['doctor']:return doctor()
  if args==['setup']:return setup()
  if args==['build']:return build()
  if args==['test']:return test()
  if len(args) in (2,3) and args[0] in ('test-route11','test-rocktunnel'):
   return test_regional_campaign(args[1],args[2] if len(args)==3 else None,'RockTunnel' if args[0]=='test-rocktunnel' else 'Route11')
+ if len(args) in (2,3) and args[0]=='test-celadon-gym':
+  output_dir=ROOT/'tests/Game.CeladonGymCampaign.Tests/evidence'/args[1]
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or output_dir.exists():raise RuntimeError('A unique Celadon Gym run name is required.')
+  command=[DOTNET,'run','--project','tests/Game.CeladonGymCampaign.Tests','--no-build','--',ROOT,output_dir]
+  if len(args)==3:command.append(pathlib.Path(args[2]).resolve())
+  run(command,'celadon-gym-campaign.log');return 0
+ if args==['test-celadon-gym-modules']:
+  for module in ['Region','Catalog']:
+   suite='Game.CeladonGym'+module+'.Tests'
+   run([DOTNET,'run','--project','tests/'+suite,'--no-build','--',ROOT],suite+'.json')
+  run([DOTNET,'run','--project','tests/Game.CeladonGymDomain.Tests','--no-build','--',ROOT,ROOT,ROOT],'Game.CeladonGymDomain.Tests.json')
+  return 0
+ if len(args) in (1,2) and args[0]=='test-celadon-gym-ui':
+  checkpoint=pathlib.Path(args[1]).resolve() if len(args)==2 else ROOT/'tests/Game.CeladonApproachCampaignRecovery.Tests/Fixtures/celadon-healed.json'
+  run(['python3','tests/Game.CeladonGymUi.Tests/verify_godot.py',checkpoint],'celadon-gym-ui.log');return 0
+ if args==['test-celadon-gym-native-evidence']:
+  run(['python3','tests/Game.CeladonGymNative.Tests/verify_native.py'],'celadon-gym-native-evidence.json');return 0
+ if len(args)==2 and args[0]=='test-celadon-gym-audit':
+  output_dir=ROOT/'tests/Game.CeladonGymNative.Tests/evidence'/args[1]
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or output_dir.exists():raise RuntimeError('A unique Celadon Gym audit run name is required.')
+  run([DOTNET,'run','--project','tests/Game.CeladonGymAudit.Tests','--no-build','--',ROOT,output_dir],'celadon-gym-audit.log');return 0
+ if args==['test-celadon-gym-synth']:
+  run([DOTNET,'run','--project','tests/Game.CeladonGymSynthAudio.Tests','--no-build','--',ROOT],'celadon-gym-synth.json');return 0
  if len(args)==2 and args[0]=='test-celadon-approach':
   return test_regional_campaign(args[1],region='CeladonApproach')
  if args==['test-celadon-approach-modules']:

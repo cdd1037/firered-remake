@@ -26,8 +26,9 @@ public static class Route22TrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-route22-rival-ai-semantic-v1";
 
-    public static Route22TrainerAiDecision Choose(PokemonCatalog catalog, Route22TrainerAiInput input, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false)
+    public static Route22TrainerAiDecision Choose(PokemonCatalog catalog, Route22TrainerAiInput input, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false)
     {
+        rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         Route22TrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
             new(code, "Input is outside the bounded Route22 early-rival AI profile."));
@@ -37,6 +38,7 @@ public static class Route22TrainerAi
         ceruleanRules |= billRules;
         mtMoonRules |= ceruleanRules;
         route3Rules |= mtMoonRules;
+        if (catalog is null || (catalog.Species.Count == 98) != celadonGymRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("route22_trainer_ai_rng_algorithm");

@@ -24,6 +24,7 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FocusEnergy = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Flinched = false)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Rooted { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool SpeedBadgeBoost { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SpecialAttackStageDelta { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SpecialDefenseStageDelta { get; init; }
@@ -127,6 +128,8 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleMtMoonVolatileEvent), "mtmoon-volatile")]
 [JsonDerivedType(typeof(WildBattleEncoreChangedEvent), "encore-changed")]
 [JsonDerivedType(typeof(WildBattleDrainEvent), "drain")]
+[JsonDerivedType(typeof(WildBattleRootsChangedEvent), "roots-changed")]
+[JsonDerivedType(typeof(WildBattleIngrainHealEvent), "ingrain-heal")]
 [JsonDerivedType(typeof(WildBattleRecoveredEvent), "recovered")]
 [JsonDerivedType(typeof(WildBattleMagnitudeEvent), "magnitude")]
 [JsonDerivedType(typeof(WildBattleSelfDestructEvent), "self-destruct")]
@@ -278,3 +281,6 @@ public sealed record WildBattlePayDayEvent(long Sequence, int Turn, WildBattleSi
 public sealed record WildBattleHeldItemKnockedOffEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target, MoveId Move, string Item) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleWeatherDamageEvent(long Sequence, int Turn, WildBattleSide Side, string Weather, int HpBefore, int HpAfter, int Damage) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleProtectAttemptEvent(long Sequence, int Turn, WildBattleSide Side, MoveId Move, int Before, int After, int Threshold, int Roll, bool NotLastAction, bool Succeeded) : WildBattleEvent(Sequence, Turn);
+
+public sealed record WildBattleRootsChangedEvent(long Sequence, int Turn, WildBattleSide Side, bool Rooted, string Reason) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleIngrainHealEvent(long Sequence, int Turn, WildBattleSide Side, int HpBefore, int HpAfter, int Restored) : WildBattleEvent(Sequence, Turn);

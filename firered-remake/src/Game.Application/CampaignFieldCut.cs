@@ -41,9 +41,10 @@ public sealed partial class CampaignSession
     private CampaignActor? AdjacentFieldCutTree(CampaignState state)
     {
         var p=state.World.Player;
-        if(p.MapId.Value!=FieldCutMap&&!(_content.Route11Enabled&&p.MapId.Value=="map.route-2")&&!(_content.CeladonApproachEnabled&&p.MapId.Value is "map.route-8" or "map.celadon-city")&&!(_content.RockTunnelEnabled&&p.MapId.Value is "map.route-9" or "map.route-10"))return null;
+        if(p.MapId.Value!=FieldCutMap&&!(_content.Route11Enabled&&p.MapId.Value=="map.route-2")&&!(_content.CeladonGymEnabled&&p.MapId.Value=="map.celadon-city-gym")&&!(_content.CeladonApproachEnabled&&p.MapId.Value is "map.route-8" or "map.celadon-city")&&!(_content.RockTunnelEnabled&&p.MapId.Value is "map.route-9" or "map.route-10"))return null;
         bool Admitted(CampaignActor actor)=>p.MapId.Value==FieldCutMap
             ? actor.SourceLocalId==7&&actor.X==19&&actor.Y==24&&actor.Elevation==3&&actor.HideFlag=="FLAG_TEMP_12"
+            : p.MapId.Value=="map.celadon-city-gym" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is (9,6,8,3,"FLAG_TEMP_12") or (10,3,5,3,"FLAG_TEMP_13") or (11,9,6,3,"FLAG_TEMP_14")
             : p.MapId.Value=="map.route-8" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is (10,33,15,3,"FLAG_TEMP_12") or (11,47,12,3,"FLAG_TEMP_13")
             : p.MapId.Value=="map.celadon-city" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is (10,52,22,3,"FLAG_TEMP_14") or (11,40,35,0,"FLAG_TEMP_13")
             : p.MapId.Value=="map.route-9" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag)==(10,2,8,3,"FLAG_TEMP_12")

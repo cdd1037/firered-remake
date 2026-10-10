@@ -9,12 +9,14 @@ namespace Game.Domain.Trainers;
 /// active-stat and byte best-damage source bugs. Voluntary switching uses CeruleanTrainerActionAi.</summary>
 public static class CeruleanTrainerAiReplacement
 {
-    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false)
+    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false)
     {
+        rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         ForestTrainerReplacementDecision Fault(string code) => new(TransitionStatus.Fault, null, [],
             new(code, "Input is outside the bounded MtMoon trainer replacement profile."));
+        if (catalog is null || (catalog.Species.Count == 98) != celadonGymRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         var active = input.FaintedActive.Pokemon;
@@ -88,7 +90,7 @@ public static class CeruleanTrainerAiReplacement
     private static string? Validate(PokemonCatalog? catalog, ForestTrainerReplacementInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
     {
         route11Rules |= rockTunnelRules;
-        if (catalog?.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > (catalog.Species.Count == 94 && rockTunnelRules ? 6 : 4) ||
+        if (catalog?.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > (catalog.Species.Count is 94 or 98 && rockTunnelRules ? 6 : 4) ||
             input.FaintedPartyIndex < 0 || input.FaintedPartyIndex >= input.Party.Length || input.FaintedActive is null || input.Target is null)
             return "cerulean_trainer_replacement_input";
         if (input.Party.Any(mon => mon is null || mon.HeldItem != "ITEM_NONE" || mon.AttackBadgeBoost || mon.SpeedBadgeBoost) || input.FaintedActive.HeldItem != "ITEM_NONE")
@@ -117,9 +119,15 @@ public static class CeruleanTrainerAiReplacement
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         if (party.IsDefaultOrEmpty || party.Any(p => p is null)) return false;
-        if (rockTunnelRules && catalog.Species.Count == 94)
+        if (rockTunnelRules && catalog.Species.Count is 94 or 98)
         {
-            foreach (var id in CeladonApproachTrainerPartyFactory.SupportedTrainers)
+            foreach (var id in CeladonGymTrainerPartyFactory.SupportedTrainers)
+        {
+            if (catalog.Species.Count != 98 || trainerId is {} requested && requested != id) continue;
+            var e = CeladonGymTrainerPartyFactory.Expected[id];
+            if (party.Length == e.Party.Length && party.All(p => CeladonGymTrainerPartyFactory.ValidPartyMember(catalog,p.Pokemon,id))) return true;
+        }
+        foreach (var id in CeladonApproachTrainerPartyFactory.SupportedTrainers)
             {
                 if (trainerId is {} selected && selected != id) continue;
                 var e = CeladonApproachTrainerPartyFactory.Expected[id];

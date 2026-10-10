@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "files": [
+    {
+      "path": "data/maps/CeladonCity_Gym/map.json",
+      "byteLength": 5730,
+      "sha256": "eb9eb76fef8c1c6544b3846908a04b6ed7bd21785335b46b08f8aa3c7bca4a5d",
+      "gitBlobSha1": "5db7ad03519f01e62ab0b3cc1d74490cc24ed973"
+    },
+    {
+      "path": "graphics/trainers/front_pics/beauty_front_pic.png",
+      "byteLength": 738,
+      "sha256": "1c22fa5f9d3b437ba55edec0ed16833c074218488791089e2d8692b72c19a9d6",
+      "gitBlobSha1": "595d0bf1ef70cd1536e95e7767547fbfdd34a471"
+    },
+    {
+      "path": "graphics/trainers/front_pics/cool_trainer_f_front_pic.png",
+      "byteLength": 715,
+      "sha256": "72b166d0fa89fcbcffe36f10c3a4f7cb7793bd03f11a2a55bd745873c1913f80",
+      "gitBlobSha1": "ca5d24f60c4856b1d4bb80ce8c9c81fe0cf547e3"
+    },
+    {
+      "path": "graphics/trainers/front_pics/leader_erika_front_pic.png",
+      "byteLength": 645,
+      "sha256": "0d11c7e56c527902d01c217212e91a2410d98be243030fcb3963774441b49ba6",
+      "gitBlobSha1": "210ec51c9f0d8861aab5dfda646ed430bd1d6f90"
+    },
+    {
+      "path": "graphics/trainers/palettes/beauty.pal",
+      "byteLength": 194,
+      "sha256": "3a297be4a4ed4d256175b1c8e8ebf49fd7b4b23469b2acce971d5aa243f70688",
+      "gitBlobSha1": "3578daf5e6276e40fe2371d036176af732637170"
+    },
+    {
+      "path": "graphics/trainers/palettes/cool_trainer_f.pal",
+      "byteLength": 193,
+      "sha256": "0e1f4c98003a3b7fcd6977fcbaedef38207592670c8e004c41ab9b4ba1ada86a",
+      "gitBlobSha1": "71ec5e47a9a156ea5ec93ad7f372efc83f44cff2"
+    },
+    {
+      "path": "graphics/trainers/palettes/leader_erika.pal",
+      "byteLength": 194,
+      "sha256": "55d768c43e33ec8199ea1d01423a89b08485a47ffbd268870d16c635c866d756",
+      "gitBlobSha1": "c503b2180b0190a58cffc25345023ab7a0f52d5d"
+    },
+    {
+      "path": "include/constants/trainers.h",
+      "byteLength": 20887,
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9",
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e"
+    },
+    {
+      "path": "src/battle_bg.c",
+      "byteLength": 39359,
+      "sha256": "9e608837b0f13ba6782d8f3d4f2590ee273b5c7fb8b6275514c89cd780b474f0",
+      "gitBlobSha1": "3bcc500805622febd3892580da14f65ea2746a6f"
+    },
+    {
+      "path": "src/data/graphics/trainers.h",
+      "byteLength": 34300,
+      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9",
+      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088"
+    },
+    {
+      "path": "src/data/trainer_graphics/front_pic_tables.h",
+      "byteLength": 24042,
+      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f",
+      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda"
+    },
+    {
+      "path": "src/data/trainers.h",
+      "byteLength": 302118,
+      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc",
+      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/fetch-lab-battle-ui.py",
+      "byteLength": 5843,
+      "sha256": "805779208815c0a7f26fb00d9187ca6b1041064e7b8909090ce7f7f048bc7f32"
+    },
+    {
+      "path": "scripts/import-lab-battle-ui.py",
+      "byteLength": 13082,
+      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+    }
+  ]
+}

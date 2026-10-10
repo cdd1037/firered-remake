@@ -105,6 +105,10 @@ public static class RockTunnelBattleData
 {
     public static int WeightHectograms(SpeciesId species) => species.Value switch
     {
+        "pret:SPECIES_VILEPLUME" => 186,
+        "pret:SPECIES_VICTREEBEL" => 155,
+        "pret:SPECIES_EXEGGCUTE" => 25,
+        "pret:SPECIES_TANGELA" => 350,
         "pret:SPECIES_CUBONE" => 65,
         "pret:SPECIES_ELECTRODE" => 666,
         "pret:SPECIES_HYPNO" => 756,

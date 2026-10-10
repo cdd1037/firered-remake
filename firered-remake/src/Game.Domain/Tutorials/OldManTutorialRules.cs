@@ -47,9 +47,9 @@ public static class OldManTutorialRules
     public const int PokeBallSourceItemId = 4;
     public static SpeciesId WeedleSpecies { get; } = new("pret:SPECIES_WEEDLE");
 
-    public static OldManTutorialResult Start(PokemonCatalog catalog, PartyPokemon hiddenPlayerPokemon, RngState rng, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonApproachRules = false)
+    public static OldManTutorialResult Start(PokemonCatalog catalog, PartyPokemon hiddenPlayerPokemon, RngState rng, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonApproachRules = false, bool celadonGymRules = false)
     {
-        rockTunnelRules |= celadonApproachRules;
+        rockTunnelRules |= celadonApproachRules || celadonGymRules;
         route11Rules |= rockTunnelRules;
         ssAnneRules |= route11Rules;
         vermilionRules |= ssAnneRules;
@@ -59,7 +59,7 @@ public static class OldManTutorialRules
         route3Rules |= mtMoonRules;
         PokemonFactory.ValidateCatalog(catalog);
         ArgumentNullException.ThrowIfNull(hiddenPlayerPokemon);
-        if ((celadonApproachRules ? catalog.Species.Count != 94 : rockTunnelRules ? catalog.Species.Count != 93 : route11Rules ? catalog.Species.Count != 79 : ssAnneRules ? catalog.Species.Count != 73 : vermilionRules ? catalog.Species.Count != 70 : billRules ? catalog.Species.Count != 68 : ceruleanRules ? catalog.Species.Count != 65 : mtMoonRules ? catalog.Species.Count != 56 : route3Rules ? catalog.Species.Count != 40 : route22Rules ? catalog.Species.Count != 32 : catalog.Species.Count is not (17 or 22 or 29)) || !catalog.Species.TryGetValue(WeedleSpecies, out var species))
+        if ((celadonGymRules ? catalog.Species.Count != 98 : celadonApproachRules ? catalog.Species.Count != 94 : rockTunnelRules ? catalog.Species.Count != 93 : route11Rules ? catalog.Species.Count != 79 : ssAnneRules ? catalog.Species.Count != 73 : vermilionRules ? catalog.Species.Count != 70 : billRules ? catalog.Species.Count != 68 : ceruleanRules ? catalog.Species.Count != 65 : mtMoonRules ? catalog.Species.Count != 56 : route3Rules ? catalog.Species.Count != 40 : route22Rules ? catalog.Species.Count != 32 : catalog.Species.Count is not (17 or 22 or 29)) || !catalog.Species.TryGetValue(WeedleSpecies, out var species))
             throw new NotSupportedException("The authenticated catalog must match the selected tutorial profile.");
         var error = PokemonStateValidator.Validate(catalog, hiddenPlayerPokemon.Pokemon);
         if (error is not null) throw new ArgumentException(error, nameof(hiddenPlayerPokemon));

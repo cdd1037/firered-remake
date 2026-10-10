@@ -43,8 +43,10 @@ public static class BillTrainerPartyFactory
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     public static TrainerId ForPlayerStarter(SpeciesId starter) => CeruleanTrainerPartyFactory.ForPlayerStarter(starter);
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(BillTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
+    public static TrainerPartyCreationResult Create(BillTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false)
     {
+        if ((pokemon.Species.Count == 98) != celadonGymRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);

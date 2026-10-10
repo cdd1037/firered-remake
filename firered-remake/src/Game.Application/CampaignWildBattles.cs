@@ -35,7 +35,7 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,WildB
 
 public sealed partial class CampaignSession
 {
-    private string CampaignWildRulesVersion=>_content.CeladonApproachEnabled?WildBattleRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?WildBattleRules.RockTunnelRulesVersion:_content.Route11Enabled?WildBattleRules.Route11RulesVersion:_content.VermilionGymEnabled?WildBattleRules.VermilionGymRulesVersion:_content.SsAnneEnabled?WildBattleRules.SsAnneRulesVersion:_content.VermilionEnabled?WildBattleRules.VermilionRulesVersion:_content.BillEnabled?WildBattleRules.BillRulesVersion:_content.CeruleanEnabled?WildBattleRules.CeruleanRulesVersion:_content.MtMoonEnabled?WildBattleRules.MtMoonRulesVersion:_content.Route3Enabled?WildBattleRules.Route3RulesVersion:_content.Route22Enabled?WildBattleRules.Route22RulesVersion:_content.EarlyPartyEnabled?WildBattleRules.EarlyPartyRulesVersion:_content.EarlyStarterEnabled?WildBattleRules.EarlyStarterRulesVersion:_content.PewterEnabled?WildBattleRules.PewterRulesVersion:_content.ForestEnabled?WildBattleRules.ForestRulesVersion:WildBattleRules.RulesVersion;
+    private string CampaignWildRulesVersion=>_content.CeladonGymEnabled?WildBattleRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?WildBattleRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?WildBattleRules.RockTunnelRulesVersion:_content.Route11Enabled?WildBattleRules.Route11RulesVersion:_content.VermilionGymEnabled?WildBattleRules.VermilionGymRulesVersion:_content.SsAnneEnabled?WildBattleRules.SsAnneRulesVersion:_content.VermilionEnabled?WildBattleRules.VermilionRulesVersion:_content.BillEnabled?WildBattleRules.BillRulesVersion:_content.CeruleanEnabled?WildBattleRules.CeruleanRulesVersion:_content.MtMoonEnabled?WildBattleRules.MtMoonRulesVersion:_content.Route3Enabled?WildBattleRules.Route3RulesVersion:_content.Route22Enabled?WildBattleRules.Route22RulesVersion:_content.EarlyPartyEnabled?WildBattleRules.EarlyPartyRulesVersion:_content.EarlyStarterEnabled?WildBattleRules.EarlyStarterRulesVersion:_content.PewterEnabled?WildBattleRules.PewterRulesVersion:_content.ForestEnabled?WildBattleRules.ForestRulesVersion:WildBattleRules.RulesVersion;
     private CampaignState BeginWildBattle(CampaignState state,Route1WildPokemonResult? fishingPokemon=null)
     {
         if(_content.ForestEnabled&&long.MaxValue-Revision<4096)throw new InvalidDataException("wild_battle_command_headroom_required");
@@ -50,7 +50,7 @@ public sealed partial class CampaignSession
         else if(_content.ForestEnabled)
         {
             var early=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");var table=_content.LandEncounters![state.World.Player.MapId];
-            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled);
+            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled);
             generated=new(result.Pokemon,result.GlobalRng,result.RandomTrace);
         }
         else generated=Route1WildPokemonFactory.Generate(BattlePokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
@@ -160,6 +160,7 @@ public sealed partial class CampaignSession
                 case WildBattleMoveUsedEvent used when used.Slot>=0:Update(used.Actor,p=>p with{Moves=p.Moves.SetItem(used.Slot,p.Moves[used.Slot] with{CurrentPp=used.PpAfter})});break;
                 case WildBattleHpChangedEvent hp:Update(hp.Target,p=>p with{CurrentHp=hp.HpAfter});break;
                 case WildBattleHeldItemConsumedEvent item:Update(item.Side,p=>p with{CurrentHp=item.HpAfter});break;
+                case WildBattleIngrainHealEvent roots:Update(roots.Side,p=>p with{CurrentHp=roots.HpAfter});break;
                 case WildBattleRecoveredEvent recovered:Update(recovered.Side,p=>p with{CurrentHp=recovered.HpAfter});break;
                 case WildBattlePotionRecoveredEvent potion:Update(potion.Side,p=>p with{CurrentHp=potion.HpAfter});break;
                 case WildBattleMedicineAppliedEvent {ActiveTarget:true} medicine:Update(WildBattleSide.Player,p=>p with{CurrentHp=medicine.HpAfter});break;

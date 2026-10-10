@@ -155,6 +155,7 @@ public partial class CampaignView
         var transition = WildCurrentEvent(battle)! switch
         {
             WildBattleHpChangedEvent change when change.Target == side => (change.HpBefore, change.HpAfter),
+            WildBattleIngrainHealEvent roots when roots.Side == side => (roots.HpBefore, roots.HpAfter),
             WildBattleRecoveredEvent recovered when recovered.Side == side => (recovered.HpBefore, recovered.HpAfter),
             WildBattlePotionRecoveredEvent potion when potion.Side == side => (potion.HpBefore, potion.HpAfter),
             WildBattleHeldItemConsumedEvent item when item.Side == side => (item.HpBefore, item.HpAfter),

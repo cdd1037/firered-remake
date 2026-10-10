@@ -9,13 +9,13 @@ public static class CeladonApproachWildPokemonFactory
     public const string RulesVersion = "firered-celadon-approach-wild-generation-v1";
     public const string EncounterRulesVersion = "firered-celadon-approach-walking-candidates-v1";
     public static EarlyLandWildPokemonResult Generate(PokemonCatalog catalog, EarlyLandEncounterTable table,
-        EarlyLandEncounterState encounter, RngState globalRng, uint playerTrainerId)
+        EarlyLandEncounterState encounter, RngState globalRng, uint playerTrainerId, bool celadonGymRules = false)
     {
         EarlyLandEncounterRules.ValidateState(encounter, table);
         var pending = encounter.Pending ?? throw new InvalidOperationException("A verified CeladonApproach land candidate is required.");
         PokemonFactory.ValidateCatalog(catalog);
         var expected = CeladonApproachLandEncounterTables.All.SingleOrDefault(t => t.Map == table.Map);
-        if (catalog.Species.Count != 94 || encounter.RulesVersion != EncounterRulesVersion || expected is null ||
+        if (catalog.Species.Count != (celadonGymRules ? 98 : 94) || encounter.RulesVersion != (celadonGymRules ? EarlyLandEncounterRules.CeladonGymRulesVersion : EncounterRulesVersion) || expected is null ||
             table with { Slots = expected.Slots } != expected || !table.Slots.SequenceEqual(expected.Slots) ||
             !catalog.Species.ContainsKey(pending.Candidate.Species))
             throw new NotSupportedException("An authenticated CeladonApproach catalog and exact land table are required.");

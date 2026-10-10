@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
         if (error is not null) return No(error);
         var use = EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field,
-            item, celadonApproachRules: _content.CeladonApproachEnabled);
+            item, celadonApproachRules: _content.CeladonApproachEnabled, celadonGymRules: _content.CeladonGymEnabled);
         if (!use.Succeeded)
             return use.Error == "repel_effects_lingered"
                 ? new(CommandStatus.Accepted, state with { ItemMenu = menu with { View = "message", MessageSymbol = "gText_RepelEffectsLingered", ReturnView = "bag" } })
@@ -67,7 +67,7 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("repel_use_wait_context_invalid");
         var use = EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field,
-            repel.Item, celadonApproachRules: _content.CeladonApproachEnabled);
+            repel.Item, celadonApproachRules: _content.CeladonApproachEnabled, celadonGymRules: _content.CeladonGymEnabled);
         if (!use.Succeeded) throw new InvalidDataException("repel_use_wait_changed: " + use.Error);
         return new(CommandStatus.Accepted, state with
         {
@@ -85,7 +85,7 @@ public sealed partial class CampaignSession
         if (!_content.RepelEnabled) return state;
         ushort steps = checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable));
         var step = EarlyRepelRules.AdvanceStep(steps, EncounterCheckTrigger.WalkingStepCompleted,
-            celadonApproachRules: _content.CeladonApproachEnabled);
+            celadonApproachRules: _content.CeladonApproachEnabled, celadonGymRules: _content.CeladonGymEnabled);
         if (step.Steps == steps) return state; // Keep absent zero absent, including upgraded saves.
         state = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem(RepelCounterVariable, step.Steps) } };
         return step.WoreOff ? state with

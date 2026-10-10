@@ -34,10 +34,11 @@ public partial class CampaignView
                     _ => throw new InvalidDataException("Unsupported committed Route11 terrain.")
                 };
         }
-        if (_catalog.CeruleanEnabled && PretGymBattleTerrain.AppliesToMap(mapId))
+        if (_catalog.CeladonGymEnabled && mapId.Value == "map.celadon-city-gym" ||
+            _catalog.CeruleanEnabled && PretGymBattleTerrain.AppliesToMap(mapId))
         {
             bool leader = _session.State.ForestTrainerBattle?.Trainer.Value is
-                "pret:TRAINER_LEADER_BROCK" or "pret:TRAINER_LEADER_MISTY";
+                "pret:TRAINER_LEADER_BROCK" or "pret:TRAINER_LEADER_MISTY" or "pret:TRAINER_LEADER_ERIKA";
             return (leader ? _leaderTerrain : _gymTerrain) ?? throw new InvalidDataException("Gym terrain was not loaded.");
         }
         if (_catalog.CityServicesEnabled && _cityBattleTerrain is not null && _session.State.World.Player is var player && player.MapId == mapId)
@@ -190,7 +191,7 @@ public partial class CampaignView
             if (ForestTrainerEventPages(Source)) { _wildPages = pages.ToImmutable(); return; }
             var current = WildCurrentEvent(b) ?? throw new InvalidDataException("Battle event missing.");
             if(current is WildBattleInfatuationBlockedEvent love) Source("sText_PkmnInLove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(love.Side)),("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(love.Source)));
-            var forestMessage = RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
+            var forestMessage = CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
             if (forestMessage is { } message)
             {
                 if (message.Symbol.Length > 0) Source(message.Symbol, message.Values);
@@ -285,15 +286,15 @@ public partial class CampaignView
         _wildElapsed += delta;
         if (_wildNotice is null && PresentedWildBattle is { Phase: CampaignBattlePhase.Events } b &&
             _wildPages.IsEmpty && _wildElapsed >= .45 && (WildCurrentEvent(b) is
-                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
+                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || CeladonGymSilentEvent(b) || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
     }
     private string WildCommandError() => _lastCommandFault ? "The battle step could not\nbe completed." : _status switch
     {
         "hm_move_cannot_be_forgotten" => HmCannotForgetText,
-        "wild_battle_switch_binding" or "pewter_trainer_switch_binding" => WildName(WildBattleSide.Player)+" can't be switched\nout!",
+        "wild_battle_switch_rooted" or "celadon_gym_trainer_switch_rooted" or "wild_battle_switch_binding" or "pewter_trainer_switch_binding" => WildName(WildBattleSide.Player)+" can't be switched\nout!",
         "wild_battle_switch_arena_trap" or "route11_trainer_switch_arena_trap" => string.Join('\n',WildSourcePages("gText_PkmnsXPreventsSwitching",("B_BUFF1",WildName(WildBattleSide.Opponent)),("B_LAST_ABILITY","ARENA TRAP"))),
         "wild_battle_run_arena_trap" => string.Join('\n',WildSourcePages("sText_PreventsEscape",("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(WildBattleSide.Opponent)),("B_SCR_ACTIVE_ABILITY","ARENA TRAP"))),
-        "wild_battle_run_binding" => string.Join('\n',WildSourcePages("sText_CantEscape2")),
+        "wild_battle_run_rooted" or "wild_battle_run_binding" => string.Join('\n',WildSourcePages("sText_CantEscape2")),
         "trainer_battle_cannot_run" => string.Join('\n', WildSourcePages("sText_NoRunningFromTrainers")),
         "trainer_battle_cannot_capture" => string.Join('\n', WildSourcePages("sText_DontBeAThief")),
         "wild_battle_player_move_pp_empty" => "This move has no PP left.",

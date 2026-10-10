@@ -13,6 +13,7 @@ public static class EarlyLandEncounterRules
     public const string SourceCommit = Route1EncounterRules.SourceCommit;
     public const string RulesVersion = "firered-early-kanto-walking-candidates-v1";
     public const string Route22RulesVersion = "firered-route22-walking-candidates-v1";
+    public const string CeladonGymRulesVersion = "firered-celadon-gym-walking-candidates-v1";
     public const string CeladonApproachRulesVersion = "firered-celadon-approach-walking-candidates-v1";
     public const string RockTunnelRulesVersion = "firered-rocktunnel-walking-candidates-v1";
     public const string Route11RulesVersion = "firered-route11-walking-candidates-v1";
@@ -84,7 +85,7 @@ public static class EarlyLandEncounterRules
         if (globalRng.AlgorithmId != Gen3Rng.AlgorithmId) throw new NotSupportedException("Unknown global RNG algorithm.");
         if (check.Map != table.Map) throw new ArgumentException("The current map and authenticated land table disagree.");
         if (!Enum.IsDefined(check.Trigger) || !Enum.IsDefined(check.EncounterType)) throw new NotSupportedException("Unknown field check or encounter terrain.");
-        bool caveAttributes = state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && (MtMoonLandEncounterTables.IsCave(table.Map) || state.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && Route11LandEncounterTables.IsCave(table.Map) || state.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion && RockTunnelLandEncounterTables.IsCave(table.Map));
+        bool caveAttributes = state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && (MtMoonLandEncounterTables.IsCave(table.Map) || state.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Route11LandEncounterTables.IsCave(table.Map) || state.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && RockTunnelLandEncounterTables.IsCave(table.Map));
         if (check.EncounterType == EncounterTileType.Water ||
             (!caveAttributes && check.EncounterType == EncounterTileType.Land && check.MetatileBehavior != TallGrassBehavior))
             throw new NotSupportedException("Only admitted source cave land, tall-grass land and non-encounter tiles are supported.");
@@ -92,8 +93,8 @@ public static class EarlyLandEncounterRules
             throw new ArgumentException("Tall grass must retain its source land encounter attribute.");
 
         return CheckCore(state, table, check, profile.WildEncountersDisabled, globalRng,
-            stench: state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadAbility == "ABILITY_STENCH",
-            illuminate: state.RulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadAbility == "ABILITY_ILLUMINATE");
+            stench: state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadAbility == "ABILITY_STENCH",
+            illuminate: state.RulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadAbility == "ABILITY_ILLUMINATE");
     }
 
     // Public profiles validate their own contracts before entering this single source engine.
@@ -220,10 +221,10 @@ public static class EarlyLandEncounterRules
         if (state.RateRng.AlgorithmId != EncounterRateRng.AlgorithmId)
             throw new NotSupportedException("Unsupported early land process version or rate RNG.");
         // The counter can retain the preceding map's cooldown until the caller's map-load reset.
-        if (state.PreviousMetatileBehavior > byte.MaxValue || state.StepsSinceLastEncounter > (state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion ? 16 : 8))
+        if (state.PreviousMetatileBehavior > byte.MaxValue || state.StepsSinceLastEncounter > (state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion ? 16 : 8))
             throw new ArgumentException("Encounter state is outside the bounded walking profile.");
         if (state.Pending is {} pending && (pending.Candidate is null ||
-            (pending.MetatileBehavior != TallGrassBehavior && !(state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && (MtMoonLandEncounterTables.IsCave(pending.Candidate.Map) || state.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && Route11LandEncounterTables.IsCave(pending.Candidate.Map) || state.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion && RockTunnelLandEncounterTables.IsCave(pending.Candidate.Map)))) ||
+            (pending.MetatileBehavior != TallGrassBehavior && !(state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && (MtMoonLandEncounterTables.IsCave(pending.Candidate.Map) || state.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Route11LandEncounterTables.IsCave(pending.Candidate.Map) || state.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && RockTunnelLandEncounterTables.IsCave(pending.Candidate.Map)))) ||
             pending.Candidate.Slot is < 0 or >= 12 || !IsAdmittedCandidate(pending.Candidate, state.RulesVersion) ||
             pending.Candidate.Level is < 1 or > 100))
             throw new ArgumentException("Invalid pending early land candidate.");
@@ -232,14 +233,14 @@ public static class EarlyLandEncounterRules
     public static void ValidateState(EarlyLandEncounterState state, EarlyLandEncounterTable table)
     {
         ValidateTable(table); ValidateState(state);
-        if (CeladonApproachLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion != CeladonApproachRulesVersion) throw new NotSupportedException("Celadon approach tables require the explicit walking profile.");
-        if (RockTunnelLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (RockTunnelRulesVersion or CeladonApproachRulesVersion)) throw new NotSupportedException("Rock Tunnel tables require their explicit profile.");
-        if (Route11LandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion)) throw new NotSupportedException("Route11 tables require their explicit walking profile.");
-        if (VermilionLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion)) throw new NotSupportedException("Vermilion tables require the explicit Vermilion walking profile.");
-        if (BillLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion)) throw new NotSupportedException("Bill land table requires explicit Bill walking profile.");
-        if ((table.Map == Route22Table.Map && state.RulesVersion is not (Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion)) ||
-            (table.Map == Route3Table.Map && state.RulesVersion is not (Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion)) ||
-            (MtMoonLandEncounterTables.All.Any(t => t.Map == table.Map) && state.RulesVersion is not (MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion)))
+        if (CeladonApproachLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (CeladonApproachRulesVersion or CeladonGymRulesVersion)) throw new NotSupportedException("Celadon approach tables require the explicit walking profile.");
+        if (RockTunnelLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion)) throw new NotSupportedException("Rock Tunnel tables require their explicit profile.");
+        if (Route11LandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion)) throw new NotSupportedException("Route11 tables require their explicit walking profile.");
+        if (VermilionLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion)) throw new NotSupportedException("Vermilion tables require the explicit Vermilion walking profile.");
+        if (BillLandEncounterTables.All.Any(t=>t.Map==table.Map) && state.RulesVersion is not (BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion)) throw new NotSupportedException("Bill land table requires explicit Bill walking profile.");
+        if ((table.Map == Route22Table.Map && state.RulesVersion is not (Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion)) ||
+            (table.Map == Route3Table.Map && state.RulesVersion is not (Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion)) ||
+            (MtMoonLandEncounterTables.All.Any(t => t.Map == table.Map) && state.RulesVersion is not (MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion)))
             throw new NotSupportedException("Extended maps require explicit encounter-profile admission.");
         if (state.Pending is not {} pending) return;
         var candidate = pending.Candidate;
@@ -257,26 +258,26 @@ public static class EarlyLandEncounterRules
         bool ordinaryAbility = profile.LeadAbility is "ABILITY_NONE" or "ABILITY_OVERGROW" or "ABILITY_BLAZE" or "ABILITY_TORRENT" or
                 "ABILITY_KEEN_EYE" or "ABILITY_RUN_AWAY" or "ABILITY_GUTS" or "ABILITY_SHIELD_DUST" or
                 "ABILITY_SHED_SKIN" or "ABILITY_SWARM" or "ABILITY_COMPOUND_EYES" or "ABILITY_STATIC";
-        bool route22Ability = profile.RulesVersion is Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadAbility == "ABILITY_VITAL_SPIRIT";
+        bool route22Ability = profile.RulesVersion is Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadAbility == "ABILITY_VITAL_SPIRIT";
         // FireRed only modifies walking for Stench/Illuminate, unlike Emerald. These add no draws.
-        bool route3Ability = profile.RulesVersion is Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadAbility is
+        bool route3Ability = profile.RulesVersion is Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadAbility is
             "ABILITY_INTIMIDATE" or "ABILITY_SWIFT_SWIM" or "ABILITY_POISON_POINT" or "ABILITY_CUTE_CHARM" or
             "ABILITY_SAND_VEIL" or "ABILITY_ROCK_HEAD" or "ABILITY_STURDY";
-        bool route3HeldItem = profile.RulesVersion is Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadHeldItem == "ITEM_ORAN_BERRY";
-        bool mtMoonAbility = profile.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadAbility is
+        bool route3HeldItem = profile.RulesVersion is Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadHeldItem == "ITEM_ORAN_BERRY";
+        bool mtMoonAbility = profile.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadAbility is
             "ABILITY_INNER_FOCUS" or "ABILITY_CHLOROPHYLL" or "ABILITY_EFFECT_SPORE" or "ABILITY_MAGNET_PULL" or
             "ABILITY_STENCH" or "ABILITY_STICKY_HOLD" or "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE";
-        bool billAbility = profile.RulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadAbility is "ABILITY_SYNCHRONIZE" or "ABILITY_INSOMNIA" or "ABILITY_SHELL_ARMOR" or "ABILITY_WATER_VEIL" or "ABILITY_ILLUMINATE" or "ABILITY_NATURAL_CURE" or "ABILITY_OBLIVIOUS" or "ABILITY_OWN_TEMPO";
-        bool mtMoonHeldItem = profile.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadHeldItem is
+        bool billAbility = profile.RulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadAbility is "ABILITY_SYNCHRONIZE" or "ABILITY_INSOMNIA" or "ABILITY_SHELL_ARMOR" or "ABILITY_WATER_VEIL" or "ABILITY_ILLUMINATE" or "ABILITY_NATURAL_CURE" or "ABILITY_OBLIVIOUS" or "ABILITY_OWN_TEMPO";
+        bool mtMoonHeldItem = profile.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadHeldItem is
             "ITEM_TINY_MUSHROOM" or "ITEM_BIG_MUSHROOM" or "ITEM_MOON_STONE";
-        bool vermilionAbility = profile.RulesVersion is VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && profile.LeadAbility is "ABILITY_PICKUP" or "ABILITY_LIMBER";
-        bool vermilionHeldItem = profile.RulesVersion is VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && Game.Domain.Pokemon.VermilionPickupRules.IsKnownHeldItem(profile.LeadHeldItem);
-        bool ssAnneAbility = profile.RulesVersion is SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && Game.Domain.WildBattle.SsAnneBattleScope.SupportsAbility(profile.LeadAbility);
-        bool ssAnneItem = profile.RulesVersion is SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && Game.Domain.WildBattle.SsAnneBattleScope.SupportsHeldItem(profile.LeadHeldItem);
-        bool route11Ability = profile.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && Game.Domain.WildBattle.Route11BattleScope.SupportsAbility(profile.LeadAbility);
-        bool route11Item = profile.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && Game.Domain.WildBattle.Route11BattleScope.SupportsHeldItem(profile.LeadHeldItem);
-        bool rockAbility = profile.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion && Game.Domain.WildBattle.RockTunnelBattleScope.SupportsAbility(profile.LeadAbility);
-        bool rockItem = profile.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion && (Game.Domain.WildBattle.RockTunnelBattleScope.SupportsHeldItem(profile.LeadHeldItem) || profile.LeadHeldItem == "ITEM_EVERSTONE");
+        bool vermilionAbility = profile.RulesVersion is VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && profile.LeadAbility is "ABILITY_PICKUP" or "ABILITY_LIMBER";
+        bool vermilionHeldItem = profile.RulesVersion is VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Game.Domain.Pokemon.VermilionPickupRules.IsKnownHeldItem(profile.LeadHeldItem);
+        bool ssAnneAbility = profile.RulesVersion is SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Game.Domain.WildBattle.SsAnneBattleScope.SupportsAbility(profile.LeadAbility);
+        bool ssAnneItem = profile.RulesVersion is SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Game.Domain.WildBattle.SsAnneBattleScope.SupportsHeldItem(profile.LeadHeldItem);
+        bool route11Ability = profile.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Game.Domain.WildBattle.Route11BattleScope.SupportsAbility(profile.LeadAbility);
+        bool route11Item = profile.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Game.Domain.WildBattle.Route11BattleScope.SupportsHeldItem(profile.LeadHeldItem);
+        bool rockAbility = profile.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Game.Domain.WildBattle.RockTunnelBattleScope.SupportsAbility(profile.LeadAbility);
+        bool rockItem = profile.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && (Game.Domain.WildBattle.RockTunnelBattleScope.SupportsHeldItem(profile.LeadHeldItem) || profile.LeadHeldItem == "ITEM_EVERSTONE");
         if (profile.Movement != EncounterMovementMode.Walking || profile.RepelSteps != 0 || (!ordinaryAbility && !route22Ability && !route3Ability && !mtMoonAbility && !billAbility && !vermilionAbility && !ssAnneAbility && !route11Ability && !rockAbility) ||
             (profile.LeadHeldItem != "ITEM_NONE" && !route3HeldItem && !mtMoonHeldItem && !vermilionHeldItem && !ssAnneItem && !route11Item && !rockItem) || profile.WhiteFluteActive || profile.BlackFluteActive ||
             profile.RoamerActive || profile.QuestLogPlayback || profile.Weather != "WEATHER_NONE")
@@ -285,7 +286,7 @@ public static class EarlyLandEncounterRules
 
     internal static void ValidateRulesVersion(string rulesVersion)
     {
-        if (rulesVersion is not (RulesVersion or Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion))
+        if (rulesVersion is not (RulesVersion or Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion))
             throw new NotSupportedException("Unsupported early land process version.");
     }
 
@@ -294,14 +295,14 @@ public static class EarlyLandEncounterRules
         if (candidate.Map.Value is "map.route-1" or "map.route-2" or "map.viridian-forest")
             return WildSpecies.Contains(candidate.Species);
         EarlyLandEncounterTable table;
-        if (rulesVersion is Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && candidate.Map == Route3Table.Map) table = Route3Table;
-        else if (rulesVersion is Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && candidate.Map == Route22Table.Map) table = Route22Table;
-        else if (rulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && MtMoonLandEncounterTables.All.FirstOrDefault(t => t.Map == candidate.Map) is {} mtMoonTable) table = mtMoonTable;
-        else if (rulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && BillLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} billTable) table=billTable;
-        else if (rulesVersion is VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && VermilionLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} vermilionTable) table=vermilionTable;
-        else if (rulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion && Route11LandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} route11Table) table=route11Table;
-        else if (rulesVersion == CeladonApproachRulesVersion && CeladonApproachLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} celadonTable) table=celadonTable;
-        else if (rulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion && RockTunnelLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} rockTable) table=rockTable;
+        if (rulesVersion is Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && candidate.Map == Route3Table.Map) table = Route3Table;
+        else if (rulesVersion is Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && candidate.Map == Route22Table.Map) table = Route22Table;
+        else if (rulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && MtMoonLandEncounterTables.All.FirstOrDefault(t => t.Map == candidate.Map) is {} mtMoonTable) table = mtMoonTable;
+        else if (rulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && BillLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} billTable) table=billTable;
+        else if (rulesVersion is VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && VermilionLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} vermilionTable) table=vermilionTable;
+        else if (rulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && Route11LandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} route11Table) table=route11Table;
+        else if (rulesVersion is CeladonApproachRulesVersion or CeladonGymRulesVersion && CeladonApproachLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} celadonTable) table=celadonTable;
+        else if (rulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion && RockTunnelLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} rockTable) table=rockTable;
         else return false;
         var slot = table.Slots[candidate.Slot];
         return candidate.Species == slot.Species && candidate.Level == slot.MinimumLevel;

@@ -48,6 +48,8 @@ public interface ICampaignCatalog:IStoryCatalog
     bool CeruleanEnabled=>false;
     bool CityServicesEnabled=>false;
     bool Route11Enabled=>false;
+    bool CeladonGymEnabled=>false;
+    CeladonGymTrainerCatalog? CeladonGymTrainers=>null;
     bool CeladonApproachEnabled=>false;
     CeladonApproachTrainerCatalog? CeladonApproachTrainers=>null;
     bool RockTunnelEnabled=>false;

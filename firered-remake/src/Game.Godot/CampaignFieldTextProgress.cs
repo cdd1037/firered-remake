@@ -29,6 +29,7 @@ public partial class CampaignView
         int frames=(int)Math.Min(int.MaxValue,Math.Floor(_fieldTextFrameRemainder));if(frames<=0)return;
         _fieldTextFrameRemainder-=frames;
         _fieldTextProgress.AdvanceFrames(frames,_fieldTextHeld,_fieldTextNewPress);_fieldTextNewPress=false;
+        ProcessSourceLeaderIntroAudio();
     }
     private bool FieldTextInput(InputEventKey key)
     {

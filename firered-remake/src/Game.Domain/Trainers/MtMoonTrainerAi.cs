@@ -14,8 +14,9 @@ public static class MtMoonTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-mtmoon-trainer-ai-semantic-v1";
 
-    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
+    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false)
     {
+        rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         ForestTrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
             new(code, "Input is outside the bounded MtMoon trainer AI profile."));
@@ -23,6 +24,7 @@ public static class MtMoonTrainerAi
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
         ceruleanRules |= billRules;
+        if (catalog is null || (catalog.Species.Count == 98) != celadonGymRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("mtmoon_trainer_ai_rng_algorithm");

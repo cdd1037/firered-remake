@@ -13,7 +13,7 @@ public partial class CampaignView
     private TrainerDefinition VisibleOrdinaryTrainer()
     {
         var id=_session.State.ForestTrainerBattle!.Trainer;
-        return _catalog.CeladonApproachTrainers?.Trainers.GetValueOrDefault(id)??_catalog.RockTunnelTrainers?.Trainers.GetValueOrDefault(id)??_catalog.Route11Trainers?.Trainers.GetValueOrDefault(id)??_catalog.VermilionGymTrainers?.Trainers.GetValueOrDefault(id)??_catalog.SsAnneTrainers?.Trainers.GetValueOrDefault(id)??_catalog.VermilionTrainers?.Trainers.GetValueOrDefault(id)??_catalog.BillTrainers?.Trainers.GetValueOrDefault(id)??_catalog.CeruleanTrainers?.Trainers.GetValueOrDefault(id)??_catalog.MtMoonTrainers?.Trainers.GetValueOrDefault(id)??_catalog.Route3Trainers?.Trainers.GetValueOrDefault(id)??_catalog.Route22Trainers?.Trainers.GetValueOrDefault(id)??_catalog.PewterTrainers?.Trainers.GetValueOrDefault(id)??_catalog.ForestTrainers!.Trainers[id];
+        return _catalog.CeladonGymTrainers?.Trainers.GetValueOrDefault(id)??_catalog.CeladonApproachTrainers?.Trainers.GetValueOrDefault(id)??_catalog.RockTunnelTrainers?.Trainers.GetValueOrDefault(id)??_catalog.Route11Trainers?.Trainers.GetValueOrDefault(id)??_catalog.VermilionGymTrainers?.Trainers.GetValueOrDefault(id)??_catalog.SsAnneTrainers?.Trainers.GetValueOrDefault(id)??_catalog.VermilionTrainers?.Trainers.GetValueOrDefault(id)??_catalog.BillTrainers?.Trainers.GetValueOrDefault(id)??_catalog.CeruleanTrainers?.Trainers.GetValueOrDefault(id)??_catalog.MtMoonTrainers?.Trainers.GetValueOrDefault(id)??_catalog.Route3Trainers?.Trainers.GetValueOrDefault(id)??_catalog.Route22Trainers?.Trainers.GetValueOrDefault(id)??_catalog.PewterTrainers?.Trainers.GetValueOrDefault(id)??_catalog.ForestTrainers!.Trainers[id];
     }
     private bool ForestTrainerCombatVisible => _session.State.ForestTrainerBattle is { Stage: not CampaignForestTrainerStage.Intro };
     private readonly Dictionary<string, ImageTexture> _forestTrainerPortraits = new(StringComparer.Ordinal);
@@ -32,7 +32,7 @@ public partial class CampaignView
     private void AddForestTrainerTextValues(Dictionary<string, string> values)
     {
         if (_session.State.ForestTrainerBattle is not { } trainer) return;
-        values["B_TRAINER1_CLASS"] = VisibleOrdinaryTrainer().TrainerClass switch{"TRAINER_CLASS_BIKER"=>"BIKER","TRAINER_CLASS_POKEMANIAC"=>"POKéMANIAC","TRAINER_CLASS_GAMER"=>"GAMER","TRAINER_CLASS_ENGINEER"=>"ENGINEER","TRAINER_CLASS_SAILOR"=>"SAILOR","TRAINER_CLASS_FISHERMAN"=>"FISHERMAN","TRAINER_CLASS_GENTLEMAN"=>"GENTLEMAN","TRAINER_CLASS_RIVAL_LATE"=>"RIVAL","TRAINER_CLASS_PICNICKER"=>"PICNICKER","TRAINER_CLASS_SWIMMER_M"=>"SWIMMER","TRAINER_CLASS_RIVAL_EARLY"=>"RIVAL","TRAINER_CLASS_LEADER"=>"LEADER","TRAINER_CLASS_CAMPER"=>"CAMPER","TRAINER_CLASS_YOUNGSTER"=>"YOUNGSTER","TRAINER_CLASS_LASS"=>"LASS","TRAINER_CLASS_SUPER_NERD"=>"SUPER NERD","TRAINER_CLASS_HIKER"=>"HIKER","TRAINER_CLASS_TEAM_ROCKET"=>"TEAM ROCKET",_=>"BUG CATCHER"};
+        values["B_TRAINER1_CLASS"] = VisibleOrdinaryTrainer().TrainerClass switch{"TRAINER_CLASS_BEAUTY"=>"BEAUTY","TRAINER_CLASS_COOLTRAINER"=>"COOLTRAINER","TRAINER_CLASS_BIKER"=>"BIKER","TRAINER_CLASS_POKEMANIAC"=>"POKéMANIAC","TRAINER_CLASS_GAMER"=>"GAMER","TRAINER_CLASS_ENGINEER"=>"ENGINEER","TRAINER_CLASS_SAILOR"=>"SAILOR","TRAINER_CLASS_FISHERMAN"=>"FISHERMAN","TRAINER_CLASS_GENTLEMAN"=>"GENTLEMAN","TRAINER_CLASS_RIVAL_LATE"=>"RIVAL","TRAINER_CLASS_PICNICKER"=>"PICNICKER","TRAINER_CLASS_SWIMMER_M"=>"SWIMMER","TRAINER_CLASS_RIVAL_EARLY"=>"RIVAL","TRAINER_CLASS_LEADER"=>"LEADER","TRAINER_CLASS_CAMPER"=>"CAMPER","TRAINER_CLASS_YOUNGSTER"=>"YOUNGSTER","TRAINER_CLASS_LASS"=>"LASS","TRAINER_CLASS_SUPER_NERD"=>"SUPER NERD","TRAINER_CLASS_HIKER"=>"HIKER","TRAINER_CLASS_TEAM_ROCKET"=>"TEAM ROCKET",_=>"BUG CATCHER"};
         values["B_TRAINER1_NAME"] = VisibleOrdinaryTrainer().TrainerClass is "TRAINER_CLASS_RIVAL_EARLY" or "TRAINER_CLASS_RIVAL_LATE"?_session.State.RivalName:VisibleOrdinaryTrainer().SourceTrainerName;
     }
     private bool TryForestTrainerIntroInput(InputEventKey key)
@@ -59,7 +59,7 @@ public partial class CampaignView
         if(item is CeruleanTrainerItemUsedEvent medicine)
         {
             string medicineName=medicine.Item switch
-            {"ITEM_SUPER_POTION"=>"SUPER POTION","ITEM_FULL_HEAL"=>"FULL HEAL",_=>throw new InvalidDataException("Unsupported visible trainer medicine: "+medicine.Item)};
+            {"ITEM_SUPER_POTION"=>"SUPER POTION","ITEM_HYPER_POTION" when _catalog.CeladonGymEnabled=>"HYPER POTION","ITEM_FULL_HEAL"=>"FULL HEAL",_=>throw new InvalidDataException("Unsupported visible trainer medicine: "+medicine.Item)};
             source("sText_Trainer1UsedItem",[("B_LAST_ITEM",medicineName)]);return true;
         }
         if (item is not ForestTrainerOpponentReplacedEvent replacement)
@@ -104,10 +104,12 @@ public partial class CampaignView
         return false;
     }
     // These exact source text controls are presentation cues, not printable words.
-    // Original font changes, music playback and multi-frame pauses have a separate fidelity gate.
+    // Match only admitted controls (Erika uses the combined PLAY_BGM spelling).
+    // Keep unknown controls visible for diagnosis; never erase arbitrary brace content.
+    // Audio reads the untouched source pages separately; cleaning does not fire cues.
     private static string PewterDisplayText(string text)
     {
-        foreach(var token in new[]{"{FONT_NORMAL}","{FONT_MALE}","{PLAY_BGM}","{MUS_ENCOUNTER_GYM_LEADER}","{PAUSE_MUSIC}","{MUS_OBTAIN_BADGE}","{PAUSE 0xFE}","{PAUSE 0x56}","{RESUME_MUSIC}"})
+        foreach(var token in new[]{"{FONT_NORMAL}","{FONT_MALE}","{PLAY_BGM MUS_ENCOUNTER_GYM_LEADER}","{PLAY_BGM}","{MUS_ENCOUNTER_GYM_LEADER}","{PAUSE_MUSIC}","{MUS_OBTAIN_BADGE}","{PAUSE 0xFE}","{PAUSE 0x56}","{RESUME_MUSIC}"})
             text=text.Replace(token,"",StringComparison.Ordinal);
         return text;
     }
@@ -193,5 +195,5 @@ public partial class CampaignView
     private bool Route22RivalVisible => _session.State.ForestTrainerBattle is {} trainer && _catalog.Route22Trainers?.Trainers.ContainsKey(trainer.Trainer)==true;
     private int Route22RivalVictoryPageCount => Route22RivalVisible ? _catalog.TextPages(_catalog.Route22Trainers!.Battles[_session.State.ForestTrainerBattle!.Trainer].VictoryText).Length : 0;
     private string VisibleTrainerPortraitId => VisibleOrdinaryTrainer().TrainerClass switch
-    {"TRAINER_CLASS_BIKER"=>"biker-front","TRAINER_CLASS_POKEMANIAC"=>"pokemaniac-front","TRAINER_CLASS_GAMER"=>"gamer-front","TRAINER_CLASS_ENGINEER"=>"engineer-front","TRAINER_CLASS_SAILOR"=>"sailor-front","TRAINER_CLASS_FISHERMAN"=>"fisherman-front","TRAINER_CLASS_GENTLEMAN"=>"gentleman-front","TRAINER_CLASS_RIVAL_LATE"=>"rival-late-front","TRAINER_CLASS_RIVAL_EARLY"=>"rival-early-front","TRAINER_CLASS_PICNICKER"=>"picnicker-front","TRAINER_CLASS_SWIMMER_M"=>"swimmer-m-front","TRAINER_CLASS_LEADER"=>VisibleOrdinaryTrainer().Id==VermilionGymTrainerPartyFactory.LtSurge?"lt-surge-front":VisibleOrdinaryTrainer().Id==CeruleanTrainerPartyFactory.Misty?"misty-front":"brock-front","TRAINER_CLASS_YOUNGSTER"=>"youngster-front","TRAINER_CLASS_LASS"=>"lass-front","TRAINER_CLASS_CAMPER"=>"camper-front","TRAINER_CLASS_SUPER_NERD"=>"super-nerd-front","TRAINER_CLASS_HIKER"=>"hiker-front","TRAINER_CLASS_TEAM_ROCKET"=>"rocket-m-front",_=>"bug-catcher-front"};
+    {"TRAINER_CLASS_BEAUTY"=>"beauty-front","TRAINER_CLASS_COOLTRAINER"=>"cooltrainer-f-front","TRAINER_CLASS_BIKER"=>"biker-front","TRAINER_CLASS_POKEMANIAC"=>"pokemaniac-front","TRAINER_CLASS_GAMER"=>"gamer-front","TRAINER_CLASS_ENGINEER"=>"engineer-front","TRAINER_CLASS_SAILOR"=>"sailor-front","TRAINER_CLASS_FISHERMAN"=>"fisherman-front","TRAINER_CLASS_GENTLEMAN"=>"gentleman-front","TRAINER_CLASS_RIVAL_LATE"=>"rival-late-front","TRAINER_CLASS_RIVAL_EARLY"=>"rival-early-front","TRAINER_CLASS_PICNICKER"=>"picnicker-front","TRAINER_CLASS_SWIMMER_M"=>"swimmer-m-front","TRAINER_CLASS_LEADER"=>VisibleOrdinaryTrainer().Id.Value=="pret:TRAINER_LEADER_ERIKA"?"erika-front":VisibleOrdinaryTrainer().Id==VermilionGymTrainerPartyFactory.LtSurge?"lt-surge-front":VisibleOrdinaryTrainer().Id==CeruleanTrainerPartyFactory.Misty?"misty-front":"brock-front","TRAINER_CLASS_YOUNGSTER"=>"youngster-front","TRAINER_CLASS_LASS"=>"lass-front","TRAINER_CLASS_CAMPER"=>"camper-front","TRAINER_CLASS_SUPER_NERD"=>"super-nerd-front","TRAINER_CLASS_HIKER"=>"hiker-front","TRAINER_CLASS_TEAM_ROCKET"=>"rocket-m-front",_=>"bug-catcher-front"};
 }

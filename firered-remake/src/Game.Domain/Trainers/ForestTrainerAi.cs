@@ -14,8 +14,9 @@ public static class ForestTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-forest-trainer-ai-semantic-v1";
 
-    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool pewterRules = false, bool earlyStarterRules = false, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
+    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool pewterRules = false, bool earlyStarterRules = false, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false)
     {
+        rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         ForestTrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
             new(code, "Input is outside the supported forest trainer AI profile."));
@@ -27,6 +28,7 @@ public static class ForestTrainerAi
         route3Rules |= mtMoonRules;
         route22Rules |= route3Rules;
         earlyStarterRules |= route22Rules;
+        if (catalog is null || (catalog.Species.Count == 98) != celadonGymRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, pewterRules || earlyStarterRules, earlyStarterRules, route22Rules, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("forest_trainer_ai_rng_algorithm");
@@ -147,7 +149,7 @@ public static class ForestTrainerAi
             if (mon.AttackStage is < 0 or > 12 || mon.DefenseStage is < 0 or > 12 || mon.SpeedStage is < 0 or > 12 ||
                 mon.AccuracyStage is < 0 or > 12 || mon.EvasionStage is < 0 or > 12)
                 return "forest_trainer_ai_stat_stage";
-            if (!(rockTunnelRules ? CeladonApproachBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route11Rules ? Route11BattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ceruleanRules ? CeruleanTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : mtMoonRules ? MtMoonTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route3Rules ? Route3TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route22Rules ? Route22TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : pewterRules ? PewterTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon.Pokemon.Species]))) return "forest_trainer_ai_species_type_ability";
+            if (!(rockTunnelRules ? CeladonGymBattleScope.ValidSharedSpecies(catalog!.Species[mon.Pokemon.Species]) : route11Rules ? Route11BattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ceruleanRules ? CeruleanTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : mtMoonRules ? MtMoonTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route3Rules ? Route3TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : route22Rules ? Route22TrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : pewterRules ? PewterTrainerAi.ValidSpecies(catalog!.Species[mon.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon.Pokemon.Species]))) return "forest_trainer_ai_species_type_ability";
         }
         if (route22Rules && (Route22TrainerAi.ValidateCombatant(catalog, input.User, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) is not null || Route22TrainerAi.ValidateCombatant(catalog, input.Target, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) is not null)) return "forest_trainer_ai_route22_combatant";
         if (input.User.Pokemon.SourceSpeciesId is not (10 or 11 or 13 or 14)) return "forest_trainer_ai_user_species";

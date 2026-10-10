@@ -65,15 +65,16 @@ public sealed class PretRuntimeMapCatalog
         bool vermilion = expectedManifestSha256 == PretVermilionRegion.RuntimeManifestSha256;
         bool ssAnne = expectedManifestSha256 == PretSsAnneRuntimeMaps.ManifestSha256;
         bool vermilionGym = expectedManifestSha256 == PretVermilionGymRuntimeMaps.ManifestSha256;
+        bool celadonGym = expectedManifestSha256 == PretCeladonGymRuntimeMaps.ManifestSha256;
         bool celadonApproach = expectedManifestSha256 == PretCeladonApproachRuntimeMaps.ManifestSha256;
         bool rockTunnel = expectedManifestSha256 == PretRockTunnelRuntimeMaps.ManifestSha256;
         bool route11 = expectedManifestSha256 == PretRoute11RegionRuntimeMaps.ManifestSha256;
         bool cityServices = expectedManifestSha256 == PretCityServicesRuntimeMaps.ManifestSha256;
         bool bill = expectedManifestSha256 == BillManifestSha256;
         PretRuntimeMapValidation.Require(manifest.SchemaVersion == 1 && manifest.ConverterVersion == ConverterVersion &&
-            manifest.ConverterSha256 == (celadonApproach ? PretCeladonApproachRuntimeMaps.ConverterSha256 : rockTunnel ? PretRockTunnelRuntimeMaps.ConverterSha256 : route11 ? PretRoute11RegionRuntimeMaps.ConverterSha256 : cityServices ? PretCityServicesRuntimeMaps.ConverterSha256 : vermilionGym ? PretVermilionGymRuntimeMaps.ConverterSha256 : ssAnne ? PretSsAnneRuntimeMaps.ConverterSha256 : vermilion ? PretVermilionRegion.RuntimeConverterSha256 : bill ? BillConverterSha256 : cerulean ? CeruleanConverterSha256 : mtMoon ? MtMoonConverterSha256 : route3 ? Route3ConverterSha256 : PinnedConverterSha256) && manifest.SourceCommit == PretWorldMap.SourceCommit,
+            manifest.ConverterSha256 == (celadonGym ? PretCeladonGymRuntimeMaps.ConverterSha256 : celadonApproach ? PretCeladonApproachRuntimeMaps.ConverterSha256 : rockTunnel ? PretRockTunnelRuntimeMaps.ConverterSha256 : route11 ? PretRoute11RegionRuntimeMaps.ConverterSha256 : cityServices ? PretCityServicesRuntimeMaps.ConverterSha256 : vermilionGym ? PretVermilionGymRuntimeMaps.ConverterSha256 : ssAnne ? PretSsAnneRuntimeMaps.ConverterSha256 : vermilion ? PretVermilionRegion.RuntimeConverterSha256 : bill ? BillConverterSha256 : cerulean ? CeruleanConverterSha256 : mtMoon ? MtMoonConverterSha256 : route3 ? Route3ConverterSha256 : PinnedConverterSha256) && manifest.SourceCommit == PretWorldMap.SourceCommit,
             "Runtime map manifest version/converter/source differs.");
-        PretRuntimeMapValidation.Require(!manifest.Maps.IsDefault && manifest.Maps.Length == (celadonApproach ? 113 : rockTunnel ? 98 : route11 ? 91 : cityServices ? 83 : vermilionGym ? 81 : ssAnne ? 80 : vermilion ? 54 : bill ? 44 : cerulean ? 41 : mtMoon ? 30 : route3 ? 27 : 24),
+        PretRuntimeMapValidation.Require(!manifest.Maps.IsDefault && manifest.Maps.Length == (celadonGym ? 114 : celadonApproach ? 113 : rockTunnel ? 98 : route11 ? 91 : cityServices ? 83 : vermilionGym ? 81 : ssAnne ? 80 : vermilion ? 54 : bill ? 44 : cerulean ? 41 : mtMoon ? 30 : route3 ? 27 : 24),
             "Runtime map collection is incomplete.");
         if (ssAnne) PretSsAnneRuntimeMaps.ValidatePackage(directory, manifest.Maps);
         if (vermilionGym) PretVermilionGymRuntimeMaps.ValidatePackage(directory, manifest.Maps);
@@ -81,6 +82,7 @@ public sealed class PretRuntimeMapCatalog
         if (route11) PretRoute11RegionRuntimeMaps.ValidatePackage(directory, manifest.Maps);
         if (rockTunnel) PretRockTunnelRuntimeMaps.ValidatePackage(directory, manifest.Maps);
         if (celadonApproach) PretCeladonApproachRuntimeMaps.ValidatePackage(directory, manifest.Maps);
+        if (celadonGym) PretCeladonGymRuntimeMaps.ValidatePackage(directory, manifest.Maps);
         var baseMetadata = LoadBaseMetadata(directory, manifest.SourceRegistry);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretRuntimeMapData>();
         var paths = new HashSet<string>(StringComparer.Ordinal);
@@ -206,6 +208,7 @@ public sealed class PretRuntimeMapData : IFieldMap
             PretRoute11Region.FullSourceHash => PretRoute11Region.MapIdFromSourceSymbol,
             PretRockTunnelRegion.FullSourceHash => PretRockTunnelRegion.MapIdFromSourceSymbol,
             PretCeladonApproachRegion.FullSourceHash => PretCeladonApproachRegion.MapIdFromSourceSymbol,
+            PretCeladonGymRegion.FullSourceHash => PretCeladonGymRegion.MapIdFromSourceSymbol,
             _ => throw new InvalidDataException("Unknown runtime map source profile.")
         };
     }

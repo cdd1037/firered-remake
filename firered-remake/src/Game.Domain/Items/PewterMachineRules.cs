@@ -47,6 +47,7 @@ public static class PewterMachineRules
     public static void ValidateCatalog(PewterMachineCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.Profile == CeladonGymMachineRules.Profile) { CeladonGymMachineRules.ValidateCatalog(catalog); return; }
         if (catalog.Profile == CeladonApproachMachineRules.Profile) { CeladonApproachMachineRules.ValidateCatalog(catalog); return; }
         if (catalog.Profile == RockTunnelMachineRules.Profile) { RockTunnelMachineRules.ValidateCatalog(catalog); return; }
         if (catalog.Profile == Route11Profile) { Route11MachineRules.ValidateCatalog(catalog); return; }
@@ -271,7 +272,7 @@ public static class PewterMachineRules
         if (definition is null) return Fail("inventory_machine_unsupported");
         error = PokemonStateValidator.Validate(pokemonCatalog, pokemon.Pokemon);
         if (error is not null) return Fail(error);
-        if (pokemonCatalog.Species.Count != (catalog.Profile == CeladonApproachMachineRules.Profile ? 94 : catalog.Profile == RockTunnelMachineRules.Profile ? 93 : catalog.Profile == Route11Profile ? 79 : catalog.Profile is SsAnneProfile or VermilionGymProfile ? 73 : catalog.Profile == VermilionProfile ? 70 : catalog.Profile == BillProfile ? 68 : catalog.Profile == CeruleanProfile ? 65 : catalog.Profile == MtMoonProfile ? 56 : catalog.Profile == Route3Profile ? 40 : catalog.Profile == Route22Profile ? 32 : 29) || !pokemonCatalog.Moves.TryGetValue(definition.Move, out var move) ||
+        if (pokemonCatalog.Species.Count != (catalog.Profile == CeladonGymMachineRules.Profile ? 98 : catalog.Profile == CeladonApproachMachineRules.Profile ? 94 : catalog.Profile == RockTunnelMachineRules.Profile ? 93 : catalog.Profile == Route11Profile ? 79 : catalog.Profile is SsAnneProfile or VermilionGymProfile ? 73 : catalog.Profile == VermilionProfile ? 70 : catalog.Profile == BillProfile ? 68 : catalog.Profile == CeruleanProfile ? 65 : catalog.Profile == MtMoonProfile ? 56 : catalog.Profile == Route3Profile ? 40 : catalog.Profile == Route22Profile ? 32 : 29) || !pokemonCatalog.Moves.TryGetValue(definition.Move, out var move) ||
             move.SourceMoveId != definition.SourceMoveId || move.Pp != definition.MovePp)
             return Fail("machine_pokemon_catalog");
         if (string.IsNullOrEmpty(currentMapSection) || !currentMapSection.StartsWith("MAPSEC_", StringComparison.Ordinal))

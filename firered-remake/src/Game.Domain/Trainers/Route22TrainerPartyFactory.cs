@@ -32,8 +32,10 @@ public static class Route22TrainerPartyFactory
     };
 
     public static TrainerPartyCreationResult Create(Route22TrainerCatalog trainers, PokemonCatalog pokemon,
-        TrainerId trainerId, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
+        TrainerId trainerId, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false)
     {
+        if ((pokemon.Species.Count == 98) != celadonGymRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers);

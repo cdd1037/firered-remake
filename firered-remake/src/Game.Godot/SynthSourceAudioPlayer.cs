@@ -41,8 +41,9 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false)
     {
+        if(includeCeladonGym&&!includeCeladonApproach)throw new ArgumentException("Celadon Gym audio requires Celadon approach.");
         if(includeCeladonApproach&&!includeRockTunnel)throw new ArgumentException("Celadon approach audio requires RockTunnel.");
         if(includeRockTunnel&&!includeRoute11)throw new ArgumentException("RockTunnel audio requires Route11.");
         string directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/synth-audio");
@@ -98,6 +99,16 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=CeladonApproachSynthManifestIdentity.Sha256)throw new InvalidDataException("CeladonApproach synth manifest identity differs.");
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing CeladonApproach synth manifest.");
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=CeladonApproachSynthManifestIdentity.SourceCommit||extension.Cues.Length!=CeladonApproachSynthManifestIdentity.CueCount)throw new InvalidDataException("CeladonApproach synth manifest contract differs.");
+            cues=[..cues,..extension.Cues];
+        }
+        if(includeCeladonGym)
+        {
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/celadon-gym-synth-audio/manifest.json");
+            if(new FileInfo(path).Length!=CeladonGymSynthManifestIdentity.Bytes)throw new InvalidDataException("CeladonGym synth manifest length differs.");
+            byte[] extensionBytes=File.ReadAllBytes(path);
+            if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=CeladonGymSynthManifestIdentity.Sha256)throw new InvalidDataException("CeladonGym synth manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing CeladonGym synth manifest.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=CeladonGymSynthManifestIdentity.SourceCommit||extension.Cues.Length!=CeladonGymSynthManifestIdentity.CueCount)throw new InvalidDataException("CeladonGym synth manifest contract differs.");
             cues=[..cues,..extension.Cues];
         }
         _catalog = new(StringComparer.Ordinal);

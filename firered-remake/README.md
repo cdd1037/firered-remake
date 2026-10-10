@@ -4,28 +4,30 @@ Goal: a complete, local single-player recreation of the English original-revisio
 
 ## Current recovered state — 2026-10-10
 
-The playable continuation reaches **Lavender, Route8, the east–west underground
-passage, Route7 and Celadon City's Pokémon Center**, after the third badge and
-Rock Tunnel. Run `bash scripts/launch-current.sh` (`launch-celadon-approach.sh`);
-saves are isolated in `.play/celadon-approach`. Exact Rock Tunnel saves use the
-explicit `save upgrade-celadon-approach INPUT NEW_OUTPUT` tooling command.
-Earlier profile launchers and their explicit upgrades remain available.
+The current continuation reaches **Celadon Gym and Erika's Rainbow Badge**, after
+Lavender, Route8 singles, the east–west underground passage and Celadon center.
+Run `bash scripts/launch-current.sh` (`launch-celadon-gym.sh`); saves are isolated in
+`.play/celadon-gym`. Exact Celadon approach saves use the explicit
+`save upgrade-celadon-gym INPUT NEW_OUTPUT` command. Earlier profile launchers and
+migrations remain available.
 
-Fresh verification completes892 natural public commands/3051 checks, all11
-supported Route8 single trainers and30 opponents, source pickups, natural starter
-evolution, city treatment and save recovery. New Great Ball capture/PC identity,
-Super Repel200 steps, Rawst and Ice Heal are usable. The113-map/94-species profile
-has271 source-synthesis cues. Godot217 checks and two real window processes verify
-Celadon rendering, BGM transition, saving and normal Continue with identical state
-and bytes. See [current checks and boundaries](docs/celadon-approach-recovery-20261010.md).
-Physical audio and a fresh GBA same-scene comparison are not claimed here.
+Fresh application checks use an unchanged, command-earned Celadon nurse save:
+334 accepted commands through Cut and all seven ordinary Gym trainers, followed
+by a corrected 217-command checkpoint continuation through Erika's three original
+opponents, fourth badge, TM19 teaching, repeat reward refusal, return Cut and nurse,
+and strict save/restore. The explicit prefix/suffix evidence is retained. The new
+profile has114maps/98species/223move records/46items/15machines and279 source-synthesis
+cues. Giga Drain and Ingrain, original trainer medicines and TM19 are usable.
+See [current scope and verification](docs/celadon-gym.md) and
+[presentation verification](docs/celadon-gym-presentation.md).
 
-The real Route8 Twins still require double-battle implementation; interaction is
-explicitly unavailable and is never converted to a single battle. Celadon Gym,
-city interiors and Rocket hideout are next. This remains an active complete-FireRed
-project. Earlier sections retain their original milestone scope. The asset-complete
-private third-stage Drive recovery point is7401a009; subsequent source-only GitHub
-sync is a separate record. Post-reset increments are freshly verified.
+Route8's genuine preset double battle, remaining Celadon city services and Rocket
+Hideout are still pending. No conversion to two single battles is made. Actual Erika victory/save and corrected
+intro/ordinary Continue are verified; physical listening and a fresh GBA Gym
+comparison remain separate, unverified entries.
+Earlier sections retain their original milestone scope. The asset-complete private
+third-stage Drive recovery point is7401a009; source-only GitHub synchronization has
+a separate record. This is an active complete-FireRed project, not a finished game.
 
 ## Earlier first-badge checkpoint
 
