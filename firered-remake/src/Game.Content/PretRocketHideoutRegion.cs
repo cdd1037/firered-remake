@@ -112,7 +112,9 @@ public sealed class PretRocketHideoutRegion
         var value = warp.GetProperty("dest_warp_id").GetString(); var destination = warp.GetProperty("dest_map").GetString();
         if (value == "WARP_ID_DYNAMIC" || destination == "MAP_DYNAMIC")
         {
-            Need(sourceHash == FullSourceHash && sourceMap == "MAP_ROCKET_HIDEOUT_ELEVATOR" && value == "WARP_ID_DYNAMIC" && destination == "MAP_DYNAMIC",
+            Need((sourceHash == FullSourceHash && sourceMap == "MAP_ROCKET_HIDEOUT_ELEVATOR" ||
+                  sourceHash == PretRegionalServiceMaps.FullSourceHash && sourceMap == "MAP_CELADON_CITY_DEPARTMENT_STORE_ELEVATOR") &&
+                 value == "WARP_ID_DYNAMIC" && destination == "MAP_DYNAMIC",
                 "Dynamic warp is outside the authenticated elevator contract.");
             return DynamicWarpId;
         }

@@ -77,7 +77,7 @@ public partial class CampaignView
             if (_session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
                 _session.State.ItemMenu is not null || _session.State.Pc is not null ||
                 ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
-                _session.State.Battle is not null || FieldDialogueVisible || RocketElevatorMenuActive || BillPcMenuActive || BillPcPictureActive ||
+                _session.State.Battle is not null || FieldDialogueVisible || NameRaterChoosing || DepartmentElevatorMenuActive || RocketElevatorMenuActive || BillPcMenuActive || BillPcPictureActive ||
                 _session.State.Repel?.Phase == CampaignRepelPhase.WoreOff)
             { MouseKey(Key.Backspace); QueueRedraw(); GetViewport().SetInputAsHandled(); }
             else if (CanOpenFieldMenu)
@@ -85,7 +85,7 @@ public partial class CampaignView
             return true;
         }
 
-        bool acted = _session.State.RareCandy is not null ? MouseRareCandy(point)
+        bool acted = NameRaterChoosing ? MouseNameRater(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
             : TownMapActive ? MouseTownMap(point)
             : FieldMenuOpen ? MouseFieldMenu(point)
             : _session.State.Shop is not null ? MouseShop(point)
@@ -134,6 +134,8 @@ public partial class CampaignView
     }
     private bool NavigateMenuPointer(Vector2 point, int direction)
     {
+        if(NameRaterChoosing)return NavigateNameRaterPointer(point,direction);
+        if(DepartmentElevatorMenuActive)return NavigateDepartmentPointer(point,direction);
         // Preserve exactly the same top-level owner as the click/drawing routes.
         if (_session.State.RareCandy is {} candy)
             return _candyNotice is null && candy.Stage == CampaignRareCandyStage.LearnMove && PointerRows(point, direction, ref _candyMoveCursor,

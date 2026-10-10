@@ -80,6 +80,7 @@ public sealed partial class CampaignSession
         var before=state.World.Player;var movementMaps=RocketMovementMaps(state);var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
         bool turn=command.Kind=="turn";
         if(!turn&&_content.SnorlaxEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
+        if(TryDepartmentDynamicExit(state,command) is {} departmentExit)return departmentExit;
         if(TryRocketDynamicExit(state,command) is {} dynamicExit)return dynamicExit;
         if(!turn&&command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&RegionalWalkIntoSign(state,x,y) is {} regionalSign)
             return new(CommandStatus.Accepted,regionalSign);
@@ -117,6 +118,7 @@ public sealed partial class CampaignSession
         if(_content.SnorlaxEnabled&&!_content.IsSnorlaxStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"snorlax_region_boundary_not_open");
         if(changed)
         {
+            moved=RecordDepartmentElevatorEntrance(state,moved);
             moved=RecordRocketElevatorEntrance(state,moved);
             moved=moved with{Exploration=ResetEncounterModifiers(moved.Exploration!)};
             moved=Pump(EnterMap(moved,moved.World.Player.Facing));

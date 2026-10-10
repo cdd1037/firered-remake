@@ -53,6 +53,7 @@ public sealed class PretRegionalServiceMaps
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
+        "MAP_DYNAMIC" => new("map.dynamic"),
         "MAP_CELADON_CITY_CONDOMINIUMS_1F" => new("map.celadon-city-condominiums-1f"),
         "MAP_CELADON_CITY_CONDOMINIUMS_2F" => new("map.celadon-city-condominiums-2f"),
         "MAP_CELADON_CITY_CONDOMINIUMS_3F" => new("map.celadon-city-condominiums-3f"),

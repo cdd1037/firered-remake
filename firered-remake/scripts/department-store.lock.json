@@ -1,0 +1,224 @@
+{
+  "files": [
+    {
+      "byteLength": 55643,
+      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
+      "path": "data/event_scripts.s",
+      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27"
+    },
+    {
+      "byteLength": 10506,
+      "gitBlobSha1": "99d4c3303ff38c057e7d9f2c609031cdbecd63bc",
+      "path": "data/maps/CeladonCity/map.json",
+      "sha256": "5d1891d99fdb71875373dbfaec5f3fce8840acb7e8c93beab93bd6baed0fe71c"
+    },
+    {
+      "byteLength": 2522,
+      "gitBlobSha1": "85e4641bfb32d4a69d727a78403856bb38563f18",
+      "path": "data/maps/CeladonCity_DepartmentStore_1F/map.json",
+      "sha256": "a33c9b04794edf811dd87d03e1d2dc4cab57b50ca20280a516d6ebbfc634a7e5"
+    },
+    {
+      "byteLength": 462,
+      "gitBlobSha1": "9ea3423337f02e0e38d7160cc21b86303f670420",
+      "path": "data/maps/CeladonCity_DepartmentStore_1F/scripts.inc",
+      "sha256": "9cf66e2afc80cfc6bf5b2586d40a2026c7fd38a7cffe4d5c6f2c691c7e07ed1f"
+    },
+    {
+      "byteLength": 576,
+      "gitBlobSha1": "09be234a4787077efe665dca60964881d9a70156",
+      "path": "data/maps/CeladonCity_DepartmentStore_1F/text.inc",
+      "sha256": "852b4ba321c9a08306e55cf94353fca52e6a6166f2254aafa61c2e699287ac5c"
+    },
+    {
+      "byteLength": 2971,
+      "gitBlobSha1": "f97e35bfd9f193e375588afdd4bdc61b5052615a",
+      "path": "data/maps/CeladonCity_DepartmentStore_2F/map.json",
+      "sha256": "33421c798ec6111737e6793d9f9a04f21222793e1d0c99eecc22db027a158d22"
+    },
+    {
+      "byteLength": 1430,
+      "gitBlobSha1": "c15e291c1e57e0b485df60a06a417d5616154998",
+      "path": "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc",
+      "sha256": "3c3838130444cd6c1bbae4b21cdf7869d5d0fa585c8a5ded6343ba98b3fbf17e"
+    },
+    {
+      "byteLength": 721,
+      "gitBlobSha1": "7cfb9f9df7ec4497468da9051e9228376c641829",
+      "path": "data/maps/CeladonCity_DepartmentStore_2F/text.inc",
+      "sha256": "499a6fdf199aa6d71e873253b6f00e127f49e97dd9c8da2a244c8346c67bd1a1"
+    },
+    {
+      "byteLength": 5478,
+      "gitBlobSha1": "4fa3b75b3c981f7db0c7fe0a7b73596956e47dd0",
+      "path": "data/maps/CeladonCity_DepartmentStore_3F/map.json",
+      "sha256": "534c4e5aa680b19e935485c6fbe6cb9844ba7a8ef1ee6063e08999694c12e142"
+    },
+    {
+      "byteLength": 1603,
+      "gitBlobSha1": "d85eb3fead201d24de02f7b48da726a30f9de2ab",
+      "path": "data/maps/CeladonCity_DepartmentStore_3F/scripts.inc",
+      "sha256": "407e1a80ea7704d91e6686e916f47859def24d052b059500bd0b4b0ab196e7f1"
+    },
+    {
+      "byteLength": 2260,
+      "gitBlobSha1": "1ae4b60a3d169b9733a661914a67e15c90610558",
+      "path": "data/maps/CeladonCity_DepartmentStore_3F/text.inc",
+      "sha256": "c7e325626fd151c4d7ef3a00de63230d9f147881c2d4eeac7741cc3bee162bd1"
+    },
+    {
+      "byteLength": 2508,
+      "gitBlobSha1": "deedb24858476022a4e223f44bbc7f49cbf01810",
+      "path": "data/maps/CeladonCity_DepartmentStore_4F/map.json",
+      "sha256": "329fa1f7f6a2f46f5c3c5f3120aa8cce70ef5ed7a194825e397a6b152491616d"
+    },
+    {
+      "byteLength": 926,
+      "gitBlobSha1": "98069ca2eb7a56913729aa0efef124df82d28360",
+      "path": "data/maps/CeladonCity_DepartmentStore_4F/scripts.inc",
+      "sha256": "5b7518184e31879a034d326a9cf954fb8e081ec975895d3f441dd98de076c81a"
+    },
+    {
+      "byteLength": 721,
+      "gitBlobSha1": "5b50614290c2b4723403daa1eabdff60474def68",
+      "path": "data/maps/CeladonCity_DepartmentStore_4F/text.inc",
+      "sha256": "e6912476f37c72ee9001975438fa3ed416395823e593820e15358b2eb1b7dd94"
+    },
+    {
+      "byteLength": 2956,
+      "gitBlobSha1": "27de2a5964d469bbcac6fb4f05580e6189a336a5",
+      "path": "data/maps/CeladonCity_DepartmentStore_5F/map.json",
+      "sha256": "e88c4f21043cc5e822c412fcbb232966065ff822285d88697bfed174c99d7469"
+    },
+    {
+      "byteLength": 1395,
+      "gitBlobSha1": "8625e22444196952ba6866660d10bf4f18e6660b",
+      "path": "data/maps/CeladonCity_DepartmentStore_5F/scripts.inc",
+      "sha256": "9bb56cfe4611f84ef9f35d8eadb145deb390434660dbaf83e78778f647207e39"
+    },
+    {
+      "byteLength": 803,
+      "gitBlobSha1": "9ee8cb2b374e94e16a478681df66b8aa40016184",
+      "path": "data/maps/CeladonCity_DepartmentStore_5F/text.inc",
+      "sha256": "3efde01e9a656ce9faf02ef36b1a6a3554227a71f5da9fff3d97d999256236fc"
+    },
+    {
+      "byteLength": 1331,
+      "gitBlobSha1": "7805bb3f1719a1280854905190cb52707efd90ba",
+      "path": "data/maps/CeladonCity_DepartmentStore_Elevator/map.json",
+      "sha256": "7f011df4c362c0c181325ce7ec6d40252a24879c6b18e28e31c649805256312d"
+    },
+    {
+      "byteLength": 4821,
+      "gitBlobSha1": "80b1d2c6d0fde19f7ae97848d602f3826e44735b",
+      "path": "data/maps/CeladonCity_DepartmentStore_Elevator/scripts.inc",
+      "sha256": "b385c9a3ea17406633bb03d3bad860adfd9762e97445772a45eb2af9c850cc6a"
+    },
+    {
+      "byteLength": 2496,
+      "gitBlobSha1": "7d8881bce6258d6e689c1449819c7e0bd9b4cfeb",
+      "path": "data/maps/CeladonCity_DepartmentStore_Roof/map.json",
+      "sha256": "5b46ec4e0a690a24786420ec8849b724b9ad18406ec32979532106bd50e0c27d"
+    },
+    {
+      "byteLength": 11209,
+      "gitBlobSha1": "364d83c43e2ec4fe0a10b1a49f26d1dcf289e970",
+      "path": "data/maps/CeladonCity_DepartmentStore_Roof/scripts.inc",
+      "sha256": "9b789b64abc864565c382faef027f3c94e1cc6158aee37870e6abd8f5a8ace42"
+    },
+    {
+      "byteLength": 2731,
+      "gitBlobSha1": "9cde20d36b8f7198f428b65ad84a05262fd242d1",
+      "path": "data/maps/CeladonCity_DepartmentStore_Roof/text.inc",
+      "sha256": "d709f1d1c0a50ba499f4d88f8dfd0382a0e063a5653d2cf2db4337a66bb24f60"
+    },
+    {
+      "byteLength": 839,
+      "gitBlobSha1": "1e1d4ac35e4618f3b3ddacd023e0b8c0be52f0e3",
+      "path": "data/text/poke_mart.inc",
+      "sha256": "a1b8588b2078d15aa82893be92a408a682106ecff3a9db6c36008618497d169e"
+    },
+    {
+      "byteLength": 95397,
+      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
+      "path": "include/constants/flags.h",
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "byteLength": 12436,
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "path": "include/constants/items.h",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "byteLength": 1114,
+      "gitBlobSha1": "fe2b7fd14fe6d26fd86c0e50c2bbbc7997d0a4af",
+      "path": "include/constants/maps.h",
+      "sha256": "fd72a95bb4bd8c589630826d745814beaafe7a8518ffa3fb7927bf16d670a7dd"
+    },
+    {
+      "byteLength": 6143,
+      "gitBlobSha1": "7c36f3605918ee455321cade37d7c60877a36dde",
+      "path": "include/constants/menu.h",
+      "sha256": "e741f81083d034b90d30ec4ea1fc1380b5304510d87d4e2ea6d0384732166ca4"
+    },
+    {
+      "byteLength": 17306,
+      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
+      "path": "include/constants/vars.h",
+      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12"
+    },
+    {
+      "byteLength": 194280,
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "path": "src/data/items.json",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "byteLength": 12207,
+      "gitBlobSha1": "db57298b6ceeea0b3605bf3e65aaa9d2d6be1010",
+      "path": "src/data/pokemon/item_effects.h",
+      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25"
+    },
+    {
+      "byteLength": 40928,
+      "gitBlobSha1": "b1b6465941133b927505be92d189a7c283e4722f",
+      "path": "src/field_control_avatar.c",
+      "sha256": "305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d"
+    },
+    {
+      "byteLength": 77314,
+      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d",
+      "path": "src/field_specials.c",
+      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9"
+    },
+    {
+      "byteLength": 17534,
+      "gitBlobSha1": "0587adf7db9feea06275fbe33dc1756adf23759a",
+      "path": "src/item.c",
+      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a"
+    },
+    {
+      "byteLength": 103643,
+      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
+      "path": "src/overworld.c",
+      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2"
+    },
+    {
+      "byteLength": 44041,
+      "gitBlobSha1": "41eebd86e76e195f6dd14157994ee10c9fa3ce0a",
+      "path": "src/script_menu.c",
+      "sha256": "7b4771c440fd45f4c7c375308d45cc1bc88eba30c6c7ff9c634f838cf2bebad8"
+    },
+    {
+      "byteLength": 34724,
+      "gitBlobSha1": "3d6b1cde422435be57497efb98479da067db38fa",
+      "path": "src/shop.c",
+      "sha256": "d326d1498cad7fc610f483237a3ff17b0d27836dcf8213960b41bbd2b58844f8"
+    }
+  ],
+  "profile": "firered-department-store-contract-v1",
+  "schemaVersion": 1,
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

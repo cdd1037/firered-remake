@@ -60,6 +60,7 @@ public partial class CampaignView
 
     private void SubmitCampaignNickname(string text)
     {
+        if(SubmitNameRaterNicknameFromView(text))return;
         if (CaptureNamingActive && _wildNotice is not null) { _wildNotice = null; QueueRedraw(); return; }
         if (GiftNamingActive) _ = GiftNicknameTarget();
         Apply(new("nickname", Text: text));

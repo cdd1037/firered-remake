@@ -33,6 +33,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMoneyBox? MoneyBox{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMagikarpGift? MagikarpGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEeveeGift? EeveeGift{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignNameRater? NameRater{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignDepartmentElevator? DepartmentElevator{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignGiftDelivery? GiftDelivery{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public EscapeRopeDestination? EscapeDestination{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEscapeRope? EscapeRope{get;init;}
@@ -232,7 +234,7 @@ public sealed partial class CampaignSession
         if(s.Script.QuestLogState!=0)return "save_quest_log_state_not_supported";
         if(s.Script.Variables is null||s.Script.Flags is null||s.Script.Fame is null||s.Script.Stack.IsDefault)return "save_script_invalid";
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
-        if(s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
+        if(s.NameRater is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
         var escapeError=ValidateEscapeRopeState(s);if(escapeError is not null)return escapeError;
         var repelError=ValidateRepelState(s);if(repelError is not null)return repelError;
@@ -275,7 +277,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -345,6 +347,7 @@ public sealed partial class CampaignSession
     {
         try
         {
+            if(TryDecideNameRater(state,command,out var nameRaterDecision))return nameRaterDecision;
             if(state.PokeFlute is not null)return DecidePokeFlute(state,command);
             if(state.RocketSpin is not null)return DecideRocketSpin(state,command);
             if(state.FlashEffect is not null)return DecideFieldFlash(state,command);
@@ -442,6 +445,7 @@ public sealed partial class CampaignSession
                 var actor=VisibleActorAt(state,actorX,actorY);
                 if(actor is not null)
                 {
+                    if(_content.DeferredRegionalServiceReason(p.MapId,actor.ScriptId) is {} unavailable)return new(CommandStatus.Rejected,state,unavailable);
                     if(actor.ScriptId is "0" or "0x0")return new(CommandStatus.Rejected,state,"actor_no_script");
                     if(_content.CeladonApproachEnabled&&actor.ScriptId is "Route8_EventScript_Eli" or "Route8_EventScript_Anne")return new(CommandStatus.Rejected,state,"celadon_approach_double_battle_not_implemented");
                     if(_content.RocketHideoutEnabled&&actor.ScriptId is "RocketHideout_B4F_EventScript_LiftKey" or "RocketHideout_B4F_EventScript_SilphScope"&&
@@ -486,6 +490,7 @@ public sealed partial class CampaignSession
             {state=Advance(state,StoryRules.Continue(state.Script,native.CorrelationId,_content));continue;}
             if(state.Script.Wait is not null||!state.Script.Completed)return state;
             state=FinishFieldPickup(state);
+            if(state.NameRater is not null)state=state with{NameRater=null};
             if(_content.SupportsRegionalFlavor(state.World.Player.MapId)&&state.Dialogue is null&&!state.Script.Locked)state=state with{SignMessage=null};
             if(!state.EntryPrograms.IsEmpty)
             {
@@ -523,6 +528,8 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
             if(TryApplySnorlaxEffect(state,effect,out var snorlaxState)){state=snorlaxState;continue;}
             if(TryApplyTowerEffect(state,effect,out var towerState)){state=towerState;continue;}
+            if(TryApplyNameRaterEffect(state,effect,out var nameRaterState)){state=nameRaterState;continue;}
+            if(TryApplyDepartmentStoreEffect(state,effect,out var departmentState)){state=departmentState;continue;}
             if(TryApplyRocketHideoutEffect(state,effect,out var rocketState)){state=rocketState;continue;}
             if(TryApplyRockTunnelEffect(state,effect,out var rockState)){state=rockState;continue;}
             if(TryApplyRoute11Effect(state,effect,out var route11State)){state=route11State;continue;}
@@ -554,7 +561,7 @@ public sealed partial class CampaignSession
             {
                 case "pokemart":state=OpenShop(state,effect);break;
                 case "lock":case "lockall":break;
-                case "release":case "releaseall":state=state with{Dialogue=null,SignMessage=null,MessagePointer=null,GiftDelivery=null};break;
+                case "release":case "releaseall":state=state with{Dialogue=null,SignMessage=null,MessagePointer=null,GiftDelivery=null,NameRater=null};break;
                 case "signmsg":state=state with{SignMessage=(state.SignMessage??new()) with{SignStyle=true}};break;
                 case "normalmsg":state=state with{SignMessage=state.SignMessage is {} signStyle?signStyle with{SignStyle=false}:null};break;
                 case "setrespawn":state=state with{LastHealingLocation=a[0]};break;

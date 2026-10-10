@@ -14,8 +14,27 @@ public static class EarlyShopRules
         if (shop is null) return new(false, 0, 0, "shop_unsupported");
         var definition = EarlyShopInventoryRules.Find(catalog, item);
         if (definition is null || !shop.Items.Contains(item)) return new(false, 0, 0, "shop_item_not_stocked");
+        return QuoteBuyValidated(catalog, inventory, money, definition);
+    }
+
+    public static EarlyShopQuote QuoteBuy(EarlyShopCatalog catalog, InventoryState inventory, int money,
+        DepartmentStoreOrdinaryStock stock, ItemId item)
+    {
+        string? error = EarlyShopInventoryRules.Validate(catalog, inventory);
+        if (error is not null) return new(false, 0, 0, error);
+        if (money < 0 || money > catalog.MaximumMoney) return new(false, 0, 0, "shop_money_invalid");
+        ArgumentNullException.ThrowIfNull(stock);
+        stock.Validate(catalog);
+        var definition = EarlyShopInventoryRules.Find(catalog, item);
+        if (definition is null || !stock.Entries.Any(entry => entry.Id == item)) return new(false, 0, 0, "shop_item_not_stocked");
+        return QuoteBuyValidated(catalog, inventory, money, definition);
+    }
+
+    private static EarlyShopQuote QuoteBuyValidated(EarlyShopCatalog catalog, InventoryState inventory, int money,
+        EarlyShopItemDefinition definition)
+    {
         var pocket = EarlyShopInventoryRules.Pocket(inventory, definition);
-        int count = OpeningInventoryRules.Quantity(pocket, item);
+        int count = OpeningInventoryRules.Quantity(pocket, definition.Id);
         int capacity = definition.Pocket == "POCKET_POKE_BALLS" ? catalog.QuestLimits.BallSlots : catalog.Limits.BagItemSlots;
         int remaining = count == 0 && pocket.Length >= capacity ? 0 : catalog.Limits.MaximumStack - count;
         int maximum = Math.Min(catalog.MaximumTransactionQuantity, money / definition.Price);
@@ -39,8 +58,20 @@ public static class EarlyShopRules
         string shopId, ItemId item, int quantity)
     {
         ArgumentNullException.ThrowIfNull(inventory);
+        return BuyQuoted(catalog, inventory, money, item, quantity, QuoteBuy(catalog, inventory, money, shopId, item));
+    }
+
+    public static EarlyShopTransactionResult Buy(EarlyShopCatalog catalog, InventoryState inventory, int money,
+        DepartmentStoreOrdinaryStock stock, ItemId item, int quantity)
+    {
+        ArgumentNullException.ThrowIfNull(inventory);
+        return BuyQuoted(catalog, inventory, money, item, quantity, QuoteBuy(catalog, inventory, money, stock, item));
+    }
+
+    private static EarlyShopTransactionResult BuyQuoted(EarlyShopCatalog catalog, InventoryState inventory, int money,
+        ItemId item, int quantity, EarlyShopQuote quote)
+    {
         EarlyShopTransactionResult Fail(string error) => new(inventory, money, false, 0, 0, 0, error);
-        var quote = QuoteBuy(catalog, inventory, money, shopId, item);
         if (!quote.Succeeded) return Fail(quote.Error!);
         if (quantity < 1 || quantity > catalog.MaximumTransactionQuantity) return Fail("shop_quantity_invalid");
         var definition = EarlyShopInventoryRules.Find(catalog, item)!;

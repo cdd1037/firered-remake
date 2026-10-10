@@ -1,13 +1,13 @@
 # 完整单机目标的实施顺序
 
-状态：路线和验收门禁。P0 尚在取证；后续阶段均未据此宣称完成。最终范围见 [scope.md](scope.md)，源冻结见 [source-baseline.md](source-baseline.md)。本路线不承诺缺乏测量依据的日历工期。
+状态（2026-10-10）：已进入关都分批扩展，四徽章、火箭队基地、宝可梦塔、两处卡比兽和有限玉虹/紫苑服务已分别验收；这不代表所有已载入地区交互完成。下表保留阶段门禁定义，实际边界见各阶段证据及覆盖清单。最终范围见 [scope.md](scope.md)，源冻结见 [source-baseline.md](source-baseline.md)。本路线不承诺缺乏测量依据的日历工期。
 
 ## 阶段与退出证据
 
 | 阶段 | 工作边界 | 退出证据 |
 | --- | --- | --- |
 | P0 工具链与最小宿主 | 固定 Godot 4.7.2 .NET/net10.0；自制资源；最小 C# 场景。只做来源审计及独立工程基础，不批量接入游戏内容 | 实际进程/原生导出均记录 Runtime 10；restore/build、真实窗口、中文、输入、音频、修改重载、退出重启的独立证据。缺项明确失败/未验证 |
-| P1 确定性规则合同 | 纯 C# 命令、状态、强类型 ID、RNG、原子事务、回放；源行为代表夹具；最小内容 IR | 非法命令不消耗资源/RNG，重复命令幂等，规范化 hash 可重复；伤害、成长、捕获/战败代表案例通过 |
+| P1 确定性规则合同 | 纯 C# 命令、状态、强类型 ID、RNG、原子事务、回放；源行为代表夹具；最小内容 IR | 非法或旧 revision 命令不消耗资源/RNG，业务一次性 flags 保持，规范化 hash 可重复；伤害、成长、捕获/战败代表案例通过 |
 | P2 地图剧情纵切 | P0 已通过后，一张源地图及室内连接、NPC/文本、脚本事务、战斗返回、保存恢复；先用原创夹具验证技术 | 同源重复生成字节一致；未知语法/缺引用拒绝；真渲染、碰撞、输入、中文、音频及读档证据 |
 | P3 第一徽章 | 自动生成首徽章可达闭包，补全三初始伙伴、支路、成长和异常分支依赖 | 完整玩家路径和异常路径通过；无脚本占位、悬空引用或人工修档；小刚奖励可幂等补领 |
 | P4 首个阶段候选版 | 首徽章已完成范围的清洁重建、原生分发测试、迁移与回归 | 新环境复建/运行，保存损坏恢复、输入焦点、画面/音频与所有已有流程回归；此阶段不是完整游戏交付 |
@@ -64,4 +64,14 @@ as implemented interactions. The current inventory is in
 
 Small verified code increments continue to the private GitHub repository; major playable stages continue to private Drive. Per the latest user decision, backup preparation checks package completeness/integrity and uploaded bytes/hashes, but does not create another local recovery environment or repeat builds, gameplay replay or save/Continue acceptance solely for packaging. Development tests remain selected by the actual code change.
 
-Current milestone is both Route12/16 Snorlax blockers followed by a bounded Celadon/Lavender/connecting-road interaction pass, not the fifth badge. Loaded-map ordinary dialogue/environmental text is the first regional batch. Tea/Eevee/Department Store/Name Rater/coin and prize services, missing interiors, Itemfinder and original preset double battles remain explicit service/mechanism gaps. High-cost minigames remain deferred. Fuchsia/Koga follows this regional milestone.
+The bounded regional milestone now covers both Route12/16 Snorlax blockers,
+ordinary loaded-map dialogue/environmental text, Tea/four gates, Eevee party/PC,
+ordinary Department Store 2F purchases, all store floors/stairs/elevator, hotel/
+house/restaurant ordinary dialogue and Lavender Name Rater. The store's TM shelf,
+Counter tutor, stones/dolls/mail, vitamins/X items and roof vending/exchanges,
+Coin Case/currency/prizes, Itemfinder-specific rewards and original preset double
+battles remain explicit gaps. Mainline acceptance does not mean every regional
+interaction is complete; see the per-floor coverage ledger. Next is a bounded
+Route12 south → Route13/14/15 → Fuchsia Center connection, then Koga/fifth badge
+and the associated ordinary facilities. Safari and its HM/story dependencies are
+planned separately; no fifth-badge acceptance is claimed by this closeout.

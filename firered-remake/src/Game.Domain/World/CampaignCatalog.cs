@@ -33,6 +33,11 @@ public sealed record CampaignRocketElevatorFloor(int MenuIndex,string Label,int 
 public sealed record CampaignRocketElevatorEntrance(MapId SourceMapId,int SourceWarpId,int ElevatorWarpId,
     int ReturnX,int ReturnY,int ReturnElevation);
 public sealed record CampaignRocketDynamicExit(int WarpIndex,int X,int Y,int Elevation,int SourceWarpId);
+public sealed record CampaignDepartmentElevatorFloor(int MenuIndex,string Label,int SourceFloorValue,MapId DestinationMapId,
+    int X,int Y,int Elevation,int DestinationWarpId);
+public sealed record CampaignDepartmentElevatorEntrance(MapId SourceMapId,int SourceWarpId,int ElevatorWarpId,
+    int ReturnX,int ReturnY,int ReturnElevation);
+public sealed record CampaignDepartmentDynamicExit(int WarpIndex,int X,int Y,int Elevation,int SourceWarpId);
 public interface ICampaignCatalog:IStoryCatalog
 {
     string ContentVersion{get;}
@@ -65,6 +70,15 @@ public interface ICampaignCatalog:IStoryCatalog
     bool CeladonGymEnabled=>false;
     CeladonGymTrainerCatalog? CeladonGymTrainers=>null;
     bool RegionalServicesEnabled=>false;
+    bool RegionalInteriorServicesEnabled=>false;
+    string? DeferredRegionalServiceReason(MapId map,string script)=>null;
+    NameRaterSourceContent? NameRaterSource=>null;
+    DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock=>null;
+    ImmutableArray<CampaignDepartmentElevatorFloor> DepartmentStoreElevatorFloors=>[];
+    ImmutableArray<CampaignDepartmentElevatorEntrance> DepartmentStoreElevatorEntrances=>[];
+    ImmutableArray<CampaignDepartmentDynamicExit> DepartmentStoreDynamicExits=>[];
+    int DepartmentStoreElevatorShakeFrames(int from,int to)=>throw new NotSupportedException();
+    int DepartmentStoreElevatorWindowCycles(int distance)=>throw new NotSupportedException();
     bool SnorlaxEnabled=>false;
     bool IsSnorlaxStablePosition(MapId map,int x,int y)=>true;
     bool IsSnorlaxWarpAllowed(MapId map,int sourceWarpId)=>true;

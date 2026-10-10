@@ -13,7 +13,7 @@ public sealed record StorySource(string Path, string Symbol, int Line);
 public sealed record StoryInstruction(StoryOp Op, string Opcode, ImmutableArray<string> Args, StorySource Source);
 public sealed record StoryProgram(string Id, ImmutableArray<StoryInstruction> Instructions);
 public sealed record StoryFrame(string ProgramId, int InstructionIndex);
-public enum StoryWaitKind { None, Dialog, Choice, Presentation, NativeEffect, MessagePrinting, Nickname, Battle, Inventory, MenuChoice, ButtonPress }
+public enum StoryWaitKind { None, Dialog, Choice, Presentation, NativeEffect, MessagePrinting, Nickname, Battle, Inventory, MenuChoice, ButtonPress, PartySelection }
 public sealed record StoryWait(StoryWaitKind Kind, string CorrelationId);
 public sealed record FameEntry(int PickState,int FlavorFlags);
 public sealed record StoryState(ImmutableArray<StoryFrame> Stack, ImmutableSortedDictionary<string,int> Variables,
@@ -59,6 +59,10 @@ public static class StoryRules
             if(program is not null&&index>=0&&index<program.Instructions.Length)
             {
                 var instruction=program.Instructions[index];
+                if(instruction.Op==StoryOp.Multichoice&&instruction.Opcode=="multichoicedefault"&&
+                    instruction.Source.Path=="data/maps/CeladonCity_DepartmentStore_Elevator/scripts.inc"&&instruction.Args.Length==5&&
+                    instruction.Args[2]=="MULTICHOICE_DEPT_STORE_ELEVATOR"&&instruction.Args[4]=="FALSE")
+                    return choice is >=0 and <=5 or 127;
                 if(instruction.Op==StoryOp.Multichoice&&instruction.Opcode=="multichoicedefault"&&
                     instruction.Source.Path=="data/maps/RocketHideout_Elevator/scripts.inc"&&instruction.Args.Length==5&&
                     instruction.Args[2]=="MULTICHOICE_ROCKET_HIDEOUT_ELEVATOR"&&instruction.Args[4]=="FALSE")

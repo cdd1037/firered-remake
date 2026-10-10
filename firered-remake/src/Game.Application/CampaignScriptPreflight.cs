@@ -9,6 +9,7 @@ public sealed partial class CampaignSession
     private bool _preflightingStory;
     private CampaignState StartStory(CampaignState state,string program)
     {
+        if(_content.DeferredRegionalServiceReason(state.World.Player.MapId,program) is {} unavailable)throw new InvalidDataException(unavailable);
         if(_content.ConnectedFieldMaps is not null&&!_preflightingStory&&_commands is not null)PreflightStoryEntry(state,program);
         return Advance(state,StoryRules.Start(state.Script,program,_content));
     }
@@ -30,7 +31,7 @@ public sealed partial class CampaignSession
             {
                 if(++steps>budget)throw new InvalidDataException("script_preflight_budget: "+program);
                 // These are already-owned application workflows with separate admission contracts.
-                if(probe.Pc is not null||probe.Shop is not null||probe.ForestTrainerBattle is not null||probe.Battle is not null||probe.WildBattle is not null||probe.OldManTutorial is not null||probe.ItemMenu is not null||probe.Nickname is not null)continue;
+                if(probe.Pc is not null||probe.Shop is not null||probe.ForestTrainerBattle is not null||probe.Battle is not null||probe.WildBattle is not null||probe.OldManTutorial is not null||probe.ItemMenu is not null||probe.Nickname is not null||probe.NameRater is not null)continue;
                 if(probe.Script.Completed&&probe.Script.Wait is null)continue;
                 if(probe.Script.Wait is not {} wait)throw new InvalidDataException("script_preflight_unstable: "+program);
                 bool billMenu=IsBillPreflightMenu(probe);
@@ -53,7 +54,7 @@ public sealed partial class CampaignSession
                 // every page, making a long yes/no message grow exponentially.
                 bool moreText=wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice or StoryWaitKind.MenuChoice or StoryWaitKind.MessagePrinting&&
                     probe.Dialogue is {} dialogue&&dialogue.Page+1<dialogue.Pages.Length;
-                foreach(var choice in moreText?new int?[]{null}:billMenu?new int?[]{0,1,2,3,4,127}:probe.RocketElevator?.MenuDefault is not null?new int?[]{0,1,2,3,127}:wait.Kind==StoryWaitKind.MenuChoice?new int?[]{0,1,127}:wait.Kind==StoryWaitKind.Choice?new int?[]{0,1}:new int?[]{null})
+                foreach(var choice in moreText?new int?[]{null}:billMenu?new int?[]{0,1,2,3,4,127}:probe.DepartmentElevator?.MenuDefault is not null?new int?[]{0,1,2,3,4,5,127}:probe.RocketElevator?.MenuDefault is not null?new int?[]{0,1,2,3,127}:wait.Kind==StoryWaitKind.MenuChoice?new int?[]{0,1,127}:wait.Kind==StoryWaitKind.Choice?new int?[]{0,1}:new int?[]{null})
                 {
                     var decision=Decide(probe,wait.Kind==StoryWaitKind.ButtonPress?new("button_press",Text:"A"):new("ack",Choice:choice));
                     if(decision.Status!=CommandStatus.Accepted)throw new InvalidDataException("script_preflight: "+program+": "+decision.Error);
