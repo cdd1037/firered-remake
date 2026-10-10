@@ -1,0 +1,334 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/battle_anim_scripts.s",
+      "localPath": "content/raw/pokemon-tower-region/data/battle_anim_scripts.s",
+      "byteLength": 406484,
+      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e",
+      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068"
+    },
+    {
+      "path": "data/battle_scripts_1.s",
+      "localPath": "content/raw/pokemon-tower-region/data/battle_scripts_1.s",
+      "byteLength": 138642,
+      "sha256": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034",
+      "gitBlobSha1": "8aa0a1004033e40df8222107b60cc72fa85d9b8f"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "localPath": "content/raw/pokemon-tower-region/include/constants/songs.h",
+      "byteLength": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+    },
+    {
+      "path": "include/constants/species.h",
+      "localPath": "content/raw/pokemon-tower-region/include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+    },
+    {
+      "path": "include/constants/sound.h",
+      "localPath": "content/raw/rocket-hideout-synth/include/constants/sound.h",
+      "byteLength": 2051,
+      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2",
+      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "localPath": "content/raw/rocket-hideout-synth/sound/song_table.inc",
+      "byteLength": 9204,
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+    },
+    {
+      "path": "sound/cry_tables.inc",
+      "localPath": "content/raw/pokemon-tower-region/sound/cry_tables.inc",
+      "byteLength": 16533,
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
+      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+    },
+    {
+      "path": "src/sound.c",
+      "localPath": "content/raw/pokemon-tower-region/src/sound.c",
+      "byteLength": 15232,
+      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958",
+      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e"
+    },
+    {
+      "path": "src/itemfinder.c",
+      "localPath": "content/raw/pokemon-tower-region/src/itemfinder.c",
+      "byteLength": 18386,
+      "sha256": "7f240eea2f57ac87d922e18fa960be8ec0a7d39c65c3c7cbb9c09222eaed9a30",
+      "gitBlobSha1": "deaa0266162e5c29058bc5156bfd1e01ab360390"
+    },
+    {
+      "path": "sound/songs/midi/se_m_nightmare.mid",
+      "localPath": "content/raw/pokemon-tower-synth/sound/songs/midi/se_m_nightmare.mid",
+      "byteLength": 470,
+      "sha256": "8be0930726a91e3ba368f4e9ca3259745cd808781d5b2d32c1dd4b8f8f3f9763",
+      "gitBlobSha1": "4887d2339075e1bf3b352cb572c2e0b4a5b7b626"
+    },
+    {
+      "path": "sound/songs/midi/se_m_lick.mid",
+      "localPath": "content/raw/pokemon-tower-synth/sound/songs/midi/se_m_lick.mid",
+      "byteLength": 320,
+      "sha256": "0e5361e82ea19369399cf943200a7159565c662f3aa6554af11622ff55ea18e8",
+      "gitBlobSha1": "69436bd5cb9b92f2d396feafc794cd9226176b50"
+    },
+    {
+      "path": "sound/songs/midi/se_m_bonemerang.mid",
+      "localPath": "content/raw/pokemon-tower-synth/sound/songs/midi/se_m_bonemerang.mid",
+      "byteLength": 136,
+      "sha256": "de68349d75f036743fb06ee75ee2a7083f80835ef6af9c38ac59315a590d0332",
+      "gitBlobSha1": "37727d64a28688baf4185920097fb2b2c86babd4"
+    },
+    {
+      "path": "sound/songs/midi/se_m_mist.mid",
+      "localPath": "content/raw/pokemon-tower-synth/sound/songs/midi/se_m_mist.mid",
+      "byteLength": 228,
+      "sha256": "f14bfd1f07162941f412897049a2d92c5dd58c662f1bafc229612a5f46d0af17",
+      "gitBlobSha1": "2d184451fd0876f88a1701bee8d2f364532a0996"
+    },
+    {
+      "path": "sound/songs/midi/se_m_minimize.mid",
+      "localPath": "content/raw/pokemon-tower-region/sound/songs/midi/se_m_minimize.mid",
+      "byteLength": 424,
+      "sha256": "16412a096a5007efdb9ad24e6bc8a8dbe52c2a255beac958632666b4d0f8a964",
+      "gitBlobSha1": "bca3aa2a87226f58d7d661d938242c5850f6c024"
+    },
+    {
+      "path": "sound/songs/midi/se_itemfinder.mid",
+      "localPath": "content/raw/pokemon-tower-synth/sound/songs/midi/se_itemfinder.mid",
+      "byteLength": 149,
+      "sha256": "cd0b34cb2f504d46435b94ed346cdb281b779c3bf7a19d1e3fa06f5d587b6a6f",
+      "gitBlobSha1": "9b6538a7026ab5d87d562d47daf2cebaa4019c2e"
+    },
+    {
+      "path": "sound/songs/midi/mus_poke_tower.mid",
+      "localPath": "content/raw/pokemon-tower-region/sound/songs/midi/mus_poke_tower.mid",
+      "byteLength": 5056,
+      "sha256": "4d6fbdc45175efec028e6f7d10370daf2be564f1171e689b9c301234dbe39eb5",
+      "gitBlobSha1": "0a537d191f846521f6253e853be6a152c2e6b912"
+    },
+    {
+      "path": "sound/songs/midi/mus_poke_flute.mid",
+      "localPath": "content/raw/pokemon-tower-region/sound/songs/midi/mus_poke_flute.mid",
+      "byteLength": 703,
+      "sha256": "cd65e35e7751bd655275fea2abe5584d081f8ea496e395edc273700a5dfd3cc0",
+      "gitBlobSha1": "02686a30b5d9942176379343fdfa90c5b42459fb"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/gastly.wav",
+      "localPath": "content/raw/pokemon-tower-region/sound/direct_sound_samples/cries/gastly.wav",
+      "byteLength": 11652,
+      "sha256": "ab01ee568188367c826b0d214e61e635d833b707d3efcd61d10dacf4a1da993f",
+      "gitBlobSha1": "7d9c25de300271c4361525d43828aeb88cf57d0f"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/haunter.wav",
+      "localPath": "content/raw/pokemon-tower-region/sound/direct_sound_samples/cries/haunter.wav",
+      "byteLength": 11744,
+      "sha256": "68a1ac4af5ee4fd9080286cc5271d48c45693eb33e7b89455f3ea7679f60f895",
+      "gitBlobSha1": "999a0d02d1c8d8113f0845208a126d381c760c46"
+    },
+    {
+      "path": "sound/direct_sound_samples/cries/psyduck.wav",
+      "localPath": "content/raw/pokemon-tower-region/sound/direct_sound_samples/cries/psyduck.wav",
+      "byteLength": 6610,
+      "sha256": "431fef3330ec91d1a3e471449d0c2a8e422660a9548ec5bb57b5220382fe9a54",
+      "gitBlobSha1": "7b1a76da7a96c1a4982ea9ee4ffbad90ffcda5a2"
+    },
+    {
+      "path": "data/maps/PokemonTower_1F/map.json",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_1F/map.json",
+      "byteLength": 3103,
+      "sha256": "c4b52c52ec9232d9fa05dcc2735d41ab186f0b5e0d6ad8835a863596ac5720f9",
+      "gitBlobSha1": "900da797b40b9fb24194473c61f6287862ea4aef"
+    },
+    {
+      "path": "data/maps/PokemonTower_1F/scripts.inc",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_1F/scripts.inc",
+      "byteLength": 965,
+      "sha256": "ce33cb730cff618eb61ce347376aec5b3a9e421baa02b8ab77aeba4e9ebe43d1",
+      "gitBlobSha1": "11973713622e9a46ba994b0d4b0bca2a26480930"
+    },
+    {
+      "path": "data/maps/PokemonTower_2F/map.json",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_2F/map.json",
+      "byteLength": 2108,
+      "sha256": "6247fdef34a71ce450d97af0d2ca854c6dee7573f46a112ec2287977ed2f66ab",
+      "gitBlobSha1": "c7828a303e34c9bf8e23bb8920b438d8839d5ca6"
+    },
+    {
+      "path": "data/maps/PokemonTower_2F/scripts.inc",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_2F/scripts.inc",
+      "byteLength": 3042,
+      "sha256": "8edc9d0878eebd943e76c39d59ee5f20b352d567caf004c93ddf2446feaf1740",
+      "gitBlobSha1": "01e40100167f3ad6c9bdf2b80ca047f2119e037e"
+    },
+    {
+      "path": "data/maps/PokemonTower_3F/map.json",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_3F/map.json",
+      "byteLength": 2500,
+      "sha256": "1f00493afb6cd414d753bd05a49357cd2acb08dc3f78e579d57e3ab884284835",
+      "gitBlobSha1": "f894e4cf4d47b205970831f388a8749f492604b4"
+    },
+    {
+      "path": "data/maps/PokemonTower_3F/scripts.inc",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_3F/scripts.inc",
+      "byteLength": 702,
+      "sha256": "a5fb201f25621b025ae4bebd2f9eadf2b03652ee5d8bca6348842fcd4f6ff97a",
+      "gitBlobSha1": "76368c142eb621a47ead86cdd4932107f3fa06cd"
+    },
+    {
+      "path": "data/maps/PokemonTower_4F/map.json",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_4F/map.json",
+      "byteLength": 3379,
+      "sha256": "db07e0e9f3498875dd82e4d7a2258fe25704c7e079b4c0bc4843bf111cd5f051",
+      "gitBlobSha1": "67aa43d0f57fb910c0187b9b02375b99703a6ae7"
+    },
+    {
+      "path": "data/maps/PokemonTower_4F/scripts.inc",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_4F/scripts.inc",
+      "byteLength": 692,
+      "sha256": "9434eadb103aa8f6ed365c7ffe2322ffc51e66ddb174e332d19d43e358153742",
+      "gitBlobSha1": "e777bdb01089a8367b20c33d50addeae97600043"
+    },
+    {
+      "path": "data/maps/PokemonTower_5F/map.json",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_5F/map.json",
+      "byteLength": 7415,
+      "sha256": "6a7c648e7afbac0ec863e42622588871b5705fc93750841a15e922984f30ce52",
+      "gitBlobSha1": "72fb7dee8b9f1767d227a75bbe0efbcb81fff777"
+    },
+    {
+      "path": "data/maps/PokemonTower_5F/scripts.inc",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_5F/scripts.inc",
+      "byteLength": 1345,
+      "sha256": "e8e741918ef55b11a19ca1f62d13841407523a1d3451dc0c56c3e555d696b1f2",
+      "gitBlobSha1": "5a70571faaec0ff0dacdbc400209d460d00fc9c9"
+    },
+    {
+      "path": "data/maps/PokemonTower_6F/map.json",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_6F/map.json",
+      "byteLength": 3388,
+      "sha256": "ed2db6909d066de716c74286527e59a17c0c9487eb689044f9f918b84f46a34e",
+      "gitBlobSha1": "da60ee2699c7d09c83ced1da860a7e806f6c49d7"
+    },
+    {
+      "path": "data/maps/PokemonTower_6F/scripts.inc",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_6F/scripts.inc",
+      "byteLength": 1597,
+      "sha256": "9b761b8470ee034f3c3fea2c2e293ef631e75c2b848e3bf81daedc0ff30b2a90",
+      "gitBlobSha1": "ba5969ab1a8d6e20c166a326a175b58dcde596f3"
+    },
+    {
+      "path": "data/maps/PokemonTower_7F/map.json",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_7F/map.json",
+      "byteLength": 2788,
+      "sha256": "f58f5339a3acf0cafe66162f500093fed33c6a8e395260e3f4580a77f2340a55",
+      "gitBlobSha1": "afda482b4b9f253c6a70878c7cccb7cc853dff2c"
+    },
+    {
+      "path": "data/maps/PokemonTower_7F/scripts.inc",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/PokemonTower_7F/scripts.inc",
+      "byteLength": 5754,
+      "sha256": "3c9699000e2912afcb9833b07591271ffe24ce066331cf0a4a6e7e85f1d78dfd",
+      "gitBlobSha1": "616225564c87b3fd18fba9ece49cbded5a2a0bf3"
+    },
+    {
+      "path": "data/maps/LavenderTown_VolunteerPokemonHouse/scripts.inc",
+      "localPath": "content/raw/pokemon-tower-region/data/maps/LavenderTown_VolunteerPokemonHouse/scripts.inc",
+      "byteLength": 2512,
+      "sha256": "5e6f4e734e5fe3a6e7b85926789bd1926a5583161f6a43ad2843ded5c63f8004",
+      "gitBlobSha1": "2e31c87893d27675273c97e4c84d499119318f5d"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/audit-early-audio.py",
+      "byteLength": 21672,
+      "sha256": "e7db8de67b65dcc69dc6d7c41153340c9204913bcb5a3d35f585b5e9ab8525c5"
+    },
+    {
+      "path": "content/generated/synth-audio/firered.pack",
+      "byteLength": 2565436,
+      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+    },
+    {
+      "path": "content/generated/synth-audio/normal-cries.bin",
+      "byteLength": 6188,
+      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+    },
+    {
+      "path": "content/generated/synth-audio/manifest.json",
+      "byteLength": 88374,
+      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
+    },
+    {
+      "path": "content/generated/route11-synth-audio/manifest.json",
+      "byteLength": 2653,
+      "sha256": "0631c99d955f0eddaea29dbc65b56df14e14847ee1c9bc5d072c7ccaf39bf4b1"
+    },
+    {
+      "path": "content/generated/rocktunnel-synth-audio/manifest.json",
+      "byteLength": 5587,
+      "sha256": "478237a8683d31438da6a5504272e76a52313d1417133767e08fa83a4cc0a621"
+    },
+    {
+      "path": "content/generated/celadon-approach-synth-audio/manifest.json",
+      "byteLength": 1177,
+      "sha256": "783f665e6660198e64eb3ea04510d138072b448a63d1581d393b47ef1a6bb5b2"
+    },
+    {
+      "path": "content/generated/celadon-gym-synth-audio/manifest.json",
+      "byteLength": 3007,
+      "sha256": "9583fd815f1aaa9a0f91be461c244d28fc563416ec3f333c46d1a2cc8901af87"
+    },
+    {
+      "path": "content/generated/rocket-hideout-synth-audio/manifest.json",
+      "byteLength": 2622,
+      "sha256": "c8046b3213835cf439c395692711776856d8e520f097087bc97870452a735f82"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Cry.cs",
+      "byteLength": 4642,
+      "sha256": "5e674c5eea1afe62a0e669b6398ba3b48dcbc572cc06c3e9141b044a9a6602d7"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_CryCatalog.cs",
+      "byteLength": 2705,
+      "sha256": "0e86f47bb0a7ba4e1f3e0fa0dcf447aedc880c789305071c68c9111db3bf9e3b"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Profiles.cs",
+      "byteLength": 2372,
+      "sha256": "8f71ddb91c0039221beeda005861d2c1e4f8cfeab417f1fd545970a21e3ec413"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_PsgSynth.cs",
+      "byteLength": 4767,
+      "sha256": "665bcf8d58959b5d5ca51ab4771b77d20a4c23ca946d9acce3caee34bab7988e"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Resources.cs",
+      "byteLength": 2676,
+      "sha256": "0846dccd72f2c0f446aaa82fc2c5846ea9e6b58eaa66cae9ea653d71c1f26295"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Sequence.cs",
+      "byteLength": 9512,
+      "sha256": "3cba6ead2cf1828211b2257a163ae8657d39cab36de223fef46a65e4ebb9f7b3"
+    },
+    {
+      "path": "src/Game.Godot/OriginalAudioCore_Synth.cs",
+      "byteLength": 37803,
+      "sha256": "7cd6f81faed247aad4245b9d79c3dc954904ec3d57b515aafee1929ad815832e"
+    }
+  ]
+}

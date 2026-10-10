@@ -154,6 +154,7 @@ public partial class CampaignView
         if (battle.Phase != CampaignBattlePhase.Events) return hp;
         var transition = WildCurrentEvent(battle)! switch
         {
+            WildBattleTowerHpEvent tower when tower.Side == side => (tower.HpBefore, tower.HpAfter),
             WildBattleHpChangedEvent change when change.Target == side => (change.HpBefore, change.HpAfter),
             WildBattleIngrainHealEvent roots when roots.Side == side => (roots.HpBefore, roots.HpAfter),
             WildBattleRecoveredEvent recovered when recovered.Side == side => (recovered.HpBefore, recovered.HpAfter),

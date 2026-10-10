@@ -10,7 +10,7 @@ using Direction=Game.Domain.World.Direction;
 
 public partial class CampaignView
 {
-    private static bool RocketHideoutProfileRequested=>OS.GetEnvironment("FIRERED_ROCKET_HIDEOUT")=="1"||OS.GetCmdlineUserArgs().Contains("--story-rocket-hideout");
+    private static bool RocketHideoutProfileRequested=>PokemonTowerProfileRequested||OS.GetEnvironment("FIRERED_ROCKET_HIDEOUT")=="1"||OS.GetCmdlineUserArgs().Contains("--story-rocket-hideout");
     private sealed record RocketTile(string Tileset,Rect2I Region);
     private readonly Dictionary<(string Tileset,int Id),RocketTile> _rocketTiles=[];
     private readonly Dictionary<string,int> _rocketTileSymbols=new(StringComparer.Ordinal);

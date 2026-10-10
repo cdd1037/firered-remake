@@ -58,6 +58,9 @@ public interface ICampaignCatalog:IStoryCatalog
     bool Route11Enabled=>false;
     bool CeladonGymEnabled=>false;
     CeladonGymTrainerCatalog? CeladonGymTrainers=>null;
+    bool PokemonTowerEnabled=>false;
+    PokemonTowerTrainerCatalog? PokemonTowerTrainers=>null;
+    ImmutableArray<int> PokemonTowerInitiallySetFlags=>[];
     bool RocketHideoutEnabled=>false;
     RocketHideoutTrainerCatalog? RocketHideoutTrainers=>null;
     ImmutableArray<int> RocketHideoutInitiallySetFlags=>[];

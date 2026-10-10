@@ -59,8 +59,9 @@ public static class PokemonFactory
     public static ImmutableArray<SpeciesId> CeladonGymSupportedSpecies { get; } = CeladonApproachSupportedSpecies.AddRange(
         new[] { "VILEPLUME", "VICTREEBEL", "EXEGGCUTE", "TANGELA" }.Select(x => new SpeciesId("pret:SPECIES_" + x)));
     public static ImmutableArray<SpeciesId> RocketHideoutSupportedSpecies { get; } = CeladonGymSupportedSpecies.Add(new("pret:SPECIES_KANGASKHAN"));
-    private static readonly ImmutableDictionary<SpeciesId,int> SourceIds = RocketHideoutSupportedSpecies
-        .Zip(new[]{1,2,3,4,5,6,7,8,9,16,17,18,19,20,13,14,15,10,11,12,25,26,74,75,76,27,28,95,208,21,22,56,23,29,30,32,33,39,129,130,24,35,41,42,43,46,47,69,81,88,100,109,31,34,36,40,63,64,66,96,90,116,118,120,121,79,44,70,52,53,58,77,72,50,51,82,60,61,37,104,101,97,108,67,105,57,111,117,119,73,49,48,110,89,45,71,102,114,115},(id,source)=>(Id:id,Source:source)).ToImmutableDictionary(x=>x.Id,x=>x.Source);
+    public static ImmutableArray<SpeciesId> PokemonTowerSupportedSpecies { get; } = RocketHideoutSupportedSpecies.Add(new("pret:SPECIES_GASTLY")).Add(new("pret:SPECIES_HAUNTER"));
+    private static readonly ImmutableDictionary<SpeciesId,int> SourceIds = PokemonTowerSupportedSpecies
+        .Zip(new[]{1,2,3,4,5,6,7,8,9,16,17,18,19,20,13,14,15,10,11,12,25,26,74,75,76,27,28,95,208,21,22,56,23,29,30,32,33,39,129,130,24,35,41,42,43,46,47,69,81,88,100,109,31,34,36,40,63,64,66,96,90,116,118,120,121,79,44,70,52,53,58,77,72,50,51,82,60,61,37,104,101,97,108,67,105,57,111,117,119,73,49,48,110,89,45,71,102,114,115,92,93},(id,source)=>(Id:id,Source:source)).ToImmutableDictionary(x=>x.Id,x=>x.Source);
 
     public static PokemonCreationResult Create(PokemonCatalog catalog, CreatePokemonRequest request, RngState rng)
     {
@@ -132,9 +133,9 @@ public static class PokemonFactory
     {
         ArgumentNullException.ThrowIfNull(catalog);
         if (catalog.SourceCommit != SourceCommit) throw new NotSupportedException("Unsupported Pokemon source commit.");
-        if (catalog.Species is null || catalog.Moves is null || catalog.Species.Count is not (9 or 14 or 17 or 22 or 29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99) || catalog.Moves.Count == 0)
+        if (catalog.Species is null || catalog.Moves is null || catalog.Species.Count is not (9 or 14 or 17 or 22 or 29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101) || catalog.Moves.Count == 0)
             throw new ArgumentException("A complete bounded starter, Route 1, old-man tutorial, forest, Pewter, Route22, Route3, Mt. Moon or Cerulean catalog is required.");
-        var supported=catalog.Species.Count switch{9=>SupportedSpecies,14=>Route1SupportedSpecies,17=>OldManTutorialSupportedSpecies,22=>ForestSupportedSpecies,29=>PewterSupportedSpecies,32=>Route22SupportedSpecies,40=>Route3SupportedSpecies,56=>MtMoonSupportedSpecies,65=>CeruleanSupportedSpecies,68=>BillSupportedSpecies,70=>VermilionSupportedSpecies,79=>Route11SupportedSpecies,93=>RockTunnelSupportedSpecies,94=>CeladonApproachSupportedSpecies,98=>CeladonGymSupportedSpecies,99=>RocketHideoutSupportedSpecies,_=>SsAnneSupportedSpecies};
+        var supported=catalog.Species.Count switch{9=>SupportedSpecies,14=>Route1SupportedSpecies,17=>OldManTutorialSupportedSpecies,22=>ForestSupportedSpecies,29=>PewterSupportedSpecies,32=>Route22SupportedSpecies,40=>Route3SupportedSpecies,56=>MtMoonSupportedSpecies,65=>CeruleanSupportedSpecies,68=>BillSupportedSpecies,70=>VermilionSupportedSpecies,79=>Route11SupportedSpecies,93=>RockTunnelSupportedSpecies,94=>CeladonApproachSupportedSpecies,98=>CeladonGymSupportedSpecies,99=>RocketHideoutSupportedSpecies,101=>PokemonTowerSupportedSpecies,_=>SsAnneSupportedSpecies};
         foreach (var (id, species) in catalog.Species)
         {
             if (species is null || species.Id != id || !supported.Contains(id) || species.SourceSpeciesId != SourceIds[id])
@@ -166,29 +167,29 @@ public static class PokemonFactory
                 }
                 else if (evolution.Method == PokemonEvolutionMethod.Item)
                 {
-                    bool thunderStone = catalog.Species.Count is 22 or 29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 &&
+                    bool thunderStone = catalog.Species.Count is 22 or 29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 &&
                         id.Value == "pret:SPECIES_PIKACHU" && evolution.Target.Value == "pret:SPECIES_RAICHU" &&
                         evolution.Parameter == "ITEM_THUNDER_STONE";
-                    bool moonStone = catalog.Species.Count is 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 && evolution.Parameter == "ITEM_MOON_STONE" &&
+                    bool moonStone = catalog.Species.Count is 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 && evolution.Parameter == "ITEM_MOON_STONE" &&
                         (id.Value, evolution.Target.Value) is
                             ("pret:SPECIES_NIDORINA", "pret:SPECIES_NIDOQUEEN") or
                             ("pret:SPECIES_NIDORINO", "pret:SPECIES_NIDOKING") or
                             ("pret:SPECIES_CLEFAIRY", "pret:SPECIES_CLEFABLE") or
                             ("pret:SPECIES_JIGGLYPUFF", "pret:SPECIES_WIGGLYTUFF");
-                    bool waterStone = catalog.Species.Count is 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 && id.Value == "pret:SPECIES_STARYU" &&
+                    bool waterStone = catalog.Species.Count is 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 && id.Value == "pret:SPECIES_STARYU" &&
                         evolution.Target.Value == "pret:SPECIES_STARMIE" && evolution.Parameter == "ITEM_WATER_STONE";
-                    bool leafStone = catalog.Species.Count is 98 or 99 && evolution.Parameter == "ITEM_LEAF_STONE" &&
+                    bool leafStone = catalog.Species.Count is 98 or 99 or 101 && evolution.Parameter == "ITEM_LEAF_STONE" &&
                         (id.Value, evolution.Target.Value) is ("pret:SPECIES_GLOOM", "pret:SPECIES_VILEPLUME") or ("pret:SPECIES_WEEPINBELL", "pret:SPECIES_VICTREEBEL");
                     if (evolution.Level != 0 || !(thunderStone || moonStone || waterStone || leafStone))
                         throw new ArgumentException("Unsupported item-evolution metadata. Item use/evolution execution is not implemented.");
                 }
                 else if (evolution.Method == PokemonEvolutionMethod.Trade)
                 {
-                    if (catalog.Species.Count is not (29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99) || id.Value != "pret:SPECIES_GRAVELER" ||
+                    if (catalog.Species.Count is not (29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101) || id.Value != "pret:SPECIES_GRAVELER" ||
                         evolution.Level != 0 || evolution.Target.Value != "pret:SPECIES_GOLEM" || evolution.Parameter is not null)
                         throw new ArgumentException("Unsupported trade-evolution metadata. Trade execution is not implemented.");
                 }
-                else if (catalog.Species.Count is not (29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99) || id.Value != "pret:SPECIES_ONIX" ||
+                else if (catalog.Species.Count is not (29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101) || id.Value != "pret:SPECIES_ONIX" ||
                     evolution.Level != 0 || evolution.Target.Value != "pret:SPECIES_STEELIX" || evolution.Parameter != "ITEM_METAL_COAT")
                     throw new ArgumentException("Unsupported trade-item evolution metadata. Trade execution is not implemented.");
             }

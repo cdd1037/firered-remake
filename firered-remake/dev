@@ -203,13 +203,26 @@ def test_regional_campaign(name,checkpoint=None,region='Route11'):
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-rocket-hideout <new-run-name> [legal-checkpoint|--boundaries]','test-rocket-hideout-modules <source-preparation>','test-rocket-hideout-ui','test-rocket-hideout-synth','test-rocket-hideout-audit <unique-name>','test-rocket-hideout-native-evidence','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
+ if not args:return output({'commands':['doctor','setup','build','test','test-pokemon-tower <new-run-name> [legal-checkpoint|--boundaries]','test-pokemon-tower-modules','test-pokemon-tower-ui [--only assets|intro|flute-awake|flute-sleep]','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-rocket-hideout <new-run-name> [legal-checkpoint|--boundaries]','test-rocket-hideout-modules <source-preparation>','test-rocket-hideout-ui','test-rocket-hideout-synth','test-rocket-hideout-audit <unique-name>','test-rocket-hideout-native-evidence','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
  if args==['doctor']:return doctor()
  if args==['setup']:return setup()
  if args==['build']:return build()
  if args==['test']:return test()
  if len(args) in (2,3) and args[0] in ('test-route11','test-rocktunnel'):
   return test_regional_campaign(args[1],args[2] if len(args)==3 else None,'RockTunnel' if args[0]=='test-rocktunnel' else 'Route11')
+ if args and args[0]=='test-pokemon-tower-ui':run(['python3','tests/Game.PokemonTowerUi.Tests/run.py',*args[1:]]);return 0
+ if len(args) in (2,3) and args[0]=='test-pokemon-tower':
+  output_dir=ROOT/'tests/Game.PokemonTowerCampaign.Tests/evidence'/args[1]
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or output_dir.exists():raise RuntimeError('A unique Pokemon Tower run name is required.')
+  command=[DOTNET,'run','--project','tests/Game.PokemonTowerCampaign.Tests','--no-build','--',ROOT,output_dir]
+  if len(args)==3:command.append(args[2] if args[2]=='--boundaries' else pathlib.Path(args[2]).resolve())
+  run(command,'pokemon-tower-campaign.log');return 0
+ if args==['test-pokemon-tower-modules']:
+  for module,count in [('Battle',2),('Ghost',2),('Trainers',3),('Items',1),('Presentation',3),('SynthAudio',1)]:
+   suite='Game.PokemonTower'+module+'.Tests'
+   run([DOTNET,'run','--project','tests/'+suite,'--no-build','--',*([ROOT]*count)],suite+'.json')
+  run([DOTNET,'run','--project','tests/Game.PokemonTowerFieldRules.Tests','--no-build','--',ROOT,ROOT/'content/raw/pokemon-tower-region'],'Game.PokemonTowerFieldRules.Tests.json')
+  run([DOTNET,'run','--project','tests/Game.PokeFlute.Tests','--no-build','--',ROOT],'Game.PokeFlute.Tests.json');return 0
  if len(args) in (2,3) and args[0]=='test-rocket-hideout':
   output_dir=ROOT/'tests/Game.RocketHideoutCampaign.Tests/evidence'/args[1]
   if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or output_dir.exists():raise RuntimeError('A unique Rocket Hideout run name is required.')

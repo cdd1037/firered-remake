@@ -23,10 +23,11 @@ public static class MtMoonTrainerPartyFactory
     }.Select(x => new TrainerId("pret:TRAINER_" + x)).ToImmutableArray();
 
     public static TrainerPartyCreationResult Create(MtMoonTrainerCatalog trainers, PokemonCatalog pokemon,
-        TrainerId trainerId, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
+        TrainerId trainerId, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false)
     {
+        rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
-        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != rocketHideoutRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (pokemon.Species.Count == 101) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;

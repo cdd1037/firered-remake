@@ -109,6 +109,8 @@ public partial class CampaignView
             if (key.Keycode == Key.Enter)
             {
                 _questPocketPopup = false;
+                if (_catalog.PokemonTowerEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POKE_FLUTE")
+                { Apply(new("field_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
                 if (_questPocket == 1 && _questPocketAction == 0 && TryCityServiceItem(QuestPocketStacks[_questPocketCursor].Item.Value)) return true;
                 if (_catalog.TownMapEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item == QuestItemRules.TownMapId)
                 { Apply(new("town_map_open",Text:QuestItemRules.TownMapId.Value)); return true; }

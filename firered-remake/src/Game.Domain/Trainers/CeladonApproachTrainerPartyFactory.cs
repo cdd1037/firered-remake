@@ -29,11 +29,12 @@ public static class CeladonApproachTrainerPartyFactory
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(CeladonApproachTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool celadonGymRules = false, bool rocketHideoutRules = false)
+    public static TrainerPartyCreationResult Create(CeladonApproachTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false)
     {
+        rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (rocketHideoutRules ? 99 : celadonGymRules ? 98 : 94) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count != (towerRules ? 101 : rocketHideoutRules ? 99 : celadonGymRules ? 98 : 94) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("CeladonApproach requires the exact ninety-four-species catalog and one initial source CeladonApproach team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

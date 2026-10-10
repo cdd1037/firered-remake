@@ -20,11 +20,12 @@ public static class VermilionPickupRules
         if(roll is <0 or >99)throw new ArgumentOutOfRangeException(nameof(roll));
         int i=0;while(i<thresholds.Length && thresholds[i]<=roll)i++;return Items[i];
     }
-    public static VermilionPickupResult Apply(PokemonCatalog catalog,ImmutableArray<PartyPokemon> party,RngState rng,WildBattleOutcome outcome, bool ssAnneRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false)
+    public static VermilionPickupResult Apply(PokemonCatalog catalog,ImmutableArray<PartyPokemon> party,RngState rng,WildBattleOutcome outcome, bool ssAnneRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonApproachRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool pokemonTowerRules = false)
     {
+        rocketHideoutRules |= pokemonTowerRules;
         celadonGymRules |= rocketHideoutRules;
         route11Rules |= rockTunnelRules;
-        if(catalog.SourceCommit!=WildBattleRules.SourceCommit || catalog.Species.Count!=(rocketHideoutRules ? 99 : celadonGymRules ? 98 : celadonApproachRules ? 94 : rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : 70))
+        if(catalog.SourceCommit!=WildBattleRules.SourceCommit || catalog.Species.Count!=(pokemonTowerRules ? 101 : rocketHideoutRules ? 99 : celadonGymRules ? 98 : celadonApproachRules ? 94 : rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : 70))
             throw new NotSupportedException("Pickup requires the complete explicitly selected catalog.");
         if(party.IsDefault || party.Length is <1 or >6 || party.Any(p=>p is null) || party.Select(p=>p.InstanceId).Distinct().Count()!=party.Length)
             throw new ArgumentException("Invalid Pickup party.");

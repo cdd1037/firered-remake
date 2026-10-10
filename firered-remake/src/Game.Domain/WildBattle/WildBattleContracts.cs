@@ -24,6 +24,10 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FocusEnergy = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Flinched = false)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Cursed { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Nightmare { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool DestinyBond { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? MeanLookSource { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Rooted { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int FirstTurnCounter { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool SpeedBadgeBoost { get; init; }
@@ -68,6 +72,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public PokemonTowerBattleKind? TowerBattleKind { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTerrain? Terrain { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int PlayerReflectTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int OpponentReflectTurnsRemaining { get; init; }
@@ -77,6 +82,12 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 }
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildBattlePokeFluteEvent), "poke-flute")]
+[JsonDerivedType(typeof(WildBattleTowerGhostActionEvent), "tower-ghost-action")]
+[JsonDerivedType(typeof(WildBattleTowerBallDodgedEvent), "tower-ball-dodged")]
+[JsonDerivedType(typeof(WildBattleTowerVolatileEvent), "tower-volatile")]
+[JsonDerivedType(typeof(WildBattleSpiteEvent), "spite")]
+[JsonDerivedType(typeof(WildBattleTowerHpEvent), "tower-hp")]
 [JsonDerivedType(typeof(WildBattleHeldItemKnockedOffEvent), "held-item-knocked-off")]
 [JsonDerivedType(typeof(WildBattleWeatherDamageEvent), "weather-damage")]
 [JsonDerivedType(typeof(WildBattleProtectAttemptEvent), "protect-attempt")]
@@ -285,3 +296,8 @@ public sealed record WildBattleProtectAttemptEvent(long Sequence, int Turn, Wild
 
 public sealed record WildBattleRootsChangedEvent(long Sequence, int Turn, WildBattleSide Side, bool Rooted, string Reason) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleIngrainHealEvent(long Sequence, int Turn, WildBattleSide Side, int HpBefore, int HpAfter, int Restored) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>Source canceller text; no move-use or PP expenditure occurs.</summary>
+public sealed record WildBattleTowerGhostActionEvent(long Sequence, int Turn, WildBattleSide Side, string StringId) : WildBattleEvent(Sequence, Turn);
+/// <summary>Source BALL_GHOST_DODGE, then the opponent action. Caller spends the authorized ball.</summary>
+public sealed record WildBattleTowerBallDodgedEvent(long Sequence, int Turn, CaptureBall Ball) : WildBattleEvent(Sequence, Turn);

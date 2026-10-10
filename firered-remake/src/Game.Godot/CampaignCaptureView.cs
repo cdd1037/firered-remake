@@ -133,6 +133,8 @@ public partial class CampaignView
                     _wildMedicineItem=enabled?item:null;_wildMenu = "medicine-target"; _wildCursor = enabled?battle.ActivePartyIndex:0; }
                 else if (_captureBagPocket == 1)
                 {
+                    if(_catalog.PokemonTowerEnabled && CaptureBagStacks[_captureBagSelected].Item.Value == "pret:ITEM_POKE_FLUTE")
+                    { ApplyWildChoice(new("battle_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
                     _wildMenu = "bag"; _wildCursor = _captureBagSelected;
                     _wildNotice = "Key items cannot be used\nin this battle.";
                 }

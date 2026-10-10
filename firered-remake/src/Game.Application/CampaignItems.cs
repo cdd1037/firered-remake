@@ -39,6 +39,7 @@ public sealed partial class CampaignSession
             if(!_content.SsAnneEnabled||menu.Origin!="bag"||menu.View!="bag"||OpeningInventoryRules.Quantity(state.Inventory!.KeyItems??[],SsAnneItemRules.BerryPouchId)!=1)return No("berry_pouch_context_invalid");
             return Menu("berries");
         }
+        if(command.Kind=="field_poke_flute")return UseFieldPokeFlute(state,command);
         if(command.Kind=="field_bicycle")return UseFieldBicycle(state,command);
         if(command.Kind=="field_fish")return StartFieldFishing(state,command);
         if(command.Kind=="town_map_open")return OpenTownMap(state,command);

@@ -19,6 +19,7 @@ public partial class CampaignView
     private readonly Dictionary<string,Texture2D> _cityBattleScenes = [];
     private Texture2D WildBattleTerrainForMap(MapId mapId)
     {
+        if(_catalog.PokemonTowerEnabled&&PokemonTowerPresentationModel.UsesTowerTerrain(mapId.Value))return _towerTerrain??throw new InvalidDataException("Tower terrain missing.");
         if (_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId)==true&&_catalog.SourceMaps[mapId].Events.GetProperty("battle_scene").GetString()=="MAP_BATTLE_SCENE_INDOOR_2")
             return _rocketIndoorTerrain??throw new InvalidDataException("Rocket Indoor2 terrain was not loaded.");
         if (_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.CeladonApproachRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
@@ -139,7 +140,7 @@ public partial class CampaignView
     private PartyPokemon WildRewardRecipient(CampaignWildBattle b) => _session.State.Party[b.RewardPartyIndex];
     private string WildName(WildBattleSide side) => side == WildBattleSide.Player
         ? WildWithdrawing(PresentedWildBattle!) ? PresentedWildBattle!.LastSwitch!.Outgoing.Nickname : SsAnnePendingPlayerForceOut(PresentedWildBattle!) is {} forced ? _session.State.Party[forced.PreviousIndex].Nickname : PresentedWildBattle!.OwnedBefore.Nickname
-        : _catalog.PokemonContent!.SpeciesNames[PresentedWildBattle!.DisplayOpponent.SourceSpeciesId];
+        : TowerOpponentAppearance()?.Name ?? _catalog.PokemonContent!.SpeciesNames[PresentedWildBattle!.DisplayOpponent.SourceSpeciesId];
     private string WildPrefixedName(WildBattleSide side) => (side == WildBattleSide.Opponent ? _session.State.ForestTrainerBattle is not null ? "Foe " : "Wild " : "") + WildName(side);
     private static string WildStatName(WildBattleStat stat) => stat switch
     {
@@ -183,6 +184,7 @@ public partial class CampaignView
         void Source(string symbol, params (string Key, string Value)[] values)
         {
             var added = WildSourcePages(symbol, values);
+            if(_catalog.PokemonTowerEnabled&&symbol=="sText_TheGhostWas")added=added.Where(p=>!string.IsNullOrWhiteSpace(p)).ToImmutableArray();
             bool finalWait = _battleText[symbol].EndsWith("\\p", StringComparison.Ordinal) ||
                 _battleText[symbol].EndsWith("\\l", StringComparison.Ordinal) || _battleText[symbol].Contains("{PAUSE_UNTIL_PRESS}", StringComparison.Ordinal);
             for (int i = 0; i < added.Length; i++) if (i + 1 < added.Length || finalWait) _wildArrowPages.Add(pages.Count + i);
@@ -193,7 +195,7 @@ public partial class CampaignView
             if (ForestTrainerEventPages(Source)) { _wildPages = pages.ToImmutable(); return; }
             var current = WildCurrentEvent(b) ?? throw new InvalidDataException("Battle event missing.");
             if(current is WildBattleInfatuationBlockedEvent love) Source("sText_PkmnInLove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(love.Side)),("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(love.Source)));
-            var forestMessage = RocketHideoutWildMessage(current) ?? CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
+            var forestMessage = PokemonTowerWildMessage(current) ?? RocketHideoutWildMessage(current) ?? CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
             if (forestMessage is { } message)
             {
                 if (message.Symbol.Length > 0) Source(message.Symbol, message.Values);
@@ -201,6 +203,7 @@ public partial class CampaignView
             else switch (current)
             {
                 case WildBattleStartedEvent:
+                    if (PokemonTowerStartedPages(b,Source)) break;
                     if (_session.State.ForestTrainerBattle is not null) { Source("sText_Trainer1WantsToBattle"); Source("sText_Trainer1SentOutPkmn"); }
                     else Source("sText_WildPkmnAppeared");
                     Source("sText_GoPkmn"); break;
@@ -286,17 +289,18 @@ public partial class CampaignView
     private void ProcessWildBattle(double delta)
     {
         _wildElapsed += delta;
+        if(PresentedWildBattle is {Phase:CampaignBattlePhase.Events} fluteBattle && ProcessPokemonTowerFluteBattle(fluteBattle))return;
         if (_wildNotice is null && PresentedWildBattle is { Phase: CampaignBattlePhase.Events } b &&
             _wildPages.IsEmpty && _wildElapsed >= .45 && (WildCurrentEvent(b) is
-                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || CeladonGymSilentEvent(b) || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
+                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || PokemonTowerSilentEvent(b) || CeladonGymSilentEvent(b) || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
     }
     private string WildCommandError() => _lastCommandFault ? "The battle step could not\nbe completed." : _status switch
     {
         "hm_move_cannot_be_forgotten" => HmCannotForgetText,
-        "wild_battle_switch_rooted" or "celadon_gym_trainer_switch_rooted" or "wild_battle_switch_binding" or "pewter_trainer_switch_binding" => WildName(WildBattleSide.Player)+" can't be switched\nout!",
+        "wild_battle_switch_rooted" or "wild_battle_switch_mean_look" or "celadon_gym_trainer_switch_rooted" or "wild_battle_switch_binding" or "pewter_trainer_switch_binding" => WildName(WildBattleSide.Player)+" can't be switched\nout!",
         "wild_battle_switch_arena_trap" or "route11_trainer_switch_arena_trap" => string.Join('\n',WildSourcePages("gText_PkmnsXPreventsSwitching",("B_BUFF1",WildName(WildBattleSide.Opponent)),("B_LAST_ABILITY","ARENA TRAP"))),
         "wild_battle_run_arena_trap" => string.Join('\n',WildSourcePages("sText_PreventsEscape",("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(WildBattleSide.Opponent)),("B_SCR_ACTIVE_ABILITY","ARENA TRAP"))),
-        "wild_battle_run_rooted" or "wild_battle_run_binding" => string.Join('\n',WildSourcePages("sText_CantEscape2")),
+        "wild_battle_run_rooted" or "wild_battle_run_binding" or "wild_battle_run_mean_look" => string.Join('\n',WildSourcePages("sText_CantEscape2")),
         "trainer_battle_cannot_run" => string.Join('\n', WildSourcePages("sText_NoRunningFromTrainers")),
         "trainer_battle_cannot_capture" => string.Join('\n', WildSourcePages("sText_DontBeAThief")),
         "wild_battle_player_move_pp_empty" => "This move has no PP left.",
@@ -376,6 +380,7 @@ public partial class CampaignView
         if (!key.Pressed || key.Echo) return true;
         _held = null;
         var b = PresentedWildBattle!;
+        if(PokemonTowerRevealInputLocked(b))return true;
         if (_wildNotice is not null)
         {
             if (key.Keycode is Key.Enter or Key.Backspace)
@@ -393,7 +398,7 @@ public partial class CampaignView
         if (b.Phase != CampaignBattlePhase.ChooseMove)
         {
             if (key.Keycode == Key.Enter && _wildElapsed > (b.Phase == CampaignBattlePhase.Events &&
-                WildCurrentEvent(b) is WildBattleWeatherDamageEvent or WildBattleStatusDamageEvent or WildBattleBindingDamageEvent or WildBattleConfusionSelfHitEvent ? .45 : .1))
+                WildCurrentEvent(b) is WildBattleWeatherDamageEvent or WildBattleStatusDamageEvent or WildBattleBindingDamageEvent or WildBattleConfusionSelfHitEvent or WildBattleTowerHpEvent ? .45 : .1))
             {
                 if (WildStatsPage(b) && !_wildStatsTotals) { _wildStatsTotals = true; _wildElapsed = 0; Write("wildBattleStatsPage", new { page = 2 }); }
                 else if (_wildPage + 1 < _wildPages.Length) { _wildPage++; _wildElapsed = 0; Write("wildBattlePage", new { key = _wildPresentationKey, page = _wildPage }); }
@@ -511,14 +516,14 @@ public partial class CampaignView
         bool defeatedTrainer = DrawForestTrainerDefeatPortrait(b);
         foreach (var (side, mon) in new[] { (WildBattleSide.Opponent, b.DisplayOpponent), (WildBattleSide.Player, WildDisplayPlayer(b)) })
         {
-            if (portrait || defeatedTrainer && side == WildBattleSide.Opponent || ForestTrainerHidePlayer(b, side)) continue;
+            if (portrait || defeatedTrainer && side == WildBattleSide.Opponent || ForestTrainerHidePlayer(b, side) || PokemonTowerHidePlayer(b,side)) continue;
             if (side == WildBattleSide.Opponent && b.Phase == CampaignBattlePhase.Events &&
                 b.Events.Take(b.EventIndex + 1).OfType<WildBattleCaptureResultEvent>().Any(c => c.Outcome == CaptureOutcome.Caught)) continue;
             bool faintShown = mon.CurrentHp == 0 && (b.Phase == CampaignBattlePhase.Results || b.Phase == CampaignBattlePhase.Events && b.Events.Take(b.EventIndex + 1).OfType<WildBattleFaintedEvent>().Any(f => f.Side == side));
             if (!faintShown)
             {
                 var asset = _battleArt[(mon.SourceSpeciesId, side == WildBattleSide.Player ? "back" : "front", mon.IsShiny)];
-                DrawTexture(asset.Texture, asset.Position);
+                if(side!=WildBattleSide.Opponent||!DrawPokemonTowerOpponent(b))DrawTexture(asset.Texture, asset.Position);
             }
             int hp = WildDisplayedHp(b, mon, side);
             DrawWildHealth(mon, side, hp);
@@ -531,7 +536,8 @@ public partial class CampaignView
         if (WildStatsPage(b)) { DrawWildStats(b, (WildRewardLevelEvent)b.Pages[b.PageIndex].Reward!); return; }
         if (!_wildPages.IsEmpty)
         {
-            WildLines(_wildPages[_wildPage]);
+            if(WildCurrentEvent(b) is not WildBattleTowerHpEvent {Effect:"curse-cost"} || _wildElapsed>=.4)WildLines(_wildPages[_wildPage]);
+            NotePokemonTowerFluteBattle(b);
             if (_wildArrowPages.Contains(_wildPage)) DrawTextCursor(_battleWhite, LabBattleUiSkin.BattleMessageText, _wildPages[_wildPage].Split('\n'), 16, _wildElapsed, true);
             return;
         }
@@ -620,7 +626,7 @@ public partial class CampaignView
             showHpLabel: ForestHealthShowsHpLabel(PresentedWildBattle!, side));
         var name = player ? LabBattleUiSkin.PlayerName : LabBattleUiSkin.OpponentName;
         SourceText(_healthFont, name, WildName(side));
-        if (mon.Gender != PokemonGender.Genderless)
+        if (mon.Gender != PokemonGender.Genderless && (player || TowerOpponentAppearance()?.ShowGender != false))
         {
             float width = _healthFont.Font.GetStringSize(_healthFont.PrepareText(WildName(side)), fontSize: _healthFont.Size).X;
             SourceText(mon.Gender == PokemonGender.Female ? _healthFemale : _healthMale, name + new Vector2(width, 0), mon.Gender == PokemonGender.Female ? "♀" : "♂");

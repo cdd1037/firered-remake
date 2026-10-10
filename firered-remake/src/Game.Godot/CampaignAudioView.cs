@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -39,6 +39,7 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
                     SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
                     sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.PokemonTowerEnabled)Write("pokemonTowerAudioCatalog",new{PokemonTowerSynthManifestIdentity.Sha256,PokemonTowerSynthManifestIdentity.CueCount,priorCueCount=286,audibleOutputVerified=false});
                 if(_catalog.RocketHideoutEnabled)Write("rocketHideoutAudioCatalog",new{RocketHideoutSynthManifestIdentity.Sha256,RocketHideoutSynthManifestIdentity.CueCount,priorCueCount=279,audibleOutputVerified=false});
                 if(_catalog.CeladonGymEnabled)Write("celadonGymAudioCatalog",new{CeladonGymSynthManifestIdentity.Sha256,CeladonGymSynthManifestIdentity.CueCount,priorCueCount=271,audibleOutputVerified=false});
                 if(_catalog.CeladonApproachEnabled)Write("celadonApproachAudioCatalog",new{CeladonApproachSynthManifestIdentity.Sha256,CeladonApproachSynthManifestIdentity.CueCount,priorCueCount=268,audibleOutputVerified=false});
@@ -324,7 +325,8 @@ public partial class CampaignView
             string key=$"{wild.Id}:{e.Sequence}:{_wildPage}";
             if(key==_audioPresentedEvent)return;_audioPresentedEvent=key;
             if(e is WildBattleStartedEvent)
-            {if(_wildPage==0)SourceCry(wild.DisplayOpponent);else if(_wildPage==1)SourceCry(wild.DisplayPlayer);}
+            {if(!PokemonTowerStartedAudio(wild)){if(_wildPage==0)SourceCry(wild.DisplayOpponent);else if(_wildPage==1)SourceCry(wild.DisplayPlayer);}}
+            if(e is WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.Fanfare})SourceSound("MUS_POKE_FLUTE",fanfare:true);
             if(e is WildBattlePlayerSwitchedEvent sw&&_wildPage==1)SourceCry(sw.Replacement.Pokemon);
             if(e is WildBattlePlayerReplacedEvent re&&_wildPage==0)SourceCry(re.Replacement.Pokemon);
             if(e is WildBattleMedicineAppliedEvent&&_wildPage==0)SourceSound("SE_USE_ITEM");

@@ -12,7 +12,7 @@ public sealed partial class CampaignSession
         if (state.EscapeRope is not null) return "save_event_active";
         if (!_content.MtMoonEnabled)
             return state.EscapeDestination is null ? null : "save_escape_rope_profile_missing";
-        return EscapeRopeRules.ValidateDestination(state.EscapeDestination,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled);
+        return EscapeRopeRules.ValidateDestination(state.EscapeDestination,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled);
     }
 
     private CampaignState RecordEscapeWarp(CampaignState before, CampaignState moved, Direction direction)
@@ -27,7 +27,7 @@ public sealed partial class CampaignSession
             p = p with { X = p.X + dx, Y = p.Y + dy };
         }
         return moved with { EscapeDestination = EscapeRopeRules.RecordWarp(before.EscapeDestination,
-            p with { Facing = direction }, moved.World.Player.MapId,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled) };
+            p with { Facing = direction }, moved.World.Player.MapId,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled) };
     }
 
     private Decision<CampaignState> UseFieldEscapeRope(CampaignState state, CampaignCommand command)
@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
             return No("field_escape_rope_context_invalid");
         if (ValidateCampaignInventory(state.Inventory) is { } error) return No(error);
         var use = EscapeRopeRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
-            state.World.Player.MapId, state.EscapeDestination, PotionUseContext.Field,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled);
+            state.World.Player.MapId, state.EscapeDestination, PotionUseContext.Field,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled);
         if (!use.Succeeded) return No(use.Error!);
         var arrival = use.Arrival!;
         if (!_content.Maps.TryGetValue(arrival.MapId, out var map) ||

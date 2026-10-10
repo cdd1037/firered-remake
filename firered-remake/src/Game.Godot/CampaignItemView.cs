@@ -93,6 +93,7 @@ public partial class CampaignView
         if(_itemQuantityOpen)ItemMessageBox(ItemText(view=="withdraw"?"gText_WithdrawHowMany":"gText_DepositHowManyStrVars1")+"   × "+_itemQuantity);
         if(_fieldMedicineTargetOpen){if(MtMoonTargetActive)DrawMtMoonTargets();else DrawFieldMedicineTargets();}
         if(_itemNotice is not null)ItemMessageBox(_itemNotice);
+        NotePokemonTowerFluteMessage();
     }
     private void DrawItemActionPopup(bool pc,string[] labels,int selected,string? itemName=null)
     {

@@ -14,7 +14,7 @@ public static class MtMoonFieldMedicineRules
         ArgumentNullException.ThrowIfNull(inventory);
         ArgumentNullException.ThrowIfNull(pokemon);
         MtMoonFieldMedicineResult Fail(string error) => new(inventory, pokemon, false, 0, 0, 0, error);
-        if (catalog.Profile is not (EarlyShopInventoryRules.MtMoonProfile or RocketHideoutItemRules.Profile)) return Fail("medicine_profile_unsupported");
+        if (catalog.Profile is not (EarlyShopInventoryRules.MtMoonProfile or RocketHideoutItemRules.Profile or PokemonTowerItemRules.Profile)) return Fail("medicine_profile_unsupported");
         var error = EarlyShopInventoryRules.Validate(catalog, inventory);
         if (error is not null) return Fail(error);
         error = PokemonStateValidator.ValidateParty(pokemonContent, pokemon);

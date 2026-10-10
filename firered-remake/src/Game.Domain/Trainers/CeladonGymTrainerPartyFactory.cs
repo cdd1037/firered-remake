@@ -28,10 +28,10 @@ public static class CeladonGymTrainerPartyFactory
     public static TrainerId Mary { get; } = new("pret:TRAINER_COOLTRAINER_MARY");
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(CeladonGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool rocketHideoutRules = false)
+    public static TrainerPartyCreationResult Create(CeladonGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool rocketHideoutRules = false, bool towerRules = false)
     {
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (rocketHideoutRules ? 99 : 98) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count != (towerRules ? 101 : rocketHideoutRules ? 99 : 98) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("CeladonGym requires the exact ninety-eight-species catalog and one initial source CeladonGym team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

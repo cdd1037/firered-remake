@@ -63,6 +63,7 @@ public sealed partial class CampaignSession
     private InventoryState LegacyQuestInventory(InventoryState inventory)
     {
         var view=WithoutCityServiceItems(_content.PewterEnabled?PewterMachineRules.WithoutMachines(inventory):inventory);
+        if(_content.PokemonTowerEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=PokemonTowerItemRules.PokeFluteId).ToImmutableArray()};
         if(_content.RocketHideoutEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item.Value is not("pret:ITEM_LIFT_KEY" or "pret:ITEM_SILPH_SCOPE")).ToImmutableArray(),Balls=view.Balls?.Where(s=>s.Item.Value is not("pret:ITEM_NET_BALL" or "pret:ITEM_NEST_BALL")).ToImmutableArray()};
         if(_content.SsAnneEnabled)view=view with{Berries=null,Balls=view.Balls is {} balls?balls.Where(s=>s.Item!=SsAnneItemRules.GreatBallId).ToImmutableArray():null,KeyItems=view.KeyItems is {} shipKeys?shipKeys.Where(s=>s.Item!=SsAnneItemRules.BerryPouchId).ToImmutableArray():null};
         if(_content.BillEnabled)view=view with{KeyItems=view.KeyItems is {} billKeys?billKeys.Where(s=>s.Item!=BillItemRules.FameCheckerId&&s.Item!=BillItemRules.SsTicketId).ToImmutableArray():null};
@@ -83,9 +84,16 @@ public sealed partial class CampaignSession
         if(!result.Succeeded)return result with{State=inventory};
         var keys=result.State.KeyItems;if(_content.PewterEnabled&&inventory.KeyItems is {} original)
         {
-            var preserved=original.Where(s=>_content.CityServicesEnabled&&IsCityServiceItem(s.Item)||s.Item==PewterMachineRules.TmCaseId||_content.SsAnneEnabled&&s.Item==SsAnneItemRules.BerryPouchId||_content.BillEnabled&&(s.Item==BillItemRules.FameCheckerId||s.Item==BillItemRules.SsTicketId)||_content.MtMoonEnabled&&(s.Item==MtMoonItemRules.HelixFossilId||s.Item==MtMoonItemRules.DomeFossilId)).ToArray();
+            var preserved=original.Where(s=>!(view.KeyItems??[]).Any(v=>v.Item==s.Item)).ToArray();
             foreach(var kept in preserved){var index=original.IndexOf(kept);var items=(keys??[]).ToBuilder();items.Insert(Math.Min(index,items.Count),kept);keys=items.ToImmutable();}
         }
-        return result with{State=inventory with{KeyItems=keys,Balls=_content.SsAnneEnabled?(result.State.Balls??[]).AddRange((inventory.Balls??[]).Where(s=>s.Item==SsAnneItemRules.GreatBallId)):result.State.Balls}};
+        var balls=result.State.Balls;
+        if(_content.RocketHideoutEnabled&&inventory.Balls is {} allBalls)
+        {
+            foreach(var kept in allBalls.Where(s=>!(view.Balls??[]).Any(v=>v.Item==s.Item)))
+            {var items=(balls??[]).ToBuilder();items.Insert(Math.Min(allBalls.IndexOf(kept),items.Count),kept);balls=items.ToImmutable();}
+        }
+        else if(_content.SsAnneEnabled)balls=(balls??[]).AddRange((inventory.Balls??[]).Where(s=>s.Item==SsAnneItemRules.GreatBallId));
+        return result with{State=inventory with{KeyItems=keys,Balls=balls}};
     }
 }

@@ -41,8 +41,9 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false)
     {
+        if(includePokemonTower&&!includeRocketHideout)throw new ArgumentException("Pokemon Tower audio requires Rocket Hideout.");
         if(includeRocketHideout&&!includeCeladonGym)throw new ArgumentException("Rocket Hideout audio requires Celadon Gym.");
         if(includeCeladonGym&&!includeCeladonApproach)throw new ArgumentException("Celadon Gym audio requires Celadon approach.");
         if(includeCeladonApproach&&!includeRockTunnel)throw new ArgumentException("Celadon approach audio requires RockTunnel.");
@@ -120,6 +121,16 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=RocketHideoutSynthManifestIdentity.Sha256)throw new InvalidDataException("RocketHideout synth manifest identity differs.");
             var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing RocketHideout synth manifest.");
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=RocketHideoutSynthManifestIdentity.SourceCommit||extension.Cues.Length!=RocketHideoutSynthManifestIdentity.CueCount)throw new InvalidDataException("RocketHideout synth manifest contract differs.");
+            cues=[..cues,..extension.Cues];
+        }
+        if(includePokemonTower)
+        {
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/pokemon-tower-synth-audio/manifest.json");
+            if(new FileInfo(path).Length!=PokemonTowerSynthManifestIdentity.Bytes)throw new InvalidDataException("PokemonTower synth manifest length differs.");
+            byte[] extensionBytes=File.ReadAllBytes(path);
+            if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=PokemonTowerSynthManifestIdentity.Sha256)throw new InvalidDataException("PokemonTower synth manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing PokemonTower synth manifest.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=PokemonTowerSynthManifestIdentity.SourceCommit||extension.Cues.Length!=PokemonTowerSynthManifestIdentity.CueCount)throw new InvalidDataException("PokemonTower synth manifest contract differs.");
             cues=[..cues,..extension.Cues];
         }
         _catalog = new(StringComparer.Ordinal);
