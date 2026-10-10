@@ -47,8 +47,9 @@ public static class OldManTutorialRules
     public const int PokeBallSourceItemId = 4;
     public static SpeciesId WeedleSpecies { get; } = new("pret:SPECIES_WEEDLE");
 
-    public static OldManTutorialResult Start(PokemonCatalog catalog, PartyPokemon hiddenPlayerPokemon, RngState rng, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool route11Rules = false)
+    public static OldManTutorialResult Start(PokemonCatalog catalog, PartyPokemon hiddenPlayerPokemon, RngState rng, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         ssAnneRules |= route11Rules;
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
@@ -57,7 +58,7 @@ public static class OldManTutorialRules
         route3Rules |= mtMoonRules;
         PokemonFactory.ValidateCatalog(catalog);
         ArgumentNullException.ThrowIfNull(hiddenPlayerPokemon);
-        if ((route11Rules ? catalog.Species.Count != 79 : ssAnneRules ? catalog.Species.Count != 73 : vermilionRules ? catalog.Species.Count != 70 : billRules ? catalog.Species.Count != 68 : ceruleanRules ? catalog.Species.Count != 65 : mtMoonRules ? catalog.Species.Count != 56 : route3Rules ? catalog.Species.Count != 40 : route22Rules ? catalog.Species.Count != 32 : catalog.Species.Count is not (17 or 22 or 29)) || !catalog.Species.TryGetValue(WeedleSpecies, out var species))
+        if ((rockTunnelRules ? catalog.Species.Count != 93 : route11Rules ? catalog.Species.Count != 79 : ssAnneRules ? catalog.Species.Count != 73 : vermilionRules ? catalog.Species.Count != 70 : billRules ? catalog.Species.Count != 68 : ceruleanRules ? catalog.Species.Count != 65 : mtMoonRules ? catalog.Species.Count != 56 : route3Rules ? catalog.Species.Count != 40 : route22Rules ? catalog.Species.Count != 32 : catalog.Species.Count is not (17 or 22 or 29)) || !catalog.Species.TryGetValue(WeedleSpecies, out var species))
             throw new NotSupportedException("The authenticated catalog must match the selected tutorial profile.");
         var error = PokemonStateValidator.Validate(catalog, hiddenPlayerPokemon.Pokemon);
         if (error is not null) throw new ArgumentException(error, nameof(hiddenPlayerPokemon));
@@ -66,7 +67,7 @@ public static class OldManTutorialRules
         // Source items.json assigns these cave wild-held items HOLD_EFFECT_NONE.
         bool mtMoonHeldItem = mtMoonRules && hiddenPlayerPokemon.HeldItem is
             "ITEM_TINY_MUSHROOM" or "ITEM_BIG_MUSHROOM" or "ITEM_MOON_STONE";
-        if ((hiddenPlayerPokemon.HeldItem != "ITEM_NONE" && !(route3Rules && hiddenPlayerPokemon.HeldItem == "ITEM_ORAN_BERRY") && !mtMoonHeldItem && !(route11Rules && Game.Domain.WildBattle.Route11BattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(ssAnneRules && Game.Domain.WildBattle.SsAnneBattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(vermilionRules && VermilionPickupRules.IsKnownHeldItem(hiddenPlayerPokemon.HeldItem))) ||
+        if ((hiddenPlayerPokemon.HeldItem != "ITEM_NONE" && !(route3Rules && hiddenPlayerPokemon.HeldItem == "ITEM_ORAN_BERRY") && !mtMoonHeldItem && !(rockTunnelRules && Game.Domain.WildBattle.RockTunnelBattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(route11Rules && Game.Domain.WildBattle.Route11BattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(ssAnneRules && Game.Domain.WildBattle.SsAnneBattleScope.SupportsHeldItem(hiddenPlayerPokemon.HeldItem)) && !(vermilionRules && VermilionPickupRules.IsKnownHeldItem(hiddenPlayerPokemon.HeldItem))) ||
             hiddenPlayerPokemon.Status != 0 || hiddenPlayerPokemon.Mail != 255)
             throw new NotSupportedException("Tutorial profile excludes unmodeled held items, status and mail.");
         // Old profiles stay narrow. Route 3 models Intimidate below; the other admitted abilities
@@ -84,7 +85,7 @@ public static class OldManTutorialRules
             "ABILITY_WATER_VEIL" or "ABILITY_NATURAL_CURE" or "ABILITY_ILLUMINATE";
         bool billAbility=billRules && hiddenPlayerPokemon.Pokemon.AbilityId is "ABILITY_OBLIVIOUS" or "ABILITY_OWN_TEMPO";
         if (hiddenPlayerPokemon.Pokemon.AbilityId is not ("ABILITY_OVERGROW" or "ABILITY_BLAZE" or "ABILITY_TORRENT" or
-            "ABILITY_KEEN_EYE" or "ABILITY_RUN_AWAY" or "ABILITY_GUTS" or "ABILITY_SHIELD_DUST" or "ABILITY_SHED_SKIN" or "ABILITY_SWARM") && !((route22Rules || route3Rules) && hiddenPlayerPokemon.Pokemon.AbilityId=="ABILITY_VITAL_SPIRIT") && !route3Ability && !mtMoonAbility && !ceruleanAbility && !billAbility && !(route11Rules && Game.Domain.WildBattle.Route11BattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !(ssAnneRules && Game.Domain.WildBattle.SsAnneBattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !(vermilionRules && hiddenPlayerPokemon.Pokemon.AbilityId=="ABILITY_PICKUP"))
+            "ABILITY_KEEN_EYE" or "ABILITY_RUN_AWAY" or "ABILITY_GUTS" or "ABILITY_SHIELD_DUST" or "ABILITY_SHED_SKIN" or "ABILITY_SWARM") && !((route22Rules || route3Rules) && hiddenPlayerPokemon.Pokemon.AbilityId=="ABILITY_VITAL_SPIRIT") && !route3Ability && !mtMoonAbility && !ceruleanAbility && !billAbility && !(rockTunnelRules && Game.Domain.WildBattle.RockTunnelBattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !(route11Rules && Game.Domain.WildBattle.Route11BattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !(ssAnneRules && Game.Domain.WildBattle.SsAnneBattleScope.SupportsAbility(hiddenPlayerPokemon.Pokemon.AbilityId)) && !(vermilionRules && hiddenPlayerPokemon.Pokemon.AbilityId=="ABILITY_PICKUP"))
             throw new NotSupportedException("Unmodeled tutorial entry ability.");
         if (species.SourceSpeciesId != 13 || species.GenderRatio != 127 || species.Ability1 != "ABILITY_SHIELD_DUST")
             throw new ArgumentException("Unexpected tutorial Weedle definition.", nameof(catalog));

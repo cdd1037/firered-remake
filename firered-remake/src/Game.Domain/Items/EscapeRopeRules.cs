@@ -17,18 +17,22 @@ public static class EscapeRopeRules
     public const string RulesVersion = "firered-mtmoon-forest-escape-rope-v1";
     public static ItemId Item { get; } = new("pret:ITEM_ESCAPE_ROPE");
 
-    public static bool IsSupportedMap(MapId map) => map.Value is
-        "map.mt-moon-1f" or "map.mt-moon-b1f" or "map.mt-moon-b2f" or "map.viridian-forest";
+    private static bool IsDiglettMap(MapId map) => map.Value is
+        "map.digletts-cave-south-entrance" or "map.digletts-cave-b1f" or "map.digletts-cave-north-entrance";
+    private static bool IsRockMap(MapId map) => map.Value is "map.rock-tunnel-1f" or "map.rock-tunnel-b1f";
+    public static bool IsSupportedMap(MapId map, bool route11Rules = false, bool rockTunnelRules = false) =>
+        map.Value is "map.mt-moon-1f" or "map.mt-moon-b1f" or "map.mt-moon-b2f" or "map.viridian-forest" ||
+        (route11Rules || rockTunnelRules) && IsDiglettMap(map) || rockTunnelRules && IsRockMap(map);
 
     /// <summary>Call once, only after a successful actual warp, with the source warp tile and its
     /// triggering facing, in local map coordinates (no GBA seven-tile padding).
     /// This deliberately tracks only the entrances needed by the admitted Escape Rope maps.
     /// Other warps, including Forest-to-gate exits, retain the previous bounded destination.</summary>
     public static EscapeRopeDestination? RecordWarp(EscapeRopeDestination? previous,
-        TilePosition sourceWarp, MapId destinationMap)
+        TilePosition sourceWarp, MapId destinationMap, bool route11Rules = false, bool rockTunnelRules = false)
     {
         ArgumentNullException.ThrowIfNull(sourceWarp);
-        if (ValidateDestination(previous) is { } error) throw new ArgumentException(error, nameof(previous));
+        if (ValidateDestination(previous, route11Rules, rockTunnelRules) is { } error) throw new ArgumentException(error, nameof(previous));
         if (!StableId.IsValid(sourceWarp.MapId.Value) || !StableId.IsValid(destinationMap.Value) ||
             sourceWarp.X < 0 || sourceWarp.Y < 0 || sourceWarp.Elevation is < 0 or > 15 || !Enum.IsDefined(sourceWarp.Facing))
             throw new ArgumentException("Invalid warp source position.", nameof(sourceWarp));
@@ -37,7 +41,12 @@ public static class EscapeRopeRules
             destinationMap.Value is "map.mt-moon-1f" or "map.mt-moon-b1f";
         bool forestEntrance = sourceWarp.MapId.Value == "map.route-2" &&
             destinationMap.Value is "map.route-2-forest-south-gate" or "map.route-2-forest-north-gate";
-        if (!moonEntrance && !forestEntrance) return previous;
+        bool diglettEntrance = (sourceWarp.MapId.Value, destinationMap.Value) is
+            ("map.route-11", "map.digletts-cave-south-entrance") or ("map.route-2", "map.digletts-cave-north-entrance");
+        bool rockEntrance = sourceWarp.MapId.Value == "map.route-10" && destinationMap.Value == "map.rock-tunnel-1f";
+        if (!moonEntrance && !forestEntrance && !diglettEntrance && !rockEntrance) return previous;
+        if (diglettEntrance && !(route11Rules || rockTunnelRules) || rockEntrance && !rockTunnelRules)
+            return previous;
 
         bool admitted = (sourceWarp.MapId.Value, destinationMap.Value, sourceWarp.X, sourceWarp.Y, sourceWarp.Facing) switch
         {
@@ -45,6 +54,9 @@ public static class EscapeRopeRules
             ("map.route-4", "map.mt-moon-b1f", 32, 5, Direction.North) => true,
             ("map.route-2", "map.route-2-forest-south-gate", 5 or 6, 51, Direction.North) => true,
             ("map.route-2", "map.route-2-forest-north-gate", 5 or 6, 13, Direction.South) => true,
+            ("map.route-11", "map.digletts-cave-south-entrance", 6, 7, Direction.North) => true,
+            ("map.route-2", "map.digletts-cave-north-entrance", 17, 11, Direction.North) => true,
+            ("map.route-10", "map.rock-tunnel-1f", 8, 19 or 57, Direction.North) => true,
             _ => false
         };
         if (!admitted || sourceWarp.Elevation != 3)
@@ -55,11 +67,14 @@ public static class EscapeRopeRules
 
     /// <summary>Null remains valid for historical saves, including old in-cave saves. Such saves
     /// cannot use a rope until a real admitted entrance establishes the destination.</summary>
-    public static string? ValidateDestination(EscapeRopeDestination? destination) => destination switch
+    public static string? ValidateDestination(EscapeRopeDestination? destination, bool route11Rules = false, bool rockTunnelRules = false) => destination switch
     {
         null => null,
         { MapId.Value: "map.route-4", X: 19 or 32, Y: 6 } => null,
         { MapId.Value: "map.route-2", X: 5 or 6, Y: 13 or 52 } => null,
+        { MapId.Value: "map.route-11", X: 6, Y: 8 } when route11Rules || rockTunnelRules => null,
+        { MapId.Value: "map.route-2", X: 17, Y: 12 } when route11Rules || rockTunnelRules => null,
+        { MapId.Value: "map.route-10", X: 8, Y: 20 or 58 } when rockTunnelRules => null,
         _ => "escape_rope_destination_invalid"
     };
 
@@ -68,18 +83,26 @@ public static class EscapeRopeRules
     /// must not call Use again. Failure preserves the exact inventory and consumes zero.
     /// Application owns field/battle locks, revision guards, movement/RNG, and destination persistence.</summary>
     public static EscapeRopeUseResult Use(EarlyShopCatalog catalog, InventoryState inventory,
-        MapId currentMap, EscapeRopeDestination? destination, PotionUseContext context)
+        MapId currentMap, EscapeRopeDestination? destination, PotionUseContext context,
+        bool route11Rules = false, bool rockTunnelRules = false)
     {
         ArgumentNullException.ThrowIfNull(inventory);
         EscapeRopeUseResult Fail(string error) => new(inventory, null, false, 0, error);
         var error = EarlyShopInventoryRules.Validate(catalog, inventory);
         if (error is not null) return Fail(error);
         if (context != PotionUseContext.Field) return Fail("escape_rope_field_only");
-        if (!IsSupportedMap(currentMap)) return Fail("escape_rope_map_not_allowed");
+        if (!IsSupportedMap(currentMap, route11Rules, rockTunnelRules)) return Fail("escape_rope_map_not_allowed");
+        if (IsRockMap(currentMap) && catalog.Profile != RockTunnelItemRules.Profile ||
+            IsDiglettMap(currentMap) && catalog.Profile is not (Route11ItemRules.Profile or RockTunnelItemRules.Profile))
+            return Fail("escape_rope_map_not_allowed");
         if (destination is null) return Fail("escape_rope_destination_missing");
-        if (ValidateDestination(destination) is { } invalid) return Fail(invalid);
-        if ((currentMap.Value == "map.viridian-forest") != (destination.MapId.Value == "map.route-2"))
-            return Fail("escape_rope_destination_mismatch");
+        if (ValidateDestination(destination, route11Rules, rockTunnelRules) is { } invalid) return Fail(invalid);
+        bool matches = currentMap.Value == "map.viridian-forest" ?
+            destination is { MapId.Value: "map.route-2", X: 5 or 6, Y: 13 or 52 } :
+            IsDiglettMap(currentMap) ? destination is { MapId.Value: "map.route-11", X: 6, Y: 8 } or { MapId.Value: "map.route-2", X: 17, Y: 12 } :
+            IsRockMap(currentMap) ? destination is { MapId.Value: "map.route-10", X: 8, Y: 20 or 58 } :
+            destination is { MapId.Value: "map.route-4", X: 19 or 32, Y: 6 };
+        if (!matches) return Fail("escape_rope_destination_mismatch");
         int quantity = OpeningInventoryRules.Quantity(inventory.BagItems, Item);
         if (quantity == 0) return Fail("escape_rope_not_in_bag");
         var definition = catalog.Items.Single(i => i.Id == Item);

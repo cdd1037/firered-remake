@@ -22,11 +22,12 @@ public static class CeruleanTrainerPartyFactory
         "pret:SPECIES_SQUIRTLE" => SupportedTrainers[5], _ => throw new NotSupportedException("Unknown original starter.") };
 
     public static TrainerPartyCreationResult Create(CeruleanTrainerCatalog trainers, PokemonCatalog pokemon,
-        TrainerId trainerId, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false)
+        TrainerId trainerId, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || !trainers.Trainers.TryGetValue(trainerId, out var trainer))
+        if (pokemon.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || !trainers.Trainers.TryGetValue(trainerId, out var trainer))
             throw new NotSupportedException("Cerulean requires its complete sixty-five-species catalog and a source trainer.");
         foreach (var member in trainer.Party)
         {

@@ -163,6 +163,7 @@ public partial class CampaignView
             WildBattleConfusionSelfHitEvent self when self.Side == side => (self.HpBefore, self.HpAfter),
             WildBattleBindingDamageEvent bind when bind.Side == side => (bind.HpBefore, bind.HpAfter),
             WildBattleStatusDamageEvent damage when damage.Side == side => (damage.HpBefore, damage.HpAfter),
+            WildBattleWeatherDamageEvent damage when damage.Side == side => (damage.HpBefore, damage.HpAfter),
             WildBattleDrainEvent drain when drain.Actor==side => (drain.HpBefore,drain.HpAfter),
             WildBattleLeechSeedDrainEvent seed when seed.DrainedSide==side => (seed.HpBefore,seed.HpAfter),
             WildBattleLeechSeedDrainEvent seed when seed.ReceivingSide==side => (seed.ReceiverHpBefore,seed.ReceiverHpAfter),

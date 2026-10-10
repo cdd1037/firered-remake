@@ -17,6 +17,7 @@ public sealed record FieldMapDefinition(MapId Id,string SourceMapSymbol,Immutabl
     ImmutableArray<FieldCoordTrigger> CoordTriggers,ImmutableArray<FieldBackgroundTrigger> BackgroundTriggers,FieldMapPrograms Programs,string Music,string RegionMapSection="")
 {
     public string MapType { get; init; } = "MAP_TYPE_NONE";
+    public bool RequiresFlash { get; init; }
 }
 public sealed record CampaignBattleContent(TrainerCatalog Trainers,ImmutableSortedDictionary<string,string> MoveNames);
 public sealed record CampaignOakRatingProjection(int Seen,int Caught,string RatingTextSymbol,bool KantoComplete);
@@ -47,7 +48,9 @@ public interface ICampaignCatalog:IStoryCatalog
     bool CeruleanEnabled=>false;
     bool CityServicesEnabled=>false;
     bool Route11Enabled=>false;
+    bool RockTunnelEnabled=>false;
     Route11TrainerCatalog? Route11Trainers=>null;
+    RockTunnelTrainerCatalog? RockTunnelTrainers=>null;
     ImmutableArray<PewterMachineItem> CityServiceItems=>[];
     IReadOnlyDictionary<MapId,OldRodEncounterTable>? OldRodEncounters=>null;
     int? TerrainAt(MapId map,int x,int y)=>null;

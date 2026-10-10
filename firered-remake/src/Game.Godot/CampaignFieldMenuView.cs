@@ -128,6 +128,7 @@ public partial class CampaignView
                 else { _fieldMenuMode = "switch"; _fieldSwapSource = _fieldPartyCursor; }
             }
             else if(actions[_fieldPartyAction] == "CUT") UseFieldPartyCut();
+            else if(actions[_fieldPartyAction] == "FLASH") UseFieldPartyFlash();
             else _fieldMenuMode = "party";
             return true;
         }
@@ -154,11 +155,15 @@ public partial class CampaignView
     }
 
     // The source lists a known field move before checking its badge/context at selection.
-    private string[] FieldPartyActions() => _catalog.VermilionGymEnabled &&
-        _fieldPartyCursor >= 0 && _fieldPartyCursor < _session.State.Party.Length &&
-        !_session.State.Party[_fieldPartyCursor].IsEgg &&
-        _session.State.Party[_fieldPartyCursor].Pokemon.Moves.Any(m=>m.Move.Value=="pret:MOVE_CUT")
-        ? ["SUMMARY", "CUT", "SWITCH", "CANCEL"] : ["SUMMARY", "SWITCH", "CANCEL"];
+    private string[] FieldPartyActions()
+    {
+        var actions=new List<string>{"SUMMARY"};
+        if(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&!_session.State.Party[_fieldPartyCursor].IsEgg)
+            foreach(var move in _session.State.Party[_fieldPartyCursor].Pokemon.Moves)
+                if(_catalog.VermilionGymEnabled&&move.Move.Value=="pret:MOVE_CUT")actions.Add("CUT");
+                else if(_catalog.RockTunnelEnabled&&move.Move.Value=="pret:MOVE_FLASH")actions.Add("FLASH");
+        actions.Add("SWITCH");actions.Add("CANCEL");return actions.ToArray();
+    }
     private int FieldPartyActionTop => 152-FieldPartyActions().Length*16;
     private void UseFieldPartyCut()
     {

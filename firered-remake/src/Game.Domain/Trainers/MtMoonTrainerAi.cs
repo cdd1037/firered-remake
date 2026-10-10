@@ -14,15 +14,16 @@ public static class MtMoonTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-mtmoon-trainer-ai-semantic-v1";
 
-    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false)
+    public static ForestTrainerAiDecision Choose(PokemonCatalog catalog, ForestTrainerAiInput input, RngState rng, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         ForestTrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
             new(code, "Input is outside the bounded MtMoon trainer AI profile."));
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
         ceruleanRules |= billRules;
-        string? error = Validate(catalog, input, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
+        string? error = Validate(catalog, input, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("mtmoon_trainer_ai_rng_algorithm");
         bool Usable(int slot) => WildBattleRules.IsMoveSelectable(input.User, slot) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move));
@@ -171,25 +172,26 @@ public static class MtMoonTrainerAi
             value = value * effect.MultiplierTenths / 10;
         return value;
     }
-    private static string? Validate(PokemonCatalog? catalog, ForestTrainerAiInput? input, bool ceruleanRules, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules)
+    private static string? Validate(PokemonCatalog? catalog, ForestTrainerAiInput? input, bool ceruleanRules, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         if (input is null) return "mtmoon_trainer_ai_input_missing";
         if (input.AiFlags != 1) return "mtmoon_trainer_ai_flags_unsupported";
-        if (catalog?.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : 56)) return "mtmoon_trainer_ai_catalog_scope";
+        if (catalog?.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : 56)) return "mtmoon_trainer_ai_catalog_scope";
         foreach (var (name, mon) in new[] { ("user", input.User), ("target", input.Target) })
         {
-            string? error = ValidateCombatant(catalog, mon, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
+            string? error = ValidateCombatant(catalog, mon, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
             if (error is not null) return "mtmoon_trainer_ai_" + name + "_" + error;
             if (mon.Pokemon.CurrentHp == 0) return "mtmoon_trainer_ai_" + name + "_fainted";
         }
         if (!ValidUser(catalog, input.User.Pokemon) || input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost || input.User.HeldItem != "ITEM_NONE") return "mtmoon_trainer_ai_user_roster";
         foreach (var slot in input.User.Pokemon.Moves)
             if (!MtMoonBattleScope.ValidDefinition(catalog.Moves[slot.Move])) return "mtmoon_trainer_ai_move_definition";
-        if (input.KnownTargetAbility is { } known && !(route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "mtmoon_trainer_ai_ability_history";
+        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? RockTunnelBattleScope.SupportsAbility(known) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "mtmoon_trainer_ai_ability_history";
         return null;
     }
-    internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false) =>
-        ceruleanRules ? CeruleanTrainerAi.ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules) : WildBattleRules.ValidateCombatant(catalog!, mon!, "mtmoon-ai", true, true, true, true, true, true, true) ??
+    internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false) =>
+        ceruleanRules ? CeruleanTrainerAi.ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) : WildBattleRules.ValidateCombatant(catalog!, mon!, "mtmoon-ai", true, true, true, true, true, true, true) ??
         (!ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) ? "mtmoon_ai_species_type_ability" : null);
     internal static bool ValidUser(PokemonCatalog catalog, PokemonInstance mon) =>
         MtMoonTrainerPartyFactory.SupportedTrainers.Any(id => MtMoonTrainerPartyFactory.Expected(id).Party.Contains((mon.SourceSpeciesId, mon.Level))) &&

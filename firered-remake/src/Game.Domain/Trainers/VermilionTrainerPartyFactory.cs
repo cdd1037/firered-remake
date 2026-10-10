@@ -28,11 +28,12 @@ public static class VermilionTrainerPartyFactory
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(VermilionTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false)
+    public static TrainerPartyCreationResult Create(VermilionTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : 70) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : 70) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("Vermilion requires the exact seventy-species catalog and one initial team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

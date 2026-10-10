@@ -26,8 +26,9 @@ public static class Route22TrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-route22-rival-ai-semantic-v1";
 
-    public static Route22TrainerAiDecision Choose(PokemonCatalog catalog, Route22TrainerAiInput input, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false)
+    public static Route22TrainerAiDecision Choose(PokemonCatalog catalog, Route22TrainerAiInput input, RngState rng, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false)
     {
+        route11Rules |= rockTunnelRules;
         Route22TrainerAiDecision Fault(string code) => new(TransitionStatus.Fault, null, [], [], rng, [],
             new(code, "Input is outside the bounded Route22 early-rival AI profile."));
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
@@ -36,7 +37,7 @@ public static class Route22TrainerAi
         ceruleanRules |= billRules;
         mtMoonRules |= ceruleanRules;
         route3Rules |= mtMoonRules;
-        string? error = Validate(catalog, input, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
+        string? error = Validate(catalog, input, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("route22_trainer_ai_rng_algorithm");
         bool Usable(int slot) => route3Rules ? WildBattleRules.IsMoveSelectable(input.User, slot) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move)) : slot < input.User.Pokemon.Moves.Length && input.User.Pokemon.Moves[slot].CurrentPp > 0;
@@ -184,14 +185,15 @@ public static class Route22TrainerAi
         return Math.Max(1, value * percent / 100);
     }
 
-    private static string? Validate(PokemonCatalog? catalog, Route22TrainerAiInput? input, bool route3Rules, bool mtMoonRules, bool ceruleanRules, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules)
+    private static string? Validate(PokemonCatalog? catalog, Route22TrainerAiInput? input, bool route3Rules, bool mtMoonRules, bool ceruleanRules, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         if (input is null) return "route22_trainer_ai_input_missing";
-        if (catalog?.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) return "route22_trainer_ai_catalog_scope";
+        if (catalog?.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) return "route22_trainer_ai_catalog_scope";
         if (input.AiFlags != 7) return "route22_trainer_ai_flags_unsupported";
         foreach (var (name, mon) in new[] { ("user", input.User), ("target", input.Target) })
         {
-            string? error = ValidateCombatant(catalog, mon, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
+            string? error = ValidateCombatant(catalog, mon, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
             if (error is not null) return "route22_trainer_ai_" + name + "_" + error;
             if (mon.Pokemon.CurrentHp == 0) return "route22_trainer_ai_" + name + "_fainted";
         }
@@ -200,13 +202,14 @@ public static class Route22TrainerAi
         if (input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost) return "route22_trainer_ai_enemy_badge";
         foreach (var slot in input.User.Pokemon.Moves)
             if (!ValidMove(catalog!.Moves[slot.Move])) return "route22_trainer_ai_move_definition";
-        if (input.KnownTargetAbility is { } known && !(route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "route22_trainer_ai_ability_history";
+        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? RockTunnelBattleScope.SupportsAbility(known) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "route22_trainer_ai_ability_history";
         return null;
     }
 
-    internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false)
+    internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
-        if (ceruleanRules) return CeruleanTrainerAi.ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
+        route11Rules |= rockTunnelRules;
+        if (ceruleanRules) return CeruleanTrainerAi.ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (mtMoonRules) return MtMoonTrainerAi.ValidateCombatant(catalog, mon);
         if (route3Rules) return Route3TrainerAi.ValidateCombatant(catalog, mon);
         if (mon is null) return "missing";

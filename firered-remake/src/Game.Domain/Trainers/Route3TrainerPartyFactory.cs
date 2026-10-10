@@ -16,11 +16,12 @@ public static class Route3TrainerPartyFactory
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = new[] {
         "YOUNGSTER_BEN", "YOUNGSTER_CALVIN", "BUG_CATCHER_COLTON", "BUG_CATCHER_GREG", "BUG_CATCHER_JAMES",
         "LASS_JANICE", "LASS_SALLY", "LASS_ROBIN" }.Select(x => new TrainerId("pret:TRAINER_" + x)).ToImmutableArray();
-    public static TrainerPartyCreationResult Create(Route3TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId trainerId, RngState rng, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false)
+    public static TrainerPartyCreationResult Create(Route3TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId trainerId, RngState rng, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : 40)) throw new NotSupportedException("The explicit Route3 or MtMoon Pokemon catalog is required.");
+        if (pokemon.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : 40)) throw new NotSupportedException("The explicit Route3 or MtMoon Pokemon catalog is required.");
         if (!trainers.Trainers.TryGetValue(trainerId, out var trainer)) throw new NotSupportedException("Unknown Route3 trainer.");
         foreach (var member in trainer.Party)
             if (!pokemon.Species.TryGetValue(member.Species, out var species) || !Route3TrainerAi.ValidSpecies(species))

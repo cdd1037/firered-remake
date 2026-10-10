@@ -34,6 +34,12 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int RampageTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? RampageMoveSlot { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Rage { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Identified { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool DamagedByOpponentThisTurn { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Protected { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Enduring { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int ProtectConsecutiveUses { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? KnockedOffItem { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Imprison { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool FlashFireBoost { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool WaterSport { get; init; }
@@ -61,11 +67,17 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTerrain? Terrain { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int PlayerReflectTurnsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int OpponentReflectTurnsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SandstormTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int RainTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int PayDayMoney { get; init; }
 }
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildBattleHeldItemKnockedOffEvent), "held-item-knocked-off")]
+[JsonDerivedType(typeof(WildBattleWeatherDamageEvent), "weather-damage")]
+[JsonDerivedType(typeof(WildBattleProtectAttemptEvent), "protect-attempt")]
 [JsonDerivedType(typeof(WildBattlePayDayEvent), "pay-day")]
 [JsonDerivedType(typeof(WildBattleStartedEvent), "started")]
 [JsonDerivedType(typeof(WildBattleOrderEvent), "order")]
@@ -262,3 +274,7 @@ public sealed record WildBattleHeldItemStolenEvent(long Sequence, int Turn, Wild
 public sealed record WildBattleRecoveredEvent(long Sequence, int Turn, WildBattleSide Side, MoveId Move, int HpBefore, int HpAfter, int Recovered) : WildBattleEvent(Sequence, Turn);
 
 public sealed record WildBattlePayDayEvent(long Sequence, int Turn, WildBattleSide Actor, int Before, int After) : WildBattleEvent(Sequence, Turn);
+
+public sealed record WildBattleHeldItemKnockedOffEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target, MoveId Move, string Item) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleWeatherDamageEvent(long Sequence, int Turn, WildBattleSide Side, string Weather, int HpBefore, int HpAfter, int Damage) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleProtectAttemptEvent(long Sequence, int Turn, WildBattleSide Side, MoveId Move, int Before, int After, int Threshold, int Roll, bool NotLastAction, bool Succeeded) : WildBattleEvent(Sequence, Turn);

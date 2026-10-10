@@ -80,7 +80,7 @@ public static class ItemEvolutionRules
     private static void Validate(CampaignPokemonContent content, PartyPokemon owned, string item)
     {
         LevelEvolutionRules.Validate(content, owned);
-        if (content.Catalog.Species.Count is not (56 or 65 or 68 or 70 or 73 or 79))
+        if (content.Catalog.Species.Count is not (56 or 65 or 68 or 70 or 73 or 79 or 93))
             throw new NotSupportedException("Moon Stone evolution requires the verified MtMoon or Cerulean catalog.");
         if (item != MoonStone)
             throw new NotSupportedException("Only Moon Stone item evolution is implemented by this profile.");

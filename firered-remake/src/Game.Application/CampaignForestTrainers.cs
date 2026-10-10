@@ -64,27 +64,29 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("forest_trainer_local_owner_required");
             var mon = owned.Pokemon.CurrentHp == 0 ? owned.Pokemon with { CurrentHp = 1 } : owned.Pokemon;
             var combatant=new WildBattleCombatant(mon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET")};
-            var probe = IsRoute11Trainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.Route11Trainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state))
+            var probe = IsRockTunnelTrainer(trainer)
+                ? ForestTrainerCombatRules.Start(_content.RockTunnelTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state))
+                : IsRoute11Trainer(trainer)
+                ? ForestTrainerCombatRules.Start(_content.Route11Trainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),rockTunnelRules:_content.RockTunnelEnabled)
                 : IsVermilionGymTrainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.VermilionGymTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),route11Rules:_content.Route11Enabled)
+                ? ForestTrainerCombatRules.Start(_content.VermilionGymTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
                 : IsSsAnneTrainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.SsAnneTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled)
+                ? ForestTrainerCombatRules.Start(_content.SsAnneTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
                 : IsVermilionTrainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.VermilionTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled)
+                ? ForestTrainerCombatRules.Start(_content.VermilionTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
                 : IsBillTrainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.BillTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled)
+                ? ForestTrainerCombatRules.Start(_content.BillTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
                 : IsCeruleanTrainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.CeruleanTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled)
+                ? ForestTrainerCombatRules.Start(_content.CeruleanTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
                 : IsMtMoonTrainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.MtMoonTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled)
+                ? ForestTrainerCombatRules.Start(_content.MtMoonTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
                 : IsRoute3Trainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.Route3Trainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled)
+                ? ForestTrainerCombatRules.Start(_content.Route3Trainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
                 : IsRoute22Trainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.Route22Trainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled)
+                ? ForestTrainerCombatRules.Start(_content.Route22Trainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
                 : IsPewterTrainer(trainer)
-                ? ForestTrainerCombatRules.Start(_content.PewterTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),earlyStarterRules:_content.EarlyStarterEnabled,earlyPartyRules:_content.EarlyPartyEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled)
-                : ForestTrainerCombatRules.Start(ForestTrainers,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),pewterRules:_content.PewterEnabled,earlyStarterRules:_content.EarlyStarterEnabled,earlyPartyRules:_content.EarlyPartyEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled);
+                ? ForestTrainerCombatRules.Start(_content.PewterTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),earlyStarterRules:_content.EarlyStarterEnabled,earlyPartyRules:_content.EarlyPartyEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled)
+                : ForestTrainerCombatRules.Start(ForestTrainers,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),pewterRules:_content.PewterEnabled,earlyStarterRules:_content.EarlyStarterEnabled,earlyPartyRules:_content.EarlyPartyEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,terrain:CampaignBattleTerrain(state),vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled);
             if (!probe.Succeeded) throw new InvalidDataException(probe.Fault);
             if (owned.Pokemon.CurrentHp > 0) first ??= probe;
         }
@@ -104,7 +106,7 @@ public sealed partial class CampaignSession
             var selected=state.Actors.Values.SingleOrDefault(a=>a.Active&&a.SourceLocalId==state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED"))??throw new InvalidDataException("mtmoon_no_intro_actor_missing");
             state=SelectInteractedObject(state,selected.LocalId) with{LastTalked=selected.LocalId};
         }
-        var expectedLine=IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
+        var expectedLine=IsRockTunnelTrainer(trainer)||IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
         if (effect.Source.Path != definition.Source.Path || ((effect.Source.Symbol != definition.ScriptEntry || effect.Source.Line != expectedLine) && !IsBillRocketTriggeredBattle(effect,trainer)) ||
             (!noIntro&&(effect.Args[1] != definition.IntroText || effect.Args[2] != definition.DefeatText)) ||
             state.LastTalked is not { } actorId || !state.Actors.TryGetValue(actorId, out var actor) ||
@@ -250,7 +252,7 @@ public sealed partial class CampaignSession
         int index = command.PartyIndex;
         if (index < 0 || index >= state.Party.Length || index == b.ActivePartyIndex || state.Party[index].IsEgg || state.Party[index].Pokemon.CurrentHp == 0)
             return new(CommandStatus.Rejected, state, "replacement_member_invalid");
-        var incoming = state.Party[index]; var replacement = new WildBattleCombatant(incoming.Pokemon, HeldItem: incoming.HeldItem, Status: incoming.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET")};
+        var incoming = state.Party[index]; var replacement = OwnedBattleMember(state,b,incoming);
         bool reserves = HasForestTrainerReserves(state, index);
         var turn = shift ? ForestTrainerCombatRules.ChooseShift(BattlePokemon, trainer.Combat, replacement, reserves, replacementPartyIndex:index)
             : trainer.Combat.Phase == ForestTrainerCombatPhase.AwaitingPlayerReplacement
@@ -261,7 +263,8 @@ public sealed partial class CampaignSession
             turn=turn with{State=turn.State! with{CeruleanPlayerPartyIndex=index}};
         if(_content.Route22Enabled&&turn.Events.OfType<WildBattlePlayerSwitchedEvent>().SingleOrDefault() is {} switched)
         {
-            var preserved=state.Party[b.ActivePartyIndex] with{Pokemon=switched.Previous.Pokemon,Status=switched.Previous.Status,HeldItem=switched.Previous.HeldItem};
+            b=RememberKnockedOff(b,state.Party[b.ActivePartyIndex].InstanceId,switched.Previous);
+            var preserved=state.Party[b.ActivePartyIndex] with{Pokemon=switched.Previous.Pokemon,Status=switched.Previous.Status,HeldItem=OwnedBattleHeldItem(switched.Previous)};
             var fainted=b.FaintedMembers??ImmutableSortedSet<long>.Empty;
             if(preserved.Pokemon.CurrentHp==0&&!fainted.Contains(preserved.InstanceId))
             {preserved=preserved with{Pokemon=preserved.Pokemon with{Friendship=Math.Max(0,preserved.Pokemon.Friendship-1)}};fainted=fainted.Add(preserved.InstanceId);}
@@ -287,12 +290,14 @@ public sealed partial class CampaignSession
         {
             if (!_content.SsAnneEnabled || forced.PreviousIndex != b.ActivePartyIndex || forced.PartyIndex < 0 || forced.PartyIndex >= state.Party.Length)
                 throw new InvalidDataException("ssanne_forced_party_context");
-            var previous = state.Party[forced.PreviousIndex] with { Pokemon = forced.Previous.Pokemon, Status = forced.Previous.Status, HeldItem = forced.Previous.HeldItem };
+            b=RememberKnockedOff(b,state.Party[forced.PreviousIndex].InstanceId,forced.Previous);
+            var previous = state.Party[forced.PreviousIndex] with { Pokemon = forced.Previous.Pokemon, Status = forced.Previous.Status, HeldItem = OwnedBattleHeldItem(forced.Previous) };
             state = state with { Party = state.Party.SetItem(forced.PreviousIndex, previous) };
             b = b with { ActivePartyIndex = forced.PartyIndex, OwnedBefore = state.Party[forced.PartyIndex], LastSwitch = null,
                 ParticipatingMembers = b.ParticipatingMembers!.Add(state.Party[forced.PartyIndex].InstanceId), OpponentHpAtLastSwitch = combat.Battle.Opponent.Pokemon.CurrentHp };
         }
-        var owned = state.Party[b.ActivePartyIndex] with { Pokemon = combat.Battle.Player.Pokemon, Status = combat.Battle.Player.Status, HeldItem = combat.Battle.Player.HeldItem };
+        b=RememberKnockedOff(b,state.Party[b.ActivePartyIndex].InstanceId,combat.Battle.Player);
+        var owned = state.Party[b.ActivePartyIndex] with { Pokemon = combat.Battle.Player.Pokemon, Status = combat.Battle.Player.Status, HeldItem = OwnedBattleHeldItem(combat.Battle.Player) };
         var fainted = b.FaintedMembers ?? ImmutableSortedSet<long>.Empty;
         if (owned.Pokemon.CurrentHp == 0 && !fainted.Contains(owned.InstanceId))
         {
@@ -377,7 +382,7 @@ public sealed partial class CampaignSession
             !state.Party[i].IsEgg && state.Party[i].Pokemon.CurrentHp > 0).ToArray();
         var receivers = indices.Select(i => new CampaignWildRewardReceiver(i, WildVictoryRewards.Apply(BattlePokemon, state.Party[i],
             trainer.Combat.Battle.Opponent.Pokemon, _content.MapDefinition(state.World.Player.MapId).RegionMapSection,
-            indices.Length, forestRules: true, trainerBattle: true,pewterRules:_content.PewterEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled))).ToImmutableArray();
+            indices.Length, forestRules: true, trainerBattle: true,pewterRules:_content.PewterEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled))).ToImmutableArray();
         return StartForestTrainerRewardReceiver(state with { ForestTrainerBattle = trainer with
         { Stage = CampaignForestTrainerStage.Rewards, ExperienceGained = checked(trainer.ExperienceGained + receivers.Sum(r => r.Result.ExperienceGained)),
             Presentation = b with { RewardReceivers = receivers, RewardReceiverIndex = 0, Phase = CampaignBattlePhase.Results } } });
@@ -469,7 +474,7 @@ public sealed partial class CampaignSession
         if (_content.VermilionEnabled && won)
         {
             var payday = VermilionPayDayRules.Settle(money, trainer.Combat.Battle.PayDayMoney, WildBattleOutcome.Won);
-            var pickup = VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, WildBattleOutcome.Won,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled);
+            var pickup = VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, WildBattleOutcome.Won,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled);
             money = payday.Money;
             if (payday.Collected != 0) pages.Add(new($"{state.PlayerName} picked up\n¥{payday.Collected}!"));
             state = state with { Party = pickup.Party, World = state.World with { Rng = pickup.Rng } };

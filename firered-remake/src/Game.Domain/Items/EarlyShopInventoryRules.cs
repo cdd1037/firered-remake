@@ -25,6 +25,11 @@ public static class EarlyShopInventoryRules
     public static void ValidateCatalog(EarlyShopCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.Profile == RockTunnelItemRules.Profile)
+        {
+            RockTunnelItemRules.ValidateShop(catalog);
+            return;
+        }
         if (catalog.Profile == Route11ItemRules.Profile) { Route11ItemRules.ValidateShop(catalog); return; }
         if (catalog.Profile == SsAnneItemRules.Profile)
         {
@@ -93,14 +98,14 @@ public static class EarlyShopInventoryRules
         ValidateCatalog(catalog);
         if (state is null) return "inventory_missing";
         if (state.Limits != catalog.Limits) return "inventory_limits";
-        if (catalog.Profile is not (SsAnneItemRules.Profile or Route11ItemRules.Profile) && state.Berries is not null) return "inventory_berry_profile_missing";
-        string? berryError = catalog.Profile == Route11ItemRules.Profile ? Route11ItemRules.ValidateBerries(state) : catalog.Profile == SsAnneItemRules.Profile ? SsAnneItemRules.ValidateBerries(state) : null;
+        if (catalog.Profile is not (SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile) && state.Berries is not null) return "inventory_berry_profile_missing";
+        string? berryError = catalog.Profile == RockTunnelItemRules.Profile ? RockTunnelItemRules.ValidateBerries(state) : catalog.Profile == Route11ItemRules.Profile ? Route11ItemRules.ValidateBerries(state) : catalog.Profile == SsAnneItemRules.Profile ? SsAnneItemRules.ValidateBerries(state) : null;
         if (berryError is not null) return berryError;
         var ordinary = catalog.Items.Where(i => i.Pocket == "POCKET_ITEMS").Select(i => i.Id).ToHashSet();
         return ValidatePocket(state.BagItems, state.Limits.BagItemSlots, ordinary, "bag") ??
             ValidatePocket(state.PcItems, state.Limits.PcItemSlots, catalog.Items.Where(i => i.Pocket != "POCKET_KEY_ITEMS").Select(i => i.Id).ToHashSet(), "pc") ??
-            ValidateOptional(state.KeyItems, catalog.QuestLimits.KeyItemSlots, catalog.Profile is SsAnneItemRules.Profile or Route11ItemRules.Profile ? [QuestItemRules.ParcelId, QuestItemRules.TeachyTvId, MtMoonItemRules.HelixFossilId, MtMoonItemRules.DomeFossilId, BillItemRules.FameCheckerId, BillItemRules.SsTicketId, SsAnneItemRules.BerryPouchId] : catalog.Profile is BillItemRules.Profile or VermilionItemRules.Profile ? [QuestItemRules.ParcelId, QuestItemRules.TeachyTvId, MtMoonItemRules.HelixFossilId, MtMoonItemRules.DomeFossilId, BillItemRules.FameCheckerId, BillItemRules.SsTicketId] : catalog.Profile is MtMoonProfile or CeruleanItemRules.Profile ? [QuestItemRules.ParcelId, QuestItemRules.TeachyTvId, MtMoonItemRules.HelixFossilId, MtMoonItemRules.DomeFossilId] : [QuestItemRules.ParcelId, QuestItemRules.TeachyTvId], "key_items") ??
-            ValidateOptional(state.Balls, catalog.QuestLimits.BallSlots, catalog.Profile is SsAnneItemRules.Profile or Route11ItemRules.Profile ? [QuestItemRules.PokeBallId, SsAnneItemRules.GreatBallId] : [QuestItemRules.PokeBallId], "balls");
+            ValidateOptional(state.KeyItems, catalog.QuestLimits.KeyItemSlots, catalog.Profile is SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile ? [QuestItemRules.ParcelId, QuestItemRules.TeachyTvId, MtMoonItemRules.HelixFossilId, MtMoonItemRules.DomeFossilId, BillItemRules.FameCheckerId, BillItemRules.SsTicketId, SsAnneItemRules.BerryPouchId] : catalog.Profile is BillItemRules.Profile or VermilionItemRules.Profile ? [QuestItemRules.ParcelId, QuestItemRules.TeachyTvId, MtMoonItemRules.HelixFossilId, MtMoonItemRules.DomeFossilId, BillItemRules.FameCheckerId, BillItemRules.SsTicketId] : catalog.Profile is MtMoonProfile or CeruleanItemRules.Profile ? [QuestItemRules.ParcelId, QuestItemRules.TeachyTvId, MtMoonItemRules.HelixFossilId, MtMoonItemRules.DomeFossilId] : [QuestItemRules.ParcelId, QuestItemRules.TeachyTvId], "key_items") ??
+            ValidateOptional(state.Balls, catalog.QuestLimits.BallSlots, catalog.Profile is SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile ? [QuestItemRules.PokeBallId, SsAnneItemRules.GreatBallId] : [QuestItemRules.PokeBallId], "balls");
     }
 
     private static string? ValidateOptional(ImmutableArray<InventoryStack>? stacks, int capacity, HashSet<ItemId> allowed, string name)

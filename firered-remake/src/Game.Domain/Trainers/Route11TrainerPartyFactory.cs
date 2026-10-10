@@ -32,10 +32,10 @@ public static class Route11TrainerPartyFactory
     }.ToImmutableDictionary();
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(Route11TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng)
+    public static TrainerPartyCreationResult Create(Route11TrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool rockTunnelRules = false)
     {
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != 79 || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count != (rockTunnelRules ? 93 : 79) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("Route11 requires the exact seventy-nine-species catalog and one initial source Route11 team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

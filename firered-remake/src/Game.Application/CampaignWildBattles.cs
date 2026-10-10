@@ -28,12 +28,13 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,WildB
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignWildRewardReceiver>? RewardReceivers{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int RewardReceiverIndex{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool PostBattleItemsSettled{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableSortedDictionary<long,string>? KnockedOffHeldItems{get;init;}
     [JsonIgnore] public int RewardPartyIndex=>RewardReceivers is {} receivers&&RewardReceiverIndex<receivers.Length?receivers[RewardReceiverIndex].PartyIndex:ActivePartyIndex;
 }
 
 public sealed partial class CampaignSession
 {
-    private string CampaignWildRulesVersion=>_content.Route11Enabled?WildBattleRules.Route11RulesVersion:_content.VermilionGymEnabled?WildBattleRules.VermilionGymRulesVersion:_content.SsAnneEnabled?WildBattleRules.SsAnneRulesVersion:_content.VermilionEnabled?WildBattleRules.VermilionRulesVersion:_content.BillEnabled?WildBattleRules.BillRulesVersion:_content.CeruleanEnabled?WildBattleRules.CeruleanRulesVersion:_content.MtMoonEnabled?WildBattleRules.MtMoonRulesVersion:_content.Route3Enabled?WildBattleRules.Route3RulesVersion:_content.Route22Enabled?WildBattleRules.Route22RulesVersion:_content.EarlyPartyEnabled?WildBattleRules.EarlyPartyRulesVersion:_content.EarlyStarterEnabled?WildBattleRules.EarlyStarterRulesVersion:_content.PewterEnabled?WildBattleRules.PewterRulesVersion:_content.ForestEnabled?WildBattleRules.ForestRulesVersion:WildBattleRules.RulesVersion;
+    private string CampaignWildRulesVersion=>_content.RockTunnelEnabled?WildBattleRules.RockTunnelRulesVersion:_content.Route11Enabled?WildBattleRules.Route11RulesVersion:_content.VermilionGymEnabled?WildBattleRules.VermilionGymRulesVersion:_content.SsAnneEnabled?WildBattleRules.SsAnneRulesVersion:_content.VermilionEnabled?WildBattleRules.VermilionRulesVersion:_content.BillEnabled?WildBattleRules.BillRulesVersion:_content.CeruleanEnabled?WildBattleRules.CeruleanRulesVersion:_content.MtMoonEnabled?WildBattleRules.MtMoonRulesVersion:_content.Route3Enabled?WildBattleRules.Route3RulesVersion:_content.Route22Enabled?WildBattleRules.Route22RulesVersion:_content.EarlyPartyEnabled?WildBattleRules.EarlyPartyRulesVersion:_content.EarlyStarterEnabled?WildBattleRules.EarlyStarterRulesVersion:_content.PewterEnabled?WildBattleRules.PewterRulesVersion:_content.ForestEnabled?WildBattleRules.ForestRulesVersion:WildBattleRules.RulesVersion;
     private CampaignState BeginWildBattle(CampaignState state,Route1WildPokemonResult? fishingPokemon=null)
     {
         if(_content.ForestEnabled&&long.MaxValue-Revision<4096)throw new InvalidDataException("wild_battle_command_headroom_required");
@@ -48,7 +49,7 @@ public sealed partial class CampaignSession
         else if(_content.ForestEnabled)
         {
             var early=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");var table=_content.LandEncounters![state.World.Player.MapId];
-            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled);
+            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled);
             generated=new(result.Pokemon,result.GlobalRng,result.RandomTrace);
         }
         else generated=Route1WildPokemonFactory.Generate(BattlePokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
@@ -122,8 +123,9 @@ public sealed partial class CampaignSession
         }
         else return new(CommandStatus.Rejected,state,"wild_battle_active");
         if(!turn.Succeeded)return new(CommandStatus.Rejected,state,turn.Fault);
+        b=RememberKnockedOff(b,state.Party[b.ActivePartyIndex].InstanceId,turn.State!.Player);
         var nextBattle=b with{State=turn.State!,Events=turn.Events,EventIndex=0,Phase=CampaignBattlePhase.Events,RandomTrace=turn.Trace};
-        return new(CommandStatus.Accepted,PrepareWildPresentation(PenalizeWildFaint(state with{WildBattle=nextBattle,Inventory=capturedInventory??potion?.Inventory??state.Inventory,Party=state.Party.SetItem(b.ActivePartyIndex,state.Party[b.ActivePartyIndex] with{Pokemon=turn.State!.Player.Pokemon,Status=turn.State.Player.Status,HeldItem=turn.State.Player.HeldItem}),World=state.World with{Rng=turn.State!.Rng}})));
+        return new(CommandStatus.Accepted,PrepareWildPresentation(PenalizeWildFaint(state with{WildBattle=nextBattle,Inventory=capturedInventory??potion?.Inventory??state.Inventory,Party=state.Party.SetItem(b.ActivePartyIndex,state.Party[b.ActivePartyIndex] with{Pokemon=turn.State!.Player.Pokemon,Status=turn.State.Player.Status,HeldItem=OwnedBattleHeldItem(turn.State.Player)}),World=state.World with{Rng=turn.State!.Rng}})));
     }
     private CampaignState PrepareWildPresentation(CampaignState state)
     {
@@ -210,7 +212,7 @@ public sealed partial class CampaignSession
         var trainers=state.BattledTrainers;
         foreach(var stage in new[]{"FIRST","REMATCH"})foreach(var species in new[]{"SQUIRTLE","BULBASAUR","CHARMANDER"})trainers=trainers.Remove("pret:TRAINER_CHAMPION_"+stage+"_"+species);
         int lost=WhiteOutLoss(state);
-        int x=center?7:8,y=center?4:5;var map=_content.MapFromSourceSymbol(center?(state.LastHealingLocation=="HEAL_LOCATION_VERMILION_CITY"?"MAP_VERMILION_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CERULEAN_CITY"?"MAP_CERULEAN_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE4"?"MAP_ROUTE4_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_PEWTER_CITY"?"MAP_PEWTER_CITY_POKEMON_CENTER_1F":"MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F"):"MAP_PALLET_TOWN_PLAYERS_HOUSE_1F");var tile=_content.Maps[map].GetTile(x,y)??throw new InvalidDataException("whiteout_spawn_missing");
+        int x=center?7:8,y=center?4:5;var map=_content.MapFromSourceSymbol(center?(state.LastHealingLocation=="HEAL_LOCATION_ROUTE10"?"MAP_ROUTE10_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_VERMILION_CITY"?"MAP_VERMILION_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CERULEAN_CITY"?"MAP_CERULEAN_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE4"?"MAP_ROUTE4_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_PEWTER_CITY"?"MAP_PEWTER_CITY_POKEMON_CENTER_1F":"MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F"):"MAP_PALLET_TOWN_PLAYERS_HOUSE_1F");var tile=_content.Maps[map].GetTile(x,y)??throw new InvalidDataException("whiteout_spawn_missing");
         var next=state with{WildBattle=null,Money=state.Money-lost,Party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(BattlePokemon,p)).ToImmutableArray(),BattledTrainers=trainers,
             World=state.World with{Player=new(map,x,y,tile.Elevation,Direction.North)},Script=state.Script with{Flags=flags,Variables=vars},Exploration=ResetEncounterModifiers(state.Exploration!)};
         next=Pump(EnterMap(next,Direction.North));

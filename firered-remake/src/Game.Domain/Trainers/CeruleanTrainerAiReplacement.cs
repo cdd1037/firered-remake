@@ -9,12 +9,13 @@ namespace Game.Domain.Trainers;
 /// active-stat and byte best-damage source bugs. Voluntary switching uses CeruleanTrainerActionAi.</summary>
 public static class CeruleanTrainerAiReplacement
 {
-    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false)
+    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false)
     {
+        route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         ForestTrainerReplacementDecision Fault(string code) => new(TransitionStatus.Fault, null, [],
             new(code, "Input is outside the bounded MtMoon trainer replacement profile."));
-        string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules);
+        string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         var active = input.FaintedActive.Pokemon;
         var a = catalog.Species[active.Species]; var d = catalog.Species[input.Target.Pokemon.Species];
@@ -55,7 +56,7 @@ public static class CeruleanTrainerAiReplacement
         var staleType = none || struggle ? ElementType.Normal : Type(stale!.Type);
         // Source AI_CalcDmg reads active stats, stale gCurrentMove and cleared faint ability.
         int baseDamage = CeruleanTrainerAi.BasePrediction(input.FaintedActive, input.Target,
-            power, staleType, stale?.Effect, clearUserAbility: true, rain: route11Rules && rain);
+            power, staleType, stale?.Effect, clearUserAbility: true, rain: route11Rules && rain, reflect: rockTunnelRules && reflect);
         int chosen = -1; byte bestDamage = 0;
         for (int i = 0; i < input.Party.Length; i++)
         {
@@ -84,15 +85,16 @@ public static class CeruleanTrainerAiReplacement
         if (chosen < 0) chosen = Enumerable.Range(0, input.Party.Length).First(Living);
         return new(TransitionStatus.Accepted, chosen, [.. scores], null);
     }
-    private static string? Validate(PokemonCatalog? catalog, ForestTrainerReplacementInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules)
+    private static string? Validate(PokemonCatalog? catalog, ForestTrainerReplacementInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
     {
-        if (catalog?.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > 4 ||
+        route11Rules |= rockTunnelRules;
+        if (catalog?.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > 4 ||
             input.FaintedPartyIndex < 0 || input.FaintedPartyIndex >= input.Party.Length || input.FaintedActive is null || input.Target is null)
             return "cerulean_trainer_replacement_input";
         if (input.Party.Any(mon => mon is null || mon.HeldItem != "ITEM_NONE" || mon.AttackBadgeBoost || mon.SpeedBadgeBoost) || input.FaintedActive.HeldItem != "ITEM_NONE")
             return "cerulean_trainer_replacement_enemy_item";
         foreach (var mon in input.Party.Append(input.FaintedActive).Append(input.Target))
-            if (CeruleanTrainerAi.ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules) is not null) return "cerulean_trainer_replacement_combatant";
+            if (CeruleanTrainerAi.ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) is not null) return "cerulean_trainer_replacement_combatant";
         if (input.FaintedActive.Pokemon.CurrentHp != 0 || input.Target.Pokemon.CurrentHp == 0) return "cerulean_trainer_replacement_faint_state";
         var cleared = input.FaintedActive;
         if (cleared.Imprison || cleared.Status != 0 || cleared.AttackStage != 6 || cleared.DefenseStage != 6 || cleared.SpeedStage != 6 ||
@@ -104,16 +106,21 @@ public static class CeruleanTrainerAiReplacement
         if (active with { Moves = input.FaintedActive.Pokemon.Moves } != input.FaintedActive.Pokemon ||
             !active.Moves.SequenceEqual(input.FaintedActive.Pokemon.Moves)) return "cerulean_trainer_replacement_active_identity";
         if (!input.Party.Where((_, i) => i != input.FaintedPartyIndex).Any(x => x.Pokemon.CurrentHp > 0)) return "cerulean_trainer_replacement_no_reserve";
-        if (!SupportedParty(catalog, input.Party, billRules: billRules, vermilionRules: vermilionRules, ssAnneRules: ssAnneRules, vermilionGymRules: vermilionGymRules, route11Rules: route11Rules)) return "cerulean_trainer_replacement_party_scope";
+        if (!SupportedParty(catalog, input.Party, billRules: billRules, vermilionRules: vermilionRules, ssAnneRules: ssAnneRules, vermilionGymRules: vermilionGymRules, route11Rules: route11Rules, rockTunnelRules: rockTunnelRules)) return "cerulean_trainer_replacement_party_scope";
         if (input.StaleCurrentMove.Value is not ("pret:MOVE_NONE" or "pret:MOVE_STRUGGLE") &&
-            (!catalog.Moves.TryGetValue(input.StaleCurrentMove, out var move) || !(route11Rules ? Route11BattleScope.ValidDefinition(move) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move) : vermilionRules ? VermilionBattleScope.ValidDefinition(move) : billRules ? BillBattleScope.ValidDefinition(move) : CeruleanBattleScope.ValidDefinition(move))))
+            (!catalog.Moves.TryGetValue(input.StaleCurrentMove, out var move) || !(rockTunnelRules ? RockTunnelBattleScope.ValidDefinition(move) : route11Rules ? Route11BattleScope.ValidDefinition(move) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move) : vermilionRules ? VermilionBattleScope.ValidDefinition(move) : billRules ? BillBattleScope.ValidDefinition(move) : CeruleanBattleScope.ValidDefinition(move))))
             return "cerulean_trainer_replacement_stale_move";
         return null;
     }
-    internal static bool SupportedParty(PokemonCatalog catalog, ImmutableArray<WildBattleCombatant> party, Game.Domain.Ids.TrainerId? trainerId = null, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false)
+    internal static bool SupportedParty(PokemonCatalog catalog, ImmutableArray<WildBattleCombatant> party, Game.Domain.Ids.TrainerId? trainerId = null, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         if (party.IsDefaultOrEmpty || party.Any(p => p is null)) return false;
+        if (rockTunnelRules)
+            foreach (var id in RockTunnelTrainerPartyFactory.SupportedTrainers)
+                if ((trainerId is null || trainerId == id) && party.Length == RockTunnelTrainerPartyFactory.Expected[id].Party.Length &&
+                    party.All(m => RockTunnelTrainerPartyFactory.ValidPartyMember(catalog,m.Pokemon,id,RockTunnelTrainerPartyFactory.Expected[id].AiFlags))) return true;
         if (route11Rules)
         {
             foreach (var id in Route11TrainerPartyFactory.SupportedTrainers)

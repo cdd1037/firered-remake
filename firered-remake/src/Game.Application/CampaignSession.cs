@@ -25,6 +25,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     ImmutableArray<CampaignMotion> Motions,int PresentationTicks,string LastHealingLocation,string TextColor,string Music,
     string PlayerName,string RivalName,int Money,string SavedMusic,ImmutableArray<CampaignPresentation> PresentationEffects,bool PlayerVisible)
 {
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int FlashLevel{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFlashEffect? FlashEffect{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool IsCycling{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFishing? Fishing{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMoneyBox? MoneyBox{get;init;}
@@ -135,6 +137,7 @@ public sealed partial class CampaignSession
     public const string RepelRulesVersion="fr-repel-campaign-v1";
     public const string TownMapRulesVersion="fr-town-map-campaign-v1";
     public const string OakRatingRulesVersion="fr-oak-rating-campaign-v1";
+    public const string RockTunnelRulesVersion="fr-rocktunnel-campaign-v1";
     public const string Route11RulesVersion="fr-route11-campaign-v1";
     public const string CityServicesRulesVersion="fr-city-services-campaign-v1";
     public const string VermilionGymRulesVersion="fr-vermilion-gym-campaign-v1";
@@ -146,7 +149,7 @@ public sealed partial class CampaignSession
     public const string MagikarpRulesVersion="fr-route4-magikarp-campaign-v1";
     public const string Route3RulesVersion="fr-route3-campaign-v1";
     public const string Route22RulesVersion="fr-route22-campaign-v1";
-    public string RulesVersion=>_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
+    public string RulesVersion=>_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
     public CampaignState State=>_commands.State;
@@ -166,6 +169,7 @@ public sealed partial class CampaignSession
     public CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options=null)
     {
         _content=content;options??=new();
+        if(content.RockTunnelEnabled&&!content.Route11Enabled)throw new InvalidDataException("rocktunnel_requires_route11_profile");
         if(content.Route11Enabled&&!content.CityServicesEnabled)throw new InvalidDataException("route11_requires_city_services_profile");
         if(content.CityServicesEnabled&&!content.VermilionGymEnabled)throw new InvalidDataException("city_services_requires_vermilion_gym_profile");
         if(content.VermilionGymEnabled&&!content.SsAnneEnabled)throw new InvalidDataException("vermilion_gym_requires_ssanne_profile");
@@ -179,7 +183,7 @@ public sealed partial class CampaignSession
         if(content.Route22Enabled&&!content.OakRatingEnabled)throw new InvalidDataException("route22_requires_oak_profile");
         if(content.OakRatingEnabled&&!content.TownMapEnabled)throw new InvalidDataException("oak_rating_requires_town_map_profile");
         if(content.TownMapEnabled&&(!content.RepelEnabled||content.QuestItems?.Profile!=QuestItemRules.TownMapProfile))throw new InvalidDataException("town_map_requires_repel_profile");
-        if(content.RepelEnabled&&(!content.PokemonStorageEnabled||content.FieldPickups.Length!=(content.Route11Enabled?47:content.SsAnneEnabled?41:content.BillEnabled?29:content.MtMoonEnabled?27:8)||content.EarlyShop is null))throw new InvalidDataException("repel_requires_field_pickup_profile");
+        if(content.RepelEnabled&&(!content.PokemonStorageEnabled||content.FieldPickups.Length!=(content.RockTunnelEnabled?62:content.Route11Enabled?47:content.SsAnneEnabled?41:content.BillEnabled?29:content.MtMoonEnabled?27:8)||content.EarlyShop is null))throw new InvalidDataException("repel_requires_field_pickup_profile");
         if(content.PokemonStorageEnabled&&!content.EarlyPartyEnabled)throw new InvalidDataException("storage_requires_early_party_profile");
         if(!ValidTrainerName(options.PlayerName)||!ValidTrainerName(options.RivalName)||options.PlayerGender is <0 or >1)throw new ArgumentException("Invalid explicit new-game identity.");
         var id=content.MapFromSourceSymbol("MAP_PALLET_TOWN_PLAYERS_HOUSE_2F");var map=content.Maps[id];var tile=map.GetTile(6,6)??throw new InvalidDataException("Initial player room coordinate missing.");
@@ -217,6 +221,7 @@ public sealed partial class CampaignSession
         var giftError=ValidateMagikarpGift(s);if(giftError is not null)return giftError;
         var parcelError=ValidateParcelState(s);if(parcelError is not null)return parcelError;
         if(!_content.Maps.TryGetValue(s.World.Player.MapId,out var map))return "save_map_missing";
+        var flashError=ValidateFieldFlashState(s);if(flashError is not null)return flashError;
         var pickupError=ValidateFieldPickupState(s);if(pickupError is not null)return pickupError;
         var worldError=ValidateCampaignWorld(s,map);if(worldError is not null)return worldError;
         if(!ValidTrainerName(s.PlayerName)||!ValidTrainerName(s.RivalName)||s.Money is <0 or >999999||s.LastHealingLocation is null||s.TextColor is null||s.Music is null||s.SavedMusic is null)return "save_player_invalid";
@@ -248,7 +253,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -318,6 +323,8 @@ public sealed partial class CampaignSession
     {
         try
         {
+            if(state.FlashEffect is not null)return DecideFieldFlash(state,command);
+            if(command.Kind=="field_flash")return StartFieldFlash(state,command);
             if(state.Fishing is not null)return DecideFishing(state,command);
             if(command.Kind=="field_cut")return DecideFieldCut(state,command);
             if(state.RareCandy is not null)return DecideRareCandy(state,command);
@@ -427,6 +434,7 @@ public sealed partial class CampaignSession
     }
     private CampaignState EnterMap(CampaignState state,Direction? arrival)
     {
+        state=ApplyFieldFlashMapEntry(state);
         var definition=_content.MapDefinition(state.World.Player.MapId);
         var variables=state.Script.Variables.RemoveRange(state.Script.Variables.Keys.Where(k=>k.StartsWith("VAR_TEMP_",StringComparison.Ordinal)));
         var flags=state.Script.Flags.RemoveRange(state.Script.Flags.Keys.Where(k=>k.StartsWith("FLAG_TEMP_",StringComparison.Ordinal)));
@@ -480,6 +488,7 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyRockTunnelEffect(state,effect,out var rockState)){state=rockState;continue;}
             if(TryApplyRoute11Effect(state,effect,out var route11State)){state=route11State;continue;}
             if(TryApplyCityServicesEffect(state,effect,out var cityServiceState)){state=cityServiceState;continue;}
             if(TryApplyVermilionGymEffect(state,effect,out var vermilionGymState)){state=vermilionGymState;continue;}
@@ -495,6 +504,7 @@ public sealed partial class CampaignSession
             if(TryApplyOakRatingEffect(state,effect,out var oakState)){state=oakState;continue;}
             if(TryApplyOldManEffect(state,effect,out var tutorialState)){state=tutorialState;continue;}
             if(TryApplyPcEffect(state,effect,out var pcState)){state=pcState;continue;}
+            if(TryApplyFieldFlashEffect(state,effect,out var flashState)){state=flashState;continue;}
             if(TryApplyFieldCutEffect(state,effect,out var cutState)){state=cutState;continue;}
             if(TryApplyCenterEffect(state,effect,out var centerState)){state=centerState;continue;}
             if(TryApplyPewterGymEffect(state,effect,out var gymState)){state=gymState;continue;}

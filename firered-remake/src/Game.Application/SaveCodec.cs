@@ -24,6 +24,7 @@ public static class SaveCodec
     }
     private static LoadedSave<T> DecodeCore<T>(ReadOnlySpan<byte> bytes, string rules, string content, string source, Func<T, string?>? validate)
     {
+        ValidateEnvelopeFields(bytes);
         var envelope = JsonSerializer.Deserialize<SaveEnvelope>(bytes) ?? throw new InvalidDataException("save_empty");
         if (envelope.SchemaVersion != CurrentSchema) throw new InvalidDataException("save_schema_unsupported");
         if (envelope.RulesVersion != rules || envelope.ContentVersion != content || envelope.GameEdition != "firered") throw new InvalidDataException("save_version_mismatch");
@@ -33,6 +34,40 @@ public static class SaveCodec
         var error = validate?.Invoke(state);
         if (error is not null) throw new InvalidDataException("save_semantic_invalid: " + error);
         return new(state, envelope.Generation, source);
+    }
+    private static void ValidateEnvelopeFields(ReadOnlySpan<byte> bytes)
+    {
+        // Validate the envelope before constructor defaults or ignored properties can
+        // hide damaged metadata. Payload fields retain their own compatibility rules.
+        var reader = new Utf8JsonReader(bytes);
+        if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
+            throw new InvalidDataException("save_envelope_invalid");
+        int seen = 0;
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject)
+            {
+                if (seen != 0x7f) throw new InvalidDataException("save_envelope_field_missing");
+                if (reader.Read()) throw new InvalidDataException("save_envelope_invalid");
+                return;
+            }
+            if (reader.TokenType != JsonTokenType.PropertyName)
+                throw new InvalidDataException("save_envelope_invalid");
+            // ValueTextEquals compares decoded names, including JSON escapes.
+            int field = reader.ValueTextEquals("SchemaVersion"u8) ? 1
+                : reader.ValueTextEquals("RulesVersion"u8) ? 2
+                : reader.ValueTextEquals("ContentVersion"u8) ? 4
+                : reader.ValueTextEquals("GameEdition"u8) ? 8
+                : reader.ValueTextEquals("Generation"u8) ? 16
+                : reader.ValueTextEquals("PayloadHash"u8) ? 32
+                : reader.ValueTextEquals("Payload"u8) ? 64
+                : throw new InvalidDataException("save_envelope_field_unknown");
+            if ((seen & field) != 0) throw new InvalidDataException("save_envelope_field_duplicate");
+            seen |= field;
+            if (!reader.Read()) throw new InvalidDataException("save_envelope_invalid");
+            reader.Skip();
+        }
+        throw new InvalidDataException("save_envelope_invalid");
     }
 }
 /// <summary>Platform adapters provide same-directory writes and replacement. No IO in Domain or this codec.</summary>

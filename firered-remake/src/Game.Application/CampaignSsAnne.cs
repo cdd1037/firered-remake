@@ -37,8 +37,7 @@ public sealed partial class CampaignSession
         var combat = trainer.Combat with { CeruleanPlayerPartyIndex = index };
         if (_content.SsAnneEnabled)
             combat = combat with { SsAnnePlayerParty = state.Party.Select((p, i) => p.IsEgg ? null : i == index ? combat.Battle.Player :
-                new WildBattleCombatant(p.Pokemon, HeldItem:p.HeldItem, Status:p.Status)
-                { AttackBadgeBoost=state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET") }).ToImmutableArray() };
+                OwnedBattleMember(state,trainer.Presentation,p)).ToImmutableArray() };
         return trainer with { Combat = combat };
     }
 

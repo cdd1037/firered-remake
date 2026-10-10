@@ -149,7 +149,7 @@ public partial class CampaignView
         ItemLabel(new(12, 26 + _mtMoonMoveSlot * 16), _itemSkin.Text("gText_SelectorArrow2"));
         ItemMessageBox(_battleText["gText_RestoreWhichMove"]);
     }
-    private bool MtMoonSilentEvent(CampaignWildBattle battle) => WildCurrentEvent(battle) is { } current && MtMoonWildMessage(battle, current) is { Symbol.Length: 0 };
+    private bool MtMoonSilentEvent(CampaignWildBattle battle) => WildCurrentEvent(battle) is { } current && RockTunnelWildMessage(current) is null && MtMoonWildMessage(battle, current) is { Symbol.Length: 0 };
 
     private ForestMessage? MtMoonWildMessage(CampaignWildBattle battle, WildBattleEvent current) => !_catalog.MtMoonEnabled ? null : current switch
     {

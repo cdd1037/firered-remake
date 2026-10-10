@@ -51,10 +51,11 @@ public static class SsAnneTrainerPartyFactory
         _ => throw new NotSupportedException("Unknown original starter.")
     };
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(SsAnneTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool route11Rules = false)
+    public static TrainerPartyCreationResult Create(SsAnneTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool route11Rules = false, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (route11Rules ? 79 : 73) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : 73) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("SsAnne requires the exact seventy-three-species catalog and one source ship team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

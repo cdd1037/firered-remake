@@ -35,7 +35,7 @@ internal static class BattleMedicineRules
         if (targetIndex < 0) return "battle_medicine_target_identity";
         var ownedActive = party[activeIndex];
         if (!SamePokemon(ownedActive.Pokemon, active.Pokemon) || ownedActive.Status != active.Status ||
-            ownedActive.HeldItem != active.HeldItem) return "battle_medicine_active_projection";
+            ownedActive.HeldItem != (active.KnockedOffItem ?? active.HeldItem)) return "battle_medicine_active_projection";
         try
         {
             var medicine = EarlyShopMedicineRules.Use(shop, opening, content, inventory, party[targetIndex],
@@ -59,5 +59,5 @@ internal static class BattleMedicineRules
 
     internal static ImmutableArray<PartyPokemon> Synchronize(ImmutableArray<PartyPokemon> party,
         int activeIndex, WildBattleCombatant active) => party.SetItem(activeIndex, party[activeIndex] with
-        { Pokemon = active.Pokemon, Status = active.Status, HeldItem = active.HeldItem });
+        { Pokemon = active.Pokemon, Status = active.Status, HeldItem = active.KnockedOffItem ?? active.HeldItem });
 }

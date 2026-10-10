@@ -9,12 +9,13 @@ internal static class ForestBattleDamage
 {
     // pokemon.c:2385-2652; battle_script_commands.c:1210-1550. No weather, held items or screens. Only Pewter admits the player Attack badge boost.
     internal static DamageResult Calculate(PokemonCatalog catalog, WildBattleCombatant user,
-        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false)
+        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false)
     {
+        route11Rules |= rockTunnelRules;
         if (randomPercent is < 85 or > 100) throw new ArgumentOutOfRangeException(nameof(randomPercent));
         bool struggle = moveId == WildBattleRules.StruggleMove;
         var move = struggle ? null : catalog.Moves[moveId];
-        if (!struggle && (!(route11Rules ? Route11BattleScope.ValidDefinition(move!) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move!) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move!) : vermilionRules ? VermilionBattleScope.ValidDefinition(move!) : billRules ? BillBattleScope.ValidDefinition(move!) : ceruleanRules ? CeruleanBattleScope.ValidDefinition(move!) : mtMoonRules ? MtMoonBattleScope.ValidDefinition(move!) : route3Rules ? Route3BattleScope.ValidDefinition(move!) : route22Rules ? Route22BattleScope.ValidDefinition(move!) : earlyPartyRules ? EarlyPartyBattleScope.ValidDefinition(move!) : earlyStarterRules ? EarlyStarterBattleScope.ValidDefinition(move!) : pewterRules ? PewterBattleScope.ValidDefinition(move!) : ForestBattleScope.ValidDefinition(move!)) || move!.Power == 0))
+        if (!struggle && (!(rockTunnelRules ? RockTunnelBattleScope.ValidDefinition(move!) : route11Rules ? Route11BattleScope.ValidDefinition(move!) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move!) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move!) : vermilionRules ? VermilionBattleScope.ValidDefinition(move!) : billRules ? BillBattleScope.ValidDefinition(move!) : ceruleanRules ? CeruleanBattleScope.ValidDefinition(move!) : mtMoonRules ? MtMoonBattleScope.ValidDefinition(move!) : route3Rules ? Route3BattleScope.ValidDefinition(move!) : route22Rules ? Route22BattleScope.ValidDefinition(move!) : earlyPartyRules ? EarlyPartyBattleScope.ValidDefinition(move!) : earlyStarterRules ? EarlyStarterBattleScope.ValidDefinition(move!) : pewterRules ? PewterBattleScope.ValidDefinition(move!) : ForestBattleScope.ValidDefinition(move!)) || move!.Power == 0))
             throw new NotSupportedException("wild_battle_damage_move");
         ElementType Type(string symbol) => Enum.Parse<ElementType>(symbol[5..], true);
         var type = struggle ? ElementType.Normal : Type(move!.Type);
@@ -35,7 +36,12 @@ internal static class ForestBattleDamage
         if (mtMoonRules && move?.Effect == "EFFECT_DRAGON_RAGE") return new(40, category, [new("fixed-damage", 40)]);
         if (mtMoonRules && move?.Effect == "EFFECT_MAGNITUDE" && dynamicPower is null) throw new NotSupportedException("mtmoon_magnitude_power_required");
         int power = struggle ? 50 : route22Rules && move!.Effect == "EFFECT_LOW_KICK"
-            ? Route22BattleData.LowKickPower(route11Rules ? Route11BattleData.WeightHectograms(target.Pokemon.Species) : vermilionGymRules ? VermilionGymBattleData.WeightHectograms(target.Pokemon.Species) : ssAnneRules ? SsAnneBattleData.WeightHectograms(target.Pokemon.Species) : vermilionRules ? VermilionBattleData.WeightHectograms(target.Pokemon.Species) : billRules ? BillBattleData.WeightHectograms(target.Pokemon.Species) : ceruleanRules ? CeruleanBattleData.WeightHectograms(target.Pokemon.Species) : mtMoonRules ? MtMoonBattleData.WeightHectograms(target.Pokemon.Species) : route3Rules ? Route3BattleData.WeightHectograms(target.Pokemon.Species) : Route22BattleData.WeightHectograms(target.Pokemon.Species)) : move!.Power;
+            ? Route22BattleData.LowKickPower(rockTunnelRules ? RockTunnelBattleData.WeightHectograms(target.Pokemon.Species) : route11Rules ? Route11BattleData.WeightHectograms(target.Pokemon.Species) : vermilionGymRules ? VermilionGymBattleData.WeightHectograms(target.Pokemon.Species) : ssAnneRules ? SsAnneBattleData.WeightHectograms(target.Pokemon.Species) : vermilionRules ? VermilionBattleData.WeightHectograms(target.Pokemon.Species) : billRules ? BillBattleData.WeightHectograms(target.Pokemon.Species) : ceruleanRules ? CeruleanBattleData.WeightHectograms(target.Pokemon.Species) : mtMoonRules ? MtMoonBattleData.WeightHectograms(target.Pokemon.Species) : route3Rules ? Route3BattleData.WeightHectograms(target.Pokemon.Species) : Route22BattleData.WeightHectograms(target.Pokemon.Species)) : move!.Power;
+        if (rockTunnelRules && move?.Effect == "EFFECT_FLAIL")
+        {
+            int fraction = user.Pokemon.CurrentHp * 48 / user.Pokemon.Stats.MaxHp;
+            power = fraction <= 1 ? 200 : fraction <= 4 ? 150 : fraction <= 9 ? 100 : fraction <= 16 ? 80 : fraction <= 32 ? 40 : 20;
+        }
         if (route3Rules && move?.Effect == "EFFECT_ROLLOUT" && dynamicPower is null)
             power *= (1 << (user.RolloutTurnsRemaining == 0 ? 0 : 5 - user.RolloutTurnsRemaining)) * (user.DefenseCurled ? 2 : 1);
         if (billRules && target.DigMoveSlot is not null && move?.Effect=="EFFECT_MAGNITUDE") power*=2;
@@ -55,6 +61,7 @@ internal static class ForestBattleDamage
             attack = attack * 110 / 100;
             steps.Add(new("attack-badge", attack));
         }
+        if (rockTunnelRules && user.HeldItem == "ITEM_HARD_STONE" && type == ElementType.Rock) { attack = attack * 110 / 100; steps.Add(new("hard-stone", attack)); }
         if (physical && user.Pokemon.AbilityId == "ABILITY_GUTS" && user.Status != 0)
             attack = attack * 150 / 100;
         if (ceruleanRules && type == ElementType.Fire && (user.WaterSport || target.WaterSport)) power /= 2;
@@ -77,6 +84,7 @@ internal static class ForestBattleDamage
         value /= 50; steps.Add(new("divide-50", value));
         if (physical && user.Status == WildBattleStatus.Burn && user.Pokemon.AbilityId != "ABILITY_GUTS") value /= 2;
         steps.Add(new("burn", value));
+        if (rockTunnelRules && reflect && physical && !critical) { value /= 2; steps.Add(new("reflect", value)); }
         if (physical) value = Math.Max(1, value);
         steps.Add(new("physical-minimum-before-plus-two", value));
         if (route11Rules && rain && !physical)
@@ -89,6 +97,7 @@ internal static class ForestBattleDamage
         value += 2; steps.Add(new("plus-two", value));
         if (critical) value *= 2;
         steps.Add(new("critical", value));
+        if (rockTunnelRules && move?.Effect == "EFFECT_REVENGE" && user.DamagedByOpponentThisTurn) { value *= 2; steps.Add(new("revenge", value)); }
         if (mtMoonRules && user.ChargeTurnsRemaining > 0 && type == ElementType.Electric) { value *= 2; steps.Add(new("charge", value)); }
         if (mtMoonRules && move?.Effect == "EFFECT_FLINCH_MINIMIZE_HIT" && target.Minimized) { value *= 2; steps.Add(new("minimized", value)); }
         if (pursuitSwitch)
@@ -103,6 +112,7 @@ internal static class ForestBattleDamage
         if (!struggle)
             foreach (var effect in TypeRules.OrderedEffects(type, Type(d.Type1), Type(d.Type2)))
             {
+                if (rockTunnelRules && target.Identified && effect.Defense == ElementType.Ghost && type is ElementType.Normal or ElementType.Fighting) continue;
                 value = value * effect.MultiplierTenths / 10;
                 if (effect.MultiplierTenths == 0) immune = true;
                 else if (value == 0) value = 1;

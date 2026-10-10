@@ -28,6 +28,7 @@ public sealed partial class CampaignSession
             ShopInventoryView(state.Inventory!),state.Party,battle.ActivePartyIndex,new(new ItemId(command.Text!),command.TargetInstanceId!.Value));
         if(!result.Succeeded)return new(CommandStatus.Rejected,state,result.Fault);
         var turn=result.Battle;
+        battle=RememberKnockedOff(battle,state.Party[battle.ActivePartyIndex].InstanceId,turn.State!.Player);
         var next=state with{Inventory=MergeShopInventory(state.Inventory!,result.Inventory),Party=result.Party,
             WildBattle=battle with{State=turn.State!,Events=turn.Events,EventIndex=0,Phase=CampaignBattlePhase.Events,RandomTrace=turn.Trace},
             World=state.World with{Rng=turn.State!.Rng}};

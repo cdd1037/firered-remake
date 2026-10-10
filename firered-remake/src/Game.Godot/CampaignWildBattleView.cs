@@ -19,9 +19,9 @@ public partial class CampaignView
     private readonly Dictionary<string,Texture2D> _cityBattleScenes = [];
     private Texture2D WildBattleTerrainForMap(MapId mapId)
     {
-        if (_catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
+        if (_catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
         {
-            if (mapId.Value is "map.digletts-cave-south-entrance" or "map.digletts-cave-b1f" or "map.digletts-cave-north-entrance")
+            if (mapId.Value is "map.rock-tunnel-1f" or "map.rock-tunnel-b1f" or "map.digletts-cave-south-entrance" or "map.digletts-cave-b1f" or "map.digletts-cave-north-entrance")
                 return _mtMoonTerrain ?? throw new InvalidDataException("Diglett cave terrain was not loaded.");
             // The transaction commits terrain on entry. Rendering does not reclassify it from the player's later tile.
             if (PresentedWildBattle is {} battle)
@@ -190,7 +190,7 @@ public partial class CampaignView
             if (ForestTrainerEventPages(Source)) { _wildPages = pages.ToImmutable(); return; }
             var current = WildCurrentEvent(b) ?? throw new InvalidDataException("Battle event missing.");
             if(current is WildBattleInfatuationBlockedEvent love) Source("sText_PkmnInLove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(love.Side)),("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(love.Source)));
-            var forestMessage = Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
+            var forestMessage = RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
             if (forestMessage is { } message)
             {
                 if (message.Symbol.Length > 0) Source(message.Symbol, message.Values);
@@ -285,7 +285,7 @@ public partial class CampaignView
         _wildElapsed += delta;
         if (_wildNotice is null && PresentedWildBattle is { Phase: CampaignBattlePhase.Events } b &&
             _wildPages.IsEmpty && _wildElapsed >= .45 && (WildCurrentEvent(b) is
-                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
+                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
     }
     private string WildCommandError() => _lastCommandFault ? "The battle step could not\nbe completed." : _status switch
     {
@@ -390,7 +390,7 @@ public partial class CampaignView
         if (b.Phase != CampaignBattlePhase.ChooseMove)
         {
             if (key.Keycode == Key.Enter && _wildElapsed > (b.Phase == CampaignBattlePhase.Events &&
-                WildCurrentEvent(b) is WildBattleStatusDamageEvent or WildBattleBindingDamageEvent or WildBattleConfusionSelfHitEvent ? .45 : .1))
+                WildCurrentEvent(b) is WildBattleWeatherDamageEvent or WildBattleStatusDamageEvent or WildBattleBindingDamageEvent or WildBattleConfusionSelfHitEvent ? .45 : .1))
             {
                 if (WildStatsPage(b) && !_wildStatsTotals) { _wildStatsTotals = true; _wildElapsed = 0; Write("wildBattleStatsPage", new { page = 2 }); }
                 else if (_wildPage + 1 < _wildPages.Length) { _wildPage++; _wildElapsed = 0; Write("wildBattlePage", new { key = _wildPresentationKey, page = _wildPage }); }

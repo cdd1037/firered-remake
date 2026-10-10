@@ -41,8 +41,9 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false)
     {
+        if(includeRockTunnel&&!includeRoute11)throw new ArgumentException("RockTunnel audio requires Route11.");
         string directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/synth-audio");
         string pack = Path.Combine(directory, "firered.pack");
         if (new FileInfo(pack).Length != FireRedAudio.Resources.End - FireRedAudio.Resources.Base)
@@ -77,6 +78,16 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
                 extra.SourceCommit != Route11SynthManifestIdentity.SourceCommit || extra.Cues.Length != Route11SynthManifestIdentity.CueCount)
                 throw new InvalidDataException("Route11 synth manifest contract differs.");
             cues = [.. cues, .. extra.Cues];
+        }
+        if(includeRockTunnel)
+        {
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/rocktunnel-synth-audio/manifest.json");
+            if(new FileInfo(path).Length!=RockTunnelSynthManifestIdentity.Bytes)throw new InvalidDataException("RockTunnel synth manifest length differs.");
+            byte[] extensionBytes=File.ReadAllBytes(path);
+            if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=RockTunnelSynthManifestIdentity.Sha256)throw new InvalidDataException("RockTunnel synth manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing RockTunnel synth manifest.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=RockTunnelSynthManifestIdentity.SourceCommit||extension.Cues.Length!=RockTunnelSynthManifestIdentity.CueCount)throw new InvalidDataException("RockTunnel synth manifest contract differs.");
+            cues=[..cues,..extension.Cues];
         }
         _catalog = new(StringComparer.Ordinal);
         foreach (var cue in cues)

@@ -2,37 +2,27 @@
 
 Goal: a complete, local single-player recreation of the English original-revision FireRed. Kanto, story, ordinary single-player side content and reachable post-game are the target. The first badge is an intermediate acceptance milestone. See [scope](docs/scope.md) and [full scope audit](docs/full-scope-audit.md).
 
-## Current recovered state — 2026-10-09
+## Current recovered state — 2026-10-10
 
-The current playable continuation reaches **S.S. Anne, the rival and Captain,
-HM01 teaching and the original departure back to Vermilion**, after the second
-badge and Bill's ticket. Run `bash scripts/launch-current.sh` (equivalent to
-`launch-ssanne.sh`); saves are isolated in `.play/ssanne`. An old Vermilion save
-needs the explicit `save upgrade-ssanne INPUT NEW_OUTPUT` tooling command.
-See [ship application and remaining work](docs/ssanne-application.md).
+The playable continuation reaches **Route11, Diglett's Cave, HM05, Route9/10,
+Rock Tunnel and Lavender**, after the third badge, bicycle and Old Rod services.
+Run `bash scripts/launch-current.sh` (equivalent to `launch-rocktunnel.sh`);
+saves are isolated in `.play/rocktunnel`. Exact Route11 saves use the explicit
+`save upgrade-rocktunnel INPUT NEW_OUTPUT` tooling command. Earlier upgrades remain
+profile-specific; saves are never silently relabeled.
 
-The profile admits 80 compact maps, 73 species and 239 source-synthesis cues.
-`./dev test-ssanne NEW-RUN-NAME` drives the legal main route, all 16 ordinary
-ship trainers and 11 currently reachable pickups. Independent review also
-verified HM preservation, defeat recovery and corrected both sides' forced
-replacement action cancellation. A real window shows the Captain room and
-TM Case, walks out, observes departure, saves and exits; an independent second
-process continues with the same save/state hashes. See [native evidence](evidence/ssanne-native.md).
-This native segment starts from a legally generated after-teaching checkpoint;
-it does not replay every ship battle or certify physical audio. Field Cut,
-the Gym puzzle and Surge are next. Great Ball throwing and X Attack use remain
-explicitly unavailable in this bounded profile.
+Fresh recovery verification completed1688 natural public commands /6449 checks,
+focused source/battle/item/service tests, Godot Flash presentation, strict envelope
+rejection and two real window processes saving/continuing the same lit cave state.
+The current profile has98 compact maps,93 species and268 source-synthesis cues.
+See [current verification, commands and boundaries](docs/rocktunnel-recovery-20261010.md).
+Physical audio and a new GBA same-scene comparison are not claimed by this increment.
 
-The previous [Bill checkpoint](docs/bill-checkpoint.md) is archived separately.
-Its native report and original GBA scene comparisons retain their fixed version
-and do not certify subsequent map or battle additions.
-
-This work was rebuilt and verified after the environment recovery. Some older
-full native artifacts were intentionally removed during the authorized disk
-cleanup; retained summaries do not imply those recordings can all be replayed
-locally. The private Drive checkpoint at `8884fa0` is an earlier recovery point
-and does not contain the later Route 3, Magikarp, Moon or Cerulean increments.
-The sections below retain their earlier first-badge scope.
+This remains an active complete-FireRed project. Lavender's western route and
+Celadon are next; the earlier sections below retain their original milestone
+scope. The private third-stage Drive recovery point is7401a009. GitHub code-only
+sync and Drive asset-complete checkpoints are separate records; reconstructed
+post-reset increments are freshly verified before becoming new checkpoints.
 
 ## Earlier first-badge checkpoint
 

@@ -6,6 +6,7 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     private bool OwnedHeldItemSupported(CampaignState state,PartyPokemon owned)=>owned.HeldItem=="ITEM_NONE" ||
+        _content.RockTunnelEnabled&&owned.HeldItem is "ITEM_HARD_STONE" or "ITEM_EVERSTONE" ||
         _content.VermilionEnabled&&VermilionPickupRules.IsKnownHeldItem(owned.HeldItem)||
         _content.MtMoonEnabled&&owned.HeldItem is "ITEM_ORAN_BERRY" or "ITEM_TINY_MUSHROOM" or "ITEM_BIG_MUSHROOM" or "ITEM_MOON_STONE" ||
         _content.Route3Enabled&&owned.HeldItem=="ITEM_ORAN_BERRY"&&

@@ -38,12 +38,12 @@ public partial class CampaignView
     }
 
     private CaptureDexEntry CaptureDexEntry(int species) =>
-        _catalog.Route11Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SsAnnePokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.VermilionPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.BillPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.CeruleanPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.MtMoonPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route3Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route22Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_captureDex!.Entries[species];
+        _catalog.RockTunnelPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route11Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SsAnnePokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.VermilionPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.BillPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.CeruleanPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.MtMoonPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route3Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route22Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_captureDex!.Entries[species];
 
     private PokedexMenuPage PresentedPokedexPage(int species)
     {
         var page=_pokedexMenu!.BuildPage(species,_session.State.SeenSpecies,_session.State.CaughtSpecies,PokedexAccess);
-        var entry=_catalog.Route11Pokemon?.DexEntries.GetValueOrDefault(species)??_catalog.SsAnnePokemon?.DexEntries.GetValueOrDefault(species)??_catalog.VermilionPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.BillPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.CeruleanPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.MtMoonPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.Route3Pokemon?.DexEntries.GetValueOrDefault(species)??_catalog.Route22Pokemon?.DexEntries.GetValueOrDefault(species);
+        var entry=_catalog.RockTunnelPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.Route11Pokemon?.DexEntries.GetValueOrDefault(species)??_catalog.SsAnnePokemon?.DexEntries.GetValueOrDefault(species)??_catalog.VermilionPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.BillPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.CeruleanPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.MtMoonPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.Route3Pokemon?.DexEntries.GetValueOrDefault(species)??_catalog.Route22Pokemon?.DexEntries.GetValueOrDefault(species);
         if(entry is not null)return page with{Portrait=entry.Portrait,Footprint=page.Caught?entry.Footprint:null};
         var preview=_catalog.BillItems?.DexViews.FirstOrDefault(v=>v.SourceSpeciesId==species);
         return preview is not null?page with{Portrait=BillPcDexPortrait(preview)}:page;
@@ -60,6 +60,12 @@ public partial class CampaignView
                     using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,PretBillItems.DexRgba(view));
                     return image.SavePngToBuffer();
                 }
+        if(_catalog.RockTunnelPokemon is {} rockTunnel)
+            foreach(var entry in rockTunnel.DexEntries.Values)
+            {
+                if(texture==entry.Portrait)return rockTunnel.ReadSpriteTexture(rockTunnel.Catalog.Species.Values.Single(s=>s.SourceSpeciesId==entry.SourceSpeciesId).Id,"front");
+                if(texture==entry.Footprint)return rockTunnel.ReadFootprintTexture(entry.SourceSpeciesId);
+            }
         if(_catalog.Route11Pokemon is {} route11)
             foreach(var entry in route11.DexEntries.Values)
             {

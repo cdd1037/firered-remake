@@ -109,10 +109,10 @@ public partial class CampaignView
     private void DrawFieldCutActor(string id,SpriteAsset asset,Pose pose,Vector2 camera)
     {
         var cut=_session.State.CutEffect;
-        if(cut?.Phase==FieldCutSourcePresentation.ShowMon&&id=="LOCALID_PLAYER")
+        if((cut?.Phase==FieldCutSourcePresentation.ShowMon||_session.State.FlashEffect?.Phase==FieldFlashSourcePresentation.ShowMon)&&id=="LOCALID_PLAYER")
         {
             var position=pose.Position.Floor()+new Vector2(8,8)-asset.Anchor-camera;
-            DrawTextureRectRegion(_session.State.PlayerGender==0?_fieldCutRed!:_fieldCutGreen!,new(position,new(16,32)),new(FieldCutPlayerFrame*16,0,16,32));
+            DrawTextureRectRegion(_session.State.PlayerGender==0?_fieldCutRed!:_fieldCutGreen!,new(position,new(16,32)),new((_session.State.FlashEffect is null?FieldCutPlayerFrame:FieldFlashPlayerFrame)*16,0,16,32));
             return;
         }
         if(cut?.Phase==FieldCutSourcePresentation.TreeCut&&id==cut.ActorId)

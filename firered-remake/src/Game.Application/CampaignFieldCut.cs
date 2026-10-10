@@ -41,9 +41,12 @@ public sealed partial class CampaignSession
     private CampaignActor? AdjacentFieldCutTree(CampaignState state)
     {
         var p=state.World.Player;
-        if(p.MapId.Value!=FieldCutMap&&!(_content.Route11Enabled&&p.MapId.Value=="map.route-2"))return null;
+        if(p.MapId.Value!=FieldCutMap&&!(_content.Route11Enabled&&p.MapId.Value=="map.route-2")&&!(_content.RockTunnelEnabled&&p.MapId.Value is "map.route-9" or "map.route-10"))return null;
         bool Admitted(CampaignActor actor)=>p.MapId.Value==FieldCutMap
             ? actor.SourceLocalId==7&&actor.X==19&&actor.Y==24&&actor.Elevation==3&&actor.HideFlag=="FLAG_TEMP_12"
+            : p.MapId.Value=="map.route-9" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag)==(10,2,8,3,"FLAG_TEMP_12")
+            : p.MapId.Value=="map.route-10" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is
+                (7,10,20,0,"FLAG_TEMP_12") or (8,10,22,0,"FLAG_TEMP_13") or (9,10,24,0,"FLAG_TEMP_14") or (10,10,26,0,"FLAG_TEMP_15")
             : (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is
                 (1,16,62,3,"FLAG_TEMP_14") or (2,15,69,3,"FLAG_TEMP_13") or
                 (3,11,13,3,"FLAG_TEMP_15") or (4,18,26,3,"FLAG_TEMP_16");

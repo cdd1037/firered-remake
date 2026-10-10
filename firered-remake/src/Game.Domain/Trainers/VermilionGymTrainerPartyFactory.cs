@@ -30,10 +30,11 @@ public static class VermilionGymTrainerPartyFactory
     public static ImmutableArray<TrainerId> SupportedTrainers { get; } = Expected.Keys.OrderBy(x => x.Value, StringComparer.Ordinal).ToImmutableArray();
     public static TrainerId LtSurge { get; } = new("pret:TRAINER_LEADER_LT_SURGE");
     internal static string SpeciesName(string symbol) => symbol == "NIDORAN_F" ? "NIDORAN♀" : symbol == "NIDORAN_M" ? "NIDORAN♂" : symbol;
-    public static TrainerPartyCreationResult Create(VermilionGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool route11Rules = false)
+    public static TrainerPartyCreationResult Create(VermilionGymTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng, bool route11Rules = false, bool rockTunnelRules = false)
     {
+        route11Rules |= rockTunnelRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (route11Rules ? 79 : 73) || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : 73) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("VermilionGym requires the exact seventy-three-species catalog and one source Gym team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

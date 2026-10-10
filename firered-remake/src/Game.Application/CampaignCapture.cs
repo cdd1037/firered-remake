@@ -33,7 +33,7 @@ public sealed partial class CampaignSession
         var b=state.WildBattle!;
         if(!_content.CaptureEnabled||b.Origin is null||state.Exploration!.Captured is null||CaptureCapacityError(state) is not null||b.Capture is not null)throw new InvalidDataException("capture_delivery_context_invalid");
         var opponent=b.State.Opponent;bool first=!state.CaughtSpecies.Contains(opponent.Pokemon.SourceSpeciesId);
-        var pending=new CampaignPendingCapture(opponent.Pokemon,opponent.HeldItem,opponent.Status,b.Origin,first,first?CampaignCaptureStage.DexNotice:CampaignCaptureStage.NicknameChoice);
+        var pending=new CampaignPendingCapture(opponent.Pokemon,OwnedBattleHeldItem(opponent),opponent.Status,b.Origin,first,first?CampaignCaptureStage.DexNotice:CampaignCaptureStage.NicknameChoice);
         return state with{CaughtSpecies=state.CaughtSpecies.Add(opponent.Pokemon.SourceSpeciesId),WildBattle=b with{Capture=pending,Phase=CampaignBattlePhase.Results,Pages=[],PageIndex=0}};
     }
     private Decision<CampaignState> DecideCapture(CampaignState state,CampaignCommand command)
@@ -110,10 +110,10 @@ public sealed partial class CampaignSession
             int index=command.PartyIndex;
             if(index<0||index>=state.Party.Length||index==b.ActivePartyIndex||state.Party[index].IsEgg||state.Party[index].Pokemon.CurrentHp==0)return new(CommandStatus.Rejected,state,"replacement_member_invalid");
             var owned=state.Party[index];bool reserves=state.Party.Where((p,i)=>i!=index).Any(p=>!p.IsEgg&&p.Pokemon.CurrentHp>0);
-            var change=WildBattleRules.ReplaceFaintedPlayer(BattlePokemon,b.State,new(owned.Pokemon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET")},_content.ForestEnabled&&reserves);
+            var change=WildBattleRules.ReplaceFaintedPlayer(BattlePokemon,b.State,OwnedBattleMember(state,b,owned),_content.ForestEnabled&&reserves);
             if(!change.Succeeded)return new(CommandStatus.Fault,state,change.Fault);
             if(_content.PartyTrainingEnabled)b=b with{ParticipatingMembers=(b.ParticipatingMembers??throw new InvalidDataException("wild_participation_missing")).Add(owned.InstanceId),OpponentHpAtLastSwitch=b.State.Opponent.Pokemon.CurrentHp};
-            return new(CommandStatus.Accepted,PrepareWildPresentation(PenalizeWildFaint(state with{WildBattle=b with{State=change.State!,ActivePartyIndex=index,OwnedBefore=owned,Replacement=null,Events=change.Events,EventIndex=0,Phase=CampaignBattlePhase.Events,RandomTrace=change.Trace,DisplayPlayer=owned.Pokemon},Party=state.Party.SetItem(index,owned with{Pokemon=change.State!.Player.Pokemon,Status=change.State.Player.Status,HeldItem=change.State.Player.HeldItem}),World=state.World with{Rng=change.State!.Rng}})));
+            return new(CommandStatus.Accepted,PrepareWildPresentation(PenalizeWildFaint(state with{WildBattle=b with{State=change.State!,ActivePartyIndex=index,OwnedBefore=owned,Replacement=null,Events=change.Events,EventIndex=0,Phase=CampaignBattlePhase.Events,RandomTrace=change.Trace,DisplayPlayer=owned.Pokemon},Party=state.Party.SetItem(index,owned with{Pokemon=change.State!.Player.Pokemon,Status=change.State.Player.Status,HeldItem=OwnedBattleHeldItem(change.State.Player)}),World=state.World with{Rng=change.State!.Rng}})));
         }
         return new(CommandStatus.Rejected,state,"replacement_selection_required");
     }

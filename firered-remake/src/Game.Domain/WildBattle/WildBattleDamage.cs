@@ -7,9 +7,10 @@ namespace Game.Domain.WildBattle;
 public static class WildBattleDamage
 {
     public static DamageResult Calculate(PokemonCatalog catalog, WildBattleCombatant user,
-        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, string rulesVersion, int? dynamicPower = null, bool rain = false) =>
+        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, string rulesVersion, int? dynamicPower = null, bool rain = false, bool reflect = false) =>
         rulesVersion switch
         {
+            WildBattleRules.RockTunnelRulesVersion => ForestBattleDamage.Calculate(catalog,user,target,moveId,critical,randomPercent,true,true,true,true,route3Rules:true,dynamicPower:dynamicPower,mtMoonRules:true,ceruleanRules:true,billRules:true,vermilionRules:true,ssAnneRules:true,vermilionGymRules:true,route11Rules:true,rain:rain,rockTunnelRules:true,reflect:reflect),
             WildBattleRules.Route11RulesVersion => ForestBattleDamage.Calculate(catalog,user,target,moveId,critical,randomPercent,true,true,true,true,route3Rules:true,dynamicPower:dynamicPower,mtMoonRules:true,ceruleanRules:true,billRules:true,vermilionRules:true,ssAnneRules:true,vermilionGymRules:true,route11Rules:true,rain:rain),
             WildBattleRules.VermilionGymRulesVersion => ForestBattleDamage.Calculate(catalog,user,target,moveId,critical,randomPercent,true,true,true,true,route3Rules:true,dynamicPower:dynamicPower,mtMoonRules:true,ceruleanRules:true,billRules:true,vermilionRules:true,ssAnneRules:true,vermilionGymRules:true),
             WildBattleRules.SsAnneRulesVersion => ForestBattleDamage.Calculate(catalog,user,target,moveId,critical,randomPercent,true,true,true,true,route3Rules:true,dynamicPower:dynamicPower,mtMoonRules:true,ceruleanRules:true,billRules:true,vermilionRules:true,ssAnneRules:true),
