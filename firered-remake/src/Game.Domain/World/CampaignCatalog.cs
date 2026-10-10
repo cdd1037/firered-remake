@@ -73,6 +73,8 @@ public interface ICampaignCatalog:IStoryCatalog
     bool RegionalInteriorServicesEnabled=>false;
     bool FuchsiaRouteEnabled=>false;
     FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>null;
+    bool FuchsiaGymEnabled=>false;
+    FuchsiaGymTrainerCatalog? FuchsiaGymTrainerParties=>null;
     bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;
     string? DeferredRegionalServiceReason(MapId map,string script)=>null;
     NameRaterSourceContent? NameRaterSource=>null;

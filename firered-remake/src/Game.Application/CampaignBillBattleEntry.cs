@@ -17,6 +17,7 @@ public sealed partial class CampaignSession
             "Route12" or "Route13" or "Route14" or "Route15" when _content.FuchsiaRouteEnabled=>new("map.route-"+sourceMap[5..]),
             "CeladonCity_GameCorner" when _content.RocketHideoutEnabled=>new("map.celadon-city-game-corner"),
             _ when _content.RocketHideoutEnabled&&sourceMap.StartsWith("RocketHideout_",StringComparison.Ordinal)=>new("map.rocket-hideout-"+sourceMap.Split('_')[1].ToLowerInvariant()),
+            "FuchsiaCity_Gym" when _content.FuchsiaGymEnabled=>new("map.fuchsia-city-gym"),
             "CeladonCity_Gym" when _content.CeladonGymEnabled=>new("map.celadon-city-gym"),
             "Route8" when _content.CeladonApproachEnabled=>new("map.route-8"),
             "Route9" when _content.RockTunnelEnabled=>new("map.route-9"),

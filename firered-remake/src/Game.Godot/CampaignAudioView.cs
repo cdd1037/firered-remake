@@ -215,7 +215,7 @@ public partial class CampaignView
         if(s.Battle is {} lab)return lab.Phase==CampaignBattlePhase.Results&&lab.State.Outcome==FirstBattleOutcome.Won?"MUS_VICTORY_TRAINER":"MUS_VS_TRAINER";
         if(s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer)
         {
-            bool leader=trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA";
+            bool leader=trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value);
             bool victory=trainer.Combat.Phase==ForestTrainerCombatPhase.Ended&&trainer.Combat.Battle.Outcome==WildBattleOutcome.Won;
             return victory?(leader?"MUS_VICTORY_GYM_LEADER":"MUS_VICTORY_TRAINER"):(leader?"MUS_VS_GYM_LEADER":"MUS_VS_TRAINER");
         }
@@ -312,7 +312,8 @@ public partial class CampaignView
                 .Any(e=>e.TrainerBattle&&e.Target==WildBattleSide.Opponent&&e.Sequence<replacement.Sequence);
             // Match the real message sequence: a living ordinary switch first withdraws;
             // a faint replacement or forced replacement has its send-out page immediately.
-            int page=!forcedOpponent&&_catalog.CeruleanEnabled&&replacement.Previous.Pokemon.CurrentHp>0
+            int page=!forcedOpponent&&!SourceBatonSwitchBefore(replacing.Presentation,WildBattleSide.Opponent,replacement.Sequence)&&
+                _catalog.CeruleanEnabled&&replacement.Previous.Pokemon.CurrentHp>0
                 ? WildSourcePages("sText_Trainer1WithdrewPkmn",("B_BUFF1",_catalog.PokemonContent!.SpeciesNames[replacement.Previous.Pokemon.SourceSpeciesId])).Length:0;
             if(_wildPage==page&&_audioTrainerOneShots.Add($"{replacing.Id}:opponent-replaced:{replacement.Sequence}"))
                 SourceCry(replacement.Replacement.Pokemon);
@@ -336,7 +337,7 @@ public partial class CampaignView
             if(e is WildBattleStartedEvent)
             {if(!PokemonTowerStartedAudio(wild)){if(_wildPage==0)SourceCry(wild.DisplayOpponent);else if(_wildPage==1)SourceCry(wild.DisplayPlayer);}}
             if(e is WildBattlePokeFluteEvent {Phase:PokeFluteBattlePhase.Fanfare})SourceSound("MUS_POKE_FLUTE",fanfare:true);
-            if(e is WildBattlePlayerSwitchedEvent sw&&_wildPage==1)SourceCry(sw.Replacement.Pokemon);
+            if(e is WildBattlePlayerSwitchedEvent sw&&_wildPage==(SourcePlayerBatonSwitch(wild)?0:1))SourceCry(sw.Replacement.Pokemon);
             if(e is WildBattlePlayerReplacedEvent re&&_wildPage==0)SourceCry(re.Replacement.Pokemon);
             if(e is WildBattleMedicineAppliedEvent&&_wildPage==0)SourceSound("SE_USE_ITEM");
         }
@@ -347,8 +348,8 @@ public partial class CampaignView
             _session.State.ForestTrainerBattle is not {Stage:CampaignForestTrainerStage.Intro} trainer||
             _session.State.Dialogue is not {} dialogue||
             !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||
-              trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"))return;
-        // All four pinned intro controls are at page end. Waiting for the printer's
+              trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)))return;
+        // All five pinned intro controls are at page end. Waiting for the printer's
         // EOS step includes its final glyph delay; page entry or last glyph is too early.
         string raw=dialogue.Pages[dialogue.Page];
         if(!raw.EndsWith("{PLAY_BGM}{MUS_ENCOUNTER_GYM_LEADER}",StringComparison.Ordinal)&&
@@ -364,7 +365,7 @@ public partial class CampaignView
         if(!_catalog.VermilionGymEnabled||_session.State.ForestTrainerBattle is not
             {Stage:CampaignForestTrainerStage.Finished,Combat.Battle.Outcome:WildBattleOutcome.Won} trainer||
             trainer.Presentation is not {Phase:CampaignBattlePhase.Results} battle||battle.PageIndex<0||battle.PageIndex>=battle.Pages.Length||
-            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"))return;
+            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)))return;
         string raw=battle.Pages[battle.PageIndex].Text;
         int cue=raw.IndexOf("{PLAY_BGM}{MUS_OBTAIN_BADGE}",StringComparison.Ordinal);
         if(cue<0||!raw.Contains("{PAUSE_MUSIC}",StringComparison.Ordinal)||!raw.Contains("{RESUME_MUSIC}",StringComparison.Ordinal))return;

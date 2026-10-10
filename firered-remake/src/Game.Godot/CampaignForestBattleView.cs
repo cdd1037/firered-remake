@@ -118,7 +118,7 @@ public partial class CampaignView
         _ => null
     };
     private static WildBattleSide Opposite(WildBattleSide side) => side == WildBattleSide.Player ? WildBattleSide.Opponent : WildBattleSide.Player;
-    private string ForestStatusName(uint status) => _battleText[status switch
+    private string ForestStatusName(uint status) => _battleText[ForestPresentationStatus(status) switch
     {
         >=1 and <=5 => "gText_Sleep",
         WildBattleStatus.Freeze => "gText_Ice", WildBattleStatus.Poison => "gText_Poison", WildBattleStatus.Burn => "gText_Burn", WildBattleStatus.Paralysis => "gText_Paralysis",
@@ -132,7 +132,7 @@ public partial class CampaignView
     {
         if (!_catalog.ForestEnabled) return 0;
         if (side == WildBattleSide.Player && WildWithdrawing(battle))
-            return ((WildBattlePlayerSwitchedEvent)WildCurrentEvent(battle)!).Previous.Status;
+            return ForestPresentationStatus(((WildBattlePlayerSwitchedEvent)WildCurrentEvent(battle)!).Previous.Status);
         var forced = side == WildBattleSide.Player ? SsAnnePendingPlayerForceOut(battle) : null;
         uint status = forced?.Previous.Status ?? (side == WildBattleSide.Player ? battle.State.Player.Status : battle.State.Opponent.Status);
         if (battle.Phase == CampaignBattlePhase.Events)
@@ -144,6 +144,7 @@ public partial class CampaignView
                     case WildBattlePlayerSwitchedEvent change when side == WildBattleSide.Player: status = change.Previous.Status; break;
                     case WildBattlePlayerReplacedEvent change when side == WildBattleSide.Player: status = change.Previous.Status; break;
                 }
+        status = ForestPresentationStatus(status);
         if (!WildBattleStatus.IsSupported(status,_catalog.EarlyStarterEnabled,_catalog.Route11Enabled)) throw new InvalidDataException("Unsupported displayed forest status.");
         return status;
     }
@@ -174,7 +175,7 @@ public partial class CampaignView
         return (int)Math.Round(Mathf.Lerp(transition.Item1, transition.Item2, (float)Math.Clamp(_wildElapsed / .4, 0, 1)));
     }
 
-    private static string ForestStatusId(uint status) => status switch
+    private string ForestStatusId(uint status) => ForestPresentationStatus(status) switch
     {
         >=1 and <=5 => "sleep",
         WildBattleStatus.Freeze => "freeze", WildBattleStatus.Poison => "poison", WildBattleStatus.Burn => "burn", WildBattleStatus.Paralysis => "paralysis",

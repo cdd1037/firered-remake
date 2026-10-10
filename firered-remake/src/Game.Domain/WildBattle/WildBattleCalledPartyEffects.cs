@@ -170,7 +170,7 @@ public static partial class WildBattleRules
                     if (!FuchsiaBattleScope.SupportsHeldItem(mon.HeldItem) || !FuchsiaBattleScope.SupportsHeldItem(WildBattleSourcePartyEffects.PersistentHeldItem(mon))) return "called_party_item";
                     if (mon.KnockedOffItem is { } knocked && (knocked == "ITEM_NONE" || !FuchsiaBattleScope.SupportsHeldItem(knocked))) return "called_party_knocked_off";
                     if (mon.Status != 0 && mon.Status is not (WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
-                        !WildBattleStatus.IsSleeping(mon.Status) && !WildBattleSourceFieldEffects.IsValidToxic(mon.Status)) return "called_party_status";
+                        !WildBattleStatus.IsSleeping(mon.Status) && mon.Status != SourcePartyStatusRules.Toxic) return "called_party_status";
                 }
                 var live = side == WildBattleSide.Player ? state.Player : state.Opponent; var entry = party[active];
                 if (entry.IsEgg || !WildBattleSourcePartyEffects.SamePokemon(entry.Pokemon, WildBattleTransformationRules.PersistentPokemon(live)) ||
@@ -587,7 +587,8 @@ public static partial class WildBattleRules
             var incoming = WildBattleSourcePartyEffects.Party(context, side)[index];
             var next = new WildBattleCombatant(incoming.Pokemon, HeldItem: incoming.KnockedOffItem is not null ? "ITEM_NONE" : WildBattleSourcePartyEffects.PersistentHeldItem(incoming),
                 Status: WildBattleSourceFieldEffects.ResetToxicCounter(incoming.Status), AttackBadgeBoost: departing.AttackBadgeBoost)
-                { SpeedBadgeBoost = departing.SpeedBadgeBoost, FirstTurnCounter = 2, KnockedOffItem = incoming.KnockedOffItem };
+                { SpeedBadgeBoost = departing.SpeedBadgeBoost, DefenseBadgeBoost = departing.DefenseBadgeBoost,
+                    FirstTurnCounter = 2, KnockedOffItem = incoming.KnockedOffItem, CalledDamage = departing.CalledDamage };
             if (baton)
             {
                 next = next with {

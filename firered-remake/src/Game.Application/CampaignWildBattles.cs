@@ -60,10 +60,11 @@ public sealed partial class CampaignSession
         }
         else generated=Route1WildPokemonFactory.Generate(BattlePokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
         // Start owns source AI-init -> held-item -> order/turn-number RNG sequencing.
-        var player=new WildBattleCombatant(owned.Pokemon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET")};
+        var player=new WildBattleCombatant(owned.Pokemon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),DefenseBadgeBoost=_content.FuchsiaGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET")};
         bool towerBattle=_content.PokemonTowerEnabled&&TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
         var kind=PokemonTowerBattleContract.Classify(scriptedMarowak,HasSilphScope(state));
-        var started=scriptedSnorlaxRoute!=0?WildBattleRules.StartSnorlax(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state),fuchsiaRules:_content.FuchsiaRouteEnabled):towerBattle?WildBattleRules.StartPokemonTower(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,kind,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled):
+        var started=_content.FuchsiaGymEnabled?WildBattleRules.StartSourceWild(BattlePokemon,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,
+            CampaignBattleTerrain(state),fishingPokemon is not null,towerBattle?kind:null,scriptedSnorlaxRoute!=0):scriptedSnorlaxRoute!=0?WildBattleRules.StartSnorlax(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state),fuchsiaRules:_content.FuchsiaRouteEnabled):towerBattle?WildBattleRules.StartPokemonTower(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,kind,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled):
             WildBattleRules.Start(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignWildRulesVersion,terrain:CampaignBattleTerrain(state),oldRodFishing:fishingPokemon is not null);
 
         if(!started.Succeeded)throw new InvalidDataException(started.Fault);
@@ -78,6 +79,7 @@ public sealed partial class CampaignSession
     {
         var b=state.WildBattle!;
         if(b.Capture is not null)return DecideCapture(state,command);
+        if(b.Phase==CampaignBattlePhase.ChooseMove&&WildBattleRules.IsSourceWild(b.State)&&b.State.CalledParty?.PendingSwitch is{Kind:WildBattleCalledSwitchKind.BatonPass})return DecideSourceWildPartyChoice(state,command);
         if(b.Replacement is not null&&b.Phase==CampaignBattlePhase.ChooseMove)return DecideWildReplacement(state,command);
         if(command.Kind=="ack")
         {
@@ -169,6 +171,10 @@ public sealed partial class CampaignSession
             void Update(WildBattleSide side,Func<PokemonInstance,PokemonInstance> update){b=side==WildBattleSide.Player?b with{DisplayPlayer=update(b.DisplayPlayer)}:b with{DisplayOpponent=update(b.DisplayOpponent)};}
             switch(e)
             {
+                case WildBattlePpCommandEvent pp:Update(pp.Actor,p=>p with{Moves=p.Moves.SetItem(pp.PpSlot,p.Moves[pp.PpSlot] with{CurrentPp=pp.After})});break;
+                case WildBattleGrudgePpEvent grudge:Update(grudge.Attacker,p=>p with{Moves=p.Moves.SetItem(grudge.ChosenSlot,p.Moves[grudge.ChosenSlot] with{CurrentPp=0})});break;
+                case WildBattleWeatherDamageEvent weather:Update(weather.Side,p=>p with{CurrentHp=weather.HpAfter});break;
+                case WildBattleDrainEvent drain:Update(drain.Actor,p=>p with{CurrentHp=drain.HpAfter});break;
                 case WildBattleTransformedEvent transformed:b=ApplyTransformDisplay(b,transformed);break;
                 case WildBattlePlayerSwitchedEvent changed:b=b with{DisplayPlayer=BattleDisplayPokemon(changed.Replacement),DisplayPlayerAppearance=null};break;
                 case WildBattleMoveUsedEvent used when used.Slot>=0:Update(used.Actor,p=>p with{Moves=p.Moves.SetItem(used.Slot,p.Moves[used.Slot] with{CurrentPp=used.PpAfter})});break;
@@ -188,7 +194,7 @@ public sealed partial class CampaignSession
             }
             return state with{WildBattle=b};
         }
-        if(b.State.Outcome==WildBattleOutcome.Ongoing)return state with{WildBattle=b with{Phase=CampaignBattlePhase.ChooseMove,Replacement=b.State.AwaitingReplacement?b.Replacement??CampaignReplacementStage.UseNext:null,DisplayPlayer=BattleDisplayPokemon(b.State.Player),DisplayOpponent=BattleDisplayPokemon(b.State.Opponent),DisplayPlayerAppearance=BattleAppearance(b.State.Player),DisplayOpponentAppearance=BattleAppearance(b.State.Opponent)}};
+        if(b.State.Outcome==WildBattleOutcome.Ongoing)return state with{WildBattle=b with{Phase=CampaignBattlePhase.ChooseMove,Replacement=b.State.CalledParty?.PendingSwitch is{Kind:WildBattleCalledSwitchKind.BatonPass}?CampaignReplacementStage.Select:b.State.AwaitingReplacement?b.Replacement??CampaignReplacementStage.UseNext:null,DisplayPlayer=BattleDisplayPokemon(b.State.Player),DisplayOpponent=BattleDisplayPokemon(b.State.Opponent),DisplayPlayerAppearance=BattleAppearance(b.State.Player),DisplayOpponentAppearance=BattleAppearance(b.State.Opponent)}};
         if(b.State.Outcome==WildBattleOutcome.Caught)return BeginCapturePresentation(state with{WildBattle=b});
         return SettleWildBattle(state with{WildBattle=b});
     }

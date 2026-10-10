@@ -41,7 +41,7 @@ public sealed partial class CampaignSession
     private CampaignActor? AdjacentFieldCutTree(CampaignState state)
     {
         var p=state.World.Player;
-        if(p.MapId.Value!=FieldCutMap&&!(_content.Route11Enabled&&p.MapId.Value=="map.route-2")&&!(_content.CeladonGymEnabled&&p.MapId.Value=="map.celadon-city-gym")&&!(_content.CeladonApproachEnabled&&p.MapId.Value is "map.route-8" or "map.celadon-city")&&!(_content.RockTunnelEnabled&&p.MapId.Value is "map.route-9" or "map.route-10"))return null;
+        if(p.MapId.Value!=FieldCutMap&&!(_content.Route11Enabled&&p.MapId.Value=="map.route-2")&&!(_content.CeladonGymEnabled&&p.MapId.Value=="map.celadon-city-gym")&&!(_content.CeladonApproachEnabled&&p.MapId.Value is "map.route-8" or "map.celadon-city")&&!(_content.RockTunnelEnabled&&p.MapId.Value is "map.route-9" or "map.route-10")&&!(_content.FuchsiaRouteEnabled&&p.MapId.Value is "map.route-12" or "map.route-13" or "map.route-14" or "map.fuchsia-city"))return null;
         bool Admitted(CampaignActor actor)=>p.MapId.Value==FieldCutMap
             ? actor.SourceLocalId==7&&actor.X==19&&actor.Y==24&&actor.Elevation==3&&actor.HideFlag=="FLAG_TEMP_12"
             : p.MapId.Value=="map.celadon-city-gym" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is (9,6,8,3,"FLAG_TEMP_12") or (10,3,5,3,"FLAG_TEMP_13") or (11,9,6,3,"FLAG_TEMP_14")
@@ -50,6 +50,13 @@ public sealed partial class CampaignSession
             : p.MapId.Value=="map.route-9" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag)==(10,2,8,3,"FLAG_TEMP_12")
             : p.MapId.Value=="map.route-10" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is
                 (7,10,20,0,"FLAG_TEMP_12") or (8,10,22,0,"FLAG_TEMP_13") or (9,10,24,0,"FLAG_TEMP_14") or (10,10,26,0,"FLAG_TEMP_15")
+            : p.MapId.Value=="map.route-12" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is
+                (9,11,100,3,"FLAG_TEMP_12") or (14,12,111,3,"FLAG_TEMP_13")
+            : p.MapId.Value=="map.route-13" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag)==(11,44,5,3,"FLAG_TEMP_12")
+            : p.MapId.Value=="map.route-14" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is
+                (11,7,26,3,"FLAG_TEMP_12") or (12,12,35,3,"FLAG_TEMP_13") or (13,1,47,3,"FLAG_TEMP_14")
+            : p.MapId.Value=="map.fuchsia-city" ? (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is
+                (11,30,10,3,"FLAG_TEMP_12") or (12,21,13,3,"FLAG_TEMP_13") or (13,32,16,3,"FLAG_TEMP_14") or (14,24,22,3,"FLAG_TEMP_15")
             : (actor.SourceLocalId,actor.X,actor.Y,actor.Elevation,actor.HideFlag) is
                 (1,16,62,3,"FLAG_TEMP_14") or (2,15,69,3,"FLAG_TEMP_13") or
                 (3,11,13,3,"FLAG_TEMP_15") or (4,18,26,3,"FLAG_TEMP_16");

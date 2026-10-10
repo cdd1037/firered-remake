@@ -17,7 +17,7 @@ internal static class ForestBattleDamage
         bool struggle = moveId == WildBattleRules.StruggleMove;
         var move = sourceDefinition ?? (struggle ? null : catalog.Moves[moveId]);
         bool sourceMove = sourceDefinition is not null;
-        if (sourceMove && (struggle || sourceDefinition!.Id != moveId || !MetronomeSourceMoveDefinition.Matches(sourceDefinition)))
+        if (sourceMove && (sourceDefinition!.Id != moveId || !MetronomeSourceMoveDefinition.Matches(sourceDefinition)))
             throw new NotSupportedException("called_damage_source_definition");
         if (!struggle && ((!sourceMove && !(rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, move!) : route11Rules ? Route11BattleScope.ValidDefinition(move!) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move!) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move!) : vermilionRules ? VermilionBattleScope.ValidDefinition(move!) : billRules ? BillBattleScope.ValidDefinition(move!) : ceruleanRules ? CeruleanBattleScope.ValidDefinition(move!) : mtMoonRules ? MtMoonBattleScope.ValidDefinition(move!) : route3Rules ? Route3BattleScope.ValidDefinition(move!) : route22Rules ? Route22BattleScope.ValidDefinition(move!) : earlyPartyRules ? EarlyPartyBattleScope.ValidDefinition(move!) : earlyStarterRules ? EarlyStarterBattleScope.ValidDefinition(move!) : pewterRules ? PewterBattleScope.ValidDefinition(move!) : ForestBattleScope.ValidDefinition(move!))) || move!.Power == 0))
             throw new NotSupportedException("wild_battle_damage_move");
@@ -99,6 +99,13 @@ internal static class ForestBattleDamage
             // pokemon.c:2440 precedes Guts (2490) and stat stages; preserve both integer divisions.
             attack = attack * 110 / 100;
             steps.Add(new("attack-badge", attack));
+        }
+        if (rockTunnelRules && catalog.Species.Count == 107 && catalog.Moves.Count == 354 && physical && target.DefenseBadgeBoost)
+        {
+            // pokemon.c:2442 applies the player's fifth badge before held items, abilities,
+            // Explosion's defense halving and stat stages. Keep its own integer truncation.
+            defense = defense * 110 / 100;
+            steps.Add(new("defense-badge", defense));
         }
         if (rockTunnelRules && user.HeldItem == "ITEM_HARD_STONE" && type == ElementType.Rock) { attack = attack * 110 / 100; steps.Add(new("hard-stone", attack)); }
         if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 99 or 101 or 102 or 107 && user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) { attack = attack * 110 / 100; steps.Add(new("black-glasses", attack)); }

@@ -929,7 +929,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         }
         var fuchsiaRouteCompositionPokemon=pokemonContent;
         if(fuchsiaGym is not null)
-            pokemonContent=pokemonContent! with{Catalog=FuchsiaGymPokemon(pokemonContent.Catalog,fuchsiaGymTrainers!,fuchsiaGymMoveSource!)};
+            pokemonContent=pokemonContent! with{Catalog=FuchsiaGymPokemon(pokemonContent.Catalog,fuchsiaGymTrainers!,fuchsiaGymMoveSource!),AllowToxicStatus=true};
         var mtMoonItems=includeMtMoon?PretMtMoonItems.LoadProject(projectRoot):null;
         if(mtMoonItems is not null)hashes.Add("mtmoon-items:"+PretMtMoonItems.GeneratedSha256+":"+PretMtMoonItems.LockSha256);
         var machines=includeSsAnne?PretSsAnneMachines.LoadCatalogProject(projectRoot):includeVermilion?PretVermilionMachines.LoadCatalogProject(projectRoot):includeBill?PretBillMachines.LoadCatalogProject(projectRoot):includeCerulean?PretCeruleanMachines.LoadCatalogProject(projectRoot):includeMtMoon?PretPewterMachines.LoadMtMoonProject(projectRoot):includeRoute3?PretPewterMachines.LoadRoute3Project(projectRoot):includeRoute22?PretPewterMachines.LoadRoute22Project(projectRoot):includePewter?PretPewterMachines.LoadProject(projectRoot):null;
@@ -1016,6 +1016,11 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
                 names[move.Value]=name;
             }
             if(fuchsiaPokemon is not null)foreach(var (move,name) in fuchsiaPokemon.AdditionalMoveNames)names[move.Value]=name;
+            if(fuchsiaGymMoveSource is not null)foreach(var (move,name) in fuchsiaGymMoveSource.MoveNames)
+            {
+                if(names.TryGetValue(move.Value,out var prior)&&prior!=name)throw new InvalidDataException("Conflicting Fuchsia Gym source move name: "+move.Value);
+                names[move.Value]=name;
+            }
             if(includeVermilionGym)foreach(var (move,name) in PretVermilionGymTrainers.LoadMoveNames(projectRoot))
             {
                 if(names.TryGetValue(move.Value,out var prior)&&prior!=name)throw new InvalidDataException("Conflicting Vermilion Gym move name: "+move.Value);

@@ -14,7 +14,7 @@ public static class CeruleanTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-cerulean-trainer-ai-semantic-v1";
 
-    public static CeruleanTrainerAiDecision Choose(PokemonCatalog catalog, CeruleanTrainerAiInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool userReflect = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
+    public static CeruleanTrainerAiDecision Choose(PokemonCatalog catalog, CeruleanTrainerAiInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool userReflect = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false, SourceTrainerAiContext? source = null)
     {
         towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
@@ -27,10 +27,11 @@ public static class CeruleanTrainerAi
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
         if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
-        string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
+        string? error = source is null ? Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) :
+            !source.Matches(catalog, input.User, input.Target) || input.AiFlags != SourceTrainerAi.Flags(source.State.Trainer) ? "source_trainer_ai_context_mismatch" : null;
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("cerulean_trainer_ai_rng_algorithm");
-        bool Usable(int slot) => WildBattleRules.IsMoveSelectable(input.User, slot) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move));
+        bool Usable(int slot) => (source is null ? WildBattleRules.IsMoveSelectable(input.User, slot) : WildBattleRules.IsCalledMoveSelectable(catalog, input.User, slot)) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move));
         if (!Enumerable.Range(0, 4).Any(Usable)) return Fault("cerulean_trainer_ai_struggle_required");
         var current = rng;
         var trace = ImmutableArray.CreateBuilder<RandomTrace>();
@@ -41,15 +42,17 @@ public static class CeruleanTrainerAi
             current = next.State; trace.Add(next.Trace); return next.Trace.Result;
         }
         var targetSpecies = catalog.Species[input.Target.Pokemon.Species];
+        var targetTypes = source is null ? (targetSpecies.Type1, targetSpecies.Type2) : WildBattleEffective.Types(catalog, input.Target);
         string Ability(int slot, string reason)
         {
             // Cmd_get_ability consults side history, then reveals actual trapping abilities,
             // otherwise independently guesses a dual ability on every script instruction.
-            bool trappedAbility = input.Target.Pokemon.AbilityId == "ABILITY_MAGNET_PULL" || route11Rules && input.Target.Pokemon.AbilityId == "ABILITY_ARENA_TRAP";
+            string actualAbility = WildBattleEffective.Ability(input.Target);
+            bool trappedAbility = actualAbility == "ABILITY_MAGNET_PULL" || route11Rules && actualAbility == "ABILITY_ARENA_TRAP" || source is not null && actualAbility == "ABILITY_SHADOW_TAG";
             bool guess = input.KnownTargetAbility is null && !trappedAbility && targetSpecies.Ability2 != "ABILITY_NONE";
             string ability = input.KnownTargetAbility ?? (guess
                 ? Draw($"cerulean-trainer.ai.slot.{slot}.ability.{reason}", 2) != 0 ? targetSpecies.Ability1 : targetSpecies.Ability2
-                : trappedAbility ? input.Target.Pokemon.AbilityId : targetSpecies.Ability1);
+                : trappedAbility ? actualAbility : targetSpecies.Ability1);
             reads.Add(new(slot, reason, ability, guess));
             return ability;
         }
@@ -64,16 +67,16 @@ public static class CeruleanTrainerAi
             for (int slot = 0; slot < input.User.Pokemon.Moves.Length; slot++)
             {
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain, reflect: rockTunnelRules && reflect);
+                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain, reflect: rockTunnelRules && reflect, source: source);
             }
             void Score(int slot, int change) => scores[slot] = Math.Max(0, scores[slot] + change);
             for (int slot = 0; slot < 4; slot++)
             {
                 if (!Usable(slot)) continue;
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1 && !(rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107 && move.Effect == "EFFECT_EXPLOSION"))
+                if (move.Power > 1 && !(source is not null ? SourceTrainerAi.DiscouragedPower(move.Effect) : rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107 && move.Effect == "EFFECT_EXPLOSION"))
                 {
-                    int effectiveness = TypeEffectiveness(move.Type, targetSpecies);
+                    int effectiveness = TypeEffectiveness(move.Type, targetTypes, source is not null && input.Target.Identified);
                     if (effectiveness == 0) { Score(slot, -10); continue; }
                     string ability = Ability(slot, "damage-immunity");
                     if ((ability == "ABILITY_VOLT_ABSORB" && move.Type == "TYPE_ELECTRIC") ||
@@ -87,6 +90,8 @@ public static class CeruleanTrainerAi
                 string soundAbility = Ability(slot, "soundproof");
                 if (soundAbility == "ABILITY_SOUNDPROOF" && IsSoundMove(move.Id))
                 { Score(slot, -10); continue; }
+                if (source is not null && SourceTrainerAi.AdditionalBadMove(source, move, reason => Ability(slot, reason),
+                    change => Score(slot, change), () => TypeEffectiveness(move.Type, targetTypes, input.Target.Identified))) continue;
                 switch (move.Effect)
                 {
                     // New southern source parties add these effects. The pinned CHECK_BAD_MOVE
@@ -100,8 +105,8 @@ public static class CeruleanTrainerAi
                         if (rain) Score(slot, -8);
                         break;
                     case "EFFECT_FLAIL" when fuchsiaRules:
-                        if (TypeEffectiveness(move.Type, targetSpecies) == 0) { Score(slot, -10); break; }
-                        if (Ability(slot, "high-risk-damage") == "ABILITY_WONDER_GUARD" && TypeEffectiveness(move.Type, targetSpecies) != 20) Score(slot, -10);
+                        if (TypeEffectiveness(move.Type, targetTypes, source is not null && input.Target.Identified) == 0) { Score(slot, -10); break; }
+                        if (Ability(slot, "high-risk-damage") == "ABILITY_WONDER_GUARD" && TypeEffectiveness(move.Type, targetTypes, source is not null && input.Target.Identified) != 20) Score(slot, -10);
                         break;
                     // Original AI_CBM_Curse checks stat stages even for a Ghost user.
                     case "EFFECT_CURSE" when towerRules:
@@ -120,11 +125,11 @@ public static class CeruleanTrainerAi
                         break;
                     case "EFFECT_EXPLOSION" when rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107:
                         // Source counts living reserves, excluding the active Pokémon on each side.
-                        if (TypeEffectiveness(move.Type,targetSpecies) == 0 || Ability(slot,"explosion-immunity") == "ABILITY_DAMP") { Score(slot,-10); break; }
+                        if (TypeEffectiveness(move.Type,targetTypes, source is not null && input.Target.Identified) == 0 || Ability(slot,"explosion-immunity") == "ABILITY_DAMP") { Score(slot,-10); break; }
                         if (!input.UserHasReserves) Score(slot,input.TargetHasReserves ? -10 : -1);
                         break;
                     case "EFFECT_MAGNITUDE" when rockTunnelRules:
-                        if (Ability(slot,"magnitude-immunity") == "ABILITY_LEVITATE" || TypeEffectiveness(move.Type,targetSpecies) == 0) Score(slot,-10);
+                        if (Ability(slot,"magnitude-immunity") == "ABILITY_LEVITATE" || TypeEffectiveness(move.Type,targetTypes, source is not null && input.Target.Identified) == 0) Score(slot,-10);
                         break;
                     case "EFFECT_FORESIGHT" when rockTunnelRules:
                         if (input.Target.Identified) Score(slot,-10); break;
@@ -141,7 +146,7 @@ public static class CeruleanTrainerAi
 
                     case "EFFECT_WILL_O_WISP" when route11Rules:
                         if (Ability(slot, "burn-immunity") == "ABILITY_WATER_VEIL" || input.Target.Status != 0 ||
-                            TypeEffectiveness(move.Type, targetSpecies) is 0 or 5 or 2) Score(slot, -10);
+                            TypeEffectiveness(move.Type, targetTypes, source is not null && input.Target.Identified) is 0 or 5 or 2) Score(slot, -10);
                         break;
                     case "EFFECT_DEFENSE_DOWN_HIT" when celadonGymRules: break;
                     case "EFFECT_REFLECT" when celadonGymRules:
@@ -155,7 +160,7 @@ public static class CeruleanTrainerAi
                         if (input.Target.DisabledMove is not null) Score(slot, -8);
                         break;
                     case "EFFECT_PARALYZE":
-                        if (TypeEffectiveness(move.Type, targetSpecies) == 0) { Score(slot, -10); break; }
+                        if (TypeEffectiveness(move.Type, targetTypes, source is not null && input.Target.Identified) == 0) { Score(slot, -10); break; }
                         if (Ability(slot, "paralysis-immunity") == "ABILITY_LIMBER" || input.Target.Status != 0) Score(slot, -10);
                         break;
                     case "EFFECT_ATTACK_DOWN_2" when rockTunnelRules:
@@ -193,8 +198,8 @@ public static class CeruleanTrainerAi
                         if (Ability(slot, "confusion-immunity") == "ABILITY_OWN_TEMPO") Score(slot, -10);
                         break;
                     case "EFFECT_POISON":
-                        if (targetSpecies.Type1 is "TYPE_POISON" or "TYPE_STEEL" ||
-                            targetSpecies.Type2 is "TYPE_POISON" or "TYPE_STEEL") { Score(slot, -10); break; }
+                        if (targetTypes.Type1 is "TYPE_POISON" or "TYPE_STEEL" ||
+                            targetTypes.Type2 is "TYPE_POISON" or "TYPE_STEEL") { Score(slot, -10); break; }
                         if (Ability(slot, "poison-immunity") == "ABILITY_IMMUNITY" || input.Target.Status != 0) Score(slot, -10);
                         break;
                     case "EFFECT_WATER_SPORT":
@@ -204,7 +209,7 @@ public static class CeruleanTrainerAi
                         Score(slot, -10);
                         break;
                     case "EFFECT_LEECH_SEED":
-                        if (input.Target.LeechSeedSource is not null || targetSpecies.Type1 == "TYPE_GRASS" || targetSpecies.Type2 == "TYPE_GRASS") Score(slot, -10);
+                        if (input.Target.LeechSeedSource is not null || targetTypes.Type1 == "TYPE_GRASS" || targetTypes.Type2 == "TYPE_GRASS") Score(slot, -10);
                         break;
                     case "EFFECT_ROAR" when ssAnneRules:
                         if (!input.TargetHasReserves) { Score(slot, -10); break; }
@@ -213,8 +218,8 @@ public static class CeruleanTrainerAi
                     case "EFFECT_SONICBOOM" when vermilionGymRules:
                     case "EFFECT_LEVEL_DAMAGE" when ssAnneRules:
                     case "EFFECT_LOW_KICK":
-                        if (TypeEffectiveness(move.Type, targetSpecies) == 0) { Score(slot, -10); break; }
-                        if (Ability(slot, "high-risk-damage") == "ABILITY_WONDER_GUARD" && TypeEffectiveness(move.Type, targetSpecies) != 20) Score(slot, -10);
+                        if (TypeEffectiveness(move.Type, targetTypes, source is not null && input.Target.Identified) == 0) { Score(slot, -10); break; }
+                        if (Ability(slot, "high-risk-damage") == "ABILITY_WONDER_GUARD" && TypeEffectiveness(move.Type, targetTypes, source is not null && input.Target.Identified) != 20) Score(slot, -10);
                         break;
                     case "EFFECT_MUD_SPORT":
                         if (input.User.MudSport) Score(slot, -10);
@@ -245,7 +250,9 @@ public static class CeruleanTrainerAi
                     case "EFFECT_EVASION_UP" when vermilionRules:
                         if (input.User.EvasionStage == 12) Score(slot, -10);
                         break;
-                    default: return Fault("cerulean_trainer_ai_effect_outside_source_parties");
+                    default:
+                        if (source is not null && !SourceTrainerAi.HasBadMoveDispatch(move.Effect)) break;
+                        return Fault("cerulean_trainer_ai_effect_outside_source_parties");
                 }
             }
             if (input.AiFlags == 7)
@@ -258,7 +265,8 @@ public static class CeruleanTrainerAi
                     int Roll(string reason) => Draw($"cerulean-trainer.ai.viability.slot.{slot}.{reason}", 256);
                     bool TargetFaster()
                     {
-                        int u = Speed(input.User, route11Rules && rain), t = Speed(input.Target, route11Rules && rain);
+                        bool sun = source?.Battle.CalledField?.SunTurnsRemaining > 0;
+                        int u = Speed(input.User, route11Rules && rain, sun), t = Speed(input.Target, route11Rules && rain, sun);
                         // GetWhoStrikesFirst returns 0/2 on ties; ==1 is false for either.
                         if (u == t) _ = Draw($"cerulean-trainer.ai.viability.slot.{slot}.speed-tie", 2);
                         return t > u;
@@ -271,10 +279,10 @@ public static class CeruleanTrainerAi
                             else Score(slot, -3);
                             break;
                         case "EFFECT_REFLECT" when towerRules:
-                            if (userHp < 50 || (TypeRules.Category(ParseType(targetSpecies.Type1)) != DamageCategory.Physical && TypeRules.Category(ParseType(targetSpecies.Type2)) != DamageCategory.Physical && Roll("reflect-nonphysical-type") >= 50)) Score(slot, -2);
+                            if (userHp < 50 || (TypeRules.Category(ParseType(targetTypes.Type1)) != DamageCategory.Physical && TypeRules.Category(ParseType(targetTypes.Type2)) != DamageCategory.Physical && Roll("reflect-nonphysical-type") >= 50)) Score(slot, -2);
                             break;
                         case "EFFECT_ABSORB" when celadonGymRules:
-                            if (TypeEffectiveness(catalog.Moves[input.User.Pokemon.Moves[slot].Move].Type, targetSpecies) is 5 or 2 && Roll("absorb-resisted") >= 50) Score(slot, -3);
+                            if (TypeEffectiveness(catalog.Moves[input.User.Pokemon.Moves[slot].Move].Type, targetTypes, source is not null && input.Target.Identified) is 5 or 2 && Roll("absorb-resisted") >= 50) Score(slot, -3);
                             break;
                         case "EFFECT_DISABLE" when ssAnneRules:
                             if (TargetFaster()) break;
@@ -295,6 +303,7 @@ public static class CeruleanTrainerAi
                             if (Roll("recover-phantom-snatch") < 100) break;
                             if (Roll("recover-encourage") >= 20) Score(slot, 2);
                             break;
+                        case "EFFECT_DEFENSE_UP_2" when source is not null:
                         case "EFFECT_DEFENSE_UP":
                             if (input.User.DefenseStage >= 9)
                             { if (Roll("defense-high-stage") >= 100) Score(slot, -1); }
@@ -309,11 +318,15 @@ public static class CeruleanTrainerAi
                             }
                             if (Roll("defense-last-move") >= 60) Score(slot, -2);
                             break;
+                        case "EFFECT_MINIMIZE" when source is not null:
                         case "EFFECT_EVASION_UP" when vermilionGymRules:
                             if (userHp >= 90 && Roll("evasion-healthy") >= 100) Score(slot, 3);
                             if (input.User.EvasionStage >= 9 && Roll("evasion-high-stage") >= 128) Score(slot, -1);
-                            // Toxic, Ingrain and Curse are outside this admitted state schema.
+                            if (source is not null && WildBattleSourceFieldEffects.IsToxic(input.Target.Status) &&
+                                (userHp > 50 || Roll("evasion-toxic-low-hp") >= 80) && Roll("evasion-toxic") >= 50) Score(slot, 3);
                             if (input.Target.LeechSeedSource is not null && Roll("evasion-leech-seed") >= 70) Score(slot, 3);
+                            if (source is not null && input.User.Rooted && Roll("evasion-rooted") >= 128) Score(slot, 2);
+                            if (source is not null && input.Target.Cursed && Roll("evasion-curse") >= 70) Score(slot, 3);
                             if (userHp <= 70 && input.User.EvasionStage != 6 &&
                                 (userHp < 40 || targetHp < 40 || Roll("evasion-repeated-low-hp") >= 70)) Score(slot, -2);
                             break;
@@ -335,7 +348,7 @@ public static class CeruleanTrainerAi
                                 if (input.Target.AttackStage <= 3 && Roll("attack-down-low-stage") >= 50) Score(slot, -2);
                             }
                             if (targetHp <= 70) Score(slot, -2);
-                            if (!PhysicalHeuristicType(targetSpecies.Type1) && !PhysicalHeuristicType(targetSpecies.Type2) && Roll("attack-down-nonphysical-type") >= 50) Score(slot, -2);
+                            if (!PhysicalHeuristicType(targetTypes.Type1) && !PhysicalHeuristicType(targetTypes.Type2) && Roll("attack-down-nonphysical-type") >= 50) Score(slot, -2);
                             break;
                         case "EFFECT_DEFENSE_DOWN_2" when vermilionGymRules:
                         case "EFFECT_DEFENSE_DOWN":
@@ -345,19 +358,36 @@ public static class CeruleanTrainerAi
                         case "EFFECT_ACCURACY_DOWN":
                             if ((userHp < 70 || targetHp <= 70) && Roll("accuracy-down-low-hp") >= 100) Score(slot, -1);
                             if (input.User.AccuracyStage <= 4 && Roll("accuracy-down-user-accuracy") >= 80) Score(slot, -2);
+                            if (source is not null && WildBattleSourceFieldEffects.IsToxic(input.Target.Status) && Roll("accuracy-down-toxic") >= 70) Score(slot, 2);
                             if (input.Target.LeechSeedSource is not null && Roll("accuracy-down-leech-seed") >= 70) Score(slot, 2);
+                            if (source is not null && input.User.Rooted && Roll("accuracy-down-rooted") >= 128) Score(slot, 1);
+                            if (source is not null && input.Target.Cursed && Roll("accuracy-down-curse") >= 70) Score(slot, 2);
                             if (userHp <= 70 && input.Target.AccuracyStage != 6 &&
                                 (userHp < 40 || targetHp < 40 || Roll("accuracy-down-repeated-low-hp") >= 70)) Score(slot, -2);
                             break;
                         case "EFFECT_POISON":
                             if (userHp < 50 || targetHp <= 50) Score(slot, -1);
                             break;
+                        case "EFFECT_TOXIC" when source is not null:
                         case "EFFECT_LEECH_SEED":
                             if (input.User.Pokemon.Moves.Any(m => catalog.Moves[m.Move].Power > 0))
                             {
                                 if (userHp <= 50 && Roll("seed-user-low-hp") >= 50) Score(slot, -3);
                                 if (targetHp <= 50 && Roll("seed-target-low-hp") >= 50) Score(slot, -3);
                             }
+                            if (source is not null && input.User.Pokemon.Moves.Any(m => catalog.Moves[m.Move].Effect is "EFFECT_SPECIAL_DEFENSE_UP" or "EFFECT_PROTECT") && Roll("toxic-protect") >= 60) Score(slot, 2);
+                            break;
+                        case "EFFECT_EXPLOSION" when source is not null:
+                            if (input.Target.EvasionStage >= 7) {
+                                Score(slot, -1);
+                                if (input.Target.EvasionStage >= 10 && Roll("self-ko-evasion") >= 128) Score(slot, -1);
+                            }
+                            if (userHp >= 80 && !TargetFaster()) {
+                                if (Roll("self-ko-healthy") >= 50) Score(slot, -3);
+                            } else if (userHp <= 50) {
+                                if (Roll("self-ko-low-hp") >= 128) Score(slot, 1);
+                                if (userHp <= 30 && Roll("self-ko-critical-hp") >= 50) Score(slot, 1);
+                            } else if (Roll("self-ko-mid-hp") >= 50) Score(slot, -1);
                             break;
                     }
                 }
@@ -366,8 +396,11 @@ public static class CeruleanTrainerAi
                     if (!Usable(slot)) continue;
                     var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
                     if (move.Power < 2) continue;
-                    if (input.Target.Pokemon.CurrentHp <= prediction[slot]) Score(slot, move.Effect == "EFFECT_QUICK_ATTACK" ? 6 : 4);
-                    else if (prediction.Any(damage => damage > prediction[slot])) Score(slot, -1);
+                    if (input.Target.Pokemon.CurrentHp <= prediction[slot]) {
+                        if (source is null || move.Effect != "EFFECT_EXPLOSION") Score(slot, move.Effect == "EFFECT_QUICK_ATTACK" ? 6 : 4);
+                    } else if (source is null ? prediction.Any(damage => damage > prediction[slot]) :
+                        !SourceTrainerAi.DiscouragedPower(move.Effect) && input.User.Pokemon.Moves.Select((m,i) => (m,i)).Any(x =>
+                            !SourceTrainerAi.DiscouragedPower(catalog.Moves[x.m.Move].Effect) && prediction[x.i] > prediction[slot])) Score(slot, -1);
                 }
             }
             var best = new List<int> { 0 }; int maximum = scores[0];
@@ -383,12 +416,12 @@ public static class CeruleanTrainerAi
         catch (OverflowException) { return Fault("cerulean_trainer_ai_rng_exhausted"); }
     }
 
-    private static int TypeEffectiveness(string moveType, PokemonSpeciesDefinition target)
+    private static int TypeEffectiveness(string moveType, (string Type1, string Type2) target, bool identified = false)
     {
         ElementType Type(string value) => Enum.Parse<ElementType>(value["TYPE_".Length..], true);
         int value = 10;
         foreach (var effect in TypeRules.OrderedEffects(Type(moveType), Type(target.Type1), Type(target.Type2)))
-            value = value * effect.MultiplierTenths / 10;
+            if (!(identified && effect.MultiplierTenths == 0 && moveType is "TYPE_NORMAL" or "TYPE_FIGHTING")) value = value * effect.MultiplierTenths / 10;
         return value;
     }
     private static string? Validate(PokemonCatalog? catalog, CeruleanTrainerAiInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
@@ -451,9 +484,9 @@ public static class CeruleanTrainerAi
     private static bool IsSoundMove(MoveId move) => MtMoonTrainerAi.IsSoundMove(move);
     private static bool PhysicalHeuristicType(string type) => type is "TYPE_NORMAL" or "TYPE_FIGHTING" or "TYPE_GROUND" or "TYPE_ROCK" or "TYPE_BUG" or "TYPE_STEEL";
     private static ElementType ParseType(string type) => Enum.Parse<ElementType>(type[5..], true);
-    private static int Speed(WildBattleCombatant mon, bool rain = false)
+    private static int Speed(WildBattleCombatant mon, bool rain = false, bool sun = false)
     {
-        int speed = WildBattleDamage.Stat(mon.Pokemon.Stats.Speed * (rain && mon.Pokemon.AbilityId == "ABILITY_SWIFT_SWIM" ? 2 : 1), mon.SpeedStage);
+        int speed = WildBattleDamage.Stat(mon.Pokemon.Stats.Speed * ((rain && WildBattleEffective.Ability(mon) == "ABILITY_SWIFT_SWIM" || sun && WildBattleEffective.Ability(mon) == "ABILITY_CHLOROPHYLL") ? 2 : 1), mon.SpeedStage);
         if (mon.SpeedBadgeBoost) speed = speed * 110 / 100;
         return mon.Status == WildBattleStatus.Paralysis ? speed / 4 : speed;
     }
@@ -461,22 +494,27 @@ public static class CeruleanTrainerAi
     // AI_CalcDmg uses base power, without execution's variable-power preprocessing. TypeCalc
     // applies STAB but Levitate only sets a discarded local flag, leaving damage nonzero.
     internal static int Predict(PokemonCatalog catalog, WildBattleCombatant user, WildBattleCombatant target,
-        PokemonMoveDefinition move, int percent, bool clearUserAbility = false, bool rain = false, bool reflect = false)
+        PokemonMoveDefinition move, int percent, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiContext? source = null)
     {
-        int value = BasePrediction(user, target, move.Power, ParseType(move.Type), move.Effect, clearUserAbility, rain, reflect);
-        value = TypePrediction(catalog, user, target, move, value);
+        int value = BasePrediction(user, target, move.Power, ParseType(move.Type), move.Effect, clearUserAbility, rain, reflect, source);
+        value = TypePrediction(catalog, user, target, move, value, source is not null);
         return Math.Max(1, value * percent / 100);
     }
     internal static int BasePrediction(WildBattleCombatant user, WildBattleCombatant target, int power, ElementType type,
-        string? effect, bool clearUserAbility = false, bool rain = false, bool reflect = false)
+        string? effect, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiContext? source = null)
     {
         bool physical = TypeRules.Category(type) == DamageCategory.Physical;
         int attack = physical ? user.Pokemon.Stats.Attack : user.Pokemon.Stats.SpecialAttack;
         int defense = physical ? target.Pokemon.Stats.Defense : target.Pokemon.Stats.SpecialDefense;
-        string ability = clearUserAbility ? "ABILITY_NONE" : user.Pokemon.AbilityId;
+        string ability = clearUserAbility ? "ABILITY_NONE" : WildBattleEffective.Ability(user);
         if (physical && user.AttackBadgeBoost) attack = attack * 110 / 100;
         if (user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) attack = attack * 110 / 100;
-        if (target.Pokemon.AbilityId == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice) attack /= 2;
+        if (source is not null) {
+            if (user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) attack = attack * 110 / 100;
+            if (physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) attack *= 2;
+            if (physical && target.HeldItem == "ITEM_METAL_POWDER" && target.Pokemon.SourceSpeciesId == 132) defense *= 2;
+        }
+        if (WildBattleEffective.Ability(target) == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice) attack /= 2;
         if (physical && ability == "ABILITY_GUTS" && user.Status != 0) attack = attack * 150 / 100;
         if (type == ElementType.Electric && (user.MudSport || target.MudSport)) power /= 2;
         if (type == ElementType.Fire && (user.WaterSport || target.WaterSport)) power /= 2;
@@ -489,22 +527,27 @@ public static class CeruleanTrainerAi
         int value = checked(attack * power * (2 * user.Pokemon.Level / 5 + 2)) / defense / 50;
         if (physical && user.Status == WildBattleStatus.Burn && ability != "ABILITY_GUTS") value /= 2;
         if (physical && reflect) value /= 2;
+        if (!physical && source?.Battle.CalledField?.PlayerLightScreenTurnsRemaining > 0) value /= 2;
         if (physical) value = Math.Max(1, value);
+        if (source?.Battle.CalledField?.SunTurnsRemaining > 0 && type == ElementType.Fire) value = value * 15 / 10;
+        if (source?.Battle.CalledField?.SunTurnsRemaining > 0 && type == ElementType.Water) value /= 2;
         if (rain && type == ElementType.Fire) value /= 2;
         if (rain && type == ElementType.Water) value = value * 15 / 10;
+        if (source is not null && effect == "EFFECT_SOLAR_BEAM" && (rain || source.Battle.SandstormTurnsRemaining > 0 || source.Battle.CalledField?.HailTurnsRemaining > 0)) value /= 2;
         if (user.FlashFireBoost && type == ElementType.Fire) value = value * 15 / 10;
         value += 2;
         if (user.ChargeTurnsRemaining > 0 && type == ElementType.Electric) value *= 2;
         return value;
     }
     internal static int TypePrediction(PokemonCatalog catalog, WildBattleCombatant user, WildBattleCombatant target,
-        PokemonMoveDefinition move, int value)
+        PokemonMoveDefinition move, int value, bool sourceRules = false)
     {
-        var a = catalog.Species[user.Pokemon.Species]; var d = catalog.Species[target.Pokemon.Species];
+        var a = WildBattleEffective.Types(catalog, user); var d = WildBattleEffective.Types(catalog, target);
         if (move.Type == a.Type1 || move.Type == a.Type2) value = value * 15 / 10;
-        if (target.Pokemon.AbilityId == "ABILITY_LEVITATE" && move.Type == "TYPE_GROUND") return value;
+        if (WildBattleEffective.Ability(target) == "ABILITY_LEVITATE" && move.Type == "TYPE_GROUND") return value;
         foreach (var effect in TypeRules.OrderedEffects(ParseType(move.Type), ParseType(d.Type1), ParseType(d.Type2)))
         {
+            if (sourceRules && target.Identified && effect.MultiplierTenths == 0 && move.Type is "TYPE_NORMAL" or "TYPE_FIGHTING") continue;
             value = value * effect.MultiplierTenths / 10;
             if (value == 0 && effect.MultiplierTenths != 0) value = 1;
         }

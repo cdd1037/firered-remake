@@ -9,7 +9,7 @@ namespace Game.Domain.Trainers;
 /// active-stat and byte best-damage source bugs. Voluntary switching uses CeruleanTrainerActionAi.</summary>
 public static class CeruleanTrainerAiReplacement
 {
-    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false)
+    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false, SourceTrainerAiContext? source = null)
     {
         towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
@@ -20,10 +20,11 @@ public static class CeruleanTrainerAiReplacement
         ForestTrainerReplacementDecision Fault(string code) => new(TransitionStatus.Fault, null, [],
             new(code, "Input is outside the bounded MtMoon trainer replacement profile."));
         if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
-        string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
+        string? error = source is null ? Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) :
+            !source.Matches(catalog,input.FaintedActive,input.Target) || !source.Party.SequenceEqual(input.Party) || input.FaintedPartyIndex!=source.State.OpponentIndex ? "source_trainer_replacement_context_mismatch" : null;
         if (error is not null) return Fault(error);
         var active = input.FaintedActive.Pokemon;
-        var a = catalog.Species[active.Species]; var d = catalog.Species[input.Target.Pokemon.Species];
+        var a = WildBattleEffective.Types(catalog,input.FaintedActive); var d = WildBattleEffective.Types(catalog,input.Target);
         ElementType Type(string value) => Enum.Parse<ElementType>(value[5..], true);
         bool Living(int index) => index != input.FaintedPartyIndex && input.Party[index].Pokemon.CurrentHp > 0;
         var scores = new int[input.Party.Length]; Array.Fill(scores, -1);
@@ -46,10 +47,11 @@ public static class CeruleanTrainerAiReplacement
             foreach (var slot in input.Party[best].Pokemon.Moves)
             {
                 var move = catalog.Moves[slot.Move];
-                if (move.Power == 0 || input.Target.Pokemon.AbilityId == "ABILITY_LEVITATE" && move.Type == "TYPE_GROUND") continue;
+                if (move.Power == 0 || WildBattleEffective.Ability(input.Target) == "ABILITY_LEVITATE" && move.Type == "TYPE_GROUND") continue;
                 int value = 10;
                 foreach (var effect in TypeRules.OrderedEffects(Type(move.Type), Type(d.Type1), Type(d.Type2)))
-                    value = value * effect.MultiplierTenths / 10;
+                    if (!(source is not null && input.Target.Identified && effect.MultiplierTenths == 0 && move.Type is "TYPE_NORMAL" or "TYPE_FIGHTING"))
+                        value = value * effect.MultiplierTenths / 10;
                 if (value > 10) return new(TransitionStatus.Accepted, best, [.. scores], null);
             }
             invalid[best] = true;
@@ -61,7 +63,7 @@ public static class CeruleanTrainerAiReplacement
         var staleType = none || struggle ? ElementType.Normal : Type(stale!.Type);
         // Source AI_CalcDmg reads active stats, stale gCurrentMove and cleared faint ability.
         int baseDamage = CeruleanTrainerAi.BasePrediction(input.FaintedActive, input.Target,
-            power, staleType, stale?.Effect, clearUserAbility: true, rain: route11Rules && rain, reflect: rockTunnelRules && reflect);
+            power, staleType, stale?.Effect, clearUserAbility: source is null || input.FaintedActive.Pokemon.CurrentHp == 0, rain: route11Rules && rain, reflect: rockTunnelRules && reflect, source: source);
         int chosen = -1; byte bestDamage = 0;
         for (int i = 0; i < input.Party.Length; i++)
         {
@@ -76,9 +78,10 @@ public static class CeruleanTrainerAiReplacement
                     damage = baseDamage; var type = Type(move.Type);
                     if (type == Type(a.Type1) || type == Type(a.Type2)) damage = damage * 15 / 10;
                     // Source Levitate sets flags without zeroing damage; this caller ignores them.
-                    if (!(input.Target.Pokemon.AbilityId == "ABILITY_LEVITATE" && type == ElementType.Ground))
+                    if (!(WildBattleEffective.Ability(input.Target) == "ABILITY_LEVITATE" && type == ElementType.Ground))
                         foreach (var effect in TypeRules.OrderedEffects(type, Type(d.Type1), Type(d.Type2)))
                         {
+                            if (source is not null && input.Target.Identified && effect.MultiplierTenths == 0 && move.Type is "TYPE_NORMAL" or "TYPE_FIGHTING") continue;
                             damage = damage * effect.MultiplierTenths / 10;
                             if (damage == 0 && effect.MultiplierTenths != 0) damage = 1;
                         }

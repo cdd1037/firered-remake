@@ -12,24 +12,24 @@ public enum FieldPoisonEffect { None, Poisoned, Fainted }
 public sealed record FieldPoisonStep(int Counter, ImmutableArray<PartyPokemon> Party, FieldPoisonEffect Effect);
 
 /// <summary>
-/// Bounded ordinary-poison field rules from pret/pokefirered 037335f4.
-/// The campaign admits healthy, ordinary poison, burn and paralysis only.
+/// Source field poison rules from pret/pokefirered 037335f4.
+/// Canonical Toxic is opt-in for the Fuchsia Gym successor; field damage is always one HP.
 /// </summary>
 public static class CampaignFieldPoisonRules
 {
     public const string CounterVariable = "VAR_POISON_STEP_COUNTER";
     public const uint Poison = 8;
-    public static FieldPoisonStep Walk(int counter, ImmutableArray<PartyPokemon> party, bool allowSleep=false, bool allowFreeze=false)
+    public static FieldPoisonStep Walk(int counter, ImmutableArray<PartyPokemon> party, bool allowSleep=false, bool allowFreeze=false, bool allowToxic=false)
     {
         if (counter is < 0 or >= 5) throw new ArgumentOutOfRangeException(nameof(counter));
-        ValidateParty(party,allowSleep,allowFreeze);
+        ValidateParty(party,allowSleep,allowFreeze,allowToxic);
         counter = (counter + 1) % 5;
         if (counter != 0) return new(counter, party, FieldPoisonEffect.None);
         bool poisoned = false, fainted = false;
         for (int i = 0; i < party.Length; i++)
         {
             var mon = party[i];
-            if (!IsUsableSpecies(mon) || mon.Status != Poison) continue;
+            if (!IsUsableSpecies(mon) || !SourcePartyStatusRules.IsPoison(mon.Status,allowToxic)) continue;
             int hp = Math.Max(0, mon.Pokemon.CurrentHp - 1);
             poisoned = true;
             fainted |= hp == 0;
@@ -37,28 +37,28 @@ public static class CampaignFieldPoisonRules
         }
         return new(counter, party, fainted ? FieldPoisonEffect.Fainted : poisoned ? FieldPoisonEffect.Poisoned : FieldPoisonEffect.None);
     }
-    public static bool IsPoisonFaint(PartyPokemon mon) => IsUsableSpecies(mon) && mon.Pokemon.CurrentHp == 0 && mon.Status == Poison;
-    public static bool HasUsablePokemon(ImmutableArray<PartyPokemon> party, bool allowSleep=false, bool allowFreeze=false)
+    public static bool IsPoisonFaint(PartyPokemon mon, bool allowToxic=false) => IsUsableSpecies(mon) && mon.Pokemon.CurrentHp == 0 && SourcePartyStatusRules.IsPoison(mon.Status,allowToxic);
+    public static bool HasUsablePokemon(ImmutableArray<PartyPokemon> party, bool allowSleep=false, bool allowFreeze=false, bool allowToxic=false)
     {
-        ValidateParty(party,allowSleep,allowFreeze);
+        ValidateParty(party,allowSleep,allowFreeze,allowToxic);
         return party.Any(mon => IsUsableSpecies(mon) && mon.Pokemon.CurrentHp > 0);
     }
-    public static PartyPokemon ResolveFaint(PartyPokemon mon)
+    public static PartyPokemon ResolveFaint(PartyPokemon mon, bool allowToxic=false)
     {
-        if (!IsPoisonFaint(mon)) throw new ArgumentException("field_poison_faint_required", nameof(mon));
+        if (!IsPoisonFaint(mon,allowToxic)) throw new ArgumentException("field_poison_faint_required", nameof(mon));
         int friendship = mon.Pokemon.Friendship;
         if (friendship is < 0 or > 255) throw new ArgumentException("field_poison_friendship_invalid", nameof(mon));
         return mon with { Status = 0, Pokemon = mon.Pokemon with { Friendship = Math.Max(0, friendship - (friendship >= 200 ? 10 : 5)) } };
     }
     private static bool IsUsableSpecies(PartyPokemon mon) => !mon.IsEgg && mon.Pokemon.SourceSpeciesId > 0;
-    private static void ValidateParty(ImmutableArray<PartyPokemon> party,bool allowSleep,bool allowFreeze)
+    private static void ValidateParty(ImmutableArray<PartyPokemon> party,bool allowSleep,bool allowFreeze,bool allowToxic)
     {
         if (party.IsDefault || party.Length > 6) throw new ArgumentException("field_poison_party_invalid", nameof(party));
         foreach (var mon in party)
         {
             if (mon is null || mon.Pokemon is null || mon.Pokemon.CurrentHp < 0 || mon.Pokemon.CurrentHp > mon.Pokemon.Stats.MaxHp)
                 throw new ArgumentException("field_poison_party_invalid", nameof(party));
-            if (!Game.Domain.WildBattle.WildBattleStatus.IsSupported(mon.Status,allowSleep,allowFreeze)) throw new NotSupportedException("field_poison_status_unsupported");
+            if (!SourcePartyStatusRules.IsSupported(mon.Status,allowSleep,allowFreeze,allowToxic)) throw new NotSupportedException("field_poison_status_unsupported");
         }
     }
 }
@@ -79,7 +79,7 @@ public sealed partial class CampaignSession
         if (!_content.ForestEnabled) return state;
         if (state.FieldPoison is not null || !state.Script.Completed || state.Script.Locked || state.Script.Wait is not null || !state.Script.Stack.IsEmpty || state.Dialogue is not null)
             throw new InvalidDataException("field_poison_step_event_active");
-        var step = CampaignFieldPoisonRules.Walk(state.Script.Variables.GetValueOrDefault(CampaignFieldPoisonRules.CounterVariable), state.Party,_content.EarlyStarterEnabled,_content.Route11Enabled);
+        var step = CampaignFieldPoisonRules.Walk(state.Script.Variables.GetValueOrDefault(CampaignFieldPoisonRules.CounterVariable), state.Party,_content.EarlyStarterEnabled,_content.Route11Enabled,_content.FuchsiaGymEnabled);
         state = state with { Party = step.Party, Script = state.Script with { Variables = state.Script.Variables.SetItem(CampaignFieldPoisonRules.CounterVariable, step.Counter) } };
         if (step.Effect == FieldPoisonEffect.None) return state;
         // Source FldEffPoison_Start is asynchronous; surviving poison does not stop walking or encounters.
@@ -134,18 +134,18 @@ public sealed partial class CampaignSession
         for (int i = poison.NextPartyIndex; i < state.Party.Length; i++)
         {
             var mon = state.Party[i];
-            if (!CampaignFieldPoisonRules.IsPoisonFaint(mon)) continue;
+            if (!CampaignFieldPoisonRules.IsPoisonFaint(mon,_content.FuchsiaGymEnabled)) continue;
             // Task_TryFieldPoisonWhiteOut changes this one slot before its own message,
             // and waits for dismissal before advancing to the next party slot.
             state = state with
             {
-                Party = state.Party.SetItem(i, CampaignFieldPoisonRules.ResolveFaint(mon)),
+                Party = state.Party.SetItem(i, CampaignFieldPoisonRules.ResolveFaint(mon,_content.FuchsiaGymEnabled)),
                 FieldPoison = poison with { NextPartyIndex = i + 1 },
                 TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname)
             };
             return ShowFieldPoisonMessage(state, "gText_PkmnFainted3");
         }
-        bool whiteout = !CampaignFieldPoisonRules.HasUsablePokemon(state.Party,_content.EarlyStarterEnabled,_content.Route11Enabled);
+        bool whiteout = !CampaignFieldPoisonRules.HasUsablePokemon(state.Party,_content.EarlyStarterEnabled,_content.Route11Enabled,_content.FuchsiaGymEnabled);
         state = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", whiteout ? 1 : 0) } };
         if (!whiteout) return FinishFieldPoison(state);
         // This profile has no badge yet; the shared respawn routine enforces the same restriction.

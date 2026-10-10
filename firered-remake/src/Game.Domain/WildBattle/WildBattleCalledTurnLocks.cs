@@ -81,16 +81,17 @@ public static partial class WildBattleRules
     /// <summary>Executes the forced source current move through ForestMove. It never looks up a fabricated learned slot.
     /// The caller composes other actions and end-turn commands separately under the called-action contract.</summary>
     public static WildBattleCalledMoveResult ResolveCalledMoveContinuation(PokemonCatalog catalog, WildBattleState state,
-        WildBattleSide side)
+        WildBattleSide side, WildBattleCalledActionContext? actionContext = null)
     {
         string? error = ValidateCalledMoveActionState(catalog, state);
+        if (error is null && actionContext is { } supplied && (supplied.ActionOrderIndex is < 0 or > 1 || supplied.ActorPartyIndex is < 0 or > 5)) error = "called_action_context";
         if (error is null && (!Enum.IsDefined(side) || state.Outcome != WildBattleOutcome.Ongoing || state.AwaitingReplacement || state.CalledParty?.PendingSwitch is not null)) error = "called_turn_action_phase";
         var actor = side == WildBattleSide.Player ? state.Player : state.Opponent;
         if (error is null && actor.CalledTurnState?.Lock is null) error = "called_turn_no_continuation";
         if (error is not null) return new(Fail(state, error), null);
         WildBattleMoveInvocation? invocation = null;
         var result = Execute(state, state, context => {
-            context.ExecuteCalledMoveContinuation(catalog, side);
+            context.ExecuteCalledMoveContinuation(catalog, side, actionContext);
             context.State = context.State with { Revision = checked(state.Revision + 1) };
             invocation = context.activeInvocation;
         });
@@ -193,8 +194,9 @@ public static partial class WildBattleRules
                 e is WildBattleMoveFailedEvent { Reason: "disabled" or "imprison" or "taunted" });
             if (unable) ChangeCalledLock(side, locked with { UnableToUseMove = true }, "unable-to-use-move");
         }
-        internal void ExecuteCalledMoveContinuation(PokemonCatalog catalog, WildBattleSide side)
+        internal void ExecuteCalledMoveContinuation(PokemonCatalog catalog, WildBattleSide side, WildBattleCalledActionContext? actionContext = null)
         {
+            calledActionContext = actionContext ?? new();
             SourceCalledPreparePartyExecution(side);
             var locked = Get(side).CalledTurnState!.Lock!; var current = catalog.Moves[locked.Move];
             // HandleAction_UseMove sets BOTH chosen/current to gLockedMoves; the PP index survives.
@@ -216,6 +218,7 @@ public static partial class WildBattleRules
             if (Route11) Route11DefrostOnFireHit(catalog, side, eventStart);
             if (Vermilion) { VermilionImmunityAbilities(); SourceCalledApplyChangedItems(); VermilionMoveEndBerries(); }
             FinishCalledMoveHistory(catalog, eventStart);
+            SourceCalledSynchronizeParties();
         }
         internal void CalledTurnLockResidual(WildBattleSide side)
         {

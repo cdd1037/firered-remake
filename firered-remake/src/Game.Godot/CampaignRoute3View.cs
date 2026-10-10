@@ -98,8 +98,8 @@ public partial class CampaignView
     {
         _wildMenu = "moves";
         var player = battle.State.Player;
-        _wildCursor = WildBattleRules.ForcedMoveSlot(player) ?? (WildBattleRules.RequiresStruggle(battle.State, WildBattleSide.Player) ? 0 :
-            WildBattleRules.IsMoveSelectable(battle.State, WildBattleSide.Player, _wildLastMoveCursor) ? _wildLastMoveCursor :
-            Enumerable.Range(0, player.Pokemon.Moves.Length).First(i => WildBattleRules.IsMoveSelectable(battle.State, WildBattleSide.Player, i)));
+        _wildCursor = SourceBattleForcedMoveSlot(battle) ?? (SourceBattleRequiresStruggle(battle) ? 0 :
+            SourceBattleMoveSelectable(battle, _wildLastMoveCursor) ? _wildLastMoveCursor :
+            Enumerable.Range(0, player.Pokemon.Moves.Length).First(i => SourceBattleMoveSelectable(battle, i)));
     }
 }

@@ -264,7 +264,7 @@ public partial class CampaignView
             if (ForestTrainerShiftPending)
                 return _wildPage + 1 == _wildPages.Length && PointerYesNo(point, direction, ref _wildCursor);
         }
-        if (battle.Phase == CampaignBattlePhase.ChooseMove && WildBattleRules.ForcedMoveSlot(battle.State.Player) is {} forced) { _wildCursor=forced; return false; }
+        if (battle.Phase == CampaignBattlePhase.ChooseMove && SourceBattleForcedMoveSlot(battle) is {} forced) { _wildCursor=forced; return false; }
         if (_wildMenu == "learn-moves") return PointerRows(point, direction, ref _wildCursor, WildRewardRecipient(battle).Pokemon.Moves.Length + 1, 12, 28, 220);
         if (_wildMenu == "learn-confirm") return PointerYesNo(point, direction, ref _wildCursor);
         if (_wildMenu == "learn-intro" || battle.Phase != CampaignBattlePhase.ChooseMove) return false;
@@ -276,7 +276,7 @@ public partial class CampaignView
             _wildMenu == "medicine-target" && _session.BattleMedicineEnabled)
             return PointerRows(point, direction, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
         return _wildMenu is "actions" or "moves" && PointerGrid(point, direction, ref _wildCursor, _wildMenu == "moves",
-            _wildMenu == "actions" ? 4 : WildBattleRules.RequiresStruggle(battle.State, Game.Domain.WildBattle.WildBattleSide.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
+            _wildMenu == "actions" ? 4 : SourceBattleRequiresStruggle(battle) ? 1 : battle.State.Player.Pokemon.Moves.Length);
     }
 
     private bool MouseKey(Key key = Key.Enter)
@@ -419,7 +419,7 @@ public partial class CampaignView
             if (ForestTrainerShiftPending)
                 return _wildPage + 1 < _wildPages.Length ? MouseConfirm(point, MouseMessage) : MouseYesNo(point, ref _wildCursor);
         }
-        if (battle.Phase == CampaignBattlePhase.ChooseMove && WildBattleRules.ForcedMoveSlot(battle.State.Player) is {} forced)
+        if (battle.Phase == CampaignBattlePhase.ChooseMove && SourceBattleForcedMoveSlot(battle) is {} forced)
         { _wildCursor=forced; return MouseConfirm(point,new Rect2(LabBattleUiSkin.MoveText(forced)-new Vector2(8,0),new Vector2(72,16))); }
         if (_wildMenu == "learn-intro") return MouseConfirm(point, MouseMessage);
         if (_wildMenu == "learn-moves") return MouseSelect(point, ref _wildCursor, WildRewardRecipient(battle).Pokemon.Moves.Length + 1, 12, 28, 220);
@@ -438,6 +438,6 @@ public partial class CampaignView
             return MouseSelect(point,ref _wildCursor,_session.State.Party.Length+1,8,8,224,14);
         if (_wildMenu is "party" or "medicine-target") return MouseConfirm(point, new Rect2(8, 8, 224, 16));
         return _wildMenu is "actions" or "moves" && MouseGrid(point, ref _wildCursor, _wildMenu == "moves",
-            _wildMenu == "actions" ? 4 : WildBattleRules.RequiresStruggle(battle.State, Game.Domain.WildBattle.WildBattleSide.Player) ? 1 : battle.State.Player.Pokemon.Moves.Length);
+            _wildMenu == "actions" ? 4 : SourceBattleRequiresStruggle(battle) ? 1 : battle.State.Player.Pokemon.Moves.Length);
     }
 }

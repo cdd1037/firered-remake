@@ -42,28 +42,30 @@ public sealed partial class CampaignSession
         if (long.MaxValue - Revision < 4096 || long.MaxValue - state.Script.Revision < 4096 ||
             long.MaxValue - state.Script.EffectSequence < 4096 || ulong.MaxValue - state.World.Rng.Cursor < (1UL << 32))
             throw new InvalidDataException("forest_trainer_counter_headroom_required");
-        if (!state.Party.Any(p => !p.IsEgg && p.Pokemon.CurrentHp > 0 &&
+        if (!_content.FuchsiaGymEnabled && !state.Party.Any(p => !p.IsEgg && p.Pokemon.CurrentHp > 0 &&
             (p.Pokemon.Moves.All(m => m.CurrentPp == 0) || p.Pokemon.Moves.Any(m => m.CurrentPp > 0 && WildBattleRules.IsMoveSupported(m.Move, CampaignWildRulesVersion)))))
             throw new InvalidDataException("forest_trainer_no_supported_party_action");
         var definition = OrdinaryTrainerScript(trainer);
         // The next city chapter owns the rival's Fame Checker and Rocket TM28 continuations.
         // Reject before committing their first lock/battle until those complete reward paths exist.
         if(!_content.BillEnabled&&IsCeruleanTrainer(trainer)&&definition.Mode==3)throw new InvalidDataException("cerulean_north_events_not_implemented");
-        if (definition.Mode != 0 && !(IsPokemonTowerTrainer(trainer) && definition.Mode is 2 or 3) && !(IsRocketHideoutTrainer(trainer) && definition.Mode is 2 or 3) && !(IsCeladonGymTrainer(trainer) && definition.Mode == 1) && !(IsPewterTrainer(trainer) && definition.Mode == 1) && !(IsRoute22Trainer(trainer) && definition.Mode == 9) && !(IsMtMoonTrainer(trainer) && definition.Mode == 3) && !(IsCeruleanTrainer(trainer)&&definition.Mode is 1 or 3) && !(IsBillTrainer(trainer)&&definition.Mode==3) && !(IsSsAnneTrainer(trainer)&&definition.Mode==3)) throw new InvalidDataException("forest_trainer_mode_unsupported");
+        if (definition.Mode != 0 && !(IsPokemonTowerTrainer(trainer) && definition.Mode is 2 or 3) && !(IsRocketHideoutTrainer(trainer) && definition.Mode is 2 or 3) && !(IsFuchsiaGymTrainer(trainer) && definition.Mode == 1) && !(IsCeladonGymTrainer(trainer) && definition.Mode == 1) && !(IsPewterTrainer(trainer) && definition.Mode == 1) && !(IsRoute22Trainer(trainer) && definition.Mode == 9) && !(IsMtMoonTrainer(trainer) && definition.Mode == 3) && !(IsCeruleanTrainer(trainer)&&definition.Mode is 1 or 3) && !(IsBillTrainer(trainer)&&definition.Mode==3) && !(IsSsAnneTrainer(trainer)&&definition.Mode==3)) throw new InvalidDataException("forest_trainer_mode_unsupported");
         if(!string.IsNullOrEmpty(definition.IntroText))_ = _content.TextPages(definition.IntroText);
         _ = _content.TextPages(definition.DefeatText);
         if(!string.IsNullOrEmpty(definition.PostBattleText))_ = _content.TextPages(definition.PostBattleText);
+        // The source successor receives every genuine party member before entry.
+        // Historical profiles keep their previous bounded admission checks.
+        if(_content.FuchsiaGymEnabled)return PrepareFuchsiaSourceTrainerBattle(state,trainer);
         ForestTrainerCombatResult? first = null;
-        // Reserves can enter later. Admit their complete current move/status/held-item closure
-        // before the first source lock, without publishing any of these tentative RNG draws.
-        foreach (var owned in state.Party)
+        IEnumerable<PartyPokemon> entryMembers=state.Party;
+        foreach (var owned in entryMembers)
         {
             if (owned.IsEgg) throw new InvalidDataException("forest_trainer_eggs_unsupported");
             if (owned.Pokemon.OriginalTrainerId != state.TrainerId || owned.OriginalTrainerName != state.PlayerName ||
                 owned.OriginalTrainerGender != state.PlayerGender)
                 throw new InvalidDataException("forest_trainer_local_owner_required");
             var mon = owned.Pokemon.CurrentHp == 0 ? owned.Pokemon with { CurrentHp = 1 } : owned.Pokemon;
-            var combatant=new WildBattleCombatant(mon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET")};
+            var combatant=new WildBattleCombatant(mon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),DefenseBadgeBoost=_content.FuchsiaGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET")};
             var probe = IsFuchsiaRouteTrainer(trainer)
                 ? ForestTrainerCombatRules.Start(_content.FuchsiaRouteTrainers!,BattlePokemon,trainer,combatant,state.World.Rng,battleStyle:EffectiveBattleStyle(state),terrain:CampaignBattleTerrain(state))
                 : IsPokemonTowerTrainer(trainer)
@@ -100,7 +102,7 @@ public sealed partial class CampaignSession
             if (!probe.Succeeded) throw new InvalidDataException(probe.Fault);
             if (owned.Pokemon.CurrentHp > 0) first ??= probe;
         }
-        return first ?? throw new InvalidDataException("forest_trainer_live_party_required");
+        return first??throw new InvalidDataException("forest_trainer_live_party_required");
     }
 
     private CampaignState BeginForestTrainerBattle(CampaignState state, StoryEffect effect)
@@ -116,7 +118,7 @@ public sealed partial class CampaignSession
             var selected=state.Actors.Values.SingleOrDefault(a=>a.Active&&a.SourceLocalId==state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED"))??throw new InvalidDataException("mtmoon_no_intro_actor_missing");
             state=SelectInteractedObject(state,selected.LocalId) with{LastTalked=selected.LocalId};
         }
-        var expectedLine=IsFuchsiaRouteTrainer(trainer)||IsPokemonTowerTrainer(trainer)||IsRocketHideoutTrainer(trainer)||IsCeladonGymTrainer(trainer)||IsCeladonApproachTrainer(trainer)||IsRockTunnelTrainer(trainer)||IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
+        var expectedLine=IsFuchsiaGymTrainer(trainer)||IsFuchsiaRouteTrainer(trainer)||IsPokemonTowerTrainer(trainer)||IsRocketHideoutTrainer(trainer)||IsCeladonGymTrainer(trainer)||IsCeladonApproachTrainer(trainer)||IsRockTunnelTrainer(trainer)||IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
         if (effect.Source.Path != definition.Source.Path || ((effect.Source.Symbol != definition.ScriptEntry || effect.Source.Line != expectedLine) && !IsBillRocketTriggeredBattle(effect,trainer)) ||
             (!noIntro&&(effect.Args[1] != definition.IntroText || effect.Args[2] != definition.DefeatText)) ||
             state.LastTalked is not { } actorId || !state.Actors.TryGetValue(actorId, out var actor) ||
@@ -141,6 +143,13 @@ public sealed partial class CampaignSession
             int expected=source.PostBattleScript is not null?4:3;
             if(effect.Args.Length!=expected||expected==4&&effect.Args[3]!=source.PostBattleScript)
                 throw new InvalidDataException("rocket_trainer_optional_arguments_mismatch");
+        }
+        else if(IsFuchsiaGymTrainer(trainer))
+        {
+            var source=_content.FuchsiaGymTrainerParties!.Battles[trainer];
+            int expected=source.MusicOption is not null?5:source.PostBattleScript is not null?4:3;
+            if(effect.Args.Length!=expected||expected>=4&&effect.Args[3]!=source.PostBattleScript||expected==5&&effect.Args[4]!=source.MusicOption)
+                throw new InvalidDataException("fuchsia_gym_trainer_optional_arguments_mismatch");
         }
         else if(IsCeladonGymTrainer(trainer))
         {
@@ -191,7 +200,7 @@ public sealed partial class CampaignSession
         var next=state with { ForestTrainerBattle = battle,
             Dialogue = noIntro?null:new(definition.IntroText, _content.TextPages(definition.IntroText), 0, false, false),
             Script = state.Script with { Locked = true, Variables = _forestTrainerApproaching ? state.Script.Variables : state.Script.Variables.SetItem("VAR_RESULT", 0) },
-            Music = noIntro||IsCeladonGymTrainer(trainer)&&_content.CeladonGymTrainers!.Battles[trainer].MusicOption=="NO_MUSIC"||IsVermilionGymTrainer(trainer)&&_content.VermilionGymTrainers!.Battles[trainer].MusicOption=="NO_MUSIC"||(IsPewterTrainer(trainer)||IsCeruleanTrainer(trainer)) && definition.Mode == 1 ? state.Music : OrdinaryEncounterMusic(trainer) };
+            Music = noIntro||IsFuchsiaGymTrainer(trainer)&&_content.FuchsiaGymTrainerParties!.Battles[trainer].MusicOption=="NO_MUSIC"||IsCeladonGymTrainer(trainer)&&_content.CeladonGymTrainers!.Battles[trainer].MusicOption=="NO_MUSIC"||IsVermilionGymTrainer(trainer)&&_content.VermilionGymTrainers!.Battles[trainer].MusicOption=="NO_MUSIC"||(IsPewterTrainer(trainer)||IsCeruleanTrainer(trainer)) && definition.Mode == 1 ? state.Music : OrdinaryEncounterMusic(trainer) };
         return noIntro?PrepareForestTrainerPresentation(ResetFieldPoisonCounterForBattle(next) with{ForestTrainerBattle=battle with{Stage=CampaignForestTrainerStage.Combat},Dialogue=null,Motions=[],PresentationTicks=0,World=next.World with{Rng=combat.Battle.Rng},SeenSpecies=next.SeenSpecies.Add(combat.Battle.Opponent.Pokemon.SourceSpeciesId)}):next;
     }
 
@@ -240,6 +249,8 @@ public sealed partial class CampaignSession
         }
         if (command.Kind == "wild_learn") return DecideForestTrainerLearning(state, command);
         if (b.Phase != CampaignBattlePhase.ChooseMove) return new(CommandStatus.Rejected, state, "battle_presentation_pending");
+        if(SourceTrainerBatonPassPending(trainer.Combat))
+            return DecideSourceTrainerPartyChoice(state with{ForestTrainerBattle=trainer},command);
         if (command.Kind == "battle_ball") return new(CommandStatus.Rejected, state, "trainer_battle_cannot_capture");
         if (command.Kind == "battle_menu" && command.Text == "run") return new(CommandStatus.Rejected, state, "trainer_battle_cannot_run");
         if (trainer.Combat.Phase is ForestTrainerCombatPhase.AwaitingPlayerReplacement or ForestTrainerCombatPhase.AwaitingShiftChoice)
@@ -282,7 +293,10 @@ public sealed partial class CampaignSession
         int index = command.PartyIndex;
         if (index < 0 || index >= state.Party.Length || index == b.ActivePartyIndex || state.Party[index].IsEgg || state.Party[index].Pokemon.CurrentHp == 0)
             return new(CommandStatus.Rejected, state, "replacement_member_invalid");
-        var incoming = state.Party[index]; var replacement = OwnedBattleMember(state,b,incoming);
+        var incoming = state.Party[index];
+        var replacement=trainer.Combat.SourceMoveRulesVersion is not null
+            ? trainer.Combat.SsAnnePlayerParty!.Value[index]??throw new InvalidDataException("source_trainer_reserve_missing")
+            : OwnedBattleMember(state,b,incoming);
         bool reserves = HasForestTrainerReserves(state, index);
         var turn = shift ? ForestTrainerCombatRules.ChooseShift(BattlePokemon, trainer.Combat, replacement, reserves, replacementPartyIndex:index)
             : trainer.Combat.Phase == ForestTrainerCombatPhase.AwaitingPlayerReplacement
@@ -291,7 +305,7 @@ public sealed partial class CampaignSession
         if (!turn.Succeeded) return new(CommandStatus.Rejected, state, turn.Fault);
         if(_content.CeruleanEnabled&&!_content.SsAnneEnabled&&turn.Events.OfType<WildBattlePlayerSwitchedEvent>().Any())
             turn=turn with{State=turn.State! with{CeruleanPlayerPartyIndex=index}};
-        if(_content.Route22Enabled&&turn.Events.OfType<WildBattlePlayerSwitchedEvent>().SingleOrDefault() is {} switched)
+        if(trainer.Combat.SourceMoveRulesVersion is null&&_content.Route22Enabled&&turn.Events.OfType<WildBattlePlayerSwitchedEvent>().SingleOrDefault() is {} switched)
         {
             b=RememberKnockedOff(b,state.Party[b.ActivePartyIndex].InstanceId,switched.Previous);
             var preserved=state.Party[b.ActivePartyIndex] with{Pokemon=WildBattleTransformationRules.PersistentPokemon(switched.Previous),Status=WildBattleTransformationRules.PersistentStatus(switched.Previous),HeldItem=OwnedBattleHeldItem(switched.Previous)};
@@ -315,19 +329,29 @@ public sealed partial class CampaignSession
     private CampaignState CommitForestTrainerTurn(CampaignState state, ForestTrainerCombatResult result)
     {
         var trainer = state.ForestTrainerBattle!; var b = trainer.Presentation;
-        trainer=WithSsAnnePartyContext(state,trainer); var combat = result.State!;
+        // Medicine/flute results may already have changed the owned party; validate the
+        // returned complete source party below, rather than rebuilding the input context.
+        if(trainer.Combat.SourceMoveRulesVersion is null)trainer=WithSsAnnePartyContext(state,trainer);
+        var combat = result.State!;
+        if(combat.SourceMoveRulesVersion is not null)
+            state=ProjectSourceTrainerOwnedParty(state,combat);
         foreach (var forced in result.TrainerEvents.OfType<SsAnneTrainerPlayerForcedOutEvent>())
         {
             if (!_content.SsAnneEnabled || forced.PreviousIndex != b.ActivePartyIndex || forced.PartyIndex < 0 || forced.PartyIndex >= state.Party.Length)
                 throw new InvalidDataException("ssanne_forced_party_context");
-            b=RememberKnockedOff(b,state.Party[forced.PreviousIndex].InstanceId,forced.Previous);
-            var previous = state.Party[forced.PreviousIndex] with { Pokemon = WildBattleTransformationRules.PersistentPokemon(forced.Previous), Status = WildBattleTransformationRules.PersistentStatus(forced.Previous), HeldItem = OwnedBattleHeldItem(forced.Previous) };
-            state = state with { Party = state.Party.SetItem(forced.PreviousIndex, previous) };
+            if(combat.SourceMoveRulesVersion is null)
+            {
+                b=RememberKnockedOff(b,state.Party[forced.PreviousIndex].InstanceId,forced.Previous);
+                var previous = state.Party[forced.PreviousIndex] with { Pokemon = WildBattleTransformationRules.PersistentPokemon(forced.Previous), Status = WildBattleTransformationRules.PersistentStatus(forced.Previous), HeldItem = OwnedBattleHeldItem(forced.Previous) };
+                state = state with { Party = state.Party.SetItem(forced.PreviousIndex, previous) };
+            }
             b = b with { ActivePartyIndex = forced.PartyIndex, OwnedBefore = state.Party[forced.PartyIndex], LastSwitch = null,
                 ParticipatingMembers = b.ParticipatingMembers!.Add(state.Party[forced.PartyIndex].InstanceId), OpponentHpAtLastSwitch = combat.Battle.Opponent.Pokemon.CurrentHp };
         }
-        b=RememberKnockedOff(b,state.Party[b.ActivePartyIndex].InstanceId,combat.Battle.Player);
-        var owned = state.Party[b.ActivePartyIndex] with { Pokemon = WildBattleTransformationRules.PersistentPokemon(combat.Battle.Player), Status = WildBattleTransformationRules.PersistentStatus(combat.Battle.Player), HeldItem = OwnedBattleHeldItem(combat.Battle.Player) };
+        if(combat.SourceMoveRulesVersion is not null&&combat.Battle.CalledParty!.PlayerActiveIndex!=b.ActivePartyIndex)
+            throw new InvalidDataException("source_trainer_replacement_event_context");
+        if(combat.SourceMoveRulesVersion is null)b=RememberKnockedOff(b,state.Party[b.ActivePartyIndex].InstanceId,combat.Battle.Player);
+        var owned = state.Party[b.ActivePartyIndex] with { Pokemon = WildBattleTransformationRules.PersistentPokemon(combat.Battle.Player), Status = WildBattleTransformationRules.PersistentStatus(combat.Battle.Player), HeldItem = combat.SourceMoveRulesVersion is not null ? WildBattleSourcePartyEffects.PersistentHeldItem(combat.Battle.CalledParty!.Player[b.ActivePartyIndex]) : OwnedBattleHeldItem(combat.Battle.Player) };
         var fainted = b.FaintedMembers ?? ImmutableSortedSet<long>.Empty;
         if (owned.Pokemon.CurrentHp == 0 && !fainted.Contains(owned.InstanceId))
         {
@@ -336,6 +360,8 @@ public sealed partial class CampaignSession
             combat = combat with { Battle = combat.Battle with { Player = WildBattleTransformationRules.ApplyPersistentPokemon(combat.Battle.Player,owned.Pokemon) } };
             fainted = fainted.Add(owned.InstanceId);
         }
+        if(combat.SourceMoveRulesVersion is not null)
+            combat=SyncSourceTrainerOwnedPokemon(combat,b.ActivePartyIndex,owned);
         var participants = b.ParticipatingMembers!; var sent = trainer.OpponentsSent; var seen = state.SeenSpecies;
         foreach (var replacement in result.TrainerEvents.OfType<ForestTrainerOpponentReplacedEvent>())
         {
@@ -380,6 +406,10 @@ public sealed partial class CampaignSession
                 b = side == WildBattleSide.Player ? b with { DisplayPlayer = update(b.DisplayPlayer) } : b with { DisplayOpponent = update(b.DisplayOpponent) };
             switch (e)
             {
+                case WildBattlePpCommandEvent pp:Update(pp.Actor,p=>p with{Moves=p.Moves.SetItem(pp.PpSlot,p.Moves[pp.PpSlot] with{CurrentPp=pp.After})});break;
+                case WildBattleGrudgePpEvent grudge:Update(grudge.Attacker,p=>p with{Moves=p.Moves.SetItem(grudge.ChosenSlot,p.Moves[grudge.ChosenSlot] with{CurrentPp=0})});break;
+                case WildBattleWeatherDamageEvent weather:Update(weather.Side,p=>p with{CurrentHp=weather.HpAfter});break;
+                case WildBattleDrainEvent drain:Update(drain.Actor,p=>p with{CurrentHp=drain.HpAfter});break;
                 case WildBattleTransformedEvent transformed:b=ApplyTransformDisplay(b,transformed);break;
                 case WildBattlePlayerSwitchedEvent change: b = b with { DisplayPlayer = change.Replacement.Pokemon }; break;
                 case WildBattlePlayerReplacedEvent change: b = b with { DisplayPlayer = change.Replacement.Pokemon }; break;
@@ -403,7 +433,7 @@ public sealed partial class CampaignSession
         if (trainer.Combat.Phase == ForestTrainerCombatPhase.AwaitingExperience) return BeginForestTrainerRewards(state);
         if (trainer.Combat.Phase == ForestTrainerCombatPhase.Ended) return SettleForestTrainerBattle(state);
         return state with { ForestTrainerBattle = state.ForestTrainerBattle! with { Presentation = state.ForestTrainerBattle.Presentation with
-        { Phase = CampaignBattlePhase.ChooseMove, Replacement = trainer.Combat.Phase == ForestTrainerCombatPhase.AwaitingPlayerReplacement ? CampaignReplacementStage.Select : null } } };
+        { Phase = CampaignBattlePhase.ChooseMove, Replacement = trainer.Combat.Phase == ForestTrainerCombatPhase.AwaitingPlayerReplacement || SourceTrainerBatonPassPending(trainer.Combat) ? CampaignReplacementStage.Select : null } } };
     }
 
     private CampaignState BeginForestTrainerRewards(CampaignState state)
@@ -435,6 +465,8 @@ public sealed partial class CampaignSession
                 if (e is WildRewardMoveLearnedEvent learned) pages.Add(new($"{reward.Pokemon.Nickname} learned\n{BattleContent.MoveNames[learned.Move.Value]}!", e));
             }
             state = state with { Party = state.Party.SetItem(receiver.PartyIndex, reward.Pokemon) };
+            if(trainer.Combat.SourceMoveRulesVersion is not null)
+                trainer=trainer with{Combat=SyncSourceTrainerOwnedPokemon(trainer.Combat,receiver.PartyIndex,reward.Pokemon)};
             b = b with { Reward = reward, Pages = pages.ToImmutable(), PageIndex = 0, PendingMoves = reward.PendingMoves };
             if (!b.Pages.IsEmpty || !b.PendingMoves.IsEmpty) return state with { ForestTrainerBattle = trainer with { Presentation = b } };
             b = b with { RewardReceiverIndex = b.RewardReceiverIndex + 1 };
@@ -475,6 +507,8 @@ public sealed partial class CampaignSession
         // can repeat a candidate; recheck current knowledge before offering the next choice.
         while (!pending.IsEmpty && owned.Pokemon.Moves.Any(m => m.Move == pending[0].Move)) pending = pending.RemoveAt(0);
         b = b with { PendingMoves = pending, DisplayPlayer = b.RewardPartyIndex == b.ActivePartyIndex ? owned.Pokemon : b.DisplayPlayer };
+        if(trainer.Combat.SourceMoveRulesVersion is not null)
+            trainer=trainer with{Combat=SyncSourceTrainerOwnedPokemon(trainer.Combat,b.RewardPartyIndex,owned)};
         var next = state with { Party = state.Party.SetItem(b.RewardPartyIndex, owned), ForestTrainerBattle = trainer with { Presentation = b } };
         return new(CommandStatus.Accepted, b.PendingMoves.IsEmpty ? CompleteForestTrainerRewardReceiver(next) : next);
     }
@@ -513,6 +547,8 @@ public sealed partial class CampaignSession
             if (payday.Collected != 0) pages.Add(new($"{state.PlayerName} picked up\n¥{payday.Collected}!"));
             state = state with { Party = pickup.Party, World = state.World with { Rng = pickup.Rng } };
             trainer = trainer with { Combat = trainer.Combat with { Battle = trainer.Combat.Battle with { Rng = pickup.Rng } } };
+            if(trainer.Combat.SourceMoveRulesVersion is not null)
+                trainer=trainer with{Combat=SyncSourceTrainerPickup(trainer.Combat,state.Party)};
             b = b with { RandomTrace = pickup.Trace };
         }
         return state with { Money = money, ForestTrainerHistory = (state.ForestTrainerHistory ?? []).Add(history),
@@ -554,6 +590,8 @@ public sealed partial class CampaignSession
             return Pump(StartStory(next with{Script=next.Script with{Locked=true}},towerCallback));
         if(IsRocketHideoutTrainer(trainer.Trainer)&&_content.RocketHideoutTrainers!.Battles[trainer.Trainer].PostBattleScript is {} rocketCallback)
             return Pump(StartStory(next with{Script=next.Script with{Locked=true}},rocketCallback));
+        if(IsFuchsiaGymTrainer(trainer.Trainer)&&_content.FuchsiaGymTrainerParties!.Battles[trainer.Trainer].PostBattleScript is {} fuchsiaGymCallback)
+            return Pump(StartStory(next with{Script=next.Script with{Locked=true}},fuchsiaGymCallback));
         if(IsCeladonGymTrainer(trainer.Trainer)&&_content.CeladonGymTrainers!.Battles[trainer.Trainer].PostBattleScript is {} celadonGymCallback)
             return Pump(StartStory(next with{Script=next.Script with{Locked=true}},celadonGymCallback));
         if(IsVermilionGymTrainer(trainer.Trainer)&&_content.VermilionGymTrainers!.Battles[trainer.Trainer].PostBattleScript is {} gymCallback)

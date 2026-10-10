@@ -1,0 +1,226 @@
+using System.Collections.Immutable;
+using Game.Domain.Ids;
+using Game.Domain.WildBattle;
+
+internal sealed record SourceTrainerText(string Symbol, params (string Key, string Value)[] Values);
+internal sealed record SourceTrainerEventDisplay(ImmutableArray<SourceTrainerText> Texts, bool Unsupported = false)
+{
+    internal bool Silent => !Unsupported && Texts.IsEmpty;
+}
+
+/// <summary>Read-only source-event projection. No RNG, HP, PP, party or command mutation.</summary>
+internal static class SourceTrainerPresentationModel
+{
+    internal const string UnsupportedNotice = "This battle event is not\nsupported yet.";
+    private static readonly SourceTrainerEventDisplay Silent = new([]);
+    private static readonly SourceTrainerEventDisplay Unsupported = new([], true);
+    internal static uint DisplayStatus(uint status) => WildBattleSourceFieldEffects.IsValidToxic(status) ? WildBattleStatus.Poison : status;
+    internal static string AbilityName(string source) => source switch {
+        "ABILITY_NONE" => "-------", "ABILITY_COMPOUND_EYES" => "COMPOUNDEYES", "ABILITY_LIGHTNING_ROD" => "LIGHTNINGROD",
+        _ when source.StartsWith("ABILITY_", StringComparison.Ordinal) => source[8..].Replace('_', ' '),
+        _ => throw new InvalidDataException("Unknown source ability symbol.")
+    };
+    private static WildBattleSide Other(WildBattleSide side) => side == WildBattleSide.Player ? WildBattleSide.Opponent : WildBattleSide.Player;
+    private static SourceTrainerEventDisplay Text(string symbol, params (string Key, string Value)[] fields) => new([new(symbol, fields)]);
+
+    // Stop at the next printed invocation: caller announcements can have no MoveUsed counterpart.
+    internal static bool PairedMoveUsed(IReadOnlyList<WildBattleEvent> events, int index, WildBattleAttackStringEvent attack)
+    {
+        for (int i = index + 1; i < events.Count && events[i] is not WildBattleAttackStringEvent; i++)
+            if (events[i] is WildBattleMoveUsedEvent used && used.Actor == attack.Actor && used.Move == attack.CurrentMove) return true;
+        return false;
+    }
+    internal static MoveId? LastMove(IReadOnlyList<WildBattleEvent> events, int index, WildBattleSide side)
+    {
+        for (int i = index; i >= 0; i--)
+        {
+            MoveId? move = events[i] switch {
+                WildBattlePpCommandEvent p when p.Actor == side => p.CurrentMove,
+                WildBattleAttackStringEvent a when a.Actor == side => a.CurrentMove,
+                WildBattleMoveUsedEvent u when u.Actor == side => u.Move,
+                WildBattleCalledMoveTransitionEvent t when t.Invocation.Actor == side => t.Invocation.CurrentMove,
+                _ => null
+            };
+            if (move is not null) return move;
+        }
+        return null;
+    }
+    private static bool PriorMatching(IReadOnlyList<WildBattleEvent> events, int index, Func<WildBattleEvent, bool> match)
+    {
+        for (int i = index - 1; i >= 0 && events[i] is not WildBattleAttackStringEvent; i--)
+            if (match(events[i])) return true;
+        return false;
+    }
+
+    internal static SourceTrainerEventDisplay? Describe(IReadOnlyList<WildBattleEvent> events, int index,
+        Func<WildBattleSide, string> name, Func<MoveId, string> moveName, Func<WildBattleSide, int, string> partyName,
+        Func<string, string>? itemName = null)
+    {
+        if (index < 0 || index >= events.Count) throw new ArgumentOutOfRangeException(nameof(index));
+        SourceTrainerEventDisplay Atk(string symbol, WildBattleSide side) => Text(symbol, ("B_ATK_NAME_WITH_PREFIX", name(side)));
+        switch (events[index])
+        {
+            case WildBattleAttackStringEvent attack:
+                return PairedMoveUsed(events, index, attack) ? Silent : Text("sText_AttackerUsedX",
+                    ("B_ATK_NAME_WITH_PREFIX", name(attack.Actor)), ("B_BUFF2", moveName(attack.CurrentMove) + "!"));
+            case WildBattleMoveUsedEvent used when used.Move.Value is "pret:MOVE_HEAL_BELL" or "pret:MOVE_AROMATHERAPY":
+                return new([new("sText_AttackerUsedX", ("B_ATK_NAME_WITH_PREFIX", name(used.Actor)), ("B_BUFF2", moveName(used.Move) + "!")),
+                    new(used.Move.Value == "pret:MOVE_HEAL_BELL" ? "sText_BellChimed" : "sText_SoothingAroma")]);
+            case WildBattlePpCommandEvent or WildBattleCalledMoveTransitionEvent or WildBattleCalledPartySwitchRequiredEvent or WildBattleCalledPartySwitchedEvent:
+                return Silent;
+            case WildBattleCallerSelectionEvent selection:
+                return selection.Caller.Value == "pret:MOVE_NATURE_POWER" && selection.Result is { } selected
+                    ? Text("sText_NaturePowerTurnedInto", ("B_CURRENT_MOVE", moveName(selected))) : Silent;
+            case WildBattleSubstituteDamagedEvent substitute:
+                var substituteTexts = ImmutableArray.CreateBuilder<SourceTrainerText>();
+                substituteTexts.Add(new("sText_SubstituteDamaged", ("B_DEF_NAME_WITH_PREFIX", name(substitute.Target))));
+                if (substitute.HpAfter == 0) substituteTexts.Add(new("sText_PkmnSubstituteFaded", ("B_DEF_NAME_WITH_PREFIX", name(substitute.Target))));
+                return new(substituteTexts.ToImmutable());
+            case WildBattleGrudgePpEvent grudge:
+                return Text("sText_PkmnLostPPGrudge", ("B_ATK_NAME_WITH_PREFIX", name(grudge.Attacker)), ("B_BUFF1", moveName(grudge.Move)));
+            case WildBattleMagicCoatEvent coat:
+                return Text("sText_PkmnMoveBounced", ("B_ATK_NAME_WITH_PREFIX", name(coat.OriginalActor)), ("B_CURRENT_MOVE", moveName(coat.Move)));
+            case WildBattleCalledBeatUpMemberEvent beat:
+                return Text("sText_PkmnAttack", ("B_BUFF1", partyName(beat.Side, beat.PartyIndex)));
+            case WildBattleCalledSpikesChangedEvent spikes:
+                return spikes.After > spikes.Before ? Text("sText_SpikesScattered") : spikes.After == 0
+                    ? Atk("sText_PkmnBlewAwaySpikes", spikes.Side) : Unsupported;
+            case WildBattleCalledOverlayChangedEvent overlay:
+                if (overlay.Move.Value is "pret:MOVE_CONVERSION" or "pret:MOVE_CONVERSION_2" or "pret:MOVE_CAMOUFLAGE")
+                    return overlay.After?.Type1 is { } type && type.StartsWith("TYPE_", StringComparison.Ordinal)
+                        ? Text("sText_PkmnChangedType", ("B_ATK_NAME_WITH_PREFIX", name(overlay.Side)), ("B_BUFF1", type[5..])) : Unsupported;
+                if (overlay.Move.Value == "pret:MOVE_ROLE_PLAY")
+                    return overlay.After?.Ability is { } ability ? Text("sText_PkmnCopiedFoe", ("B_ATK_NAME_WITH_PREFIX", name(overlay.Side)),
+                        ("B_DEF_NAME_WITH_PREFIX", name(Other(overlay.Side))), ("B_DEF_ABILITY", AbilityName(ability))) : Unsupported;
+                if (overlay.Move.Value == "pret:MOVE_SKILL_SWAP")
+                    return PriorMatching(events, index, e => e is WildBattleCalledOverlayChangedEvent o && o.Move == overlay.Move)
+                        ? Silent : Atk("sText_PkmnSwappedAbilities", overlay.Side);
+                return Unsupported;
+            case WildBattleCalledPartyChangedEvent party:
+                if (party.Reason is "heal-bell" or "aromatherapy")
+                    return Silent;
+                if (party.Reason == "trick-party-write")
+                {
+                    if (PriorMatching(events, index, e => e is WildBattleCalledPartyChangedEvent p && p.Reason == party.Reason)) return Silent;
+                    var result = ImmutableArray.CreateBuilder<SourceTrainerText>();
+                    result.Add(new("sText_PkmnSwitchedItems", ("B_ATK_NAME_WITH_PREFIX", name(party.Side))));
+                    if (itemName is not null)
+                        foreach (var change in events.Skip(index).TakeWhile(e => e is not WildBattleAttackStringEvent).OfType<WildBattleCalledPartyChangedEvent>().Where(p => p.Reason == party.Reason))
+                        {
+                            string item = WildBattleSourcePartyEffects.PersistentHeldItem(change.After);
+                            if (item != "ITEM_NONE") result.Add(new("sText_PkmnObtainedX", ("B_ATK_NAME_WITH_PREFIX", name(change.Side)), ("B_BUFF1", itemName(item))));
+                        }
+                    return new(result.ToImmutable());
+                }
+                if (party.Reason == "active-sync" && LastMove(events, index, party.Side)?.Value == "pret:MOVE_RECYCLE" &&
+                    WildBattleSourcePartyEffects.PersistentHeldItem(party.Before) != WildBattleSourcePartyEffects.PersistentHeldItem(party.After) &&
+                    WildBattleSourcePartyEffects.PersistentHeldItem(party.After) is { } recycled && recycled != "ITEM_NONE" && itemName is not null)
+                    return Text("sText_XFoundOneY", ("B_ATK_NAME_WITH_PREFIX", name(party.Side)), ("B_LAST_ITEM", itemName(recycled)));
+                return party.Reason is "active-sync" or "consumed-item" or "steal-party-write" or "knock-off-battle-only" ? Silent : Unsupported;
+            case WildBattleCalledDelayedEvent delayed:
+                if (delayed.Reason == "countdown") return Silent;
+                if (delayed.Move.Value == "pret:MOVE_WISH")
+                    return delayed.Reason == "scheduled" ? Atk("sText_PkmnMadeWish", delayed.Target) : delayed.Reason == "resolved" && delayed.SourcePartyIndex is { } sourceIndex
+                        ? Text("sText_PkmnWishCameTrue", ("B_BUFF1", partyName(delayed.Target, sourceIndex))) : Unsupported;
+                if (delayed.Move.Value is "pret:MOVE_FUTURE_SIGHT" or "pret:MOVE_DOOM_DESIRE")
+                {
+                    if (delayed.Reason == "resolved") return Text("sText_PkmnTookAttack", ("B_DEF_NAME_WITH_PREFIX", name(delayed.Target)), ("B_BUFF1", moveName(delayed.Move)));
+                    if (delayed.Reason == "scheduled") return delayed.Move.Value == "pret:MOVE_FUTURE_SIGHT"
+                        ? Atk("sText_PkmnForesawAttack", Other(delayed.Target))
+                        : Text("sText_PkmnChoseXAsDestiny", ("B_ATK_NAME_WITH_PREFIX", name(Other(delayed.Target))), ("B_CURRENT_MOVE", moveName(delayed.Move)));
+                }
+                return Unsupported;
+            case WildBattleStatusChangedEvent status when status.Before == 0 && WildBattleSourceFieldEffects.IsValidToxic(status.After):
+                return Text("sText_PkmnBadlyPoisoned", ("B_EFF_NAME_WITH_PREFIX", name(status.Side)));
+            case WildBattleStatusDamageEvent status when WildBattleSourceFieldEffects.IsValidToxic(status.Status):
+                return Atk("sText_PkmnHurtByPoison", status.Side);
+            case WildBattleStatusChangedEvent { Reason: "uproar-wake" } status:
+                return Atk("sText_PkmnWokeUpInUproar", status.Side);
+            case WildBattleStatusChangedEvent { Reason: "natural-cure" or "heal-bell" or "aromatherapy" }:
+                return Silent;
+            case WildBattleConfusionChangedEvent { Reason: "teeter-dance" } confusion:
+                return Text("sText_PkmnWasConfused", ("B_EFF_NAME_WITH_PREFIX", name(confusion.Side)));
+            case WildBattleWeatherDamageEvent { Weather: "hail" } hail:
+                return Atk("sText_PkmnPeltedByHail", hail.Side);
+            case WildBattleHpChangedEvent { Move.Value: "pret:MOVE_SPIKES" } spikes:
+                return Text("sText_PkmnHurtBySpikes", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", name(spikes.Target)));
+            case WildBattleMtMoonVolatileEvent v:
+                return Volatile(events, index, v, name, moveName);
+            case WildBattleMoveFailedEvent failed:
+                return Failure(failed, name, moveName);
+            default: return null;
+        }
+    }
+
+    private static SourceTrainerEventDisplay? Failure(WildBattleMoveFailedEvent f, Func<WildBattleSide, string> name, Func<MoveId, string> moveName)
+    {
+        return f.Reason switch {
+            "must-recharge" => Text("sText_PkmnMustRecharge", ("B_ATK_NAME_WITH_PREFIX", name(f.Actor))),
+            "already-substitute" => Text("sText_PkmnHasSubstitute", ("B_ATK_NAME_WITH_PREFIX", name(f.Actor))),
+            "substitute-insufficient-hp" => Text("sText_TooWeakForSubstitute"),
+            "stockpile-full" => Text("sText_PkmnCantStockpile", ("B_ATK_NAME_WITH_PREFIX", name(f.Actor))),
+            "stockpile-empty" => Text(f.Move.Value == "pret:MOVE_SWALLOW" ? "sText_FailedToSwallow" : "sText_FailedToSpitUp"),
+            "accuracy" or "future-accuracy" or "missed" => Text("sText_AttackMissed", ("B_ATK_NAME_WITH_PREFIX", name(f.Actor))),
+            "taunted" => Text("sText_PkmnCantUseMoveTaunt", ("B_ACTIVE_NAME_WITH_PREFIX", name(f.Actor)), ("B_CURRENT_MOVE", moveName(f.Move))),
+            "safeguard" => Text("sText_PkmnUsedSafeguard", ("B_DEF_NAME_WITH_PREFIX", name(f.Target))),
+            "mist" => Text("sText_PkmnProtectedByMist", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", name(f.Target))),
+            "bide-no-energy" or "mirror-move-no-history" or "assist-no-candidates" or "perish-song-already-active" or
+            "future-slot-occupied" or "wish-slot-occupied" or "already-tormented" or "already-taunted" or
+            "magic-coat-last-action" or "already-grudge" or "substitute" or "already-type" or "no-different-move-type" or
+            "no-landed-move" or "source-still-multiple-turns" or "no-resistant-type" or "uncopyable-ability" or
+            "spikes-at-maximum" or "no-eligible-reserve" or "no-eligible-contributor" or "stats-at-minimum" or
+            "no-recyclable-item" or "item-swap-not-allowed" or "already-sun" or "already-hail" or "already-mist" or
+            "already-light-screen" or "already-safeguard" => Text("sText_ButItFailed"),
+            _ => null
+        };
+    }
+
+    private static SourceTrainerEventDisplay? Volatile(IReadOnlyList<WildBattleEvent> events, int index,
+        WildBattleMtMoonVolatileEvent v, Func<WildBattleSide, string> name, Func<MoveId, string> moveName)
+    {
+        SourceTrainerEventDisplay Atk(string symbol) => Text(symbol, ("B_ATK_NAME_WITH_PREFIX", name(v.Side)));
+        SourceTrainerEventDisplay Def(string symbol) => Text(symbol, ("B_DEF_NAME_WITH_PREFIX", name(v.Side)));
+        string team = v.Side == WildBattleSide.Player ? "Ally" : "Foe";
+        switch (v.Volatile)
+        {
+            case "substitute": return v.Reason == "move" ? Atk("sText_PkmnMadeSubstitute") : Unsupported;
+            case "stockpile": return v.Reason == "move" ? Text("sText_PkmnStockpiled", ("B_ATK_NAME_WITH_PREFIX", name(v.Side)), ("B_BUFF1", v.After.ToString())) : v.Reason is "swallow" or "spit-up" ? Silent : Unsupported;
+            case "perish-song":
+                if (v.Reason == "move") return PriorMatching(events, index, e => e is WildBattleMtMoonVolatileEvent { Volatile: "perish-song", Reason: "move" }) ? Silent : Text("sText_FaintInThree");
+                return v.Reason is "countdown" or "perished" ? Text("sText_PkmnPerishCountFell", ("B_ATK_NAME_WITH_PREFIX", name(v.Side)), ("B_BUFF1", v.Before.ToString())) : Unsupported;
+            case "torment": return v.Reason == "move" ? Def("sText_PkmnSubjectedToTorment") : Unsupported;
+            case "taunt": return v.Reason == "move" ? Def("sText_PkmnFellForTaunt") : v.Reason == "countdown" ? Silent : Unsupported;
+            case "grudge": return v.Reason == "move" ? Atk("sText_PkmnWantsGrudge") : v.Reason == "action-attempt" ? Silent : Unsupported;
+            case "magic-coat": return v.Reason == "move" ? Text("sText_PkmnShroudedItself", ("B_ATK_NAME_WITH_PREFIX", name(v.Side)), ("B_CURRENT_MOVE", moveName(new("pret:MOVE_MAGIC_COAT")))) : v.Reason == "turn-end" ? Silent : Unsupported;
+            case "sure-hit": return v.Reason == "move" ? Text("sText_PkmnTookAim", ("B_ATK_NAME_WITH_PREFIX", name(Other(v.Side))), ("B_DEF_NAME_WITH_PREFIX", name(v.Side))) : Silent;
+            case "called-charge":
+                if (v.Reason != "move") return Silent;
+                // Sunny SolarBeam sets/clears the charge register in one action without charge text.
+                if (events.Skip(index + 1).TakeWhile(e => e is not WildBattleAttackStringEvent)
+                    .Any(e => e is WildBattleMtMoonVolatileEvent { Volatile: "called-charge", Reason: "released" } released && released.Side == v.Side)) return Silent;
+                string? symbol = LastMove(events, index, v.Side)?.Value switch {
+                    "pret:MOVE_RAZOR_WIND" => "sText_PkmnWhippedWhirlwind", "pret:MOVE_SOLAR_BEAM" => "sText_PkmnTookSunlight",
+                    "pret:MOVE_SKULL_BASH" => "sText_PkmnLoweredHead", "pret:MOVE_SKY_ATTACK" => "sText_PkmnIsGlowing",
+                    "pret:MOVE_FLY" => "sText_PkmnFlewHigh", "pret:MOVE_DIG" => "sText_PkmnDugHole",
+                    "pret:MOVE_DIVE" => "sText_PkmnHidUnderwater", "pret:MOVE_BOUNCE" => "sText_PkmnSprangUp", _ => null };
+                return symbol is null ? Unsupported : Atk(symbol);
+            case "called-bide": return v.Reason == "storing-energy" ? Atk("sText_PkmnStoringEnergy") : v.Reason == "released" ? Atk("sText_PkmnUnleashedEnergy") : Silent;
+            case "called-uproar": return v.Reason switch { "move" => Atk("sText_PkmnCausedUproar"), "countdown" => Atk("sText_PkmnMakingUproar"), "uproar-ended" => Atk("sText_PkmnCalmedDown"), _ => Silent };
+            case "called-recharge" or "called-rampage" or "called-rollout": return Silent;
+            case "sun": return v.Reason switch { "move" => Text("sText_SunlightGotBright"), "countdown" => Text("sText_SunlightStrong"), "expired" => Text("sText_SunlightFaded"), _ => Unsupported };
+            case "hail": return v.Reason switch { "move" => Text("sText_StartedHail"), "countdown" => Text("sText_HailContinues"), "expired" => Text("sText_HailStopped"), _ => Unsupported };
+            case "mist": return v.Reason == "move" ? Text("gBattleText_MistShroud", ("B_ATK_PREFIX2", team)) : v.Reason == "expired" ? Text("sText_PkmnsXWoreOff", ("B_ATK_PREFIX1", team), ("B_BUFF1", "MIST")) : v.Reason == "countdown" ? Silent : Unsupported;
+            case "light-screen" when v.Reason == "brick-break":
+                return PriorMatching(events, index, e => e is WildBattleMtMoonVolatileEvent { Reason: "brick-break" }) ? Silent : Text("sText_TheWallShattered");
+            case "light-screen": return v.Reason == "move" ? Text("sText_PkmnRaisedSpDef", ("B_ATK_PREFIX2", team), ("B_CURRENT_MOVE", "LIGHT SCREEN")) : v.Reason == "expired" ? Text("sText_PkmnsXWoreOff", ("B_ATK_PREFIX1", team), ("B_BUFF1", "LIGHT SCREEN")) : v.Reason is "countdown" or "brick-break" ? Silent : Unsupported;
+            case "safeguard": return v.Reason == "move" ? Text("sText_PkmnCoveredByVeil", ("B_ATK_PREFIX2", team)) : v.Reason == "expired" ? Text("sText_PkmnSafeguardExpired", ("B_ATK_PREFIX3", team)) : v.Reason == "countdown" ? Silent : Unsupported;
+            case "reflect" when v.Reason == "brick-break":
+                return PriorMatching(events, index, e => e is WildBattleMtMoonVolatileEvent { Reason: "brick-break" }) ? Silent : Text("sText_TheWallShattered");
+            case "haze": return Text("sText_StatChangesGone");
+            case "psych-up": return Text("sText_PkmnCopiedStatChanges", ("B_ATK_NAME_WITH_PREFIX", name(v.Side)), ("B_DEF_NAME_WITH_PREFIX", name(Other(v.Side))));
+            case "fury-cutter" or "rampage" or "dig-underground": return Silent;
+            case "protect" or "endure" or "reflect" or "sandstorm" or "identified" or "rain" or "charge" or "water-sport" or "mud-sport" or "follow-me" or "imprison": return null;
+            default: return Unsupported;
+        }
+    }
+}

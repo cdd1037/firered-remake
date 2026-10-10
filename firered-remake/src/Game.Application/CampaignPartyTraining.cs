@@ -16,9 +16,9 @@ public sealed partial class CampaignSession
         if(b.ParticipatingMembers is null||b.OpponentHpAtLastSwitch is null)return new(CommandStatus.Fault,state,"wild_participation_missing");
         var incoming=state.Party[index];var outgoing=state.Party[b.ActivePartyIndex];
         bool reserves=state.Party.Where((p,i)=>i!=index).Any(p=>!p.IsEgg&&p.Pokemon.CurrentHp>0);
-        var turn=WildBattleRules.SwitchPlayer(BattlePokemon,b.State,OwnedBattleMember(state,b,incoming),reserves);
+        var turn=WildBattleRules.IsSourceWild(b.State)?WildBattleRules.SwitchSourceWildPlayer(BattlePokemon,b.State,index):WildBattleRules.SwitchPlayer(BattlePokemon,b.State,OwnedBattleMember(state,b,incoming),reserves);
         if(!turn.Succeeded)return new(CommandStatus.Rejected,state,turn.Fault);
-        if(_content.Route22Enabled&&turn.Events.OfType<WildBattlePlayerSwitchedEvent>().SingleOrDefault() is {} switched)
+        if(_content.Route22Enabled&&!WildBattleRules.IsSourceWild(turn.State)&&turn.Events.OfType<WildBattlePlayerSwitchedEvent>().SingleOrDefault() is {} switched)
         {
             b=RememberKnockedOff(b,outgoing.InstanceId,switched.Previous);
             var preserved=outgoing with{Pokemon=WildBattleTransformationRules.PersistentPokemon(switched.Previous),Status=WildBattleTransformationRules.PersistentStatus(switched.Previous),HeldItem=OwnedBattleHeldItem(switched.Previous)};

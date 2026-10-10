@@ -418,7 +418,8 @@ public static partial class WildBattleRules
             calledPassiveDelayed = true;
             try
             {
-                SourceGenericApplyDamage(future.Attacker, target, move, damage, false, percent);
+                int lost = SourceGenericApplyDamage(future.Attacker, target, move, damage, false, percent);
+                if (SourceCalledHitReachedPokemon(target)) RecordCalledDamage(target, future.Attacker, lost, "TYPE_NORMAL");
                 if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
                 // HandleAction_ActionFinished cleared gCurrentMove to MOVE_NONE; the source's
                 // MOVEEND_RAGE case therefore fails its power != 0 test for this delayed script.

@@ -16,6 +16,8 @@ public sealed record CampaignPokemonContent(PokemonCatalog Catalog,ImmutableSort
     public bool AllowSleepStatus{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
     public bool AllowFreezeStatus{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AllowToxicStatus{get;init;}
 }
 public static class PokemonNicknameRules
 {

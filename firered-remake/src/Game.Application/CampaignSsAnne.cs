@@ -32,6 +32,8 @@ public sealed partial class CampaignSession
 {
     private CampaignForestTrainerBattle WithSsAnnePartyContext(CampaignState state, CampaignForestTrainerBattle trainer)
     {
+        if(trainer.Combat.SourceMoveRulesVersion is not null)
+            return ValidateSourceTrainerOwnedParty(state,trainer);
         if (!_content.CeruleanEnabled) return trainer;
         int index = trainer.Presentation.ActivePartyIndex;
         var combat = trainer.Combat with { CeruleanPlayerPartyIndex = index };

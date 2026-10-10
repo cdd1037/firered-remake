@@ -21,6 +21,7 @@ public static partial class WildBattleRules
         CampaignPokemonContent content, WildBattleState state, InventoryState inventory,
         ImmutableArray<PartyPokemon> party, int activeIndex)
     {
+        if (IsSourceWild(state)) return ResolveSourceWildPokeFlute(shop, content, state, inventory, party, activeIndex);
         WildBattlePokeFluteResult Reject(string error) => new(Fail(state, error), party);
         if (state.RulesVersion is not (TowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion)) return Reject("poke_flute_battle_profile_not_enabled");
         var error = ValidateAction(content.Catalog, state) ?? ValidateRoute3NonMoveAction(state) ??

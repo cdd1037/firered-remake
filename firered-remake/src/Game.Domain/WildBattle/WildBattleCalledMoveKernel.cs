@@ -121,6 +121,7 @@ public static partial class WildBattleRules
         AddCalledVolatileSupport(move, ref supported);
         AddCalledFieldEffectSupport(move, ref supported);
         AddCalledPartyEffectSupport(move, ref supported);
+        AddCalledCallerSupport(move, ref supported);
         return supported;
     }
 
@@ -129,6 +130,13 @@ public static partial class WildBattleRules
     public static string? ValidateCalledMoveActionState(PokemonCatalog catalog, WildBattleState state)
     {
         if (state.RulesVersion != FuchsiaRulesVersion) return "called_move_base_profile";
+        foreach (var mon in new[] { state.Player, state.Opponent })
+            if (mon.SourcePartyStatusOverride is { } partyStatus &&
+                (state.CalledParty is null || mon.Pokemon.CurrentHp == 0 || mon.Transform?.PartyStatusOverride is not null ||
+                 !(partyStatus == 0 && WildBattleStatus.IsSleeping(mon.Status) ||
+                   WildBattleStatus.IsSleeping(partyStatus) && mon.Status == 0)))
+                return "source_party_status_override";
+        if (ValidateCalledDamageState(state) is { } damageError) return damageError;
         if (ValidateCalledFieldState(state) is { } fieldError) return fieldError;
         if (ValidateCalledPartyState(catalog, state) is { } partyError) return partyError;
         if (ValidateCalledVolatileState(catalog, state) is { } volatileError) return volatileError;
@@ -145,11 +153,11 @@ public static partial class WildBattleRules
                     (!catalog.Moves.TryGetValue(value, out var move) || !MetronomeSourceMoveDefinition.Matches(move))) return "called_move_history_definition";
             if (h.LastHitByType is { } type && type is not ("TYPE_NORMAL" or "TYPE_FIGHTING" or "TYPE_FLYING" or "TYPE_POISON" or "TYPE_GROUND" or "TYPE_ROCK" or "TYPE_BUG" or "TYPE_GHOST" or "TYPE_STEEL" or "TYPE_MYSTERY" or "TYPE_FIRE" or "TYPE_WATER" or "TYPE_GRASS" or "TYPE_ELECTRIC" or "TYPE_PSYCHIC" or "TYPE_ICE" or "TYPE_DRAGON" or "TYPE_DARK")) return "called_move_history_type";
             foreach (var mirror in new[] { h.LastTakenMove, h.LastTakenFromPlayer, h.LastTakenFromOpponent })
-                if (mirror is { } id && (!catalog.Moves.TryGetValue(id, out var move) || !move.Flags.Contains("FLAG_MIRROR_MOVE_AFFECTED"))) return "called_move_mirror_history";
+                if (mirror is { } id && id.Value is not ("pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE") && (!catalog.Moves.TryGetValue(id, out var move) || !move.Flags.Contains("FLAG_MIRROR_MOVE_AFFECTED"))) return "called_move_mirror_history";
         }
         WildBattleCombatant Projection(WildBattleCombatant mon) => mon with {
             Status = WildBattleSourceFieldEffects.IsValidToxic(mon.Status) ? WildBattleStatus.Poison : mon.Status,
-            CalledVolatile = null, CalledTurnState = null, SourceMoveHistory = null, LastUsedMove = mon.SourceMoveHistory is null ? mon.LastUsedMove : null,
+            CalledDamage = null, CalledVolatile = null, CalledTurnState = null, SourceMoveHistory = null, LastUsedMove = mon.SourceMoveHistory is null ? mon.LastUsedMove : null,
             LastCalledMove = mon.SourceMoveHistory is null ? mon.LastCalledMove : null, LastLandedMove = mon.SourceMoveHistory is null ? mon.LastLandedMove : null,
             BindingMove = mon.BindingMove is { } bind && catalog.Moves.TryGetValue(bind, out var binding) &&
                 MetronomeSourceMoveDefinition.Matches(binding) && binding.Effect == "EFFECT_TRAP" ? new("pret:MOVE_BIND") : mon.BindingMove
@@ -304,6 +312,7 @@ public static partial class WildBattleRules
 
         private void FinishCalledMoveHistory(PokemonCatalog catalog, int eventStart)
         {
+            RecordCalledDamageHistory(catalog, eventStart);
             SourceCalledMoveEndSubstitute();
             var invocation = activeInvocation!;
             var emitted = Events.Skip(eventStart).ToArray();

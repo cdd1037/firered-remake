@@ -26,10 +26,11 @@ public static class WildBattleTransformationRules
     public static PokemonInstance PersistentPokemon(WildBattleCombatant mon) => mon.Transform is { } transform
         ? transform.OriginalPokemon with { CurrentHp = mon.Pokemon.CurrentHp } : mon.Pokemon;
 
-    public static uint PersistentStatus(WildBattleCombatant mon) => mon.Transform?.PartyStatusOverride ?? mon.Status;
+    public static uint PersistentStatus(WildBattleCombatant mon) => SourcePartyStatusRules.FromBattle(
+        mon.SourcePartyStatusOverride ?? mon.Transform?.PartyStatusOverride ?? mon.Status);
 
-    public static WildBattleCombatant Restore(WildBattleCombatant mon) => mon.Transform is null ? mon :
-        mon with { Pokemon = PersistentPokemon(mon), Status = PersistentStatus(mon), Transform = null, CalledOverlay = null };
+    public static WildBattleCombatant Restore(WildBattleCombatant mon) => mon.Transform is null && mon.SourcePartyStatusOverride is null ? mon :
+        mon with { Pokemon = PersistentPokemon(mon), Status = PersistentStatus(mon), Transform = null, CalledOverlay = null, SourcePartyStatusOverride = null };
 
     /// <summary>Apply a validated party medicine/EXP update without replacing copied moves. A level gain uses the source stat refresh.</summary>
     public static WildBattleCombatant ApplyPersistentPokemon(WildBattleCombatant mon, PokemonInstance pokemon)

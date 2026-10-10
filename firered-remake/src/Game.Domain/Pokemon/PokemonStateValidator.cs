@@ -31,9 +31,9 @@ public static class PokemonStateValidator
 
     /// <summary>
     /// General ownership invariants in the current English-keyboard, non-egg profile. Source language
-    /// and game IDs, and the twelve Gen III balls, are recognized. Only standalone poison, burn and
-    /// paralysis status1 values are represented; the explicit early-starter content also admits sleep counters1–5. Freeze, toxic, eggs and attached mail remain
-    /// unsupported; injury/zero HP are supported. Met-location/held-item symbols get
+    /// and game IDs, and the twelve Gen III balls, are recognized. Poison, burn and paralysis are
+    /// represented; explicit content admits sleep counters1–5, freeze and canonical Toxic0x80.
+    /// Toxic battle counters, eggs and attached mail remain unsupported; injury/zero HP are supported. Met-location/held-item symbols get
     /// syntax validation only: the current content contract has no complete location/item catalog.
     /// Call ValidateLocalStarterGift for the exact locally implemented gift checkpoint instead.
     /// </summary>
@@ -61,7 +61,7 @@ public static class PokemonStateValidator
             return "party_ball";
         if (!ValidSymbol(owned.HeldItem, "ITEM_")) return "party_held_item";
         if (owned.Mail != 255) return "party_mail_unsupported";
-        if (!WildBattleStatus.IsSupported(owned.Status,content.AllowSleepStatus,content.AllowFreezeStatus)) return "party_status_unsupported";
+        if (!SourcePartyStatusRules.IsSupported(owned.Status,content.AllowSleepStatus,content.AllowFreezeStatus,content.AllowToxicStatus)) return "party_status_unsupported";
         if (owned.IsEgg) return "party_egg_unsupported";
         return null;
     }

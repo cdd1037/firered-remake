@@ -20,6 +20,9 @@ public sealed record ForestTrainerCombatState(TrainerId Trainer, WildBattleState
     int? PendingOpponentIndex = null, string? KnownPlayerAbility = null, MoveId StaleCurrentMove = default,
     int ExperienceCompletedMask = 0, string RulesVersion = ForestTrainerCombatRules.RulesVersion)
 {
+    /// <summary>Explicit opt-in to the shared source action/party/turn contract; absent for historical profiles.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? SourceMoveRulesVersion { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceTrainerTurnState? SourceTurn { get; init; }
     /// <summary>Full party slot order; null marks an egg/empty slot. Application refreshes before each command.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<WildBattleCombatant?>? SsAnnePlayerParty { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? CeruleanPendingSwitchIndex { get; init; }

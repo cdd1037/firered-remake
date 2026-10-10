@@ -8,11 +8,11 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    // These are Content identities only. Battle admission, rewards and teaching require
-    // separate Domain/Application rules; no existing execution profile is relabeled.
-    public const string FuchsiaGymContentProfile = "firered-fuchsia-gym-content-v1";
-    public const string FuchsiaGymMachineContentProfile = "firered-fuchsia-gym-machine-content-v1";
-    public const string FuchsiaGymShopContentProfile = "firered-fuchsia-gym-shop-content-v1";
+    // Explicit successor composition. The predecessor route retains its 244 moves
+    // and its old Domain profiles; source trainer admission belongs to Application.
+    public const string FuchsiaGymContentProfile = "firered-fuchsia-gym-source-content-v1";
+    public const string FuchsiaGymMachineContentProfile = FuchsiaGymMachineRules.Profile;
+    public const string FuchsiaGymShopContentProfile = FuchsiaGymItemRules.Profile;
     public static PretCampaignCatalog LoadFuchsiaGymProfile(string root, bool useCompactMapData = true) => Load(root,
         includeStarterEvents:true, includeFirstBattle:true, includeOpeningItems:true,
         includeViridianRegion:true, includeParcelQuest:true, includeCapture:true, includeViridianCenter:true,
@@ -30,9 +30,11 @@ public sealed partial class PretCampaignCatalog
     public PretFuchsiaGymRegion? FuchsiaGymRegion { get; }
     public FuchsiaGymTrainerDocument? FuchsiaGymTrainerDocument { get; }
     public FuchsiaGymTrainerCatalogContent? FuchsiaGymTrainers { get; }
+    Game.Domain.Trainers.FuchsiaGymTrainerCatalog? Game.Domain.World.ICampaignCatalog.FuchsiaGymTrainerParties =>
+        FuchsiaGymTrainers is { } trainers ? new(trainers.SourceCommit,trainers.Profile,trainers.CompleteSourceRoster,trainers.Trainers,trainers.Battles) : null;
     public PretFuchsiaGymItemsDocument? FuchsiaGymItems { get; }
     public PretRockTunnelMachinesDocument? FuchsiaGymMachines { get; }
-    /// <summary>Source composition opt-in, not a claim of executable Gym gameplay.</summary>
+    /// <summary>Explicit source successor opt-in; native acceptance remains a separate gate.</summary>
     public bool FuchsiaGymEnabled => FuchsiaGymRegion is not null;
     public PokemonMoveDefinition? FuchsiaGymToxic => FuchsiaGymEnabled
         ? PokemonContent!.Catalog.Moves[new("pret:MOVE_TOXIC")] : null;
@@ -69,7 +71,7 @@ public sealed partial class PretCampaignCatalog
         foreach (var text in region.TextSources.Values)
             if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
         MergeRegionalServiceConstants(constants, region.Constants);
-        MergeRegionalServiceConstants(constants, new Dictionary<string, int> { ["MOVE_TOXIC"] = moveSource.Constants["MOVE_TOXIC"] });
+        MergeRegionalServiceConstants(constants, moveSource.Constants.Where(p=>p.Key.StartsWith("MOVE_",StringComparison.Ordinal)).ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal));
         hashes.AddRange(region.AdditionalSourceHashes);
         hashes.AddRange(moveSource.AdditionalSourceHashes);
         hashes.Add("fuchsia-gym-trainers:" + PretFuchsiaGymTrainers.LockSha256 + ":" + PretFuchsiaGymTrainers.GeneratedSha256);
@@ -86,9 +88,9 @@ public sealed partial class PretCampaignCatalog
             predecessor.Moves.ContainsKey(new("pret:MOVE_TOXIC")) || predecessor.Moves.Values.Any(m => !source.MatchesSource(m)) ||
             trainers.Moves.Any(m => !source.MatchesSource(m)))
             throw new InvalidDataException("fuchsia_gym_pokemon_predecessor_or_source");
-        // Read the authenticated complete metadata table, but compose exactly one absent definition.
-        var toxic = source.Moves[new("pret:MOVE_TOXIC")];
-        var result = predecessor with { Moves = predecessor.Moves.Add(toxic.Id, toxic) };
+        // The source turn kernel may call any authenticated move. Extend metadata only:
+        // preserve every species/learnset and existing move object unchanged.
+        var result = source.Extend(predecessor);
         PokemonFactory.ValidateCatalog(result);
         if (trainers.Moves.Any(m => !result.Moves.ContainsKey(m.Id)) ||
             trainers.Trainers.SelectMany(t => t.Party).Any(p => !result.Species.ContainsKey(p.Species)))
@@ -104,15 +106,19 @@ public sealed partial class PretCampaignCatalog
         if (machine.Machine.Item.Id != PretFuchsiaGymItems.Tm06Id ||
             predecessor.AdditionalMachines!.Value.Any(m => m.Machine.Item.Id == machine.Machine.Item.Id))
             throw new InvalidDataException("fuchsia_gym_machine_predecessor");
-        return predecessor with { Profile = FuchsiaGymMachineContentProfile,
+        var result=predecessor with { Profile = FuchsiaGymMachineRules.Profile,
             AdditionalMachines = predecessor.AdditionalMachines.Value.Add(machine) };
+        FuchsiaGymMachineRules.ValidateCatalog(result);
+        return result;
     }
 
     private static EarlyShopCatalog ComposeFuchsiaGymShop(EarlyShopCatalog predecessor, PretFuchsiaGymItemsDocument document)
     {
         var item = PretFuchsiaGymItems.Definition(document);
         if (predecessor.Items.Any(i => i.Id == item.Id)) throw new InvalidDataException("fuchsia_gym_shop_item_conflict");
-        return predecessor with { Profile = FuchsiaGymShopContentProfile, Items = predecessor.Items.Add(item) };
+        var result=predecessor with { Profile = FuchsiaGymItemRules.Profile, Items = predecessor.Items.Add(item) };
+        FuchsiaGymItemRules.ValidateShop(result);
+        return result;
     }
 
     private static void ValidateFuchsiaGymComposition(PretFuchsiaGymRegion region,
@@ -123,7 +129,7 @@ public sealed partial class PretCampaignCatalog
         if (maps.Count != 154 || predecessorMaps.Count != 153 || region.NewMaps.Count != 1 ||
             !maps.Keys.Except(predecessorMaps.Keys).SequenceEqual([gymId]) ||
             predecessorMaps.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) || !ReferenceEquals(maps[gymId], region.NewMaps[gymId]) ||
-            pokemon.Species.Count != 107 || pokemon.Moves.Count != 245 || !ReferenceEquals(pokemon.Species, predecessorPokemon.Species) ||
+            pokemon.Species.Count != 107 || pokemon.Moves.Count != 354 || !ReferenceEquals(pokemon.Species, predecessorPokemon.Species) ||
             predecessorPokemon.Moves.Any(p => !ReferenceEquals(p.Value, pokemon.Moves[p.Key])))
             throw new InvalidDataException("fuchsia_gym_composition_scope");
         if (!JsonElement.DeepEquals(maps[cityId].Events, region.ExternalFuchsiaEvents) ||

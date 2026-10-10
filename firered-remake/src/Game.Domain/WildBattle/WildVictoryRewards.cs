@@ -174,7 +174,8 @@ public static class WildVictoryRewards
         route11Rules |= rockTunnelRules;
         var names = catalog.Species.Values.ToImmutableSortedDictionary(s => s.SourceSpeciesId,
             s => s.SourceSpeciesId switch { 29 => "NIDORAN♀", 32 => "NIDORAN♂", _ => s.Id.Value["pret:SPECIES_".Length..] });
-        var error = PokemonStateValidator.ValidateParty(new(catalog, names, PokemonStateValidator.NicknameAlphabet) { AllowSleepStatus = route22Rules, AllowFreezeStatus = route11Rules }, owned);
+        var error = PokemonStateValidator.ValidateParty(new(catalog, names, PokemonStateValidator.NicknameAlphabet) { AllowSleepStatus = route22Rules, AllowFreezeStatus = route11Rules,
+            AllowToxicStatus = catalog.Species.Count == 107 && catalog.Moves.Count == 354 }, owned);
         if (error is not null) throw new ArgumentException(error, nameof(owned));
         if (route22Rules && owned.Pokemon.AbilityId == "ABILITY_VITAL_SPIRIT" && WildBattleStatus.IsSleeping(owned.Status))
             throw new NotSupportedException("Vital Spirit cannot enter rewards asleep in the Route22 profile.");

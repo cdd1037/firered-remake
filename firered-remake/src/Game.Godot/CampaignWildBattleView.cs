@@ -37,11 +37,12 @@ public partial class CampaignView
                     _ => throw new InvalidDataException("Unsupported committed Route11 terrain.")
                 };
         }
-        if (_catalog.CeladonGymEnabled && mapId.Value == "map.celadon-city-gym" ||
+        if (_catalog.FuchsiaGymEnabled && mapId.Value == "map.fuchsia-city-gym" ||
+            _catalog.CeladonGymEnabled && mapId.Value == "map.celadon-city-gym" ||
             _catalog.CeruleanEnabled && PretGymBattleTerrain.AppliesToMap(mapId))
         {
             bool leader = _session.State.ForestTrainerBattle?.Trainer.Value is
-                "pret:TRAINER_LEADER_BROCK" or "pret:TRAINER_LEADER_MISTY" or "pret:TRAINER_LEADER_ERIKA";
+                "pret:TRAINER_LEADER_BROCK" or "pret:TRAINER_LEADER_MISTY" or "pret:TRAINER_LEADER_ERIKA" or "pret:TRAINER_LEADER_KOGA";
             return (leader ? _leaderTerrain : _gymTerrain) ?? throw new InvalidDataException("Gym terrain was not loaded.");
         }
         if (_catalog.CityServicesEnabled && _cityBattleTerrain is not null && _session.State.World.Player is var player && player.MapId == mapId)
@@ -134,7 +135,7 @@ public partial class CampaignView
     }
 
     private bool WildWithdrawing(CampaignWildBattle b) => b.Phase == CampaignBattlePhase.Events &&
-        WildCurrentEvent(b) is WildBattlePlayerSwitchedEvent && _wildPage == 0;
+        WildCurrentEvent(b) is WildBattlePlayerSwitchedEvent && !SourcePlayerBatonSwitch(b) && _wildPage == 0;
     private PokemonInstance WildDisplayPlayer(CampaignWildBattle b) => WildWithdrawing(b)
         ? ((WildBattlePlayerSwitchedEvent)WildCurrentEvent(b)!).Previous.Pokemon : b.DisplayPlayer;
     private PartyPokemon WildRewardRecipient(CampaignWildBattle b) => _session.State.Party[b.RewardPartyIndex];
@@ -179,7 +180,7 @@ public partial class CampaignView
         _wildPresentationKey = key; _wildElapsed = 0; _wildPage = 0; _wildPages = []; _wildArrowPages.Clear();
         _wildNotice = null; _wildNoticeReturn = null; _wildStatsTotals = false; _wildMenu = "actions"; _wildCursor = 0;_wildMedicineItem=null;
         if (b.Capture is not null) return;
-        if (b.Phase == CampaignBattlePhase.ChooseMove) { if(WildBattleRules.ForcedMoveSlot(b.State.Player) is not null)SelectWildMoveMenu(b); SynchronizeForestTrainerChoice(); return; }
+        if (b.Phase == CampaignBattlePhase.ChooseMove) { if(b.Replacement is null && !ForestTrainerShiftPending && SourceBattleForcedMoveSlot(b) is not null)SelectWildMoveMenu(b); SynchronizeForestTrainerChoice(); return; }
         var pages = ImmutableArray.CreateBuilder<string>();
         void Source(string symbol, params (string Key, string Value)[] values)
         {
@@ -194,6 +195,7 @@ public partial class CampaignView
         {
             if (ForestTrainerEventPages(Source)) { _wildPages = pages.ToImmutable(); return; }
             var current = WildCurrentEvent(b) ?? throw new InvalidDataException("Battle event missing.");
+            if (SourceTrainerEventPages(b, Source, pages)) { _wildPages = pages.ToImmutable(); return; }
             if(current is WildBattleInfatuationBlockedEvent love) Source("sText_PkmnInLove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(love.Side)),("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(love.Source)));
             var forestMessage = FuchsiaRouteWildMessage(current) ?? SnorlaxWildMessage(current) ?? PokemonTowerWildMessage(current) ?? RocketHideoutWildMessage(current) ?? CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
             if (forestMessage is { } message)
@@ -219,7 +221,7 @@ public partial class CampaignView
                 case WildBattleMedicineAppliedEvent medicine:
                     string targetName=_session.State.Party.Single(p=>p.InstanceId==medicine.TargetInstanceId).Nickname;
                     string medicineText=medicine.HpAfter>medicine.HpBefore?"gText_PkmnHPRestoredByVar2":
-                        WildBattleStatus.IsSleeping(medicine.StatusBefore)?"gText_PkmnWokeUp2":medicine.StatusBefore switch
+                        WildBattleStatus.IsSleeping(medicine.StatusBefore)?"gText_PkmnWokeUp2":ForestPresentationStatus(medicine.StatusBefore) switch
                         {WildBattleStatus.Poison=>"gText_PkmnCuredOfPoison",WildBattleStatus.Burn=>"gText_PkmnBurnHealed",WildBattleStatus.Freeze=>"gText_PkmnThawedOut",WildBattleStatus.Paralysis=>"gText_PkmnCuredOfParalysis",_=>throw new InvalidDataException("Unsupported medicine result message.")};
                     Source(medicineText,("STR_VAR_1",targetName),("STR_VAR_2",(medicine.HpAfter-medicine.HpBefore).ToString()));break;
                 case WildBattleRecoilEvent recoil:
@@ -248,6 +250,8 @@ public partial class CampaignView
                 case WildBattleReplacementRequiredEvent: Source("sText_UseNextPkmn"); break;
                 case WildBattlePlayerReplacedEvent: Source("sText_GoPkmn"); break;
                 case WildBattlePlayerSwitchedEvent:
+                    if (SourcePlayerBatonSwitch(b))
+                    { Source(SourceBatonSendOutText(b), ("B_BUFF1", b.OwnedBefore.Nickname)); break; }
                     var change = b.LastSwitch ?? throw new InvalidDataException("Voluntary switch presentation is missing.");
                     Source(change.WithdrawalTextSymbol, ("B_BUFF1", change.Outgoing.Nickname));
                     Source(change.SendOutTextSymbol, ("B_BUFF1", b.OwnedBefore.Nickname));
@@ -292,7 +296,7 @@ public partial class CampaignView
         if(PresentedWildBattle is {Phase:CampaignBattlePhase.Events} fluteBattle && ProcessPokemonTowerFluteBattle(fluteBattle))return;
         if (_wildNotice is null && PresentedWildBattle is { Phase: CampaignBattlePhase.Events } b &&
             _wildPages.IsEmpty && _wildElapsed >= .45 && (WildCurrentEvent(b) is
-                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || SnorlaxSilentEvent(b) || PokemonTowerSilentEvent(b) || CeladonGymSilentEvent(b) || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
+                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || SourceTrainerSilentEvent(b) || SnorlaxSilentEvent(b) || PokemonTowerSilentEvent(b) || CeladonGymSilentEvent(b) || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
     }
     private string WildCommandError() => _lastCommandFault ? "The battle step could not\nbe completed." : _status switch
     {
@@ -399,7 +403,7 @@ public partial class CampaignView
             }
             return true;
         }
-        if(b.Phase==CampaignBattlePhase.ChooseMove && b.Replacement is null && !ForestTrainerShiftPending && WildBattleRules.ForcedMoveSlot(b.State.Player) is {} forced)
+        if(b.Phase==CampaignBattlePhase.ChooseMove && b.Replacement is null && !ForestTrainerShiftPending && SourceBattleForcedMoveSlot(b) is {} forced)
         { SelectWildMoveMenu(b); if(key.Keycode==Key.Enter)ApplyWildChoice(new("battle_move",MoveSlot:forced));return true; }
         if (TryForestTrainerInput(key, b)) return true;
         if (TryCaptureWildInput(key, b)) return true;
@@ -473,7 +477,7 @@ public partial class CampaignView
             return true;
         }
         if (key.Keycode == Key.Backspace) { _wildMenu = "actions"; _wildCursor = 0; return true; }
-        int count = _wildMenu == "actions" ? 4 : WildBattleRules.RequiresStruggle(b.State, WildBattleSide.Player) ? 1 : b.State.Player.Pokemon.Moves.Length;
+        int count = _wildMenu == "actions" ? 4 : SourceBattleRequiresStruggle(b) ? 1 : b.State.Player.Pokemon.Moves.Length;
         if (_wildMenu == "actions" && key.Keycode is Key.Left or Key.Right) _wildCursor ^= 1;
         else if (_wildMenu == "actions" && key.Keycode is Key.Up or Key.Down) _wildCursor ^= 2;
         else if (_wildMenu == "moves" && key.Keycode is Key.Left or Key.Right) { int candidate = _wildCursor ^ 1; if (candidate < count) _wildCursor = candidate; }
@@ -482,10 +486,11 @@ public partial class CampaignView
         {
             if (_wildMenu == "moves")
             {
-                int slot=WildBattleRules.RequiresStruggle(b.State, WildBattleSide.Player)?WildBattleRules.StruggleSlot:_wildCursor;
-                if(!WildBattleRules.IsMoveSelectable(b.State,WildBattleSide.Player,slot))
+                int slot=SourceBattleRequiresStruggle(b)?WildBattleRules.StruggleSlot:_wildCursor;
+                if(!SourceBattleMoveSelectable(b,slot))
                 {
-                    if(Route11SealedMoveNotice(b,slot) is {} sealedNotice) _wildNotice=sealedNotice;
+                    if(SourceBattleSelectionNotice(b,slot) is {} sourceNotice) _wildNotice=string.Join('\n',WildSourcePages(sourceNotice.Symbol,sourceNotice.Values));
+                    else if(Route11SealedMoveNotice(b,slot) is {} sealedNotice) _wildNotice=sealedNotice;
                     else if(b.State.Player.DisabledMove==b.State.Player.Pokemon.Moves[slot].Move)
                     {var message=DisabledMoveMessage(WildBattleSide.Player,b.State.Player.Pokemon.Moves[slot].Move);_wildNotice=string.Join('\n',WildSourcePages(message.Symbol,message.Values));}
                     else _wildNotice="This move has no PP left.";
@@ -564,7 +569,7 @@ public partial class CampaignView
         else
         {
             _battleSkin.DrawMoveMenu(this);
-            if (WildBattleRules.RequiresStruggle(b.State, WildBattleSide.Player)) { SourceText(_battleMoveFont, LabBattleUiSkin.MoveText(0), "STRUGGLE"); _uiCorrections.DrawSelectionCursor(this, true, 0); return; }
+            if (SourceBattleRequiresStruggle(b)) { SourceText(_battleMoveFont, LabBattleUiSkin.MoveText(0), "STRUGGLE"); _uiCorrections.DrawSelectionCursor(this, true, 0); return; }
             var moves = b.State.Player.Pokemon.Moves;
             for (int i = 0; i < 4; i++) SourceText(_battleMoveFont, LabBattleUiSkin.MoveText(i), i < moves.Length ? MoveName(moves[i].Move) : "-");
             _wildCursor = Math.Clamp(_wildCursor, 0, moves.Length - 1);

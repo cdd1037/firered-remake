@@ -1,3 +1,4 @@
+using Game.Domain.Trainers;
 using System.Collections.Immutable;
 using Game.Domain;
 using Game.Domain.Events;
@@ -166,8 +167,9 @@ public sealed partial class CampaignSession
     public const string Route3RulesVersion="fr-route3-campaign-v1";
     public const string Route22RulesVersion="fr-route22-campaign-v1";
     public const string FuchsiaRouteRulesVersion="fr-fuchsia-route-campaign-v1";
+    public const string FuchsiaGymRulesVersion="fr-fuchsia-gym-campaign-v1";
     public const string SnorlaxRulesVersion="fr-snorlax-campaign-v1";
-    public string RulesVersion=>_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
+    public string RulesVersion=>_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
     public CampaignState State=>_commands.State;
@@ -187,6 +189,14 @@ public sealed partial class CampaignSession
     public CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options=null)
     {
         _content=content;options??=new();
+        if(content.FuchsiaGymEnabled)
+        {
+            if(!content.FuchsiaRouteEnabled||content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
+                throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
+            FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
+            FuchsiaGymMachineRules.ValidateCatalog(content.PewterMachines??throw new InvalidDataException("fuchsia_gym_machines_missing"));
+            FuchsiaGymItemRules.ValidateShop(content.EarlyShop??throw new InvalidDataException("fuchsia_gym_items_missing"));
+        }
         if(content.SnorlaxEnabled&&!content.PokemonTowerEnabled)throw new InvalidDataException("snorlax_requires_tower_profile");
         if(content.PokemonTowerEnabled&&!content.RocketHideoutEnabled)throw new InvalidDataException("tower_requires_rocket_profile");
         if(content.RocketHideoutEnabled&&!content.CeladonGymEnabled)throw new InvalidDataException("rocket_hideout_requires_gym_profile");
@@ -278,7 +288,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -527,6 +537,7 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyFuchsiaGymEffect(state,effect,out var fuchsiaGymState)){state=fuchsiaGymState;continue;}
             if(TryApplySnorlaxEffect(state,effect,out var snorlaxState)){state=snorlaxState;continue;}
             if(TryApplyTowerEffect(state,effect,out var towerState)){state=towerState;continue;}
             if(TryApplyNameRaterEffect(state,effect,out var nameRaterState)){state=nameRaterState;continue;}
