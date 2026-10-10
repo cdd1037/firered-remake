@@ -167,7 +167,7 @@ public static class LevelEvolutionRules
         bool staticHeldItem = content.Catalog.Species.Count switch
         {
             40 => owned.HeldItem == "ITEM_ORAN_BERRY",
-            93 => Game.Domain.WildBattle.RockTunnelBattleScope.SupportsHeldItem(owned.HeldItem),
+            93 or 94 => Game.Domain.WildBattle.RockTunnelBattleScope.SupportsHeldItem(owned.HeldItem),
             79 => Game.Domain.WildBattle.Route11BattleScope.SupportsHeldItem(owned.HeldItem),
             73 => Game.Domain.WildBattle.SsAnneBattleScope.SupportsHeldItem(owned.HeldItem),
             70 => Game.Domain.Pokemon.VermilionPickupRules.IsKnownHeldItem(owned.HeldItem),

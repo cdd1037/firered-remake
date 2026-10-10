@@ -1,3 +1,4 @@
+using Game.Domain.WildBattle;
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
@@ -37,7 +38,7 @@ public static class Route22TrainerPartyFactory
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers);
         PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) throw new NotSupportedException("The versioned early-rival Pokemon catalog is required.");
+        if (pokemon.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) throw new NotSupportedException("The versioned early-rival Pokemon catalog is required.");
         if (!trainers.Trainers.TryGetValue(trainerId, out var trainer))
             throw new NotSupportedException("Only the three Route22 early rivals are supported.");
         foreach (var member in trainer.Party)

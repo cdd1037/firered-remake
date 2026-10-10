@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Game.Domain;
 using Game.Domain.Items;
+using Game.Domain.Capture;
 using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
 using System.Text.Json.Serialization;
@@ -10,11 +11,16 @@ public enum CampaignReplacementStage { UseNext,Select }
 public sealed record CampaignWildOrigin(string MetLocation,int MetLevel,string DefaultName);
 public sealed record CampaignPendingCapture(PokemonInstance Pokemon,string HeldItem,uint Status,CampaignWildOrigin Origin,bool FirstCaught,CampaignCaptureStage Stage)
 {
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? Ball{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageAddress? Address{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? MessageSymbol{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int MessagePage{get;init;}
 }
-public sealed record CampaignCapturedPokemon(long InstanceId,string BattleId,int SourceSpeciesId,uint Personality,SixStats Ivs,int MetLevel,string MetLocation);
+public sealed record CampaignCapturedPokemon(long InstanceId,string BattleId,int SourceSpeciesId,uint Personality,SixStats Ivs,int MetLevel,string MetLocation)
+{
+    // Null keeps every historical Poké Ball receipt byte-for-byte compatible.
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? Ball{get;init;}
+}
 
 public sealed partial class CampaignSession
 {
@@ -33,7 +39,9 @@ public sealed partial class CampaignSession
         var b=state.WildBattle!;
         if(!_content.CaptureEnabled||b.Origin is null||state.Exploration!.Captured is null||CaptureCapacityError(state) is not null||b.Capture is not null)throw new InvalidDataException("capture_delivery_context_invalid");
         var opponent=b.State.Opponent;bool first=!state.CaughtSpecies.Contains(opponent.Pokemon.SourceSpeciesId);
-        var pending=new CampaignPendingCapture(opponent.Pokemon,OwnedBattleHeldItem(opponent),opponent.Status,b.Origin,first,first?CampaignCaptureStage.DexNotice:CampaignCaptureStage.NicknameChoice);
+        var ball=b.Events.OfType<WildBattleCaptureResultEvent>().Single(e=>e.Outcome==CaptureOutcome.Caught).Ball;
+        if(ball!=CaptureBall.Poke&&!(ball==CaptureBall.Great&&_content.CeladonApproachEnabled))throw new InvalidDataException("capture_ball_unsupported");
+        var pending=new CampaignPendingCapture(opponent.Pokemon,OwnedBattleHeldItem(opponent),opponent.Status,b.Origin,first,first?CampaignCaptureStage.DexNotice:CampaignCaptureStage.NicknameChoice){Ball=ball==CaptureBall.Great?"ITEM_GREAT_BALL":null};
         return state with{CaughtSpecies=state.CaughtSpecies.Add(opponent.Pokemon.SourceSpeciesId),WildBattle=b with{Capture=pending,Phase=CampaignBattlePhase.Results,Pages=[],PageIndex=0}};
     }
     private Decision<CampaignState> DecideCapture(CampaignState state,CampaignCommand command)
@@ -68,9 +76,9 @@ public sealed partial class CampaignSession
         var b=state.WildBattle!;var c=b.Capture!;var captures=state.Exploration!.Captured!.Value;
         if(CaptureCapacityError(state) is not null||state.NextPokemonId is <2 or long.MaxValue||captures.Any(x=>x.BattleId==b.Id)||state.Exploration.Battles.Any(x=>x.Id==b.Id))throw new InvalidDataException("capture_delivery_already_committed_or_full");
         var pokemon=c.Pokemon with{OriginalTrainerId=state.TrainerId};
-        var owned=new PartyPokemon(state.NextPokemonId,pokemon,nickname,state.PlayerName,state.PlayerGender,2,c.Origin.MetLocation,c.Origin.MetLevel,4,"ITEM_POKE_BALL",c.HeldItem){Status=c.Status};
+        var owned=new PartyPokemon(state.NextPokemonId,pokemon,nickname,state.PlayerName,state.PlayerGender,2,c.Origin.MetLocation,c.Origin.MetLevel,4,c.Ball??"ITEM_POKE_BALL",c.HeldItem){Status=c.Status};
         var error=PokemonStateValidator.ValidateParty(_content.PokemonContent,owned);if(error is not null)throw new InvalidDataException(error);
-        var record=new CampaignCapturedPokemon(owned.InstanceId,b.Id,pokemon.SourceSpeciesId,pokemon.Personality,pokemon.Ivs,c.Origin.MetLevel,c.Origin.MetLocation);
+        var record=new CampaignCapturedPokemon(owned.InstanceId,b.Id,pokemon.SourceSpeciesId,pokemon.Personality,pokemon.Ivs,c.Origin.MetLevel,c.Origin.MetLocation){Ball=c.Ball};
         var history=new CampaignWildHistory(b.Id,pokemon.SourceSpeciesId,pokemon.Level,WildBattleOutcome.Caught,0);
         var received=_content.PokemonStorageEnabled?PokemonStorageRules.Receive(_content.PokemonContent,state.Party,state.Storage!,owned):null;
         if(received is {Succeeded:false})throw new InvalidDataException(received.Diagnostic!.Code);
@@ -126,9 +134,9 @@ public sealed partial class CampaignSession
         var ids=new HashSet<long>();var battles=new HashSet<string>(StringComparer.Ordinal);
         foreach(var capture in captures)
         {
-            if(capture is null||capture.InstanceId<2||!ids.Add(capture.InstanceId)||!battles.Add(capture.BattleId)||!WildOriginSupported(capture.SourceSpeciesId,capture.MetLevel,capture.MetLocation))return "save_capture_provenance_invalid";
+            if(capture is null||capture.InstanceId<2||!ids.Add(capture.InstanceId)||!battles.Add(capture.BattleId)||!WildOriginSupported(capture.SourceSpeciesId,capture.MetLevel,capture.MetLocation)||capture.Ball is not null&&!(capture.Ball=="ITEM_GREAT_BALL"&&_content.CeladonApproachEnabled))return "save_capture_provenance_invalid";
             var owned=allOwned.SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
-            if(owned is null||!EvolutionSpeciesMatchesOrigin(state,owned,capture.SourceSpeciesId)||owned.Pokemon.Personality!=capture.Personality||owned.Pokemon.Ivs!=capture.Ivs||owned.MetLevel!=capture.MetLevel||owned.MetLocation!=capture.MetLocation||owned.Ball!="ITEM_POKE_BALL")return "save_capture_instance_mismatch";
+            if(owned is null||!EvolutionSpeciesMatchesOrigin(state,owned,capture.SourceSpeciesId)||owned.Pokemon.Personality!=capture.Personality||owned.Pokemon.Ivs!=capture.Ivs||owned.MetLevel!=capture.MetLevel||owned.MetLocation!=capture.MetLocation||owned.Ball!=(capture.Ball??"ITEM_POKE_BALL"))return "save_capture_instance_mismatch";
             if(!state.Exploration.Battles.Any(b=>b.Id==capture.BattleId&&b.SourceSpeciesId==capture.SourceSpeciesId&&b.Level==capture.MetLevel&&b.Outcome==WildBattleOutcome.Caught&&b.ExperienceGained==0))return "save_capture_history_missing";
         }
         if(state.Exploration.Battles.Any(b=>b.Outcome==WildBattleOutcome.Caught&&!battles.Contains(b.Id)))return "save_capture_delivery_missing";

@@ -1,3 +1,4 @@
+using Game.Domain.WildBattle;
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
@@ -21,7 +22,7 @@ public static class Route3TrainerPartyFactory
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : 40)) throw new NotSupportedException("The explicit Route3 or MtMoon Pokemon catalog is required.");
+        if (pokemon.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : 40)) throw new NotSupportedException("The explicit Route3 or MtMoon Pokemon catalog is required.");
         if (!trainers.Trainers.TryGetValue(trainerId, out var trainer)) throw new NotSupportedException("Unknown Route3 trainer.");
         foreach (var member in trainer.Party)
             if (!pokemon.Species.TryGetValue(member.Species, out var species) || !Route3TrainerAi.ValidSpecies(species))

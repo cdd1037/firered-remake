@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -39,6 +39,7 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
                     SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
                     sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.CeladonApproachEnabled)Write("celadonApproachAudioCatalog",new{CeladonApproachSynthManifestIdentity.Sha256,CeladonApproachSynthManifestIdentity.CueCount,priorCueCount=268,audibleOutputVerified=false});
                 if(_catalog.RockTunnelEnabled)Write("rockTunnelAudioCatalog",new{RockTunnelSynthManifestIdentity.Sha256,RockTunnelSynthManifestIdentity.CueCount,priorCueCount=253,audibleOutputVerified=false});
                 if(_catalog.Route11Enabled)Write("route11AudioCatalog",new{Route11SynthManifestIdentity.Sha256,
                     count=Route11SynthManifestIdentity.CueCount,oldManifestUnchanged=true,recordedFallback=false,audibleOutputVerified=false});

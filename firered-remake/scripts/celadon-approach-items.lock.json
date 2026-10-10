@@ -1,0 +1,203 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 10506,
+      "gitBlobSha1": "99d4c3303ff38c057e7d9f2c609031cdbecd63bc",
+      "path": "data/maps/CeladonCity/map.json",
+      "sha256": "5d1891d99fdb71875373dbfaec5f3fce8840acb7e8c93beab93bd6baed0fe71c"
+    },
+    {
+      "byteLength": 879,
+      "gitBlobSha1": "6425e5917911d91d5af798eaa316f19de6c3a030",
+      "path": "data/maps/LavenderTown_Mart/scripts.inc",
+      "sha256": "323771243429c1b559bfd5ae41a00525bcd5b0579253ce0ee96da7584201e8d9"
+    },
+    {
+      "byteLength": 1630,
+      "gitBlobSha1": "5539f5b372620dd78e9be90bceba0a8292a985a8",
+      "path": "data/maps/Route7/map.json",
+      "sha256": "d0d7fd8960fa4c16527a07a490370329af5c53ef0f86b320f70d68bf5e63d1da"
+    },
+    {
+      "byteLength": 7847,
+      "gitBlobSha1": "53c017e41959e759ddb1caf3760e9d35ecc7ddef",
+      "path": "data/maps/Route8/map.json",
+      "sha256": "414c45024763d0eecdd4f1e4d25c2ee093f312dc30b40e1260e6e15ea4df6c4c"
+    },
+    {
+      "byteLength": 2622,
+      "gitBlobSha1": "30ca49913d8ae50174a059e59a920b5cd72da31f",
+      "path": "data/maps/UndergroundPath_EastWestTunnel/map.json",
+      "sha256": "8c386780d2c6bd30cfa02a02f586c9b05edb134fa4fff0fc5f9a83471dc4d025"
+    },
+    {
+      "byteLength": 12171,
+      "gitBlobSha1": "25233baa0794d0511f01638676eb4c7803c957e8",
+      "path": "data/scripts/item_ball_scripts.inc",
+      "sha256": "0a660b0eddcecc31cec1a815f343c7e5aea54ac2fb7a54597c2ae38fbbd5d65c"
+    },
+    {
+      "byteLength": 173,
+      "gitBlobSha1": "49a1b20b19ab79e04fabd49fe32e115246b25dda",
+      "path": "graphics/items/icon_palettes/ice_heal.pal",
+      "sha256": "b5442e208f03b4d0c698ea2035d2f0e9ec4c951010abae6889820cf44eb892a8"
+    },
+    {
+      "byteLength": 167,
+      "gitBlobSha1": "ac4934b0563d173941d928b35f210c6cbdd5ae7d",
+      "path": "graphics/items/icon_palettes/leppa_berry.pal",
+      "sha256": "7aae5781300296216953c4da325a38c39df278810a1bd352c66cd1291ecf8d4d"
+    },
+    {
+      "byteLength": 144,
+      "gitBlobSha1": "0dc661882c0b0aa9599051727e7c20ea1e500e0c",
+      "path": "graphics/items/icon_palettes/lum_berry.pal",
+      "sha256": "3952c2f77a97447c00f19016ce9b0e4ba44c5f50ce73908f7d8827201e7d204e"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "89e49377938fdd2c30ea8c42be4265d963ea8b66",
+      "path": "graphics/items/icon_palettes/pp_up.pal",
+      "sha256": "259b3df7e460bea6847bc415f95291405cb62f057a27ddcb72d7ef95d50c3e9c"
+    },
+    {
+      "byteLength": 162,
+      "gitBlobSha1": "df09ffb83c746ff913f0d737f7551d6074808775",
+      "path": "graphics/items/icon_palettes/rawst_berry.pal",
+      "sha256": "f239adbc93cfbe63c7cd868875f3a33e45315fbeb0003879054fc0c27639a979"
+    },
+    {
+      "byteLength": 176,
+      "gitBlobSha1": "c9c489689e753720ee749db77e46177df24ed922",
+      "path": "graphics/items/icon_palettes/super_repel.pal",
+      "sha256": "880706a72d27c128823d0f00408cf20b976331d2278ebe9fd90dd285b5bbb764"
+    },
+    {
+      "byteLength": 144,
+      "gitBlobSha1": "cc4e3ff0169c10bd130e2f10ef838e82aa37148c",
+      "path": "graphics/items/icon_palettes/wepear_berry.pal",
+      "sha256": "0d7e3d744d53453a69d75cfd3ad843c5bceef367e95979b47cdcffccd751ee14"
+    },
+    {
+      "byteLength": 284,
+      "gitBlobSha1": "b7e62df8ac252162b4e10e750bfb9e69713268df",
+      "path": "graphics/items/icons/leppa_berry.png",
+      "sha256": "64441d46c54d180d7c6e1b8ac837f964fb05b1b76def06ad56c5eac609da994d"
+    },
+    {
+      "byteLength": 259,
+      "gitBlobSha1": "33020e55803c9a1767e5d7c357bc528120cd97bb",
+      "path": "graphics/items/icons/lum_berry.png",
+      "sha256": "14e05f4e60b9ea6d792369cac6fb292515eba3f1e3da641ea9bb6ae91e9def66"
+    },
+    {
+      "byteLength": 273,
+      "gitBlobSha1": "d5187efc1c657a8c7160da46ae89b45690815752",
+      "path": "graphics/items/icons/pp_up.png",
+      "sha256": "9630b78bdebe564564f354770d782413814cb2d683254a02e45792ae5dd190a3"
+    },
+    {
+      "byteLength": 300,
+      "gitBlobSha1": "ebe39573767d91ed78d40b45f23222d6f0843363",
+      "path": "graphics/items/icons/rawst_berry.png",
+      "sha256": "d9aec5b98afd2e3d6dbeb37d9bfce562717c068fde2c635fd0716d3f8dc1d738"
+    },
+    {
+      "byteLength": 266,
+      "gitBlobSha1": "a6cb74fc35889fd33ea45cb6a543be4414e060f6",
+      "path": "graphics/items/icons/repel.png",
+      "sha256": "cc87ab37422efb66b2ab468461989ee12d69dda1e707de4a8ab0a55cf231ce41"
+    },
+    {
+      "byteLength": 255,
+      "gitBlobSha1": "205512e4a67c43cf24b7b29b670b9496a08d6543",
+      "path": "graphics/items/icons/status_heal.png",
+      "sha256": "2228793bddee1bd7e48b09fcb5c9d2a6358be40ae02d290eba23948b76cc08c1"
+    },
+    {
+      "byteLength": 272,
+      "gitBlobSha1": "05edc7bf2357f78205ccac5aad8627b8651eb49e",
+      "path": "graphics/items/icons/wepear_berry.png",
+      "sha256": "3df8a7fea511db9e02516db22d0afc78a4f15fe40e753ed01b27e1bc5bdb50c3"
+    },
+    {
+      "byteLength": 3009,
+      "gitBlobSha1": "888cb685362ce4bcedef6204bf1b64ea6fb19c5e",
+      "path": "include/constants/item_effects.h",
+      "sha256": "71075ef690c612f81cb68d5fae62874e39d452208cc1e94890c3973f774fd0f9"
+    },
+    {
+      "byteLength": 12436,
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "path": "include/constants/items.h",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "byteLength": 46353,
+      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
+      "path": "src/data/graphics/items.h",
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+    },
+    {
+      "byteLength": 30370,
+      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
+      "path": "src/data/item_icon_table.h",
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    },
+    {
+      "byteLength": 194280,
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "path": "src/data/items.json",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "byteLength": 1170,
+      "gitBlobSha1": "a389a5c83f1caa1b11cb490c6b03e5b33d359fd1",
+      "path": "src/data/items.json.txt",
+      "sha256": "dfdcaaec0169aee61a443304ed3b19be5880caa39f98259cac87d1d24d7ed1a9"
+    },
+    {
+      "byteLength": 12207,
+      "gitBlobSha1": "db57298b6ceeea0b3605bf3e65aaa9d2d6be1010",
+      "path": "src/data/pokemon/item_effects.h",
+      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25"
+    },
+    {
+      "byteLength": 559340,
+      "gitBlobSha1": "0aa21e85be2f970536c8ed901c556013c16327e5",
+      "path": "src/data/pokemon/tmhm_learnsets.h",
+      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+    },
+    {
+      "byteLength": 17534,
+      "gitBlobSha1": "0587adf7db9feea06275fbe33dc1756adf23759a",
+      "path": "src/item.c",
+      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a"
+    },
+    {
+      "byteLength": 221865,
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
+      "path": "src/pokemon.c",
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "byteLength": 7511,
+      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
+      "path": "tools/gbagfx/convert_png.c",
+      "sha256": "c542d1cffe83516d8b644ec04be507d3fa376231083f03f2001be15152da2965"
+    },
+    {
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "path": "tools/gbagfx/gfx.c",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ],
+  "gameEdition": "FIRERED",
+  "profile": "firered-celadon-approach-items-v1",
+  "repository": "pret/pokefirered",
+  "romRevision": 0,
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

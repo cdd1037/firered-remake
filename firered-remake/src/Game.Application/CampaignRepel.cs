@@ -1,11 +1,15 @@
 using Game.Domain;
 using Game.Domain.Encounters;
+using Game.Domain.Ids;
 using Game.Domain.Items;
 
 namespace Game.Application;
 
 public enum CampaignRepelPhase { UseSound, WoreOff }
-public sealed record CampaignRepel(CampaignRepelPhase Phase, string WaitId);
+public sealed record CampaignRepel(CampaignRepelPhase Phase, string WaitId)
+{
+    public ItemId Item { get; init; } = EarlyRepelRules.Item;
+}
 
 public sealed partial class CampaignSession
 {
@@ -17,19 +21,24 @@ public sealed partial class CampaignSession
         if (state.Repel is not null) return "save_event_active";
         int steps = state.Script.Variables.GetValueOrDefault(RepelCounterVariable);
         if (!_content.RepelEnabled) return steps != 0 ? "save_repel_profile_missing" : null;
-        return steps is < 0 or > EarlyRepelRules.Duration ? "save_repel_counter_invalid" : null;
+        int maximum = _content.CeladonApproachEnabled ? EarlyRepelRules.SuperDuration : EarlyRepelRules.Duration;
+        return steps < 0 || steps > maximum ? "save_repel_counter_invalid" : null;
     }
 
     private Decision<CampaignState> UseFieldRepel(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         if (!_content.RepelEnabled) return No("repel_not_enabled");
-        if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu || command.Text != EarlyRepelRules.Item.Value)
+        if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
+            !(command.Text == EarlyRepelRules.Item.Value ||
+                _content.CeladonApproachEnabled && command.Text == LavenderItemRules.SuperRepelId.Value))
             return No("field_repel_context_invalid");
+        var item = new ItemId(command.Text!);
         var error = ValidateCampaignInventory(state.Inventory);
         if (error is not null) return No(error);
         var use = EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
-            checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field);
+            checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field,
+            item, celadonApproachRules: _content.CeladonApproachEnabled);
         if (!use.Succeeded)
             return use.Error == "repel_effects_lingered"
                 ? new(CommandStatus.Accepted, state with { ItemMenu = menu with { View = "message", MessageSymbol = "gText_RepelEffectsLingered", ReturnView = "bag" } })
@@ -39,7 +48,7 @@ public sealed partial class CampaignSession
         long sequence = checked(state.Script.EffectSequence + 1);
         return new(CommandStatus.Accepted, state with
         {
-            Repel = new(CampaignRepelPhase.UseSound, "repel-use:" + sequence),
+            Repel = new(CampaignRepelPhase.UseSound, "repel-use:" + sequence) { Item = item },
             Script = state.Script with { EffectSequence = sequence },
             PresentationEffects = state.PresentationEffects.Add(new(sequence, "playse", state.World.Player.MapId, ["SE_REPEL"]))
         });
@@ -57,14 +66,15 @@ public sealed partial class CampaignSession
         if (!_content.RepelEnabled || state.ItemMenu is not { Origin: "bag", View: "bag" } menu)
             throw new InvalidDataException("repel_use_wait_context_invalid");
         var use = EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
-            checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field);
+            checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field,
+            repel.Item, celadonApproachRules: _content.CeladonApproachEnabled);
         if (!use.Succeeded) throw new InvalidDataException("repel_use_wait_changed: " + use.Error);
         return new(CommandStatus.Accepted, state with
         {
             Repel = null,
             Inventory = MergeShopInventory(state.Inventory!, use.Inventory),
             Script = state.Script with { Variables = state.Script.Variables.SetItem(RepelCounterVariable, use.Steps) },
-            TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", ShopCatalog.Items.Single(i => i.Id == EarlyRepelRules.Item).Name),
+            TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", ShopCatalog.Items.Single(i => i.Id == repel.Item).Name),
             ItemMenu = menu with { View = "message", MessageSymbol = "gText_PlayerUsedVar2", ReturnView = "bag" },
             PresentationEffects = state.PresentationEffects.RemoveAll(e => e.Opcode == "playse" && e.Args.SequenceEqual(new[] { "SE_REPEL" }))
         });
@@ -74,7 +84,8 @@ public sealed partial class CampaignSession
     {
         if (!_content.RepelEnabled) return state;
         ushort steps = checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable));
-        var step = EarlyRepelRules.AdvanceStep(steps, EncounterCheckTrigger.WalkingStepCompleted);
+        var step = EarlyRepelRules.AdvanceStep(steps, EncounterCheckTrigger.WalkingStepCompleted,
+            celadonApproachRules: _content.CeladonApproachEnabled);
         if (step.Steps == steps) return state; // Keep absent zero absent, including upgraded saves.
         state = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem(RepelCounterVariable, step.Steps) } };
         return step.WoreOff ? state with

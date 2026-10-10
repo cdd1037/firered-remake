@@ -189,7 +189,7 @@ public static class Route22TrainerAi
     {
         route11Rules |= rockTunnelRules;
         if (input is null) return "route22_trainer_ai_input_missing";
-        if (catalog?.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) return "route22_trainer_ai_catalog_scope";
+        if (catalog?.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) return "route22_trainer_ai_catalog_scope";
         if (input.AiFlags != 7) return "route22_trainer_ai_flags_unsupported";
         foreach (var (name, mon) in new[] { ("user", input.User), ("target", input.Target) })
         {

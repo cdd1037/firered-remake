@@ -1,3 +1,4 @@
+using Game.Domain.WildBattle;
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
@@ -28,7 +29,7 @@ public static class MtMoonTrainerPartyFactory
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         ValidateCatalog(trainers);
         PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : 56)) throw new NotSupportedException("MtMoon requires its complete fifty-six-species catalog.");
+        if (pokemon.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : 56)) throw new NotSupportedException("MtMoon requires its complete fifty-six-species catalog.");
         if (!trainers.Trainers.TryGetValue(trainerId, out var trainer)) throw new NotSupportedException("Unknown MtMoon trainer.");
         foreach (var member in trainer.Party)
             if (!pokemon.Species.TryGetValue(member.Species, out var species) || !MtMoonTrainerAi.ValidSpecies(species))

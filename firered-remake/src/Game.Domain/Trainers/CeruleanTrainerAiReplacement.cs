@@ -88,7 +88,7 @@ public static class CeruleanTrainerAiReplacement
     private static string? Validate(PokemonCatalog? catalog, ForestTrainerReplacementInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
     {
         route11Rules |= rockTunnelRules;
-        if (catalog?.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > 4 ||
+        if (catalog?.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > (catalog.Species.Count == 94 && rockTunnelRules ? 6 : 4) ||
             input.FaintedPartyIndex < 0 || input.FaintedPartyIndex >= input.Party.Length || input.FaintedActive is null || input.Target is null)
             return "cerulean_trainer_replacement_input";
         if (input.Party.Any(mon => mon is null || mon.HeldItem != "ITEM_NONE" || mon.AttackBadgeBoost || mon.SpeedBadgeBoost) || input.FaintedActive.HeldItem != "ITEM_NONE")
@@ -108,7 +108,7 @@ public static class CeruleanTrainerAiReplacement
         if (!input.Party.Where((_, i) => i != input.FaintedPartyIndex).Any(x => x.Pokemon.CurrentHp > 0)) return "cerulean_trainer_replacement_no_reserve";
         if (!SupportedParty(catalog, input.Party, billRules: billRules, vermilionRules: vermilionRules, ssAnneRules: ssAnneRules, vermilionGymRules: vermilionGymRules, route11Rules: route11Rules, rockTunnelRules: rockTunnelRules)) return "cerulean_trainer_replacement_party_scope";
         if (input.StaleCurrentMove.Value is not ("pret:MOVE_NONE" or "pret:MOVE_STRUGGLE") &&
-            (!catalog.Moves.TryGetValue(input.StaleCurrentMove, out var move) || !(rockTunnelRules ? RockTunnelBattleScope.ValidDefinition(move) : route11Rules ? Route11BattleScope.ValidDefinition(move) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move) : vermilionRules ? VermilionBattleScope.ValidDefinition(move) : billRules ? BillBattleScope.ValidDefinition(move) : CeruleanBattleScope.ValidDefinition(move))))
+            (!catalog.Moves.TryGetValue(input.StaleCurrentMove, out var move) || !(rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, move) : route11Rules ? Route11BattleScope.ValidDefinition(move) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move) : vermilionRules ? VermilionBattleScope.ValidDefinition(move) : billRules ? BillBattleScope.ValidDefinition(move) : CeruleanBattleScope.ValidDefinition(move))))
             return "cerulean_trainer_replacement_stale_move";
         return null;
     }
@@ -117,6 +117,17 @@ public static class CeruleanTrainerAiReplacement
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         if (party.IsDefaultOrEmpty || party.Any(p => p is null)) return false;
+        if (rockTunnelRules && catalog.Species.Count == 94)
+        {
+            foreach (var id in CeladonApproachTrainerPartyFactory.SupportedTrainers)
+            {
+                if (trainerId is {} selected && selected != id) continue;
+                var e = CeladonApproachTrainerPartyFactory.Expected[id];
+                if (party.Length == e.Party.Length && party.Select(p => p.Pokemon.Species.Value).SequenceEqual(e.Party.Select(p => "pret:SPECIES_" + p.Symbol)) &&
+                    party.All(p => CeladonApproachTrainerPartyFactory.ValidPartyMember(catalog,p.Pokemon,id))) return true;
+            }
+            if (trainerId is {} selectedCeladon && CeladonApproachTrainerPartyFactory.SupportedTrainers.Contains(selectedCeladon)) return false;
+        }
         if (rockTunnelRules)
             foreach (var id in RockTunnelTrainerPartyFactory.SupportedTrainers)
                 if ((trainerId is null || trainerId == id) && party.Length == RockTunnelTrainerPartyFactory.Expected[id].Party.Length &&

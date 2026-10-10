@@ -203,13 +203,30 @@ def test_regional_campaign(name,checkpoint=None,region='Route11'):
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
+ if not args:return output({'commands':['doctor','setup','build','test','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
  if args==['doctor']:return doctor()
  if args==['setup']:return setup()
  if args==['build']:return build()
  if args==['test']:return test()
  if len(args) in (2,3) and args[0] in ('test-route11','test-rocktunnel'):
   return test_regional_campaign(args[1],args[2] if len(args)==3 else None,'RockTunnel' if args[0]=='test-rocktunnel' else 'Route11')
+ if len(args)==2 and args[0]=='test-celadon-approach':
+  return test_regional_campaign(args[1],region='CeladonApproach')
+ if args==['test-celadon-approach-modules']:
+  for module in ['Region','Catalog','Battle']:
+   suite='Game.CeladonApproach'+module+'.Tests'
+   run([DOTNET,'run','--project','tests/'+suite,'--no-build','--',ROOT],suite+'.json')
+  run(['python3','tests/Game.CeladonApproachRegion.Tests/importer-tests.py'],'celadon-approach-import.log')
+  return 0
+ if len(args) in (1,2) and args[0]=='test-celadon-approach-ui':
+  path=args[1] if len(args)==2 else str(ROOT/'tests/Game.RockTunnelCampaignRecovery.Tests/Fixtures/lavender-arrival.json')
+  run(['python3','tests/Game.CeladonApproachUi.Tests/verify_godot.py',path],'celadon-approach-ui.log');return 0
+ if args==['test-celadon-approach-synth']:
+  run([DOTNET,'run','--project','tests/Game.CeladonApproachSynthAudio.Tests','--no-build','--',ROOT],'celadon-approach-synth.json');return 0
+ if len(args)==3 and args[0]=='test-great-ball':
+  run([DOTNET,'run','--project','tests/Game.GreatBallRecovery.Tests','--no-build','--',ROOT,pathlib.Path(args[1]).resolve(),pathlib.Path(args[2]).resolve()],'great-ball-recovery.log');return 0
+ if len(args)==3 and args[0]=='test-super-repel':
+  run([DOTNET,'run','--project','tests/Game.SuperRepelRecovery.Tests','--no-build','--',ROOT,pathlib.Path(args[1]).resolve(),pathlib.Path(args[2]).resolve()],'super-repel-recovery.log');return 0
  if len(args)==2 and args[0]=='test-save-envelope':
   run([DOTNET,'run','--project','tests/Game.SaveEnvelopeIntegrity.Tests','--no-build','--',ROOT,pathlib.Path(args[1]).resolve()],'save-envelope.log');return 0
  if args==['test-rocktunnel-modules']:

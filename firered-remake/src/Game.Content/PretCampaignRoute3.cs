@@ -43,6 +43,14 @@ public sealed partial class PretCampaignCatalog
 
     private FieldActorDefinition CampaignSourceActor(PretWorldMap map,JsonElement source,int index)
     {
+        if(CeladonApproachRegion is {} approach && map.SourceMapSymbol=="MAP_CELADON_CITY" && source.GetProperty("type").GetString()=="clone")
+        {
+            if(source.GetProperty("target_map").GetString()!="MAP_ROUTE16" || source.GetProperty("target_local_id").GetString()!="LOCALID_ROUTE16_CUT_TREE")
+                throw new InvalidDataException("celadon_border_clone_target_differs");
+            var celadonCloneTarget=approach.ExternalRoute16Events.GetProperty("object_events").EnumerateArray().Select((value,i)=>(value,i))
+                .Single(x=>x.value.TryGetProperty("local_id",out var local)&&local.GetString()=="LOCALID_ROUTE16_CUT_TREE");
+            return SourceActor(celadonCloneTarget.value,celadonCloneTarget.i) with{X=source.GetProperty("x").GetInt32(),Y=source.GetProperty("y").GetInt32(),IsClone=true};
+        }
         if(CeruleanRegion is {} cerulean && map.SourceMapSymbol=="MAP_CERULEAN_CITY" && source.GetProperty("type").GetString()=="clone")
         {
             var clone=cerulean.NpcSources.GetProperty("clones").EnumerateArray().Single(c=>c.GetProperty("map").GetString()==map.SourceMapSymbol&&c.GetProperty("localId").GetInt32()==index+1);

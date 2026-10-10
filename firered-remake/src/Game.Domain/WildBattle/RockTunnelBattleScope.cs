@@ -118,6 +118,7 @@ public static class RockTunnelBattleData
         "pret:SPECIES_TENTACRUEL" => 550,
         "pret:SPECIES_VENOMOTH" => 125,
         "pret:SPECIES_VENONAT" => 300,
+        "pret:SPECIES_MUK" => 300,
         "pret:SPECIES_WEEZING" => 95,
         _ => Route11BattleData.WeightHectograms(species)
     };

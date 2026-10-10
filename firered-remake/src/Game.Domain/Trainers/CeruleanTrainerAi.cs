@@ -66,7 +66,7 @@ public static class CeruleanTrainerAi
             {
                 if (!Usable(slot)) continue;
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1)
+                if (move.Power > 1 && !(rockTunnelRules && catalog.Species.Count == 94 && move.Effect == "EFFECT_EXPLOSION"))
                 {
                     int effectiveness = TypeEffectiveness(move.Type, targetSpecies);
                     if (effectiveness == 0) { Score(slot, -10); continue; }
@@ -84,6 +84,15 @@ public static class CeruleanTrainerAi
                 { Score(slot, -10); continue; }
                 switch (move.Effect)
                 {
+                    case "EFFECT_HELPING_HAND" when rockTunnelRules && catalog.Species.Count == 94:
+                        // Source AI_CBM_HelpingHand penalizes Helping Hand in any singles battle.
+                        Score(slot, -10);
+                        break;
+                    case "EFFECT_EXPLOSION" when rockTunnelRules && catalog.Species.Count == 94:
+                        // Source counts living reserves, excluding the active Pokémon on each side.
+                        if (TypeEffectiveness(move.Type,targetSpecies) == 0 || Ability(slot,"explosion-immunity") == "ABILITY_DAMP") { Score(slot,-10); break; }
+                        if (!input.UserHasReserves) Score(slot,input.TargetHasReserves ? -10 : -1);
+                        break;
                     case "EFFECT_MAGNITUDE" when rockTunnelRules:
                         if (Ability(slot,"magnitude-immunity") == "ABILITY_LEVITATE" || TypeEffectiveness(move.Type,targetSpecies) == 0) Score(slot,-10);
                         break;
@@ -341,22 +350,22 @@ public static class CeruleanTrainerAi
         route11Rules |= rockTunnelRules;
         if (input is null) return "cerulean_trainer_ai_input_missing";
         if (input.AiFlags is not (1 or 7)) return "cerulean_trainer_ai_flags_unsupported";
-        if (catalog?.Species.Count != (rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65)) return "cerulean_trainer_ai_catalog_scope";
+        if (catalog?.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65)) return "cerulean_trainer_ai_catalog_scope";
         foreach (var (name, mon) in new[] { ("user", input.User), ("target", input.Target) })
         {
             string? error = ValidateCombatant(catalog, mon, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
             if (error is not null) return "cerulean_trainer_ai_" + name + "_" + error;
             if (mon.Pokemon.CurrentHp == 0) return "cerulean_trainer_ai_" + name + "_fainted";
         }
-        if (!(rockTunnelRules && RockTunnelTrainerPartyFactory.SupportedTrainers.Any(id => RockTunnelTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || route11Rules && Route11TrainerPartyFactory.SupportedTrainers.Any(id => Route11TrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || vermilionGymRules && VermilionGymTrainerPartyFactory.SupportedTrainers.Any(id => VermilionGymTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || ssAnneRules && SsAnneTrainerPartyFactory.SupportedTrainers.Any(id => SsAnneTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || vermilionRules && VermilionTrainerPartyFactory.SupportedTrainers.Any(id => VermilionTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || (billRules ? BillTrainerPartyFactory.SupportedTrainers.Any(id => BillTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || ValidUser(catalog,input.User.Pokemon,input.AiFlags) : ValidUser(catalog,input.User.Pokemon,input.AiFlags))) || input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost || input.User.HeldItem != "ITEM_NONE") return "cerulean_trainer_ai_user_roster";
+        if (!(rockTunnelRules && catalog.Species.Count == 94 && CeladonApproachTrainerPartyFactory.SupportedTrainers.Any(id => CeladonApproachTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || rockTunnelRules && RockTunnelTrainerPartyFactory.SupportedTrainers.Any(id => RockTunnelTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || route11Rules && Route11TrainerPartyFactory.SupportedTrainers.Any(id => Route11TrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || vermilionGymRules && VermilionGymTrainerPartyFactory.SupportedTrainers.Any(id => VermilionGymTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || ssAnneRules && SsAnneTrainerPartyFactory.SupportedTrainers.Any(id => SsAnneTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || vermilionRules && VermilionTrainerPartyFactory.SupportedTrainers.Any(id => VermilionTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || (billRules ? BillTrainerPartyFactory.SupportedTrainers.Any(id => BillTrainerPartyFactory.ValidPartyMember(catalog,input.User.Pokemon,id,input.AiFlags)) || ValidUser(catalog,input.User.Pokemon,input.AiFlags) : ValidUser(catalog,input.User.Pokemon,input.AiFlags))) || input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost || input.User.HeldItem != "ITEM_NONE") return "cerulean_trainer_ai_user_roster";
         foreach (var slot in input.User.Pokemon.Moves)
-            if (!(rockTunnelRules ? RockTunnelBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : route11Rules ? Route11BattleScope.ValidDefinition(catalog.Moves[slot.Move]) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : vermilionRules ? VermilionBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : billRules ? BillBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : CeruleanBattleScope.ValidDefinition(catalog.Moves[slot.Move]))) return "cerulean_trainer_ai_move_definition";
+            if (!(rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, catalog.Moves[slot.Move]) : route11Rules ? Route11BattleScope.ValidDefinition(catalog.Moves[slot.Move]) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : vermilionRules ? VermilionBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : billRules ? BillBattleScope.ValidDefinition(catalog.Moves[slot.Move]) : CeruleanBattleScope.ValidDefinition(catalog.Moves[slot.Move]))) return "cerulean_trainer_ai_move_definition";
         if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? RockTunnelBattleScope.SupportsAbility(known) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : SupportsAbility(known))) return "cerulean_trainer_ai_ability_history";
         return null;
     }
     internal static string? ValidateCombatant(PokemonCatalog? catalog, WildBattleCombatant? mon, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false) =>
         WildBattleRules.ValidateCombatant(catalog!, mon!, "cerulean-ai", true, true, true, true, true, true, true, ceruleanRules: true, billRules: billRules, vermilionRules: vermilionRules, ssAnneRules: ssAnneRules, vermilionGymRules: vermilionGymRules, route11Rules: route11Rules, rockTunnelRules: rockTunnelRules) ??
-        (!(rockTunnelRules ? RockTunnelBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : route11Rules ? Route11BattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon!.Pokemon.Species])) ? "cerulean_ai_species_type_ability" : null);
+        (!(rockTunnelRules ? CeladonApproachBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : route11Rules ? Route11BattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : ssAnneRules ? SsAnneBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : vermilionRules ? VermilionBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : billRules ? BillBattleScope.ValidSpecies(catalog!.Species[mon!.Pokemon.Species]) : ValidSpecies(catalog!.Species[mon!.Pokemon.Species])) ? "cerulean_ai_species_type_ability" : null);
 
     internal static bool ValidUser(PokemonCatalog catalog, PokemonInstance mon, uint? flags = null) =>
         CeruleanTrainerPartyFactory.SupportedTrainers.Any(id => ValidPartyMember(catalog, mon, id, flags));

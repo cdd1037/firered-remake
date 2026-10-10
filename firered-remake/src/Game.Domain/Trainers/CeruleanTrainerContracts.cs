@@ -21,6 +21,8 @@ public sealed record CeruleanTrainerAiInput(WildBattleCombatant User, WildBattle
 {
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
     public bool TargetHasReserves { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool UserHasReserves { get; init; }
 }
 public sealed record CeruleanTrainerAiDecision(TransitionStatus Status, int? MoveSlot, ImmutableArray<int> Scores,
     ImmutableArray<int> SimulatedDamagePercent, RngState Rng, ImmutableArray<RandomTrace> Trace, Diagnostic? Diagnostic)

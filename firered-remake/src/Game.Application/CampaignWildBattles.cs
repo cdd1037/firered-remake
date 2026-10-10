@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Game.Domain;
 using Game.Domain.Encounters;
+using Game.Domain.Capture;
 using Game.Domain.Events;
 using Game.Domain.World;
 using System.Text.Json.Serialization;
@@ -34,7 +35,7 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,WildB
 
 public sealed partial class CampaignSession
 {
-    private string CampaignWildRulesVersion=>_content.RockTunnelEnabled?WildBattleRules.RockTunnelRulesVersion:_content.Route11Enabled?WildBattleRules.Route11RulesVersion:_content.VermilionGymEnabled?WildBattleRules.VermilionGymRulesVersion:_content.SsAnneEnabled?WildBattleRules.SsAnneRulesVersion:_content.VermilionEnabled?WildBattleRules.VermilionRulesVersion:_content.BillEnabled?WildBattleRules.BillRulesVersion:_content.CeruleanEnabled?WildBattleRules.CeruleanRulesVersion:_content.MtMoonEnabled?WildBattleRules.MtMoonRulesVersion:_content.Route3Enabled?WildBattleRules.Route3RulesVersion:_content.Route22Enabled?WildBattleRules.Route22RulesVersion:_content.EarlyPartyEnabled?WildBattleRules.EarlyPartyRulesVersion:_content.EarlyStarterEnabled?WildBattleRules.EarlyStarterRulesVersion:_content.PewterEnabled?WildBattleRules.PewterRulesVersion:_content.ForestEnabled?WildBattleRules.ForestRulesVersion:WildBattleRules.RulesVersion;
+    private string CampaignWildRulesVersion=>_content.CeladonApproachEnabled?WildBattleRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?WildBattleRules.RockTunnelRulesVersion:_content.Route11Enabled?WildBattleRules.Route11RulesVersion:_content.VermilionGymEnabled?WildBattleRules.VermilionGymRulesVersion:_content.SsAnneEnabled?WildBattleRules.SsAnneRulesVersion:_content.VermilionEnabled?WildBattleRules.VermilionRulesVersion:_content.BillEnabled?WildBattleRules.BillRulesVersion:_content.CeruleanEnabled?WildBattleRules.CeruleanRulesVersion:_content.MtMoonEnabled?WildBattleRules.MtMoonRulesVersion:_content.Route3Enabled?WildBattleRules.Route3RulesVersion:_content.Route22Enabled?WildBattleRules.Route22RulesVersion:_content.EarlyPartyEnabled?WildBattleRules.EarlyPartyRulesVersion:_content.EarlyStarterEnabled?WildBattleRules.EarlyStarterRulesVersion:_content.PewterEnabled?WildBattleRules.PewterRulesVersion:_content.ForestEnabled?WildBattleRules.ForestRulesVersion:WildBattleRules.RulesVersion;
     private CampaignState BeginWildBattle(CampaignState state,Route1WildPokemonResult? fishingPokemon=null)
     {
         if(_content.ForestEnabled&&long.MaxValue-Revision<4096)throw new InvalidDataException("wild_battle_command_headroom_required");
@@ -49,7 +50,7 @@ public sealed partial class CampaignSession
         else if(_content.ForestEnabled)
         {
             var early=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");var table=_content.LandEncounters![state.World.Player.MapId];
-            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled);
+            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled);
             generated=new(result.Pokemon,result.GlobalRng,result.RandomTrace);
         }
         else generated=Route1WildPokemonFactory.Generate(BattlePokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
@@ -114,12 +115,28 @@ public sealed partial class CampaignSession
         }
         else if(command.Kind=="battle_ball")
         {
-            if(command.Text is not (null or "pret:ITEM_POKE_BALL"))return new(CommandStatus.Rejected,state,"capture_ball_unsupported");
+            bool great=command.Text=="pret:ITEM_GREAT_BALL"&&_content.CeladonApproachEnabled;
+            if(!great&&command.Text is not (null or "pret:ITEM_POKE_BALL"))return new(CommandStatus.Rejected,state,"capture_ball_unsupported");
             if(!_content.CaptureEnabled||_content.QuestItems is not {} items||state.Inventory is null||!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))return new(CommandStatus.Rejected,state,"capture_not_enabled");
             var capacityError=CaptureCapacityError(state);if(capacityError is not null)return new(CommandStatus.Rejected,state,capacityError);
             if(state.NextPokemonId is <2 or long.MaxValue||long.MaxValue-Revision<256)return new(CommandStatus.Rejected,state,"capture_counter_headroom_required");
-            var spend=QuestChange(items,state.Inventory,QuestItemRules.PokeBallSymbol,1,false);if(!spend.Succeeded)return new(CommandStatus.Rejected,state,"capture_no_poke_ball");
-            capturedInventory=spend.State;turn=WildBattleRules.ResolvePokeBall(BattlePokemon,b.State,reserves);
+            if(great)
+            {
+                var inventoryError=ValidateCampaignInventory(state.Inventory);
+                if(inventoryError is not null)return new(CommandStatus.Rejected,state,inventoryError);
+                var balls=state.Inventory.Balls??[];int index=-1;
+                for(int n=0;n<balls.Length;n++)if(balls[n].Item==SsAnneItemRules.GreatBallId){index=n;break;}
+                if(index<0)return new(CommandStatus.Rejected,state,"capture_no_great_ball");
+                var stack=balls[index];
+                capturedInventory=state.Inventory with{Balls=stack.Quantity==1?balls.RemoveAt(index):balls.SetItem(index,stack with{Quantity=stack.Quantity-1})};
+            }
+            else
+            {
+                var spend=QuestChange(items,state.Inventory,QuestItemRules.PokeBallSymbol,1,false);
+                if(!spend.Succeeded)return new(CommandStatus.Rejected,state,"capture_no_poke_ball");
+                capturedInventory=spend.State;
+            }
+            turn=WildBattleRules.ResolveBall(BattlePokemon,b.State,great?CaptureBall.Great:CaptureBall.Poke,reserves);
         }
         else return new(CommandStatus.Rejected,state,"wild_battle_active");
         if(!turn.Succeeded)return new(CommandStatus.Rejected,state,turn.Fault);
@@ -212,7 +229,7 @@ public sealed partial class CampaignSession
         var trainers=state.BattledTrainers;
         foreach(var stage in new[]{"FIRST","REMATCH"})foreach(var species in new[]{"SQUIRTLE","BULBASAUR","CHARMANDER"})trainers=trainers.Remove("pret:TRAINER_CHAMPION_"+stage+"_"+species);
         int lost=WhiteOutLoss(state);
-        int x=center?7:8,y=center?4:5;var map=_content.MapFromSourceSymbol(center?(state.LastHealingLocation=="HEAL_LOCATION_ROUTE10"?"MAP_ROUTE10_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_VERMILION_CITY"?"MAP_VERMILION_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CERULEAN_CITY"?"MAP_CERULEAN_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE4"?"MAP_ROUTE4_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_PEWTER_CITY"?"MAP_PEWTER_CITY_POKEMON_CENTER_1F":"MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F"):"MAP_PALLET_TOWN_PLAYERS_HOUSE_1F");var tile=_content.Maps[map].GetTile(x,y)??throw new InvalidDataException("whiteout_spawn_missing");
+        int x=center?7:8,y=center?4:5;var map=_content.MapFromSourceSymbol(center?(state.LastHealingLocation=="HEAL_LOCATION_LAVENDER_TOWN"?"MAP_LAVENDER_TOWN_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CELADON_CITY"?"MAP_CELADON_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE10"?"MAP_ROUTE10_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_VERMILION_CITY"?"MAP_VERMILION_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CERULEAN_CITY"?"MAP_CERULEAN_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE4"?"MAP_ROUTE4_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_PEWTER_CITY"?"MAP_PEWTER_CITY_POKEMON_CENTER_1F":"MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F"):"MAP_PALLET_TOWN_PLAYERS_HOUSE_1F");var tile=_content.Maps[map].GetTile(x,y)??throw new InvalidDataException("whiteout_spawn_missing");
         var next=state with{WildBattle=null,Money=state.Money-lost,Party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(BattlePokemon,p)).ToImmutableArray(),BattledTrainers=trainers,
             World=state.World with{Player=new(map,x,y,tile.Elevation,Direction.North)},Script=state.Script with{Flags=flags,Variables=vars},Exploration=ResetEncounterModifiers(state.Exploration!)};
         next=Pump(EnterMap(next,Direction.North));

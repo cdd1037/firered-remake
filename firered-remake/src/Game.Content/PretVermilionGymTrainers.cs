@@ -45,11 +45,11 @@ public static class PretVermilionGymTrainers
         var catalog=new VermilionGymTrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         VermilionGymTrainerPartyFactory.ValidateCatalog(catalog);return catalog;
     }
-    public static PokemonCatalog ExtendPokemon(string root, PokemonCatalog previous, bool route11Rules=false)
+    public static PokemonCatalog ExtendPokemon(string root, PokemonCatalog previous, bool route11Rules=false, bool rockTunnelRules=false, bool celadonApproachRules=false)
     {
         _ = Load(root);
         PokemonFactory.ValidateCatalog(previous);
-        if(previous.Species.Count != (route11Rules?79:73)) throw new InvalidDataException("Gym requires the exact S.S. Anne species scope.");
+        if(previous.Species.Count != (celadonApproachRules?94:rockTunnelRules?93:route11Rules?79:73)) throw new InvalidDataException("Gym requires the exact selected regional species scope.");
         var doc=ReadDocument(root);
         var moves=previous.Moves;
         foreach(var move in doc.Moves)

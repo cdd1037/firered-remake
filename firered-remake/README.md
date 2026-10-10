@@ -4,25 +4,28 @@ Goal: a complete, local single-player recreation of the English original-revisio
 
 ## Current recovered state — 2026-10-10
 
-The playable continuation reaches **Route11, Diglett's Cave, HM05, Route9/10,
-Rock Tunnel and Lavender**, after the third badge, bicycle and Old Rod services.
-Run `bash scripts/launch-current.sh` (equivalent to `launch-rocktunnel.sh`);
-saves are isolated in `.play/rocktunnel`. Exact Route11 saves use the explicit
-`save upgrade-rocktunnel INPUT NEW_OUTPUT` tooling command. Earlier upgrades remain
-profile-specific; saves are never silently relabeled.
+The playable continuation reaches **Lavender, Route8, the east–west underground
+passage, Route7 and Celadon City's Pokémon Center**, after the third badge and
+Rock Tunnel. Run `bash scripts/launch-current.sh` (`launch-celadon-approach.sh`);
+saves are isolated in `.play/celadon-approach`. Exact Rock Tunnel saves use the
+explicit `save upgrade-celadon-approach INPUT NEW_OUTPUT` tooling command.
+Earlier profile launchers and their explicit upgrades remain available.
 
-Fresh recovery verification completed1688 natural public commands /6449 checks,
-focused source/battle/item/service tests, Godot Flash presentation, strict envelope
-rejection and two real window processes saving/continuing the same lit cave state.
-The current profile has98 compact maps,93 species and268 source-synthesis cues.
-See [current verification, commands and boundaries](docs/rocktunnel-recovery-20261010.md).
-Physical audio and a new GBA same-scene comparison are not claimed by this increment.
+Fresh verification completes892 natural public commands/3051 checks, all11
+supported Route8 single trainers and30 opponents, source pickups, natural starter
+evolution, city treatment and save recovery. New Great Ball capture/PC identity,
+Super Repel200 steps, Rawst and Ice Heal are usable. The113-map/94-species profile
+has271 source-synthesis cues. Godot217 checks and two real window processes verify
+Celadon rendering, BGM transition, saving and normal Continue with identical state
+and bytes. See [current checks and boundaries](docs/celadon-approach-recovery-20261010.md).
+Physical audio and a fresh GBA same-scene comparison are not claimed here.
 
-This remains an active complete-FireRed project. Lavender's western route and
-Celadon are next; the earlier sections below retain their original milestone
-scope. The private third-stage Drive recovery point is7401a009. GitHub code-only
-sync and Drive asset-complete checkpoints are separate records; reconstructed
-post-reset increments are freshly verified before becoming new checkpoints.
+The real Route8 Twins still require double-battle implementation; interaction is
+explicitly unavailable and is never converted to a single battle. Celadon Gym,
+city interiors and Rocket hideout are next. This remains an active complete-FireRed
+project. Earlier sections retain their original milestone scope. The asset-complete
+private third-stage Drive recovery point is7401a009; subsequent source-only GitHub
+sync is a separate record. Post-reset increments are freshly verified.
 
 ## Earlier first-badge checkpoint
 

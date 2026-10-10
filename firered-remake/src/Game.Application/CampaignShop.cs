@@ -18,7 +18,7 @@ public sealed partial class CampaignSession
     {
         var catalog = ShopCatalog;
         string map = state.World.Player.MapId.Value;
-        string sourceMap = map switch { "map.vermilion-city-mart" when _content.VermilionEnabled => "VermilionCity_Mart", "map.viridian-mart" => "ViridianCity_Mart", "map.pewter-mart" => "PewterCity_Mart", "map.cerulean-city-mart" when _content.CeruleanEnabled => "CeruleanCity_Mart", _ => throw new InvalidDataException("shop_map_unsupported") };
+        string sourceMap = map switch { "map.lavender-town-mart" when _content.CeladonApproachEnabled => "LavenderTown_Mart", "map.vermilion-city-mart" when _content.VermilionEnabled => "VermilionCity_Mart", "map.viridian-mart" => "ViridianCity_Mart", "map.pewter-mart" => "PewterCity_Mart", "map.cerulean-city-mart" when _content.CeruleanEnabled => "CeruleanCity_Mart", _ => throw new InvalidDataException("shop_map_unsupported") };
         if (effect.Args.Length != 1 || effect.Args[0] != sourceMap + "_Items" ||
             effect.Source.Path != "data/maps/" + sourceMap + "/scripts.inc" ||
             effect.Source.Symbol != sourceMap + "_EventScript_Clerk" || !state.Script.Locked ||

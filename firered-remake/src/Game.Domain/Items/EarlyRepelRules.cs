@@ -11,27 +11,34 @@ public sealed record EarlyRepelUseResult(InventoryState Inventory, ushort Steps,
     int ItemsConsumed, string? Error);
 public sealed record EarlyRepelStepResult(ushort Steps, bool WoreOff);
 
-/// <summary>Explicit REPEL-only extension. Old encounter/item profiles retain their original contracts.</summary>
+/// <summary>Explicit Repel extension; Super Repel requires the Celadon approach opt-in.
+/// Old encounter/item profiles retain their original 100-step contracts.</summary>
 public static class EarlyRepelRules
 {
     public const string SourceCommit = EarlyLandEncounterRules.SourceCommit;
     public const string RulesVersion = "firered-early-kanto-repel-v1";
     public const ushort Duration = 100;
+    public const ushort SuperDuration = 200;
     public static ItemId Item { get; } = new("pret:ITEM_REPEL");
 
     /// <summary>Commit the returned inventory and counter together, after the source use sound completes.
     /// An active effect does not refresh, stack, or consume an item. No battle action is admitted.</summary>
     public static EarlyRepelUseResult Use(EarlyShopCatalog catalog, InventoryState inventory,
-        ushort steps, PotionUseContext context)
+        ushort steps, PotionUseContext context, ItemId? item = null, bool celadonApproachRules = false)
     {
         ArgumentNullException.ThrowIfNull(inventory);
-        ValidateSteps(steps);
+        ValidateSteps(steps, celadonApproachRules);
         EarlyRepelUseResult Fail(string error) => new(inventory, steps, false, 0, error);
         var error = EarlyShopInventoryRules.Validate(catalog, inventory);
         if (error is not null) return Fail(error);
+        if (celadonApproachRules && catalog.Profile != LavenderItemRules.Profile)
+            throw new NotSupportedException("Super Repel rules require the authenticated Lavender item profile.");
         if (context != PotionUseContext.Field) return Fail("repel_field_only");
-        var definition = catalog.Items.Single(i => i.Id == Item);
-        int count = OpeningInventoryRules.Quantity(inventory.BagItems, Item);
+        var selected = item ?? Item;
+        if (selected != Item && !(celadonApproachRules && catalog.Profile == LavenderItemRules.Profile &&
+            selected == LavenderItemRules.SuperRepelId)) return Fail("repel_item_unsupported");
+        var definition = catalog.Items.Single(i => i.Id == selected);
+        int count = OpeningInventoryRules.Quantity(inventory.BagItems, selected);
         if (count == 0) return Fail("repel_not_in_bag");
         if (steps != 0) return Fail("repel_effects_lingered");
         return new(EarlyShopInventoryRules.SetQuantity(inventory, definition, count - 1),
@@ -44,9 +51,9 @@ public static class EarlyRepelRules
     /// and preempts the entire encounter check, including cooldown/RNG, on that final step.</summary>
     public static EarlyRepelStepResult AdvanceStep(ushort steps, EncounterCheckTrigger trigger,
         bool forcedMovement = false, bool forcedMovementTile = false,
-        bool inUnionRoom = false, bool questLogPlayback = false)
+        bool inUnionRoom = false, bool questLogPlayback = false, bool celadonApproachRules = false)
     {
-        ValidateSteps(steps);
+        ValidateSteps(steps, celadonApproachRules);
         if (!Enum.IsDefined(trigger)) throw new NotSupportedException("Unknown field step trigger.");
         if (trigger != EncounterCheckTrigger.WalkingStepCompleted || forcedMovement || forcedMovementTile ||
             inUnionRoom || questLogPlayback || steps == 0)
@@ -57,9 +64,10 @@ public static class EarlyRepelRules
 
     /// <summary>Source order is party order, skipping zero HP and eggs; equality is permitted.
     /// This projection does not enable egg gameplay or change the authoritative party validator.</summary>
-    public static bool IsWildLevelAllowed(ushort steps, int wildLevel, ImmutableArray<EarlyRepelPartyMember> party)
+    public static bool IsWildLevelAllowed(ushort steps, int wildLevel, ImmutableArray<EarlyRepelPartyMember> party,
+        bool celadonApproachRules = false)
     {
-        ValidateSteps(steps);
+        ValidateSteps(steps, celadonApproachRules);
         if (wildLevel is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(wildLevel));
         ValidateParty(party);
         if (steps == 0) return true;
@@ -76,13 +84,14 @@ public static class EarlyRepelRules
         ImmutableArray<EarlyRepelPartyMember> party, RngState globalRng)
     {
         ArgumentNullException.ThrowIfNull(profile);
-        ValidateSteps(profile.RepelSteps);
+        bool celadonApproachRules = profile.RulesVersion == EarlyLandEncounterRules.CeladonApproachRulesVersion;
+        ValidateSteps(profile.RepelSteps, celadonApproachRules);
         ValidateParty(party);
         var result = EarlyLandEncounterRules.Check(state, table, check, profile with { RepelSteps = 0 }, globalRng);
         if (profile.RepelSteps == 0) return result;
         if (result.Outcome == EncounterCheckOutcome.RateMiss)
             return result with { State = result.State with { EncounterRateBuff = 0 } };
-        if (result.Candidate is null || IsWildLevelAllowed(profile.RepelSteps, result.Candidate.Level, party))
+        if (result.Candidate is null || IsWildLevelAllowed(profile.RepelSteps, result.Candidate.Level, party, celadonApproachRules))
             return result;
         return result with
         {
@@ -92,9 +101,12 @@ public static class EarlyRepelRules
         };
     }
 
-    public static void ValidateSteps(ushort steps)
+    public static void ValidateSteps(ushort steps, bool celadonApproachRules = false)
     {
-        if (steps > Duration) throw new NotSupportedException("Only the 100-step REPEL is admitted by this profile.");
+        if (steps > (celadonApproachRules ? SuperDuration : Duration))
+            throw new NotSupportedException(celadonApproachRules
+                ? "Only REPEL and the 200-step SUPER REPEL are admitted by this profile."
+                : "Only the 100-step REPEL is admitted by this profile.");
     }
 
     private static void ValidateParty(ImmutableArray<EarlyRepelPartyMember> party)

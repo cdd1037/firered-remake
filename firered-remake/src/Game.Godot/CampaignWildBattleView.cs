@@ -19,7 +19,7 @@ public partial class CampaignView
     private readonly Dictionary<string,Texture2D> _cityBattleScenes = [];
     private Texture2D WildBattleTerrainForMap(MapId mapId)
     {
-        if (_catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
+        if (_catalog.CeladonApproachRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
         {
             if (mapId.Value is "map.rock-tunnel-1f" or "map.rock-tunnel-b1f" or "map.digletts-cave-south-entrance" or "map.digletts-cave-b1f" or "map.digletts-cave-north-entrance")
                 return _mtMoonTerrain ?? throw new InvalidDataException("Diglett cave terrain was not loaded.");
@@ -214,7 +214,7 @@ public partial class CampaignView
                     string targetName=_session.State.Party.Single(p=>p.InstanceId==medicine.TargetInstanceId).Nickname;
                     string medicineText=medicine.HpAfter>medicine.HpBefore?"gText_PkmnHPRestoredByVar2":
                         WildBattleStatus.IsSleeping(medicine.StatusBefore)?"gText_PkmnWokeUp2":medicine.StatusBefore switch
-                        {WildBattleStatus.Poison=>"gText_PkmnCuredOfPoison",WildBattleStatus.Burn=>"gText_PkmnBurnHealed",WildBattleStatus.Paralysis=>"gText_PkmnCuredOfParalysis",_=>throw new InvalidDataException("Unsupported medicine result message.")};
+                        {WildBattleStatus.Poison=>"gText_PkmnCuredOfPoison",WildBattleStatus.Burn=>"gText_PkmnBurnHealed",WildBattleStatus.Freeze=>"gText_PkmnThawedOut",WildBattleStatus.Paralysis=>"gText_PkmnCuredOfParalysis",_=>throw new InvalidDataException("Unsupported medicine result message.")};
                     Source(medicineText,("STR_VAR_1",targetName),("STR_VAR_2",(medicine.HpAfter-medicine.HpBefore).ToString()));break;
                 case WildBattleRecoilEvent recoil:
                     Source("sText_PkmnHitWithRecoil", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(recoil.Actor))); break;
@@ -228,8 +228,8 @@ public partial class CampaignView
                 case WildBattleFaintedEvent fainted:
                     Source("sText_TargetFainted", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(fainted.Side))); break;
                 case WildBattleRunAttemptEvent run: Source(run.Escaped ? "sText_GotAwaySafely" : "sText_CantEscape"); break;
-                case WildBattleBallThrownEvent:
-                    Source("sText_PlayerUsedItem", ("B_LAST_ITEM", "POKé BALL")); break;
+                case WildBattleBallThrownEvent thrown:
+                    Source("sText_PlayerUsedItem", ("B_LAST_ITEM", CaptureBallName(thrown.Ball))); break;
                 case WildBattleCaptureResultEvent captured:
                     // Source animation code 4 is three-shake success. These are committed
                     // result pages, not an invented four-shake animation or another roll.
@@ -308,7 +308,7 @@ public partial class CampaignView
         "capture_no_poke_ball" or "capture_ball_not_in_bag" or "ball_not_in_bag" or "poke_ball_not_in_bag" => "There are no POKé BALLS\nin the BAG.",
         "storage_full" => PcText("gText_BoxFull"),
         "storage_delivery_unsupported" => "Your party has six POKéMON.\nPC delivery is not available yet.",
-        "capture_profile_unsupported" or "capture_not_enabled" or "capture_ball_unsupported" or "wild_capture_unsupported" => "This capture is not supported.\nNo POKé BALL was used.",
+        "capture_profile_unsupported" or "capture_not_enabled" or "capture_ball_unsupported" or "wild_capture_unsupported" => "This capture is not supported.\nNo BALL was used.",
         "replacement_member_invalid" or "wild_replacement_fainted" or "wild_replacement_invalid" or "wild_replacement_target_invalid" => "Choose a living POKéMON\nthat is not already in battle.",
         "nickname_length" => "Use a name of up to\n10 characters.",
         "nickname_character_unsupported" => "That character is not\navailable in this game.",

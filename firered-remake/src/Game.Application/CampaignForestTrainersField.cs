@@ -16,7 +16,7 @@ public sealed partial class CampaignSession
 
     private CampaignState CheckForestTrainerSight(CampaignState state)
     {
-        if (!_content.ForestTrainersEnabled || state.World.Player.MapId.Value != "map.viridian-forest" && !(_content.PewterEnabled && state.World.Player.MapId.Value == "map.pewter-gym") && !(_content.VermilionGymEnabled && state.World.Player.MapId.Value == "map.vermilion-city-gym") && !(_content.Route11Enabled && state.World.Player.MapId.Value == "map.route-11") && !(_content.RockTunnelEnabled && state.World.Player.MapId.Value is "map.route-9" or "map.route-10" or "map.rock-tunnel-1f" or "map.rock-tunnel-b1f") && !(_content.Route3Enabled && state.World.Player.MapId.Value == "map.route-3") && !(_content.MtMoonEnabled && state.World.Player.MapId.Value.StartsWith("map.mt-moon-",StringComparison.Ordinal)) && !(_content.CeruleanEnabled&&state.World.Player.MapId.Value=="map.cerulean-city-gym") && !(_content.BillEnabled&&state.World.Player.MapId.Value is "map.route-24" or "map.route-25") && !(_content.VermilionEnabled&&state.World.Player.MapId.Value=="map.route-6") && !(_content.SsAnneEnabled&&state.World.Player.MapId.Value.StartsWith("map.ssanne-",StringComparison.Ordinal)) ||
+        if (!_content.ForestTrainersEnabled || state.World.Player.MapId.Value != "map.viridian-forest" && !(_content.PewterEnabled && state.World.Player.MapId.Value == "map.pewter-gym") && !(_content.VermilionGymEnabled && state.World.Player.MapId.Value == "map.vermilion-city-gym") && !(_content.Route11Enabled && state.World.Player.MapId.Value == "map.route-11") && !(_content.CeladonApproachEnabled && state.World.Player.MapId.Value=="map.route-8") && !(_content.RockTunnelEnabled && state.World.Player.MapId.Value is "map.route-9" or "map.route-10" or "map.rock-tunnel-1f" or "map.rock-tunnel-b1f") && !(_content.Route3Enabled && state.World.Player.MapId.Value == "map.route-3") && !(_content.MtMoonEnabled && state.World.Player.MapId.Value.StartsWith("map.mt-moon-",StringComparison.Ordinal)) && !(_content.CeruleanEnabled&&state.World.Player.MapId.Value=="map.cerulean-city-gym") && !(_content.BillEnabled&&state.World.Player.MapId.Value is "map.route-24" or "map.route-25") && !(_content.VermilionEnabled&&state.World.Player.MapId.Value=="map.route-6") && !(_content.SsAnneEnabled&&state.World.Player.MapId.Value.StartsWith("map.ssanne-",StringComparison.Ordinal)) ||
             !state.Script.Completed || state.Script.Wait is not null || state.Dialogue is not null ||
             state.ForestTrainerBattle is not null || state.WildBattle is not null || state.FieldPoison is not null) return state;
         var definitions = _content.MapDefinition(state.World.Player.MapId).Actors.ToDictionary(a => a.LocalId);
@@ -27,6 +27,11 @@ public sealed partial class CampaignSession
         {
             var actor = state.Actors[id]; var definition = definitions[id];
             if (!actor.Active || definition.TrainerType != "TRAINER_TYPE_NORMAL") continue;
+            // These source actors dispatch trainerbattle_double. They are deliberately
+            // absent from the single-battle registry; merely entering the object window
+            // must not fault unrelated walking. Direct interaction reports the explicit
+            // unsupported double-battle boundary until that executor is implemented.
+            if (_content.CeladonApproachEnabled && actor.ScriptId is "Route8_EventScript_Eli" or "Route8_EventScript_Anne") continue;
             var battle = OrdinaryTrainerScripts.SingleOrDefault(b => b.ScriptEntry == actor.ScriptId);
             if (battle is null) throw new InvalidDataException("forest_trainer_actor_definition_missing");
             if (state.BattledTrainers.Contains(battle.Trainer.Value)) continue;

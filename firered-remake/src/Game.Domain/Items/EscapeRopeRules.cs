@@ -92,8 +92,8 @@ public static class EscapeRopeRules
         if (error is not null) return Fail(error);
         if (context != PotionUseContext.Field) return Fail("escape_rope_field_only");
         if (!IsSupportedMap(currentMap, route11Rules, rockTunnelRules)) return Fail("escape_rope_map_not_allowed");
-        if (IsRockMap(currentMap) && catalog.Profile != RockTunnelItemRules.Profile ||
-            IsDiglettMap(currentMap) && catalog.Profile is not (Route11ItemRules.Profile or RockTunnelItemRules.Profile))
+        if (IsRockMap(currentMap) && catalog.Profile is not (RockTunnelItemRules.Profile or LavenderItemRules.Profile) ||
+            IsDiglettMap(currentMap) && catalog.Profile is not (Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile))
             return Fail("escape_rope_map_not_allowed");
         if (destination is null) return Fail("escape_rope_destination_missing");
         if (ValidateDestination(destination, route11Rules, rockTunnelRules) is { } invalid) return Fail(invalid);
