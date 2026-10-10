@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "treeSha1": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "scope": "Escape Rope: three Mt. Moon floors and Viridian Forest; exact Route4 and Route2 entrance destinations.",
+  "rights": "Local source audit only. Fixed blobs read as data; no upstream code execution, ROM or publication.",
+  "files": [
+    {
+      "path": "data/layouts/Route2/map.bin",
+      "gitBlobSha1": "1d093f92b2f33e63630bdd88878071bd6474025f",
+      "byteLength": 3840,
+      "sha256": "1c52f8da946a9a9546a30215181d83f81d144d2a0e989077a80b796fc44579a9",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/Route2/map.bin"
+    },
+    {
+      "path": "data/layouts/Route4/map.bin",
+      "gitBlobSha1": "447d87b5cd71550faa272e8a9aa9bc35cacf51b6",
+      "byteLength": 4320,
+      "sha256": "a7e4cc45bac2c77de409b513140c717acb1809c2f15d3cfd51d7eb4566705560",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/Route4/map.bin"
+    },
+    {
+      "path": "data/layouts/layouts.json",
+      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
+      "byteLength": 158096,
+      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/layouts/layouts.json"
+    },
+    {
+      "path": "data/maps/MtMoon_1F/map.json",
+      "gitBlobSha1": "500184fa2c0da6f95acc8985a82097ef70566ed1",
+      "byteLength": 7060,
+      "sha256": "312b2de23d9942d3326da9fe9597b25ef7c3537bcedfcafa7922d5c8b8e8d8fc",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/MtMoon_1F/map.json"
+    },
+    {
+      "path": "data/maps/MtMoon_B1F/map.json",
+      "gitBlobSha1": "96472b9c287eab2a097f279c324299cfca3b97b1",
+      "byteLength": 2954,
+      "sha256": "f654d2cbc3983a0e0d161f7d4505d855aa7f06f7f614cdcc116ba029e275d36d",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/MtMoon_B1F/map.json"
+    },
+    {
+      "path": "data/maps/MtMoon_B2F/map.json",
+      "gitBlobSha1": "f1e0129d27370f9fb7b34722e3e66a60ecb3c0c1",
+      "byteLength": 6507,
+      "sha256": "451a05df92c5df570c121affa75c846996d3561c12e7e5d67d91814482a37ff3",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/MtMoon_B2F/map.json"
+    },
+    {
+      "path": "data/maps/Route2/map.json",
+      "gitBlobSha1": "3f232d8d16b4a96ec74b41a28a0ec401c38a2ba8",
+      "byteLength": 5182,
+      "sha256": "2562e3736b600c95b8c0a4c2a1bb3fb062f5c50208bebc43cd4303328ccda7ea",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/Route2/map.json"
+    },
+    {
+      "path": "data/maps/Route2_ViridianForest_NorthEntrance/map.json",
+      "gitBlobSha1": "f0b7393b210ae5f272851356237b62da506859d3",
+      "byteLength": 2382,
+      "sha256": "8404cb80094b615571abb1332e65fa9b88f7331810b8d317b268b5f53caaf008",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/Route2_ViridianForest_NorthEntrance/map.json"
+    },
+    {
+      "path": "data/maps/Route2_ViridianForest_SouthEntrance/map.json",
+      "gitBlobSha1": "4f5a7fb05996819c621ec744b5835c5bc666efa5",
+      "byteLength": 1923,
+      "sha256": "e00af0f21d008868ed5b9b183e38d86e8b516c0d4d632abe527b5bb96a32d655",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/Route2_ViridianForest_SouthEntrance/map.json"
+    },
+    {
+      "path": "data/maps/Route4/map.json",
+      "gitBlobSha1": "9d00b28b6bb9f2cc113bae97d31542b0ed82da8c",
+      "byteLength": 4770,
+      "sha256": "5b0b84cb73ecc6597470d01d5933ca36d5e4410cdda53dddb72922689e5653ac",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/Route4/map.json"
+    },
+    {
+      "path": "data/maps/ViridianForest/map.json",
+      "gitBlobSha1": "2d42aab09f10146a10d1ff02e8e30beb19407417",
+      "byteLength": 7739,
+      "sha256": "6d6f082604d3c220eeb2c72cb6a606403330df44c58d9ed2523cd81c53fdaba2",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/ViridianForest/map.json"
+    },
+    {
+      "path": "data/tilesets/primary/general/metatile_attributes.bin",
+      "gitBlobSha1": "45f6f352ef262d9c34b0f3e5ff379d9fc6b5eee6",
+      "byteLength": 2560,
+      "sha256": "1f62a949da41adca90ad36ca3597754bee953a8f21781f32aedf6158922c89cb",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/tilesets/primary/general/metatile_attributes.bin"
+    },
+    {
+      "path": "include/constants/global.h",
+      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
+      "byteLength": 3785,
+      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/global.h"
+    },
+    {
+      "path": "include/constants/items.h",
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "byteLength": 12436,
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/items.h"
+    },
+    {
+      "path": "include/global.h",
+      "gitBlobSha1": "77155b09014aa854fcf87260e6ad2969e222da53",
+      "byteLength": 25663,
+      "sha256": "044325b90e7c79146cc0cf73d31b6be3e4840059e2e778b63d9b5448fe538429",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/global.h"
+    },
+    {
+      "path": "src/data/items.json",
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "byteLength": 194280,
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/items.json"
+    },
+    {
+      "path": "src/field_control_avatar.c",
+      "gitBlobSha1": "b1b6465941133b927505be92d189a7c283e4722f",
+      "byteLength": 40928,
+      "sha256": "305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/field_control_avatar.c"
+    },
+    {
+      "path": "src/field_effect.c",
+      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be",
+      "byteLength": 125868,
+      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/field_effect.c"
+    },
+    {
+      "path": "src/item_use.c",
+      "gitBlobSha1": "954f4821d469a342865875f4e36cd1abec91409f",
+      "byteLength": 28138,
+      "sha256": "035ca3bdb70f5708dc8771d2bc6cc5450e775e3144278e7683aacba218cb9c98",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/item_use.c"
+    },
+    {
+      "path": "src/overworld.c",
+      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
+      "byteLength": 103643,
+      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/overworld.c"
+    },
+    {
+      "path": "src/strings.c",
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
+      "byteLength": 96631,
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/strings.c"
+    }
+  ]
+}

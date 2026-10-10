@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "profile": "firered-repel-audio-qoa48-v1",
+  "source": {
+    "repository": "pret/pokefirered",
+    "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+    "romSha1": "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc"
+  },
+  "sourceFiles": [
+    {
+      "path": "sound/songs/midi/se_repel.mid",
+      "byteLength": 96,
+      "sha256": "4f1cb6a3e9d5c4141b084d9301336fdd9f1cb904188165c7c017c38591e12d2e",
+      "gitBlobSha1": "c84b176cb94e636ff752f963a4d8e3547277b5c1"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "byteLength": 9204,
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+    },
+    {
+      "path": "sound/songs/midi/midi.cfg",
+      "byteLength": 20338,
+      "sha256": "49b3a0b5a2809ccd8b504da3bedfb0f5168afd073b94ef6c10a3904e1ea62560",
+      "gitBlobSha1": "71a968f7b52eb1ed005695c7c97aec856cfeb980"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "byteLength": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+    }
+  ],
+  "studyFiles": [
+    {
+      "path": "manifest.json",
+      "byteLength": 970213,
+      "sha256": "545523faab56c15b1a388aebfbf285958e439c7a160c303bab3d597eda1d038d"
+    },
+    {
+      "path": "inventory.json",
+      "byteLength": 1142993,
+      "sha256": "26598ab2d5f1d67d2925f02d3570c1a6e1323a2814f773bd0077069f18d926c0"
+    },
+    {
+      "path": "results/SE_REPEL.json",
+      "byteLength": 1053,
+      "sha256": "44459d781d69a989cf0bc1d1b837efc2b7c1ca7ed52c47ceeb7c92e7a2d1bbef"
+    },
+    {
+      "path": "traces/SE_REPEL.csv",
+      "byteLength": 15620,
+      "sha256": "245943cdbd49e9f60f6b7e637603726b956e20e29413f4c8ebcfc37fd0ec3918"
+    },
+    {
+      "path": "run_study.py",
+      "byteLength": 6262,
+      "sha256": "978d1f800f52ffeab7b2a00979bbb61d944a99cecbeeed19e7ba6a48eb60f792"
+    },
+    {
+      "path": "encode_qoa.gd",
+      "byteLength": 522,
+      "sha256": "d6c333e7e5de9bc96c38b10301fa57f131b89635288ac6dd6ae62ade7ab1fbae"
+    },
+    {
+      "path": "assets/SE_REPEL.qoa",
+      "byteLength": 9984,
+      "sha256": "a09661a54a686f836ca05962ec17c2ae697d3012de5455202538882d8ab07c4d"
+    }
+  ],
+  "song": {
+    "id": "SE_REPEL",
+    "songId": 41,
+    "asmSymbol": "se_repel",
+    "sourcePath": "sound/songs/midi/se_repel.mid",
+    "player": 1,
+    "priority": 4,
+    "reverb": 178,
+    "trackCount": 1,
+    "mid2agbOptions": "-E -R50 -G127 -V090 -P4"
+  },
+  "renderer": {
+    "name": "mGBA-0.10.5-original-FireRed-rev0-m4a-offline-v1",
+    "sourceSha256": "a8267d4ff5244c688f7a22a82a684134f9b731f066cd8ee122718be06a98db7f",
+    "binarySha256": "3d158c1301984157a724f37418ea12a6caadbcba2bd9a2b83955d4f15daff0fb"
+  },
+  "delivery": {
+    "codec": "qoa",
+    "encoder": "Godot 4.6.3-stable official AudioStreamWAV QOA",
+    "sampleRate": 48000,
+    "channels": 1,
+    "logicalFrameCount": 24632,
+    "sourcePcmSha256": "8dc901dd7d77093b949b6531d7d0b89f2cd5fa7e6ed5d0479c12f8544df4d0e2",
+    "sourceSequenceStoppedVBlank": 27,
+    "loopStartFrame": null,
+    "loopEndFrame": null,
+    "sourceEnergyAbove12kHzPercent": 19.530189995773792,
+    "resampled": false,
+    "normalized": false,
+    "losslessToSourceChannel": false,
+    "audibleOutputVerified": false,
+    "originalScriptWaitVerified": false
+  },
+  "limitations": [
+    "Source PCM hash authenticates the study mono PCM before lossy encoding; it does not authenticate decoded QOA.",
+    "The source sequencer first stopped at VBlank 27; 24632 frames include rendered release and 10 ms tail and are not an exact source script wait.",
+    "Original offline mono capture does not reproduce all simultaneous m4a channel/reverb interactions.",
+    "Hardware listening and original script timing acceptance remain unverified."
+  ]
+}

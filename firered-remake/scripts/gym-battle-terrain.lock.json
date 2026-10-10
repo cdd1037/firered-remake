@@ -1,0 +1,99 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 14605,
+      "gitBlobSha1": "8b454dbd18eb0069fa5851d788697190890a5b37",
+      "path": "Makefile",
+      "sha256": "51960ea72311e53c272ebcc5b481021efba52fcc7db7f0ded4bfcebaf8bbdf47",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/Makefile"
+    },
+    {
+      "byteLength": 2955,
+      "gitBlobSha1": "8bb783973cc2db86871ba14e65871ec26708452a",
+      "path": "data/maps/CeruleanCity_Gym/map.json",
+      "sha256": "9f3810130c8ebb39285389f53f23c2c6f5d71d34ee2438beffa9cb9a2d230495",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/CeruleanCity_Gym/map.json"
+    },
+    {
+      "byteLength": 2514,
+      "gitBlobSha1": "5ecb2eb7c74cf0a960a9fa748ce2e3b1a200d57a",
+      "path": "data/maps/PewterCity_Gym/map.json",
+      "sha256": "097c4a35212ef28a7fae2974ee4ce5e3d87dbc1f9ad7c3b1aceacacaed65ad10",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/PewterCity_Gym/map.json"
+    },
+    {
+      "byteLength": 4096,
+      "gitBlobSha1": "0710427da9da44534ea120d1e752aa97d9200fb5",
+      "path": "graphics/battle_terrain/building/terrain.bin",
+      "sha256": "b3aa7db1dd6d4973b20f4934dc1215b7c442228414b145fe5de7014778d5aef0",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_terrain/building/terrain.bin"
+    },
+    {
+      "byteLength": 706,
+      "gitBlobSha1": "3b060be4e60081f2d952476e68798ba0978b9f49",
+      "path": "graphics/battle_terrain/building/terrain.png",
+      "sha256": "af7a79f684b7f656926ba7727f1b48e30af2bf196131a0805db6fdc37beb2d42",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_terrain/building/terrain.png"
+    },
+    {
+      "byteLength": 515,
+      "gitBlobSha1": "187054476cdb0acb41f99e7157b6cc0b11dc0785",
+      "path": "graphics/battle_terrain/indoor/gym.pal",
+      "sha256": "67795e9f45509893d4995922d78aa092a8152e1d17b8bd5b0ba700bc7824a638",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_terrain/indoor/gym.pal"
+    },
+    {
+      "byteLength": 515,
+      "gitBlobSha1": "581b6d5966eeaa8bdea4cb757faa6a6e3b03eb23",
+      "path": "graphics/battle_terrain/indoor/leader.pal",
+      "sha256": "b5f122d0e3e707409de38f372b75571d0678503ee51ac971b9d59224d1eab00a",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_terrain/indoor/leader.pal"
+    },
+    {
+      "byteLength": 14859,
+      "gitBlobSha1": "39b952cd45b6a34eb98318a76aa531fcafff134d",
+      "path": "graphics_file_rules.mk",
+      "sha256": "bd56e518ab9527f844642230673ce27a5bae73c7208d917d3288b073859fb685",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics_file_rules.mk"
+    },
+    {
+      "byteLength": 16440,
+      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
+      "path": "include/constants/battle.h",
+      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/battle.h"
+    },
+    {
+      "byteLength": 39359,
+      "gitBlobSha1": "3bcc500805622febd3892580da14f65ea2746a6f",
+      "path": "src/battle_bg.c",
+      "sha256": "9e608837b0f13ba6782d8f3d4f2590ee273b5c7fb8b6275514c89cd780b474f0",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_bg.c"
+    },
+    {
+      "byteLength": 171904,
+      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
+      "path": "src/battle_main.c",
+      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_main.c"
+    },
+    {
+      "byteLength": 7511,
+      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
+      "path": "tools/gbagfx/convert_png.c",
+      "sha256": "c542d1cffe83516d8b644ec04be507d3fa376231083f03f2001be15152da2965",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/tools/gbagfx/convert_png.c"
+    },
+    {
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "path": "tools/gbagfx/gfx.c",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/tools/gbagfx/gfx.c"
+    }
+  ],
+  "profile": "firered-gym-battle-terrain-static-v1",
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1
+}

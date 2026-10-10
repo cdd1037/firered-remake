@@ -1,0 +1,200 @@
+using System.Collections.Immutable;
+using Game.Domain.Growth;
+using Game.Domain.Ids;
+using Game.Domain.Rules;
+using Game.Domain.WildBattle;
+
+namespace Game.Domain.Pokemon;
+
+/// <summary>
+/// Pure validation of persisted, non-egg state in the imported starter/Route 1 families. Returns the first stable error code,
+/// or null. This validates represented state, not whether a battle, TM, trade or item action exists.
+/// Catalog authenticity and loading remain the composition/content layer's responsibility.
+/// </summary>
+public static class PokemonStateValidator
+{
+    // Each character is one byte in the pinned English source charmap. This is not a UTF-8 byte limit.
+    // naming_screen.c:378-397; global.h:63-64; charmap.txt:67-145 (037335f4c725d7c9aecdac87066f2002b4bd7e14).
+    public const string NicknameAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?/-♂♀…“”‘'";
+
+    /// <summary>
+    /// General instance invariants: injury/fainting, partial XP, EVs, changed friendship, depleted PP,
+    /// PP Ups and any distinct imported moves are valid. Initial learnsets are NOT a legality test:
+    /// a later move choice, TM or evolution can retain moves absent from this level's initial set.
+    /// </summary>
+    public static string? Validate(PokemonCatalog? catalog, PokemonInstance? pokemon)
+    {
+        var catalogError = ValidateCatalog(catalog);
+        if (catalogError is not null) return catalogError;
+        return ValidateInstance(catalog!, pokemon);
+    }
+
+    /// <summary>
+    /// General ownership invariants in the current English-keyboard, non-egg profile. Source language
+    /// and game IDs, and the twelve Gen III balls, are recognized. Only standalone poison, burn and
+    /// paralysis status1 values are represented; the explicit early-starter content also admits sleep counters1–5. Freeze, toxic, eggs and attached mail remain
+    /// unsupported; injury/zero HP are supported. Met-location/held-item symbols get
+    /// syntax validation only: the current content contract has no complete location/item catalog.
+    /// Call ValidateLocalStarterGift for the exact locally implemented gift checkpoint instead.
+    /// </summary>
+    public static string? ValidateParty(CampaignPokemonContent? content, PartyPokemon? owned)
+    {
+        var contentError = ValidateContent(content);
+        if (contentError is not null) return contentError;
+        if (owned is null) return "party_pokemon_missing";
+        if (owned.InstanceId <= 0) return "party_instance_id";
+        var instanceError = ValidateInstance(content!.Catalog, owned.Pokemon);
+        if (instanceError is not null) return instanceError;
+        if (!ValidName(owned.Nickname, 10)) return "party_nickname";
+        if (!ValidName(owned.OriginalTrainerName, 7)) return "party_original_trainer_name";
+        if (owned.OriginalTrainerGender is not (0 or 1)) return "party_original_trainer_gender";
+        // 6 is explicitly unused in the pinned source language list.
+        if (owned.Language is not (1 or 2 or 3 or 4 or 5 or 7)) return "party_language";
+        if (!ValidSymbol(owned.MetLocation, "MAPSEC_")) return "party_met_location";
+        // Zero can describe a previously hatched/traded creature; this does not add an egg mechanic.
+        if (owned.MetLevel < 0 || owned.MetLevel > owned.Pokemon.Level) return "party_met_level";
+        // These are the named values in pinned include/constants/global.h. No unknown 4-bit IDs.
+        if (owned.MetGame is not (1 or 2 or 3 or 4 or 5 or 7 or 8 or 10 or 11 or 12 or 15)) return "party_met_game";
+        if (owned.Ball is not ("ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL" or "ITEM_GREAT_BALL" or
+            "ITEM_POKE_BALL" or "ITEM_SAFARI_BALL" or "ITEM_NET_BALL" or "ITEM_DIVE_BALL" or
+            "ITEM_NEST_BALL" or "ITEM_REPEAT_BALL" or "ITEM_TIMER_BALL" or "ITEM_LUXURY_BALL" or "ITEM_PREMIER_BALL"))
+            return "party_ball";
+        if (!ValidSymbol(owned.HeldItem, "ITEM_")) return "party_held_item";
+        if (owned.Mail != 255) return "party_mail_unsupported";
+        if (!WildBattleStatus.IsSupported(owned.Status,content.AllowSleepStatus,content.AllowFreezeStatus)) return "party_status_unsupported";
+        if (owned.IsEgg) return "party_egg_unsupported";
+        return null;
+    }
+
+    /// <summary>Party container invariants, including allocated entity IDs. An empty party is valid.</summary>
+    public static string? ValidatePartyCollection(CampaignPokemonContent? content, ImmutableArray<PartyPokemon> party,
+        long nextInstanceId)
+    {
+        var contentError = ValidateContent(content);
+        if (contentError is not null) return contentError;
+        if (party.IsDefault || party.Length > 6) return "party_count";
+        if (nextInstanceId <= 0) return "party_next_instance_id";
+        var ids = new HashSet<long>();
+        foreach (var owned in party)
+        {
+            var error = ValidateParty(content, owned);
+            if (error is not null) return error;
+            if (!ids.Add(owned.InstanceId)) return "party_duplicate_instance_id";
+            if (owned.InstanceId >= nextInstanceId) return "party_next_instance_id";
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Exact current first-starter checkpoint, before battles/progression exist. This deliberately
+    /// requires a healthy newborn and local OT/met data. Never substitute it for general validation
+    /// once the campaign can alter HP, experience, EVs, friendship, moves, items or ownership.
+    /// Nickname may already have been changed through the source keyboard.
+    /// </summary>
+    public static string? ValidateLocalStarterGift(CampaignPokemonContent? content, PartyPokemon? owned,
+        uint expectedTrainerId, string expectedTrainerName, int expectedTrainerGender)
+    {
+        var error = ValidateParty(content, owned);
+        if (error is not null) return error;
+        if (!ValidName(expectedTrainerName, 7)) return "gift_expected_trainer_name";
+        if (expectedTrainerGender is not (0 or 1)) return "gift_expected_trainer_gender";
+        var p = owned!.Pokemon;
+        if (p.SourceSpeciesId is not (1 or 4 or 7)) return "gift_species";
+        if (p.Level != 5 || p.Experience != 135) return "gift_level_experience";
+        if (p.OriginalTrainerId != expectedTrainerId || owned.OriginalTrainerName != expectedTrainerName ||
+            owned.OriginalTrainerGender != expectedTrainerGender) return "gift_original_trainer";
+        if (owned.Language != 2) return "gift_language";
+        if (owned.MetLocation != "MAPSEC_PALLET_TOWN" || owned.MetLevel != 5 || owned.MetGame != 4)
+            return "gift_met_data";
+        if (owned.Ball != "ITEM_POKE_BALL" || owned.HeldItem != "ITEM_NONE") return "gift_item_data";
+        if (p.Evs != SixStats.Zero) return "gift_evs";
+        if (p.CurrentHp != p.Stats.MaxHp) return "gift_hp";
+        if (owned.Status != 0) return "gift_status";
+        var species = content!.Catalog.Species[p.Species];
+        if (p.Friendship != species.Friendship) return "gift_friendship";
+        var initialMoves = PokemonMoveRules.InitialMoves(content.Catalog, species, 5);
+        if (!p.Moves.SequenceEqual(initialMoves)) return "gift_moves";
+        return null;
+    }
+
+    private static string? ValidateInstance(PokemonCatalog catalog, PokemonInstance? p)
+    {
+        if (p is null) return "pokemon_missing";
+        if (!ValidSymbol(p.Species.Value, "pret:SPECIES_") || !catalog.Species.TryGetValue(p.Species, out var species))
+            return "pokemon_species";
+        if (p.SourceSpeciesId != species.SourceSpeciesId) return "pokemon_source_species_id";
+        if (p.Level is < 1 or > 100) return "pokemon_level";
+        uint minimum = GrowthRules.ExperienceAtLevel(species.GrowthRate, p.Level);
+        uint maximum = GrowthRules.ExperienceAtLevel(species.GrowthRate, 100);
+        if (p.Experience < minimum || p.Experience > maximum ||
+            (p.Level < 100 && p.Experience >= GrowthRules.ExperienceAtLevel(species.GrowthRate, p.Level + 1)))
+            return "pokemon_experience";
+        if (!Enum.IsDefined(p.Nature) || p.Nature != (Nature)(p.Personality % 25)) return "pokemon_nature";
+        if (p.Ivs is null || p.Ivs.Values.Any(x => x is < 0 or > 31)) return "pokemon_ivs";
+        if (p.Evs is null || p.Evs.Values.Any(x => x is < 0 or > 255) || p.Evs.Values.Sum() > 510) return "pokemon_evs";
+        var statEvs = p.StatCalculationEvs ?? p.Evs;
+        if (statEvs.Values.Any(x => x is < 0 or > 255) || statEvs.Values.Sum() > 510 ||
+            statEvs.Values.Where((value, index) => value > p.Evs.Values[index]).Any())
+            return "pokemon_stat_calculation_evs";
+        var b = species.BaseStats;
+        int Other(int baseValue, int iv, int ev, Stat stat) => StatRules.CalculateOther(baseValue, iv, ev, p.Level, p.Nature, stat);
+        var expected = new BattleStats(StatRules.CalculateHp(b.Hp, p.Ivs.Hp, statEvs.Hp, p.Level),
+            Other(b.Attack, p.Ivs.Attack, statEvs.Attack, Stat.Attack),
+            Other(b.Defense, p.Ivs.Defense, statEvs.Defense, Stat.Defense),
+            Other(b.SpecialAttack, p.Ivs.SpecialAttack, statEvs.SpecialAttack, Stat.SpecialAttack),
+            Other(b.SpecialDefense, p.Ivs.SpecialDefense, statEvs.SpecialDefense, Stat.SpecialDefense),
+            Other(b.Speed, p.Ivs.Speed, statEvs.Speed, Stat.Speed));
+        if (p.Stats != expected) return "pokemon_stats";
+        if (p.CurrentHp < 0 || p.CurrentHp > expected.MaxHp) return "pokemon_hp";
+        if (!Enum.IsDefined(p.Gender) || p.Gender != PokemonFactory.GenderFromPersonality(species.GenderRatio, p.Personality))
+            return "pokemon_gender";
+        int abilitySlot = species.Ability2 == "ABILITY_NONE" ? 0 : (int)(p.Personality & 1);
+        if (p.AbilitySlot != abilitySlot || p.AbilityId != (abilitySlot == 0 ? species.Ability1 : species.Ability2))
+            return "pokemon_ability";
+        if (p.Friendship is < 0 or > 255) return "pokemon_friendship";
+        if (p.Moves.IsDefaultOrEmpty || p.Moves.Length > 4) return "pokemon_move_count";
+        var seen = new HashSet<MoveId>();
+        foreach (var slot in p.Moves)
+        {
+            if (slot is null) return "pokemon_move_missing";
+            if (!ValidSymbol(slot.Move.Value, "pret:MOVE_") || !catalog.Moves.TryGetValue(slot.Move, out var move))
+                return "pokemon_move_id";
+            if (!seen.Add(slot.Move)) return "pokemon_move_duplicate";
+            if (slot.PpUps is < 0 or > 3) return "pokemon_move_pp_ups";
+            // src/pokemon.c:3898-3902: basePP + basePP * 20 * bonus / 100, integer floor.
+            int maximumPp = move.Pp + move.Pp * 20 * slot.PpUps / 100;
+            if (slot.MaximumPp != maximumPp) return "pokemon_move_maximum_pp";
+            if (slot.CurrentPp < 0 || slot.CurrentPp > maximumPp) return "pokemon_move_current_pp";
+        }
+        return null;
+    }
+
+    private static string? ValidateCatalog(PokemonCatalog? catalog)
+    {
+        if (catalog is null) return "pokemon_catalog_missing";
+        try { PokemonFactory.ValidateCatalog(catalog); }
+        catch (ArgumentException) { return "pokemon_catalog_invalid"; }
+        catch (NotSupportedException) { return "pokemon_catalog_unsupported"; }
+        return null;
+    }
+
+    private static string? ValidateContent(CampaignPokemonContent? content)
+    {
+        if (content is null) return "pokemon_content_missing";
+        var error = ValidateCatalog(content.Catalog);
+        if (error is not null) return error;
+        if (content.NicknameCharacters is null || content.NicknameCharacters.Length != NicknameAlphabet.Length ||
+            !content.NicknameCharacters.ToHashSet().SetEquals(NicknameAlphabet)) return "pokemon_nickname_alphabet";
+        if (content.SpeciesNames is null || content.SpeciesNames.Count != content.Catalog.Species.Count ||
+            content.Catalog.Species.Values.Any(s => !content.SpeciesNames.TryGetValue(s.SourceSpeciesId, out var name) || !ValidName(name, 10)))
+            return "pokemon_species_names";
+        return null;
+    }
+
+    private static bool ValidName(string? value, int maximumBytes) => !string.IsNullOrEmpty(value) &&
+        value.Length <= maximumBytes && value.Any(c => c != ' ') && value.All(NicknameAlphabet.Contains);
+
+    private static bool ValidSymbol(string? value, string prefix) => value is not null && value.Length <= 128 &&
+        value.StartsWith(prefix, StringComparison.Ordinal) && value.Length > prefix.Length &&
+        value[prefix.Length..].All(c => char.IsAsciiLetterUpper(c) || char.IsAsciiDigit(c) || c == '_');
+}

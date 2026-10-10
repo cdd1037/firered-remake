@@ -1,0 +1,12 @@
+{
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/battle_scripts_2.s",
+      "byteLength": 6616,
+      "gitBlobSha1": "6f41e3ce138c9276bdef763e1a659b37124ae768",
+      "sha256": "83e1211907cc9a21cd1d94e65a065af5abf683d4e88e7ee690e78faf40651133"
+    }
+  ]
+}

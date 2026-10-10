@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "profile": "firered-starter-showmonpic-static-v1",
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "gameEdition": "FIRERED",
+  "romRevision": 0,
+  "rights": "Local reference research only; original game art is not cleared for redistribution.",
+  "files": [
+    {
+      "path": "Makefile",
+      "byteLength": 14605,
+      "gitBlobSha1": "8b454dbd18eb0069fa5851d788697190890a5b37",
+      "sha256": "51960ea72311e53c272ebcc5b481021efba52fcc7db7f0ded4bfcebaf8bbdf47",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/Makefile"
+    },
+    {
+      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
+      "byteLength": 47604,
+      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987",
+      "sha256": "ed6e02fdd179af05159f27288ef9b5226ce7917c03ae54e8fb8d83c853fc311d",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/data/maps/PalletTown_ProfessorOaksLab/scripts.inc"
+    },
+    {
+      "path": "graphics/pokemon/bulbasaur/front.png",
+      "byteLength": 558,
+      "gitBlobSha1": "e23eaeeb6430b6aecb030bdc4a4c9211f52f04e4",
+      "sha256": "523c5d50a673c3a46a68a96bd32a63fcfae9192637fb6407198a43746c38f7e3",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/pokemon/bulbasaur/front.png"
+    },
+    {
+      "path": "graphics/pokemon/bulbasaur/normal.pal",
+      "byteLength": 190,
+      "gitBlobSha1": "cc333bed389c70e65f2ed298f66b2e869caf2606",
+      "sha256": "77bb91fcdfd9f8144a7a1a9d4c436af38c53374641bc542375456a967db132e6",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/pokemon/bulbasaur/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/charmander/front.png",
+      "byteLength": 566,
+      "gitBlobSha1": "7235c104f932207f0fd140fdfcb30f63ee67add8",
+      "sha256": "0235fcad1ca309f303947ae1688d7564636971c30a0c707b6ee123e697f76022",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/pokemon/charmander/front.png"
+    },
+    {
+      "path": "graphics/pokemon/charmander/normal.pal",
+      "byteLength": 190,
+      "gitBlobSha1": "223adef4cfd24908b0d10aae94eeb1e00472471c",
+      "sha256": "36c6417eb7e1bc9fa0ed7f4d0e4fa79a2f1bf49bf55ee8266fae950efeaf1940",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/pokemon/charmander/normal.pal"
+    },
+    {
+      "path": "graphics/pokemon/squirtle/front.png",
+      "byteLength": 543,
+      "gitBlobSha1": "c494d47e33a58297a9e3e98ee85bf0a9e76fde5a",
+      "sha256": "30d6413a70495a23d4af23a941bae57f5373f7b6fec1e05eb8ef78a0636898bc",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/pokemon/squirtle/front.png"
+    },
+    {
+      "path": "graphics/pokemon/squirtle/normal.pal",
+      "byteLength": 193,
+      "gitBlobSha1": "4cc9f28e8a7c73397ab24483008fdae132f6eda4",
+      "sha256": "dcee2dee811ff0f8b58ad318a5c974e214148133e9ab6f5d029292feffe3fd7d",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/pokemon/squirtle/normal.pal"
+    },
+    {
+      "path": "include/constants/pokemon.h",
+      "byteLength": 10894,
+      "gitBlobSha1": "21c678744f21693825a0c03bb73efa77a256af8b",
+      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/pokemon.h"
+    },
+    {
+      "path": "include/constants/species.h",
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/species.h"
+    },
+    {
+      "path": "include/pokemon.h",
+      "byteLength": 16352,
+      "gitBlobSha1": "414dc41767295aed38f299e8495c5e2f8d25ddc9",
+      "sha256": "a6881fee07ae10f57ebf3ec7af1cabd2e900d8ba8d3da644313c087d16e1617e",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/pokemon.h"
+    },
+    {
+      "path": "src/data.c",
+      "byteLength": 8769,
+      "gitBlobSha1": "498f281b48ca9bbbcba32a9200e981316a3d54bf",
+      "sha256": "e1efcc8e6bde1c187fe51dafb0bdb8dbdc5ae3761c44f6488f4f42dbf19a71f9",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data.c"
+    },
+    {
+      "path": "src/data/graphics/pokemon.h",
+      "byteLength": 214609,
+      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
+      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/graphics/pokemon.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
+      "byteLength": 44879,
+      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036",
+      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/pokemon_graphics/front_pic_coordinates.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/front_pic_table.h",
+      "byteLength": 23065,
+      "gitBlobSha1": "82af860d3006c8ca1c1d4c58ac35fb33e1ad025b",
+      "sha256": "dab5014e227693ec6e3cc06ff2fcca1f4abafc748e09c705d10788f43aa21f4b",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/pokemon_graphics/front_pic_table.h"
+    },
+    {
+      "path": "src/data/pokemon_graphics/palette_table.h",
+      "byteLength": 21253,
+      "gitBlobSha1": "35edcc76c13bf5b2b87f93a39e4f1c07099cb273",
+      "sha256": "52ef57ca9828f2ef5e5908191b76d5486add0fa0aad63433b0e7cea3c9c74704",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/pokemon_graphics/palette_table.h"
+    },
+    {
+      "path": "src/decompress.c",
+      "byteLength": 11157,
+      "gitBlobSha1": "f4740f917ed9ae7e0fd967107e1e63733bb8c66a",
+      "sha256": "f190145b3948c1c22213e1a540f261aba89592ed9f30b6d13fa25b78ac417c7f",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/decompress.c"
+    },
+    {
+      "path": "src/field_effect.c",
+      "byteLength": 125868,
+      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be",
+      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/field_effect.c"
+    },
+    {
+      "path": "src/pokemon.c",
+      "byteLength": 221865,
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/pokemon.c"
+    },
+    {
+      "path": "src/script_menu.c",
+      "byteLength": 44041,
+      "gitBlobSha1": "41eebd86e76e195f6dd14157994ee10c9fa3ce0a",
+      "sha256": "7b4771c440fd45f4c7c375308d45cc1bc88eba30c6c7ff9c634f838cf2bebad8",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/script_menu.c"
+    },
+    {
+      "path": "src/trainer_pokemon_sprites.c",
+      "byteLength": 9331,
+      "gitBlobSha1": "a6622d8fc915b209881560f7e2d6e17d6eab6759",
+      "sha256": "efbb56754bf17ef3cf418ff00779782f8c45995bc835d061d99a1005e2802ffe",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/trainer_pokemon_sprites.c"
+    },
+    {
+      "path": "tools/gbagfx/convert_png.c",
+      "byteLength": 7511,
+      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
+      "sha256": "c542d1cffe83516d8b644ec04be507d3fa376231083f03f2001be15152da2965",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/tools/gbagfx/convert_png.c"
+    },
+    {
+      "path": "tools/gbagfx/gfx.c",
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/tools/gbagfx/gfx.c"
+    }
+  ]
+}

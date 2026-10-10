@@ -1,0 +1,42 @@
+**/bin/
+**/obj/
+**/.godot/
+.tools/
+.toolhome/
+exports/
+content/raw/
+*.user
+
+# Local-only reference renderings and copyrighted game inputs
+content/generated/
+src/Game.Godot/Assets/Reference/
+
+# Local-only source-map screenshots
+evidence/pallet-*.png
+
+# Local-only reference story screenshots
+evidence/story-*.png
+
+# Local runtime traces include complete source dialogue text
+evidence/story-*.jsonl
+evidence/story-window.log
+
+**/__pycache__/
+
+# Local-only starter reference captures and source-text traces
+evidence/starter-*.png
+evidence/starter-*.jsonl
+
+# Validated native player-save checkpoints for local QA only
+evidence/local-checkpoints/
+
+# Local-only native battle source-text traces and image captures
+evidence/lab-battle-*.jsonl
+evidence/lab-battle-*.png
+
+# Native source-fidelity captures and full dialogue traces stay local
+evidence/source-*.png
+evidence/source-*.jsonl
+.play/
+evidence/pewter-play/
+tests/Game.EarlyStarterCampaign.Tests/evidence/

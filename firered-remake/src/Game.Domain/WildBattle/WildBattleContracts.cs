@@ -1,0 +1,264 @@
+using System.Collections.Immutable;
+using System.Text.Json.Serialization;
+using Game.Domain.Capture;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
+using Game.Domain.Randomness;
+
+namespace Game.Domain.WildBattle;
+
+public enum WildBattleSide { Player, Opponent }
+public enum WildBattleOutcome { Ongoing = 0, Won = 1, Lost = 2, Draw = 3, Escaped = 4, Caught = 5 }
+public enum WildBattleOrderPhase { Entry, Actions, EndTurn }
+public enum WildBattleStat { Attack, Defense, Accuracy, Speed, Evasion, SpecialAttack, SpecialDefense }
+public enum WildBattleEffectiveness { NoEffect, NotVeryEffective, SuperEffective }
+
+public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStage = 6, int DefenseStage = 6,
+    int AccuracyStage = 6, int EvasionStage = 6, int SpeedStage = 6,
+    string HeldItem = "ITEM_NONE", uint Status = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DefenseCurled = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int BindTurnsRemaining = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool AttackBadgeBoost = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] WildBattleSide? LeechSeedSource = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ConfusionTurnsRemaining = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FocusEnergy = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Flinched = false)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool SpeedBadgeBoost { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SpecialAttackStageDelta { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SpecialDefenseStageDelta { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int ChargeTurnsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int EncoreTurnsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? EncoreMoveSlot { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? EncoredMove { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int RampageTurnsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? RampageMoveSlot { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Rage { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Imprison { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool FlashFireBoost { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool WaterSport { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool MudSport { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Minimized { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? LastLandedMove { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? LastHitBy { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? LastUsedMove { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? DisabledMove { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int DisableTurnsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int RolloutTurnsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? RolloutMoveSlot { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? InfatuationSource { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? DigMoveSlot { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? BindingMove { get; init; }
+}
+public sealed record WildBattleState(WildBattleCombatant Player, WildBattleCombatant Opponent,
+    int Turn, long Revision, long EventSequence, RngState Rng, ushort RandomTurnNumber,
+    WildBattleOutcome Outcome, int RunAttempts = 0, string RulesVersion = WildBattleRules.RulesVersion,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool AwaitingReplacement = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? ForestPlayerMoveSlot = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? ForestOpponentMoveSlot = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool ForestResidualsFinished = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTerrain? Terrain { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int RainTurnsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int PayDayMoney { get; init; }
+}
+
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildBattlePayDayEvent), "pay-day")]
+[JsonDerivedType(typeof(WildBattleStartedEvent), "started")]
+[JsonDerivedType(typeof(WildBattleOrderEvent), "order")]
+[JsonDerivedType(typeof(WildBattleMoveUsedEvent), "move-used")]
+[JsonDerivedType(typeof(WildBattleMoveMissedEvent), "move-missed")]
+[JsonDerivedType(typeof(WildBattleHpChangedEvent), "hp-changed")]
+[JsonDerivedType(typeof(WildBattlePotionRecoveredEvent), "potion-recovered")]
+[JsonDerivedType(typeof(WildBattleMedicineAppliedEvent), "medicine-applied")]
+[JsonDerivedType(typeof(WildBattleRecoilEvent), "recoil")]
+[JsonDerivedType(typeof(WildBattleCriticalHitEvent), "critical-hit")]
+[JsonDerivedType(typeof(WildBattleStatChangedEvent), "stat-changed")]
+[JsonDerivedType(typeof(WildBattleStatAtMinimumEvent), "stat-at-minimum")]
+[JsonDerivedType(typeof(WildBattleAbilityPreventedEvent), "ability-prevented")]
+[JsonDerivedType(typeof(WildBattleFaintedEvent), "fainted")]
+[JsonDerivedType(typeof(WildBattleEndedEvent), "ended")]
+[JsonDerivedType(typeof(WildBattleTurnReadyEvent), "turn-ready")]
+[JsonDerivedType(typeof(WildBattleRunAttemptEvent), "run-attempt")]
+[JsonDerivedType(typeof(WildBattleBallThrownEvent), "ball-thrown")]
+[JsonDerivedType(typeof(WildBattleCaptureResultEvent), "capture-result")]
+[JsonDerivedType(typeof(WildBattleReplacementRequiredEvent), "replacement-required")]
+[JsonDerivedType(typeof(WildBattlePlayerReplacedEvent), "player-replaced")]
+[JsonDerivedType(typeof(WildBattlePlayerSwitchedEvent), "player-switched")]
+[JsonDerivedType(typeof(WildBattleStatusChangedEvent), "status-changed")]
+[JsonDerivedType(typeof(WildBattleStatusDamageEvent), "status-damage")]
+[JsonDerivedType(typeof(WildBattleActionBlockedEvent), "action-blocked")]
+[JsonDerivedType(typeof(WildBattleStatAtMaximumEvent), "stat-at-maximum")]
+[JsonDerivedType(typeof(WildBattleBindingChangedEvent), "binding-changed")]
+[JsonDerivedType(typeof(WildBattleBindingDamageEvent), "binding-damage")]
+[JsonDerivedType(typeof(WildBattleDefenseCurledEvent), "defense-curled")]
+[JsonDerivedType(typeof(WildBattleEffectivenessEvent), "effectiveness")]
+[JsonDerivedType(typeof(WildBattleMoveFailedEvent), "move-failed")]
+[JsonDerivedType(typeof(WildBattleLeechSeedChangedEvent), "leech-seed-changed")]
+[JsonDerivedType(typeof(WildBattleLeechSeedDrainEvent), "leech-seed-drain")]
+[JsonDerivedType(typeof(WildBattleConfusionChangedEvent), "confusion-changed")]
+[JsonDerivedType(typeof(WildBattleConfusionSelfHitEvent), "confusion-self-hit")]
+[JsonDerivedType(typeof(WildBattleFocusEnergyEvent), "focus-energy")]
+[JsonDerivedType(typeof(WildBattleFlinchEvent), "flinch")]
+[JsonDerivedType(typeof(WildBattleMultiHitEvent), "multi-hit")]
+[JsonDerivedType(typeof(WildBattleForcedOutEvent), "forced-out")]
+[JsonDerivedType(typeof(WildBattlePursuitInterceptedEvent), "pursuit-intercepted")]
+[JsonDerivedType(typeof(WildBattleDisableChangedEvent), "disable-changed")]
+[JsonDerivedType(typeof(WildBattleRolloutChangedEvent), "rollout-changed")]
+[JsonDerivedType(typeof(WildBattleInfatuationChangedEvent), "infatuation-changed")]
+[JsonDerivedType(typeof(WildBattleInfatuationBlockedEvent), "infatuation-blocked")]
+[JsonDerivedType(typeof(WildBattleAbilityActivatedEvent), "ability-activated")]
+[JsonDerivedType(typeof(WildBattleHeldItemConsumedEvent), "held-item-consumed")]
+[JsonDerivedType(typeof(WildBattleMtMoonVolatileEvent), "mtmoon-volatile")]
+[JsonDerivedType(typeof(WildBattleEncoreChangedEvent), "encore-changed")]
+[JsonDerivedType(typeof(WildBattleDrainEvent), "drain")]
+[JsonDerivedType(typeof(WildBattleRecoveredEvent), "recovered")]
+[JsonDerivedType(typeof(WildBattleMagnitudeEvent), "magnitude")]
+[JsonDerivedType(typeof(WildBattleSelfDestructEvent), "self-destruct")]
+[JsonDerivedType(typeof(WildBattleHeldItemStolenEvent), "held-item-stolen")]
+public abstract record WildBattleEvent(long Sequence, int Turn);
+public sealed record WildBattleStartedEvent(long Sequence, int Turn) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleOrderEvent(long Sequence, int Turn, WildBattleOrderPhase Phase,
+    WildBattleSide First, WildBattleSide Second) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleMoveUsedEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, int Slot, MoveId Move, int PpBefore, int PpAfter) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleMoveMissedEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleHpChangedEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical,
+    int RandomPercent) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattlePotionRecoveredEvent(long Sequence, int Turn, WildBattleSide Side,
+    int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn);
+/// <summary>Exact owned target and medicine-only delta, before the enemy response and residuals.</summary>
+public sealed record WildBattleMedicineAppliedEvent(long Sequence, int Turn, ItemId Item,
+    long TargetInstanceId, int PartyIndex, bool ActiveTarget, int HpBefore, int HpAfter,
+    uint StatusBefore, uint StatusAfter) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleRecoilEvent(long Sequence, int Turn, WildBattleSide Actor,
+    MoveId Move, int HpBefore, int HpAfter, int Damage) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleCriticalHitEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleStatChangedEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, WildBattleStat Stat, int Before, int After) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleStatAtMinimumEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, WildBattleStat Stat) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleAbilityPreventedEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move, string Ability) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleFaintedEvent(long Sequence, int Turn, WildBattleSide Side) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleEndedEvent(long Sequence, int Turn, WildBattleOutcome Outcome) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleTurnReadyEvent(long Sequence, int Turn, ushort RandomTurnNumber) : WildBattleEvent(Sequence, Turn);
+/// <summary>Threshold is the source u8 value, null for guaranteed escape. Roll is null if no escape draw occurs.</summary>
+public sealed record WildBattleRunAttemptEvent(long Sequence, int Turn, int AttemptsBefore, int AttemptsAfter,
+    int PlayerSpeed, int OpponentSpeed, int? Threshold, int? Roll, bool Escaped) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleBallThrownEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, CaptureBall Ball) : WildBattleEvent(Sequence, Turn);
+/// <summary>AnimationCode 4 means three-shake success, not four visible shakes. The captured instance
+/// remains State.Opponent.Pokemon; ownership, inventory and Pokédex effects belong to the caller.</summary>
+public sealed record WildBattleCaptureResultEvent(long Sequence, int Turn, CaptureBall Ball,
+    CaptureOutcome Outcome, CaptureDecisionBranch Branch, CaptureCalculation Calculation,
+    int ChecksPassed, int AnimationCode) : WildBattleEvent(Sequence, Turn);
+/// <summary>The active player fainted but the caller reports a living reserve. The current turn is paused.</summary>
+public sealed record WildBattleReplacementRequiredEvent(long Sequence, int Turn) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattlePlayerReplacedEvent(long Sequence, int Turn,
+    WildBattleCombatant Previous, WildBattleCombatant Replacement) : WildBattleEvent(Sequence, Turn);
+/// <summary>A voluntary switch. Previous includes any Route22 Pursuit interception damage; an intercepted
+/// action has already executed, otherwise the opponent's selected action still follows the switch.</summary>
+public sealed record WildBattlePlayerSwitchedEvent(long Sequence, int Turn,
+    WildBattleCombatant Previous, WildBattleCombatant Replacement) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>Failure returns the identical input state, empty events and trace. Start failure returns null.</summary>
+public sealed record WildBattleResult(TransitionStatus Status, WildBattleState? State,
+    ImmutableArray<WildBattleEvent> Events, ImmutableArray<RandomTrace> Trace, Diagnostic? Diagnostic)
+{
+    public bool Succeeded => Status == TransitionStatus.Accepted;
+    public string? Fault => Diagnostic?.Code;
+}
+
+/// <summary>Reason is move, static, shed-skin or faint; uint values are exact Gen III status1.</summary>
+public sealed record WildBattleStatusChangedEvent(long Sequence, int Turn, WildBattleSide Side,
+    uint Before, uint After, string Reason) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleStatusDamageEvent(long Sequence, int Turn, WildBattleSide Side,
+    uint Status, int HpBefore, int HpAfter, int Damage) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleActionBlockedEvent(long Sequence, int Turn, WildBattleSide Side,
+    MoveId Move, uint Status) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleStatAtMaximumEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, WildBattleStat Stat) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>Remaining is the source status2 counter: 3-6 on application, decremented before residual damage.</summary>
+public sealed record WildBattleBindingChangedEvent(long Sequence, int Turn, WildBattleSide Side,
+    int Before, int After, string Reason) : WildBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? Move { get; init; }
+}
+public sealed record WildBattleBindingDamageEvent(long Sequence, int Turn, WildBattleSide Side,
+    MoveId Move, int HpBefore, int HpAfter, int Damage, int Remaining) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleDefenseCurledEvent(long Sequence, int Turn, WildBattleSide Side) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>Non-neutral source result message, after HP/critical messages and before secondary effects.</summary>
+public sealed record WildBattleEffectivenessEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move, WildBattleEffectiveness Effectiveness) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>Source failure branch after spending PP, with no status/seed application.</summary>
+public sealed record WildBattleMoveFailedEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move, string Reason) : WildBattleEvent(Sequence, Turn);
+/// <summary>Source is a battler slot, not a Pokemon identity. It survives the caster leaving.</summary>
+public sealed record WildBattleLeechSeedChangedEvent(long Sequence, int Turn, WildBattleSide Side,
+    WildBattleSide? Before, WildBattleSide? After, string Reason) : WildBattleEvent(Sequence, Turn);
+/// <summary>Damage and healing are actual clamped HP deltas. Drain and heal precede the donor's faint message.</summary>
+public sealed record WildBattleLeechSeedDrainEvent(long Sequence, int Turn, WildBattleSide DrainedSide,
+    WildBattleSide ReceivingSide, int HpBefore, int HpAfter, int ReceiverHpBefore, int ReceiverHpAfter,
+    int Damage, int Restored) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>The Gen III status2 confusion counter: 2-5 at application, decremented before the action check.</summary>
+public sealed record WildBattleConfusionChangedEvent(long Sequence, int Turn, WildBattleSide Side,
+    int Before, int After, string Reason) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleConfusionSelfHitEvent(long Sequence, int Turn, WildBattleSide Side,
+    MoveId SelectedMove, int HpBefore, int HpAfter, int Damage, int RandomPercent) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleFocusEnergyEvent(long Sequence, int Turn, WildBattleSide Side) : WildBattleEvent(Sequence, Turn);
+/// <summary>Applied is true when flinch is set before the target's action, false when that action is blocked.</summary>
+public sealed record WildBattleFlinchEvent(long Sequence, int Turn, WildBattleSide Side, bool Applied) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleMultiHitEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move, int PlannedHits, int ActualHits) : WildBattleEvent(Sequence, Turn);
+/// <summary>Wild force-out ends the encounter without rewards; trainer force-out is followed by a typed opponent switch.</summary>
+public sealed record WildBattleForcedOutEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move, bool TrainerBattle) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>The chosen Pursuit intercepts a voluntary switch and consumes its original queued action.</summary>
+public sealed record WildBattlePursuitInterceptedEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide SwitchingSide, int Slot) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>Disable lasts 2–5 source end-turn ticks including the application turn.</summary>
+public sealed record WildBattleDisableChangedEvent(long Sequence, int Turn, WildBattleSide Side,
+    MoveId? Move, int Before, int After, string Reason) : WildBattleEvent(Sequence, Turn);
+/// <summary>Remaining is the number of forced Rollout attacks left after this successful hit.</summary>
+public sealed record WildBattleRolloutChangedEvent(long Sequence, int Turn, WildBattleSide Side,
+    int Before, int After, string Reason) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleInfatuationChangedEvent(long Sequence, int Turn, WildBattleSide Side,
+    WildBattleSide? Before, WildBattleSide? After, string Reason) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleInfatuationBlockedEvent(long Sequence, int Turn, WildBattleSide Side,
+    WildBattleSide Source, MoveId Move) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleAbilityActivatedEvent(long Sequence, int Turn, WildBattleSide Side,
+    string Ability) : WildBattleEvent(Sequence, Turn);
+/// <summary>Source Oran Berry end-turn healing and one-time consumption; no RNG is consumed.</summary>
+public sealed record WildBattleHeldItemConsumedEvent(long Sequence, int Turn, WildBattleSide Side,
+    string Item, int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn);
+
+public sealed record WildBattleMtMoonVolatileEvent(long Sequence, int Turn, WildBattleSide Side,
+    string Volatile, int Before, int After, string Reason) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleEncoreChangedEvent(long Sequence, int Turn, WildBattleSide Side,
+    int? Slot, int Before, int After, string Reason) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleDrainEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target,
+    MoveId Move, int DamageDealt, int HpBefore, int HpAfter, int Restored) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleMagnitudeEvent(long Sequence, int Turn, WildBattleSide Actor,
+    int Magnitude, int Power) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleSelfDestructEvent(long Sequence, int Turn, WildBattleSide Actor,
+    MoveId Move, int HpBefore) : WildBattleEvent(Sequence, Turn);
+
+public sealed record WildBattleHeldItemStolenEvent(long Sequence, int Turn, WildBattleSide Actor,
+    WildBattleSide Target, MoveId Move, string Item) : WildBattleEvent(Sequence, Turn);
+
+public sealed record WildBattleRecoveredEvent(long Sequence, int Turn, WildBattleSide Side, MoveId Move, int HpBefore, int HpAfter, int Recovered) : WildBattleEvent(Sequence, Turn);
+
+public sealed record WildBattlePayDayEvent(long Sequence, int Turn, WildBattleSide Actor, int Before, int After) : WildBattleEvent(Sequence, Turn);

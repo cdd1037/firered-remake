@@ -1,0 +1,68 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "repository": "https://github.com/pret/pokefirered",
+  "files": [
+    {
+      "path": "src/battle_main.c",
+      "byteLength": 171904,
+      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
+      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428"
+    },
+    {
+      "path": "src/battle_controller_opponent.c",
+      "byteLength": 73524,
+      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98",
+      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0"
+    },
+    {
+      "path": "src/battle_script_commands.c",
+      "byteLength": 355862,
+      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
+      "gitBlobSha1": "67f90a37044db87091b2174f78fe1e31ad2ef10d"
+    },
+    {
+      "path": "src/battle_util.c",
+      "byteLength": 136791,
+      "sha256": "87cf810eb2d58361d1beb1537b3bd71c9160a77c2a17d703399f6ed373bb5720",
+      "gitBlobSha1": "bb66a0144b6144a72e1d9b22321c541e22302f7e"
+    },
+    {
+      "path": "src/battle_ai_script_commands.c",
+      "byteLength": 55810,
+      "sha256": "0b297aa963de7a7810d3b635a95e9ab68a2594aaf4bec77d946a0e068d3a47c4",
+      "gitBlobSha1": "4df9977bc53d57ce380644ccd1cb6c3f7e7767c9"
+    },
+    {
+      "path": "src/pokemon.c",
+      "byteLength": 221865,
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c"
+    },
+    {
+      "path": "src/data/battle_moves.h",
+      "byteLength": 121457,
+      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
+      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134"
+    },
+    {
+      "path": "data/battle_scripts_1.s",
+      "byteLength": 138642,
+      "sha256": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034",
+      "gitBlobSha1": "8aa0a1004033e40df8222107b60cc72fa85d9b8f"
+    },
+    {
+      "path": "src/battle_controllers.c",
+      "byteLength": 46191,
+      "sha256": "7980699ddf2836e07fc3e3a6396c7cc4d6ca1d944be112a82726e8a931e98e4e",
+      "gitBlobSha1": "a2662c39a6f66adb48b38d7b5797f8be54a6cc6b"
+    },
+    {
+      "path": "include/battle.h",
+      "byteLength": 21838,
+      "sha256": "bf64a16fb4e660f8a326eb352a511bb9e8fd54a74ebb03e328c08d5a23e5d8fa",
+      "gitBlobSha1": "3771ef33a1fec9aacad85d29ebc96c962cf59261"
+    }
+  ],
+  "treeSha1": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "treeSnapshotSha256": "998020ccba7c9c6e49b0ac4b7e127d15bceb39a9040d4329a007873b6f750f31"
+}

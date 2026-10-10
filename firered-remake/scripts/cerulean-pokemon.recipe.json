@@ -1,0 +1,84 @@
+{
+  "command": "python3 scripts/import-cerulean-pokemon.py",
+  "existingCatalogs": [
+    {
+      "path": "content/generated/route1-pokemon/catalog.json",
+      "sha256": "81da3d737a389c783f7d6351cdefcdfd4ed830114bc437672a952b4e0fb0e06f"
+    },
+    {
+      "path": "content/generated/old-man-tutorial/catalog.json",
+      "sha256": "e2114f5049580c8e19a4ec101d6bd523adb1056d665f3cda4a9d8534d112b80f"
+    },
+    {
+      "path": "content/generated/forest-pokemon/catalog.json",
+      "sha256": "28a1ba2a4d0a846331e67b3c80641afaeffb85e7a6acc2833f6fa51bb228c866"
+    },
+    {
+      "path": "content/generated/pewter-pokemon/catalog.json",
+      "sha256": "b9ae60e66619eadc6e45843e3212ea8cc1381be79142f5ccd316dde5f1986fb8"
+    },
+    {
+      "path": "content/generated/route22-pokemon/catalog.json",
+      "sha256": "5b2dca5c7ba34ef5584062635fb14220538400e01516bf14ee99fde8c7558f1f"
+    },
+    {
+      "path": "content/generated/route3-pokemon/catalog.json",
+      "sha256": "fc4a834b216acbc4490a8b38302031dc100b7b8fdfc94b48d6d968e730880efe"
+    },
+    {
+      "path": "content/generated/mtmoon-pokemon/catalog.json",
+      "sha256": "c4ada1a6494c13c9e6fd3c2199c8a6ee6642611914139fd2bbd3e99f02c35b03"
+    }
+  ],
+  "profile": "firered-cerulean-pokemon-v1",
+  "recordedAudioImported": false,
+  "schemaVersion": 1,
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "summary": {
+    "artSha256": "2ed60d0d3d6b4b3fc7ff7ce910a9f2b72ac899e8c2b24ffc95e4ac3f82a8c006",
+    "catalogSha256": "5f0e4405eb73e1c9606cbd2f42344734545de36ad2182876420af5c45e443bea",
+    "composedMoves": 183,
+    "constants": 13,
+    "deferred": 7,
+    "encoded": 85,
+    "fullSourceHash": "11715e7da51af281e1dd4c699e66994dbf25dbbd558be4387140015c0d5fa47b",
+    "inputCount": 106,
+    "lockSha256": "538eb52c41b32870ee8fc235a973e4e9992ae4c2f4f5a71946ca07dce170580a",
+    "manifestSha256": "8d32c626cf562c2c453a8eae1fb260d6cdcb0b13f08827c4ec516557fcac6b10",
+    "moves": 76,
+    "newMoves": [
+      "pret:MOVE_AURORA_BEAM",
+      "pret:MOVE_BUBBLE_BEAM",
+      "pret:MOVE_CAMOUFLAGE",
+      "pret:MOVE_CLAMP",
+      "pret:MOVE_DIG",
+      "pret:MOVE_DYNAMIC_PUNCH",
+      "pret:MOVE_FORESIGHT",
+      "pret:MOVE_FUTURE_SIGHT",
+      "pret:MOVE_HEADBUTT",
+      "pret:MOVE_HYPNOSIS",
+      "pret:MOVE_ICE_BEAM",
+      "pret:MOVE_ICICLE_SPEAR",
+      "pret:MOVE_KINESIS",
+      "pret:MOVE_MEDITATE",
+      "pret:MOVE_PSYCHIC",
+      "pret:MOVE_PSYCH_UP",
+      "pret:MOVE_RECOVER",
+      "pret:MOVE_REFLECT",
+      "pret:MOVE_REVENGE",
+      "pret:MOVE_ROLE_PLAY",
+      "pret:MOVE_SUBMISSION",
+      "pret:MOVE_TELEPORT",
+      "pret:MOVE_TRICK",
+      "pret:MOVE_VITAL_THROW",
+      "pret:MOVE_WATERFALL",
+      "pret:MOVE_WATER_PULSE",
+      "pret:MOVE_WATER_SPORT"
+    ],
+    "outputCount": 113,
+    "rawManifestSha256": "21eb6f65ff62162d06b9b8b0aabe068619c55536788cff4b96417b81e00dd887",
+    "species": 9
+  },
+  "upstreamScriptsExecuted": false
+}

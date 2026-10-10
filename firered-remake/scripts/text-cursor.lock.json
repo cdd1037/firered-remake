@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "profile": "firered-text-down-arrow-v1",
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "gameEdition": "FIRERED",
+  "romRevision": 0,
+  "rights": "Local reference research only; no public upload or redistribution.",
+  "files": [
+    {
+      "path": "Makefile",
+      "byteLength": 14605,
+      "gitBlobSha1": "8b454dbd18eb0069fa5851d788697190890a5b37",
+      "sha256": "51960ea72311e53c272ebcc5b481021efba52fcc7db7f0ded4bfcebaf8bbdf47",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/Makefile"
+    },
+    {
+      "path": "graphics/battle_interface/textbox1.pal",
+      "byteLength": 183,
+      "gitBlobSha1": "fd5043327985ee1db694bfdbb386df48226f6171",
+      "sha256": "5bbf9a5560390c69d73d5561936281a160eebf96e49587215e620cd26ff211dd",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/battle_interface/textbox1.pal"
+    },
+    {
+      "path": "graphics/fonts/down_arrows.png",
+      "byteLength": 237,
+      "gitBlobSha1": "b89fa6bfe9bbb0eec03ff8bfc984610c004f8b7f",
+      "sha256": "f88fc23b44ef97753ddeed01546a7245789a47fbe5da8d22b851d90b9720bdeb",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/fonts/down_arrows.png"
+    },
+    {
+      "path": "graphics/text_window/stdpal_0.pal",
+      "byteLength": 196,
+      "gitBlobSha1": "c64668073bc9f0cb8a49d02b4b2c03b090369a3d",
+      "sha256": "c6cf65c60e7fd1e62050b9895393f20b41144986178649b6f71d66d8a3987b7d",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/text_window/stdpal_0.pal"
+    },
+    {
+      "path": "include/text.h",
+      "byteLength": 5585,
+      "gitBlobSha1": "7090a029bfc454e19e6425df631fda9db866ae0a",
+      "sha256": "ca0d1447747d042d92da4df693be353a5af5a26a6c9dcfdf1e3bbc0d01530299",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/text.h"
+    },
+    {
+      "path": "src/battle_bg.c",
+      "byteLength": 39359,
+      "gitBlobSha1": "3bcc500805622febd3892580da14f65ea2746a6f",
+      "sha256": "9e608837b0f13ba6782d8f3d4f2590ee273b5c7fb8b6275514c89cd780b474f0",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_bg.c"
+    },
+    {
+      "path": "src/battle_message.c",
+      "byteLength": 151308,
+      "gitBlobSha1": "a6392be9a91cd8171d920ff45c684b627b0c98b1",
+      "sha256": "257be289b56dbfe63da9cf956a87d91219d45eb72a47d2dff681caa684f2b6de",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_message.c"
+    },
+    {
+      "path": "src/blit.c",
+      "byteLength": 7755,
+      "gitBlobSha1": "969f89900879f6272aa51b55f5e688c0c2eedc02",
+      "sha256": "a88f404ede1b3681741fab707e601723d7333f4e9230e71f7a4b680ab1522cea",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/blit.c"
+    },
+    {
+      "path": "src/field_message_box.c",
+      "byteLength": 3461,
+      "gitBlobSha1": "74f441c889d59775f0a4bb16567685b5f78a9ef2",
+      "sha256": "38969672a37611f46b7ff54ba2172129d8a9690f7a6ce4587b02203233ea1c0e",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/field_message_box.c"
+    },
+    {
+      "path": "src/new_menu_helpers.c",
+      "byteLength": 27834,
+      "gitBlobSha1": "08c032027cda2c34bf0dded37458adeb250aa553",
+      "sha256": "d115f81a76f93ba1a34894acd58f266a1920215784176f94188e4bad8ba51b1c",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/new_menu_helpers.c"
+    },
+    {
+      "path": "src/text.c",
+      "byteLength": 63210,
+      "gitBlobSha1": "f3eef07ce6dea8269980a5ecfdd6902c1c9c13d2",
+      "sha256": "5696f49443eeaaac74b530421ac7f0cbfc71996c557399583788111c322dd80c",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/text.c"
+    },
+    {
+      "path": "src/text_window.c",
+      "byteLength": 7580,
+      "gitBlobSha1": "431ac55202cf22f80283ffdebbc1a305f832eb97",
+      "sha256": "acf6f9262e1684530109a428394a6cfaae00db3c6445d4c81b3ca3bab58fb591",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/text_window.c"
+    },
+    {
+      "path": "src/text_window_graphics.c",
+      "byteLength": 3401,
+      "gitBlobSha1": "8f2250362f457dfddf7fa3e4fd898887a8c87ddf",
+      "sha256": "2d942eac492959fbd5d0585a7a704e6a7e9dba11f27edf892d67ce57d072634e",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/text_window_graphics.c"
+    },
+    {
+      "path": "src/window.c",
+      "byteLength": 15783,
+      "gitBlobSha1": "834f13a8c9f4b5dbf5f5c278004f5fe5d9ff0ca2",
+      "sha256": "223a0ff33a3d4c92dc25d18ab2022d32e7e06d8c0e2fbf02c3cc111cbb0a2352",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/window.c"
+    },
+    {
+      "path": "tools/gbagfx/gfx.c",
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/tools/gbagfx/gfx.c"
+    }
+  ]
+}

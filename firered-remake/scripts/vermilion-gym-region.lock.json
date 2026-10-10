@@ -1,0 +1,1104 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-vermilion-gym-region-import-v1",
+  "gameVersion": "FIRERED",
+  "revision": 0,
+  "completeGame": false,
+  "maps": [
+    "VermilionCity_Gym"
+  ],
+  "files": [
+    {
+      "path": "asm/macros/event.inc",
+      "byteLength": 56947,
+      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
+      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "data/event_scripts.s",
+      "byteLength": 55643,
+      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
+      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/layouts/VermilionCity_Gym/border.bin",
+      "byteLength": 8,
+      "gitBlobSha1": "a886cd76469738dfa57ce364e7a0268caa314038",
+      "sha256": "e0d28e51c7e052913771ad123ea4ae85d601f22af3040d698e9b1f6a6ecb5196",
+      "roles": [
+        "map-source"
+      ]
+    },
+    {
+      "path": "data/layouts/VermilionCity_Gym/map.bin",
+      "byteLength": 462,
+      "gitBlobSha1": "6389bf60313bdb18552a864421c16e9c348c2a96",
+      "sha256": "e0a1c8f696a034cb6336cbe13a58a8d9a69072b94e7c9c2383e500a807364961",
+      "roles": [
+        "map-source"
+      ]
+    },
+    {
+      "path": "data/layouts/layouts.json",
+      "byteLength": 158096,
+      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
+      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "data/maps/VermilionCity/map.json",
+      "byteLength": 7532,
+      "gitBlobSha1": "d0b7a9a4217292b6bfd355c019ebd74aa4491270",
+      "sha256": "b109631c9791cd330d4073ab183a283380ec25e9145c5e6e591b8111a38f1f4c",
+      "roles": [
+        "external-warp-and-cut-tree"
+      ]
+    },
+    {
+      "path": "data/maps/VermilionCity_Gym/map.json",
+      "byteLength": 6398,
+      "gitBlobSha1": "62d686734e28b8a8ef165d34935547758093020e",
+      "sha256": "01d27c5e20de5459f676ed56cf85d1b8a3aac995ea7c330cf3ed065a476f9576",
+      "roles": [
+        "map-source"
+      ]
+    },
+    {
+      "path": "data/maps/VermilionCity_Gym/scripts.inc",
+      "byteLength": 9381,
+      "gitBlobSha1": "844201b0741fe928bbec470ac478e459309b1402",
+      "sha256": "3341fb187215a9b961bde55465491fb3b24772fe11b0f801d840dcea3888ed7c",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/maps/VermilionCity_Gym/text.inc",
+      "byteLength": 4707,
+      "gitBlobSha1": "e6f6fda435055e3ac562eba8a23ff19591b29ea1",
+      "sha256": "9136e4a0e91d6d535e588d94a386fb7d4b9eb0c3bdcdab70ece63edce6b418e6",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/maps/map_groups.json",
+      "byteLength": 16262,
+      "gitBlobSha1": "8c382f504d208286161903244772c93138cd7662",
+      "sha256": "ce296c9b54c8bb85cc35870b30a533ab017e72107fd40cf471224a42127af79a",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "data/scripts/field_moves.inc",
+      "byteLength": 7082,
+      "gitBlobSha1": "fc2998f1aed8b11482d87e51cfe9e51fa9dd630c",
+      "sha256": "8f1c7850d777b97ceb8779e3b2cb4a30562cd647e3c03192261fb917a42a9bb6",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/scripts/movement.inc",
+      "byteLength": 1147,
+      "gitBlobSha1": "51e4867942fc96e4e7c9e57a8aee46f765293ea5",
+      "sha256": "54948c27289cddcc0f16e30de2fb15b1fab8dcd425741f5a8b9861207e110f64",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/scripts/obtain_item.inc",
+      "byteLength": 5866,
+      "gitBlobSha1": "c904278ae8ed23e295391764dccced6f0692b3d9",
+      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/scripts/set_gym_trainers.inc",
+      "byteLength": 2358,
+      "gitBlobSha1": "28ce66e0f2f874b2ad9cac5a9ad3349f07d7a553",
+      "sha256": "565852ebc55853a3bdef4f18bfebccfffc79476b9fa2410456023f2e3c78ea38",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/scripts/std_msgbox.inc",
+      "byteLength": 1040,
+      "gitBlobSha1": "18ad553c85b66975e0c05763c6145082c8c13dde",
+      "sha256": "090541cfc3a47272ea8203f0f6c18f19f8062d407388a23fcf103e93b196b431",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/scripts/trainer_battle.inc",
+      "byteLength": 3768,
+      "gitBlobSha1": "c3e4371962dae55fedfd0b5c2f02068a1f8cf0e7",
+      "sha256": "409fdc28f13423f602cb2428208693a4c467a1f5785bc487bafb5ab0fce8c96c",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/scripts/white_out.inc",
+      "byteLength": 1627,
+      "gitBlobSha1": "ff4feb66f0822b61a8815b69196800855d31e14e",
+      "sha256": "b69a9eaf6cb7ca27fffae11bb005a881d1d140d34e2a03b89cab7b8046ff9d1e",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/text/obtain_item.inc",
+      "byteLength": 1065,
+      "gitBlobSha1": "8d2708166d4d21da3a6c20282e0ebf244ca0d57e",
+      "sha256": "dad5d2666cd24ef854bb1ac7533dd3f53ffdcfee1528a48d436762fe00b2c813",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/text/white_out.inc",
+      "byteLength": 1688,
+      "gitBlobSha1": "1d00c1e10a37ced4b6fc2810a51e83a702311c72",
+      "sha256": "3a93c033309a4c987fc707fd8549f4d1c248df83773abde472596992ee1da42f",
+      "roles": [
+        "script-label-closure"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/metatile_attributes.bin",
+      "byteLength": 2560,
+      "gitBlobSha1": "3dbc31883fdd14f31c7b86981508cc08ed3cc395",
+      "sha256": "c609529ecdf1b443b75f144fd733f353a8ddaeb3584ab018a369bb2bea8da5d4",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/metatiles.bin",
+      "byteLength": 10240,
+      "gitBlobSha1": "024797c8ee2b805df8566a62fb4e65f3244dac39",
+      "sha256": "6b53b219dcacf26af58c7174279c24a44ad13194c7292c74fcf24c48a1be4b4b",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/00.pal",
+      "byteLength": 203,
+      "gitBlobSha1": "3b6416376ec903750b97307c613328b124481489",
+      "sha256": "6d8396ee26f5d12f993004066251e5b0b578adad04740aa17745a70853a1a725",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/01.pal",
+      "byteLength": 203,
+      "gitBlobSha1": "66561f6d3326d5c3c717426abed1b9b5ce771c29",
+      "sha256": "93c52f1deab53435356361fe1c47de7d6a038ae6f393adc8650a1641ed10846c",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/02.pal",
+      "byteLength": 200,
+      "gitBlobSha1": "87a022102f199020c802e20c91a39c6e3461f929",
+      "sha256": "220932f7bc7c1a6ef2dfa2efdc47d6b0f238440361400b629c441acd89306bea",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/03.pal",
+      "byteLength": 203,
+      "gitBlobSha1": "783496dcd9bf89b72ffc26a29991f49600a8c355",
+      "sha256": "103665f17a67f4a83acfefdfa04a4e1ce736927dd65a9b6b64867ecbb9437c6c",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/04.pal",
+      "byteLength": 206,
+      "gitBlobSha1": "89eace6050ad504ce38e5ee5615def5d5109d3bf",
+      "sha256": "7a205e7a627e475e0f110f4082c221c39fb10c7b543cf4c90f1e6817831f30a1",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/05.pal",
+      "byteLength": 195,
+      "gitBlobSha1": "c7780e5c7515197b8faf0eda54968653ed5e8c04",
+      "sha256": "63c7f7fc52611a66b6371ea09da8d30ab1e9763136aceeb93bcae1016ba42211",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/06.pal",
+      "byteLength": 119,
+      "gitBlobSha1": "1d08ce9a2024a64b883c14bc907b448733603a8a",
+      "sha256": "a88e85688071309411a19eea8f42792b69e073af41b5be6be6743f7e36b435f0",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/07.pal",
+      "byteLength": 162,
+      "gitBlobSha1": "c1e7c3d5c579c24997b6530692a6e52e3d9c13e9",
+      "sha256": "86e55272f3d9823763f6b4345297787f060aa3974efa53fa83ddea93ae4dc0c6",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/08.pal",
+      "byteLength": 162,
+      "gitBlobSha1": "c1e7c3d5c579c24997b6530692a6e52e3d9c13e9",
+      "sha256": "86e55272f3d9823763f6b4345297787f060aa3974efa53fa83ddea93ae4dc0c6",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/09.pal",
+      "byteLength": 117,
+      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
+      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/10.pal",
+      "byteLength": 117,
+      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
+      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/11.pal",
+      "byteLength": 117,
+      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
+      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/12.pal",
+      "byteLength": 117,
+      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
+      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/13.pal",
+      "byteLength": 113,
+      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/14.pal",
+      "byteLength": 113,
+      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/palettes/15.pal",
+      "byteLength": 158,
+      "gitBlobSha1": "92e7ed30983dd6d08308f6f1c3ec4d681b231479",
+      "sha256": "bf04092ebe65f2846c64e84f686749bce590f62b490303c8d23f275fe4067fa2",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/primary/building/tiles.png",
+      "byteLength": 7011,
+      "gitBlobSha1": "8d864f27e2f1167e5879d3e8ec5b8546311208ba",
+      "sha256": "0c6faa0058210ffd5794613c28969d1982737cc3b7d4feeab03a13895c8363f2",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/anim/motorizeddoor/0.png",
+      "byteLength": 175,
+      "gitBlobSha1": "a17ad6f5ead26b646ba8c7a7a022064153271776",
+      "sha256": "598ec95400c55fa2a85e0645deb352d85fdd0c29190e4005bd383d244b3e6c87",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/anim/motorizeddoor/1.png",
+      "byteLength": 186,
+      "gitBlobSha1": "bfddebccd99450ca3164c11f4f8ba1a6fc763169",
+      "sha256": "3a8a05fe3bc65b8c22299ae070cfa601dd07c4dd672f618df7a6998bb32727cd",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/metatile_attributes.bin",
+      "byteLength": 300,
+      "gitBlobSha1": "a5e733de0a70a93ceec36498704c8ac1e573a14f",
+      "sha256": "8ba3f30a615abb4c5c4a4c9db9a63768550f00e45aecf69a71986d7db630e079",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/metatiles.bin",
+      "byteLength": 1200,
+      "gitBlobSha1": "25a46724bb2927bf3dce06e073b165d577a14bc6",
+      "sha256": "148536292115c12ac3815576e77495be694b4b52431b74b08eb3d8fa63fe7098",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/00.pal",
+      "byteLength": 200,
+      "gitBlobSha1": "88e712348b439f14db430f36ae34321b48725d73",
+      "sha256": "db75c8cdc25dd0de19b1f55dddc7e3dd2f27c95786dd95e5ee8ce32cc2637279",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/01.pal",
+      "byteLength": 200,
+      "gitBlobSha1": "d99adaffffc061c1cf9c0dd50bfb78b3a4060f34",
+      "sha256": "490f2d906b17823bcd5f1f80402bb397994d52670baf943f0237e98d520daccc",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/02.pal",
+      "byteLength": 199,
+      "gitBlobSha1": "cc3a9457d49462c07d03b024c731af3dc167b657",
+      "sha256": "e2e9e8e38bae82c1a4aaffa3ef30d410413a9f56bc4189462da53e52f44959ce",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/03.pal",
+      "byteLength": 188,
+      "gitBlobSha1": "7ec794ae5408e5ecaebcbbcd502d4b6849b8a801",
+      "sha256": "10c0a6e1f360d17248a742ad7033490f8c814e7f06f75b050fd235c4fe8af889",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/04.pal",
+      "byteLength": 116,
+      "gitBlobSha1": "6f31ca776222f35dab0d16c1e2aa54b472626686",
+      "sha256": "de915f823eedf2ea3b1285cf006a53103fd04dca2e41b8267977def71d2c0969",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/05.pal",
+      "byteLength": 116,
+      "gitBlobSha1": "6f31ca776222f35dab0d16c1e2aa54b472626686",
+      "sha256": "de915f823eedf2ea3b1285cf006a53103fd04dca2e41b8267977def71d2c0969",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/06.pal",
+      "byteLength": 113,
+      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/07.pal",
+      "byteLength": 201,
+      "gitBlobSha1": "efd64bcc5892abac7989900052f617b964ff62c2",
+      "sha256": "191e55f3bc030e67d7de8a972a4dcbb5e6666e7e0e39a800b53f2030f4325155",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/08.pal",
+      "byteLength": 117,
+      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
+      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/09.pal",
+      "byteLength": 117,
+      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
+      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/10.pal",
+      "byteLength": 117,
+      "gitBlobSha1": "6b0281bd6a4858a38517f73a38bba43144370dca",
+      "sha256": "9fd961331b3d93c934ae2606e4c71e915af26bdefdded710b3992d047360fc3e",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/11.pal",
+      "byteLength": 192,
+      "gitBlobSha1": "9fa42f21fca8719c462b55dcee3245a7a74b2659",
+      "sha256": "82d1823389a5e3edbdf47cf201303b77b567cb63582237e6448f00ff9e0a3b82",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/12.pal",
+      "byteLength": 195,
+      "gitBlobSha1": "5e2756cc990bab09890e3fd70645c348f3444c63",
+      "sha256": "971ec61e5f0e4b20a947ebe55954041170825a6237a98f7c9778fe85b3ad5182",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/13.pal",
+      "byteLength": 113,
+      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/14.pal",
+      "byteLength": 113,
+      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/palettes/15.pal",
+      "byteLength": 113,
+      "gitBlobSha1": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "sha256": "226f0ddc9a6d3b26b78e138333dfde67d39aa7ac95a257e9e53c766fb6035675",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "data/tilesets/secondary/vermilion_gym/tiles.png",
+      "byteLength": 1207,
+      "gitBlobSha1": "1baac08930acd129e3b031630f27c5cd3226a630",
+      "sha256": "41f15bff6b8e95d20a8ca05fe9466cb4e883fff13c29e09d58a845892f2ae12a",
+      "roles": [
+        "tileset-source"
+      ]
+    },
+    {
+      "path": "graphics/object_events/palettes/npc_green.pal",
+      "byteLength": 185,
+      "gitBlobSha1": "0c60b08a5b8b6e54123283eb221df86b06e2db59",
+      "sha256": "5197d4636852e15601d101670ae9889aaae3ad847f712f98df06df87f0906f19",
+      "roles": [
+        "npc-palette"
+      ]
+    },
+    {
+      "path": "graphics/object_events/palettes/npc_pink.pal",
+      "byteLength": 192,
+      "gitBlobSha1": "e245ba013a743c5479fe120f76642f0c160fa938",
+      "sha256": "f04b8993dbfc4ea962f17993eff5e1c621e6e71eaa782737ddbf41ce26c3fbfb",
+      "roles": [
+        "npc-palette"
+      ]
+    },
+    {
+      "path": "graphics/object_events/palettes/npc_white.pal",
+      "byteLength": 186,
+      "gitBlobSha1": "1646e805e636837f975619827060764e7aa48293",
+      "sha256": "31668dbee587a2e6c7238d4ff94a090e753ddcc06336649a186ab124ad4a6c97",
+      "roles": [
+        "npc-palette"
+      ]
+    },
+    {
+      "path": "graphics/object_events/palettes/player.pal",
+      "byteLength": 189,
+      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e",
+      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c",
+      "roles": [
+        "npc-palette"
+      ]
+    },
+    {
+      "path": "graphics/object_events/pics/misc/cut_tree.png",
+      "byteLength": 389,
+      "gitBlobSha1": "be22aeaed27a123a953d7878395e56536367a272",
+      "sha256": "819545f25316a679f4c1c5697339a3bc0dcf2722a612978acd7cc6bd9f2e0dac",
+      "roles": [
+        "npc-source"
+      ]
+    },
+    {
+      "path": "graphics/object_events/pics/people/balding_man.png",
+      "byteLength": 790,
+      "gitBlobSha1": "7a700408cffeb39dae2f54fa986494b8c41456f0",
+      "sha256": "83e6f9142ec97e848806674ead2b1d3fa0f0d6500941be688f3d6bf69eab5896",
+      "roles": [
+        "npc-source"
+      ]
+    },
+    {
+      "path": "graphics/object_events/pics/people/gentleman.png",
+      "byteLength": 810,
+      "gitBlobSha1": "195a779b6b5e6148e14f659b4294383dd2cb6a15",
+      "sha256": "0f5b22e8cad76ff95ed064fa317260bff8c7744a5575a8b04b997d4d3a6108f0",
+      "roles": [
+        "npc-source"
+      ]
+    },
+    {
+      "path": "graphics/object_events/pics/people/gym_guy.png",
+      "byteLength": 735,
+      "gitBlobSha1": "4a6bea315f88fcd573809ff356c90bde1ba6d677",
+      "sha256": "c2d38e05a6c45b6d7d4f66358df48ec354603010cc9d74a0e6bb12d70647359e",
+      "roles": [
+        "npc-source"
+      ]
+    },
+    {
+      "path": "graphics/object_events/pics/people/lt_surge.png",
+      "byteLength": 469,
+      "gitBlobSha1": "6ebb4ebb851bcb33979b2ee352a19245fe78f218",
+      "sha256": "84a863136b514b01ed6bba2ca418392ebdd2ec1b052d23cb50967cd73ff28573",
+      "roles": [
+        "npc-source"
+      ]
+    },
+    {
+      "path": "graphics/object_events/pics/people/red_normal.png",
+      "byteLength": 742,
+      "gitBlobSha1": "377224e2f5c6bca2ff5d762f22fc214a6982f772",
+      "sha256": "94eb37499a8bd663f47a0767c34b93569cf0c222a9906852943016e3a771054d",
+      "roles": [
+        "npc-source"
+      ]
+    },
+    {
+      "path": "graphics/object_events/pics/people/red_surf_run.png",
+      "byteLength": 1140,
+      "gitBlobSha1": "f4473bbae05befae4f520ae907a680a87567294d",
+      "sha256": "c33a893e4449cadb417de8e201018975f99e056e582abdafe2cb9f7450931252",
+      "roles": [
+        "npc-source"
+      ]
+    },
+    {
+      "path": "graphics/object_events/pics/people/sailor.png",
+      "byteLength": 841,
+      "gitBlobSha1": "fb20f3d418aab30d02ed84a461995ca873646019",
+      "sha256": "9b0f6f5400b4e610e8a2ec4be266c0a5215fcb724ebb3501c2649e7423b53058",
+      "roles": [
+        "npc-source"
+      ]
+    },
+    {
+      "path": "include/constants/battle_ai.h",
+      "byteLength": 1436,
+      "gitBlobSha1": "d23648f390a4d6bb28cb3970af9d2af24b6a46b6",
+      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/event_objects.h",
+      "byteLength": 7965,
+      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
+      "sha256": "5f552a754182788f21ee00fe9460d5dbc73303239cc06743fbed96c93b6e6947",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/fame_checker.h",
+      "byteLength": 815,
+      "gitBlobSha1": "e09279bb46f1eecd1bcbfeaebb2a6f2f0b2b0421",
+      "sha256": "e3cf025d99dd2dc571ab1bb5c14f21d03b90913c3ff977f271a9fe78eed865c7",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/field_effects.h",
+      "byteLength": 5109,
+      "gitBlobSha1": "0b2351017ba32d1dab03b2e765e215c7da66107f",
+      "sha256": "ea4276af2ba5997c7639df6629ca7cebcc61f308b62c43ceabbfc7dd744473f0",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/flags.h",
+      "byteLength": 95397,
+      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/game_stat.h",
+      "byteLength": 2651,
+      "gitBlobSha1": "234091bff42b804cc8f958a06df67c68a0db9fda",
+      "sha256": "e98ebe4c3d4448fd95ece37f84e15c8dbcbe91f7d61bf2dd3878c8aade0facc6",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/global.h",
+      "byteLength": 3785,
+      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
+      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/items.h",
+      "byteLength": 12436,
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/map_scripts.h",
+      "byteLength": 443,
+      "gitBlobSha1": "1353de360cf1e00b6efbb26ec59c4822c99b59bf",
+      "sha256": "02f8c3a4dd660d5b11f7d4af1f5a6d4530a994df33ba8304024e2a5ba004afc8",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/maps.h",
+      "byteLength": 1114,
+      "gitBlobSha1": "fe2b7fd14fe6d26fd86c0e50c2bbbc7997d0a4af",
+      "sha256": "fd72a95bb4bd8c589630826d745814beaafe7a8518ffa3fb7927bf16d670a7dd",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/menu.h",
+      "byteLength": 6143,
+      "gitBlobSha1": "7c36f3605918ee455321cade37d7c60877a36dde",
+      "sha256": "e741f81083d034b90d30ec4ea1fc1380b5304510d87d4e2ea6d0384732166ca4",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/metatile_behaviors.h",
+      "byteLength": 3471,
+      "gitBlobSha1": "38a02075f8bb0205d05a42e6215e62c8474fbf45",
+      "sha256": "88955bf5c4b8d702d01d28161017362a2617ee37dce7ef77c0e288bda379da75",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/metatile_labels.h",
+      "byteLength": 16165,
+      "gitBlobSha1": "7f42269233803e98ba24e7869d3c4a610d1f8259",
+      "sha256": "a38cbe9de5b9d68ddc43d11e5e05b26f00ae6360998ab095a16a0bfd4fa9a7bc",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/moves.h",
+      "byteLength": 10249,
+      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
+      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/opponents.h",
+      "byteLength": 39946,
+      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
+      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/party_menu.h",
+      "byteLength": 5326,
+      "gitBlobSha1": "1321a4ced83823a5b9779dc88e6287804bad3afd",
+      "sha256": "6986cb5b65efaab2a0f16e5cd88952153a5aaf295ed8f9ace903693dbe170cf7",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/pokemon.h",
+      "byteLength": 10894,
+      "gitBlobSha1": "21c678744f21693825a0c03bb73efa77a256af8b",
+      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/quest_log.h",
+      "byteLength": 6408,
+      "gitBlobSha1": "fe284ba133ccc28053515c501979741b3960212f",
+      "sha256": "90cceec5883201c3d3d2bdb420d1f7b3ebef21f4716eef0760bba507559be2dc",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/seagallop.h",
+      "byteLength": 556,
+      "gitBlobSha1": "68e847445961034f53afc5a41d05fa36affea78e",
+      "sha256": "65940c11f3062d901d74415951efd77e428eb1a08f45270a22a7aa1152fc080a",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/songs.h",
+      "byteLength": 17891,
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/species.h",
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/trade.h",
+      "byteLength": 1985,
+      "gitBlobSha1": "04e667eb0828173525f93cae4df2498415124628",
+      "sha256": "15b093885ccdada14b62af66cde222d8c62a451540eefe4e8d4a2a0a173b09d4",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/trainer_types.h",
+      "byteLength": 293,
+      "gitBlobSha1": "8886cf44237a1c77900e592683124be807b8082b",
+      "sha256": "dd8fe17aea8f69a13c75f88e5ebe305dc39551cbe99a26f2d3e713a7bbf6f18b",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/trainers.h",
+      "byteLength": 20887,
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/constants/vars.h",
+      "byteLength": 17306,
+      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
+      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/global.fieldmap.h",
+      "byteLength": 12127,
+      "gitBlobSha1": "e2828ec0cb1439718e830fbef4366770b3b77b1c",
+      "sha256": "34a8c91e10803ba48b97a2df8a721ca37fad7572b2ff951a4ab7ec15a5f050eb",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "include/random.h",
+      "byteLength": 669,
+      "gitBlobSha1": "fd6b88ad0af62f22951e6e81fa21e38b12480ece",
+      "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/object_events/object_event_anims.h",
+      "byteLength": 37750,
+      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d",
+      "sha256": "a484f38af198398f763c1d5f239dddd4397bb4cc7eab48c2b2e992552d767b0e",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics.h",
+      "byteLength": 23522,
+      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
+      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics_info.h",
+      "byteLength": 97115,
+      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
+      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics_info_pointers.h",
+      "byteLength": 23651,
+      "gitBlobSha1": "af2f8afb6db8ed75bcc849922c911d858b92999a",
+      "sha256": "a5e006f4855f19bf42c27e78f5c1866fdecccb687d228fbe608376f09ee7547c",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/object_events/object_event_pic_tables.h",
+      "byteLength": 82763,
+      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68",
+      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/party_menu.h",
+      "byteLength": 36157,
+      "gitBlobSha1": "6b4ebc1f7c0c5f72eb28f656c31be10f86e02094",
+      "sha256": "cfd30a7b5fdc0026da999a62d3ff72159cad88d9a921730c179d804ee026a9f7",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/tilesets/graphics.h",
+      "byteLength": 83873,
+      "gitBlobSha1": "5e6791a66f03876f2aaabe94bde3083e68f5bf2e",
+      "sha256": "63ca2a6588d938adcc4d4bf325578f23b7b1e2b622a3e27ffeccae2ac6133f61",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/tilesets/headers.h",
+      "byteLength": 21121,
+      "gitBlobSha1": "676bd21050e753822a61aa127310c338938c3c00",
+      "sha256": "bd8233763e26d3dbb025010ad379c53bcc5b102dd1a1de40cec85f8262686c8c",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/data/trainers.h",
+      "byteLength": 302118,
+      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
+      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/event_data.c",
+      "byteLength": 8913,
+      "gitBlobSha1": "da9391cf0ef74c1addf550def8616c81f16e89e3",
+      "sha256": "163fcef03561426fc185b499eef1088dc7a4334b612968a82df3a0fa6131d06f",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/event_object_movement.c",
+      "byteLength": 326145,
+      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
+      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/field_specials.c",
+      "byteLength": 77314,
+      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d",
+      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/fieldmap.c",
+      "byteLength": 28166,
+      "gitBlobSha1": "41567772299000ba5855419e5c39ad9373a34c20",
+      "sha256": "bbe15c7af1059a9f796dddaca28bdaaf206b715895029e189fa6ae012272ce68",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/fldeff_cut.c",
+      "byteLength": 8674,
+      "gitBlobSha1": "64171bb3fbea8161caf52116f794de65975586e2",
+      "sha256": "b1bb155b2ec026848100d65c86262a07ed7e47afe549269347b40750ba37098f",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/fldeff_rocksmash.c",
+      "byteLength": 4595,
+      "gitBlobSha1": "a3be0956cea4bc85ff167f310b2c65d60e8f80dd",
+      "sha256": "2cbf14e67bb931d57fc1e0fc21e2477a7bce45353e00f9ff6d8d57f6e8ccd462",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/graphics.c",
+      "byteLength": 99258,
+      "gitBlobSha1": "94fd2cc6e67c7561c26a20d21c56510988cad252",
+      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/overworld.c",
+      "byteLength": 103643,
+      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
+      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/party_menu.c",
+      "byteLength": 211085,
+      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223",
+      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/pokemon.c",
+      "byteLength": 221865,
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/random.c",
+      "byteLength": 323,
+      "gitBlobSha1": "635a1df5a59fa42a88f30ad884405db2bde95ea5",
+      "sha256": "e7e90cc070d1fbf09579f5f91762cd8875d5bbe1d7a90f468bcd870df73b9de2",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "src/scrcmd.c",
+      "byteLength": 56954,
+      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
+      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "tileset_rules.mk",
+      "byteLength": 7240,
+      "gitBlobSha1": "a868248cf07750504eec7d87c772e089c60aa211",
+      "sha256": "aed8ebf86db60e11384c23e158208f3c5581b72a43ed014eabe5a5d3b60af9d4",
+      "roles": [
+        "rule-reference"
+      ]
+    },
+    {
+      "path": "tools/mapjson/mapjson.cpp",
+      "byteLength": 28254,
+      "gitBlobSha1": "8d8ec4e4e6e1c011b06f00819abe40bad10d19d5",
+      "sha256": "c8a4af233a24c70ee49f2739bec7b313da8f50e15d2a25b31db1d40cc179aab9",
+      "roles": [
+        "rule-reference"
+      ]
+    }
+  ]
+}

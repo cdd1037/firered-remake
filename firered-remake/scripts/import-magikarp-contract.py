@@ -1,0 +1,282 @@
+#!/usr/bin/env python3
+"""Authenticate the bounded Route4 gift contract; never execute upstream code or fetch assets."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+
+ROOT = Path(__file__).resolve().parents[1]
+COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
+TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
+PROFILE = 'firered-route4-magikarp-source-contract-v1'
+REGION_LOCK_SHA256 = '38f2849ba187f843875322fd0760c2410fbac1fd410ac04f347ccb9368fdd6f4'
+# Only dependencies absent from the Route3 region import are materialized here.
+# Reviewed Git object identity is embedded in this script, not trusted from generated output.
+MISSING = (
+    ('include/random.h', 669, 'fd6b88ad0af62f22951e6e81fa21e38b12480ece', '8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9'),
+    ('src/random.c', 323, '635a1df5a59fa42a88f30ad884405db2bde95ea5', 'e7e90cc070d1fbf09579f5f91762cd8875d5bbe1d7a90f468bcd870df73b9de2'),
+    ('src/naming_screen.c', 69462, 'deef7054a11e4793ebfdb5e2710f9fc056540546', 'fbed8534a89a801f357fa04cfcbe91798fb80a4a1e24b127ad76eef0454bea13'),
+    ('src/data/region_map/region_map_sections.json', 19656, '601bff65d4a69b6ea03b0e13b3b5354038adf1ed', '82e456cbe86a57ebc4bd0d88d6e000e83e28340895ac038079c38d415bc6de5f'),
+    ('src/data/region_map/region_map_sections.constants.json.txt', 716, 'eeddea6aea1cbec23244031d9b2cd38f2c7e79d4', '84346d3ffc7572aab79273d7f048521f384e77e78c20a6c8b852966949d182d5'),
+)
+REGION_PATHS = (
+    'asm/macros/event.inc', 'data/event_scripts.s',
+    'data/maps/Route4_PokemonCenter_1F/map.json',
+    'data/maps/Route4_PokemonCenter_1F/scripts.inc',
+    'data/maps/Route4_PokemonCenter_1F/text.inc',
+    'data/scripts/pc_transfer.inc', 'data/scripts/std_msgbox.inc', 'data/text/pc_transfer.inc',
+    'include/constants/global.h', 'include/constants/items.h', 'include/constants/flags.h',
+    'include/constants/pokemon.h', 'include/constants/species.h', 'include/constants/vars.h',
+    'src/data/pokemon/species_info.h', 'src/data/pokemon/level_up_learnsets.h',
+    'src/data/battle_moves.h', 'src/field_specials.c', 'src/money.c', 'src/overworld.c',
+    'src/pokemon.c', 'src/pokemon_storage_system.c', 'src/scrcmd.c', 'src/script_pokemon_util.c',
+)
+COMMON_SCRIPTS = (
+    'EventScript_GetGiftMonPartySlot', 'EventScript_TransferredToPC',
+    'EventScript_TransferredSomeonesPC', 'EventScript_TransferredSomeonesPCBoxFull',
+    'EventScript_TransferredBillsPC', 'EventScript_TransferredBillsPCBoxFull',
+    'Std_MsgboxDefault', 'Std_MsgboxYesNo',
+)
+COMMON_TEXTS = (
+    'Text_GiveNicknameToThisMon', 'Text_MonSentToBoxInSomeonesPC',
+    'Text_MonSentToBoxInBillsPC', 'Text_MonSentToBoxSomeonesBoxFull',
+    'Text_MonSentToBoxBillsBoxFull',
+)
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def encode(document):
+    return (json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + '\n').encode('utf-8')
+
+
+def safe_file(base, relative):
+    base = Path(base).absolute()
+    path = base / relative
+    if Path(relative).is_absolute() or '..' in Path(relative).parts or path == base:
+        raise ValueError('Unsafe relative file: ' + str(relative))
+    for cursor in (path, *path.parents):
+        if cursor.is_symlink():
+            raise ValueError('Symlink source/output is unsupported: ' + str(cursor))
+    return path
+
+
+def verify(data, entry):
+    blob = hashlib.sha1(f'blob {len(data)}\0'.encode('ascii') + data).hexdigest()
+    if (len(data), blob, digest(data)) != (entry['byteLength'], entry['gitBlobSha1'], entry['sha256']):
+        raise ValueError('Pinned source identity differs: ' + entry['path'])
+    return data.decode('utf-8', errors='strict')
+
+
+def missing_entries():
+    return [dict(path=p, byteLength=n, gitBlobSha1=b, sha256=s) for p, n, b, s in MISSING]
+
+
+def materialize(reference, raw):
+    env = {k: v for k, v in os.environ.items() if not k.startswith('GIT_')}
+    env['GIT_NO_REPLACE_OBJECTS'] = '1'
+    def git(*args):
+        return subprocess.check_output(['git', '-C', str(reference), *args], env=env)
+    if git('rev-parse', COMMIT + '^{tree}').decode('ascii').strip() != TREE:
+        raise ValueError('Reference commit tree differs')
+    pending = []
+    for entry in missing_entries():
+        path = safe_file(raw, entry['path'])
+        kind = git('ls-tree', COMMIT, '--', entry['path']).decode('ascii').split()
+        if kind[:3] != ['100644', 'blob', entry['gitBlobSha1']]:
+            raise ValueError('Expected regular pinned Git blob: ' + entry['path'])
+        data = git('show', COMMIT + ':' + entry['path'])
+        verify(data, entry)
+        pending.append((path, data))
+    for path, data in pending:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+
+def read_sources(project=ROOT, raw=None, region_raw=None):
+    project = Path(project)
+    raw = Path(raw) if raw is not None else project / 'content/raw/magikarp-gift'
+    region_raw = Path(region_raw) if region_raw is not None else project / 'content/raw/route3-region'
+    lock_bytes = safe_file(project, 'scripts/route3-region.lock.json').read_bytes()
+    if digest(lock_bytes) != REGION_LOCK_SHA256:
+        raise ValueError('Reviewed Route3 source lock differs')
+    lock = json.loads(lock_bytes)
+    if lock['commit'] != COMMIT or lock['tree'] != TREE:
+        raise ValueError('Route3 source identity differs')
+    indexed = {entry['path']: entry for entry in lock['files']}
+    sources, entries = {}, []
+    for path in sorted(REGION_PATHS):
+        entry = {k: indexed[path][k] for k in ('path', 'byteLength', 'gitBlobSha1', 'sha256')}
+        sources[path] = verify(safe_file(region_raw, path).read_bytes(), entry)
+        entries.append(dict(**entry, rawModule='route3-region'))
+    for entry in missing_entries():
+        if entry['path'] in indexed:
+            raise ValueError('Unnecessary duplicate import: ' + entry['path'])
+        sources[entry['path']] = verify(safe_file(raw, entry['path']).read_bytes(), entry)
+        entries.append(dict(**entry, rawModule='magikarp-gift'))
+    return sources, sorted(entries, key=lambda entry: entry['path'])
+
+
+def reference(sources, path, symbol, start, end):
+    return dict(repository='pret/pokefirered', commit=COMMIT, path=path, symbol=symbol,
+                sha256=digest(sources[path].encode('utf-8')), line=start, endLine=end)
+
+
+def blocks(sources):
+    result = {}
+    for path in ('data/maps/Route4_PokemonCenter_1F/scripts.inc',
+                 'data/maps/Route4_PokemonCenter_1F/text.inc', 'data/scripts/pc_transfer.inc',
+                 'data/scripts/std_msgbox.inc', 'data/text/pc_transfer.inc', 'data/event_scripts.s'):
+        text = sources[path]
+        labels = list(re.finditer(r'^(\w+)::?\s*$', text, re.M))
+        for i, label in enumerate(labels):
+            finish = labels[i + 1].start() if i + 1 < len(labels) else len(text)
+            body = text[label.end():finish].splitlines()
+            # A .include is not part of the previous label's body.
+            body = [line for line in body if line.strip() and not line.lstrip().startswith(('.include', '@'))]
+            if label[1] in result:
+                raise ValueError('Duplicate source label: ' + label[1])
+            line = text[:label.start()].count('\n') + 1
+            result[label[1]] = dict(label=label[1], sourceRef=reference(sources, path, label[1], line,
+                text[:finish].count('\n')), lines=body)
+    return result
+
+
+def function(sources, path, symbol):
+    text = sources[path]
+    matches = list(re.finditer(r'^[^\n;{}]+\b' + re.escape(symbol) + r'\([^\n]*\)\n\{', text, re.M))
+    if len(matches) != 1:
+        raise ValueError('Expected one function definition: ' + symbol)
+    start = matches[0].start()
+    ending = re.search(r'^\}', text[matches[0].end():], re.M)
+    if ending is None:
+        raise ValueError('Unclosed source function: ' + symbol)
+    end = matches[0].end() + ending.end()
+    return dict(sourceRef=reference(sources, path, symbol, text[:start].count('\n') + 1,
+                text[:end].count('\n') + 1), text=text[start:end] + '\n')
+
+
+def build(sources, entries):
+    all_blocks = blocks(sources)
+    root = 'Route4_PokemonCenter_1F_EventScript_MagikarpSalesman'
+    selected, pending = {}, [root]
+    while pending:
+        symbol = pending.pop()
+        if symbol in selected:
+            continue
+        selected[symbol] = all_blocks[symbol]
+        for line in selected[symbol]['lines']:
+            if line.strip().startswith('.string'):
+                continue
+            for token in re.findall(r'\b\w+\b', line):
+                if token in all_blocks and token not in selected:
+                    pending.append(token)
+            if line.strip().startswith('msgbox '):
+                pending.append('Std_MsgboxYesNo' if 'MSGBOX_YESNO' in line else 'Std_MsgboxDefault')
+    if not set(COMMON_SCRIPTS + COMMON_TEXTS) <= selected.keys():
+        raise ValueError('Gift common-script closure is incomplete')
+    extra_common = {name for name in selected if not name.startswith('Route4_PokemonCenter_1F_')} - set(COMMON_SCRIPTS + COMMON_TEXTS)
+    if extra_common:
+        raise ValueError('Unexpected common-script scope: ' + ', '.join(sorted(extra_common)))
+    sections = json.loads(sources['src/data/region_map/region_map_sections.json'])['map_sections']
+    met_location, = [i for i, section in enumerate(sections) if section['id'] == 'MAPSEC_ROUTE_4']
+    if met_location != 104 or json.loads(sources['data/maps/Route4_PokemonCenter_1F/map.json'])['region_map_section'] != 'MAPSEC_ROUTE_4':
+        raise ValueError('Gift met-location mapping differs')
+    snippets = []
+    for path, names in (
+        ('src/script_pokemon_util.c', ('ScriptGiveMon',)),
+        ('src/pokemon.c', ('CreateMon', 'CreateBoxMon', 'GiveBoxMonInitialMoveset', 'GiveMonToPlayer', 'SendMonToPC')),
+        ('src/field_specials.c', ('ChangePokemonNickname', 'ChangePokemonNickname_CB', 'ChangeBoxPokemonNickname', 'ChangeBoxPokemonNickname_CB', 'SetPCBoxToSendMon', 'GetPCBoxToSendMon', 'ShouldShowBoxWasFullMessage')),
+        ('src/scrcmd.c', ('ScrCmd_givemon', 'ScrCmd_getpartysize', 'ScrCmd_bufferboxname', 'ScrCmd_checkplayergender', 'ScrCmd_checkmoney', 'ScrCmd_removemoney')),
+        ('src/money.c', ('IsEnoughMoney', 'RemoveMoney')),
+        ('src/overworld.c', ('GetCurrentRegionMapSectionId',)),
+        ('src/pokemon_storage_system.c', ('StorageGetCurrentBox', 'SetCurrentBox')),
+        ('src/naming_screen.c', ('SaveInputText', 'MainState_PressedOKButton')),
+        ('src/random.c', ('Random',)),
+    ):
+        snippets.extend(function(sources, path, name) for name in names)
+    constants = dict(MAGIKARP_PRICE=500, SPECIES_MAGIKARP=129, MAGIKARP_LEVEL=5,
+        MON_GIVEN_TO_PARTY=0, MON_GIVEN_TO_PC=1, MON_CANT_GIVE=2, USE_RANDOM_IVS=32,
+        FLAG_BOUGHT_MAGIKARP=0x249, FLAG_SYS_NOT_SOMEONES_PC=0x834,
+        FLAG_SHOWN_BOX_WAS_FULL_MESSAGE=0x843, VAR_TEMP_1=0x4001,
+        VAR_PC_BOX_TO_SEND_MON=0x4037, VAR_0x8004=0x8004, VAR_RESULT=0x800D,
+        MAPSEC_ROUTE_4=met_location, ITEM_NONE=0, ITEM_POKE_BALL=4,
+        VERSION_FIRE_RED=4, LANGUAGE_ENGLISH=2, POKEMON_NAME_LENGTH=10)
+    contract = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
+        sourceFiles=entries, sourceSetSha256=digest(''.join(e['path'] + '\0' + e['sha256'] + '\n' for e in entries).encode('utf-8')),
+        gameplayEnabled=False, constants=constants,
+        gift=dict(species='SPECIES_MAGIKARP', level=5, price=500, heldItem='ITEM_NONE',
+            personality='Random() | (Random() << 16)', shinyLock=False, ivDraws=2, totalRngDraws=4,
+            ivOrder=[['HP', 'Attack', 'Defense'], ['Speed', 'SpecialAttack', 'SpecialDefense']],
+            ivBitShifts=[0, 5, 10], ivMask=31, originalTrainer='player-full-32-bit-id-name-gender',
+            metLocation='MAPSEC_ROUTE_4', metLevel=5, metGame=4, language=2, ball='ITEM_POKE_BALL',
+            defaultNickname='MAGIKARP', friendship=70, initialMoves=['MOVE_SPLASH'], initialPp=[40],
+            evs=[0, 0, 0, 0, 0, 0], status=0, fullHp=True),
+        resultSemantics=[
+            dict(result=0, destination='first-empty-party-slot', consumesRng=True, setsSeenCaught=True, chargesMoney=True, setsBoughtAfterDialogue=True),
+            dict(result=1, destination='first-empty-PC-slot-current-box-then-wrap', consumesRng=True, setsSeenCaught=True, chargesMoney=True, setsBoughtAfterDialogue=True),
+            dict(result=2, destination=None, consumesRng=True, setsSeenCaught=False, chargesMoney=False, setsBoughtAfterDialogue=False)],
+        ordering=['already-bought-check', 'show-money', 'gender-offer', 'yes-no', 'money-check',
+            'generate-before-capacity-check', 'deliver-and-set-seen-caught-on-success', 'remove-500',
+            'update-money', 'paid-text-and-level-up-fanfare', 'nickname-choice',
+            'optional-nickname-callback', 'PC-transfer-message-if-boxed', 'set-bought-flag'],
+        pc=dict(currentBoxChanges=False, slotsPerBox=30, boxCount=14,
+            oldBox='previous VAR_PC_BOX_TO_SEND_MON, saved by SetPCBoxToSendMon before scanning',
+            destination='VAR_PC_BOX_TO_SEND_MON after success; gSpecialVar_MonBoxId and gSpecialVar_MonBoxPos',
+            fullNotice='not FLAG_SHOWN_BOX_WAS_FULL_MESSAGE and currentBox != destination; sets flag when true',
+            clearsFullNotice='old VAR_PC_BOX_TO_SEND_MON != actual destination',
+            buffers=dict(STR_VAR_1='actual destination box name', STR_VAR_2='MAGIKARP species name even after nickname', STR_VAR_3='previous VAR_PC_BOX_TO_SEND_MON box name, only when full notice')),
+        nickname=dict(partySlot='getpartysize - 1 copied to VAR_0x8004',
+            boxSlot='gSpecialVar_MonBoxId and gSpecialVar_MonBoxPos',
+            oldNameBuffer='STR_VAR_3', editableNameAndResultBuffer='STR_VAR_2',
+            namingTemplate='NAMING_SCREEN_NICKNAME', maximumCharacters=10,
+            initialInputEmpty=True, emptyOrAllSpaces='preserve original name',
+            transferHandledBy='script after callback; not NAMING_SCREEN_CAUGHT_MON'),
+        commonScripts=list(COMMON_SCRIPTS), commonTexts=list(COMMON_TEXTS),
+        scripts=[selected[name] for name in sorted(selected)], sourceFunctions=snippets)
+    common = '\n'.join(name + '::\n' + '\n'.join(selected[name]['lines']) + '\n' for name in COMMON_SCRIPTS + COMMON_TEXTS).encode('utf-8')
+    outputs = {'magikarp-contract.json': encode(contract), 'common-script-dependencies.inc': common}
+    manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, sourceTree=TREE,
+        sourceSetSha256=contract['sourceSetSha256'], reusedRegionSourceCount=len(REGION_PATHS),
+        newSourceCount=len(MISSING), scriptBlockCount=len(selected), commonScriptCount=len(COMMON_SCRIPTS),
+        commonTextCount=len(COMMON_TEXTS), sourceFunctionCount=len(snippets),
+        outputs=[dict(path=p, byteLength=len(b), sha256=digest(b)) for p, b in sorted(outputs.items())])
+    outputs['manifest.json'] = encode(manifest)
+    return outputs
+
+
+def run(project=ROOT, raw=None, region_raw=None, output=None, check=False):
+    sources, entries = read_sources(project, raw, region_raw)
+    outputs = build(sources, entries)
+    output = Path(output) if output is not None else Path(project) / 'content/generated/magikarp-gift'
+    for relative, data in outputs.items():
+        path = safe_file(output, relative)
+        if check:
+            if path.read_bytes() != data:
+                raise ValueError('Generated contract differs: ' + relative)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+    return json.loads(outputs['manifest.json'])
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--materialize', action='store_true', help='Read the five missing source blobs from the fixed local Git commit')
+    parser.add_argument('--reference', type=Path)
+    parser.add_argument('--check', action='store_true', help='Verify existing output without writing')
+    parser.add_argument('--output', type=Path)
+    args = parser.parse_args()
+    if args.materialize:
+        reference_root = args.reference or Path((ROOT / '.tools/reference-root').read_text(encoding='utf-8').strip())
+        materialize(reference_root, ROOT / 'content/raw/magikarp-gift')
+    print(json.dumps(run(output=args.output, check=args.check), sort_keys=True))
+
+
+if __name__ == '__main__':
+    main()

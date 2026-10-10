@@ -1,0 +1,96 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 659,
+      "gitBlobSha1": "22ca5aaa576d87b01cf817c616dbf6b82703074a",
+      "path": "graphics/trainers/front_pics/leader_misty_front_pic.png",
+      "sha256": "d05c808ba42fbcb036c3e2789d3876d7ca1c5f3733aeb71cc596a2a42a59a77b"
+    },
+    {
+      "byteLength": 626,
+      "gitBlobSha1": "7d87be9ad4e56f69e8a706814114bcf8f8682703",
+      "path": "graphics/trainers/front_pics/picnicker_front_pic.png",
+      "sha256": "14239b7899f3ed92405448ee9b1377d98633d294ea4205f7ac20ca6758fceb0b"
+    },
+    {
+      "byteLength": 602,
+      "gitBlobSha1": "af545f09c0e348e06aaed4df355ec851d05131b7",
+      "path": "graphics/trainers/front_pics/swimmer_m_front_pic.png",
+      "sha256": "5ccbf8e4e1c7f8fb9adcfd82b58b50ebb447590c644f134cec31aa5af3857a9e"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "86853c95c1e1aa4d17fc53eef0d962336f853101",
+      "path": "graphics/trainers/palettes/leader_misty.pal",
+      "sha256": "4cf7664650091ff73b61430d338028c649bbd5e074dc2fb32e423bf5f9513de1"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "476bcfaf6be94745e08e52fbfe8a886e5a446b82",
+      "path": "graphics/trainers/palettes/picnicker.pal",
+      "sha256": "a2d97904c3de364b3b0c26e69dfe4337be43aa929b16f74364ef307a2265fda1"
+    },
+    {
+      "byteLength": 199,
+      "gitBlobSha1": "206f62692417c384c229984b39e1b644ab2d0025",
+      "path": "graphics/trainers/palettes/swimmer_m.pal",
+      "sha256": "3967683a213c315c99bf3091b99fc4203d10a0f7037f019a66516ff677c3f163"
+    },
+    {
+      "byteLength": 16440,
+      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
+      "path": "include/constants/battle.h",
+      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+    },
+    {
+      "byteLength": 701,
+      "gitBlobSha1": "1e804fd1868e00406528459a031ec6dd82616109",
+      "path": "include/constants/battle_setup.h",
+      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+    },
+    {
+      "byteLength": 20887,
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
+      "path": "include/constants/trainers.h",
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+    },
+    {
+      "byteLength": 73524,
+      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0",
+      "path": "src/battle_controller_opponent.c",
+      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98"
+    },
+    {
+      "byteLength": 171904,
+      "gitBlobSha1": "64c9e59b7efdd2acf399716da40d4848da91a428",
+      "path": "src/battle_main.c",
+      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+    },
+    {
+      "byteLength": 33351,
+      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
+      "path": "src/battle_setup.c",
+      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+    },
+    {
+      "byteLength": 34300,
+      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088",
+      "path": "src/data/graphics/trainers.h",
+      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9"
+    },
+    {
+      "byteLength": 24042,
+      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda",
+      "path": "src/data/trainer_graphics/front_pic_tables.h",
+      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f"
+    },
+    {
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "path": "tools/gbagfx/gfx.c",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ],
+  "repository": "pret/pokefirered"
+}

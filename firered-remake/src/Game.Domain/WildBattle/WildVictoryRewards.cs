@@ -1,0 +1,301 @@
+using System.Collections.Immutable;
+using System.Text.Json.Serialization;
+using Game.Domain.Growth;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
+using Game.Domain.Rules;
+
+namespace Game.Domain.WildBattle;
+
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildRewardExperienceEvent), "experience")]
+[JsonDerivedType(typeof(WildRewardEvEvent), "evs")]
+[JsonDerivedType(typeof(WildRewardLevelEvent), "level")]
+[JsonDerivedType(typeof(WildRewardFriendshipEvent), "friendship")]
+[JsonDerivedType(typeof(WildRewardMoveLearnedEvent), "move-learned")]
+[JsonDerivedType(typeof(WildRewardMovePendingEvent), "move-pending")]
+public abstract record WildRewardEvent;
+public sealed record WildRewardExperienceEvent(uint Before, uint After, int Gained) : WildRewardEvent;
+public sealed record WildRewardEvEvent(SixStats Before, SixStats After, SixStats Gained) : WildRewardEvent;
+public sealed record WildRewardLevelEvent(int Before, int After, BattleStats StatsBefore, BattleStats StatsAfter,
+    int HpBefore, int HpAfter) : WildRewardEvent;
+public sealed record WildRewardFriendshipEvent(int Before, int After) : WildRewardEvent;
+public sealed record WildRewardMoveLearnedEvent(int Level, MoveId Move, int Slot) : WildRewardEvent;
+public sealed record WildRewardMovePendingEvent(int Level, MoveId Move) : WildRewardEvent;
+public sealed record WildPendingMove(int Level, MoveId Move);
+
+/// <summary>
+/// Unhealed reward state. PendingMoves must be retained and resolved in order before returning to
+/// the field; later candidates may become AlreadyKnown after the earlier replacement decisions.
+/// ExperienceGained is the source announcement; ExperienceCredited can be smaller at level 100.
+/// </summary>
+public sealed record WildVictoryRewardResult(PartyPokemon Pokemon, int ExperienceGained, SixStats EvsGained,
+    int LevelsGained, int FriendshipDelta, int HpDelta, ImmutableArray<WildRewardEvent> Events,
+    ImmutableArray<WildPendingMove> PendingMoves)
+{
+    public int ExperienceCredited => Events.OfType<WildRewardExperienceEvent>().Sum(e => checked((int)(e.After - e.Before)));
+}
+
+/// <summary>
+/// Pure ordinary wild settlement for one locally owned, participating, non-egg member and a
+/// defeated Pidgey/Rattata. Caller establishes ownership, participation, no Pokerus and ordinary
+/// battle flags, then commits atomically with its settlement ledger. No healing, money or IO.
+/// </summary>
+public static class WildVictoryRewards
+{
+    public const string RulesVersion = "firered-route1-wild-rewards-v1";
+    public const string SourceCommit = PokemonFactory.SourceCommit;
+
+    public static WildVictoryRewardResult Apply(PokemonCatalog catalog, PartyPokemon participantAfterBattle,
+        PokemonInstance defeatedPokemon, string currentRegion, int aliveParticipants = 1, bool forestRules = false, bool trainerBattle = false, bool pewterRules = false, bool route22Rules = false, bool route3Rules = false, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false)
+    {
+        vermilionGymRules |= route11Rules;
+        ssAnneRules |= vermilionGymRules;
+        vermilionRules |= ssAnneRules;
+        billRules |= vermilionRules;
+        ceruleanRules |= billRules;
+        mtMoonRules |= ceruleanRules;
+        route3Rules |= mtMoonRules;
+        route22Rules |= route3Rules;
+        if(trainerBattle&&!forestRules)throw new NotSupportedException("Trainer rewards require the authenticated forest profile.");
+        if(aliveParticipants is <1 or >6)throw new ArgumentOutOfRangeException(nameof(aliveParticipants));
+        if(pewterRules&&!forestRules)throw new NotSupportedException("Pewter rewards require forest growth rules.");
+        if(route22Rules&&!forestRules)throw new NotSupportedException("Route22 rewards require forest growth rules.");
+        pewterRules |= route22Rules;
+        ValidateRewardCatalog(catalog,forestRules,pewterRules,route22Rules,route3Rules,mtMoonRules,ceruleanRules,billRules,vermilionRules,ssAnneRules,vermilionGymRules,route11Rules);
+        ValidateOwned(catalog, participantAfterBattle, route22Rules, route11Rules);
+        var opponentError = PokemonStateValidator.Validate(catalog, defeatedPokemon);
+        if (opponentError is not null) throw new ArgumentException(opponentError, nameof(defeatedPokemon));
+        if (route11Rules && defeatedPokemon.SourceSpeciesId is 37 or 50 or 51 or 60 or 61 or 82 ? false : vermilionGymRules && defeatedPokemon.SourceSpeciesId == 26 ? false : ssAnneRules && defeatedPokemon.SourceSpeciesId is 2 or 5 or 8 or 58 or 64 or 72 or 77 ? false : vermilionRules && defeatedPokemon.SourceSpeciesId is 12 or 20 or 52 ? false : billRules && defeatedPokemon.SourceSpeciesId==79 ? false : ceruleanRules?defeatedPokemon.SourceSpeciesId is not (1 or 4 or 7 or 10 or 11 or 13 or 14 or 16 or 17 or 19 or 21 or 23 or 25 or 27 or 29 or 32 or 35 or 39 or 41 or 43 or 46 or 56 or 63 or 66 or 69 or 74 or 81 or 88 or 90 or 95 or 96 or 100 or 109 or 116 or 118 or 120 or 121 or 129):mtMoonRules?defeatedPokemon.SourceSpeciesId is not (1 or 4 or 7 or 10 or 11 or 13 or 14 or 16 or 19 or 21 or 23 or 25 or 27 or 29 or 32 or 35 or 39 or 41 or 43 or 46 or 56 or 69 or 74 or 81 or 88 or 95 or 100 or 109 or 129):route3Rules?defeatedPokemon.SourceSpeciesId is not (1 or 4 or 7 or 10 or 11 or 13 or 14 or 16 or 19 or 21 or 23 or 25 or 27 or 29 or 32 or 39 or 56 or 74 or 95 or 129):route22Rules?defeatedPokemon.SourceSpeciesId is not (1 or 4 or 7 or 10 or 11 or 13 or 14 or 16 or 19 or 21 or 25 or 27 or 56 or 74 or 95):pewterRules?defeatedPokemon.SourceSpeciesId is not (10 or 11 or 13 or 14 or 16 or 19 or 25 or 27 or 74 or 95):forestRules?defeatedPokemon.SourceSpeciesId is not (10 or 11 or 13 or 14 or 16 or 19 or 25):defeatedPokemon.SourceSpeciesId is not (16 or 19))
+            throw new NotSupportedException("Only defeated source Pidgey and Rattata are supported.");
+        if (defeatedPokemon.CurrentHp != 0)
+            throw new ArgumentException("Wild rewards require a defeated opponent.", nameof(defeatedPokemon));
+        if (!ValidRegion(currentRegion))
+            throw new ArgumentException("A source MAPSEC region is required.", nameof(currentRegion));
+        if ((participantAfterBattle.HeldItem != "ITEM_NONE" && !(route11Rules ? Route11BattleScope.SupportsHeldItem(participantAfterBattle.HeldItem) : ssAnneRules ? SsAnneBattleScope.SupportsHeldItem(participantAfterBattle.HeldItem) : vermilionRules ? VermilionBattleScope.SupportsHeldItem(participantAfterBattle.HeldItem) : ceruleanRules ? MtMoonBattleScope.SupportsHeldItem(participantAfterBattle.HeldItem) : route3Rules && participantAfterBattle.HeldItem == "ITEM_ORAN_BERRY")) || participantAfterBattle.Ball == "ITEM_LUXURY_BALL")
+            throw new NotSupportedException("Held-item modifiers and Luxury Ball friendship are outside this reward profile.");
+        if(!forestRules&&participantAfterBattle.Status!=0)throw new NotSupportedException("Status requires the forest reward profile.");
+        if (participantAfterBattle.Pokemon.Moves.Any(m => m.PpUps != 0))
+            throw new NotSupportedException("PP Ups are outside the shared move-learning profile.");
+
+        var before = participantAfterBattle.Pokemon;
+        // Cmd_getexp rejects level 100 before MonGainEVs, and checks living HP for both EXP/EVs.
+        // In particular, a simultaneous faint is not a victory reward even if its outcome has bit 1.
+        if (before.CurrentHp == 0 || before.Level == 100)
+            return new(participantAfterBattle, 0, SixStats.Zero, 0, 0, 0, [], []);
+
+        var defeated = catalog.Species[defeatedPokemon.Species];
+        var species = catalog.Species[before.Species];
+        // Cmd_getexp divides the already truncated base EXP by living participants. EVs are
+        // credited in full to each eligible participant; the caller owns membership and order.
+        int experienceGained = Math.Max(1, defeated.ExperienceYield * defeatedPokemon.Level / 7 / aliveParticipants);
+        if(trainerBattle)experienceGained=experienceGained*150/100;
+        uint experience = Math.Min(checked(before.Experience + (uint)experienceGained),
+            GrowthRules.ExperienceAtLevel(species.GrowthRate, 100));
+        int finalLevel = GrowthRules.LevelFromExperience(species.GrowthRate, experience);
+        if (!forestRules && finalLevel > before.Level && species.Evolutions.Any(e => e.Method==PokemonEvolutionMethod.Level&&e.Level <= finalLevel))
+            throw new NotSupportedException("A level evolution is now eligible; the evolution flow is not implemented.");
+
+        var values=before.Evs.Values.ToArray();var gains=new int[6];int total=values.Sum();
+        for(int i=0;i<6;i++){gains[i]=Math.Min(defeated.EvYield.Values[i],Math.Min(255-values[i],510-total));values[i]+=gains[i];total+=gains[i];}
+        var evsGained = new SixStats(gains[0],gains[1],gains[2],gains[3],gains[4],gains[5]);
+        var evs = new SixStats(values[0],values[1],values[2],values[3],values[4],values[5]);
+        var events = ImmutableArray.CreateBuilder<WildRewardEvent>();
+        var pending = ImmutableArray.CreateBuilder<WildPendingMove>();
+        events.Add(new WildRewardExperienceEvent(before.Experience, experience, experienceGained));
+        events.Add(new WildRewardEvEvent(before.Evs, evs, evsGained));
+        // The EXP event is the announcement. EV mutation precedes the first level/stat mutation.
+        var pokemon = before with
+        {
+            Evs = evs,
+            StatCalculationEvs = evs == before.Evs ? before.StatCalculationEvs : before.StatCalculationEvs ?? before.Evs
+        };
+        for (int level = before.Level + 1; level <= finalLevel; level++)
+        {
+            var stats = CalculateStats(species, pokemon, evs, level);
+            int hp = pokemon.CurrentHp + stats.MaxHp - pokemon.Stats.MaxHp;
+            events.Add(new WildRewardLevelEvent(pokemon.Level, level, pokemon.Stats, stats, pokemon.CurrentHp, hp));
+            int increment = pokemon.Friendship < 100 ? 5 : pokemon.Friendship < 200 ? 3 : 2;
+            if (participantAfterBattle.MetLocation == currentRegion) increment++;
+            int friendship = Math.Min(255, pokemon.Friendship + increment);
+            events.Add(new WildRewardFriendshipEvent(pokemon.Friendship, friendship));
+            pokemon = pokemon with
+            {
+                Level = level, Experience = GrowthRules.ExperienceAtLevel(species.GrowthRate, level),
+                Stats = stats, StatCalculationEvs = null, CurrentHp = hp, Friendship = friendship
+            };
+            foreach (var move in PokemonMoveRules.AtLevel(species, level))
+            {
+                // Once a replacement is pending, future knowledge depends on that decision.
+                // Keep every subsequent candidate, including one that is currently known.
+                if (pending.Count > 0)
+                {
+                    pending.Add(new(level, move));
+                    events.Add(new WildRewardMovePendingEvent(level, move));
+                    continue;
+                }
+                var learned = PokemonMoveRules.TryLearn(catalog, pokemon.Moves, move);
+                if (learned.Outcome == MoveLearningOutcome.NeedsReplacement)
+                {
+                    pending.Add(new(level, move));
+                    events.Add(new WildRewardMovePendingEvent(level, move));
+                }
+                else if (learned.Outcome == MoveLearningOutcome.Added)
+                {
+                    pokemon = pokemon with { Moves = learned.Moves };
+                    events.Add(new WildRewardMoveLearnedEvent(level, move, pokemon.Moves.Length - 1));
+                }
+            }
+        }
+        pokemon = pokemon with { Experience = experience };
+        var owned = participantAfterBattle with { Pokemon = pokemon };
+        ValidateOwned(catalog, owned, route22Rules, route11Rules);
+        return new(owned, experienceGained, evsGained, pokemon.Level - before.Level,
+            pokemon.Friendship - before.Friendship, pokemon.CurrentHp - before.CurrentHp,
+            events.ToImmutable(), pending.ToImmutable());
+    }
+
+    private static void ValidateOwned(PokemonCatalog catalog, PartyPokemon owned, bool route22Rules = false, bool route11Rules = false)
+    {
+        var names = catalog.Species.Values.ToImmutableSortedDictionary(s => s.SourceSpeciesId,
+            s => s.SourceSpeciesId switch { 29 => "NIDORAN♀", 32 => "NIDORAN♂", _ => s.Id.Value["pret:SPECIES_".Length..] });
+        var error = PokemonStateValidator.ValidateParty(new(catalog, names, PokemonStateValidator.NicknameAlphabet) { AllowSleepStatus = route22Rules, AllowFreezeStatus = route11Rules }, owned);
+        if (error is not null) throw new ArgumentException(error, nameof(owned));
+        if (route22Rules && owned.Pokemon.AbilityId == "ABILITY_VITAL_SPIRIT" && WildBattleStatus.IsSleeping(owned.Status))
+            throw new NotSupportedException("Vital Spirit cannot enter rewards asleep in the Route22 profile.");
+    }
+
+    private static void ValidateRewardCatalog(PokemonCatalog catalog,bool forestRules,bool pewterRules,bool route22Rules,bool route3Rules,bool mtMoonRules,bool ceruleanRules,bool billRules,bool vermilionRules,bool ssAnneRules, bool vermilionGymRules, bool route11Rules)
+    {
+        PokemonFactory.ValidateCatalog(catalog);
+        if (route22Rules)
+        {
+            if (catalog.Species.Count != (route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : ceruleanRules ? 65 : mtMoonRules ? 56 : route3Rules ? 40 : 32)) throw new NotSupportedException("Rewards require the complete versioned species catalog.");
+            foreach (var (name, id, experience, ev) in new[] {
+                ("BULBASAUR", 1, 64, new SixStats(0,0,0,0,1,0)),
+                ("CHARMANDER", 4, 65, new SixStats(0,0,0,1,0,0)),
+                ("SQUIRTLE", 7, 66, new SixStats(0,0,1,0,0,0)),
+                ("SPEAROW", 21, 58, new SixStats(0,0,0,1,0,0)),
+                ("MANKEY", 56, 74, new SixStats(0,1,0,0,0,0)) })
+                if (!catalog.Species.TryGetValue(new("pret:SPECIES_" + name), out var species) ||
+                    species.SourceSpeciesId != id || species.ExperienceYield != experience || species.EvYield != ev)
+                    throw new NotSupportedException("The pinned Route22 EXP/EV fields are required.");
+        }
+        if (route3Rules)
+        {
+            foreach (var (name, id, experience, ev) in new[] {
+                ("EKANS", 23, 62, new SixStats(0,1,0,0,0,0)),
+                ("NIDORAN_F", 29, 59, new SixStats(1,0,0,0,0,0)),
+                ("NIDORINA", 30, 117, new SixStats(2,0,0,0,0,0)),
+                ("NIDORAN_M", 32, 60, new SixStats(0,1,0,0,0,0)),
+                ("NIDORINO", 33, 118, new SixStats(0,2,0,0,0,0)),
+                ("JIGGLYPUFF", 39, 76, new SixStats(2,0,0,0,0,0)),
+                ("MAGIKARP", 129, 20, new SixStats(0,0,0,1,0,0)),
+                ("GYARADOS", 130, 214, new SixStats(0,2,0,0,0,0)) })
+                if (!catalog.Species.TryGetValue(new("pret:SPECIES_" + name), out var species) ||
+                    species.SourceSpeciesId != id || species.ExperienceYield != experience || species.EvYield != ev)
+                    throw new NotSupportedException("The pinned Route3 EXP/EV fields are required.");
+        }
+        if (mtMoonRules)
+        {
+            // Exact new species fields from the pinned species_info.h; ordinary arithmetic below is shared.
+            foreach (var (name, id, experience, ev) in new[] {
+                ("ARBOK", 24, 147, new SixStats(0,2,0,0,0,0)),
+                ("NIDOQUEEN", 31, 194, new SixStats(3,0,0,0,0,0)),
+                ("NIDOKING", 34, 195, new SixStats(0,3,0,0,0,0)),
+                ("CLEFAIRY", 35, 68, new SixStats(2,0,0,0,0,0)),
+                ("CLEFABLE", 36, 129, new SixStats(3,0,0,0,0,0)),
+                ("WIGGLYTUFF", 40, 109, new SixStats(3,0,0,0,0,0)),
+                ("ZUBAT", 41, 54, new SixStats(0,0,0,1,0,0)),
+                ("GOLBAT", 42, 171, new SixStats(0,0,0,2,0,0)),
+                ("ODDISH", 43, 78, new SixStats(0,0,0,0,1,0)),
+                ("PARAS", 46, 70, new SixStats(0,1,0,0,0,0)),
+                ("PARASECT", 47, 128, new SixStats(0,2,1,0,0,0)),
+                ("BELLSPROUT", 69, 84, new SixStats(0,1,0,0,0,0)),
+                ("MAGNEMITE", 81, 89, new SixStats(0,0,0,0,1,0)),
+                ("GRIMER", 88, 90, new SixStats(1,0,0,0,0,0)),
+                ("VOLTORB", 100, 103, new SixStats(0,0,0,1,0,0)),
+                ("KOFFING", 109, 114, new SixStats(0,0,1,0,0,0)) })
+                if (!catalog.Species.TryGetValue(new("pret:SPECIES_" + name), out var species) ||
+                    species.SourceSpeciesId != id || species.ExperienceYield != experience || species.EvYield != ev)
+                    throw new NotSupportedException("The pinned MtMoon EXP/EV fields are required.");
+        }
+        if (route11Rules)
+        {
+            foreach (var (name,id,experience,ev) in new[] {
+                ("DIGLETT",50,81,new SixStats(0,0,0,1,0,0)), ("DUGTRIO",51,153,new SixStats(0,0,0,2,0,0)),
+                ("MAGNETON",82,161,new SixStats(0,0,0,0,2,0)), ("POLIWAG",60,77,new SixStats(0,0,0,1,0,0)),
+                ("POLIWHIRL",61,131,new SixStats(0,0,0,2,0,0)), ("VULPIX",37,63,new SixStats(0,0,0,1,0,0)) })
+                if (!catalog.Species.TryGetValue(new("pret:SPECIES_"+name),out var species) || species.SourceSpeciesId != id || species.ExperienceYield != experience || species.EvYield != ev)
+                    throw new NotSupportedException("Pinned Route11 EXP/EV fields are required.");
+        }
+        if (ssAnneRules)
+        {
+            foreach (var (name,id,experience,ev) in new[] { ("IVYSAUR",2,141,new SixStats(0,0,0,0,1,1)), ("CHARMELEON",5,142,new SixStats(0,0,0,1,1,0)),
+                ("WARTORTLE",8,143,new SixStats(0,0,1,0,0,1)), ("GROWLITHE",58,91,new SixStats(0,1,0,0,0,0)),
+                ("TENTACOOL",72,105,new SixStats(0,0,0,0,0,1)), ("PONYTA",77,152,new SixStats(0,0,0,1,0,0)) })
+                if (!catalog.Species.TryGetValue(new("pret:SPECIES_"+name),out var species) || species.SourceSpeciesId != id || species.ExperienceYield != experience || species.EvYield != ev)
+                    throw new NotSupportedException("Pinned S.S. Anne EXP/EV fields are required.");
+        }
+        if(vermilionRules)
+        {
+            foreach(var (name,id,experience,ev) in new[]{("MEOWTH",52,69,new SixStats(0,0,0,1,0,0)),("BUTTERFREE",12,160,new SixStats(0,0,0,0,2,1)),("RATICATE",20,116,new SixStats(0,0,0,2,0,0))})
+                if(!catalog.Species.TryGetValue(new("pret:SPECIES_"+name),out var species)||species.SourceSpeciesId!=id||species.ExperienceYield!=experience||species.EvYield!=ev)
+                    throw new NotSupportedException("The pinned Vermilion EXP/EV fields are required.");
+        }
+        if(billRules)
+        {
+            foreach(var (name,id,experience,ev) in new[]{("SLOWPOKE",79,99,new SixStats(1,0,0,0,0,0)),("GLOOM",44,132,new SixStats(0,0,0,0,2,0)),("WEEPINBELL",70,151,new SixStats(0,2,0,0,0,0))})
+                if(!catalog.Species.TryGetValue(new("pret:SPECIES_"+name),out var species)||species.SourceSpeciesId!=id||species.ExperienceYield!=experience||species.EvYield!=ev)
+                    throw new NotSupportedException("The pinned Bill EXP/EV fields are required.");
+        }
+        if (ceruleanRules)
+        {
+            foreach (var (name, id, experience, ev) in new[] {
+                ("PIDGEOTTO", 17, 113, new SixStats(0,0,0,2,0,0)),
+                ("ABRA", 63, 73, new SixStats(0,0,0,0,1,0)),
+                ("KADABRA", 64, 145, new SixStats(0,0,0,0,2,0)),
+                ("MACHOP", 66, 88, new SixStats(0,1,0,0,0,0)),
+                ("DROWZEE", 96, 102, new SixStats(0,0,0,0,0,1)),
+                ("SHELLDER", 90, 97, new SixStats(0,0,1,0,0,0)),
+                ("HORSEA", 116, 83, new SixStats(0,0,0,0,1,0)),
+                ("GOLDEEN", 118, 111, new SixStats(0,1,0,0,0,0)),
+                ("STARYU", 120, 106, new SixStats(0,0,0,1,0,0)),
+                ("STARMIE", 121, 207, new SixStats(0,0,0,2,0,0)) })
+                if (!catalog.Species.TryGetValue(new("pret:SPECIES_" + name), out var species) ||
+                    species.SourceSpeciesId != id || species.ExperienceYield != experience || species.EvYield != ev)
+                    throw new NotSupportedException("The pinned Cerulean EXP/EV fields are required.");
+        }
+        foreach (var (name, number, yield) in new[] { ("PIDGEY", 16, 55), ("RATTATA", 19, 57) })
+        {
+            if (!catalog.Species.TryGetValue(new SpeciesId("pret:SPECIES_" + name), out var species) ||
+                species.SourceSpeciesId != number || species.ExperienceYield != yield ||
+                species.EvYield != new SixStats(0, 0, 0, 1, 0, 0))
+                throw new NotSupportedException("The pinned Route 1 wild EXP/EV source fields are required.");
+        }
+        if(pewterRules)
+        {
+            foreach(var (name,id,experience) in new[]{("GEODUDE",74,86),("SANDSHREW",27,93),("ONIX",95,108)})
+                if(!catalog.Species.TryGetValue(new("pret:SPECIES_"+name),out var species)||species.SourceSpeciesId!=id||species.ExperienceYield!=experience||species.EvYield!=new SixStats(0,0,1,0,0,0))throw new NotSupportedException("The pinned Pewter EXP/EV fields are required.");
+        }
+        if(forestRules)
+        {
+            foreach(var (name,id,experience,ev) in new[]{("CATERPIE",10,53,new SixStats(1,0,0,0,0,0)),("METAPOD",11,72,new SixStats(0,0,2,0,0,0)),("WEEDLE",13,52,new SixStats(0,0,0,1,0,0)),("KAKUNA",14,71,new SixStats(0,0,2,0,0,0)),("PIKACHU",25,82,new SixStats(0,0,0,2,0,0))})
+                if(!catalog.Species.TryGetValue(new("pret:SPECIES_"+name),out var species)||species.SourceSpeciesId!=id||species.ExperienceYield!=experience||species.EvYield!=ev)throw new NotSupportedException("The pinned forest EXP/EV fields are required.");
+        }
+    }
+
+    private static BattleStats CalculateStats(PokemonSpeciesDefinition species, PokemonInstance p, SixStats ev, int level)
+    {
+        var b = species.BaseStats;
+        int Other(int value, int iv, int effort, Stat stat) => StatRules.CalculateOther(value, iv, effort, level, p.Nature, stat);
+        return new(StatRules.CalculateHp(b.Hp, p.Ivs.Hp, ev.Hp, level),
+            Other(b.Attack, p.Ivs.Attack, ev.Attack, Stat.Attack), Other(b.Defense, p.Ivs.Defense, ev.Defense, Stat.Defense),
+            Other(b.SpecialAttack, p.Ivs.SpecialAttack, ev.SpecialAttack, Stat.SpecialAttack),
+            Other(b.SpecialDefense, p.Ivs.SpecialDefense, ev.SpecialDefense, Stat.SpecialDefense),
+            Other(b.Speed, p.Ivs.Speed, ev.Speed, Stat.Speed));
+    }
+
+    private static bool ValidRegion(string? value) => value is not null && value.Length is > 7 and <= 128 &&
+        value.StartsWith("MAPSEC_", StringComparison.Ordinal) && value[7..].All(c => char.IsAsciiLetterUpper(c) || char.IsAsciiDigit(c) || c == '_');
+}

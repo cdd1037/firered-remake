@@ -1,0 +1,36 @@
+{
+  "godot": "4.7.2-stable",
+  "godotSdk": "4.7.2",
+  "dotnetSdk": "10.0.401",
+  "dotnetRuntime": "10.0.12",
+  "targetFramework": "net10.0",
+  "platform": "linux-x64",
+  "assets": [
+    {
+      "name": "Godot_v4.7.2-stable_mono_export_templates.tpz",
+      "url": "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_export_templates.tpz",
+      "sha256": "92f8681e349ef1f90891b792da95e3b2b0bd1ed610b78018c58feb2d87e15a9d",
+      "bytes": 1202598411
+    },
+    {
+      "name": "Godot_v4.7.2-stable_mono_linux_x86_64.zip",
+      "url": "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_linux_x86_64.zip",
+      "sha256": "129f82db7bafd54ae14bb5bb284041c73860e8c7a009a3a026ca5e946cbff247",
+      "bytes": 107698034
+    },
+    {
+      "name": "SHA512-SUMS.txt",
+      "url": "https://github.com/godotengine/godot/releases/download/4.7.2-stable/SHA512-SUMS.txt",
+      "sha256": "b8bdff6704f833e7a021df16ec08e1478edd5a285c1f894929b91a7f74a5c7c0",
+      "bytes": 5682
+    },
+    {
+      "name": "dotnet-sdk-10.0.401-linux-x64.tar.gz",
+      "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-linux-x64.tar.gz",
+      "sha512": "51c8b999af9e8dd9998c9edc5944e19a90788862068acd38694e098889054ce8c23d4f0c5cccfa16bf187d044562359e5ee69a9f8ad0bbe913ba90311fbce25b"
+    }
+  ],
+  "artifactsVerified": true,
+  "runtimeMeasured": "10.0.12",
+  "p0Gate": "incomplete-audio-device"
+}

@@ -1,0 +1,30 @@
+{
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "include/constants/help_system.h",
+      "byteLength": 1861,
+      "gitBlobSha1": "628703d3e142c5bfb7daf145886244d8f996ce3b",
+      "sha256": "01d10a298364d262a01200af867d917971e52fd8493f81247fc0078b472da364"
+    },
+    {
+      "path": "src/strings.c",
+      "byteLength": 96631,
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+    },
+    {
+      "path": "include/constants/quest_log.h",
+      "byteLength": 6408,
+      "gitBlobSha1": "fe284ba133ccc28053515c501979741b3960212f",
+      "sha256": "90cceec5883201c3d3d2bdb420d1f7b3ebef21f4716eef0760bba507559be2dc"
+    },
+    {
+      "path": "src/quest_log.c",
+      "byteLength": 57194,
+      "gitBlobSha1": "0a2f76f2c4019fa0938d5044da73fcea1b2b069c",
+      "sha256": "75f19a2193d991754b48fc5a859a5731a7ddb853372dd3992842912b44a19d4e"
+    }
+  ]
+}

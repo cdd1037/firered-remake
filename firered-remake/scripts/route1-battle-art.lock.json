@@ -1,0 +1,115 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 515,
+      "gitBlobSha1": "081602716f52dfe97a69a0d8ecab428c8069f1cd",
+      "path": "graphics/pokemon/pidgey/front.png",
+      "sha256": "14508ecd9bba58857442c7cfb8dd7ce322489f06c7618d92b72b5eb6a95b8da4"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "2d9f8708fc70fe9cdbabc1b7ad6497cf294740c7",
+      "path": "graphics/pokemon/pidgey/normal.pal",
+      "sha256": "639583d826afaf5165c690ef39f427f61cd2c6408a8811b793fdaafbb1b9704b"
+    },
+    {
+      "byteLength": 188,
+      "gitBlobSha1": "5723ea075f6869a6809841a1a40b0f1472989b39",
+      "path": "graphics/pokemon/pidgey/shiny.pal",
+      "sha256": "4db0c2614f634fe4b7de2521fd090c5955aa1819d5a20a405e99c3ce95f393ee"
+    },
+    {
+      "byteLength": 488,
+      "gitBlobSha1": "28abd0e9a5570988c7a702a9e43216c43a3eac28",
+      "path": "graphics/pokemon/rattata/front.png",
+      "sha256": "5c2d6f950e1bc082fb9915d1cbdf87a83ee2d996873fdb27526a08fe3680b6de"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "a71005b50b56149e49ecdbb107e8cd9e92c4ef6e",
+      "path": "graphics/pokemon/rattata/normal.pal",
+      "sha256": "2e55c85764680b32f36c96e8e2e868356c0c04a8321b0f5978489e8090ab4a7d"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "532f2948fa29b4f64b0e3a08c33d013c8981bd72",
+      "path": "graphics/pokemon/rattata/shiny.pal",
+      "sha256": "bb9a03660024b160d1300d40990faded1e6a8f66a7aea1dbd4c1c63a3b5c0bf5"
+    },
+    {
+      "byteLength": 16440,
+      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
+      "path": "include/constants/battle.h",
+      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+    },
+    {
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "path": "include/constants/species.h",
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "byteLength": 70676,
+      "gitBlobSha1": "87e71d0ad627009e68574cbe1a7ec5008dd6d098",
+      "path": "src/battle_anim_mons.c",
+      "sha256": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb"
+    },
+    {
+      "byteLength": 73524,
+      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0",
+      "path": "src/battle_controller_opponent.c",
+      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98"
+    },
+    {
+      "byteLength": 116151,
+      "gitBlobSha1": "d8e1fe71e4e06303476313c15ab371fee1f82139",
+      "path": "src/battle_controller_player.c",
+      "sha256": "1fc12b9ed3e5f598eb1fc3761db3d57d44b5b68d6e432042d13d1679d76efa05"
+    },
+    {
+      "byteLength": 214609,
+      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
+      "path": "src/data/graphics/pokemon.h",
+      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+    },
+    {
+      "byteLength": 1834,
+      "gitBlobSha1": "dccd063dae2a1ab421c9a990c891ac2eabadf820",
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
+      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1"
+    },
+    {
+      "byteLength": 44879,
+      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036",
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
+      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f"
+    },
+    {
+      "byteLength": 23065,
+      "gitBlobSha1": "82af860d3006c8ca1c1d4c58ac35fb33e1ad025b",
+      "path": "src/data/pokemon_graphics/front_pic_table.h",
+      "sha256": "dab5014e227693ec6e3cc06ff2fcca1f4abafc748e09c705d10788f43aa21f4b"
+    },
+    {
+      "byteLength": 21253,
+      "gitBlobSha1": "35edcc76c13bf5b2b87f93a39e4f1c07099cb273",
+      "path": "src/data/pokemon_graphics/palette_table.h",
+      "sha256": "52ef57ca9828f2ef5e5908191b76d5486add0fa0aad63433b0e7cea3c9c74704"
+    },
+    {
+      "byteLength": 26093,
+      "gitBlobSha1": "8b1cfcaacadf8e543db93861d797f55b26d01729",
+      "path": "src/data/pokemon_graphics/shiny_palette_table.h",
+      "sha256": "f643dd3694b0a509fbb52748af34ccf09334686f099acf39f829ec77eee990ec"
+    },
+    {
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "path": "tools/gbagfx/gfx.c",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ],
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1
+}

@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "profile": "firered-viridian-pewter-shop-v1",
+  "completeItemCatalog": false,
+  "itemSymbols": [
+    "ITEM_POKE_BALL",
+    "ITEM_POTION",
+    "ITEM_ANTIDOTE",
+    "ITEM_PARALYZE_HEAL",
+    "ITEM_AWAKENING",
+    "ITEM_BURN_HEAL",
+    "ITEM_ESCAPE_ROPE",
+    "ITEM_REPEL"
+  ],
+  "files": [
+    {
+      "path": "data/event_scripts.s",
+      "byteLength": 55643,
+      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
+      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27"
+    },
+    {
+      "path": "data/maps/PewterCity_Mart/scripts.inc",
+      "byteLength": 725,
+      "gitBlobSha1": "02740165f48377b5be23f76fdc22937ace5b3adb",
+      "sha256": "bd0c3cd692a688f141b749b4d43bf16cbfacc7e1abca3ccc050e8cc6d1798175"
+    },
+    {
+      "path": "data/maps/ViridianCity_Mart/scripts.inc",
+      "byteLength": 2302,
+      "gitBlobSha1": "1210dd8263d35d9916db57c272ffa2041724dfd3",
+      "sha256": "b8ffccc716ae3d79be432c37213e3284849c5d5dd160757a8a1a9f1c5bc61e8b"
+    },
+    {
+      "path": "data/text/poke_mart.inc",
+      "byteLength": 839,
+      "gitBlobSha1": "1e1d4ac35e4618f3b3ddacd023e0b8c0be52f0e3",
+      "sha256": "a1b8588b2078d15aa82893be92a408a682106ecff3a9db6c36008618497d169e"
+    },
+    {
+      "path": "graphics/items/icon_palettes/antidote.pal",
+      "byteLength": 169,
+      "gitBlobSha1": "fc6561702915f0c69be0a6b15ac1afa73ce1b6aa",
+      "sha256": "bf9c9e765280bad8e7c7737ba5b50a065956723f9ee2f08eae9215dcd40a3795"
+    },
+    {
+      "path": "graphics/items/icon_palettes/awakening.pal",
+      "byteLength": 171,
+      "gitBlobSha1": "b2984538c731f69882a454d93326a72ba9555ecd",
+      "sha256": "9b0d448deeb662e5263a1b4b59dff3cdf466d403d052e0ca7b4d578f96119d99"
+    },
+    {
+      "path": "graphics/items/icon_palettes/burn_heal.pal",
+      "byteLength": 171,
+      "gitBlobSha1": "9ca167384b556456df623ead73c2d09511e9874b",
+      "sha256": "b014010dbe86edc0754ee4804e9b2263e2637fb788784c737a22460d081e81c4"
+    },
+    {
+      "path": "graphics/items/icon_palettes/escape_rope.pal",
+      "byteLength": 169,
+      "gitBlobSha1": "d9b3b84c72636e727ca2bd8b6c0b8a74126784f4",
+      "sha256": "087f6ff0b3ec57f07a085213e016cdc1fadb312332aa5a9e5580bd7eadc15381"
+    },
+    {
+      "path": "graphics/items/icon_palettes/paralyze_heal.pal",
+      "byteLength": 170,
+      "gitBlobSha1": "e19a72ca9576d70e7539cc635e30c20e27efa281",
+      "sha256": "6887350a19720d58ea4805fe53331f34cb9ce73764cc83fac4cf5d858fb4014b"
+    },
+    {
+      "path": "graphics/items/icon_palettes/poke_ball.pal",
+      "byteLength": 187,
+      "gitBlobSha1": "89182c21093a853e085ce0dcc49f7e76a7dc1620",
+      "sha256": "d8d938676e0444334da099292969d8e347454cde528e84fd065ab7b073188a05"
+    },
+    {
+      "path": "graphics/items/icon_palettes/potion.pal",
+      "byteLength": 178,
+      "gitBlobSha1": "d1c83395c458b4e8e320f5a44a82c3dc099a7d2a",
+      "sha256": "22a6d898c8f5324bf5536c27574e6db7352f8ffacc53792ab11546a90dfbd4dd"
+    },
+    {
+      "path": "graphics/items/icon_palettes/repel.pal",
+      "byteLength": 168,
+      "gitBlobSha1": "c7ef0931c2af20a90163ffe2475cdeb4a0a01e38",
+      "sha256": "dd9129c6d52ba0ae82609f041771f0bf0661ea18812dcc8af89136563f1d12b4"
+    },
+    {
+      "path": "graphics/items/icons/antidote.png",
+      "byteLength": 255,
+      "gitBlobSha1": "e577fdc2906b164164c16ecc68b5742374b8404e",
+      "sha256": "eb1dde3f633fdfe1ed264edb26a9fdd9b2b257beeb1d25006e30d541c7412588"
+    },
+    {
+      "path": "graphics/items/icons/escape_rope.png",
+      "byteLength": 265,
+      "gitBlobSha1": "9213aefa25edb821e81afaf376fc5ab972d94882",
+      "sha256": "5d44b227cfea78dc30f3b09a26ef2b0a73f84d22262e992a0a33f70fbe200fcd"
+    },
+    {
+      "path": "graphics/items/icons/poke_ball.png",
+      "byteLength": 262,
+      "gitBlobSha1": "fa039f9167981acc19a6c3e01b84c8233c79dbaa",
+      "sha256": "d2676faca26163d59bab3580b4135735007fd45be26585610d3e0f12d967f0e8"
+    },
+    {
+      "path": "graphics/items/icons/potion.png",
+      "byteLength": 289,
+      "gitBlobSha1": "c985ee5701682a37114ff0a85a51e7a5861c72cd",
+      "sha256": "dbea4bcb4accef436ce65e618807bf01c83e4f8d47e8424653561c4465bf80c5"
+    },
+    {
+      "path": "graphics/items/icons/repel.png",
+      "byteLength": 266,
+      "gitBlobSha1": "a6cb74fc35889fd33ea45cb6a543be4414e060f6",
+      "sha256": "cc87ab37422efb66b2ab468461989ee12d69dda1e707de4a8ab0a55cf231ce41"
+    },
+    {
+      "path": "graphics/items/icons/status_heal.png",
+      "byteLength": 255,
+      "gitBlobSha1": "205512e4a67c43cf24b7b29b670b9496a08d6543",
+      "sha256": "2228793bddee1bd7e48b09fcb5c9d2a6358be40ae02d290eba23948b76cc08c1"
+    },
+    {
+      "path": "include/constants/battle.h",
+      "byteLength": 16440,
+      "gitBlobSha1": "d46776ab9b2276e7591d3b964937d3ea69c574c1",
+      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+    },
+    {
+      "path": "include/constants/global.h",
+      "byteLength": 3785,
+      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
+      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+    },
+    {
+      "path": "include/constants/item_effects.h",
+      "byteLength": 3009,
+      "gitBlobSha1": "888cb685362ce4bcedef6204bf1b64ea6fb19c5e",
+      "sha256": "71075ef690c612f81cb68d5fae62874e39d452208cc1e94890c3973f774fd0f9"
+    },
+    {
+      "path": "include/constants/items.h",
+      "byteLength": 12436,
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "src/data/graphics/items.h",
+      "byteLength": 46353,
+      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+    },
+    {
+      "path": "src/data/item_icon_table.h",
+      "byteLength": 30370,
+      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    },
+    {
+      "path": "src/data/items.json",
+      "byteLength": 194280,
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "path": "src/data/items.json.txt",
+      "byteLength": 1170,
+      "gitBlobSha1": "a389a5c83f1caa1b11cb490c6b03e5b33d359fd1",
+      "sha256": "dfdcaaec0169aee61a443304ed3b19be5880caa39f98259cac87d1d24d7ed1a9"
+    },
+    {
+      "path": "src/data/pokemon/item_effects.h",
+      "byteLength": 12207,
+      "gitBlobSha1": "db57298b6ceeea0b3605bf3e65aaa9d2d6be1010",
+      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25"
+    },
+    {
+      "path": "src/item.c",
+      "byteLength": 17534,
+      "gitBlobSha1": "0587adf7db9feea06275fbe33dc1756adf23759a",
+      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a"
+    },
+    {
+      "path": "src/item_menu.c",
+      "byteLength": 79276,
+      "gitBlobSha1": "8f52ead00ec1e34df74dadb71aa23439d507b073",
+      "sha256": "155bd6b0943e8df179cbc9892e573cee52fd8f67a1d0dd39b962bdbec2e3546a"
+    },
+    {
+      "path": "src/money.c",
+      "byteLength": 3446,
+      "gitBlobSha1": "4a9a4f464f9d1771386d6575faeaaad28b1eda3b",
+      "sha256": "4565f73262c3bef947f24e1d94d6f81389e2b5b549fc425ecbb48ae6ae4ecedd"
+    },
+    {
+      "path": "src/party_menu.c",
+      "byteLength": 211085,
+      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223",
+      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b"
+    },
+    {
+      "path": "src/pokemon.c",
+      "byteLength": 221865,
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "path": "src/shop.c",
+      "byteLength": 34724,
+      "gitBlobSha1": "3d6b1cde422435be57497efb98479da067db38fa",
+      "sha256": "d326d1498cad7fc610f483237a3ff17b0d27836dcf8213960b41bbd2b58844f8"
+    },
+    {
+      "path": "src/strings.c",
+      "byteLength": 96631,
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+    },
+    {
+      "path": "tools/gbagfx/convert_png.c",
+      "byteLength": 7511,
+      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
+      "sha256": "c542d1cffe83516d8b644ec04be507d3fa376231083f03f2001be15152da2965"
+    }
+  ]
+}

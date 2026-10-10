@@ -1,0 +1,87 @@
+using Game.Application;
+using Godot;
+
+public partial class CampaignView
+{
+    private int _candyMoveCursor;
+    private string? _candyViewKey, _candyNotice;
+    private void SynchronizeRareCandy()
+    {
+        var scene = _session.State.RareCandy;
+        string? key = scene is null ? null : $"{scene.Result.Pokemon.InstanceId}:{scene.Result.Pokemon.Pokemon.Level}:{scene.Stage}:{scene.PageIndex}:{scene.PendingMoves.Length}";
+        if (key == _candyViewKey) return;
+        _candyViewKey = key; _candyMoveCursor = 0; _candyNotice = null; _held = null;
+    }
+
+    private bool RareCandyInput(InputEventKey key)
+    {
+        if (key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape) return false;
+        if (!key.Pressed || key.Echo) return true;
+        SynchronizeRareCandy();
+        var scene = _session.State.RareCandy!;
+        bool confirm = key.Keycode is Key.Enter or Key.A;
+        bool cancel = key.Keycode is Key.Backspace or Key.B;
+        if (_candyNotice is not null) { if (confirm || cancel) _candyNotice = null; return true; }
+        if (scene.Stage == CampaignRareCandyStage.LearnMove)
+        {
+            int count = _session.State.Party.Single(p => p.InstanceId == scene.Result.Pokemon.InstanceId).Pokemon.Moves.Length;
+            if (key.Keycode == Key.Up) _candyMoveCursor = Math.Max(0, _candyMoveCursor - 1);
+            if (key.Keycode == Key.Down) _candyMoveCursor = Math.Min(count, _candyMoveCursor + 1);
+            if (confirm || cancel)
+            {
+                long revision = _session.Revision;
+                Apply(new("rare_candy_learn", MoveSlot: cancel || _candyMoveCursor == count ? -1 : _candyMoveCursor));
+                if (_session.Revision == revision) _candyNotice = _status == "hm_move_cannot_be_forgotten" ? HmCannotForgetText : _status;
+            }
+        }
+        else if ((confirm || cancel) && _fanfareRemaining <= 0)
+            Apply(new("ack"));
+        return true;
+    }
+
+    private void DrawRareCandy()
+    {
+        SynchronizeRareCandy();
+        var scene = _session.State.RareCandy!;
+        var owned = _session.State.Party.Single(p => p.InstanceId == scene.Result.Pokemon.InstanceId);
+        DrawRect(new(0, 0, 240, 160), new Color("406060"));
+        bool stats = scene.Stage is CampaignRareCandyStage.StatsGain or CampaignRareCandyStage.StatsTotal;
+        if (stats)
+        {
+            _battleSkin.DrawStandardFrame(this, new(48, 0, 192, 112));
+            var before = scene.Result.StatsBefore; var after = owned.Pokemon.Stats;
+            var values = new[] { ("MAX. HP", before.MaxHp, after.MaxHp), ("ATTACK", before.Attack, after.Attack),
+                ("DEFENSE", before.Defense, after.Defense), ("SP. ATK", before.SpecialAttack, after.SpecialAttack),
+                ("SP. DEF", before.SpecialDefense, after.SpecialDefense), ("SPEED", before.Speed, after.Speed) };
+            for (int i = 0; i < values.Length; i++)
+            {
+                var (label, oldValue, newValue) = values[i];
+                SourceText(_sourceNormal, new(58, 7 + i * 16), label);
+                SourceText(_sourceNormal, new(194, 7 + i * 16), scene.Stage == CampaignRareCandyStage.StatsTotal
+                    ? newValue.ToString().PadLeft(3) : "+" + (newValue - oldValue).ToString().PadLeft(2));
+            }
+        }
+        else if (scene.Stage == CampaignRareCandyStage.LearnMove)
+        {
+            _battleSkin.DrawStandardFrame(this, new(8, 8, 224, 104));
+            for (int i = 0; i <= owned.Pokemon.Moves.Length; i++)
+            {
+                SourceText(_sourceNormal, new(28, 14 + i * 16), i == owned.Pokemon.Moves.Length ? "CANCEL" : MoveName(owned.Pokemon.Moves[i].Move));
+                if (i == _candyMoveCursor) SourceText(_sourceNormal, new(14, 14 + i * 16), "▶");
+            }
+        }
+        else DrawTexture(_battleArt[(owned.Pokemon.SourceSpeciesId, "front", owned.Pokemon.IsShiny)].Texture, new(88, 24));
+        _battleSkin.DrawStandardFrame(this, new(0, 112, 240, 48));
+        string text = stats ? $"{owned.Nickname} grew to\nLV. {owned.Pokemon.Level}!"
+            : scene.Stage == CampaignRareCandyStage.LearnMove ? $"Forget which move for\n{MoveName(scene.PendingMoves[0].Move)}?"
+            : scene.Pages[scene.PageIndex];
+        var lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(10, 119 + i * 16), lines[i]);
+        if (_candyNotice is not null) ItemMessageBox(_candyNotice);
+    }
+
+    private bool MouseRareCandy(Vector2 point) => _candyNotice is not null ? MouseConfirm(point, MouseMessage) : _session.State.RareCandy!.Stage == CampaignRareCandyStage.LearnMove
+        ? MouseSelect(point, ref _candyMoveCursor,
+            _session.State.Party.Single(p => p.InstanceId == _session.State.RareCandy.Result.Pokemon.InstanceId).Pokemon.Moves.Length + 1, 8, 14, 224)
+        : MouseConfirm(point, MouseMessage);
+}

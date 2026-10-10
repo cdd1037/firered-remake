@@ -1,0 +1,216 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 406484,
+      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068",
+      "path": "data/battle_anim_scripts.s",
+      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e"
+    },
+    {
+      "byteLength": 4594,
+      "gitBlobSha1": "83f1aefbb075752545893774bdf52ce5ef18cf98",
+      "path": "data/maps/Route24/map.json",
+      "sha256": "f844a16ec16a9aa725bcabf8862ec7b08be16b511f10664ef6e15f2448dd90a8"
+    },
+    {
+      "byteLength": 2580,
+      "gitBlobSha1": "3a7a74bd0c0b0bafa8110ed42750473ea2e102f9",
+      "path": "data/maps/Route24/scripts.inc",
+      "sha256": "786383cd3a6a2879b3f70c4edf41db4348372ab4d1b560c1b0c9c075bfc26d30"
+    },
+    {
+      "byteLength": 6979,
+      "gitBlobSha1": "ab2cdf6cb3579d40f342b053bee430a9e1f33abc",
+      "path": "data/maps/Route25/map.json",
+      "sha256": "a4b412784121ae753cb88e5a1be6db1b5575e77946ba3c6b87aca8087b1dfcb6"
+    },
+    {
+      "byteLength": 2064,
+      "gitBlobSha1": "1bf5ab9701f0d3b67326e8c51e3d3e2ce9cc665f",
+      "path": "data/maps/Route25_SeaCottage/map.json",
+      "sha256": "7ca1ad221cad25ede8a81d78d300bdac2a6b0bd6c35b80aebeaa91a1f23c08b4"
+    },
+    {
+      "byteLength": 9057,
+      "gitBlobSha1": "b4eb77a2f85373b4b1f6604c232cb4f5e4da0d19",
+      "path": "data/maps/Route25_SeaCottage/scripts.inc",
+      "sha256": "41e7058fc1aa79245b890bc086a49da80035f981237528fc4414faeef997fb38"
+    },
+    {
+      "byteLength": 17891,
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
+      "path": "include/constants/songs.h",
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "path": "include/constants/species.h",
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "byteLength": 14382,
+      "gitBlobSha1": "609259b032a32c932fc1a9f54d0e3afda70c02dc",
+      "path": "include/gba/m4a_internal.h",
+      "sha256": "9e841d8fe72d6af9f2d5a8135f686618e20975132a6d2fc95e6c7604213505e6"
+    },
+    {
+      "byteLength": 16533,
+      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9",
+      "path": "sound/cry_tables.inc",
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a"
+    },
+    {
+      "byteLength": 7134,
+      "gitBlobSha1": "833528278b734dde7c4cabc8a87171c2612edf75",
+      "path": "sound/direct_sound_samples/cries/eevee.wav",
+      "sha256": "424f9c3575b024a3cad2b45f28c65dfa48d31ddb6f3f186d867697e2f14416cd"
+    },
+    {
+      "byteLength": 7778,
+      "gitBlobSha1": "d138a75e033ada89427e9474cbeae60e50f6fad5",
+      "path": "sound/direct_sound_samples/cries/flareon.wav",
+      "sha256": "a6742253762449e4943d826d08d460ee6449e706d11210a47f5aef47c9f58d4d"
+    },
+    {
+      "byteLength": 6278,
+      "gitBlobSha1": "ce3da97083be53126507cf8eb8f4ad54165a52bb",
+      "path": "sound/direct_sound_samples/cries/gloom.wav",
+      "sha256": "8ef3e6806f6757ec08fcc8ddf68fa537f3a6dc70936782d6b0bdb8f708aae289"
+    },
+    {
+      "byteLength": 7934,
+      "gitBlobSha1": "61b5cb16043fc9de1a8511c0d153db6861af8fe5",
+      "path": "sound/direct_sound_samples/cries/jolteon.wav",
+      "sha256": "1a983687bd79a6943a3db345da4ea6f1ef14c5b7fc06b916f3d06338e60fd378"
+    },
+    {
+      "byteLength": 3754,
+      "gitBlobSha1": "275c2d9da162483c1d8854d918898cc9f9db787f",
+      "path": "sound/direct_sound_samples/cries/slowpoke.wav",
+      "sha256": "39d26580f3998fa610df32e05f309eb23a2596fa8fbb6e0d44cc2f47f806d98d"
+    },
+    {
+      "byteLength": 11048,
+      "gitBlobSha1": "861bc93cbe0a3e2cb3450a9f5174f110888749a0",
+      "path": "sound/direct_sound_samples/cries/vaporeon.wav",
+      "sha256": "685ef55ff63626304726495e6852cae6ad899f0992a2a52344ad302f91c6ec4e"
+    },
+    {
+      "byteLength": 7340,
+      "gitBlobSha1": "206bd24e45aa308971641a1687b573909c4db1b9",
+      "path": "sound/direct_sound_samples/cries/weepinbell.wav",
+      "sha256": "0cde8c08cb57837a141c76041b0fe9e50d82e1511bacea6aa55c0c2466298d01"
+    },
+    {
+      "byteLength": 9204,
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57",
+      "path": "sound/song_table.inc",
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+    },
+    {
+      "byteLength": 4981,
+      "gitBlobSha1": "c15773fffb0a393d4af6b4c764107e66b237c278",
+      "path": "sound/songs/midi/mus_route24.mid",
+      "sha256": "994d5bdf7ec1adb1c48556fbae6f1a551fa1133a361f241d752dbfd8fb1dd6fb"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "04e2bfb11a2d3ce1b4b62f02d128992b84bbecd0",
+      "path": "sound/songs/midi/se_contest_curtain_fall.mid",
+      "sha256": "a531a4c4c44e9dfc65f644aa610491f4b83c0b45028388ca09ac89e31b90fd5e"
+    },
+    {
+      "byteLength": 373,
+      "gitBlobSha1": "cd7077bca156491e8d93d14b457848997deb0a94",
+      "path": "sound/songs/midi/se_m_attract.mid",
+      "sha256": "114450aa4c59c0165f33e369877d5c92dc12078687847408fac370be9c98f222"
+    },
+    {
+      "byteLength": 316,
+      "gitBlobSha1": "473ee61613422f1719b58b570bdfa2c399269bd1",
+      "path": "sound/songs/midi/se_m_attract2.mid",
+      "sha256": "c3c5ef10d3e191b440a7e637757106c7ad2ccc29e51d061170856b92eda71096"
+    },
+    {
+      "byteLength": 270,
+      "gitBlobSha1": "593999f1bb9ffa4050a5aefceb417738b4db972e",
+      "path": "sound/songs/midi/se_m_bite.mid",
+      "sha256": "b1ae66920c78f04bc03d2ad50944ebbcb0879df76e55f214789d082d6324a7cf"
+    },
+    {
+      "byteLength": 240,
+      "gitBlobSha1": "0237d97ffb94c92e4cb3e0fad1bfc2eacb26ea4a",
+      "path": "sound/songs/midi/se_m_charm.mid",
+      "sha256": "eddfb33fa8e2182d79a41fd2258390cabc6de1e9bb91a95d08af2b85408ddd08"
+    },
+    {
+      "byteLength": 158,
+      "gitBlobSha1": "10e273bd4c2defd6d40fcb5fcd7214c6ba26cc89",
+      "path": "sound/songs/midi/se_m_dig.mid",
+      "sha256": "96b43d0dcd42ab6f8290664bcc2460574dceb1d8026ed682c70a4cf3c85e2a77"
+    },
+    {
+      "byteLength": 313,
+      "gitBlobSha1": "ac165424b3e1e2db0f44604370dd606af1c3c720",
+      "path": "sound/songs/midi/se_m_mega_kick2.mid",
+      "sha256": "6ab36bc16b5cb50269018509aa706ec9592a85e45254fb8474b3735cb990756d"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "ae94dafa21136f01ce46032a5a031d454f659967",
+      "path": "sound/songs/midi/se_m_razor_wind.mid",
+      "sha256": "e0640eeef142d9238c4de7ac46a95563f3e377713d1b34934bf2dd85f7e9326f"
+    },
+    {
+      "byteLength": 200,
+      "gitBlobSha1": "e5427c8df0bd60aa8e27b816ccef0d2003344511",
+      "path": "sound/songs/midi/se_m_take_down.mid",
+      "sha256": "56af1407c8929955bd29520a03c26f5730714862dcad1efb49b2ca409418205b"
+    },
+    {
+      "byteLength": 351,
+      "gitBlobSha1": "c95ed46537ee893b57cf2d031d99d37e67ddb4c4",
+      "path": "sound/songs/midi/se_m_waterfall.mid",
+      "sha256": "742d33a0705681869bd684f7e0108567ae62b857b5bcf95d3b848a28b67054e1"
+    },
+    {
+      "byteLength": 252,
+      "gitBlobSha1": "1fa7af764507de94156561f8a2754290acdb6780",
+      "path": "sound/songs/midi/se_m_whirlpool.mid",
+      "sha256": "c39c745bd6970893c9336ece4e3c8477fa022f21d12bc2a1ad8a8c5437a4bcc8"
+    },
+    {
+      "byteLength": 107,
+      "gitBlobSha1": "fe59c2f97781d4983a34c880ecec14499c47e077",
+      "path": "sound/songs/midi/se_pin.mid",
+      "sha256": "42b6a3e0c90148ad15b0b075a2b150f0fdb5b7b92b0ab623eae37a5ca1ab7b9e"
+    },
+    {
+      "byteLength": 116,
+      "gitBlobSha1": "e47d3df4d9452ed37be90faec0abfc3e1def6cd1",
+      "path": "sound/songs/midi/se_warp_in.mid",
+      "sha256": "ba2b51ef125e4de460c69fd11fed541e9f0ebc2193c7f623e1885f547a8b93b4"
+    },
+    {
+      "byteLength": 46383,
+      "gitBlobSha1": "ebd3afe291b6c4e9f2ac62250a87c6a0482086d4",
+      "path": "src/m4a.c",
+      "sha256": "db6bea72be02870e19a9c95f5895c6f34b75af36e6bf7f3b75b10f5b4877fe92"
+    },
+    {
+      "byteLength": 56954,
+      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
+      "path": "src/scrcmd.c",
+      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+    },
+    {
+      "byteLength": 15232,
+      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e",
+      "path": "src/sound.c",
+      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958"
+    }
+  ],
+  "repository": "pret/pokefirered"
+}

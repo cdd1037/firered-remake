@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
+    <None Include="source-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

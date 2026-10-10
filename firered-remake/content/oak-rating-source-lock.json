@@ -1,0 +1,215 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 56947,
+      "gitBlobSha1": "142ad979d7d3093244087a247fa2b4883424f77f",
+      "path": "asm/macros/event.inc",
+      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+    },
+    {
+      "byteLength": 21853,
+      "gitBlobSha1": "b9d0ed9de00d05fc303bb987a5aa634b19009b47",
+      "path": "charmap.txt",
+      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+    },
+    {
+      "byteLength": 55643,
+      "gitBlobSha1": "88d75946a7300ccf952f4a36c283966c6aebf5c0",
+      "path": "data/event_scripts.s",
+      "sha256": "3b1bd10d26c0a74fb3452ab42fc9d14dfca785f8b71389db06c71f5dfdd50a27"
+    },
+    {
+      "byteLength": 7962,
+      "gitBlobSha1": "be72653587b49da2eb65f72a3519b57ed511d05c",
+      "path": "data/maps/PalletTown_ProfessorOaksLab/map.json",
+      "sha256": "37906ed851a344cc63b41b303b41b6da091328b97b05b6e38d2570486d104704"
+    },
+    {
+      "byteLength": 47604,
+      "gitBlobSha1": "90adf867df540efc42b5ef98307a882b8aa97987",
+      "path": "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
+      "sha256": "ed6e02fdd179af05159f27288ef9b5226ce7917c03ae54e8fb8d83c853fc311d"
+    },
+    {
+      "byteLength": 13281,
+      "gitBlobSha1": "849a643c3a8c7d38efc6853f850698d9cf50a4ee",
+      "path": "data/maps/PalletTown_ProfessorOaksLab/text.inc",
+      "sha256": "fb03a0a75876da386c54137e2eeed0dfb0da0d6fdaf3bc8c66cd83d36c2d724f"
+    },
+    {
+      "byteLength": 11359,
+      "gitBlobSha1": "c5d112d9ea66d258d5a372dda89b9ad96ed2b1e1",
+      "path": "data/script_cmd_table.inc",
+      "sha256": "6b59babf9b8a33bdc37a322a1a4b6e2261426126097330f305823e53415b1389"
+    },
+    {
+      "byteLength": 2483,
+      "gitBlobSha1": "77cf55e6faf1108048781d2e574e85302201287d",
+      "path": "data/scripts/pc.inc",
+      "sha256": "9e2d8abcd0e8e96ca1ac8b63c7021b552a6f441ea181e24471340a9d2f0b9e99"
+    },
+    {
+      "byteLength": 2621,
+      "gitBlobSha1": "6a4ed07511f68b0af8e9e60ce4515b85dac5bc73",
+      "path": "data/scripts/pokedex_rating.inc",
+      "sha256": "1296caff62f2ee448b5b5f5b2e08ab9e710307c463673a997282326666ec92e5"
+    },
+    {
+      "byteLength": 15782,
+      "gitBlobSha1": "d880bf6b9dc9fd765f0b85e6d698411e3da81d5d",
+      "path": "data/specials.inc",
+      "sha256": "2dcf5aae5ded1a99026a9b944e31679c2eda389fbca36089c0f8c5d2f4015788"
+    },
+    {
+      "byteLength": 3759,
+      "gitBlobSha1": "3aa1080aa2174a8f6479e235bcdf73bddab78521",
+      "path": "data/text/pokedex_rating.inc",
+      "sha256": "02375e8e33a2940c2d5ee64c1196497d29e4475f5bc2ef40a338d59a161d1cc0"
+    },
+    {
+      "byteLength": 7965,
+      "gitBlobSha1": "9d8c514f9e2d634d40d215bf657f33041c55c28e",
+      "path": "include/constants/event_objects.h",
+      "sha256": "5f552a754182788f21ee00fe9460d5dbc73303239cc06743fbed96c93b6e6947"
+    },
+    {
+      "byteLength": 95397,
+      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
+      "path": "include/constants/flags.h",
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "byteLength": 3785,
+      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
+      "path": "include/constants/global.h",
+      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+    },
+    {
+      "byteLength": 1861,
+      "gitBlobSha1": "628703d3e142c5bfb7daf145886244d8f996ce3b",
+      "path": "include/constants/help_system.h",
+      "sha256": "01d10a298364d262a01200af867d917971e52fd8493f81247fc0078b472da364"
+    },
+    {
+      "byteLength": 39946,
+      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
+      "path": "include/constants/opponents.h",
+      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+    },
+    {
+      "byteLength": 21092,
+      "gitBlobSha1": "7ee1b3760e58411f2c765da05825d544baaac119",
+      "path": "include/constants/pokedex.h",
+      "sha256": "aac527819623140d7f44ad99b72654bab59ca5679a80cca33361828cc7e7d0c6"
+    },
+    {
+      "byteLength": 6408,
+      "gitBlobSha1": "fe284ba133ccc28053515c501979741b3960212f",
+      "path": "include/constants/quest_log.h",
+      "sha256": "90cceec5883201c3d3d2bdb420d1f7b3ebef21f4716eef0760bba507559be2dc"
+    },
+    {
+      "byteLength": 17891,
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
+      "path": "include/constants/songs.h",
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "byteLength": 17306,
+      "gitBlobSha1": "5c7bbf8a3356606af13e744ac24de806c1b0869e",
+      "path": "include/constants/vars.h",
+      "sha256": "be26624aac5cbc9ea4d364d5cc33500b4b6c7ecd47812a50b961d948f6914b12"
+    },
+    {
+      "byteLength": 2518,
+      "gitBlobSha1": "5521e942c00cc2c263b842ae7608dfb7ac881a76",
+      "path": "include/gba/defines.h",
+      "sha256": "4356e895d7108dedd2c788bbbe98e0948778712a4ea6374193bdc1a851efe69b"
+    },
+    {
+      "byteLength": 3314,
+      "gitBlobSha1": "8e27bbe56806d06a597f27cd7c34ac91eeabd92a",
+      "path": "include/pokedex.h",
+      "sha256": "b1e28d1c626692f55a03fcd4f1013e75b3e2297ef27adfcf64ed11bf6b26753d"
+    },
+    {
+      "byteLength": 8913,
+      "gitBlobSha1": "da9391cf0ef74c1addf550def8616c81f16e89e3",
+      "path": "src/event_data.c",
+      "sha256": "163fcef03561426fc185b499eef1088dc7a4334b612968a82df3a0fa6131d06f"
+    },
+    {
+      "byteLength": 3461,
+      "gitBlobSha1": "74f441c889d59775f0a4bb16567685b5f78a9ef2",
+      "path": "src/field_message_box.c",
+      "sha256": "38969672a37611f46b7ff54ba2172129d8a9690f7a6ce4587b02203233ea1c0e"
+    },
+    {
+      "byteLength": 77314,
+      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d",
+      "path": "src/field_specials.c",
+      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9"
+    },
+    {
+      "byteLength": 88697,
+      "gitBlobSha1": "00756538ea1a24fa8fe655cc8c039322e3585861",
+      "path": "src/help_system.c",
+      "sha256": "b5a16f20a8593296a8a850159802cab7c8669d2ffad3605cdb42d1a527ff8350"
+    },
+    {
+      "byteLength": 3065,
+      "gitBlobSha1": "9146267187521792ddf5d9ba9508d3e37efca32f",
+      "path": "src/pokedex.c",
+      "sha256": "b6283039a19fe1a5b781f6dd7ef3f61b1a022c460ce2588b8b6f99932a4682b7"
+    },
+    {
+      "byteLength": 125049,
+      "gitBlobSha1": "01960d240f4956d9f0d854b1bba29785d946a878",
+      "path": "src/pokedex_screen.c",
+      "sha256": "ca98e4ecc16bcf5b5e679a567d8d0c3dc5acfdc1bd377c0d6b56de696e1400f8"
+    },
+    {
+      "byteLength": 2956,
+      "gitBlobSha1": "93d8b97f2ba225ef9eef46c1e57c18e820149cfa",
+      "path": "src/prof_pc.c",
+      "sha256": "56a55f3c6c7827dcf599730da9e8877c3c981c820a4be0716cee901a37c20304"
+    },
+    {
+      "byteLength": 57194,
+      "gitBlobSha1": "0a2f76f2c4019fa0938d5044da73fcea1b2b069c",
+      "path": "src/quest_log.c",
+      "sha256": "75f19a2193d991754b48fc5a859a5731a7ddb853372dd3992842912b44a19d4e"
+    },
+    {
+      "byteLength": 56954,
+      "gitBlobSha1": "97b695ee2f6fca80a3b78f52f6a444f696fe5814",
+      "path": "src/scrcmd.c",
+      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+    },
+    {
+      "byteLength": 44041,
+      "gitBlobSha1": "41eebd86e76e195f6dd14157994ee10c9fa3ce0a",
+      "path": "src/script_menu.c",
+      "sha256": "7b4771c440fd45f4c7c375308d45cc1bc88eba30c6c7ff9c634f838cf2bebad8"
+    },
+    {
+      "byteLength": 14320,
+      "gitBlobSha1": "5c26d151a61274caac3a16c3b9c4eb73bf9a9e26",
+      "path": "src/string_util.c",
+      "sha256": "ed9519d4eaf51ed660a522915366dc0ebf2916d592a91a1d7fc2a012e4f3f17e"
+    },
+    {
+      "byteLength": 96631,
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
+      "path": "src/strings.c",
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+    }
+  ],
+  "gameEdition": "FIRERED",
+  "profile": "firered-oak-rating-v1",
+  "repository": "pret/pokefirered",
+  "romRevision": 0,
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

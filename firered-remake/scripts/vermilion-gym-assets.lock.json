@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-vermilion-gym-assets-v1",
+  "gameVersion": "FIRERED",
+  "revision": 0,
+  "files": [
+    {
+      "path": "data/battle_anim_scripts.s",
+      "byteLength": 406484,
+      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068",
+      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e"
+    },
+    {
+      "path": "data/maps/VermilionCity_Gym/map.json",
+      "byteLength": 6398,
+      "gitBlobSha1": "62d686734e28b8a8ef165d34935547758093020e",
+      "sha256": "01d27c5e20de5459f676ed56cf85d1b8a3aac995ea7c330cf3ed065a476f9576"
+    },
+    {
+      "path": "data/maps/VermilionCity_Gym/scripts.inc",
+      "byteLength": 9381,
+      "gitBlobSha1": "844201b0741fe928bbec470ac478e459309b1402",
+      "sha256": "3341fb187215a9b961bde55465491fb3b24772fe11b0f801d840dcea3888ed7c"
+    },
+    {
+      "path": "graphics/items/icon_palettes/electric_tm_hm.pal",
+      "byteLength": 193,
+      "gitBlobSha1": "f4ce9febe3b0f976bd8f7adb1284b9abebf4e5c9",
+      "sha256": "1f23275340a37d78164095a72a2e9628467992c27f29256369b7d3b4fc193d04"
+    },
+    {
+      "path": "graphics/items/icons/tm_hm.png",
+      "byteLength": 344,
+      "gitBlobSha1": "c4e6d1df78a0498443ae3567ec7c9f3839e7713a",
+      "sha256": "ad43897b481aa49e13dd85f205fe5fe9496212e47266eb3e9359113ad03d77bf"
+    },
+    {
+      "path": "graphics/trainers/front_pics/engineer_front_pic.png",
+      "byteLength": 897,
+      "gitBlobSha1": "82e51e00632cd8fd99c6282b3c762bb36d2ad37d",
+      "sha256": "dac2b5c785735958af6c96c9687aace57a0255ee13bd4a6ef55c830095eda6de"
+    },
+    {
+      "path": "graphics/trainers/front_pics/leader_lt_surge_front_pic.png",
+      "byteLength": 770,
+      "gitBlobSha1": "87940b30dec2b7031a76400dc372ab73263400df",
+      "sha256": "8146442d7c2cde6abd2c9ac317d0fd5249db7fdd68925f1a0404c896523a4843"
+    },
+    {
+      "path": "graphics/trainers/palettes/engineer.pal",
+      "byteLength": 194,
+      "gitBlobSha1": "3cfd1a3f060b3a3406fb5a5ed050dd367ed4ef1d",
+      "sha256": "8b3af845d855784fa33c8e1eb5dc29bab09f86bf7e8162d0540255267f4785a1"
+    },
+    {
+      "path": "graphics/trainers/palettes/leader_lt_surge.pal",
+      "byteLength": 188,
+      "gitBlobSha1": "e125b40d3dd4a08af7beb7994faa2f173fe863da",
+      "sha256": "215d8889bd92aceb73e8116a55cc7b7a6b88549dd07b0453d504bc3f492d15ce"
+    },
+    {
+      "path": "include/constants/items.h",
+      "byteLength": 12436,
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "include/constants/moves.h",
+      "byteLength": 10249,
+      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643",
+      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "byteLength": 17891,
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "path": "include/constants/species.h",
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "path": "include/constants/trainers.h",
+      "byteLength": 20887,
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "byteLength": 9204,
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57",
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+    },
+    {
+      "path": "sound/songs/midi/se_m_charge.mid",
+      "byteLength": 432,
+      "gitBlobSha1": "4310f8820b20dc62c4256975eed7143729714245",
+      "sha256": "9a8d397dd0ec0493e4db8390140c5ba9c7efe4ac4f71ea93b4a8ded75fd8def5"
+    },
+    {
+      "path": "sound/songs/midi/se_m_thunderbolt.mid",
+      "byteLength": 275,
+      "gitBlobSha1": "fa1cad7d04ac9017992a10e1ab9d48ad7e205aab",
+      "sha256": "2de518513a4b8950ff5acdfda16580390c21563f26aef3f6c472993c83af2051"
+    },
+    {
+      "path": "sound/songs/midi/se_m_tri_attack2.mid",
+      "byteLength": 279,
+      "gitBlobSha1": "e3cf54dbd70b9cc7e69fc9528b09e27012a9ddbd",
+      "sha256": "2fb5de9e5b9e6165778cdc0c65736c7e49170e91c5c282df87f26efdd3305e26"
+    },
+    {
+      "path": "sound/songs/midi/se_unlock.mid",
+      "byteLength": 152,
+      "gitBlobSha1": "8a57132d9dd3a7e29e6d4ee8bbae07f18e992531",
+      "sha256": "358e164240adc78db050c29beb8d37cd3e64fa83d14c8e3d86c7758a2427c793"
+    },
+    {
+      "path": "src/battle_controller_opponent.c",
+      "byteLength": 73524,
+      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0",
+      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98"
+    },
+    {
+      "path": "src/data/battle_moves.h",
+      "byteLength": 121457,
+      "gitBlobSha1": "c6457675d5441010feebbb5aec58dc9e37356134",
+      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+    },
+    {
+      "path": "src/data/graphics/items.h",
+      "byteLength": 46353,
+      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+    },
+    {
+      "path": "src/data/graphics/trainers.h",
+      "byteLength": 34300,
+      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088",
+      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9"
+    },
+    {
+      "path": "src/data/item_icon_table.h",
+      "byteLength": 30370,
+      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    },
+    {
+      "path": "src/data/items.json",
+      "byteLength": 194280,
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "path": "src/data/party_menu.h",
+      "byteLength": 36157,
+      "gitBlobSha1": "6b4ebc1f7c0c5f72eb28f656c31be10f86e02094",
+      "sha256": "cfd30a7b5fdc0026da999a62d3ff72159cad88d9a921730c179d804ee026a9f7"
+    },
+    {
+      "path": "src/data/pokemon/level_up_learnset_pointers.h",
+      "byteLength": 20597,
+      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3",
+      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+    },
+    {
+      "path": "src/data/pokemon/level_up_learnsets.h",
+      "byteLength": 182027,
+      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0",
+      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+    },
+    {
+      "path": "src/data/pokemon/tmhm_learnsets.h",
+      "byteLength": 559340,
+      "gitBlobSha1": "0aa21e85be2f970536c8ed901c556013c16327e5",
+      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+    },
+    {
+      "path": "src/data/trainer_graphics/front_pic_tables.h",
+      "byteLength": 24042,
+      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda",
+      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f"
+    },
+    {
+      "path": "src/data/trainer_parties.h",
+      "byteLength": 242256,
+      "gitBlobSha1": "2e5780022c305165d76d613eaeb682155c8b0de6",
+      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+    },
+    {
+      "path": "src/data/trainers.h",
+      "byteLength": 302118,
+      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
+      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+    },
+    {
+      "path": "src/fldeff_cut.c",
+      "byteLength": 8674,
+      "gitBlobSha1": "64171bb3fbea8161caf52116f794de65975586e2",
+      "sha256": "b1bb155b2ec026848100d65c86262a07ed7e47afe549269347b40750ba37098f"
+    },
+    {
+      "path": "src/move_descriptions.c",
+      "byteLength": 62085,
+      "gitBlobSha1": "8ece0e12d5fa10eb170bb6ad3ecf9a2ccf1ca624",
+      "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b"
+    },
+    {
+      "path": "src/pokemon.c",
+      "byteLength": 221865,
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "path": "tools/gbagfx/gfx.c",
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "content/generated/ssanne-machines/ssanne-machines.json",
+      "byteLength": 584016,
+      "sha256": "3ea2e84a941a0557d16fa27234e766ccdb9ee14eef260f22603b4fef6d6289c1"
+    },
+    {
+      "path": "content/generated/synth-audio/firered.pack",
+      "byteLength": 2565436,
+      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+    },
+    {
+      "path": "scripts/import-lab-battle-ui.py",
+      "byteLength": 13082,
+      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+    },
+    {
+      "path": "scripts/synth-ssanne-cues.json",
+      "byteLength": 85897,
+      "sha256": "1eecd6907457d13ac6f67afc8ee47bc377a85757c8c75bbbbd73c95fc3cf29ed"
+    }
+  ]
+}

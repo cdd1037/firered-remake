@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-vermilion-gym-field-move-art-v1",
+  "gameVersion": "FIRERED",
+  "revision": 0,
+  "files": [
+    {
+      "path": "Makefile",
+      "byteLength": 14605,
+      "gitBlobSha1": "8b454dbd18eb0069fa5851d788697190890a5b37",
+      "sha256": "51960ea72311e53c272ebcc5b481021efba52fcc7db7f0ded4bfcebaf8bbdf47"
+    },
+    {
+      "path": "graphics/field_effects/pics/field_move_streaks_outdoors.bin",
+      "byteLength": 640,
+      "gitBlobSha1": "466f456bed3f489017b0f46627d1b11e875a4235",
+      "sha256": "d6b6bc4334b3d32a4937b708237e6f7bcf229328ac503b08d1da0ce9e3020a7f"
+    },
+    {
+      "path": "graphics/field_effects/pics/field_move_streaks_outdoors.png",
+      "byteLength": 171,
+      "gitBlobSha1": "8f9c6a6a72db10a0d743aeb956e5f5d070f4cd26",
+      "sha256": "c46e6838df2c27fd8c033d2dc41578858f90815ee0b010aa5033e7728b6935c4"
+    },
+    {
+      "path": "graphics/object_events/palettes/player.pal",
+      "byteLength": 189,
+      "gitBlobSha1": "3097a6556d939fbdd992c9aab13e63d42fa93b2e",
+      "sha256": "d15341efa76e5056c18835eacddc0942d3919f3751c9462f1fa7242bcaf5c18c"
+    },
+    {
+      "path": "graphics/object_events/pics/people/green_item.png",
+      "byteLength": 750,
+      "gitBlobSha1": "b554d08500df59c6c295b50e4e40ad19bb225161",
+      "sha256": "3084ace890902518ae7f85102e0062e4c3e0f171ac50b8be1aa0e817ed825b87"
+    },
+    {
+      "path": "graphics/object_events/pics/people/red_item.png",
+      "byteLength": 761,
+      "gitBlobSha1": "a462ec469180a01d0652f1d640ee81a2b7b424f3",
+      "sha256": "f3dd2a2d3b47efbf4ccd4123ee4b7512bea8e6f34ae130eb82f2063fed4328b3"
+    },
+    {
+      "path": "src/data/object_events/object_event_anims.h",
+      "byteLength": 37750,
+      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d",
+      "sha256": "a484f38af198398f763c1d5f239dddd4397bb4cc7eab48c2b2e992552d767b0e"
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics.h",
+      "byteLength": 23522,
+      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
+      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec"
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics_info.h",
+      "byteLength": 97115,
+      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
+      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512"
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics_info_pointers.h",
+      "byteLength": 23651,
+      "gitBlobSha1": "af2f8afb6db8ed75bcc849922c911d858b92999a",
+      "sha256": "a5e006f4855f19bf42c27e78f5c1866fdecccb687d228fbe608376f09ee7547c"
+    },
+    {
+      "path": "src/data/object_events/object_event_pic_tables.h",
+      "byteLength": 82763,
+      "gitBlobSha1": "70889d7a2064653d96d257aad804ebcbfdb26d68",
+      "sha256": "7210ac3a847600c1e2778d6dcd5896e641e3b19f1d203841c4911bfe50769995"
+    },
+    {
+      "path": "src/event_object_movement.c",
+      "byteLength": 326145,
+      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
+      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254"
+    },
+    {
+      "path": "src/field_effect.c",
+      "byteLength": 125868,
+      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be",
+      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a"
+    },
+    {
+      "path": "src/field_player_avatar.c",
+      "byteLength": 67969,
+      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb",
+      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e"
+    },
+    {
+      "path": "src/sprite.c",
+      "byteLength": 48783,
+      "gitBlobSha1": "d0198d53004775c8664dcccf57833e178833776e",
+      "sha256": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae"
+    },
+    {
+      "path": "tools/gbagfx/gfx.c",
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "scripts/import-lab-battle-ui.py",
+      "byteLength": 13082,
+      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+    }
+  ]
+}

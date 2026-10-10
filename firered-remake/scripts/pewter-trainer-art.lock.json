@@ -1,0 +1,60 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 614,
+      "gitBlobSha1": "d150b02f6cb26050c09d432a64a9eda8b01cc7a0",
+      "path": "graphics/trainers/front_pics/camper_front_pic.png",
+      "sha256": "d9897dfb2105df1ebf2d4fdcc250bf4e5380361c1439826e26c201a40738ae9b"
+    },
+    {
+      "byteLength": 713,
+      "gitBlobSha1": "2eeaf2d6d0da869cb26204737820309767d887a7",
+      "path": "graphics/trainers/front_pics/leader_brock_front_pic.png",
+      "sha256": "3972bbf25feefb2f254201dfd9f04064c631cfb25876f424af077600eceff7ea"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "29120f6f793463849672ec10fce4dee6ea9cb0c8",
+      "path": "graphics/trainers/palettes/camper.pal",
+      "sha256": "937c7ffb4a68bb30e49398cb568619d8c2711225329af46bdc9f8024b4867226"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "ae8076a24c69c6f8a041f0880253afbf18f28885",
+      "path": "graphics/trainers/palettes/leader_brock.pal",
+      "sha256": "fddc6b96f3d69e332ca272d0d5bbf61703c6960f70dcdc71ccbd8067ae28c45a"
+    },
+    {
+      "byteLength": 20887,
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
+      "path": "include/constants/trainers.h",
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+    },
+    {
+      "byteLength": 73524,
+      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0",
+      "path": "src/battle_controller_opponent.c",
+      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98"
+    },
+    {
+      "byteLength": 34300,
+      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088",
+      "path": "src/data/graphics/trainers.h",
+      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9"
+    },
+    {
+      "byteLength": 24042,
+      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda",
+      "path": "src/data/trainer_graphics/front_pic_tables.h",
+      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f"
+    },
+    {
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "path": "tools/gbagfx/gfx.c",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ],
+  "repository": "pret/pokefirered"
+}

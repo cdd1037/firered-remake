@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-route11-items-v1",
+  "gameEdition": "FIRERED",
+  "romRevision": 0,
+  "files": [
+    {
+      "path": "data/maps/Route11/map.json",
+      "byteLength": 6893,
+      "gitBlobSha1": "8bceede4321b4a0d7980c60b1db0910db8a33754",
+      "sha256": "9626c6641d153831486cec66e04e91e846f66982aab569fed1e23269475cf826"
+    },
+    {
+      "path": "data/maps/Route2/map.json",
+      "byteLength": 5182,
+      "gitBlobSha1": "3f232d8d16b4a96ec74b41a28a0ec401c38a2ba8",
+      "sha256": "2562e3736b600c95b8c0a4c2a1bb3fb062f5c50208bebc43cd4303328ccda7ea"
+    },
+    {
+      "path": "data/scripts/item_ball_scripts.inc",
+      "byteLength": 12171,
+      "gitBlobSha1": "25233baa0794d0511f01638676eb4c7803c957e8",
+      "sha256": "0a660b0eddcecc31cec1a815f343c7e5aea54ac2fb7a54597c2ae38fbbd5d65c"
+    },
+    {
+      "path": "graphics/items/icon_palettes/aspear_berry.pal",
+      "byteLength": 166,
+      "gitBlobSha1": "68bd00715e90b9dfab724ae64db17215a37ad9c6",
+      "sha256": "7daa7b09db6039a75f8eeb564ff5828176d0ebedaccf2917ea3fde969baaa121"
+    },
+    {
+      "path": "graphics/items/icon_palettes/awakening.pal",
+      "byteLength": 171,
+      "gitBlobSha1": "b2984538c731f69882a454d93326a72ba9555ecd",
+      "sha256": "9b0d448deeb662e5263a1b4b59dff3cdf466d403d052e0ca7b4d578f96119d99"
+    },
+    {
+      "path": "graphics/items/icon_palettes/escape_rope.pal",
+      "byteLength": 169,
+      "gitBlobSha1": "d9b3b84c72636e727ca2bd8b6c0b8a74126784f4",
+      "sha256": "087f6ff0b3ec57f07a085213e016cdc1fadb312332aa5a9e5580bd7eadc15381"
+    },
+    {
+      "path": "graphics/items/icon_palettes/ether.pal",
+      "byteLength": 178,
+      "gitBlobSha1": "312f134ffca85ce19747ce07a55cc7543c8929eb",
+      "sha256": "f496330b5a6419648e8185f5bd410d3345e503e3114531cd0108e6400f8e04f4"
+    },
+    {
+      "path": "graphics/items/icon_palettes/great_ball.pal",
+      "byteLength": 185,
+      "gitBlobSha1": "6eadfac6d2aa7ebab426f0092199c479bafd30fd",
+      "sha256": "1b798a5dfa531ca3cb277b2eacd26d710a432fa1b69caf8f5d29794546fb30e6"
+    },
+    {
+      "path": "graphics/items/icon_palettes/paralyze_heal.pal",
+      "byteLength": 170,
+      "gitBlobSha1": "e19a72ca9576d70e7539cc635e30c20e27efa281",
+      "sha256": "6887350a19720d58ea4805fe53331f34cb9ce73764cc83fac4cf5d858fb4014b"
+    },
+    {
+      "path": "graphics/items/icon_palettes/x_defend.pal",
+      "byteLength": 171,
+      "gitBlobSha1": "a76518dbdb568f7e4e43ec2ffeedf6f93d5bab13",
+      "sha256": "cf71bfaf7da7225e49f702ee6edcc58b294917367668c68595e17f9209011b1d"
+    },
+    {
+      "path": "graphics/items/icons/aspear_berry.png",
+      "byteLength": 302,
+      "gitBlobSha1": "1014262f182d66fccdd7ac04f482ad4e2c65eff5",
+      "sha256": "70cb33566ed9992022220111299888cac8d11e42e5f743e7ee3e4582c31145d2"
+    },
+    {
+      "path": "graphics/items/icons/battle_stat_item.png",
+      "byteLength": 305,
+      "gitBlobSha1": "1b0adfa1fce8cc62dc8891fa6a6ca37c40bd46a5",
+      "sha256": "73feed52bc18eda0599d72ebf22d0d971d89bc01895300dd43d62b3e9ef1a5c4"
+    },
+    {
+      "path": "graphics/items/icons/escape_rope.png",
+      "byteLength": 265,
+      "gitBlobSha1": "9213aefa25edb821e81afaf376fc5ab972d94882",
+      "sha256": "5d44b227cfea78dc30f3b09a26ef2b0a73f84d22262e992a0a33f70fbe200fcd"
+    },
+    {
+      "path": "graphics/items/icons/ether.png",
+      "byteLength": 278,
+      "gitBlobSha1": "b94d9567bf49319aa82642db7cb4d9fa2fee114b",
+      "sha256": "0fc203dd22fbfcbc42d9662ee0771596dfe288ab405f96d203bb3f74284b845e"
+    },
+    {
+      "path": "graphics/items/icons/great_ball.png",
+      "byteLength": 292,
+      "gitBlobSha1": "92a57202deb6c2fecffe9841299967184433a499",
+      "sha256": "d7a91997f1b8bfb713146098aa25153c0c853a666f52760a234d436ede3ba8ca"
+    },
+    {
+      "path": "graphics/items/icons/status_heal.png",
+      "byteLength": 255,
+      "gitBlobSha1": "205512e4a67c43cf24b7b29b670b9496a08d6543",
+      "sha256": "2228793bddee1bd7e48b09fcb5c9d2a6358be40ae02d290eba23948b76cc08c1"
+    },
+    {
+      "path": "include/constants/global.h",
+      "byteLength": 3785,
+      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
+      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+    },
+    {
+      "path": "include/constants/item_effects.h",
+      "byteLength": 3009,
+      "gitBlobSha1": "888cb685362ce4bcedef6204bf1b64ea6fb19c5e",
+      "sha256": "71075ef690c612f81cb68d5fae62874e39d452208cc1e94890c3973f774fd0f9"
+    },
+    {
+      "path": "include/constants/items.h",
+      "byteLength": 12436,
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "src/data/graphics/items.h",
+      "byteLength": 46353,
+      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+    },
+    {
+      "path": "src/data/item_icon_table.h",
+      "byteLength": 30370,
+      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    },
+    {
+      "path": "src/data/items.json",
+      "byteLength": 194280,
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "path": "src/data/items.json.txt",
+      "byteLength": 1170,
+      "gitBlobSha1": "a389a5c83f1caa1b11cb490c6b03e5b33d359fd1",
+      "sha256": "dfdcaaec0169aee61a443304ed3b19be5880caa39f98259cac87d1d24d7ed1a9"
+    },
+    {
+      "path": "src/data/pokemon/item_effects.h",
+      "byteLength": 12207,
+      "gitBlobSha1": "db57298b6ceeea0b3605bf3e65aaa9d2d6be1010",
+      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25"
+    },
+    {
+      "path": "src/item.c",
+      "byteLength": 17534,
+      "gitBlobSha1": "0587adf7db9feea06275fbe33dc1756adf23759a",
+      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a"
+    },
+    {
+      "path": "src/pokemon.c",
+      "byteLength": 221865,
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "path": "tools/gbagfx/convert_png.c",
+      "byteLength": 7511,
+      "gitBlobSha1": "58371229c06d0c036a23d55ffcbf5761d0089800",
+      "sha256": "c542d1cffe83516d8b644ec04be507d3fa376231083f03f2001be15152da2965"
+    },
+    {
+      "path": "tools/gbagfx/gfx.c",
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "profile": "firered-cerulean-machines-v1",
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "command": "source scripts/env.sh && python3 scripts/import-cerulean-machines.py --reference-repo \"$FIRERED_ORIGINAL_REFERENCE\"",
+  "offlineCommand": "python3 scripts/import-cerulean-machines.py",
+  "upstreamScriptsExecuted": false,
+  "recordedAudioImported": false,
+  "inputCount": 21,
+  "inputByteLength": 1626981,
+  "generatedOutputCount": 3,
+  "composedSpecies": 65,
+  "composedMachines": 5,
+  "legacySpeciesPreserved": 56,
+  "tm03": {
+    "sourceItemId": 291,
+    "sourceMoveId": 352,
+    "price": 3000,
+    "pp": 20,
+    "compatibleSpecies": 19
+  },
+  "outputs": [
+    {
+      "path": "scripts/import-cerulean-machines.py",
+      "sha256": "8d205acaa7adccd8753cee3a35d573b39a7158f1de949104f7489f7a8ad1341b"
+    },
+    {
+      "path": "scripts/cerulean-machines.lock.json",
+      "sha256": "ac75237b5020bda00abc01b20d5d68329a930c3773024740d634f72b8498afeb"
+    },
+    {
+      "path": "content/generated/cerulean-machines/manifest.json",
+      "sha256": "08f713c79b317fd4ecb938f14be43d92f52161545347527f99cb1cea44c379d9"
+    },
+    {
+      "path": "content/generated/cerulean-machines/cerulean-machines.json",
+      "sha256": "b41688334da887aac4148e0712b9a18cdabd982aa1f4df30e09452f57a6cc06a"
+    },
+    {
+      "path": "content/generated/cerulean-machines/item_tm03.png",
+      "sha256": "c3b14c95922572c86019d4f061036f7dfeda9350ad57462d81392fe56cdcb5f0"
+    },
+    {
+      "path": "content/raw/cerulean-machines/manifest.json",
+      "sha256": "1c01ac0a08a97b5bbfee833a4b1f70fb272d87d4fcefa1402c53e6e99adf333d"
+    }
+  ],
+  "unchangedDependencies": [
+    {
+      "path": "scripts/pewter-machines.lock.json",
+      "sha256": "41b20edbd36253b5ba5b3dea6458926ee5c5aa670a102c43d98ab84bed907637"
+    },
+    {
+      "path": "scripts/mtmoon-items.lock.json",
+      "sha256": "602d603294843e02b7daa03b23356aecd38ce30d79c1b1ad65725564079fa35a"
+    },
+    {
+      "path": "scripts/cerulean-pokemon.lock.json",
+      "sha256": "538eb52c41b32870ee8fc235a973e4e9992ae4c2f4f5a71946ca07dce170580a"
+    },
+    {
+      "path": "content/generated/pewter-machines/pewter-machines.json",
+      "sha256": "e39de814e0322ab7d3f0010a8cfe605698746b9c300935e30286997108621052"
+    },
+    {
+      "path": "content/generated/mtmoon-items/mtmoon-items.json",
+      "sha256": "ce611fe3fbce03b7790dc8a9cf9a3c0bb0056504d53a92505b64e4fd3e2e718c"
+    },
+    {
+      "path": "content/generated/cerulean-pokemon/catalog.json",
+      "sha256": "5f0e4405eb73e1c9606cbd2f42344734545de36ad2182876420af5c45e443bea"
+    },
+    {
+      "path": "scripts/import-lab-battle-ui.py",
+      "sha256": "b03954e07eb38a9b2dee1f98cc8ed9f92a1f35b32fe9197a16795db4e527795a"
+    }
+  ]
+}

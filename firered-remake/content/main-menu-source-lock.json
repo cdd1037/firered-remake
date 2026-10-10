@@ -1,0 +1,149 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 809,
+      "gitBlobSha1": "bbaebf72ca275993572e95925c76f22ac8e0c65e",
+      "path": "data/text/save.inc",
+      "sha256": "2c690874b79beb258acb1bffe3a146bba5961f20a1189e2d4076ae22da578039"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "7aca54c52a5e82c780f43fc966ac63ff3f3dcbfc",
+      "path": "graphics/main_menu/bg.pal",
+      "sha256": "01c3095942a296f56f7ac762bf5572b4aebbcafb23e18efee23b0acc5ba05823"
+    },
+    {
+      "byteLength": 176,
+      "gitBlobSha1": "022f0051f900be653492790b661080f328aeab0a",
+      "path": "graphics/main_menu/textbox.pal",
+      "sha256": "a2eb7d9b92674e49620337a38dff0d3d8042fe95ee3893bbf8103d1f430474bf"
+    },
+    {
+      "byteLength": 12798,
+      "gitBlobSha1": "d00ecf0a3afcd9fc1fa9534c00f4b74793d5f06f",
+      "path": "include/characters.h",
+      "sha256": "6787db76f83c4f8426c5adbfa7aa061c46585db9522f1fef00ad888616199b98"
+    },
+    {
+      "byteLength": 95397,
+      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
+      "path": "include/constants/flags.h",
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "byteLength": 3785,
+      "gitBlobSha1": "21c781a0d40aa8b303642bbf1eac9ac09ce2b5a9",
+      "path": "include/constants/global.h",
+      "sha256": "7ecf4a63c7be65328135a75f8620786e40343bbe7688e7017e6d780526fd6a0c"
+    },
+    {
+      "byteLength": 39946,
+      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
+      "path": "include/constants/opponents.h",
+      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+    },
+    {
+      "byteLength": 815,
+      "gitBlobSha1": "be3049d3c795e3aacc738cfab08cac18266e5f34",
+      "path": "include/constants/rgb.h",
+      "sha256": "e4b500db58dceafbd1eaa196fad0670f485ab2283a49ab5a295e94535d0833eb"
+    },
+    {
+      "byteLength": 17891,
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
+      "path": "include/constants/songs.h",
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "byteLength": 2518,
+      "gitBlobSha1": "5521e942c00cc2c263b842ae7608dfb7ac881a76",
+      "path": "include/gba/defines.h",
+      "sha256": "4356e895d7108dedd2c788bbbe98e0948778712a4ea6374193bdc1a851efe69b"
+    },
+    {
+      "byteLength": 33335,
+      "gitBlobSha1": "a8a36f7e295855dbc4281f5f9a9f223ddda34a16",
+      "path": "include/gba/io_reg.h",
+      "sha256": "4b1d9592c1f2fdbefaa4f7f0d2751e5cef11069432303aa46bec142af57086d0"
+    },
+    {
+      "byteLength": 25663,
+      "gitBlobSha1": "77155b09014aa854fcf87260e6ad2969e222da53",
+      "path": "include/global.h",
+      "sha256": "044325b90e7c79146cc0cf73d31b6be3e4840059e2e778b63d9b5448fe538429"
+    },
+    {
+      "byteLength": 3314,
+      "gitBlobSha1": "8e27bbe56806d06a597f27cd7c34ac91eeabd92a",
+      "path": "include/pokedex.h",
+      "sha256": "b1e28d1c626692f55a03fcd4f1013e75b3e2297ef27adfcf64ed11bf6b26753d"
+    },
+    {
+      "byteLength": 3025,
+      "gitBlobSha1": "87fb9b615b434b58823d15688056695acda9feab",
+      "path": "include/save.h",
+      "sha256": "26d7606adc982eb3e27b642bc5817b4f4f6bd3485e5f90dd07379c28e959854b"
+    },
+    {
+      "byteLength": 5585,
+      "gitBlobSha1": "7090a029bfc454e19e6425df631fda9db866ae0a",
+      "path": "include/text.h",
+      "sha256": "ca0d1447747d042d92da4df693be353a5af5a26a6c9dcfdf1e3bbc0d01530299"
+    },
+    {
+      "byteLength": 2989,
+      "gitBlobSha1": "f64adce251582e0752128ddc00891661b9207168",
+      "path": "include/window.h",
+      "sha256": "86539c82ace8392589a5f80c137b5c4bd5ef710b90cedcb1726ea9dc8ada9edf"
+    },
+    {
+      "byteLength": 24858,
+      "gitBlobSha1": "5cef7c46ea5dcaccbdb3698909e9fc23e7d00b9c",
+      "path": "src/main_menu.c",
+      "sha256": "6662c42cb10a13c63bdc5efe53b88bbd7e3f602b3fe471868c28ece562d5f49c"
+    },
+    {
+      "byteLength": 32208,
+      "gitBlobSha1": "e4e5eed54e4c99c60ea22938f2562226bcc580fb",
+      "path": "src/menu2.c",
+      "sha256": "ee35028ff55a1062fd25df26aa6cb84b8bade79c696e9bc4ac1089a9a3a1a1d3"
+    },
+    {
+      "byteLength": 4328,
+      "gitBlobSha1": "3768b3ccb98cdad514b858cbc59244f21bedb7b0",
+      "path": "src/new_game.c",
+      "sha256": "55f03492ea90ee853550a40008089d44ca59c28cb47b8aa10aa2494e8d8608cc"
+    },
+    {
+      "byteLength": 28672,
+      "gitBlobSha1": "36b960f375c92711aa49b99bdfe9c6b3a99d6b1c",
+      "path": "src/save.c",
+      "sha256": "24f0b70d72cc83c50f7b2d6d73cb211c9b1272ab5fa40dc1d553ad48d1f4511c"
+    },
+    {
+      "byteLength": 29272,
+      "gitBlobSha1": "88cc377cea556d3663aa5ea5f5bd4537cb29ea72",
+      "path": "src/start_menu.c",
+      "sha256": "68dd2fc725c7e2685f539fe40b00d5350eecfbfd33bbbda7d6d6ff9b6e400f56"
+    },
+    {
+      "byteLength": 96631,
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
+      "path": "src/strings.c",
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+    },
+    {
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "path": "tools/gbagfx/gfx.c",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ],
+  "gameEdition": "FIRERED",
+  "profile": "firered-main-menu-source-v1",
+  "repository": "pret/pokefirered",
+  "romRevision": 0,
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

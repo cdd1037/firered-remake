@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "profile": "firered-town-route-audio-q0-qoa-24-48-v1",
+  "source": {
+    "repository": "pret/pokefirered",
+    "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+    "romSha1": "41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc"
+  },
+  "sourceFiles": [
+    {
+      "path": "sound/songs/midi/mus_dex_rating.mid",
+      "byteLength": 1083,
+      "sha256": "37f821779c98b63f65c348d113db82b3113b033869eac53ba1ecfcb275f12cea",
+      "gitBlobSha1": "98300bce17a708c05d988d91d9a4b5c9e7272b19"
+    },
+    {
+      "path": "sound/songs/midi/mus_route3.mid",
+      "byteLength": 13344,
+      "sha256": "94316b0825349a37d1b36547743322f239c60c807492fbb1b69b22a942abaa5f",
+      "gitBlobSha1": "2af80a5a83ca17d67cfb369627068bbafc8ce386"
+    },
+    {
+      "path": "sound/songs/midi/mus_victory_road.mid",
+      "byteLength": 8462,
+      "sha256": "e782c3ea2cebb670bc1e9ca5957625d1a40cfec122c24e5394d60ec482ffd61a",
+      "gitBlobSha1": "6552b65bd3380b04871fdc147d3de037dd5eaf00"
+    },
+    {
+      "path": "sound/songs/midi/se_m_spit_up.mid",
+      "byteLength": 216,
+      "sha256": "dfc271f2d24fbab7be2e8f5b465f9ece2e07fd64747b2dc167551707c1984b74",
+      "gitBlobSha1": "bfe927f14ce09d813e9ca471c1c3c5b6c59122ac"
+    },
+    {
+      "path": "sound/songs/midi/se_m_hyper_beam2.mid",
+      "byteLength": 305,
+      "sha256": "0ec3aebca27b222e6b5b660e106fcd5e39b6d45aced5901fb4dc4c2cec2b8a7e",
+      "gitBlobSha1": "694dc680d1b73d7d0c668baa8053a3a1603c010d"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "byteLength": 9204,
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+    },
+    {
+      "path": "sound/songs/midi/midi.cfg",
+      "byteLength": 20338,
+      "sha256": "49b3a0b5a2809ccd8b504da3bedfb0f5168afd073b94ef6c10a3904e1ea62560",
+      "gitBlobSha1": "71a968f7b52eb1ed005695c7c97aec856cfeb980"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "byteLength": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+    },
+    {
+      "path": "src/sound.c",
+      "byteLength": 15232,
+      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958",
+      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e"
+    },
+    {
+      "path": "src/region_map.c",
+      "byteLength": 138368,
+      "sha256": "b761f02803a1c5aada4465b9a93bf2b02c5ef1118432e677a30a5a4a4b78e0cb",
+      "gitBlobSha1": "d65f99fefa2c3a4bff11a69e674894bfd9a51374"
+    },
+    {
+      "path": "data/maps/Route22/map.json",
+      "byteLength": 2865,
+      "sha256": "3d77705fd405402183c292d15d47d698f96cd9cdf2e4e7534c2833032b6e7951",
+      "gitBlobSha1": "6da244d40828807eb434d2ee06da15ac71ffdb78"
+    },
+    {
+      "path": "data/maps/Route23/map.json",
+      "byteLength": 15426,
+      "sha256": "cdcca456f3bbf7c5b591815b21611fddde631e55829ae588883f55627ed9cfe4",
+      "gitBlobSha1": "9371d9ffa6f252637d65f9af788f885241e2aa2d"
+    }
+  ],
+  "studyFiles": [
+    {
+      "path": "manifest.json",
+      "byteLength": 970213,
+      "sha256": "545523faab56c15b1a388aebfbf285958e439c7a160c303bab3d597eda1d038d"
+    },
+    {
+      "path": "inventory.json",
+      "byteLength": 1142993,
+      "sha256": "26598ab2d5f1d67d2925f02d3570c1a6e1323a2814f773bd0077069f18d926c0"
+    },
+    {
+      "path": "RESULT.json",
+      "byteLength": 2006,
+      "sha256": "0b6351703a428e221d21dc6b83b0a6aaf5099f031f45bcb2432fd908ce03b3c8"
+    },
+    {
+      "path": "run_study.py",
+      "byteLength": 6262,
+      "sha256": "978d1f800f52ffeab7b2a00979bbb61d944a99cecbeeed19e7ba6a48eb60f792"
+    },
+    {
+      "path": "encode_qoa.gd",
+      "byteLength": 522,
+      "sha256": "d6c333e7e5de9bc96c38b10301fa57f131b89635288ac6dd6ae62ade7ab1fbae"
+    },
+    {
+      "path": "results/MUS_DEX_RATING.json",
+      "byteLength": 1083,
+      "sha256": "153495979984ca0287449765b3101a9757026b42b47016b2176ed2da43428873"
+    },
+    {
+      "path": "traces/MUS_DEX_RATING.csv",
+      "byteLength": 22465,
+      "sha256": "580635a6c5deb99fd5af0506bba0addc55017562f577325b9f753d5ac4b4a60c"
+    },
+    {
+      "path": "assets/MUS_DEX_RATING.ogg",
+      "byteLength": 13409,
+      "sha256": "e186153dab74976dfea9165d5502af7242112a8aa9d4224e1d1c2396fb1cc9ac"
+    },
+    {
+      "path": "results/MUS_ROUTE3.json",
+      "byteLength": 1497,
+      "sha256": "8009cef17b778c79b030904ac525c3fad7420a05db86f40052c035712b92263a"
+    },
+    {
+      "path": "traces/MUS_ROUTE3.csv",
+      "byteLength": 232890,
+      "sha256": "0a4474bd46ba7d4d2d08fe35b959ec90f92f93272a37acf90964e595b991499f"
+    },
+    {
+      "path": "assets/MUS_ROUTE3.ogg",
+      "byteLength": 398808,
+      "sha256": "d3bd0c42db9bffa8b0c706f27380aec4a460bd5af3fad2afd8ec583916a9aa0e"
+    },
+    {
+      "path": "results/MUS_VICTORY_ROAD.json",
+      "byteLength": 1530,
+      "sha256": "3e00716b6728a044888aabe81bb4564a0b421c856d20a1d913ec78b13640ec5d"
+    },
+    {
+      "path": "traces/MUS_VICTORY_ROAD.csv",
+      "byteLength": 209140,
+      "sha256": "3c8e96fb71e423a5d0e92522e7c7565599f8a6a63e2a2e0e7d9b5979faa25f46"
+    },
+    {
+      "path": "assets/MUS_VICTORY_ROAD.ogg",
+      "byteLength": 228432,
+      "sha256": "7e5d23f7b7f2e4733f6372aadcad60cbc2d501c82eb42398301b2b14d896627d"
+    },
+    {
+      "path": "results/SE_M_SPIT_UP.json",
+      "byteLength": 1076,
+      "sha256": "fb0630f261a314de82dc2914116471c3e578c2843f396ee7a5368b82f6ee9641"
+    },
+    {
+      "path": "traces/SE_M_SPIT_UP.csv",
+      "byteLength": 15194,
+      "sha256": "00a2cf3c967f467c0d0e829fb1443e1c46418e820ba024da2dfd6e2388ba8cbd"
+    },
+    {
+      "path": "assets/SE_M_SPIT_UP.qoa",
+      "byteLength": 5656,
+      "sha256": "14d32c0633a0599d4a0c3cfbb461dd53c37c11c5145eb3882c17497a19da1d5c"
+    },
+    {
+      "path": "results/SE_M_HYPER_BEAM2.json",
+      "byteLength": 1071,
+      "sha256": "51df7392353a6eae365796e22cfc8cd87cc52e11a56fefb3c3a69c989e878871"
+    },
+    {
+      "path": "traces/SE_M_HYPER_BEAM2.csv",
+      "byteLength": 15545,
+      "sha256": "1b6161293b1717e9c16e26821e42a2062a0e4129fb293741cdad2d8135f687ea"
+    },
+    {
+      "path": "assets/SE_M_HYPER_BEAM2.qoa",
+      "byteLength": 5872,
+      "sha256": "0cc3a929348b6434dcf584982fa6764c17346aaef551f1669e24eabab8a3a6b5"
+    }
+  ],
+  "songIds": [
+    "MUS_DEX_RATING",
+    "MUS_ROUTE3",
+    "MUS_VICTORY_ROAD",
+    "SE_M_SPIT_UP",
+    "SE_M_HYPER_BEAM2"
+  ],
+  "renderer": {
+    "name": "mGBA-0.10.5-original-FireRed-rev0-m4a-offline-v1",
+    "sourceSha256": "a8267d4ff5244c688f7a22a82a684134f9b731f066cd8ee122718be06a98db7f",
+    "binarySha256": "3d158c1301984157a724f37418ea12a6caadbcba2bd9a2b83955d4f15daff0fb"
+  },
+  "limitations": [
+    "Source PCM hashes authenticate retained mono capture before lossy encoding, not decoded Vorbis/QOA.",
+    "Integer loop endpoints reproduce the study sequencer-VBlank selection; source seams are unmodified and sample-exact seam/listening acceptance is unverified.",
+    "Fanfare sourceCounter is from src/sound.c and is independent of the sequence-stop VBlank and encoded duration.",
+    "Offline mono capture does not reproduce every simultaneous original m4a channel/reverb interaction.",
+    "Hardware listening, physical-device output, and original script-wait integration acceptance remain unverified."
+  ]
+}

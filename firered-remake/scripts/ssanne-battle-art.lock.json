@@ -1,0 +1,143 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "cf19fedfaca3e30ad73ce619b081e30d4f74aac4",
+      "path": "graphics/object_events/palettes/ss_anne.pal",
+      "sha256": "1cfc04a21e2a12e889891e00db8bf30f06bd381075b91da615ba9413f22ce534"
+    },
+    {
+      "byteLength": 315,
+      "gitBlobSha1": "5560247873a1899b9b9b78babc2202a244d7e808",
+      "path": "graphics/ss_anne/smoke.png",
+      "sha256": "67214fe4bdd4d2e66aa6be5153484fc7f6c07003e6fb2d133fab877ff4c0b5cb"
+    },
+    {
+      "byteLength": 244,
+      "gitBlobSha1": "b7ce6763fba36308c99e366a5f17afb583fd7951",
+      "path": "graphics/ss_anne/wake.png",
+      "sha256": "b83391b4a0fcff96004eb80d46e0edd82995cd900b617d10e5e2e1658bc3054f"
+    },
+    {
+      "byteLength": 841,
+      "gitBlobSha1": "5aa6d4aa35dba3eef84347f1a3f5fb062248a733",
+      "path": "graphics/trainers/front_pics/fisherman_front_pic.png",
+      "sha256": "a401f48a32aaf05381ba17530312b985bd6f154709a3a5b8d93c65f2548a4075"
+    },
+    {
+      "byteLength": 691,
+      "gitBlobSha1": "c62aadb164616f0d737ae8bf556fa7eb5c080413",
+      "path": "graphics/trainers/front_pics/gentleman_front_pic.png",
+      "sha256": "6c293ec4e38bd30711e757db385fd12dcfc27dabc87d8670fb877334385f3821"
+    },
+    {
+      "byteLength": 646,
+      "gitBlobSha1": "822ac12c4f16f94f5d77037e8a231f7db6b57164",
+      "path": "graphics/trainers/front_pics/rival_late_front_pic.png",
+      "sha256": "d93fbdd519ad959f6f24201567e04748d37d9095b366eacb9039f521ef4dba5a"
+    },
+    {
+      "byteLength": 685,
+      "gitBlobSha1": "2ef90d0a26fc13cd15c0dcf0bc178eea071acfb3",
+      "path": "graphics/trainers/front_pics/sailor_front_pic.png",
+      "sha256": "975f66fcf50ac654db7cabca35242c3defd65fc9f67ad24b18bca1f6ad3ea3f9"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "c3140cabe02eb5d540ccefe97f69841ac7c4175b",
+      "path": "graphics/trainers/palettes/fisherman.pal",
+      "sha256": "7947afab019d237a19baf28fc1ba18e66f8222420ec56b87236cb27153da11c8"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "1205b3e2f724eda52fd8dc670895e9e4118c3dcf",
+      "path": "graphics/trainers/palettes/gentleman.pal",
+      "sha256": "da1632b0f9da66c182fede0ce237549e41d5643c7a20cfbeda38a44840535eb1"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "fa9ae905b39738cda9b14584c2f03d79af846ad9",
+      "path": "graphics/trainers/palettes/rival_late.pal",
+      "sha256": "dfe55562a750589ac5546b7a32b220258d5db300f7125a7c428907030a77d7ea"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "c0b0b81bd0670c36c72001fced57a9bd49b8c496",
+      "path": "graphics/trainers/palettes/sailor.pal",
+      "sha256": "5135664674ea297e81c0c1f51a3fb7dbf4501284e90855ac4a1340d11b1a1998"
+    },
+    {
+      "byteLength": 20887,
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
+      "path": "include/constants/trainers.h",
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+    },
+    {
+      "byteLength": 11261,
+      "gitBlobSha1": "128189b0bdde65f0353ebf5e75d2fb6858f1b649",
+      "path": "include/event_object_movement.h",
+      "sha256": "cbf412819bdd65b808a8667a50008795bed0bea6e3af8fe0da70354ff68eb4e7"
+    },
+    {
+      "byteLength": 73524,
+      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0",
+      "path": "src/battle_controller_opponent.c",
+      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98"
+    },
+    {
+      "byteLength": 34300,
+      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088",
+      "path": "src/data/graphics/trainers.h",
+      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9"
+    },
+    {
+      "byteLength": 23522,
+      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
+      "path": "src/data/object_events/object_event_graphics.h",
+      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec"
+    },
+    {
+      "byteLength": 97115,
+      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
+      "path": "src/data/object_events/object_event_graphics_info.h",
+      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512"
+    },
+    {
+      "byteLength": 24042,
+      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda",
+      "path": "src/data/trainer_graphics/front_pic_tables.h",
+      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f"
+    },
+    {
+      "byteLength": 326145,
+      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
+      "path": "src/event_object_movement.c",
+      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254"
+    },
+    {
+      "byteLength": 48783,
+      "gitBlobSha1": "d0198d53004775c8664dcccf57833e178833776e",
+      "path": "src/sprite.c",
+      "sha256": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae"
+    },
+    {
+      "byteLength": 5239,
+      "gitBlobSha1": "71335915a3fc90b224e2839c89fb1f81407f75bc",
+      "path": "src/ss_anne.c",
+      "sha256": "74e4a83b6dc053a0d4807fb56515b35ae2bbf3e4db68ba0adbf0249f51ba10cf"
+    },
+    {
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "path": "tools/gbagfx/gfx.c",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ],
+  "gameVersion": "FIRERED",
+  "profile": "firered-ssanne-battle-art-v1",
+  "repository": "pret/pokefirered",
+  "revision": 0,
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

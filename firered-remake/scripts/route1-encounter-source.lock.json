@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "treeSha1": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "treeSnapshotSha256": "998020ccba7c9c6e49b0ac4b7e127d15bceb39a9040d4329a007873b6f750f31",
+  "rights": "Local source audit only; read pinned Git blobs as data. No upstream execution, ROM, or publication.",
+  "files": [
+    {
+      "path": "include/random.h",
+      "gitBlobSha1": "fd6b88ad0af62f22951e6e81fa21e38b12480ece",
+      "byteLength": 669,
+      "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/random.h"
+    },
+    {
+      "path": "include/wild_encounter.h",
+      "gitBlobSha1": "b730103069f14a7d7147547d5bfad82bf082a6de",
+      "byteLength": 1378,
+      "sha256": "a6255623049a7b02d33e70f5fa2ad951c2caff7f73ac6b96f43a5112a9bda83e",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/wild_encounter.h"
+    },
+    {
+      "path": "include/global.fieldmap.h",
+      "gitBlobSha1": "e2828ec0cb1439718e830fbef4366770b3b77b1c",
+      "byteLength": 12127,
+      "sha256": "34a8c91e10803ba48b97a2df8a721ca37fad7572b2ff951a4ab7ec15a5f050eb",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/global.fieldmap.h"
+    },
+    {
+      "path": "include/constants/metatile_behaviors.h",
+      "gitBlobSha1": "38a02075f8bb0205d05a42e6215e62c8474fbf45",
+      "byteLength": 3471,
+      "sha256": "88955bf5c4b8d702d01d28161017362a2617ee37dce7ef77c0e288bda379da75",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/metatile_behaviors.h"
+    },
+    {
+      "path": "src/random.c",
+      "gitBlobSha1": "635a1df5a59fa42a88f30ad884405db2bde95ea5",
+      "byteLength": 323,
+      "sha256": "e7e90cc070d1fbf09579f5f91762cd8875d5bbe1d7a90f468bcd870df73b9de2",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/random.c"
+    },
+    {
+      "path": "src/wild_encounter.c",
+      "gitBlobSha1": "fa358c0280880b741161fb14807beea6779d3060",
+      "byteLength": 24781,
+      "sha256": "06021f7ef390bbb49a7801ca44def3a67380c53e5ab5fd211e472fc53b10ca8f",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/wild_encounter.c"
+    },
+    {
+      "path": "src/field_control_avatar.c",
+      "gitBlobSha1": "b1b6465941133b927505be92d189a7c283e4722f",
+      "byteLength": 40928,
+      "sha256": "305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/field_control_avatar.c"
+    },
+    {
+      "path": "src/field_player_avatar.c",
+      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb",
+      "byteLength": 67969,
+      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/field_player_avatar.c"
+    },
+    {
+      "path": "src/pokemon.c",
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c",
+      "byteLength": 221865,
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/pokemon.c"
+    },
+    {
+      "path": "src/roamer.c",
+      "gitBlobSha1": "b3f262386fd48baa89bec9262f1834b69940804f",
+      "byteLength": 9970,
+      "sha256": "b72cd17c1e668b8d483953dd85cc6f0e02c54a1a022f4fabe743841867b9877f",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/roamer.c"
+    },
+    {
+      "path": "src/overworld.c",
+      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d",
+      "byteLength": 103643,
+      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/overworld.c"
+    },
+    {
+      "path": "src/battle_setup.c",
+      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
+      "byteLength": 33351,
+      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_setup.c"
+    },
+    {
+      "path": "src/new_game.c",
+      "gitBlobSha1": "3768b3ccb98cdad514b858cbc59244f21bedb7b0",
+      "byteLength": 4328,
+      "sha256": "55f03492ea90ee853550a40008089d44ca59c28cb47b8aa10aa2494e8d8608cc",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/new_game.c"
+    },
+    {
+      "path": "src/data/wild_encounters.json",
+      "gitBlobSha1": "176027bbc114fcaa42464b0f49c90de26538f555",
+      "byteLength": 706967,
+      "sha256": "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/wild_encounters.json"
+    },
+    {
+      "path": "src/title_screen.c",
+      "gitBlobSha1": "75f0e6743a2a84c906090df230bac7accb8dbe84",
+      "byteLength": 37011,
+      "sha256": "c2521f842e2f7385f429465330c50c663a88b24da7d419e6dbe77362643f56d5",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/title_screen.c"
+    },
+    {
+      "path": "src/main_menu.c",
+      "gitBlobSha1": "5cef7c46ea5dcaccbdb3698909e9fc23e7d00b9c",
+      "byteLength": 24858,
+      "sha256": "6662c42cb10a13c63bdc5efe53b88bbd7e3f602b3fe471868c28ece562d5f49c",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/main_menu.c"
+    }
+  ]
+}

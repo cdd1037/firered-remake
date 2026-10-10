@@ -1,0 +1,19 @@
+config_version=5
+[application]
+config/name="FireRed Remake — Engineering Probe"
+run/main_scene="res://Bootstrap.tscn"
+config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
+[display]
+window/size/viewport_width=240
+window/size/viewport_height=160
+window/size/window_width_override=960
+window/size/window_height_override=640
+window/stretch/mode="viewport"
+window/stretch/scale_mode="integer"
+[dotnet]
+project/assembly_name="Game.Godot"
+[rendering]
+renderer/rendering_method="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.04, 0.065, 0.12, 1)

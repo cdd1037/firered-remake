@@ -1,0 +1,97 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 2352,
+      "gitBlobSha1": "66effb468584e1fd50d10f7877187d7075620391",
+      "path": "graphics/trainers/back_pics/leaf_back_pic.png",
+      "sha256": "122b170c9823b4d66f5bf41bd05ce5c242ccca124abb2d474987b11435801da5",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/trainers/back_pics/leaf_back_pic.png"
+    },
+    {
+      "byteLength": 2270,
+      "gitBlobSha1": "a1aa1d302fcf8e32c81253082755ae2f27c4b9fa",
+      "path": "graphics/trainers/back_pics/red_back_pic.png",
+      "sha256": "cd56e9c887a82cf0f95e357eacf9fc7bbeace7f4635e8fe2da2da037830287e9",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/trainers/back_pics/red_back_pic.png"
+    },
+    {
+      "byteLength": 747,
+      "gitBlobSha1": "3bb8f8d8aa03e123fd655835b4415f2d35954339",
+      "path": "graphics/trainers/front_pics/bug_catcher_front_pic.png",
+      "sha256": "d4fde22863bf180ae3ab808d1cc1a2680e828b66fa2ce12c55bfe96cad097243",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/trainers/front_pics/bug_catcher_front_pic.png"
+    },
+    {
+      "byteLength": 214,
+      "gitBlobSha1": "67e4855b72d56d7df7169f9abb3b09b388d06808",
+      "path": "graphics/trainers/palettes/bug_catcher.pal",
+      "sha256": "3924bcde02e15f70c6ace1128460b63875f570b54b731946f4d237682f038b2d",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/trainers/palettes/bug_catcher.pal"
+    },
+    {
+      "byteLength": 209,
+      "gitBlobSha1": "13c7aad6f3aec6a50fec818ad9f1f6abf11383a8",
+      "path": "graphics/trainers/palettes/leaf_back_pic.pal",
+      "sha256": "b5d96e9ab6ce63ddd15be03fae61b1942cf13b234f79ffe877b43b2fdb6b8025",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/trainers/palettes/leaf_back_pic.pal"
+    },
+    {
+      "byteLength": 209,
+      "gitBlobSha1": "13c7aad6f3aec6a50fec818ad9f1f6abf11383a8",
+      "path": "graphics/trainers/palettes/red_back_pic.pal",
+      "sha256": "b5d96e9ab6ce63ddd15be03fae61b1942cf13b234f79ffe877b43b2fdb6b8025",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/graphics/trainers/palettes/red_back_pic.pal"
+    },
+    {
+      "byteLength": 20887,
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
+      "path": "include/constants/trainers.h",
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/include/constants/trainers.h"
+    },
+    {
+      "byteLength": 73524,
+      "gitBlobSha1": "b4b6ebbdf019fbfb2c0065f7bc42166fc5720fd0",
+      "path": "src/battle_controller_opponent.c",
+      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_controller_opponent.c"
+    },
+    {
+      "byteLength": 116151,
+      "gitBlobSha1": "d8e1fe71e4e06303476313c15ab371fee1f82139",
+      "path": "src/battle_controller_player.c",
+      "sha256": "1fc12b9ed3e5f598eb1fc3761db3d57d44b5b68d6e432042d13d1679d76efa05",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/battle_controller_player.c"
+    },
+    {
+      "byteLength": 34300,
+      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088",
+      "path": "src/data/graphics/trainers.h",
+      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/graphics/trainers.h"
+    },
+    {
+      "byteLength": 1150,
+      "gitBlobSha1": "116dd02dedaa234a63c65bd7e50e3b31644fe5de",
+      "path": "src/data/trainer_graphics/back_pic_tables.h",
+      "sha256": "985bdf4ab23cf95bd66082e09111e69295c8f1c045d4a8bb605fff701da6573c",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/trainer_graphics/back_pic_tables.h"
+    },
+    {
+      "byteLength": 24042,
+      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda",
+      "path": "src/data/trainer_graphics/front_pic_tables.h",
+      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/src/data/trainer_graphics/front_pic_tables.h"
+    },
+    {
+      "byteLength": 18570,
+      "gitBlobSha1": "1dfc38e2d0362cb8224f67f057f68ee7120dce9f",
+      "path": "tools/gbagfx/gfx.c",
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2",
+      "sourceUrl": "https://github.com/pret/pokefirered/blob/037335f4c725d7c9aecdac87066f2002b4bd7e14/tools/gbagfx/gfx.c"
+    }
+  ],
+  "repository": "pret/pokefirered"
+}

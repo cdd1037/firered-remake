@@ -1,0 +1,84 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 406484,
+      "gitBlobSha1": "9ae0ed9d1b163ebc6321d85323e957352f9de068",
+      "path": "data/battle_anim_scripts.s",
+      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e"
+    },
+    {
+      "byteLength": 17891,
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
+      "path": "include/constants/songs.h",
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "byteLength": 16533,
+      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9",
+      "path": "sound/cry_tables.inc",
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a"
+    },
+    {
+      "byteLength": 9204,
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57",
+      "path": "sound/song_table.inc",
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+    },
+    {
+      "byteLength": 7582,
+      "gitBlobSha1": "4831631fc9dc222bb853d0ff9e18869da17632e4",
+      "path": "sound/songs/midi/mus_fuchsia.mid",
+      "sha256": "a0a8949bcb54df68bd10fc3910e9e04bdff01a5233744248a8e95a9ab5c3a6e7"
+    },
+    {
+      "byteLength": 492,
+      "gitBlobSha1": "42b57ae5ef293a48199fb17fbabce6f583270636",
+      "path": "sound/songs/midi/se_m_absorb_2.mid",
+      "sha256": "42d6aa14c7d66167e3df91242b61008972fcf5702d2c84520473ec657bd5e987"
+    },
+    {
+      "byteLength": 200,
+      "gitBlobSha1": "f11c1d774aeed75f58e102a742c5b3f79ba7af16",
+      "path": "sound/songs/midi/se_m_giga_drain.mid",
+      "sha256": "2b55723d24373b45c2206471dde2dd699bfbe8cc5e61ab63b1c3adf7c98244fb"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "4cde4e2d54d3a50e6e6dd46c8d82d0516e4c100c",
+      "path": "sound/songs/midi/se_m_headbutt.mid",
+      "sha256": "d6cb674bb6b8c154a6c5b19b0e5464970ca13fe616c323e9901cc54be9e1d3d2"
+    },
+    {
+      "byteLength": 164,
+      "gitBlobSha1": "c6b60fe2318d66d3e93b06a5e36422d0776cba28",
+      "path": "sound/songs/midi/se_m_icy_wind.mid",
+      "sha256": "9ec5eed4c2097b135bbe7ccef3f0c5e512979c53e776375493dd517a86700101"
+    },
+    {
+      "byteLength": 320,
+      "gitBlobSha1": "bcc9590b49ee547aa21c478422e9632c3f137ecd",
+      "path": "sound/songs/midi/se_m_mega_kick.mid",
+      "sha256": "b3fc96c01534ea4565785f607d7470bb86c2dcf00162207f6c756aa7c066e38c"
+    },
+    {
+      "byteLength": 224,
+      "gitBlobSha1": "c1de5f212329264048f8ee040da3efded717a246",
+      "path": "sound/songs/midi/se_m_surf.mid",
+      "sha256": "9b7d22242183407fb496c3fb5c524c3009bed8b50b73c526488274286d29b9d2"
+    },
+    {
+      "byteLength": 272,
+      "gitBlobSha1": "7fe4fcca25793b29d5373f0d07c84a887263063f",
+      "path": "sound/songs/midi/se_m_swift.mid",
+      "sha256": "e36eaebb47a6376c344b9f545d3ed245d684e88c599b095f24d189b7216127a2"
+    },
+    {
+      "byteLength": 424,
+      "gitBlobSha1": "c886fad834c919f68b8b202f18eae07a2af1cfeb",
+      "path": "sound/songs/midi/se_m_teleport.mid",
+      "sha256": "213ca4e506ff0a042fd2dd90cf0aa84e2185f8402ed71677e1273e26f925cb12"
+    }
+  ],
+  "repository": "pret/pokefirered"
+}
