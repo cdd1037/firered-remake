@@ -83,7 +83,7 @@ public static partial class WildBattleRules
             }
             if (move.Effect is not ("EFFECT_SPITE" or "EFFECT_CURSE" or "EFFECT_MEAN_LOOK" or "EFFECT_NIGHTMARE" or "EFFECT_DESTINY_BOND")) return false;
             bool self = move.Effect == "EFFECT_DESTINY_BOND";
-            var species = catalog.Species[Get(side).Pokemon.Species];
+            var species = WildBattleEffective.Types(catalog, Get(side));
             bool ghost = species.Type1 == "TYPE_GHOST" || species.Type2 == "TYPE_GHOST";
             if (move.Effect == "EFFECT_CURSE" && !ghost) self = true;
             SpendEarlyPartyPp(side, self ? side : targetSide, slot, move);

@@ -63,7 +63,7 @@ public static class WildBattleDamage
                 ElementType.Mystery, null, ElementType.Mystery, null, critical, randomPercent));
         var move = catalog.Moves[moveId];
         if (move.Id.Value is not ("pret:MOVE_TACKLE" or "pret:MOVE_SCRATCH")) throw new NotSupportedException("wild_battle_damage_move");
-        var a = catalog.Species[user.Pokemon.Species]; var d = catalog.Species[target.Pokemon.Species];
+        var a = WildBattleEffective.Types(catalog, user); var d = WildBattleEffective.Types(catalog, target);
         ElementType Type(string symbol) => Enum.Parse<ElementType>(symbol[5..], true);
         return DamageRules.Calculate(new(user.Pokemon.Level, move.Power, ElementType.Normal, attack, defense,
             Type(a.Type1), Type(a.Type2), Type(d.Type1), Type(d.Type2), critical, randomPercent));

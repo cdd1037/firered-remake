@@ -93,17 +93,14 @@ public static partial class WildBattleRules
             }
             int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
             int damage = RockTunnelAdjustDamage(targetSide, Damage(percent));
-            int before = target.Pokemon.CurrentHp, after = Math.Max(0, before - damage);
-            Set(targetSide, target with { Pokemon = target.Pokemon with { CurrentHp = after } });
-            Add(n => new WildBattleHpChangedEvent(n, State.Turn, side, targetSide, move.Id,
-                before, after, damage, critical, percent));
-            if (critical && damage > 0) Add(n => new WildBattleCriticalHitEvent(n, State.Turn, side, targetSide));
+            SourceGenericApplyDamage(side, targetSide, move.Id, damage, critical, percent);
+            int after = Get(targetSide).Pokemon.CurrentHp;
             ReportPewterEffectiveness(catalog, side, targetSide, move.Id);
             // HitFromAtkAnimation always executes seteffectwithchance, including 0%.
             Draw($"{purpose}.secondary-effect", 100);
             if (after == 0) ForestFaint(targetSide);
             if (damage > 0) MtMoonRageOnDamage(side, targetSide, move.Id);
-            if (damage > 0 && target.Pokemon.AbilityId == "ABILITY_STATIC" && Get(side).Pokemon.CurrentHp > 0 &&
+            if (damage > 0 && SourceCalledHitReachedPokemon(targetSide) && WildBattleEffective.Ability(target) == "ABILITY_STATIC" && Get(side).Pokemon.CurrentHp > 0 &&
                 Draw($"{purpose}.static", 3) % 3 == 0)
             {
                 RecordAbility?.Invoke(targetSide, "ABILITY_STATIC");

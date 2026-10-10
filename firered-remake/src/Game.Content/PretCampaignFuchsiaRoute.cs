@@ -23,7 +23,8 @@ public sealed partial class PretCampaignCatalog
     public PretFuchsiaRouteArt? FuchsiaRouteArt {get;}
     public bool FuchsiaRouteEnabled=>FuchsiaRouteRegion is not null;
     public FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>FuchsiaRoutePokemon?.Trainers;
-    public bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>FuchsiaRouteRegion is not {} region ||
+    public bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>
+        map.Value=="map.fuchsia-city"&&sourceWarpId==4?FuchsiaGymEnabled:FuchsiaRouteRegion is not {} region ||
         !region.NewMaps.ContainsKey(map) || region.AllowsNewMapWarp(map,sourceWarpId);
     private static void AppendFuchsiaRouteSources(PretFuchsiaRouteRegion region,List<PretSourceScriptFile> sources,
         List<string> textFiles,Dictionary<string,int> constants,List<string> hashes)

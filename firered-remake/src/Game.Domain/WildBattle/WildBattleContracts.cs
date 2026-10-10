@@ -27,6 +27,9 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     // Opt-in called-action history. Historical battle profiles reject this extension;
     // use the versioned called-action contract to validate and resume its result.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSourceMoveHistory? SourceMoveHistory { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledOverlay? CalledOverlay { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledTurnState? CalledTurnState { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledVolatileState? CalledVolatile { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int FuryCutterCounter { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTransformation? Transform { get; init; }
     // Historical profiles use this only for Sleep Talk. The explicit called-action
@@ -83,6 +86,8 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledFieldState? CalledField { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledPartyState? CalledParty { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCalledDelayedState? CalledDelayed { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool ScriptedSnorlax { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public PokemonTowerBattleKind? TowerBattleKind { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTerrain? Terrain { get; init; }
@@ -94,6 +99,16 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 }
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildBattleCalledOverlayChangedEvent), "called-party-overlaychanged")]
+[JsonDerivedType(typeof(WildBattleCalledPartyChangedEvent), "called-party-partychanged")]
+[JsonDerivedType(typeof(WildBattleCalledPartySwitchRequiredEvent), "called-party-partyswitchrequired")]
+[JsonDerivedType(typeof(WildBattleCalledPartySwitchedEvent), "called-party-partyswitched")]
+[JsonDerivedType(typeof(WildBattleCalledSpikesChangedEvent), "called-party-spikeschanged")]
+[JsonDerivedType(typeof(WildBattleCalledBeatUpMemberEvent), "called-party-beatupmember")]
+[JsonDerivedType(typeof(WildBattleSubstituteDamagedEvent), "substitute-damaged")]
+[JsonDerivedType(typeof(WildBattleCalledDelayedEvent), "called-delayed")]
+[JsonDerivedType(typeof(WildBattleMagicCoatEvent), "magic-coat")]
+[JsonDerivedType(typeof(WildBattleGrudgePpEvent), "grudge-pp")]
 [JsonDerivedType(typeof(WildBattleCalledMoveTransitionEvent), "called-move-transition")]
 [JsonDerivedType(typeof(WildBattleAttackStringEvent), "attack-string")]
 [JsonDerivedType(typeof(WildBattlePpCommandEvent), "pp-command")]

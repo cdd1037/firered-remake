@@ -76,12 +76,12 @@ public static partial class WildBattleRules
 
     internal sealed partial class Execution
     {
-        private bool SourceCalledFieldActive => activeInvocation is not null || State.CalledField is not null;
+        private bool SourceCalledFieldActive => activeInvocation is not null || State.CalledField is not null || State.CalledDelayed is not null || State.Player.CalledVolatile is not null || State.Opponent.CalledVolatile is not null;
         private bool SourceCalledSun => (State.CalledField?.SunTurnsRemaining ?? 0) > 0;
         private bool SourceCalledWeatherPresent => SourceCalledSun || (State.CalledField?.HailTurnsRemaining ?? 0) > 0 ||
             State.RainTurnsRemaining > 0 || State.SandstormTurnsRemaining > 0;
         private bool SourceCalledWeatherSuppressed => SourceCalledFieldActive && new[] { State.Player, State.Opponent }
-            .Any(m => m.Pokemon.CurrentHp > 0 && m.Pokemon.AbilityId is "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK");
+            .Any(m => m.Pokemon.CurrentHp > 0 && WildBattleEffective.Ability(m) is "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK");
         private bool SourceCalledLightScreen(WildBattleSide side) => (side == WildBattleSide.Player
             ? State.CalledField?.PlayerLightScreenTurnsRemaining : State.CalledField?.OpponentLightScreenTurnsRemaining) > 0;
         private bool SourceCalledMist(WildBattleSide side) => (side == WildBattleSide.Player
@@ -145,7 +145,7 @@ public static partial class WildBattleRules
             if (before == 0)
             {
                 // Forecast must gain an authenticated form/ability overlay before it is representable.
-                if (new[] { State.Player, State.Opponent }.Any(m => m.Pokemon.AbilityId == "ABILITY_FORECAST"))
+                if (new[] { State.Player, State.Opponent }.Any(m => WildBattleEffective.Ability(m) == "ABILITY_FORECAST"))
                     throw new UnsupportedAction("called_field_forecast_overlay_required");
                 State = State with { RainTurnsRemaining = weather == "rain" ? 5 : 0,
                     SandstormTurnsRemaining = weather == "sandstorm" ? 5 : 0,
@@ -163,8 +163,8 @@ public static partial class WildBattleRules
         private void SourceCalledToxic(PokemonCatalog catalog, WildBattleSide side, WildBattleSide target,
             PokemonMoveDefinition move, string purpose)
         {
-            var mon = Get(target); var species = catalog.Species[mon.Pokemon.Species];
-            if (mon.Pokemon.AbilityId == "ABILITY_IMMUNITY")
+            var mon = Get(target); var species = WildBattleEffective.Types(catalog, mon);
+            if (WildBattleEffective.Ability(mon) == "ABILITY_IMMUNITY")
             {
                 RecordAbility?.Invoke(target, "ABILITY_IMMUNITY");
                 Add(n => new WildBattleAbilityPreventedEvent(n, State.Turn, side, target, move.Id, "ABILITY_IMMUNITY")); return;
@@ -186,12 +186,12 @@ public static partial class WildBattleRules
         {
             var target = Get(targetSide);
             if (target.Pokemon.CurrentHp == 0 || target.Status != 0 || !primary &&
-                (target.Pokemon.AbilityId == "ABILITY_SHIELD_DUST" || SourceCalledSafeguard(targetSide))) return;
-            var species = catalog.Species[target.Pokemon.Species];
+                (SourceCalledSecondaryBlocked(targetSide) || WildBattleEffective.Ability(target) == "ABILITY_SHIELD_DUST" || SourceCalledSafeguard(targetSide))) return;
+            var species = WildBattleEffective.Types(catalog, target);
             bool HasType(string type) => species.Type1 == type || species.Type2 == type;
             if (status == WildBattleStatus.Freeze)
             {
-                if (HasType("TYPE_ICE") || target.Pokemon.AbilityId == "ABILITY_MAGMA_ARMOR" || SourceCalledSun && !SourceCalledWeatherSuppressed) return;
+                if (HasType("TYPE_ICE") || WildBattleEffective.Ability(target) == "ABILITY_MAGMA_ARMOR" || SourceCalledSun && !SourceCalledWeatherSuppressed) return;
                 CancelRoute3Rollout(targetSide, "freeze");
             }
             else if (WildBattleSourceFieldEffects.IsToxic(status))
@@ -207,7 +207,7 @@ public static partial class WildBattleRules
                     }
                     return;
                 }
-                if (target.Pokemon.AbilityId == "ABILITY_IMMUNITY") return;
+                if (WildBattleEffective.Ability(target) == "ABILITY_IMMUNITY") return;
                 State = State with { CalledField = State.CalledField ?? new() };
             }
             ChangeStatus(targetSide, status, "move");
@@ -227,7 +227,7 @@ public static partial class WildBattleRules
             }
             bool hit;
             if (move.Effect == "EFFECT_THUNDER" && State.RainTurnsRemaining > 0 && !SourceCalledWeatherSuppressed)
-                hit = ScalarNoAccuracy(side, targetSide, move);
+                hit = ScalarAccuracy(side, targetSide, move, purpose, type);
             else hit = ScalarAccuracy(side, targetSide, move.Effect == "EFFECT_THUNDER" && SourceCalledSun && !SourceCalledWeatherSuppressed
                 ? move with { Accuracy = 50 } : move, purpose, type);
             SpendEarlyPartyPp(side, targetSide, slot, move);
@@ -242,7 +242,7 @@ public static partial class WildBattleRules
             damage = ScalarAdjust(targetSide, move, damage, purpose);
             ScalarApplyDamage(catalog, side, targetSide, move, damage, critical, percent, type);
             ScalarReportType(catalog, side, targetSide, move, type);
-            int chance = move.SecondaryEffectChance * (Get(side).Pokemon.AbilityId == "ABILITY_SERENE_GRACE" ? 2 : 1);
+            int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
             int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
             if (roll <= chance && damage > 0)
             {
@@ -297,8 +297,8 @@ public static partial class WildBattleRules
         {
             if ((State.CalledField?.HailTurnsRemaining ?? 0) == 0 || SourceCalledWeatherSuppressed ||
                 State.Outcome != WildBattleOutcome.Ongoing || TowerDisguised && side == WildBattleSide.Opponent) return;
-            var mon = Get(side); var species = catalog.Species[mon.Pokemon.Species];
-            if (mon.Pokemon.CurrentHp == 0 || mon.DigMoveSlot is not null || species.Type1 == "TYPE_ICE" || species.Type2 == "TYPE_ICE") return;
+            var mon = Get(side); var species = WildBattleEffective.Types(catalog, mon);
+            if (mon.Pokemon.CurrentHp == 0 || CalledSemiInvulnerable(mon) is WildBattleSemiInvulnerable.Underground or WildBattleSemiInvulnerable.Underwater || species.Type1 == "TYPE_ICE" || species.Type2 == "TYPE_ICE") return;
             int before = mon.Pokemon.CurrentHp, damage = Math.Max(1, mon.Pokemon.Stats.MaxHp / 16), after = Math.Max(0, before - damage);
             Set(side, mon with { Pokemon = mon.Pokemon with { CurrentHp = after } });
             Add(n => new WildBattleWeatherDamageEvent(n, State.Turn, side, "hail", before, after, damage));

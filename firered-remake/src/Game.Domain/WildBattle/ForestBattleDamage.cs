@@ -10,7 +10,7 @@ internal static class ForestBattleDamage
     // pokemon.c:2385-2652; battle_script_commands.c:1210-1550. Historical options retain
     // their original defaults; new Sun/LightScreen/suppression require an authenticated called definition.
     internal static DamageResult Calculate(PokemonCatalog catalog, WildBattleCombatant user,
-        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false)
+        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false, bool sourceSolarBeamWeakWeather = false)
     {
         route11Rules |= rockTunnelRules;
         if (randomPercent is < 85 or > 100) throw new ArgumentOutOfRangeException(nameof(randomPercent));
@@ -21,6 +21,7 @@ internal static class ForestBattleDamage
             throw new NotSupportedException("called_damage_source_definition");
         if (!struggle && ((!sourceMove && !(rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, move!) : route11Rules ? Route11BattleScope.ValidDefinition(move!) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(move!) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(move!) : vermilionRules ? VermilionBattleScope.ValidDefinition(move!) : billRules ? BillBattleScope.ValidDefinition(move!) : ceruleanRules ? CeruleanBattleScope.ValidDefinition(move!) : mtMoonRules ? MtMoonBattleScope.ValidDefinition(move!) : route3Rules ? Route3BattleScope.ValidDefinition(move!) : route22Rules ? Route22BattleScope.ValidDefinition(move!) : earlyPartyRules ? EarlyPartyBattleScope.ValidDefinition(move!) : earlyStarterRules ? EarlyStarterBattleScope.ValidDefinition(move!) : pewterRules ? PewterBattleScope.ValidDefinition(move!) : ForestBattleScope.ValidDefinition(move!))) || move!.Power == 0))
             throw new NotSupportedException("wild_battle_damage_move");
+        if (sourceSolarBeamWeakWeather && (!sourceMove || move!.Effect != "EFFECT_SOLAR_BEAM")) throw new NotSupportedException("called_solar_weather_context");
         if ((sun || lightScreen || weatherSuppressed) && !sourceMove) throw new NotSupportedException("called_damage_field_context");
         bool validEffectiveType = sourceEffectiveType is { } effective && Enum.IsDefined(effective) && move!.Effect switch {
             "EFFECT_HIDDEN_POWER" => effective is not (ElementType.Normal or ElementType.Mystery),
@@ -28,7 +29,7 @@ internal static class ForestBattleDamage
             _ => false };
         if (sourceEffectiveType is not null && (!sourceMove || !validEffectiveType))
             throw new NotSupportedException("called_damage_effective_type");
-        if (sourceDamageMultiplier != 1 && (!sourceMove || move!.Effect is not ("EFFECT_FACADE" or "EFFECT_SMELLINGSALT" or "EFFECT_WEATHER_BALL") || sourceDamageMultiplier != 2))
+        if (sourceDamageMultiplier != 1 && (!sourceMove || move!.Effect is not ("EFFECT_FACADE" or "EFFECT_SMELLINGSALT" or "EFFECT_WEATHER_BALL" or "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE" or "EFFECT_GUST" or "EFFECT_TWISTER") && move.Id.Value is not ("pret:MOVE_SURF" or "pret:MOVE_WHIRLPOOL") || sourceDamageMultiplier != 2))
             throw new NotSupportedException("called_damage_multiplier");
         if (sourceMove && (move!.Effect is "EFFECT_RETURN" or "EFFECT_FRUSTRATION" or "EFFECT_HIDDEN_POWER" or "EFFECT_ERUPTION" or "EFFECT_PRESENT" or "EFFECT_TRIPLE_KICK") && dynamicPower is null)
             throw new NotSupportedException("called_damage_dynamic_power_required");
@@ -50,13 +51,13 @@ internal static class ForestBattleDamage
         bool physical = category == DamageCategory.Physical;
         if (ssAnneRules && move?.Effect == "EFFECT_LEVEL_DAMAGE")
         {
-            var species = catalog.Species[target.Pokemon.Species];
+            var species = WildBattleEffective.Types(catalog, target);
             bool levelImmune = TypeRules.OrderedEffects(type, Type(species.Type1), Type(species.Type2)).Any(e => e.MultiplierTenths == 0);
             return new(levelImmune ? 0 : user.Pokemon.Level, category, [new("level-damage", levelImmune ? 0 : user.Pokemon.Level)]);
         }
         if (vermilionGymRules && move?.Effect == "EFFECT_SONICBOOM")
         {
-            var species = catalog.Species[target.Pokemon.Species];
+            var species = WildBattleEffective.Types(catalog, target);
             bool sonicImmune = TypeRules.OrderedEffects(type, Type(species.Type1), Type(species.Type2)).Any(e => e.MultiplierTenths == 0);
             return new(sonicImmune ? 0 : 20, category, [new("sonicboom-fixed-damage", sonicImmune ? 0 : 20)]);
         }
@@ -71,7 +72,7 @@ internal static class ForestBattleDamage
         }
         if (route3Rules && move?.Effect == "EFFECT_ROLLOUT" && dynamicPower is null)
             power *= (1 << (user.RolloutTurnsRemaining == 0 ? 0 : 5 - user.RolloutTurnsRemaining)) * (user.DefenseCurled ? 2 : 1);
-        if (billRules && target.DigMoveSlot is not null && move?.Effect=="EFFECT_MAGNITUDE") power*=2;
+        if (!sourceMove && billRules && target.DigMoveSlot is not null && move?.Effect=="EFFECT_MAGNITUDE") power*=2;
         if (catalog.Species.Count == 107 && move?.Effect == "EFFECT_FURY_CUTTER" && dynamicPower is null) power = WildBattleRules.NextFuryCutterPower(user.FuryCutterCounter);
         if (dynamicPower is { } overridden)
         {
@@ -82,10 +83,11 @@ internal static class ForestBattleDamage
                 "EFFECT_ERUPTION" => overridden == Math.Max(1, user.Pokemon.CurrentHp * move.Power / user.Pokemon.Stats.MaxHp),
                 "EFFECT_PRESENT" => overridden is 40 or 80 or 120,
                 "EFFECT_TRIPLE_KICK" => overridden is 10 or 20 or 30,
+                "EFFECT_ROLLOUT" => overridden is 30 or 60 or 120 or 240 or 480 or 960,
                 _ => false
             };
             if (!sourcePower && !(rockTunnelRules && catalog.Species.Count == 107 && moveId.Value == "pret:MOVE_FURY_CUTTER" && overridden is 10 or 20 or 40 or 80 or 160) && !(mtMoonRules && moveId.Value == "pret:MOVE_MAGNITUDE" && overridden is 10 or 30 or 50 or 70 or 90 or 110 or 150) && (!route3Rules || moveId.Value != "pret:MOVE_ROLLOUT" || overridden is < 30 or > 960)) throw new NotSupportedException("route3_dynamic_power");
-            power = overridden * (billRules && target.DigMoveSlot is not null && move?.Effect=="EFFECT_MAGNITUDE" ? 2 : 1);
+            power = overridden * (!sourceMove && billRules && target.DigMoveSlot is not null && move?.Effect=="EFFECT_MAGNITUDE" ? 2 : 1);
         }
         if (pursuitSwitch && (!route22Rules || moveId.Value != "pret:MOVE_PURSUIT"))
             throw new NotSupportedException("route22_pursuit_switch_move");
@@ -102,17 +104,17 @@ internal static class ForestBattleDamage
         if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 99 or 101 or 102 or 107 && user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) { attack = attack * 110 / 100; steps.Add(new("black-glasses", attack)); }
         if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107 && user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) { attack = attack * 110 / 100; steps.Add(new("spell-tag", attack)); }
         if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107 && physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) { attack *= 2; steps.Add(new("thick-club", attack)); }
-        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 102 or 107 && target.Pokemon.AbilityId == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice)
+        if (rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 102 or 107 && WildBattleEffective.Ability(target) == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice)
         { attack /= 2; steps.Add(new("thick-fat",attack)); }
         if (rockTunnelRules && catalog.Species.Count == 107 && physical && target.HeldItem == "ITEM_METAL_POWDER" && target.Pokemon.SourceSpeciesId == 132)
         { defense *= 2; steps.Add(new("metal-powder", defense)); }
-        if (physical && user.Pokemon.AbilityId == "ABILITY_GUTS" && user.Status != 0)
+        if (physical && WildBattleEffective.Ability(user) == "ABILITY_GUTS" && user.Status != 0)
             attack = attack * 150 / 100;
         if (ceruleanRules && type == ElementType.Fire && (user.WaterSport || target.WaterSport)) power /= 2;
         if (mtMoonRules && type == ElementType.Electric && (user.MudSport || target.MudSport)) power /= 2;
         if (mtMoonRules && move?.Effect == "EFFECT_EXPLOSION") defense = Math.Max(1, defense / 2);
         if (user.Pokemon.CurrentHp <= user.Pokemon.Stats.MaxHp / 3 &&
-            (type, user.Pokemon.AbilityId) is (ElementType.Grass, "ABILITY_OVERGROW") or
+            (type, WildBattleEffective.Ability(user)) is (ElementType.Grass, "ABILITY_OVERGROW") or
                 (ElementType.Fire, "ABILITY_BLAZE") or (ElementType.Water, "ABILITY_TORRENT") or
                 (ElementType.Bug, "ABILITY_SWARM")) power = power * 150 / 100;
         // All represented special moves have no special-stat-stage effects.
@@ -126,7 +128,7 @@ internal static class ForestBattleDamage
         steps.Add(new("times-level-factor", value));
         value /= defense; steps.Add(new("divide-defense", value));
         value /= 50; steps.Add(new("divide-50", value));
-        if (physical && user.Status == WildBattleStatus.Burn && user.Pokemon.AbilityId != "ABILITY_GUTS") value /= 2;
+        if (physical && user.Status == WildBattleStatus.Burn && WildBattleEffective.Ability(user) != "ABILITY_GUTS") value /= 2;
         steps.Add(new("burn", value));
         if (rockTunnelRules && reflect && physical && !critical) { value /= 2; steps.Add(new("reflect", value)); }
         if (physical) value = Math.Max(1, value);
@@ -138,6 +140,7 @@ internal static class ForestBattleDamage
             else if (type == ElementType.Water) value = value * 15 / 10;
             steps.Add(new("rain", value));
         }
+        if (sourceMove && sourceSolarBeamWeakWeather && !weatherSuppressed) { value /= 2; steps.Add(new("solar-beam-weather", value)); }
         if (sourceMove && sun && !physical && !weatherSuppressed)
         {
             if (type == ElementType.Fire) value = value * 15 / 10;
@@ -148,6 +151,13 @@ internal static class ForestBattleDamage
         value += 2; steps.Add(new("plus-two", value));
         if (critical) value *= 2;
         steps.Add(new("critical", value));
+        if (sourceMove && sourceDamageMultiplier == 1)
+            sourceDamageMultiplier = WildBattleRules.CalledSemiInvulnerable(target) switch {
+                WildBattleSemiInvulnerable.Air when move!.Effect is "EFFECT_GUST" or "EFFECT_TWISTER" => 2,
+                WildBattleSemiInvulnerable.Underground when move!.Effect is "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE" => 2,
+                WildBattleSemiInvulnerable.Underwater when move!.Id.Value is "pret:MOVE_SURF" or "pret:MOVE_WHIRLPOOL" => 2,
+                _ => 1
+            };
         if (sourceDamageMultiplier != 1) { value = checked(value * sourceDamageMultiplier); steps.Add(new("source-damage-multiplier", value)); }
         if (rockTunnelRules && move?.Effect == "EFFECT_REVENGE" && user.DamagedByOpponentThisTurn) { value *= 2; steps.Add(new("revenge", value)); }
         if (mtMoonRules && user.ChargeTurnsRemaining > 0 && (sourceMove ? move!.Type == "TYPE_ELECTRIC" : type == ElementType.Electric)) { value *= 2; steps.Add(new("charge", value)); }
@@ -157,10 +167,10 @@ internal static class ForestBattleDamage
             value *= 2;
             steps.Add(new("pursuit-switch", value));
         }
-        var a = catalog.Species[user.Pokemon.Species]; var d = catalog.Species[target.Pokemon.Species];
+        var a = WildBattleEffective.Types(catalog, user); var d = WildBattleEffective.Types(catalog, target);
         if (!struggle && (type == Type(a.Type1) || type == Type(a.Type2))) value = value * 15 / 10;
         steps.Add(new("stab", value));
-        bool immune = mtMoonRules && !struggle && type == ElementType.Ground && target.Pokemon.AbilityId == "ABILITY_LEVITATE";
+        bool immune = mtMoonRules && !struggle && type == ElementType.Ground && WildBattleEffective.Ability(target) == "ABILITY_LEVITATE";
         if (!struggle)
             foreach (var effect in TypeRules.OrderedEffects(type, Type(d.Type1), Type(d.Type2)))
             {

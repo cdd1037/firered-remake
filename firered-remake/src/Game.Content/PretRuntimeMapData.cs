@@ -118,6 +118,31 @@ public sealed class PretRuntimeMapCatalog
         return new(maps.ToImmutable(), manifest.Maps, expectedManifestSha256, baseMetadata);
     }
 
+    // The region manifest already authenticates its one compact map and corresponding rich
+    // source digest. Retain the original base registry; the region loader supplies Gym metadata.
+    internal PretRuntimeMapCatalog FuchsiaGymPackage(string projectRoot)
+    {
+        const string stem = "fuchsia-city-gym/";
+        var directory = Path.Combine(Path.GetFullPath(projectRoot), "content/generated/fuchsia-gym-region");
+        PretRocketHideoutRuntimeMaps.RequireNoLinks(directory, "manifest.json");
+        var manifestBytes = PretRuntimeMapValidation.ReadBounded(Path.Combine(directory, "manifest.json"), 256 * 1024);
+        PretRuntimeMapValidation.Require(PretRuntimeMapValidation.Hash(manifestBytes) == PretFuchsiaGymRegion.ManifestSha256,
+            "Fuchsia Gym compact manifest differs.");
+        using var manifest = JsonDocument.Parse(manifestBytes);
+        var outputs = manifest.RootElement.GetProperty("outputs").EnumerateArray().ToDictionary(o => o.GetProperty("path").GetString()!, StringComparer.Ordinal);
+        var runtime = outputs[stem + "runtime-map.json"]; var rich = outputs[stem + "world.json"];
+        PretRocketHideoutRuntimeMaps.RequireNoLinks(directory, stem + "runtime-map.json");
+        var bytes = PretRuntimeMapValidation.ReadBounded(Path.Combine(directory, stem + "runtime-map.json"), PretRuntimeMapValidation.MaximumMapBytes);
+        PretRuntimeMapValidation.Require(bytes.Length == runtime.GetProperty("byteLength").GetInt32() &&
+            PretRuntimeMapValidation.Hash(bytes) == runtime.GetProperty("sha256").GetString(), "Fuchsia Gym compact payload differs.");
+        var entry = new PretRuntimeMapEntry("map.fuchsia-city-gym", "fuchsia-gym-region/" + stem + "runtime-map.json",
+            bytes.Length, runtime.GetProperty("sha256").GetString()!, "fuchsia-gym-region/" + stem + "world.json",
+            rich.GetProperty("byteLength").GetInt32(), rich.GetProperty("sha256").GetString()!, PretFuchsiaGymRegion.FullSourceHash);
+        var map = PretRuntimeMapData.Decode(bytes, entry);
+        return new(ImmutableDictionary<MapId, PretRuntimeMapData>.Empty.Add(map.Id, map), [entry],
+            PretFuchsiaGymRegion.ManifestSha256, BaseMetadata);
+    }
+
     private static PretWorldMetadata LoadBaseMetadata(string directory, PretRuntimeMapRegistryEntry entry)
     {
         void Require(bool value, string message) => PretRuntimeMapValidation.Require(value, message);
@@ -216,6 +241,7 @@ public sealed class PretRuntimeMapData : IFieldMap
             PretRocketHideoutRegion.FullSourceHash => PretRocketHideoutRegion.MapIdFromSourceSymbol,
             PretPokemonTowerRegion.FullSourceHash => PretPokemonTowerRegion.MapIdFromSourceSymbol,
             PretFuchsiaRouteRegion.FullSourceHash => PretFuchsiaRouteRegion.MapIdFromSourceSymbol,
+            PretFuchsiaGymRegion.FullSourceHash => PretFuchsiaGymRegion.MapIdFromSourceSymbol,
             _ => throw new InvalidDataException("Unknown runtime map source profile.")
         };
     }

@@ -140,7 +140,7 @@ public static partial class WildBattleRules
             if (SourceStage(Get(targetSide), stat) == 12 && Get(targetSide).ConfusionTurnsRemaining != 0)
             { SourceStatRecoveryFail(side, targetSide, move, "confused-and-stat-maxed"); return; }
             SourceChangeStat(side, targetSide, stat, move.Effect == "EFFECT_SWAGGER" ? 2 : 1, move.Id);
-            if (Get(targetSide).Pokemon.AbilityId == "ABILITY_OWN_TEMPO")
+            if (WildBattleEffective.Ability(Get(targetSide)) == "ABILITY_OWN_TEMPO")
             {
                 RecordAbility?.Invoke(targetSide, "ABILITY_OWN_TEMPO");
                 Add(n => new WildBattleAbilityPreventedEvent(n, State.Turn, side, targetSide, move.Id, "ABILITY_OWN_TEMPO"));
@@ -170,7 +170,7 @@ public static partial class WildBattleRules
             bool apply = certain && damage > 0;
             if (!apply)
             {
-                int chance = move.SecondaryEffectChance * (Get(side).Pokemon.AbilityId == "ABILITY_SERENE_GRACE" ? 2 : 1);
+                int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
                 apply = Draw($"{purpose}.secondary-effect", 100) % 100 <= chance && damage > 0;
             }
             if (apply)
@@ -229,7 +229,7 @@ public static partial class WildBattleRules
             ref bool preventionShown, bool secondary = false, bool certain = false)
         {
             var mon = Get(target);
-            if (secondary && mon.Pokemon.CurrentHp == 0) return;
+            if (secondary && (mon.Pokemon.CurrentHp == 0 || side != target && SourceCalledSecondaryBlocked(target))) return;
             if (amount < 0 && !certain && move.Value != "pret:MOVE_CURSE" && SourceCalledMist(target))
             {
                 if (!secondary && !preventionShown)
@@ -239,7 +239,7 @@ public static partial class WildBattleRules
                 }
                 return;
             }
-            string ability = mon.Pokemon.AbilityId;
+            string ability = WildBattleEffective.Ability(mon);
             if (amount < 0 && !certain && (ability is "ABILITY_CLEAR_BODY" or "ABILITY_WHITE_SMOKE" ||
                 ability == "ABILITY_KEEN_EYE" && stat == WildBattleStat.Accuracy ||
                 ability == "ABILITY_HYPER_CUTTER" && stat == WildBattleStat.Attack))

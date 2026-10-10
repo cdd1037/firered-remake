@@ -33,7 +33,10 @@ public sealed record WildBattleSourceMoveHistory
 
 /// <summary>A supplied Metronome result, not the random-selection command or an entire turn.</summary>
 public sealed record WildBattleCalledMoveAction(WildBattleSide Actor, int ChosenSlot, MoveId CurrentMove,
-    string RulesVersion = WildBattleRules.CalledMoveKernelRulesVersion);
+    string RulesVersion = WildBattleRules.CalledMoveKernelRulesVersion)
+{
+    public WildBattleCalledActionContext Context { get; init; } = new();
+}
 public sealed record WildBattleCalledMoveResult(WildBattleResult Battle, WildBattleMoveInvocation? Invocation)
 {
     public bool Succeeded => Battle.Succeeded;
@@ -114,7 +117,10 @@ public static partial class WildBattleRules
         AddCalledMoveRecipeSupport(move, ref supported);
         AddCalledStatRecoverySupport(move, ref supported);
         AddCalledScalarDamageSupport(move, ref supported);
+        AddCalledTurnLockSupport(move, ref supported);
+        AddCalledVolatileSupport(move, ref supported);
         AddCalledFieldEffectSupport(move, ref supported);
+        AddCalledPartyEffectSupport(move, ref supported);
         return supported;
     }
 
@@ -124,6 +130,9 @@ public static partial class WildBattleRules
     {
         if (state.RulesVersion != FuchsiaRulesVersion) return "called_move_base_profile";
         if (ValidateCalledFieldState(state) is { } fieldError) return fieldError;
+        if (ValidateCalledPartyState(catalog, state) is { } partyError) return partyError;
+        if (ValidateCalledVolatileState(catalog, state) is { } volatileError) return volatileError;
+        if (ValidateCalledTurnLockState(catalog, state) is { } turnError) return turnError;
         foreach (var mon in new[] { state.Player, state.Opponent })
         {
             if (mon.SourceMoveHistory is not { } h) continue;
@@ -140,12 +149,12 @@ public static partial class WildBattleRules
         }
         WildBattleCombatant Projection(WildBattleCombatant mon) => mon with {
             Status = WildBattleSourceFieldEffects.IsValidToxic(mon.Status) ? WildBattleStatus.Poison : mon.Status,
-            SourceMoveHistory = null, LastUsedMove = mon.SourceMoveHistory is null ? mon.LastUsedMove : null,
+            CalledVolatile = null, CalledTurnState = null, SourceMoveHistory = null, LastUsedMove = mon.SourceMoveHistory is null ? mon.LastUsedMove : null,
             LastCalledMove = mon.SourceMoveHistory is null ? mon.LastCalledMove : null, LastLandedMove = mon.SourceMoveHistory is null ? mon.LastLandedMove : null,
             BindingMove = mon.BindingMove is { } bind && catalog.Moves.TryGetValue(bind, out var binding) &&
                 MetronomeSourceMoveDefinition.Matches(binding) && binding.Effect == "EFFECT_TRAP" ? new("pret:MOVE_BIND") : mon.BindingMove
         };
-        return ValidateCore(catalog, state with { CalledField = null, Player = Projection(state.Player), Opponent = Projection(state.Opponent) }, calledAction: true);
+        return ValidateCore(catalog, CalledPartyValidationProjection(state) with { CalledDelayed = null, CalledField = null, Player = Projection(state.Player), Opponent = Projection(state.Opponent) }, calledAction: true);
     }
 
     /// <summary>Runs the actual shared executor for an explicitly supplied legal Metronome choice.
@@ -156,11 +165,12 @@ public static partial class WildBattleRules
     {
         string? error = action.RulesVersion != CalledMoveKernelRulesVersion ? "called_move_rules_version" :
             ValidateCalledMoveActionState(catalog, state);
-        if (error is null && (state.Outcome != WildBattleOutcome.Ongoing || state.AwaitingReplacement)) error = "called_move_action_phase";
+        if (error is null && (state.Outcome != WildBattleOutcome.Ongoing || state.AwaitingReplacement || state.CalledParty?.PendingSwitch is not null)) error = "called_move_action_phase";
         if (error is null && !Enum.IsDefined(action.Actor)) error = "called_move_actor";
+        if (error is null && (action.Context is null || action.Context.ActionOrderIndex is < 0 or > 1 || action.Context.ActorPartyIndex is < 0 or > 5)) error = "called_action_context";
         var actor = action.Actor == WildBattleSide.Player ? state.Player : state.Opponent;
         if (error is null && (action.ChosenSlot < 0 || action.ChosenSlot >= actor.Pokemon.Moves.Length)) error = "called_move_chosen_slot";
-        if (error is null && (ForcedMoveSlot(actor) is not null || actor.EncoreMoveSlot is { } encore && encore != action.ChosenSlot))
+        if (error is null && (ForcedMoveSlot(actor) is not null || actor.CalledTurnState?.Lock is not null || actor.EncoreMoveSlot is { } encore && encore != action.ChosenSlot))
             error = "called_move_action_locked";
         PokemonMoveDefinition? chosen = null, current = null;
         if (error is null && (!catalog.Moves.TryGetValue(actor.Pokemon.Moves[action.ChosenSlot].Move, out chosen) ||
@@ -171,6 +181,7 @@ public static partial class WildBattleRules
         if (error is not null) return new(Fail(state, error), null);
         WildBattleMoveInvocation? invocation = null;
         var result = Execute(state, state, context => {
+            context.calledActionContext = action.Context!;
             context.ExecuteCalledMoveAction(catalog, action, chosen!, current!);
             context.State = context.State with { Revision = checked(state.Revision + 1) };
             invocation = context.activeInvocation;
@@ -198,7 +209,7 @@ public static partial class WildBattleRules
         private bool DeferInvocationProtection(PokemonMoveDefinition? move)
         {
             if (activeInvocation is null || move is null) return false;
-            bool deferred = move.Effect == "EFFECT_EXPLOSION";
+            bool deferred = HasCalledPartyRecipe(move.Effect) || move.Effect is "EFFECT_EXPLOSION" or "EFFECT_SPIT_UP" || HasCalledTurnLockRecipe(move.Effect);
             DeferCalledScalarProtection(move, ref deferred);
             return deferred;
         }
@@ -208,7 +219,9 @@ public static partial class WildBattleRules
             // battle_util.c sSoundMovesTable is independent of effect aliases.
             if (!WildBattleSourceCommands.IsSoundMove(move.Id)) return false;
             var target = activeInvocation!.Target;
-            if (Get(target).Pokemon.AbilityId != "ABILITY_SOUNDPROOF") return false;
+            if (WildBattleEffective.Ability(Get(target)) != "ABILITY_SOUNDPROOF") return false;
+            if (Get(side).CalledTurnState?.Lock is { Kind: not WildBattleCalledLockKind.Recharge })
+                activeInvocation = activeInvocation with { Flags = activeInvocation.Flags | WildBattleInvocationFlags.NoPpDeduct };
             SpendInvocationPp(side, target, move);
             RecordAbility?.Invoke(target, "ABILITY_SOUNDPROOF");
             Add(n => new WildBattleAbilityPreventedEvent(n, State.Turn, side, target, move.Id, "ABILITY_SOUNDPROOF"));
@@ -223,16 +236,20 @@ public static partial class WildBattleRules
             activeInvocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.AttackStringPrinted };
             return true;
         }
-        private void SpendInvocationPp(WildBattleSide side, WildBattleSide targetSide, PokemonMoveDefinition move)
+        private void SpendInvocationPp(WildBattleSide side, WildBattleSide targetSide, PokemonMoveDefinition move, bool printAttackString = true)
         {
             var invocation = activeInvocation! with { Target = targetSide };
             activeInvocation = invocation;
-            bool printed = PrintInvocationAttackString(); invocation = activeInvocation!;
-            var actor = Get(side); int slot = invocation.PpSlot, pp = actor.Pokemon.Moves[slot].CurrentPp;
-            int otherPressure = Get(Other(side)).Pokemon.AbilityId == "ABILITY_PRESSURE" ? 1 : 0;
+            bool printed = printAttackString && PrintInvocationAttackString(); invocation = activeInvocation!;
+            var actor = Get(side); int slot = invocation.PpSlot;
+            bool realSlot = slot >= 0 && slot < actor.Pokemon.Moves.Length;
+            if (!realSlot && (invocation.Flags & (WildBattleInvocationFlags.NoPpDeduct | WildBattleInvocationFlags.NoAttackString)) == 0)
+                throw new UnsupportedAction("called_pp_slot");
+            int pp = realSlot ? actor.Pokemon.Moves[slot].CurrentPp : 0;
+            int otherPressure = WildBattleEffective.Ability(Get(Other(side))) == "ABILITY_PRESSURE" ? 1 : 0;
             var reduction = WildBattleSourceCommands.ReducePp(pp, move.Target, side, targetSide,
-                Get(targetSide).Pokemon.AbilityId, otherPressure, otherPressure, invocation.Flags);
-            Set(side, actor with { Pokemon = actor.Pokemon with { Moves = actor.Pokemon.Moves.SetItem(slot,
+                WildBattleEffective.Ability(Get(targetSide)), otherPressure, otherPressure, invocation.Flags);
+            if (realSlot) Set(side, actor with { Pokemon = actor.Pokemon with { Moves = actor.Pokemon.Moves.SetItem(slot,
                 actor.Pokemon.Moves[slot] with { CurrentPp = reduction.After }) } });
             activeInvocation = invocation with { Flags = reduction.FlagsAfter };
             if (printed) Add(n => new WildBattleMoveUsedEvent(n, State.Turn, side, targetSide, slot, move.Id, pp, reduction.After));
@@ -243,6 +260,7 @@ public static partial class WildBattleRules
             PokemonMoveDefinition chosen, PokemonMoveDefinition current)
         {
             var side = action.Actor;
+            SourceCalledPreparePartyExecution(side);
             invocationEffectiveType = null;
             invocationCommandNoEffect = false;
             invocationSkipsMoveEnd = false;
@@ -275,13 +293,18 @@ public static partial class WildBattleRules
                 Set(side, Get(side) with { LastUsedMove = originalActorLastUsedMove });
                 return;
             }
+            RecordCalledTurnInability(eventStart, side);
             if (Route11) Route11DefrostOnFireHit(catalog, side, eventStart);
-            if (Vermilion) { VermilionImmunityAbilities(); VermilionMoveEndBerries(); }
-            FinishCalledMoveHistory(catalog, eventStart);
+            if (Vermilion && State.CalledParty?.PendingSwitch is not { Kind: WildBattleCalledSwitchKind.BatonPass }) { VermilionImmunityAbilities(); SourceCalledApplyChangedItems(); VermilionMoveEndBerries(); }
+            if (State.CalledParty?.PendingSwitch is { Kind: WildBattleCalledSwitchKind.BatonPass })
+                Set(side, Get(side) with { LastUsedMove = originalActorLastUsedMove });
+            else FinishCalledMoveHistory(catalog, eventStart);
+            SourceCalledSynchronizeParties();
         }
 
         private void FinishCalledMoveHistory(PokemonCatalog catalog, int eventStart)
         {
+            SourceCalledMoveEndSubstitute();
             var invocation = activeInvocation!;
             var emitted = Events.Skip(eventStart).ToArray();
             if (emitted.OfType<WildBattleTransformedEvent>().Any())
@@ -291,7 +314,7 @@ public static partial class WildBattleRules
             activeInvocation = invocation = invocation with { Target = targetSide };
             bool obeys = invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys);
             bool noEffect = invocationCommandNoEffect || !obeys || emitted.Any(e => e is WildBattleMoveMissedEvent || e is WildBattleActionBlockedEvent ||
-                e is WildBattleMoveFailedEvent { Reason: not ("already-full-hp" or "already-asleep" or "already-poisoned" or "already-paralyzed" or "already-confused" or "nothing-happened" or "mist") } ||
+                e is WildBattleMoveFailedEvent { Reason: not ("already-full-hp" or "already-asleep" or "already-poisoned" or "already-paralyzed" or "already-confused" or "nothing-happened" or "mist" or "already-substitute" or "substitute-insufficient-hp" or "stockpile-empty") } ||
                 e is WildBattleStatAtMinimumEvent or WildBattleStatAtMaximumEvent ||
                 e is WildBattleAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE" } ||
                 e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect });
@@ -309,7 +332,7 @@ public static partial class WildBattleRules
             Set(targetSide, target with { LastLandedMove = landed ? invocation.CurrentMove : unavailable,
                 LastHitBy = target.Pokemon.CurrentHp > 0 ? invocation.Actor : target.LastHitBy,
                 SourceMoveHistory = targetHistory with {
-                    LastHitByType = landed ? invocationEffectiveType ?? catalog.Moves[invocation.CurrentMove].Type : targetHistory.LastHitByType,
+                    LastHitByType = landed ? invocationEffectiveType ?? (invocation.CurrentMove.Value == "pret:MOVE_NONE" ? "TYPE_NORMAL" : catalog.Moves[invocation.CurrentMove].Type) : targetHistory.LastHitByType,
                     LastTakenMove = mirror ? invocation.ChosenMove : targetHistory.LastTakenMove,
                     LastTakenFromPlayer = mirror && invocation.Actor == WildBattleSide.Player ? invocation.ChosenMove : targetHistory.LastTakenFromPlayer,
                     LastTakenFromOpponent = mirror && invocation.Actor == WildBattleSide.Opponent ? invocation.ChosenMove : targetHistory.LastTakenFromOpponent } });

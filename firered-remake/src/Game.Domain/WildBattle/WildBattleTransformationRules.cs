@@ -29,7 +29,7 @@ public static class WildBattleTransformationRules
     public static uint PersistentStatus(WildBattleCombatant mon) => mon.Transform?.PartyStatusOverride ?? mon.Status;
 
     public static WildBattleCombatant Restore(WildBattleCombatant mon) => mon.Transform is null ? mon :
-        mon with { Pokemon = PersistentPokemon(mon), Status = PersistentStatus(mon), Transform = null };
+        mon with { Pokemon = PersistentPokemon(mon), Status = PersistentStatus(mon), Transform = null, CalledOverlay = null };
 
     /// <summary>Apply a validated party medicine/EXP update without replacing copied moves. A level gain uses the source stat refresh.</summary>
     public static WildBattleCombatant ApplyPersistentPokemon(WildBattleCombatant mon, PokemonInstance pokemon)
@@ -49,7 +49,7 @@ public static class WildBattleTransformationRules
     // BattleScript_EffectTransform has no accuracy, Protect, Safeguard or Substitute command.
     // Cmd_transformdataexecution checks only the target's transformed/semi-invulnerable flags.
     public static string? FailureReason(WildBattleCombatant target) => target.Transform is not null
-        ? "target-transformed" : target.DigMoveSlot is not null ? "semi-invulnerable" : null;
+        ? "target-transformed" : WildBattleRules.CalledSemiInvulnerable(target) != WildBattleSemiInvulnerable.None ? "semi-invulnerable" : null;
 
     internal static WildBattleCombatant Copy(PokemonCatalog catalog, WildBattleCombatant actor, WildBattleCombatant target)
     {
@@ -62,7 +62,7 @@ public static class WildBattleTransformationRules
             return new PokemonMoveSlot(slot.Move, Math.Min(5, pp), pp + pp * 20 * bonuses[i] / 100, bonuses[i]);
         }).ToImmutableArray();
         var view = BuildView(catalog, transformation, moves, actor.Pokemon.CurrentHp);
-        return actor with { Pokemon = view, Transform = transformation,
+        return actor with { Pokemon = view, Transform = transformation, CalledOverlay = target.CalledOverlay,
             AttackStage = target.AttackStage, DefenseStage = target.DefenseStage, SpeedStage = target.SpeedStage,
             AccuracyStage = target.AccuracyStage, EvasionStage = target.EvasionStage,
             SpecialAttackStageDelta = target.SpecialAttackStageDelta, SpecialDefenseStageDelta = target.SpecialDefenseStageDelta,
@@ -111,7 +111,7 @@ public static partial class WildBattleRules
     {
         private void TransformImmunityAbilities(WildBattleSide side)
         {
-            var mon = Get(side); string ability = mon.Pokemon.AbilityId;
+            var mon = Get(side); string ability = WildBattleEffective.Ability(mon);
             bool confusion = ability == "ABILITY_OWN_TEMPO" && mon.ConfusionTurnsRemaining > 0;
             bool attraction = ability == "ABILITY_OBLIVIOUS" && mon.InfatuationSource is not null;
             bool status = ability is "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT" && WildBattleStatus.IsSleeping(mon.Status) ||

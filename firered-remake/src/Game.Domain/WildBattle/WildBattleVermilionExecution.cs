@@ -30,9 +30,9 @@ public static partial class WildBattleRules
             foreach (var side in new[]{WildBattleSide.Player,WildBattleSide.Opponent})
             {
                 if (State.RulesVersion == FuchsiaRulesVersion) TransformImmunityAbilities(side);
-                if (Snorlax && Get(side).Pokemon.AbilityId == "ABILITY_IMMUNITY" && (Get(side).Status & 0xF88u) != 0)
+                if (Snorlax && WildBattleEffective.Ability(Get(side)) == "ABILITY_IMMUNITY" && (Get(side).Status & 0xF88u) != 0)
                 { RecordAbility?.Invoke(side,"ABILITY_IMMUNITY"); Add(n => new WildBattleAbilityActivatedEvent(n,State.Turn,side,"ABILITY_IMMUNITY")); ChangeStatus(side,WildBattleStatus.None,"immunity"); }
-                if (Get(side).Pokemon.AbilityId == "ABILITY_LIMBER" && Get(side).Status == WildBattleStatus.Paralysis)
+                if (WildBattleEffective.Ability(Get(side)) == "ABILITY_LIMBER" && Get(side).Status == WildBattleStatus.Paralysis)
                 {
                     RecordAbility?.Invoke(side,"ABILITY_LIMBER");
                     Add(n=>new WildBattleAbilityActivatedEvent(n,State.Turn,side,"ABILITY_LIMBER"));

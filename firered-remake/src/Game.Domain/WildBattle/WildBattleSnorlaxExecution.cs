@@ -66,16 +66,16 @@ public static partial class WildBattleRules
             if (move.Effect != "EFFECT_YAWN") return false;
             var targetSide = Other(side); var target = Get(targetSide);
             SpendEarlyPartyPp(side,targetSide,slot,move);
-            if (target.Pokemon.AbilityId is "ABILITY_VITAL_SPIRIT" or "ABILITY_INSOMNIA")
+            if (WildBattleEffective.Ability(target) is "ABILITY_VITAL_SPIRIT" or "ABILITY_INSOMNIA")
             {
-                RecordAbility?.Invoke(targetSide,target.Pokemon.AbilityId);
-                Add(n => new WildBattleAbilityPreventedEvent(n,State.Turn,side,targetSide,move.Id,target.Pokemon.AbilityId));
+                RecordAbility?.Invoke(targetSide,WildBattleEffective.Ability(target));
+                Add(n => new WildBattleAbilityPreventedEvent(n,State.Turn,side,targetSide,move.Id,WildBattleEffective.Ability(target)));
                 return true;
             }
             if (SourceCalledSafeguardBlocks(side, targetSide, move.Id)) return true;
             // Substitute and Uproar remain separate called-state overlay obligations.
             // NO_ACC_CALC_CHECK_LOCK_ON consumes no accuracy draw and still respects Dig.
-            string? failure = target.DigMoveSlot is not null ? "semi-invulnerable" : target.YawnTurnsRemaining != 0 ? "already-drowsy" : target.Status != 0 ? "existing-status" : null;
+            string? failure = (CalledTurnActive ? !ScalarNoAccuracy(side, targetSide, move) : target.DigMoveSlot is not null) ? "semi-invulnerable" : CalledUproarPreventsSleep(targetSide) ? "uproar" : target.YawnTurnsRemaining != 0 ? "already-drowsy" : target.Status != 0 ? "existing-status" : null;
             if (failure is not null) Add(n => new WildBattleMoveFailedEvent(n,State.Turn,side,targetSide,move.Id,failure));
             else ChangeYawn(targetSide,2,"move");
             return true;
@@ -85,7 +85,7 @@ public static partial class WildBattleRules
             var mon = Get(side);
             if (!Snorlax || mon.Pokemon.CurrentHp == 0 || mon.YawnTurnsRemaining == 0) return;
             ChangeYawn(side,mon.YawnTurnsRemaining - 1,"countdown");
-            if (Get(side).YawnTurnsRemaining != 0 || mon.Status != 0 || mon.Pokemon.AbilityId is "ABILITY_VITAL_SPIRIT" or "ABILITY_INSOMNIA") return;
+            if (Get(side).YawnTurnsRemaining != 0 || mon.Status != 0 || WildBattleEffective.Ability(mon) is "ABILITY_VITAL_SPIRIT" or "ABILITY_INSOMNIA" || CalledUproarPreventsSleep(side)) return;
             CancelRoute3Rollout(side,"yawn");
             ChangeStatus(side,(uint)((Draw($"wild-battle.{side.ToString().ToLowerInvariant()}.yawn-sleep-duration",4) & 3) + 2),"yawn");
             // Source end2 resumes residuals. HandleFaintedMonActions later checks only battler 0;

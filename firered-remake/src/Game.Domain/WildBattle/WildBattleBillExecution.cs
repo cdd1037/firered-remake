@@ -21,6 +21,7 @@ public static partial class WildBattleRules
             Add(n=>new WildBattleMtMoonVolatileEvent(n,State.Turn,side,"dig-underground",mon.DigMoveSlot is null?0:1,slot is null?0:1,reason));
         }
         private bool BillUnderground(WildBattleSide side,WildBattleSide target,PokemonMoveDefinition move) =>
+            CalledTurnActive ? CalledSemiInvulnerableMiss(side, target, move) :
             Bill && side!=target && Get(target).DigMoveSlot is not null && move.Effect!="EFFECT_MAGNITUDE";
         private bool BillScript(PokemonCatalog catalog,WildBattleSide side,int slot,PokemonMoveDefinition move,string purpose)
         {
@@ -39,7 +40,7 @@ public static partial class WildBattleRules
             SpendEarlyPartyPp(side,targetSide,slot,move);
             if(!EarlyPartyAccuracy(side,targetSide,move,purpose))return true;
             var actor=Get(side);var target=Get(targetSide);
-            if(target.Pokemon.AbilityId=="ABILITY_OBLIVIOUS")
+            if(WildBattleEffective.Ability(target)=="ABILITY_OBLIVIOUS")
             {
                 RecordAbility?.Invoke(targetSide,"ABILITY_OBLIVIOUS");
                 Add(n=>new WildBattleAbilityPreventedEvent(n,State.Turn,side,targetSide,move.Id,"ABILITY_OBLIVIOUS"));return true;
@@ -52,12 +53,12 @@ public static partial class WildBattleRules
         }
         private void BillSecretPower(PokemonCatalog catalog,WildBattleSide side,WildBattleSide target,string purpose,MoveId move)
         {
-            var mon=Get(target);if(mon.Pokemon.CurrentHp==0 || mon.Pokemon.AbilityId=="ABILITY_SHIELD_DUST")return;
+            var mon=Get(target);if(mon.Pokemon.CurrentHp==0 || WildBattleEffective.Ability(mon)=="ABILITY_SHIELD_DUST")return;
             switch(State.Terrain)
             {
                 case WildBattleTerrain.Grass:InflictStatus(catalog,target,WildBattleStatus.Poison,false);break;
                 case WildBattleTerrain.LongGrass:
-                    if(mon.Status==0 && !SourceCalledSafeguard(target) && mon.Pokemon.AbilityId is not ("ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT"))
+                    if(mon.Status==0 && !SourceCalledSafeguard(target) && WildBattleEffective.Ability(mon) is not ("ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT"))
                         ChangeStatus(target,(uint)((Draw($"{purpose}.sleep-duration",4)&3)+2),"move");
                     break;
                 case WildBattleTerrain.Sand:ChangeStage(side,target,WildBattleStat.Accuracy,-1,move,true);break;
