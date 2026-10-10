@@ -40,10 +40,11 @@ public static class RareCandyRules
     /// once. Status and existing PP/PP Ups survive. Level 100 has no effect, even when fainted.
     /// Caller must establish field context, bag ownership and exclusive modal state.
     /// </summary>
-    public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion)
+    public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion, bool snorlaxRules = false)
     {
+        if ((content.Catalog.Species.Count == 102) != snorlaxRules) throw new NotSupportedException("Explicit Snorlax Rare Candy profile required.");
         LevelEvolutionRules.Validate(content, owned);
-        if (content.Catalog.Species.Count is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101))
+        if (content.Catalog.Species.Count is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
             throw new NotSupportedException("Rare Candy requires the verified MtMoon or later Kanto catalog.");
         if (!ValidRegion(currentRegion))
             throw new ArgumentException("A source MAPSEC region is required.", nameof(currentRegion));

@@ -28,12 +28,16 @@ public static partial class WildBattleRules
         {
             if (!Vermilion) return;
             foreach (var side in new[]{WildBattleSide.Player,WildBattleSide.Opponent})
+            {
+                if (Snorlax && Get(side).Pokemon.AbilityId == "ABILITY_IMMUNITY" && (Get(side).Status & 0xF88u) != 0)
+                { RecordAbility?.Invoke(side,"ABILITY_IMMUNITY"); Add(n => new WildBattleAbilityActivatedEvent(n,State.Turn,side,"ABILITY_IMMUNITY")); ChangeStatus(side,WildBattleStatus.None,"immunity"); }
                 if (Get(side).Pokemon.AbilityId == "ABILITY_LIMBER" && Get(side).Status == WildBattleStatus.Paralysis)
                 {
                     RecordAbility?.Invoke(side,"ABILITY_LIMBER");
                     Add(n=>new WildBattleAbilityActivatedEvent(n,State.Turn,side,"ABILITY_LIMBER"));
                     ChangeStatus(side,WildBattleStatus.None,"limber");
                 }
+        }
         }
         // battle_util.c ITEMEFFECT_MOVE_END scans battler IDs, not speed order. Oran only runs at residuals.
         private void VermilionMoveEndBerries()

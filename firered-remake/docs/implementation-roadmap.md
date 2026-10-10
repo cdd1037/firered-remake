@@ -58,3 +58,10 @@ common environment-text dispatch before writing per-object special cases.
 High-cost minigames remain explicit later work; imported maps/warps do not count
 as implemented interactions. The current inventory is in
 [regional-interaction-coverage.md](regional-interaction-coverage.md).
+
+
+## 2026-10-10 backup cadence and current region milestone
+
+Small verified code increments continue to the private GitHub repository; major playable stages continue to private Drive. Per the latest user decision, backup preparation checks package completeness/integrity and uploaded bytes/hashes, but does not create another local recovery environment or repeat builds, gameplay replay or save/Continue acceptance solely for packaging. Development tests remain selected by the actual code change.
+
+Current milestone is both Route12/16 Snorlax blockers followed by a bounded Celadon/Lavender/connecting-road interaction pass, not the fifth badge. Loaded-map ordinary dialogue/environmental text is the first regional batch. Tea/Eevee/Department Store/Name Rater/coin and prize services, missing interiors, Itemfinder and original preset double battles remain explicit service/mechanism gaps. High-cost minigames remain deferred. Fuchsia/Koga follows this regional milestone.

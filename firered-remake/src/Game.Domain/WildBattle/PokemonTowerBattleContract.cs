@@ -46,8 +46,9 @@ public static partial class WildBattleRules
     /// <summary>Four source battle categories. Ordinary entry preserves the historical null flag.
     /// Caller supplies the source-created underlying Pokémon and persists TowerBattleKind with state.</summary>
     public static WildBattleResult StartPokemonTower(PokemonCatalog catalog, WildBattleCombatant player,
-        WildBattleCombatant opponent, RngState rng, PokemonTowerBattleKind kind)
+        WildBattleCombatant opponent, RngState rng, PokemonTowerBattleKind kind, bool snorlaxRules = false)
     {
+        if ((catalog.Species.Count == 102) != snorlaxRules) return Fail(null,"snorlax_catalog_profile");
         if (!Enum.IsDefined(kind)) return Fail(null, "pokemon_tower_battle_kind");
         if (opponent?.Pokemon is null) return Fail(null, "pokemon_tower_opponent_missing");
         if (kind == PokemonTowerBattleKind.DisguisedWild && opponent.Pokemon.SourceSpeciesId is not (92 or 93 or 104))
@@ -60,7 +61,7 @@ public static partial class WildBattleRules
             !opponent.Pokemon.Moves.Select(m => m.Move.Value).SequenceEqual(new[] {
                 "pret:MOVE_HEADBUTT", "pret:MOVE_LEER", "pret:MOVE_FOCUS_ENERGY", "pret:MOVE_BONEMERANG" })))
             return Fail(null, "pokemon_tower_revealed_marowak_identity");
-        return StartCore(catalog, player, opponent, rng, TowerRulesVersion, WildBattleTerrain.Building, false,
+        return StartCore(catalog, player, opponent, rng, snorlaxRules ? SnorlaxRulesVersion : TowerRulesVersion, WildBattleTerrain.Building, false,
             kind == PokemonTowerBattleKind.OrdinaryWild ? null : kind);
     }
 
@@ -68,13 +69,13 @@ public static partial class WildBattleRules
         mon.Gender == PokemonGender.Female && mon.Nature == Nature.Serious &&
         mon.Ivs == new SixStats(31, 31, 31, 31, 31, 31) && mon.Evs == SixStats.Zero;
 
-    private static bool IsTowerGhost(WildBattleState? state) => state?.RulesVersion == TowerRulesVersion &&
+    private static bool IsTowerGhost(WildBattleState? state) => state?.RulesVersion is TowerRulesVersion or SnorlaxRulesVersion &&
         state.TowerBattleKind is PokemonTowerBattleKind.DisguisedWild or PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak;
 
     private static string? ValidateTowerKind(WildBattleState state)
     {
         if (state.TowerBattleKind is not { } kind) return null;
-        if (state.RulesVersion != TowerRulesVersion || !Enum.IsDefined(kind) || kind == PokemonTowerBattleKind.OrdinaryWild)
+        if (state.RulesVersion is not (TowerRulesVersion or SnorlaxRulesVersion) || !Enum.IsDefined(kind) || kind == PokemonTowerBattleKind.OrdinaryWild)
             return "pokemon_tower_battle_kind";
         if (state.Opponent?.Pokemon is not { } mon) return "pokemon_tower_opponent_missing";
         if (kind == PokemonTowerBattleKind.DisguisedWild && mon.SourceSpeciesId is not (92 or 93 or 104))

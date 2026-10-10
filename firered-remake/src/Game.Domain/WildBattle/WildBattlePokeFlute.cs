@@ -22,9 +22,9 @@ public static partial class WildBattleRules
         ImmutableArray<PartyPokemon> party, int activeIndex)
     {
         WildBattlePokeFluteResult Reject(string error) => new(Fail(state, error), party);
-        if (state.RulesVersion != TowerRulesVersion) return Reject("poke_flute_battle_profile_not_enabled");
+        if (state.RulesVersion is not (TowerRulesVersion or SnorlaxRulesVersion)) return Reject("poke_flute_battle_profile_not_enabled");
         var error = ValidateAction(content.Catalog, state) ?? ValidateRoute3NonMoveAction(state) ??
-            PokeFluteRules.ValidateUse(shop, content, inventory, party) ??
+            PokeFluteRules.ValidateUse(shop, content, inventory, party, state.RulesVersion == SnorlaxRulesVersion) ??
             PokeFluteRules.ValidateActive(party, activeIndex, state.Player);
         if (error is not null) return Reject(error);
         var playerIndices = Enumerable.Range(0, party.Length).Where(i => PokeFluteRules.BattleWakes(party[i])).ToImmutableArray();

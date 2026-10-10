@@ -8,7 +8,7 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool PokemonTowerProfileRequested => OS.GetEnvironment("FIRERED_POKEMON_TOWER") == "1" || OS.GetCmdlineUserArgs().Contains("--story-pokemon-tower");
+    private static bool PokemonTowerProfileRequested => SnorlaxProfileRequested || OS.GetEnvironment("FIRERED_POKEMON_TOWER") == "1" || OS.GetCmdlineUserArgs().Contains("--story-pokemon-tower");
     private Texture2D? _towerTerrain, _towerFog, _towerGhost;
     private readonly Dictionary<int,PokedexMenuEntry> _towerDexEntries = [];
     private readonly Dictionary<string,byte[]> _towerDexTextures = new(StringComparer.Ordinal);

@@ -42,7 +42,7 @@ public static class PokemonTowerTrainerPartyFactory
     public static TrainerPartyCreationResult Create(PokemonTowerTrainerCatalog trainers, PokemonCatalog pokemon, TrainerId id, RngState rng)
     {
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
-        if (pokemon.Species.Count != 101 || !trainers.Trainers.TryGetValue(id, out var trainer))
+        if (pokemon.Species.Count is not (101 or 102) || !trainers.Trainers.TryGetValue(id, out var trainer))
             throw new NotSupportedException("PokemonTower requires the exact one-hundred-and-one-species catalog and one initial source PokemonTower team.");
         var expected = Expected[id];
         for (int i=0; i<trainer.Party.Length; i++)

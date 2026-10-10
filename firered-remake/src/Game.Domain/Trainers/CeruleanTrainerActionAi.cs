@@ -19,7 +19,7 @@ public static class CeruleanTrainerActionAi
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         CeruleanTrainerSwitchDecision Fault(string code) => new(TransitionStatus.Fault,null,rng,[],new(code,"Invalid Cerulean trainer switch context."));
-        if (catalog is null || (catalog.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (catalog.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (catalog.Species.Count == 101) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || (catalog.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (catalog.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (catalog.Species.Count is 101 or 102) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         if (input is null || catalog?.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input.Party.IsDefaultOrEmpty || input.Party.Length > 6 ||
             input.ActiveIndex < 0 || input.ActiveIndex >= input.Party.Length || input.PlayerPartyIndex is < 0 or > 5 ||
             input.Party.Any(m => m is null || m.Pokemon is null)) return Fault("cerulean_switch_party");

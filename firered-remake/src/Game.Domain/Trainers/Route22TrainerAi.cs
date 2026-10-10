@@ -40,7 +40,7 @@ public static class Route22TrainerAi
         ceruleanRules |= billRules;
         mtMoonRules |= ceruleanRules;
         route3Rules |= mtMoonRules;
-        if (catalog is null || (catalog.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (catalog.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (catalog.Species.Count == 101) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || (catalog.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (catalog.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (catalog.Species.Count is 101 or 102) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, route3Rules, mtMoonRules, ceruleanRules, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("route22_trainer_ai_rng_algorithm");
@@ -206,7 +206,7 @@ public static class Route22TrainerAi
         if (input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost) return "route22_trainer_ai_enemy_badge";
         foreach (var slot in input.User.Pokemon.Moves)
             if (!ValidMove(catalog!.Moves[slot.Move])) return "route22_trainer_ai_move_definition";
-        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? (catalog?.Species.Count == 101 ? RocketHideoutBattleScope.SupportsAbility(known) : RocketHideoutBattleScope.SupportsAbilityForCatalog(catalog, known)) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "route22_trainer_ai_ability_history";
+        if (input.KnownTargetAbility is { } known && !(rockTunnelRules ? (catalog?.Species.Count == 102 ? SnorlaxBattleScope.SupportsAbility(known) : catalog?.Species.Count is 101 or 102 ? RocketHideoutBattleScope.SupportsAbility(known) : RocketHideoutBattleScope.SupportsAbilityForCatalog(catalog, known)) : route11Rules ? Route11BattleScope.SupportsAbility(known) : ssAnneRules ? SsAnneBattleScope.SupportsAbility(known) : vermilionRules ? VermilionBattleScope.SupportsAbility(known) : billRules ? BillBattleScope.SupportsAbility(known) : ceruleanRules ? CeruleanTrainerAi.SupportsAbility(known) : mtMoonRules ? MtMoonTrainerAi.SupportsAbility(known) : route3Rules ? Route3TrainerAi.SupportsAbility(known) : SupportsAbility(known))) return "route22_trainer_ai_ability_history";
         return null;
     }
 

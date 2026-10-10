@@ -203,13 +203,25 @@ def test_regional_campaign(name,checkpoint=None,region='Route11'):
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-pokemon-tower <new-run-name> [legal-checkpoint|--boundaries]','test-pokemon-tower-modules','test-pokemon-tower-ui [--only assets|intro|flute-awake|flute-sleep]','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-rocket-hideout <new-run-name> [legal-checkpoint|--boundaries]','test-rocket-hideout-modules <source-preparation>','test-rocket-hideout-ui','test-rocket-hideout-synth','test-rocket-hideout-audit <unique-name>','test-rocket-hideout-native-evidence','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
+ if not args:return output({'commands':['doctor','setup','build','test','test-snorlax <new-run-name> [legal-checkpoint|--route12|--boundaries]','test-snorlax-modules','test-snorlax-ui [--only awake|sleep|audio|wiring]','test-pokemon-tower <new-run-name> [legal-checkpoint|--boundaries]','test-pokemon-tower-modules','test-pokemon-tower-ui [--only assets|intro|flute-awake|flute-sleep]','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-rocket-hideout <new-run-name> [legal-checkpoint|--boundaries]','test-rocket-hideout-modules <source-preparation>','test-rocket-hideout-ui','test-rocket-hideout-synth','test-rocket-hideout-audit <unique-name>','test-rocket-hideout-native-evidence','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
  if args==['doctor']:return doctor()
  if args==['setup']:return setup()
  if args==['build']:return build()
  if args==['test']:return test()
  if len(args) in (2,3) and args[0] in ('test-route11','test-rocktunnel'):
   return test_regional_campaign(args[1],args[2] if len(args)==3 else None,'RockTunnel' if args[0]=='test-rocktunnel' else 'Route11')
+ if args==['test-snorlax-native-evidence']:run(['python3','tests/Game.SnorlaxNative.Tests/verify_native.py']);return 0
+ if args and args[0]=='test-snorlax-ui':run(['python3','tests/Game.SnorlaxUi.Tests/run.py',*args[1:]]);return 0
+ if len(args) in (2,3) and args[0]=='test-snorlax':
+  output_dir=ROOT/'tests/Game.SnorlaxCampaign.Tests/evidence'/args[1]
+  if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]) or output_dir.exists():raise RuntimeError('A unique Snorlax run name is required.')
+  command=[DOTNET,'run','--project','tests/Game.SnorlaxCampaign.Tests','--no-build','--',ROOT,output_dir]
+  if len(args)==3:command.append(args[2] if args[2] in ('--route12','--boundaries','--guards') else pathlib.Path(args[2]).resolve())
+  run(command,'snorlax-campaign.log');return 0
+ if args==['test-snorlax-modules']:
+  for suite,count,extra in [('Game.SnorlaxRegion.Tests',1,[]),('Game.SnorlaxContent.Tests',1,[]),('Game.SnorlaxCatalog.Tests',2,['--require-factory-admission']),('Game.SnorlaxBattle.Tests',2,[])]:
+   run([DOTNET,'run','--project','tests/'+suite,'--no-build','--',*([ROOT]*count),*extra],suite+'.log')
+  return 0
  if args and args[0]=='test-pokemon-tower-ui':run(['python3','tests/Game.PokemonTowerUi.Tests/run.py',*args[1:]]);return 0
  if len(args) in (2,3) and args[0]=='test-pokemon-tower':
   output_dir=ROOT/'tests/Game.PokemonTowerCampaign.Tests/evidence'/args[1]

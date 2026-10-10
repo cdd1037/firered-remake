@@ -31,13 +31,14 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,WildB
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool PostBattleItemsSettled{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableSortedDictionary<long,string>? KnockedOffHeldItems{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool ScriptedMarowak{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int ScriptedSnorlaxRoute{get;init;}
     [JsonIgnore] public int RewardPartyIndex=>RewardReceivers is {} receivers&&RewardReceiverIndex<receivers.Length?receivers[RewardReceiverIndex].PartyIndex:ActivePartyIndex;
 }
 
 public sealed partial class CampaignSession
 {
-    private string CampaignWildRulesVersion=>_content.PokemonTowerEnabled?WildBattleRules.TowerRulesVersion:_content.RocketHideoutEnabled?WildBattleRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?WildBattleRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?WildBattleRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?WildBattleRules.RockTunnelRulesVersion:_content.Route11Enabled?WildBattleRules.Route11RulesVersion:_content.VermilionGymEnabled?WildBattleRules.VermilionGymRulesVersion:_content.SsAnneEnabled?WildBattleRules.SsAnneRulesVersion:_content.VermilionEnabled?WildBattleRules.VermilionRulesVersion:_content.BillEnabled?WildBattleRules.BillRulesVersion:_content.CeruleanEnabled?WildBattleRules.CeruleanRulesVersion:_content.MtMoonEnabled?WildBattleRules.MtMoonRulesVersion:_content.Route3Enabled?WildBattleRules.Route3RulesVersion:_content.Route22Enabled?WildBattleRules.Route22RulesVersion:_content.EarlyPartyEnabled?WildBattleRules.EarlyPartyRulesVersion:_content.EarlyStarterEnabled?WildBattleRules.EarlyStarterRulesVersion:_content.PewterEnabled?WildBattleRules.PewterRulesVersion:_content.ForestEnabled?WildBattleRules.ForestRulesVersion:WildBattleRules.RulesVersion;
-    private CampaignState BeginWildBattle(CampaignState state,Route1WildPokemonResult? fishingPokemon=null,bool scriptedMarowak=false)
+    private string CampaignWildRulesVersion=>_content.SnorlaxEnabled?WildBattleRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?WildBattleRules.TowerRulesVersion:_content.RocketHideoutEnabled?WildBattleRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?WildBattleRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?WildBattleRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?WildBattleRules.RockTunnelRulesVersion:_content.Route11Enabled?WildBattleRules.Route11RulesVersion:_content.VermilionGymEnabled?WildBattleRules.VermilionGymRulesVersion:_content.SsAnneEnabled?WildBattleRules.SsAnneRulesVersion:_content.VermilionEnabled?WildBattleRules.VermilionRulesVersion:_content.BillEnabled?WildBattleRules.BillRulesVersion:_content.CeruleanEnabled?WildBattleRules.CeruleanRulesVersion:_content.MtMoonEnabled?WildBattleRules.MtMoonRulesVersion:_content.Route3Enabled?WildBattleRules.Route3RulesVersion:_content.Route22Enabled?WildBattleRules.Route22RulesVersion:_content.EarlyPartyEnabled?WildBattleRules.EarlyPartyRulesVersion:_content.EarlyStarterEnabled?WildBattleRules.EarlyStarterRulesVersion:_content.PewterEnabled?WildBattleRules.PewterRulesVersion:_content.ForestEnabled?WildBattleRules.ForestRulesVersion:WildBattleRules.RulesVersion;
+    private CampaignState BeginWildBattle(CampaignState state,Route1WildPokemonResult? fishingPokemon=null,bool scriptedMarowak=false,int scriptedSnorlaxRoute=0)
     {
         if(_content.ForestEnabled&&long.MaxValue-Revision<4096)throw new InvalidDataException("wild_battle_command_headroom_required");
         state=ResetFieldPoisonCounterForBattle(state);
@@ -51,7 +52,7 @@ public sealed partial class CampaignSession
         else if(_content.ForestEnabled)
         {
             var early=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");var table=_content.LandEncounters![state.World.Player.MapId];
-            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled);
+            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled);
             generated=new(result.Pokemon,result.GlobalRng,result.RandomTrace);
         }
         else generated=Route1WildPokemonFactory.Generate(BattlePokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
@@ -59,13 +60,13 @@ public sealed partial class CampaignSession
         var player=new WildBattleCombatant(owned.Pokemon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET")};
         bool towerBattle=_content.PokemonTowerEnabled&&TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
         var kind=PokemonTowerBattleContract.Classify(scriptedMarowak,HasSilphScope(state));
-        var started=towerBattle?WildBattleRules.StartPokemonTower(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,kind):
+        var started=scriptedSnorlaxRoute!=0?WildBattleRules.StartSnorlax(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state)):towerBattle?WildBattleRules.StartPokemonTower(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,kind,snorlaxRules:_content.SnorlaxEnabled):
             WildBattleRules.Start(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignWildRulesVersion,terrain:CampaignBattleTerrain(state),oldRodFishing:fishingPokemon is not null);
 
         if(!started.Succeeded)throw new InvalidDataException(started.Fault);
         var battle=started.State!;
         var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,battle,started.Events,0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,null,[],0,[..generated.RandomTrace,..started.Trace],[])
-        {ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=_content.CaptureEnabled?new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]):null,FaintedMembers=_content.CaptureEnabled?ImmutableSortedSet<long>.Empty:null};
+        {ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=_content.CaptureEnabled?new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]):null,FaintedMembers=_content.CaptureEnabled?ImmutableSortedSet<long>.Empty:null};
         if(_content.PartyTrainingEnabled)b=b with{ParticipatingMembers=ImmutableSortedSet<long>.Empty.Add(owned.InstanceId),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
         if(fishingPokemon is null)exploration=_content.ForestEnabled?exploration with{EarlyEncounter=EarlyLandEncounterRules.CompleteCandidate(exploration.EarlyEncounter!,_content.LandEncounters![state.World.Player.MapId])}:exploration with{Encounter=Route1EncounterRules.CompleteCandidate(exploration.Encounter!)};
         return PrepareWildPresentation(state with{WildBattle=b,Exploration=exploration with{NextWildBattleId=checked(exploration.NextWildBattleId+1)},World=state.World with{Rng=battle.Rng},SeenSpecies=towerBattle&&!PokemonTowerBattleContract.Policy(kind).RegisterSeen?state.SeenSpecies:state.SeenSpecies.Add(battle.Opponent.Pokemon.SourceSpeciesId),Motions=[],PresentationTicks=0});
@@ -216,7 +217,7 @@ public sealed partial class CampaignSession
             pages.Add(new(state.Money==0?$"{state.PlayerName} whited out!":$"{state.PlayerName} panicked and lost\n{lost}...\n{state.PlayerName} whited out!"));
             foreach(var page in _content.TextPages(HasCenterRespawn(state)?"gText_PlayerScurriedToCenter":"gText_PlayerScurriedBackHome"))pages.Add(new(page.Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal)));
         }
-        var history=new CampaignWildHistory(b.Id,b.State.Opponent.Pokemon.SourceSpeciesId,b.State.Opponent.Pokemon.Level,b.State.Outcome,reward?.ExperienceGained??0){ScriptedMarowak=b.ScriptedMarowak};
+        var history=new CampaignWildHistory(b.Id,b.State.Opponent.Pokemon.SourceSpeciesId,b.State.Opponent.Pokemon.Level,b.State.Outcome,reward?.ExperienceGained??0){ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute,ScriptedMarowak=b.ScriptedMarowak};
         var next=state with{Party=party,Exploration=exploration with{Battles=exploration.Battles.Add(history)},WildBattle=b with{Reward=reward,Phase=CampaignBattlePhase.Results,Pages=pages.ToImmutable(),PageIndex=0,PendingMoves=reward?.PendingMoves??[]}};
         return pages.Count==0&&next.WildBattle!.PendingMoves.IsEmpty?ReturnFromWildBattle(next):next;
     }
@@ -230,10 +231,12 @@ public sealed partial class CampaignSession
             // CB2_EndMarowakBattle sends defeat directly to CB2_WhiteOut. Its
             // suspended map script is abandoned, not resumed as a non-victory.
             // Random wild battles have no suspended caller to clear.
-            var lost=b.ScriptedMarowak?state with{Dialogue=null,Motions=[],PresentationTicks=0,
+            var lost=b.ScriptedMarowak||b.ScriptedSnorlaxRoute!=0?state with{Dialogue=null,Motions=[],PresentationTicks=0,
                 Script=state.Script with{Stack=[],Wait=null,Completed=true,Locked=false}}:state;
+            if(b.ScriptedSnorlaxRoute!=0)lost=lost with{Script=lost.Script with{Flags=lost.Script.Flags.Remove(SpecialWildFlag)}};
             return WhiteOutFromRoute1(lost);
         }
+        if(b.ScriptedSnorlaxRoute!=0)return ReturnFromSnorlaxBattle(state,b);
         if(b.ScriptedMarowak)
         {
             if(state.Script.Wait is not {Kind:StoryWaitKind.Battle} wait)throw new InvalidDataException("tower_marowak_return_wait");

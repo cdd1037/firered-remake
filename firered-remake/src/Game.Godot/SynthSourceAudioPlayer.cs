@@ -41,8 +41,9 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false)
     {
+        if(includeSnorlax&&!includePokemonTower)throw new ArgumentException("Snorlax audio requires Pokemon Tower.");
         if(includePokemonTower&&!includeRocketHideout)throw new ArgumentException("Pokemon Tower audio requires Rocket Hideout.");
         if(includeRocketHideout&&!includeCeladonGym)throw new ArgumentException("Rocket Hideout audio requires Celadon Gym.");
         if(includeCeladonGym&&!includeCeladonApproach)throw new ArgumentException("Celadon Gym audio requires Celadon approach.");
@@ -133,6 +134,16 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=PokemonTowerSynthManifestIdentity.SourceCommit||extension.Cues.Length!=PokemonTowerSynthManifestIdentity.CueCount)throw new InvalidDataException("PokemonTower synth manifest contract differs.");
             cues=[..cues,..extension.Cues];
         }
+        if(includeSnorlax)
+        {
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/snorlax-synth-audio/manifest.json");
+            if(new FileInfo(path).Length!=SnorlaxSynthManifestIdentity.Bytes)throw new InvalidDataException("Snorlax synth manifest length differs.");
+            byte[] extensionBytes=File.ReadAllBytes(path);
+            if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=SnorlaxSynthManifestIdentity.Sha256)throw new InvalidDataException("Snorlax synth manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Snorlax synth manifest.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=SnorlaxSynthManifestIdentity.SourceCommit||extension.Cues.Length!=SnorlaxSynthManifestIdentity.CueCount)throw new InvalidDataException("Snorlax synth manifest contract differs.");
+            cues=[..cues,..extension.Cues];
+        }
         _catalog = new(StringComparer.Ordinal);
         foreach (var cue in cues)
         {
@@ -143,13 +154,14 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if (cue.SourcePlayer == 4)
             {
                 _cryCatalog.Get(cue.Species);
-                if (cue.SongAddress != 0 || cue.Looping || cue.SourceCounter is not null)
+                if (cue.SongAddress != 0 || cue.Looping || cue.SourceCounter is not null ||
+                    cue.CryMode != 0 && !(includeSnorlax && cue.CryMode == 2 && cue.Species == 143 && cue.Id == "CRY_SNORLAX_ENCOUNTER"))
                     throw new InvalidDataException("Invalid normal cry cue.");
             }
             else
             {
                 var song = Song.Read(_resources, cue.SongAddress);
-                if (song.Priority != cue.Priority || cue.Species != 0)
+                if (song.Priority != cue.Priority || cue.Species != 0 || cue.CryMode != 0)
                     throw new InvalidDataException("Synth song metadata differs from authenticated resource.");
             }
         }
@@ -206,7 +218,8 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public long PlayCry(string id)
     {
         if (!TryCue(id, 4, out var cue)) return 0;
-        _synth.StartNormalCry(cue!.Species, duckBgm: false);
+        if (cue!.CryMode == 2) _synth.StartEncounterSnorlaxCry(duckBgm: false);
+        else _synth.StartNormalCry(cue.Species, duckBgm: false);
         _cry = new ActiveCue(cue, ++_nextToken, _pushedFrames, _synth.GameFrames);
         _cryDucking = _renderCryDucking = true; _cryGrace = 2; ApplyMusicGain();
         Emit("started", _cry, "cry");
@@ -446,7 +459,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     }
     private sealed record SynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues);
     private sealed record SynthCue(string Id, string SourceCommit, string SourceSymbol, string SourcePath,
-        int SourcePlayer, int Priority, int? SourceCounter, uint SongAddress, int Species, bool Looping)
+        int SourcePlayer, int Priority, int? SourceCounter, uint SongAddress, int Species, bool Looping, int CryMode = 0)
     {
         public SourceAudioMetadata Metadata => new(Id, SourceCommit, SourceSymbol, SourcePath, SourcePlayer, Priority, SourceCounter, BackendId);
     }

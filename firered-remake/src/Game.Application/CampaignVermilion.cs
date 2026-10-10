@@ -23,7 +23,7 @@ public sealed partial class CampaignSession
         if (!_content.VermilionEnabled || battle.PostBattleItemsSettled)
             return BeginWildEvolution(state);
         var money = VermilionPayDayRules.Settle(state.Money, battle.State.PayDayMoney, battle.State.Outcome);
-        var pickup = VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, battle.State.Outcome,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled);
+        var pickup = VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, battle.State.Outcome,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled);
         state = state with
         {
             Money = money.Money, Party = pickup.Party, World = state.World with { Rng = pickup.Rng },

@@ -24,6 +24,9 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FocusEnergy = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Flinched = false)
 {
+    // Overrides gLastMoves only for the resulting move of the preceding Sleep Talk action.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? LastCalledMove { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int YawnTurnsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Cursed { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool Nightmare { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool DestinyBond { get; init; }
@@ -72,6 +75,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool ScriptedSnorlax { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public PokemonTowerBattleKind? TowerBattleKind { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTerrain? Terrain { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int PlayerReflectTurnsRemaining { get; init; }
@@ -82,6 +86,8 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 }
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildBattleYawnEvent), "yawn")]
+[JsonDerivedType(typeof(WildBattleSleepTalkEvent), "sleep-talk")]
 [JsonDerivedType(typeof(WildBattlePokeFluteEvent), "poke-flute")]
 [JsonDerivedType(typeof(WildBattleTowerGhostActionEvent), "tower-ghost-action")]
 [JsonDerivedType(typeof(WildBattleTowerBallDodgedEvent), "tower-ball-dodged")]

@@ -25,7 +25,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -103,7 +103,15 @@ public static partial class PretStoryCompiler
                     }
                     void Emit(string opcode,ImmutableArray<string> operands)
                     {
-                        var (kind,min,max)=Shape(opcode,includeGiftOpcodes,includeRoute3Opcodes,includeMtMoonOpcodes,includeBillOpcodes,includeSsAnneOpcodes,includeVermilionGymOpcodes,includeRockTunnelOpcodes,includeRocketHideoutOpcodes,includePokemonTowerOpcodes);
+                        bool snorlaxSource=includeSnorlaxOpcodes&&IsSnorlaxEventSource(file,label);
+                        var (kind,min,max)=Shape(opcode,includeGiftOpcodes,includeRoute3Opcodes,includeMtMoonOpcodes,includeBillOpcodes,includeSsAnneOpcodes,includeVermilionGymOpcodes,includeRockTunnelOpcodes,includeRocketHideoutOpcodes,includePokemonTowerOpcodes,snorlaxSource);
+                        // The successor only admits the two pinned static Snorlax call sites
+                        // and the already-supported Tower preparation. Earlier profiles keep
+                        // their original IR and diagnostics byte-for-byte.
+                        if(includeSnorlaxOpcodes&&opcode=="setwildbattle"&&!snorlaxSource&&!IsTowerWildBattleSource(file,label))
+                            (kind,min,max)=(StoryOp.Unsupported,0,int.MaxValue);
+                        if(snorlaxSource&&opcode=="setwildbattle"&&!operands.SequenceEqual(new[]{"SPECIES_SNORLAX","30"}))
+                            throw ContentJson.Error("snorlax_scripted_wild_operands",$"{file.Path}:{lineNumber}",opcode);
                         if(kind!=StoryOp.Unsupported&&(operands.Length<min||operands.Length>max))throw ContentJson.Error("story_opcode_arity",$"{file.Path}:{lineNumber}",$"{opcode} requires {min}..{max} arguments.");
                         if(kind==StoryOp.Unsupported)unsupported.Add(new("opcode_unsupported",$"{file.Path}:{lineNumber}",opcode));
                         instructions.Add(new(kind,opcode,operands,new(file.Path,label,lineNumber)));
@@ -143,8 +151,21 @@ public static partial class PretStoryCompiler
         }
         return new(programs.ToImmutable(),headers.ToImmutable(),conditions.ToImmutable(),movements.ToImmutable(),unsupported.ToImmutable(), (constants ?? new Dictionary<string,int>()).ToImmutableDictionary(StringComparer.Ordinal));
     }
-    private static (StoryOp,int,int) Shape(string op,bool includeGiftOpcodes,bool includeRoute3Opcodes,bool includeMtMoonOpcodes,bool includeBillOpcodes,bool includeSsAnneOpcodes,bool includeVermilionGymOpcodes,bool includeRockTunnelOpcodes,bool includeRocketHideoutOpcodes,bool includePokemonTowerOpcodes)
+    private static bool IsSnorlaxEventSource(PretSourceScriptFile file,string label) =>
+        file.SourceRef.Kind==SourceKind.Pret&&file.SourceRef.Repository=="pret/pokefirered"&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&
+        (file.Path,label,file.SourceRef.Sha256) is
+            ("data/maps/Route12/scripts.inc","Route12_EventScript_Snorlax","ea70631fa17e3042cf08b32c94fbc26fbb128936b61c00e61127b79af780368e") or
+            ("data/maps/Route16/scripts.inc","Route16_EventScript_Snorlax","680c86b2457428a348f8dd7ff006d13681c510cd5098c04b44f8f09a755a17a5");
+    private static bool IsTowerWildBattleSource(PretSourceScriptFile file,string label) =>
+        file.SourceRef.Kind==SourceKind.Pret&&file.SourceRef.Repository=="pret/pokefirered"&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&
+        file.Path=="data/maps/PokemonTower_6F/scripts.inc"&&label=="PokemonTower_6F_EventScript_MarowakGhost"&&
+        file.SourceRef.Sha256=="9b761b8470ee034f3c3fea2c2e293ef631e75c2b848e3bf81daedc0ff30b2a90";
+    private static (StoryOp,int,int) Shape(string op,bool includeGiftOpcodes,bool includeRoute3Opcodes,bool includeMtMoonOpcodes,bool includeBillOpcodes,bool includeSsAnneOpcodes,bool includeVermilionGymOpcodes,bool includeRockTunnelOpcodes,bool includeRocketHideoutOpcodes,bool includePokemonTowerOpcodes,bool includeSnorlaxOpcodes)
     {
+        // TrainerBattle is the existing typed IR operation which yields a Battle wait.
+        // Keep the original opcode so Application dispatches the static battle separately.
+        if(includeSnorlaxOpcodes&&op=="dowildbattle")return(StoryOp.TrainerBattle,0,0);
+        if(includeSnorlaxOpcodes&&op=="setwildbattle")return(StoryOp.Special,2,2);
         if(includePokemonTowerOpcodes&&op=="setwildbattle")return(StoryOp.Special,2,3);
         if(includeRocketHideoutOpcodes&&op=="multichoicedefault")return(StoryOp.Multichoice,5,5);
         if(includeRocketHideoutOpcodes&&op is "call_if_defeated" or "call_if_not_defeated" or "addvar")return(StoryOp.Special,2,2);

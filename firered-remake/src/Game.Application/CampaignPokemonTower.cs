@@ -47,7 +47,7 @@ public sealed partial class CampaignSession
             var original=s.TowerWildPreparation??throw new InvalidDataException("tower_marowak_not_prepared");
             if(HasSilphScope(s))
             {
-                var mother=PokemonTowerMarowakFactory.Create(BattlePokemon,s.TrainerId,s.World.Rng);
+                var mother=PokemonTowerMarowakFactory.Create(BattlePokemon,s.TrainerId,s.World.Rng,snorlaxRules:_content.SnorlaxEnabled);
                 original=new(mother.Pokemon,mother.Rng,[..original.RandomTrace,..mother.Trace]);
             }
             next=BeginWildBattle(s with{TowerWildPreparation=null,World=s.World with{Rng=original.GlobalRng}},original,scriptedMarowak:true);return true;

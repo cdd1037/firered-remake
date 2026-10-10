@@ -39,6 +39,33 @@ public static class NormalCharmanderCry
     }
 }
 
+// Derived main-project extension: pret sound.c CRY_MODE_ENCOUNTER, bounded to
+// the two scripted Snorlax encounters. The original normal builder stays intact.
+public static class EncounterSnorlaxCry
+{
+    public const int Species = 143, Mode = 2;
+    public const int Length = 140, Release = 225, Pitch = 15600, Chorus = 20, Volume = 90;
+
+    public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog)
+    {
+        uint tone = catalog.Get(Species).ToneAddress;
+        var (_, bytes) = NormalCharmanderCry.BuildForTone(resources, tone);
+        // m4a.c SetPokemonCryPitch adds 0x80, then writes key and fine tune;
+        // SetPokemonCryChorus enables part1 and offsets that track's fine tune.
+        int pitch = Pitch + 0x80;
+        bytes[0] = 2;
+        BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(0x0c), NormalCharmanderCry.SequenceBase + 0x18);
+        bytes[0x12] = (byte)((pitch >> 1) & 0x7f);
+        bytes[0x19] = (byte)((bytes[0x12] + Chorus) & 0x7f);
+        bytes[0x1d] = Volume;
+        bytes[0x26] = Release;
+        bytes[0x2a] = (byte)((pitch >> 8) & 0x7f);
+        BinaryPrimitives.WriteUInt16LittleEndian(bytes.AsSpan(0x2e), Length);
+        return (new Song(NormalCharmanderCry.SequenceBase, 10, tone,
+            new[] { NormalCharmanderCry.SequenceBase + 0x11, NormalCharmanderCry.SequenceBase + 0x18 }), bytes);
+    }
+}
+
 public static class DpcmDecoder
 {
     static readonly int[] Delta = { 0, 1, 4, 9, 16, 25, 36, 49, -64, -49, -36, -25, -16, -9, -4, -1 };

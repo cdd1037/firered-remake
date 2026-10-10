@@ -195,7 +195,7 @@ public partial class CampaignView
             if (ForestTrainerEventPages(Source)) { _wildPages = pages.ToImmutable(); return; }
             var current = WildCurrentEvent(b) ?? throw new InvalidDataException("Battle event missing.");
             if(current is WildBattleInfatuationBlockedEvent love) Source("sText_PkmnInLove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(love.Side)),("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(love.Source)));
-            var forestMessage = PokemonTowerWildMessage(current) ?? RocketHideoutWildMessage(current) ?? CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
+            var forestMessage = SnorlaxWildMessage(current) ?? PokemonTowerWildMessage(current) ?? RocketHideoutWildMessage(current) ?? CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
             if (forestMessage is { } message)
             {
                 if (message.Symbol.Length > 0) Source(message.Symbol, message.Values);
@@ -292,7 +292,7 @@ public partial class CampaignView
         if(PresentedWildBattle is {Phase:CampaignBattlePhase.Events} fluteBattle && ProcessPokemonTowerFluteBattle(fluteBattle))return;
         if (_wildNotice is null && PresentedWildBattle is { Phase: CampaignBattlePhase.Events } b &&
             _wildPages.IsEmpty && _wildElapsed >= .45 && (WildCurrentEvent(b) is
-                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || PokemonTowerSilentEvent(b) || CeladonGymSilentEvent(b) || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
+                WildBattleHpChangedEvent or WildBattleStatusChangedEvent { Reason: "faint" } or WildBattleAbilityActivatedEvent or WildBattleDisableChangedEvent or WildBattleRolloutChangedEvent or WildBattleInfatuationChangedEvent || SnorlaxSilentEvent(b) || PokemonTowerSilentEvent(b) || CeladonGymSilentEvent(b) || RockTunnelSilentEvent(b) || Route11SilentEvent(b) || MtMoonSilentEvent(b) || VermilionSilentEvent(b))) Apply(new("ack"));
     }
     private string WildCommandError() => _lastCommandFault ? "The battle step could not\nbe completed." : _status switch
     {

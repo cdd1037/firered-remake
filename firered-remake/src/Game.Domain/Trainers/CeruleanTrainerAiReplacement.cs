@@ -18,7 +18,7 @@ public static class CeruleanTrainerAiReplacement
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         ForestTrainerReplacementDecision Fault(string code) => new(TransitionStatus.Fault, null, [],
             new(code, "Input is outside the bounded MtMoon trainer replacement profile."));
-        if (catalog is null || (catalog.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (catalog.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (catalog.Species.Count == 101) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || (catalog.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (catalog.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (catalog.Species.Count is 101 or 102) != towerRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         var active = input.FaintedActive.Pokemon;
@@ -92,7 +92,7 @@ public static class CeruleanTrainerAiReplacement
     private static string? Validate(PokemonCatalog? catalog, ForestTrainerReplacementInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
     {
         route11Rules |= rockTunnelRules;
-        if (catalog?.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > (catalog.Species.Count is 94 or 98 or 99 or 101 && rockTunnelRules ? 6 : 4) ||
+        if (catalog?.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input is null || input.Party.IsDefaultOrEmpty || input.Party.Length > (catalog.Species.Count is 94 or 98 or 99 or 101 or 102 && rockTunnelRules ? 6 : 4) ||
             input.FaintedPartyIndex < 0 || input.FaintedPartyIndex >= input.Party.Length || input.FaintedActive is null || input.Target is null)
             return "cerulean_trainer_replacement_input";
         if (input.Party.Any(mon => mon is null || mon.HeldItem != "ITEM_NONE" || mon.AttackBadgeBoost || mon.SpeedBadgeBoost) || input.FaintedActive.HeldItem != "ITEM_NONE")
@@ -121,7 +121,7 @@ public static class CeruleanTrainerAiReplacement
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         if (party.IsDefaultOrEmpty || party.Any(p => p is null)) return false;
-        if (rockTunnelRules && catalog.Species.Count == 101)
+        if (rockTunnelRules && catalog.Species.Count is 101 or 102)
         {
             foreach (var id in PokemonTowerTrainerPartyFactory.SupportedTrainers)
             {
@@ -130,7 +130,7 @@ public static class CeruleanTrainerAiReplacement
                 if (party.Length == e.Party.Length && party.All(p => PokemonTowerTrainerPartyFactory.ValidPartyMember(catalog, p.Pokemon, id))) return true;
             }
         }
-        if (rockTunnelRules && catalog.Species.Count is 99 or 101)
+        if (rockTunnelRules && catalog.Species.Count is 99 or 101 or 102)
         {
             foreach (var id in RocketHideoutTrainerPartyFactory.SupportedTrainers)
             {
@@ -139,11 +139,11 @@ public static class CeruleanTrainerAiReplacement
                 if (party.Length == e.Party.Length && party.All(p => RocketHideoutTrainerPartyFactory.ValidPartyMember(catalog,p.Pokemon,id))) return true;
             }
         }
-        if (rockTunnelRules && catalog.Species.Count is 94 or 98 or 99 or 101)
+        if (rockTunnelRules && catalog.Species.Count is 94 or 98 or 99 or 101 or 102)
         {
             foreach (var id in CeladonGymTrainerPartyFactory.SupportedTrainers)
         {
-            if (catalog.Species.Count is not (98 or 99 or 101) || trainerId is {} requested && requested != id) continue;
+            if (catalog.Species.Count is not (98 or 99 or 101 or 102) || trainerId is {} requested && requested != id) continue;
             var e = CeladonGymTrainerPartyFactory.Expected[id];
             if (party.Length == e.Party.Length && party.All(p => CeladonGymTrainerPartyFactory.ValidPartyMember(catalog,p.Pokemon,id))) return true;
         }

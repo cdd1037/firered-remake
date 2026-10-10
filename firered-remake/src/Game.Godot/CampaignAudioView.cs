@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -39,6 +39,7 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
                     SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
                     sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.SnorlaxEnabled)Write("snorlaxAudioCatalog",new{SnorlaxSynthManifestIdentity.Sha256,SnorlaxSynthManifestIdentity.CueCount,priorCueCount=297,encounterCryMode=2,audibleOutputVerified=false});
                 if(_catalog.PokemonTowerEnabled)Write("pokemonTowerAudioCatalog",new{PokemonTowerSynthManifestIdentity.Sha256,PokemonTowerSynthManifestIdentity.CueCount,priorCueCount=286,audibleOutputVerified=false});
                 if(_catalog.RocketHideoutEnabled)Write("rocketHideoutAudioCatalog",new{RocketHideoutSynthManifestIdentity.Sha256,RocketHideoutSynthManifestIdentity.CueCount,priorCueCount=279,audibleOutputVerified=false});
                 if(_catalog.CeladonGymEnabled)Write("celadonGymAudioCatalog",new{CeladonGymSynthManifestIdentity.Sha256,CeladonGymSynthManifestIdentity.CueCount,priorCueCount=271,audibleOutputVerified=false});
@@ -57,6 +58,7 @@ public partial class CampaignView
         {
             _audioFaulted=true;Write("audioFault",new{backend,error="Unknown audio backend",recordedFallback=false});return;
         }
+        if(_catalog.SnorlaxEnabled){_audioFaulted=true;Write("audioFault",new{backend,error="Snorlax mode2 requires the source synthesizer; no recorded fallback is admitted.",recordedFallback=false});return;}
         _originalAudio=PretSmallAudioDelivery.Load(_root);
         var recorded=new SourceAudioPlayer();_sourceAudio=recorded;AddChild(recorded);
         _sourceAudio.PlaybackEvent+=cue=>Write("audioPlayback",cue);
@@ -173,15 +175,17 @@ public partial class CampaignView
         _townRouteAudio?.Clips.TryGetValue(id,out var extra)==true?extra.SourcePlayer:_originalAudio!.Clips[id].Original.SourcePlayer;
 
     private void SourceCry(PokemonInstance pokemon)=>SourceCrySymbol(pokemon.Species.Value.Replace("pret:","",StringComparison.Ordinal));
-    private void SourceCrySymbol(string species)
+    private void SourceCrySymbol(string species,int mode=0)
     {
         if(_sourceAudio is SynthSourceAudioPlayer synthesized)
         {
             if(int.TryParse(species,out int sourceSpecies))species=synthesized.CrySymbol(sourceSpecies)??species;
-            string cueId="CRY_"+species.Replace("SPECIES_","",StringComparison.Ordinal)+"_NORMAL";
+            if(mode!=0&&!(mode==2&&_catalog.SnorlaxEnabled&&species=="SPECIES_SNORLAX")){_audioFaulted=true;Write("audioFault",new{species,mode,error="Unsupported source cry mode/species",recordedFallback=false});return;}
+            string cueId="CRY_"+species.Replace("SPECIES_","",StringComparison.Ordinal)+(mode==2?"_ENCOUNTER":"_NORMAL");
             if(EnsureAudio(cueId))synthesized.PlayCry(cueId);
             return;
         }
+        if(mode!=0){if(_sourceAudio is not null){_audioFaulted=true;Write("audioFault",new{species,mode,error="Recorded backend has no admitted encounter cry",recordedFallback=false});}return;}
         if(_originalAudio is null)return;
         if(int.TryParse(species,out int number))
             species=_catalog.Route22Pokemon?.Catalog.Species.Values.FirstOrDefault(s=>s.SourceSpeciesId==number)?.Id.Value.Replace("pret:","",StringComparison.Ordinal)
@@ -261,7 +265,9 @@ public partial class CampaignView
                     SourceCrySymbol(effect.Args[0]);break;
                 case "playse":SourceSound(effect.Args[0]);break;
                 case "playfanfare":SourceSound(effect.Args[0],fanfare:true);break;
-                case "playmoncry":SourceCrySymbol(effect.Args[0]);break;
+                case "playmoncry":
+                    if(effect.Args.Length!=2||!(int.TryParse(effect.Args[1],out int cryMode)||_catalog.TryConstant(effect.Args[1],out cryMode))){_audioFaulted=true;Write("audioFault",new{error="Unresolved source cry mode",recordedFallback=false});break;}
+                    SourceCrySymbol(effect.Args[0],cryMode);break;
             }
         }
         SourceMusic(DesiredSourceMusic(after));

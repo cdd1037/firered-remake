@@ -12,7 +12,12 @@ public partial class CampaignView
     private void SynchronizeItems()
     {
         var menu=_session.State.ItemMenu;var key=menu is null?null:$"{menu.Origin}:{menu.View}";
-        if(key!=_itemMenuKey){ResetQuestPocketPresentation();_itemMenuKey=key;_itemCursor=0;_itemAction=0;_itemQuantity=1;_itemPopup=false;_itemQuantityOpen=false;_itemNotice=null;_fieldMedicineTargetOpen=false;_mtMoonMoveSlotOpen=false;}
+        if(key!=_itemMenuKey){
+            // A Bag result overlays the same pocket and selected item. Keep that
+            // presentation identity through its acknowledgement back to the Bag.
+            bool sameBag = menu is { Origin:"bag", View:"bag" } or { Origin:"bag", View:"message", ReturnView:"bag" }
+                && _itemMenuKey is "bag:bag" or "bag:message";
+            if(!sameBag)ResetQuestPocketPresentation();_itemMenuKey=key;_itemCursor=0;_itemAction=0;_itemQuantity=1;_itemPopup=false;_itemQuantityOpen=false;_itemNotice=null;_fieldMedicineTargetOpen=false;_mtMoonMoveSlotOpen=false;}
         if(menu is not null)_held=null;
     }
     private bool ItemInput(InputEventKey key)

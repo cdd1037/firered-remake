@@ -36,7 +36,7 @@ public static class Route11TrainerPartyFactory
     {
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
-        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (pokemon.Species.Count == 101) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (pokemon.Species.Count is 101 or 102) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         rockTunnelRules |= celadonGymRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);
         if (pokemon.Species.Count != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(pokemon) : 79) || !trainers.Trainers.TryGetValue(id, out var trainer))

@@ -200,6 +200,24 @@ public sealed partial class Synth
         }
     }
 
+    // This separate entrypoint cannot silently reinterpret historical mode0 calls.
+    public void StartEncounterSnorlaxCry(bool duckBgm = true)
+    {
+        if (cryCatalog is null) throw new NotSupportedException("Encounter Snorlax requires the authenticated cry catalog");
+        var (song, sequence) = EncounterSnorlaxCry.Build(Resources, cryCatalog);
+        PrepareNormalCry(EncounterSnorlaxCry.Species);
+        Stop(2);
+        players[2] = new Player(Resources, this, song, 2, sequence);
+        if (duckBgm)
+        {
+            duckActive = true;
+            duckFrames = 2;
+            SetBgmExternalVolume(21);
+            if (EnableTrace)
+                Trace.Add($"frame={GameFrames} sample={OutputFrames} duck=on externalVolume=21");
+        }
+    }
+
     public void PrepareNormalCry(int species = 4)
     {
         if (cryCatalog is not null)

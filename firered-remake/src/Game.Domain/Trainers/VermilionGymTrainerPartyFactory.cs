@@ -34,7 +34,7 @@ public static class VermilionGymTrainerPartyFactory
     {
         rocketHideoutRules |= towerRules;
         celadonGymRules |= rocketHideoutRules;
-        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (pokemon.Species.Count == 101) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
+        if ((pokemon.Species.Count == 98) != (celadonGymRules && !rocketHideoutRules) || (pokemon.Species.Count == 99) != (rocketHideoutRules && !towerRules) || (pokemon.Species.Count is 101 or 102) != towerRules) throw new NotSupportedException("Explicit Celadon Gym trainer factory profile required.");
         rockTunnelRules |= celadonGymRules;
         route11Rules |= rockTunnelRules;
         ValidateCatalog(trainers); PokemonFactory.ValidateCatalog(pokemon);

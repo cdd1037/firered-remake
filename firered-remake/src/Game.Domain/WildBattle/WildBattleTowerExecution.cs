@@ -23,7 +23,7 @@ public static partial class WildBattleRules
 
     internal sealed partial class Execution
     {
-        public bool Tower => State.RulesVersion == TowerRulesVersion;
+        public bool Tower => State.RulesVersion is TowerRulesVersion or SnorlaxRulesVersion;
         private readonly Dictionary<WildBattleSide, WildBattleSide> towerDestinyKnockouts = [];
 
         internal void ClearTowerDestinyForItem() => SetTowerFlag(WildBattleSide.Player, "destiny-bond", false, "non-move-action");
