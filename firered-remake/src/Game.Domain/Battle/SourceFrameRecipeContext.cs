@@ -104,10 +104,10 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         // MOVEEND_NEXT_TARGET uses HP only. It does not test source absence or restart action
         // ownership, so PP exhaustion and the attacker's zero HP cannot cancel the second pass.
         if (!blocked && !ChargeFirstTurn(scriptMove) && Frame.Layout == SourceBattleLayout.PresetDoubles && scriptMove.Target == "MOVE_TARGET_BOTH" &&
-            Frame.Get(firstTarget.Partner).Body?.Pokemon.CurrentHp > 0)
+            Frame.Get(invocation.Target.Partner).Body?.Pokemon.CurrentHp > 0)
         {
             invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.NoAttackString };
-            ExecutePass(firstTarget.Partner);
+            ExecutePass(invocation.Target.Partner);
         }
         void ExecutePass(BattlerSlot target)
         {
@@ -120,8 +120,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 SpendEarlyPartyPp(invocation.Actor, target, invocation.PpSlot, move);
                 Add(n => new SourceAbilityPreventedEvent(n, Turn, invocation.Actor, target, move.Id, "ABILITY_SOUNDPROOF"));
             }
-            else if (invocation.PpSlot >= 0 && Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0 &&
-                (invocation.Flags & (WildBattleInvocationFlags.AllowNoPp | WildBattleInvocationFlags.NoAttackString)) == 0 &&
+            else if ((invocation.Flags & (WildBattleInvocationFlags.AllowNoPp | WildBattleInvocationFlags.NoAttackString)) == 0 &&
+                invocation.PpSlot >= 0 && Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0 &&
                 Frame.Get(invocation.Actor).Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage })
             {
                 PrintFrameAttackString();
@@ -130,7 +130,22 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             else
             {
                 invocation = invocation with { Flags = (invocation.Flags | WildBattleInvocationFlags.Obeys) & ~WildBattleInvocationFlags.AllowNoPp };
-                if (currentLightningRodRedirected)
+                while (TryPreparedInterception(move))
+                {
+                    target = invocation.Target;
+                    purpose = Frame.Layout == SourceBattleLayout.Singles
+                        ? $"wild-battle.{(invocation.Actor.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{invocation.Actor.Value}";
+                    if (WildBattleSourceCommands.IsSoundMove(move.Id) && WildBattleEffective.Ability(Get(target)) == "ABILITY_SOUNDPROOF")
+                    {
+                        // The intercepted invocation already passed obedience; Soundproof does
+                        // not undo that earlier source flag when the canceller is re-entered.
+                        SpendEarlyPartyPp(invocation.Actor, target, invocation.PpSlot, move);
+                        Add(n => new SourceAbilityPreventedEvent(n, Turn, invocation.Actor, target, move.Id, "ABILITY_SOUNDPROOF"));
+                        CompleteScriptTarget(); return;
+                    }
+                    invocation = invocation with { Flags = invocation.Flags & ~WildBattleInvocationFlags.AllowNoPp };
+                }
+                if (currentLightningRodRedirected && target == firstTarget)
                     Add(n => new SourceAbilityActivatedEvent(n, Turn, target, "ABILITY_LIGHTNING_ROD"));
                 if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") && !ChargeFirstTurn(move))
                 {
@@ -143,6 +158,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (HasCallerRecipe(move.Effect)) { ExecuteFrameCaller(purpose); handled = true; }
                 handled = handled || !HasSleepAttackRecipe(move.Effect) && !HasSleepResidualRecipe(move.Effect) &&
                     !HasUtilityHpRecipe(move.Effect) && SubstituteScriptBlocks(catalog, invocation.Actor, invocation.ChosenSlot, move);
+                if (!handled) ExecutePreparedMove(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled && move.Effect == "EFFECT_SUBSTITUTE") { ExecuteFrameSubstitute(); handled = true; }
                 if (!handled && HasProtectionRecipe(move.Effect))
                 {
@@ -168,6 +184,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled && HasTargetMarkRecipe(move.Effect)) { ExecuteTargetMark(invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasMoveRestrictionRecipe(move.Effect))
                 { ExecuteMoveRestriction(invocation.Actor, target, invocation.PpSlot, move, purpose); handled = true; }
+                if (!handled && HasAbilityExchangeRecipe(move.Effect))
+                { ExecuteAbilityExchange(invocation.Actor, target, invocation.PpSlot, move); handled = true; }
                 if (!handled && HasCopyStateRecipe(move.Effect))
                 { ExecuteCopyState(catalog, invocation.Actor, target, invocation.PpSlot, move); handled = true; }
                 if (!handled) ExecuteTypeChange(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
@@ -184,6 +202,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled && HasWeatherHitRecipe(move.Effect)) { ExecuteWeatherHit(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasGroundSpreadRecipe(move.Effect)) { ExecuteGroundSpread(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasDynamicTypeRecipe(move.Effect)) { ExecuteDynamicType(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
+                if (!handled && HasConditionalHitRecipe(move.Effect)) { ExecuteConditionalHit(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasDynamicPowerRecipe(move.Effect)) { ExecuteDynamicPower(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasItemTransferRecipe(move.Effect)) { ExecuteItemTransfer(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasRecoilRecipe(move.Effect)) { ExecuteRecoil(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
@@ -263,6 +282,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             Frame = berries.State; Events.AddRange(berries.Events);
             ApplyFrameHitItems();
             EndSubstitutePass();
+            FinishPreparedRegisters();
             Frame = SourceMoveHistoryReducer.Apply(catalog, Frame, invocation,
                 Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect, DynamicHitType(move), wasCalled: calledMoveExecuted);
         }

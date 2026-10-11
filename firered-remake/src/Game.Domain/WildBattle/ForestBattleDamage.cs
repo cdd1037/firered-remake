@@ -11,7 +11,7 @@ internal static class ForestBattleDamage
     // pokemon.c:2385-2652; battle_script_commands.c:1210-1550. Historical options retain
     // their original defaults; new Sun/LightScreen/suppression require an authenticated called definition.
     internal static DamageResult Calculate(PokemonCatalog catalog, WildBattleCombatant user,
-        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false, bool sourceSolarBeamWeakWeather = false, bool sourceDoubleBattle = false, int sourceDefenderCount = 1, bool sourcePlusMinusBoost = false, bool sourceHelpingHand = false)
+        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false, bool sourceSolarBeamWeakWeather = false, bool sourceDoubleBattle = false, int sourceDefenderCount = 1, bool sourcePlusMinusBoost = false, bool sourceHelpingHand = false, bool sourceMudSport = false, bool sourceWaterSport = false)
     {
         route11Rules |= rockTunnelRules;
         bool canonicalSource = SourceBattleAdmission.HasCapability(catalog, SourceBattleCapability.SourceMoveRecipes);
@@ -25,7 +25,7 @@ internal static class ForestBattleDamage
             throw new NotSupportedException("wild_battle_damage_move");
         if (sourceSolarBeamWeakWeather && (!sourceMove || move!.Effect != "EFFECT_SOLAR_BEAM")) throw new NotSupportedException("called_solar_weather_context");
         if ((sun || lightScreen || weatherSuppressed) && !sourceMove) throw new NotSupportedException("called_damage_field_context");
-        if ((sourceDoubleBattle || sourcePlusMinusBoost || sourceHelpingHand) && !sourceMove || sourceDefenderCount is < 0 or > 2)
+        if ((sourceDoubleBattle || sourcePlusMinusBoost || sourceHelpingHand || sourceMudSport || sourceWaterSport) && !sourceMove || sourceDefenderCount is < 0 or > 2)
             throw new NotSupportedException("called_damage_topology_context");
         bool validEffectiveType = sourceEffectiveType is { } effective && Enum.IsDefined(effective) && move!.Effect switch {
             "EFFECT_HIDDEN_POWER" => effective is not (ElementType.Normal or ElementType.Mystery),
@@ -140,8 +140,8 @@ internal static class ForestBattleDamage
             attack = attack * 150 / 100;
         if (sourceMove && physical && WildBattleEffective.Ability(target) == "ABILITY_MARVEL_SCALE" && target.Status != 0)
         { defense = defense * 150 / 100; steps.Add(new("marvel-scale", defense)); }
-        if (ceruleanRules && type == ElementType.Fire && (user.WaterSport || target.WaterSport)) power /= 2;
-        if (mtMoonRules && type == ElementType.Electric && (user.MudSport || target.MudSport)) power /= 2;
+        if (type == ElementType.Fire && (sourceWaterSport || ceruleanRules && (user.WaterSport || target.WaterSport))) power /= 2;
+        if (type == ElementType.Electric && (sourceMudSport || mtMoonRules && (user.MudSport || target.MudSport))) power /= 2;
         if (mtMoonRules && move?.Effect == "EFFECT_EXPLOSION") defense = Math.Max(1, defense / 2);
         if (user.Pokemon.CurrentHp <= user.Pokemon.Stats.MaxHp / 3 &&
             (type, WildBattleEffective.Ability(user)) is (ElementType.Grass, "ABILITY_OVERGROW") or

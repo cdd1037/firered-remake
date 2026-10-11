@@ -9773,7 +9773,7 @@
         "startLine": 3422,
         "symbol": "MOVE_FACADE"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FOCUS_PUNCH",
@@ -9794,7 +9794,7 @@
         "startLine": 3435,
         "symbol": "MOVE_FOCUS_PUNCH"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SMELLING_SALT",
@@ -9815,7 +9815,7 @@
         "startLine": 3448,
         "symbol": "MOVE_SMELLING_SALT"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FOLLOW_ME",
@@ -9962,7 +9962,7 @@
         "startLine": 3539,
         "symbol": "MOVE_ROLE_PLAY"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WISH",
@@ -10067,7 +10067,7 @@
         "startLine": 3604,
         "symbol": "MOVE_MAGIC_COAT"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_RECYCLE",
@@ -10109,7 +10109,7 @@
         "startLine": 3630,
         "symbol": "MOVE_REVENGE"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BRICK_BREAK",
@@ -10130,7 +10130,7 @@
         "startLine": 3643,
         "symbol": "MOVE_BRICK_BREAK"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_YAWN",
@@ -10240,7 +10240,7 @@
         "startLine": 3708,
         "symbol": "MOVE_SKILL_SWAP"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_IMPRISON",
@@ -10324,7 +10324,7 @@
         "startLine": 3760,
         "symbol": "MOVE_SNATCH"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SECRET_POWER",
@@ -10408,7 +10408,7 @@
         "startLine": 3812,
         "symbol": "MOVE_CAMOUFLAGE"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TAIL_GLOW",
@@ -10555,7 +10555,7 @@
         "startLine": 3903,
         "symbol": "MOVE_MUD_SPORT"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ICE_BALL",
@@ -11536,7 +11536,7 @@
         "startLine": 4501,
         "symbol": "MOVE_WATER_SPORT"
       },
-      "fourSlotRecipeAdmission": "not-yet-migrated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CALM_MIND",
@@ -12534,22 +12534,22 @@
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
-    "method": "Previous static311 plus nine distinct source-authenticated recipes, all exercised in combined main tests; complete caller leaf coverage and battle lifecycle closure remain separate.",
+    "method": "Previous static326 plus six source-authenticated shared recipes exercised in focused main tests. Core/AI/items and complete interactions remain distinct.",
     "inventoryDateUtc": "2026-10-11",
-    "baseCommit": "294eb6c9c7d4b41d8733acc26cbe89a74d2325d7",
-    "workingTreeState": "evidence/shared-callers-late-turn-20261011/main-source-files.json",
+    "baseCommit": "aaec1508447dd1116b6107deaa3adee2edd454c0",
+    "workingTreeState": "evidence/shared-prepared-terrain-20261011/main-source-files.json",
     "singleRecipesRegistered": 354,
-    "fourSlotRecipeAdmission": 320,
-    "fourSlotRecipeNotAdmitted": 34,
+    "fourSlotRecipeAdmission": 332,
+    "fourSlotRecipeNotAdmitted": 22,
     "newFamilyMoveCounts": {
-      "callers": 5,
-      "lateTurn": 4
+      "prepared": 3,
+      "terrainSports": 3
     },
     "dedicatedSingleAnimationScriptsAccepted": 17,
     "dedicatedScriptsRemaining": 337,
     "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 17,
     "dedicatedFourSlotPresentationOnlyScripts": [],
-    "sourceKernelSha256": "78a52549074ed254891982f312e32ce3c90326c48f992ee254f338ad8b8e8ffd",
+    "sourceKernelSha256": "9a6c11237df64516ab8387c6045e0bdab6ace6a336f19a8ead70f619575de6f2",
     "predicateInputs": [
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.ActionCancellers.cs",
@@ -12597,7 +12597,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FieldSetting.cs",
-        "sha256": "135ac55fb2dddbf96f1da5a7594aff08f82d368caf8b0f3618a4607f03f1db17"
+        "sha256": "d512c5c190ae9d017ae4470052aabb42e3ed46d197aa766b1eb58ced16f0b77f"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FireThawTriAttack.cs",
@@ -12613,7 +12613,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Generic.cs",
-        "sha256": "292e94f31c40afd2132f11f6eebd10ec848418d0674e72542706971da1d2670d"
+        "sha256": "a76b1e7e69a8e3c0e3dae3e772a7af6bb9ab0bc27d1fa710d3f773b27bae62fa"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.GroundSpread.cs",
@@ -12713,7 +12713,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.TypeChanges.cs",
-        "sha256": "7e3ceb13161ae6a9ef394752c4bd43027a3f382990dcaa32e48bcd2d648f63f5"
+        "sha256": "ac7776e864cc5152f2c51b18cb2e62e789f091006f05420965d37800a3b0be94"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.TypeResults.cs",
@@ -12898,18 +12898,15 @@
         "physicalAudioVerified": false
       }
     },
-    "previousFourSlotRecipeAdmission": 311,
-    "admissionIncrease": 9,
+    "previousFourSlotRecipeAdmission": 326,
+    "admissionIncrease": 6,
     "newFamilyMoveIds": [
-      "pret:MOVE_ASSIST",
-      "pret:MOVE_BIDE",
-      "pret:MOVE_DESTINY_BOND",
-      "pret:MOVE_GRUDGE",
-      "pret:MOVE_METRONOME",
-      "pret:MOVE_MIRROR_MOVE",
-      "pret:MOVE_NATURE_POWER",
-      "pret:MOVE_PERISH_SONG",
-      "pret:MOVE_SLEEP_TALK"
+      "pret:MOVE_CAMOUFLAGE",
+      "pret:MOVE_FOCUS_PUNCH",
+      "pret:MOVE_MAGIC_COAT",
+      "pret:MOVE_MUD_SPORT",
+      "pret:MOVE_SNATCH",
+      "pret:MOVE_WATER_SPORT"
     ],
     "retaliationEvidence": {
       "result": "evidence/shared-target-families-20261011/retaliation-result.json",
@@ -13062,7 +13059,9 @@
     "sharedRecoilCriticalEvidence": "evidence/shared-recoil-critical-20261011/README.md",
     "sharedWeatherAbilitiesEvidence": "evidence/shared-weather-abilities-20261011/README.md",
     "sharedItemsVolatilesEvidence": "evidence/shared-items-volatiles-20261011/README.md",
-    "sharedCallersLateEvidence": "evidence/shared-callers-late-turn-20261011/README.md"
+    "sharedCallersLateEvidence": "evidence/shared-callers-late-turn-20261011/README.md",
+    "sharedExchangeConditionalEvidence": "evidence/shared-exchange-conditional-20261011/README.md",
+    "sharedPreparedTerrainEvidence": "evidence/shared-prepared-terrain-20261011/README.md"
   },
   "stageExitPolicy": {
     "dateUtc": "2026-10-11",

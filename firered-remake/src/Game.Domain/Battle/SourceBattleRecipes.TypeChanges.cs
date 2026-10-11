@@ -5,7 +5,7 @@ namespace Game.Domain.Battle;
 
 internal abstract partial class SourceRecipeContext
 {
-    internal static bool HasTypeChangeRecipe(string effect) => effect is "EFFECT_CONVERSION" or "EFFECT_CONVERSION_2";
+    internal static bool HasTypeChangeRecipe(string effect) => effect is "EFFECT_CONVERSION" or "EFFECT_CONVERSION_2" or "EFFECT_CAMOUFLAGE";
     internal virtual bool TypeChangeEnabled(PokemonCatalog catalog) => true;
     internal virtual bool TypeChangeNoEffect(PokemonMoveDefinition move) => ContactCommandNoEffect;
     internal abstract string TypeChangeHitType(PokemonMoveDefinition move);
@@ -48,6 +48,14 @@ internal abstract partial class SourceRecipeContext
         SpendEarlyPartyPp(actor, actor, slot, move);
         var body = Get(actor);
         void Fail(string reason) => Add(n => new SourceMoveFailedEvent(n, Turn, actor, actor, move.Id, reason));
+        if (move.Effect == "EFFECT_CAMOUFLAGE")
+        {
+            var terrain = SettingWeather.Terrain ?? throw new SourceRecipeUnsupported("called_camouflage_terrain");
+            var type = WildBattleSourcePartyEffects.CamouflageType(terrain);
+            if (WildBattleEffective.HasType(catalog, body, type)) Fail("already-type");
+            else SetBattleType(actor, move, type);
+            return;
+        }
         if (move.Effect == "EFFECT_CONVERSION")
         {
             string MoveType(int index)

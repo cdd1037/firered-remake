@@ -29,6 +29,34 @@ foreach(string name in new[]{"TRANSFORM","MIMIC","SKETCH"})foreach(uint seed in 
  var switched=WildBattleRules.SwitchSourceWildPlayer(catalog,state,1);if(!switched.Succeeded)throw new Exception("switch:"+switched.Fault);turns.Add(switched);
  var data=Json(turns);snapshots.Add(new{name,seed,sha256=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))).ToLowerInvariant(),bytes=Encoding.UTF8.GetByteCount(data)});
 }
+var abilitySnapshots = new List<object>();
+foreach (string name in new[] { "ROLE_PLAY", "SKILL_SWAP" })
+foreach (string donor in new[] { "SNORLAX", "DITTO", "PORYGON", "GROUDON", "KYOGRE", "CASTFORM", "SHEDINJA", "DUSCLOPS", "GYARADOS", "PSYDUCK" })
+foreach (uint seed in new uint[] { 0, 31, 127 })
+{
+ var actor = Mon(donor == "GROUDON" ? "CASTFORM" : "ABRA", 40, name);
+ if (donor == "SNORLAX") actor = actor with { Status = WildBattleStatus.Poison };
+ var start = WildBattleRules.StartSourceWild(proof, BattleRulesProfile.CanonicalSourceSingles,
+  [actor, Mon("PIDGEY", 40, "GROWL")], 0, Mon(donor, 40, "DEFENSE_CURL"), new(seed));
+ if (!start.Succeeded) throw new Exception("ability start: " + start.Fault);
+ var turns = new List<object>(); var state = start.State!;
+ for (int turn = 0; turn < 2; turn++)
+ {
+  var result = WildBattleRules.ResolveMove(catalog, state, 0);
+  if (!result.Succeeded) throw new Exception("ability turn: " + name + "/" + donor + ": " + result.Fault);
+  turns.Add(result); state = result.State!;
+ }
+ var switched = WildBattleRules.SwitchSourceWildPlayer(catalog, state, 1);
+ if (!switched.Succeeded) throw new Exception("ability switch: " + switched.Fault);
+ turns.Add(switched);
+ var data = Json(turns);
+ abilitySnapshots.Add(new { name, donor, seed, sha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))).ToLowerInvariant(), bytes = Encoding.UTF8.GetByteCount(data) });
+}
+if (args.Contains("--capture-ability"))
+{
+ if (File.Exists(args[1])) throw new Exception("refuse baseline overwrite");
+ File.WriteAllText(args[1], Json(new { baseline = "516c492a2c78862e1100983edba22d867b618b5f before shared ability exchange", snapshots = abilitySnapshots }) + "\n"); return 0;
+}
 if(args.Contains("--capture")){
  if(File.Exists(args[1]))throw new Exception("refuse baseline overwrite");
  File.WriteAllText(args[1],Json(new{baseline="242275c plus frozen dynamic/freeze/recharge working tree",snapshots})+"\n");return 0;
@@ -137,14 +165,16 @@ Test("Mimic into Transform clears copied flags without leaking temporary move",(
  var f=Frame([Mon("DITTO",20,"MIMIC"),Mon("SNORLAX",20,"DEFENSE_CURL"),Mon("DITTO",20,"GROWL"),Mon("SNORLAX",20,"GROWL")]);f=Act(History(f,1,"TRANSFORM"),0,1).State;
  var transformed=Act(f,0,1).State.Slots[0].Body!;Check(transformed.CopyMoves is null&&transformed.Transform!.OriginalPokemon.Moves[0].Move==Id("MIMIC"),"single permanent origin after mimic-transform");
 });
-Test("malformed copy and transform states and unimplemented caller selections reject atomically",()=>{
+Test("malformed copy and transform states reject while copied caller selections are supported",()=>{
  var start=History(Frame(),1,"DEFENSE_CURL");var transformed=Act(start,0,1).State;var t=transformed.Slots[0].Body!;
  var bad=new[]{t with{Transform=t.Transform! with{OriginalPokemon=null!}},t with{Transform=t.Transform! with{CopiedPokemon=null!}},t with{Transform=t.Transform! with{OriginalPpUps=default}},t with{Pokemon=t.Pokemon with{Moves=default}},t with{Transform=t.Transform! with{OriginalPpUps=[4,0,0,0]}},t with{Pokemon=t.Pokemon with{AbilityId="ABILITY_PRESSURE"}},t with{CopyMoves=new([])},t with{Transform=null,CopyMoves=new([new(9,t.Pokemon.Moves[0])])},t with{Transform=null,CopyMoves=new([null!])}};
  foreach(var body in bad){var f=transformed with{Slots=transformed.Slots.SetItem(0,transformed.Slots[0] with{Body=body})};
   var r=SourceBattleKernel.ResolveAction(catalog,f,new(f.Slots[0].Occupant!.Value,f.Revision,0,new(1)));Check(!r.Succeeded&&ReferenceEquals(r.State,f)&&r.Events.IsEmpty&&r.Trace.IsEmpty,"atomic malformed action");
   var turn=SourceFourActionTurns.BeginActions(catalog,f,f.Revision,[]);Check(!turn.Succeeded&&ReferenceEquals(turn.State,f)&&turn.Events.IsEmpty&&turn.Trace.IsEmpty,"atomic malformed turn");}
  var caller=Act(History(Put(Frame(),0,Mon("DITTO",20,"SKETCH")),1,"METRONOME"),0,1).State;
- var reject=SourceFourActionTurns.BeginActions(catalog,caller,caller.Revision,Choices(caller));Check(!reject.Succeeded&&ReferenceEquals(reject.State,caller)&&reject.Events.IsEmpty&&reject.Trace.IsEmpty,"copied caller has explicit unsupported selection");
+ var accepted=SourceFourActionTurns.BeginActions(catalog,caller,caller.Revision,Choices(caller));Check(accepted.Succeeded,"copied Metronome selection uses shared caller admission");
+ var invalid=Choices(caller).Select(x=>x.Actor.Slot.Value==0?x with{MoveSlot=4}:x).ToImmutableArray();
+ var reject=SourceFourActionTurns.BeginActions(catalog,caller,caller.Revision,invalid);Check(!reject.Succeeded&&ReferenceEquals(reject.State,caller)&&reject.Events.IsEmpty&&reject.Trace.IsEmpty,"copied caller still rejects invalid learned position atomically");
 });
 
 Test("unchanged compiled source command outcomes match every copy actor",()=>{
@@ -199,4 +229,139 @@ Test("fainted copied occupants use deferred KO entry and retain permanent party 
   Check(r.State.Slots[0].Body!.Transform is null&&r.State.Slots[0].Body!.CopyMoves is null,"new entrant has no copied state");
  }
 });
+Test("ability exchange retains frozen complete singles state events RNG and switch results", () => {
+ using var baseline = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "ability-singles-baseline.json")));
+ var old = baseline.RootElement.GetProperty("snapshots").EnumerateArray().ToArray();
+ Check(old.Length == 60 && abilitySnapshots.Count == 60, "60 pre-migration complete singles results");
+ for (int i = 0; i < old.Length; i++)
+  Check(JsonSerializer.SerializeToElement(abilitySnapshots[i]).GetProperty("sha256").GetString() == old[i].GetProperty("sha256").GetString(), "ability singles parity " + Json(abilitySnapshots[i]));
+});
+WildBattleCombatant Acquired(WildBattleCombatant mon, string ability) => mon with { CalledOverlay = (mon.CalledOverlay ?? new()) with { Ability = ability } };
+Test("648 unchanged compiled source ability commands match all four actual positions", () => {
+ Check(args.Length >= 4, "required freshly compiled ability oracle");
+ using var oracle = JsonDocument.Parse(File.ReadAllText(args[3]));
+ var vectors = oracle.RootElement.GetProperty("exchange").EnumerateArray().ToArray();
+ Check(vectors.Length == 648, "nonempty source matrix");
+ string Ability(int id) => id == 0 ? "ABILITY_NONE" : proof.Abilities.Values.Single(x => x.SourceAbilityId == id).Symbol;
+ foreach (var v in vectors) {
+  int actor = v.GetProperty("actor").GetInt32(), target = actor ^ 1;
+  bool swap = v.GetProperty("swap").GetInt32() != 0, success = v.GetProperty("success").GetBoolean();
+  var mons = Enumerable.Range(0, 4).Select(i => Mon("SNORLAX", 50, i == actor ? swap ? "SKILL_SWAP" : "ROLE_PLAY" : "DEFENSE_CURL")).ToArray();
+  mons[actor] = Acquired(mons[actor], Ability(v.GetProperty("own").GetInt32()));
+  mons[target] = Acquired(mons[target], Ability(v.GetProperty("target").GetInt32()));
+  var f = Frame(mons); var r = Act(f, actor, target);
+  Check(!r.Events.OfType<SourceMoveFailedEvent>().Any() == success, "source exchange outcome " + Json(v));
+  Check(WildBattleEffective.Ability(r.State.Slots[actor].Body!) == Ability(v.GetProperty("afterOwn").GetInt32()) &&
+        WildBattleEffective.Ability(r.State.Slots[target].Body!) == Ability(v.GetProperty("afterTarget").GetInt32()), "source exchange registers");
+  Check(r.Trace.IsEmpty, "ability commands consume no RNG");
+  Check(r.State.Parties.SelectMany(p => p.Members).Select(m => m.Pokemon.AbilityId).SequenceEqual(f.Parties.SelectMany(p => p.Members).Select(m => m.Pokemon.AbilityId)), "all permanent abilities unchanged");
+  Check(r.Events.OfType<SourceCalledOverlayChangedEvent>().Count() == (success ? swap ? 2 : 1 : 0), "exact actual overlay recipients");
+ }
+});
+Test("Role Play and Skill Swap no-accuracy guards honor Protect Substitute and Lock-On", () => {
+ foreach (string name in new[] { "ROLE_PLAY", "SKILL_SWAP" }) for (int actor = 0; actor < 4; actor++) {
+  int target = actor ^ 1;
+  var f = Frame(Enumerable.Range(0, 4).Select(i => Mon(i == target ? "DITTO" : "SNORLAX", 40, i == actor ? name : "DIG")).ToArray());
+  var protectedBody = f.Slots[target].Body! with { Protected = true, ProtectConsecutiveUses = 1, CalledVolatile = new() { SubstituteHp = 10 } };
+  var protectedResult = Act(Put(f, target, protectedBody), actor, target);
+  Check(protectedResult.Events.OfType<SourceMoveFailedEvent>().Any() == (name == "SKILL_SWAP"), "exact Protect flag " + name);
+  var sub = Act(Put(f, target, protectedBody with { Protected = false, ProtectConsecutiveUses = 0 }), actor, target);
+  Check(!sub.Events.OfType<SourceMoveFailedEvent>().Any() && sub.State.Slots[target].Body!.CalledVolatile!.SubstituteHp == 10, "Substitute does not intercept ability exchange");
+  var cell = f.Slots[target];
+  f = f with { Slots = f.Slots.SetItem(target, cell with { Registers = cell.Registers with { Turn = new(WildBattleRules.CalledMoveKernelRulesVersion,
+      new(WildBattleCalledLockKind.Charge, Id("DIG"), 0, Id("DIG"), new(actor), 1, 0, null, false), 0, null) } }) };
+  var underground = Act(f, actor, target);
+  Check(underground.Events.OfType<SourceMoveFailedEvent>().Any(e => e.Reason == "semi-invulnerable") && underground.Trace.IsEmpty, "semi-invulnerability costs PP without accuracy RNG");
+  cell = f.Slots[target]; f = f with { Slots = f.Slots.SetItem(target, cell with { Registers = cell.Registers with { Turn = cell.Registers.Turn! with { SureHitTurnsRemaining = 2, SureHitSource = new(actor) } } }) };
+  var sure = Act(f, actor, target);
+  Check(!sure.Events.OfType<SourceMoveFailedEvent>().Any(), "Lock-On bypasses semi-invulnerability");
+ }
+});
+Test("ability acquisition cures real move-end immunity in numeric target order", () => {
+ foreach (var sample in new (string ability, uint status)[] { ("ABILITY_IMMUNITY", 0xF80u), ("ABILITY_LIMBER", WildBattleStatus.Paralysis),
+     ("ABILITY_INSOMNIA", 3u), ("ABILITY_VITAL_SPIRIT", 3u), ("ABILITY_WATER_VEIL", WildBattleStatus.Burn), ("ABILITY_MAGMA_ARMOR", WildBattleStatus.Freeze) })
+ for (int actor = 0; actor < 4; actor++) {
+  int target = actor ^ 1;
+  var mons = Enumerable.Range(0, 4).Select(i => Mon("SNORLAX", 40, i == actor ? "SKILL_SWAP" : "DEFENSE_CURL")).ToArray();
+  mons[actor] = Acquired(mons[actor], sample.ability);
+  mons[target] = mons[target] with { Status = sample.status, Nightmare = WildBattleStatus.IsSleeping(sample.status) };
+  var result = Act(Frame(mons), actor, target);
+  Check(result.State.Slots[target].Body!.Status == 0 && !result.State.Slots[target].Body!.Nightmare, "new holder cured " + sample.ability);
+  Check(result.State.Parties[(int)new BattlerSlot(target).Side].Members[target / 2].Status == 0, "actual party member status synchronized");
+  long exchanged = result.Events.OfType<SourceCalledOverlayChangedEvent>().Last().Sequence;
+  Check(result.Events.OfType<SourceStatusChangedEvent>().Single(e => e.Side.Value == target).Sequence > exchanged, "cure occurs after exchange script");
+ }
+ foreach (string ability in new[] { "ABILITY_OWN_TEMPO", "ABILITY_OBLIVIOUS" }) {
+  var f = Frame([Acquired(Mon("SNORLAX", 40, "SKILL_SWAP"), ability), Mon("DITTO", 40, "DEFENSE_CURL"), Mon("SNORLAX", 40, "DEFENSE_CURL"), Mon("DITTO", 40, "DEFENSE_CURL")]);
+  if (ability == "ABILITY_OWN_TEMPO") f = Put(f, 1, f.Slots[1].Body! with { ConfusionTurnsRemaining = 4 });
+  else { var c = f.Slots[1]; f = f with { Slots = f.Slots.SetItem(1, c with { Registers = c.Registers with { InfatuationSource = new(2) } }) }; }
+  var r = Act(f, 0, 1);
+  Check(ability == "ABILITY_OWN_TEMPO" ? r.State.Slots[1].Body!.ConfusionTurnsRemaining == 0 : r.State.Slots[1].Registers.InfatuationSource is null, "move-end volatile cure " + ability);
+ }
+});
+Test("full turns use acquired ability and switch-out restores every actual permanent identity", () => {
+ foreach (string move in new[] { "ROLE_PLAY", "SKILL_SWAP" }) for (int actor = 0; actor < 4; actor++) foreach (int target in new[] { actor ^ 1, actor ^ 2 }) {
+  var mons = Enumerable.Range(0, 4).Select(i => Mon(i == target ? "DITTO" : "SNORLAX", 40 + i, i == actor ? [move, "DEFENSE_CURL"] : ["DEFENSE_CURL"])).ToArray();
+  var f = Frame(mons); var targets = Enumerable.Range(0, 4).ToArray(); targets[actor] = target;
+  var first = Turn(f, t: targets);
+  Check(first.Events.OfType<SourceMoveUsedEvent>().Select(e => e.Actor.Value).Order().SequenceEqual(new[] { 0, 1, 2, 3 }), "four distinct actions");
+  Check(WildBattleEffective.Ability(first.State.Slots[actor].Body!) == "ABILITY_LIMBER", "correct actual donor after full turn");
+  var positions = new int[4]; positions[actor] = 1;
+  var second = Turn(first.State, positions);
+  Check(WildBattleEffective.Ability(second.State.Slots[actor].Body!) == "ABILITY_LIMBER", "acquired ability persists into next turn");
+  var choices = Choices(second.State, positions).ToArray();
+  choices[actor] = new(second.State.Slots[actor].Occupant!.Value, SourceActionKind.Switch, Incoming: new(new BattlerSlot(actor).Side, 2));
+  var departed = Finish(Ok(SourceFourActionTurns.BeginActions(catalog, second.State, second.State.Revision, choices.ToImmutableArray())));
+  Check(departed.State.Slots[actor].Body!.CalledOverlay is null && departed.State.Parties[actor & 1].Members[actor / 2].Pokemon.AbilityId == "ABILITY_IMMUNITY", "departure discarded acquired ability only");
+  choices = Choices(departed.State).ToArray();
+  choices[actor] = new(departed.State.Slots[actor].Occupant!.Value, SourceActionKind.Switch, Incoming: new(new BattlerSlot(actor).Side, actor / 2));
+  var returned = Finish(Ok(SourceFourActionTurns.BeginActions(catalog, departed.State, departed.State.Revision, choices.ToImmutableArray())));
+  Check(WildBattleEffective.Ability(returned.State.Slots[actor].Body!) == "ABILITY_IMMUNITY" && returned.State.Slots[actor].Body!.CalledOverlay is null, "return uses original ability");
+ }
+});
+Test("copied Trace Intimidate and weather never rerun entry while authentic Trace can copy Wonder Guard", () => {
+ foreach (string ability in new[] { "ABILITY_TRACE", "ABILITY_INTIMIDATE", "ABILITY_DROUGHT", "ABILITY_DRIZZLE", "ABILITY_SAND_STREAM" }) {
+  var f = Frame([Mon("SNORLAX", 40, "ROLE_PLAY", "DEFENSE_CURL"), Acquired(Mon("DITTO", 40, "DEFENSE_CURL"), ability), Mon("SNORLAX", 40, "DEFENSE_CURL"), Mon("DITTO", 40, "DEFENSE_CURL")]);
+  var copied = Turn(f);
+  Check(WildBattleEffective.Ability(copied.State.Slots[0].Body!) == ability && !copied.State.Slots[0].Body!.SourceTracePending, "copied entry ability remains unarmed");
+  Check(!copied.Events.OfType<SourceAbilityActivatedEvent>().Any(e => e.Side.Value == 0 && e.Ability == ability) && copied.State.Field.PermanentWeather is null && copied.State.Slots.All(c => c.Body!.AttackStage == 6), "no fake switch-in effects");
+  var next = Turn(copied.State, [1, 0, 0, 0]);
+  Check(WildBattleEffective.Ability(next.State.Slots[0].Body!) == ability && !next.State.Slots[0].Body!.SourceTracePending, "no delayed re-arming");
+ }
+ var traceFrame = Frame([Mon("PORYGON", 40, "DEFENSE_CURL"), Mon("SHEDINJA", 40, "DEFENSE_CURL"), Mon("SNORLAX", 40, "DEFENSE_CURL"), Mon("SHEDINJA", 40, "DEFENSE_CURL")]);
+ var trace = Ok(SourceFourEntryAbilities.InitializeEntry(catalog, traceFrame, traceFrame.Revision));
+ Check(WildBattleEffective.Ability(trace.State.Slots[0].Body!) == "ABILITY_WONDER_GUARD" && !trace.State.Slots[0].Body!.SourceTracePending, "source Trace permits Wonder Guard");
+ Check(Turn(trace.State).State.Slots[0].Body!.Pokemon.AbilityId == "ABILITY_TRACE", "Trace permanent identity retained");
+});
+Test("Forecast re-evaluates at genuine action settlement and preserves lost-ability form", () => {
+ var f = Frame([Mon("CASTFORM", 100, "SKILL_SWAP", "ROLE_PLAY"), MonIdentity("PSYDUCK", 20, 42, 1, "DEFENSE_CURL"), Mon("GROUDON", 40, "DEFENSE_CURL"), Mon("SNORLAX", 30, "DEFENSE_CURL")]);
+ f = Ok(SourceFourEntryAbilities.InitializeEntry(catalog, f, f.Revision)).State;
+ var swapped = Turn(f);
+ Check(WildBattleEffective.Ability(swapped.State.Slots[0].Body!) == "ABILITY_CLOUD_NINE" && WildBattleEffective.Ability(swapped.State.Slots[1].Body!) == "ABILITY_FORECAST", "Forecast transferred without changing permanent species");
+ var reacquired = Turn(swapped.State, [1, 0, 0, 0]);
+ Check(reacquired.State.Slots[0].Body!.CalledOverlay?.CastformForm == SourceCastformForm.Sunny && WildBattleEffective.Types(catalog, reacquired.State.Slots[0].Body!).Type1 == "TYPE_FIRE", "last weather suppressor lost then reacquired Forecast turns sunny");
+ Check(reacquired.State.Slots[1].Body!.CalledOverlay?.CastformForm is null, "non-Castform never changes form");
+ var lost = Turn(reacquired.State, t: [3, 1, 2, 3]);
+ Check(WildBattleEffective.Ability(lost.State.Slots[0].Body!) == "ABILITY_IMMUNITY" && lost.State.Slots[0].Body!.CalledOverlay?.CastformForm == SourceCastformForm.Sunny, "losing Forecast retains old sunny form");
+ Check(Turn(lost.State, [1, 0, 0, 0], [3, 1, 2, 3]).State.Slots[0].Body!.CalledOverlay?.CastformForm == SourceCastformForm.Sunny, "reacquired Forecast accepts retained form");
+});
+Test("Castform retains its visual form when acquired Color Change changes its types", () => {
+ var f = Frame([Mon("CASTFORM", 100, "SKILL_SWAP", "ROLE_PLAY"), Mon("KECLEON", 20, "WATER_GUN"), Mon("GROUDON", 40, "DEFENSE_CURL"), Mon("SNORLAX", 30, "DEFENSE_CURL")]);
+ f = Ok(SourceFourEntryAbilities.InitializeEntry(catalog, f, f.Revision)).State;
+ var colored = Turn(f);
+ Check(WildBattleEffective.Ability(colored.State.Slots[0].Body!) == "ABILITY_COLOR_CHANGE" &&
+       colored.State.Slots[0].Body!.CalledOverlay?.CastformForm == SourceCastformForm.Sunny &&
+       WildBattleEffective.Types(catalog, colored.State.Slots[0].Body!).Type1 == "TYPE_WATER", "visual form survives actual acquired Color Change hit");
+ var restored = Turn(colored.State, [1, 0, 0, 0]);
+ Check(WildBattleEffective.Ability(restored.State.Slots[0].Body!) == "ABILITY_FORECAST" &&
+       WildBattleEffective.Types(catalog, restored.State.Slots[0].Body!).Type1 == "TYPE_FIRE", "reacquired Forecast re-evaluates the changed type at actual settlement");
+});
+Test("unknown acquired abilities reject before any command and RNG", () => {
+ var f = Frame(); f = Put(f, 0, Acquired(Mon("SNORLAX", 40, "ROLE_PLAY"), "ABILITY_INVENTED"));
+ var r = SourceBattleKernel.ResolveAction(catalog, f, new(f.Slots[0].Occupant!.Value, f.Revision, 0, new(1)));
+ Check(!r.Succeeded && ReferenceEquals(r.State, f) && r.Events.IsEmpty && r.Trace.IsEmpty, "malformed action is atomic");
+ var t = SourceFourActionTurns.BeginActions(catalog, f, f.Revision, Choices(f));
+ Check(!t.Succeeded && ReferenceEquals(t.State, f) && t.Events.IsEmpty && t.Trace.IsEmpty, "malformed full turn is atomic");
+});
+
 File.WriteAllText(args[1],Json(new{passed=failures==0,groups,checks,failures,results,snapshots})+"\n");return failures==0?0:1;

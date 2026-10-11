@@ -226,6 +226,13 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
         {
             var cell = prior with { Registers = prior.Registers with { Damage = null, HelpingHand = false } };
             Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, cell) };
+            var body = Get(cell.Slot);
+            if (body.CalledVolatile is { } prepared && (prepared.MagicCoat || prepared.SnatchOrderIndex is not null))
+            {
+                Set(cell.Slot, SourcePreparedMoveRules.WithoutPrepared(body));
+                if (prepared.MagicCoat) Add(n => new SourceMtMoonVolatileEvent(n, Turn, cell.Slot, "magic-coat", 1, 0, "turn-end"));
+            }
+            cell = Frame.Get(cell.Slot);
             if (WildBattleStatus.IsSleeping(cell.Body!.Status) && cell.Registers.Turn?.Lock is { Kind: WildBattleCalledLockKind.Rollout } rollout)
             {
                 Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, cell with { Registers = cell.Registers with { Turn = null } }) };

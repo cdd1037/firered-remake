@@ -1,0 +1,33 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "functions": [
+    {
+      "function": "Cmd_trysetmagiccoat",
+      "path": "src/battle_script_commands.c",
+      "line": 9144,
+      "sourceSha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
+      "snippetSha256": "57683929c966c146d0969c0be2fbb0e0bb1832c213226baf366783f4405eca37"
+    },
+    {
+      "function": "Cmd_trysetsnatch",
+      "path": "src/battle_script_commands.c",
+      "line": 9160,
+      "sourceSha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
+      "snippetSha256": "345d722c447b8ae31c3650382d2e4fcc28272039dec5ae2a25e2cf2163a4acf0"
+    },
+    {
+      "function": "Cmd_snatchsetbattlers",
+      "path": "src/battle_script_commands.c",
+      "line": 9427,
+      "sourceSha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
+      "snippetSha256": "3b861ad9e91d0a3a0ab5c692de4d69bb9eed599a78915fe61088d6d7f11830aa"
+    },
+    {
+      "function": "PressurePPLose",
+      "path": "src/battle_util.c",
+      "line": 78,
+      "sourceSha256": "87cf810eb2d58361d1beb1537b3bd71c9160a77c2a17d703399f6ed373bb5720",
+      "snippetSha256": "cb03c985d03debe743eed6c5e16d961d37ff190d01be530f63d65b79a138cee3"
+    }
+  ]
+}

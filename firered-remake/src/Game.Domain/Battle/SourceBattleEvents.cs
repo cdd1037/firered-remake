@@ -60,6 +60,7 @@ namespace Game.Domain.Battle;
 [JsonDerivedType(typeof(SourceIngrainHealEvent), "SourceIngrainHealEvent")]
 [JsonDerivedType(typeof(SourceLeechSeedChangedEvent), "SourceLeechSeedChangedEvent")]
 [JsonDerivedType(typeof(SourceLeechSeedDrainEvent), "SourceLeechSeedDrainEvent")]
+[JsonDerivedType(typeof(SourceMagicCoatPressurePpEvent), "SourceMagicCoatPressurePpEvent")]
 [JsonDerivedType(typeof(SourceMagicCoatEvent), "SourceMagicCoatEvent")]
 [JsonDerivedType(typeof(SourceMagnitudeEvent), "SourceMagnitudeEvent")]
 [JsonDerivedType(typeof(SourceMedicineAppliedEvent), "SourceMedicineAppliedEvent")]
@@ -158,6 +159,7 @@ public sealed record SourceInfatuationChangedEvent(long Sequence, int Turn, Batt
 public sealed record SourceIngrainHealEvent(long Sequence, int Turn, BattlerSlot Side, int HpBefore, int HpAfter, int Restored) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceLeechSeedChangedEvent(long Sequence, int Turn, BattlerSlot Side, BattlerSlot? Before, BattlerSlot? After, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceLeechSeedDrainEvent(long Sequence, int Turn, BattlerSlot DrainedSide, BattlerSlot ReceivingSide, int HpBefore, int HpAfter, int ReceiverHpBefore, int ReceiverHpAfter, int Damage, int Restored) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceMagicCoatPressurePpEvent(long Sequence, int Turn, BattlerSlot PressuringActor, BattlerSlot Reflector, int Slot, int Before, int After) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceMagicCoatEvent(long Sequence, int Turn, BattlerSlot OriginalActor, BattlerSlot Reflector, MoveId Move) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceMagnitudeEvent(long Sequence, int Turn, BattlerSlot Actor, int Magnitude, int Power) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceMedicineAppliedEvent(long Sequence, int Turn, ItemId Item, long TargetInstanceId, int PartyIndex, bool ActiveTarget, int HpBefore, int HpAfter, uint StatusBefore, uint StatusAfter) : SourceBattleEvent(Sequence, Turn);
@@ -256,6 +258,7 @@ public static class SourceBattleEventAdapter
         WildBattleIngrainHealEvent x => new SourceIngrainHealEvent(x.Sequence, x.Turn, Slot(x.Side), x.HpBefore, x.HpAfter, x.Restored),
         WildBattleLeechSeedChangedEvent x => new SourceLeechSeedChangedEvent(x.Sequence, x.Turn, Slot(x.Side), Slot(x.Before), Slot(x.After), x.Reason),
         WildBattleLeechSeedDrainEvent x => new SourceLeechSeedDrainEvent(x.Sequence, x.Turn, Slot(x.DrainedSide), Slot(x.ReceivingSide), x.HpBefore, x.HpAfter, x.ReceiverHpBefore, x.ReceiverHpAfter, x.Damage, x.Restored),
+        WildBattleMagicCoatPressurePpEvent x => new SourceMagicCoatPressurePpEvent(x.Sequence, x.Turn, Slot(x.PressuringActor), Slot(x.Reflector), x.Slot, x.Before, x.After),
         WildBattleMagicCoatEvent x => new SourceMagicCoatEvent(x.Sequence, x.Turn, Slot(x.OriginalActor), Slot(x.Reflector), x.Move),
         WildBattleMagnitudeEvent x => new SourceMagnitudeEvent(x.Sequence, x.Turn, Slot(x.Actor), x.Magnitude, x.Power),
         WildBattleMedicineAppliedEvent x => new SourceMedicineAppliedEvent(x.Sequence, x.Turn, x.Item, x.TargetInstanceId, x.PartyIndex, x.ActiveTarget, x.HpBefore, x.HpAfter, x.StatusBefore, x.StatusAfter),
@@ -352,6 +355,7 @@ public static class SourceBattleEventAdapter
         SourceIngrainHealEvent x => new WildBattleIngrainHealEvent(x.Sequence, x.Turn, Side(x.Side), x.HpBefore, x.HpAfter, x.Restored),
         SourceLeechSeedChangedEvent x => new WildBattleLeechSeedChangedEvent(x.Sequence, x.Turn, Side(x.Side), Side(x.Before), Side(x.After), x.Reason),
         SourceLeechSeedDrainEvent x => new WildBattleLeechSeedDrainEvent(x.Sequence, x.Turn, Side(x.DrainedSide), Side(x.ReceivingSide), x.HpBefore, x.HpAfter, x.ReceiverHpBefore, x.ReceiverHpAfter, x.Damage, x.Restored),
+        SourceMagicCoatPressurePpEvent x => new WildBattleMagicCoatPressurePpEvent(x.Sequence, x.Turn, Side(x.PressuringActor), Side(x.Reflector), x.Slot, x.Before, x.After),
         SourceMagicCoatEvent x => new WildBattleMagicCoatEvent(x.Sequence, x.Turn, Side(x.OriginalActor), Side(x.Reflector), x.Move),
         SourceMagnitudeEvent x => new WildBattleMagnitudeEvent(x.Sequence, x.Turn, Side(x.Actor), x.Magnitude, x.Power),
         SourceMedicineAppliedEvent x => new WildBattleMedicineAppliedEvent(x.Sequence, x.Turn, x.Item, x.TargetInstanceId, x.PartyIndex, x.ActiveTarget, x.HpBefore, x.HpAfter, x.StatusBefore, x.StatusAfter),
@@ -492,6 +496,7 @@ public static class SourceBattleEventHooks
             SourceIngrainHealEvent x => [x.Side],
             SourceLeechSeedChangedEvent x => [x.Side, x.Before, x.After],
             SourceLeechSeedDrainEvent x => [x.DrainedSide, x.ReceivingSide],
+            SourceMagicCoatPressurePpEvent x => [x.PressuringActor, x.Reflector],
             SourceMagicCoatEvent x => [x.OriginalActor, x.Reflector],
             SourceMagnitudeEvent x => [x.Actor],
             SourceMedicineAppliedEvent x => [],

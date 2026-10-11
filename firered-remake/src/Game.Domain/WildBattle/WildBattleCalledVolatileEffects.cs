@@ -41,6 +41,7 @@ public sealed record WildBattleSubstituteDamagedEvent(long Sequence, int Turn, W
     : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleCalledDelayedEvent(long Sequence, int Turn, WildBattleSide Target, MoveId Move,
     int Before, int After, string Reason, int? SourcePartyIndex = null) : WildBattleEvent(Sequence, Turn);
+public sealed record WildBattleMagicCoatPressurePpEvent(long Sequence, int Turn, WildBattleSide PressuringActor, WildBattleSide Reflector, int Slot, int Before, int After) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleMagicCoatEvent(long Sequence, int Turn, WildBattleSide OriginalActor,
     WildBattleSide Reflector, MoveId Move) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleGrudgePpEvent(long Sequence, int Turn, WildBattleSide Fainted,
@@ -144,14 +145,7 @@ public static partial class WildBattleRules
             var target = activeInvocation.Target;
             if (move.Effect == "EFFECT_MAGIC_COAT")
             {
-                activeInvocation = activeInvocation with { Target = side, Flags = activeInvocation.Flags | WildBattleInvocationFlags.PpNotAffectedByPressure };
-                target = side;
-                if (calledActionContext.ActionOrderIndex == 0)
-                {
-                    var coat = Get(side).CalledVolatile ?? new();
-                    SetCalledVolatile(side, coat with { MagicCoat = true });
-                    SourceCalledVolatileEvent(side, "magic-coat", coat.MagicCoat ? 1 : 0, 1);
-                }
+                Recipes.ExecutePreparedMove(catalog, S(side), slot, move, purpose, ref handled); return;
             }
             if (move.Effect == "EFFECT_SUBSTITUTE")
             {
@@ -309,16 +303,8 @@ public static partial class WildBattleRules
 
         private bool SourceCalledReflectMove(PokemonCatalog catalog, ref WildBattleSide side, int slot, PokemonMoveDefinition move)
         {
-            if (activeInvocation is not { } invocation || !move.Flags.Contains("FLAG_MAGIC_COAT_AFFECTED") ||
-                Get(invocation.Target).CalledVolatile is not { MagicCoat: true } coat) return false;
-            WildBattleSide original = side, reflector = invocation.Target;
-            SetCalledVolatile(reflector, coat with { MagicCoat = false });
-            SpendEarlyPartyPp(original, reflector, slot, move);
-            Add(n => new WildBattleMagicCoatEvent(n, State.Turn, original, reflector, move.Id));
-            activeInvocation = activeInvocation! with { Actor = reflector, Target = original, PpOwner = invocation.PpOwner,
-                Flags = activeInvocation!.Flags | WildBattleInvocationFlags.AttackStringPrinted | WildBattleInvocationFlags.NoPpDeduct | WildBattleInvocationFlags.AllowNoPp };
-            side = reflector;
-            return true;
+            if (!Recipes.TryPreparedInterception(move, snatch: false)) return false;
+            side = activeInvocation!.Actor; return true;
         }
 
         private WildBattleCalledWish? SourceCalledWish(WildBattleSide side) => side == WildBattleSide.Player ? State.CalledDelayed?.PlayerWish : State.CalledDelayed?.OpponentWish;

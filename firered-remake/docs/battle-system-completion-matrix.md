@@ -721,3 +721,11 @@ Nine shared recipes extend static admission to **311/354,43 gated**. [Main focus
 ### Shared callers and late-turn lifetimes — 2026-10-11
 
 The combined main dispatcher now admits **320/354** authentic recipes; **34 remain gated**. Five caller moves and Bide/Perish Song/Destiny Bond/Grudge share real slot, PP and continuation ownership. [Focused combined evidence](../evidence/shared-callers-late-turn-20261011/README.md) includes Choice Band plus Metronome, caller Bide over three turns, called Perish Pressure, self-KO/EXP, and late-turn multi-KO replacement. The original336 Metronome pool is unchanged; an unsupported selected leaf rejects atomically rather than being redrawn. Thus caller entry support does not claim complete caller coverage. Official ability identities remain76/76 admitted and dedicated scripts17/354; core closure remains the mainline prerequisite, dedicated visuals continue independently.
+
+### Ability exchange and conditional hits — 2026-10-11
+
+Shared admission is **326/354,28 gated** after Role Play/Skill Swap and Facade/Smelling Salt/Revenge/Brick Break. [Combined evidence](../evidence/shared-exchange-conditional-20261011/README.md) covers actual acquired-ability settlement, retained Castform form independent of type, source per-attacker damage receipts, screen ordering and complete four-action turns. Canonical Revenge's old coarse-flag mismatch is corrected with a declared two-case minimal delta; historical results remain unchanged. This still does not claim complete battle-system or dedicated presentation acceptance.
+
+### Prepared actions and terrain — 2026-10-11
+
+Shared recipe admission is **332/354,22 gated** after Focus Punch/Snatch/Magic Coat and Mud Sport/Water Sport/Camouflage. [Main evidence](../evidence/shared-prepared-terrain-20261011/README.md) includes called spread reflection across a fourth learned slot and a one-move reflector, true Pressure ownership, source retained-body sports and merged Castform form/type independence. Prepared and final terrain runs retain separate exact source manifests. Wider AI/item/flow acceptance and dedicated presentation remain open.

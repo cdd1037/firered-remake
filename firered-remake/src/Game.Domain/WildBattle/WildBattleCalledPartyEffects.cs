@@ -387,9 +387,7 @@ public static partial class WildBattleRules
                 case "EFFECT_SKILL_SWAP": CalledAbilityChange(side, target, move); break;
                 case "EFFECT_RECYCLE": CalledRecycle(side, move); break;
                 case "EFFECT_CAMOUFLAGE":
-                    SpendInvocationPp(side, side, move);
-                    var type = WildBattleSourcePartyEffects.CamouflageType(State.Terrain ?? throw new UnsupportedAction("called_camouflage_terrain"));
-                    if (WildBattleEffective.HasType(catalog, Get(side), type)) CalledPartyFailure(side, side, move, "already-type"); else SetCalledType(side, move, type);
+                    SharedTypeChange(catalog, side, move, purpose);
                     break;
                 case "EFFECT_TEETER_DANCE": CalledTeeterDance(side, Other(side), move, purpose); break;
                 case "EFFECT_TRICK": CalledTrick(side, target, move, purpose); break;
@@ -407,6 +405,11 @@ public static partial class WildBattleRules
         }
         private void CalledAbilityChange(WildBattleSide side, WildBattleSide target, PokemonMoveDefinition move)
         {
+            if (State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion)
+            {
+                Recipes.ExecuteAbilityExchange(S(side), S(target), activeInvocation!.PpSlot, move);
+                return;
+            }
             SpendInvocationPp(side, target, move);
             if (!ScalarNoAccuracy(side, target, move)) { CalledPartyFailure(side, target, move, "semi-invulnerable"); return; }
             string own = WildBattleEffective.Ability(Get(side)), theirs = WildBattleEffective.Ability(Get(target));

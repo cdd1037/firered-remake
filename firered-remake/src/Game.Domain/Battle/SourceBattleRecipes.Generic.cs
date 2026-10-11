@@ -113,7 +113,8 @@ internal abstract partial class SourceRecipeContext
                 sourceSolarBeamWeakWeather: move.Effect == "EFFECT_SOLAR_BEAM" && (SourceCalledRain || StruggleSandstorm || SettingWeather.HailTurnsRemaining > 0),
                 weatherSuppressed: SourceDamageWeatherSuppressed, sourceDoubleBattle: SourceDoubleBattle,
                 sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor),
-                sourceHelpingHand: Invocation is { } invocation && HelpingHand(invocation.Actor)).Damage,
+                sourceHelpingHand: Invocation is { } invocation && HelpingHand(invocation.Actor),
+                sourceMudSport: FieldMudSport, sourceWaterSport: FieldWaterSport).Damage,
                 effectiveType is { } type ? SourceDynamicTypeRules.Symbol(type) : null, suppressTypeMiss, typeCommand);
 
         // The canonical owner emits result text here, after actual HP/critical commands.

@@ -1,4 +1,5 @@
 using Game.Domain.Ids;
+using Game.Domain.Battle;
 using Game.Domain.Pokemon;
 
 namespace Game.Domain.WildBattle;
@@ -23,10 +24,13 @@ public static class WildBattleSourcePreparedMoves
         !WildBattleStatus.IsSleeping(status) && !truantLoafing && !noValidMoves;
     /// <summary>PressurePPLose finds the first actual learned Snatch slot, including an exhausted one.</summary>
     public static int? SnatchPressureSlot(string interceptedActorAbility, IReadOnlyList<PokemonMoveSlot> snatcherMoves)
+        => InterceptionPressureSlot(interceptedActorAbility, snatcherMoves, new("pret:MOVE_SNATCH"));
+
+    public static int? InterceptionPressureSlot(string interceptedActorAbility, IReadOnlyList<PokemonMoveSlot> interceptorMoves, MoveId preparedMove)
     {
         if (interceptedActorAbility != "ABILITY_PRESSURE") return null;
-        for (int slot = 0; slot < snatcherMoves.Count; slot++)
-            if (snatcherMoves[slot].Move.Value == "pret:MOVE_SNATCH") return slot;
+        for (int slot = 0; slot < interceptorMoves.Count; slot++)
+            if (interceptorMoves[slot].Move == preparedMove) return slot;
         return null;
     }
     public static int SnatchPressurePpAfter(int before) => before is >= 0 and <= 255
@@ -51,7 +55,6 @@ public static partial class WildBattleRules
     internal sealed partial class Execution
     {
         private bool choiceBatonPassFailed;
-        private bool preparedSwapAttackerTarget;
         private MoveId? preparedPpOwnerPreviousMove;
 
         private void BeginPreparedMoveInvocation(PokemonCatalog catalog, MoveId? previousMove)
@@ -59,7 +62,7 @@ public static partial class WildBattleRules
             SourceHitItemsBegin(catalog);
             invocationFireThawStart = State.EventSequence;
             choiceBatonPassFailed = false;
-            preparedSwapAttackerTarget = false;
+            Recipes.ResetPreparedRegisters();
             preparedPpOwnerPreviousMove = previousMove;
         }
 
@@ -81,81 +84,16 @@ public static partial class WildBattleRules
         }
 
         private void ExecutePreparedMoveEffect(PokemonCatalog catalog, WildBattleSide side, int slot,
-            PokemonMoveDefinition move, string purpose, ref bool handled)
-        {
-            if (move.Effect is not ("EFFECT_FOCUS_PUNCH" or "EFFECT_SNATCH")) return;
-            if (activeInvocation is null || !MetronomeSourceMoveDefinition.Matches(move))
-                throw new UnsupportedAction("prepared_move_source_definition");
-            handled = true;
-            if (move.Effect == "EFFECT_SNATCH")
-            {
-                activeInvocation = activeInvocation with { Flags = activeInvocation.Flags | WildBattleInvocationFlags.PpNotAffectedByPressure };
-                bool arm = WildBattleSourcePreparedMoves.SnatchCanArm(calledActionContext.ActionOrderIndex, 2);
-                if (arm) SetCalledVolatile(side, (Get(side).CalledVolatile ?? new()) with { SnatchOrderIndex = calledActionContext.ActionOrderIndex });
-                SpendInvocationPp(side, activeInvocation.Target, move);
-                if (arm) Add(n => new WildBattleSnatchReadyEvent(n, State.Turn, side, calledActionContext.ActionOrderIndex));
-                else Add(n => new WildBattleMoveFailedEvent(n, State.Turn, side, activeInvocation.Target, move.Id, "snatch-last-action"));
-                return;
-            }
-            var damage = Get(side).CalledDamage;
-            int physical = damage?.Turn == State.Turn ? damage.PhysicalDamage : 0;
-            int special = damage?.Turn == State.Turn ? damage.SpecialDamage : 0;
-            if (physical != 0 || special != 0)
-            {
-                // attackcanceler records Protect before jumpifnodamage, but never bypasses that
-                // command. Lost focus has no attack string and does not itself mark move failure.
-                if (Get(activeInvocation.Target).Protected) invocationCommandNoEffect = true;
-                SpendInvocationPp(side, activeInvocation.Target, move, printAttackString: false);
-                Add(n => new WildBattleFocusPunchLostEvent(n, State.Turn, side, physical, special));
-                return;
-            }
-            if (RockTunnelProtectionBlocks(side, slot, move)) return;
-            SourceGenericHit(catalog, side, activeInvocation.Target, slot, move, purpose);
-        }
+            PokemonMoveDefinition move, string purpose, ref bool handled) =>
+            Recipes.ExecutePreparedMove(catalog, S(side), slot, move, purpose, ref handled);
 
         private bool SourceSnatchMove(ref WildBattleSide side, int slot, PokemonMoveDefinition move)
         {
-            if (activeInvocation is not { } invocation || !move.Flags.Contains("FLAG_SNATCH_AFFECTED")) return false;
-            // Stored queue indices preserve source order even when a faster action was canceled.
-            var candidates = new[] { WildBattleSide.Player, WildBattleSide.Opponent }
-                .Where(s => Get(s).CalledVolatile?.SnatchOrderIndex is not null)
-                .OrderBy(s => Get(s).CalledVolatile!.SnatchOrderIndex).ToArray();
-            if (candidates.Length == 0) return false;
-            var original = side; var snatcher = candidates[0];
-            var armed = Get(snatcher).CalledVolatile!;
-            SourceSnatchPressure(original, snatcher);
-            SetCalledVolatile(snatcher, armed with { SnatchOrderIndex = null });
-            SpendInvocationPp(original, invocation.Target, move);
-            // snatchsetbattlers followed by swapattackerwithtarget. USER initially has
-            // equal actor/target; PSYCH_UP (SELECTED) retains the intercepted actor as target.
-            var target = invocation.Actor == invocation.Target ? snatcher : original;
-            Add(n => new WildBattleMoveSnatchedEvent(n, State.Turn, original, snatcher, move.Id, target));
-            activeInvocation = activeInvocation! with { Actor = snatcher, Target = target, PpOwner = invocation.PpOwner,
-                Flags = activeInvocation!.Flags | WildBattleInvocationFlags.AttackStringPrinted |
-                    WildBattleInvocationFlags.NoPpDeduct | WildBattleInvocationFlags.AllowNoPp };
-            preparedSwapAttackerTarget = !preparedSwapAttackerTarget;
-            side = snatcher;
-            return true;
+            if (!Recipes.TryPreparedInterception(move, reflect: false)) return false;
+            side = activeInvocation!.Actor; return true;
         }
 
-        private void SourceSnatchPressure(WildBattleSide original, WildBattleSide snatcher)
-        {
-            var mon = Get(snatcher);
-            if (WildBattleSourcePreparedMoves.SnatchPressureSlot(WildBattleEffective.Ability(Get(original)), mon.Pokemon.Moves) is not { } slot) return;
-            int before = mon.Pokemon.Moves[slot].CurrentPp, after = WildBattleSourcePreparedMoves.SnatchPressurePpAfter(before);
-            Set(snatcher, mon with { Pokemon = mon.Pokemon with { Moves = mon.Pokemon.Moves.SetItem(slot,
-                mon.Pokemon.Moves[slot] with { CurrentPp = after }) } });
-            Add(n => new WildBattleSnatchPressurePpEvent(n, State.Turn, original, snatcher, slot, before, after));
-        }
-
-        private void FinishPreparedMoveRegisters()
-        {
-            if (!preparedSwapAttackerTarget || activeInvocation is not { } invocation) return;
-            activeInvocation = invocation with { Actor = invocation.Target, Target = invocation.Actor, PpOwner = invocation.PpOwner };
-            preparedSwapAttackerTarget = false;
-            if (activeInvocation.Actor != invocation.PpOwner)
-                Set(invocation.PpOwner, Get(invocation.PpOwner) with { LastUsedMove = preparedPpOwnerPreviousMove });
-        }
+        private void FinishPreparedMoveRegisters() => Recipes.FinishPreparedRegisters();
 
         internal void SourceClearSnatch(WildBattleSide side)
         {

@@ -127,6 +127,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleCalledBeatUpMemberEvent), "called-party-beatupmember")]
 [JsonDerivedType(typeof(WildBattleSubstituteDamagedEvent), "substitute-damaged")]
 [JsonDerivedType(typeof(WildBattleCalledDelayedEvent), "called-delayed")]
+[JsonDerivedType(typeof(WildBattleMagicCoatPressurePpEvent), "magic-coat-pressure-pp")]
 [JsonDerivedType(typeof(WildBattleMagicCoatEvent), "magic-coat")]
 [JsonDerivedType(typeof(WildBattleFocusPunchPreparedEvent), "focus-punch-prepared")]
 [JsonDerivedType(typeof(WildBattleFocusPunchLostEvent), "focus-punch-lost")]

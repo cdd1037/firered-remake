@@ -37,21 +37,24 @@ public static class SourceFourEntryAbilities
         return null;
     }
 
-    internal static bool OverlaySupported(WildBattleCombatant body)
+    internal static bool OverlaySupported(PokemonCatalog catalog, WildBattleCombatant body)
     {
         if (body.CalledOverlay is not { } overlay) return true;
         if (overlay.RulesVersion != WildBattleRules.CalledMoveKernelRulesVersion) return false;
-        bool trace = body.Pokemon.AbilityId == "ABILITY_TRACE";
-        if (overlay.Ability is not null && !trace) return false;
-        if (overlay.Type1 is null && overlay.Type2 is null && overlay.CastformForm is null) return trace;
-        // Conversion and Color Change set both live slots; Trace may retain its copied ability.
-        // A legal type overlay does not admit Transform, copied moves, or other callers.
+        // Ability acquisition changes battle registers only. Its identity must still be from
+        // the authenticated source catalog; the permanent species/ability remain validated separately.
+        if (overlay.Ability is { } ability && ability != "ABILITY_NONE" && SourceMechanicsCatalog.For(catalog)?.Abilities.ContainsKey(ability) != true) return false;
+        if (overlay.Type1 is null && overlay.Type2 is null && overlay.CastformForm is null)
+            return overlay.Ability is not null || body.Pokemon.AbilityId == "ABILITY_TRACE";
         if (overlay.CastformForm is null)
             return overlay.Type1 == overlay.Type2 && WildBattleEffective.IsSourceType(overlay.Type1);
-        if (body.Pokemon.Species.Value != "pret:SPECIES_CASTFORM" || body.Pokemon.AbilityId != "ABILITY_FORECAST" ||
-            overlay.Ability is not null || overlay.Type1 != overlay.Type2 || overlay.CastformForm is not { } form) return false;
-        return overlay.Type1 == (form switch { SourceCastformForm.Normal => "TYPE_NORMAL", SourceCastformForm.Sunny => "TYPE_FIRE",
-            SourceCastformForm.Rainy => "TYPE_WATER", SourceCastformForm.Snowy => "TYPE_ICE", _ => null });
+        // CastformDataTypeChange returns without altering the old form when Forecast is lost.
+        // Reacquiring Forecast re-evaluates weather at the actual fainted-action boundary.
+        if (body.Pokemon.Species.Value != "pret:SPECIES_CASTFORM" ||
+            overlay.Type1 != overlay.Type2 || overlay.CastformForm is not { } form) return false;
+        // Visual form and current types are independent source registers: an acquired
+        // Color Change/Conversion can change types while the previous form is retained.
+        return Enum.IsDefined(form) && WildBattleEffective.IsSourceType(overlay.Type1);
     }
 
     /// <summary>Actual four-position pre-turn entry, using the source sort and its exact tie RNG.

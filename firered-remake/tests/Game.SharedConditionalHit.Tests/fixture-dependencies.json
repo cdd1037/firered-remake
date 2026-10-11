@@ -1,0 +1,71 @@
+{
+  "selectedBaseline": "516c492a2c78862e1100983edba22d867b618b5f",
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "authoredInputs": [
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/Game.SharedConditionalHit.Tests.csproj",
+      "sha256": "44be4b29782901c92d8b83398ef1748512a3df82e34d3facf7fa2593c14c93c6"
+    },
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/Program.cs",
+      "sha256": "81baea149aa13e0cbaca8cbefb16dc7c35fa765523c0f478b7ee04d19aaf3767"
+    },
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/README.md",
+      "sha256": "1c9b3812c3c14706e731b501efdf74c6a568832a32fbaf0f772b42db4d38518f"
+    },
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/packages.lock.json",
+      "sha256": "bc3fb880f9154b320d358f0d9639d66712373c85d80496ffc8a2a67ce4654c44"
+    },
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/run.sh",
+      "sha256": "7d9705bff0ed90f1f15e61b8ff62611100c5527dda5fe90290ec5d6307ed6935"
+    },
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/singles-before-516.json",
+      "sha256": "3d20a56e6e8ab296ad4aaa40e05b5581cc429ff1c71e0e01d425116250cc017d"
+    },
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/source-main.c",
+      "sha256": "170d0ec80fd55b8006c7dde8f8b9e4c3e8c55c755878538e72b8c53739baf32e"
+    },
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/source-prefix.h",
+      "sha256": "6c04d3a312b912991d80e66580ed5a40e584c8cf022e0e314a02ec4bbdf5eaf2"
+    },
+    {
+      "path": "tests/Game.SharedConditionalHit.Tests/source_probe.py",
+      "sha256": "ab56157a60df5b4c741092f5aa3bb1426a61cc0bfed2ee744da868674e9d4489"
+    }
+  ],
+  "reusedFixtureAuthors": [
+    "tests/Game.SharedRecoil.Tests/Program.cs (minimal setup, Put, full-turn and JSON replay helper pattern; historical catalog loader chain)"
+  ],
+  "readOnlyContentLoaders": [
+    "SourceMechanicsCatalogLoader.LoadAuthenticated",
+    "PretMetronomeMoveCatalog.Load",
+    "PretRocketHideoutPokemon.Load",
+    "PretCeladonApproachPokemon.Load",
+    "PretVermilionGymTrainers.ExtendPokemon",
+    "PretPokemonTowerPokemon.Load",
+    "PretSnorlaxPokemon.Load",
+    "PretEeveePokemon.Load",
+    "PretFuchsiaRoutePokemon.Load"
+  ],
+  "pinnedReferenceFiles": {
+    "src/battle_script_commands.c": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
+    "data/battle_scripts_1.s": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034"
+  },
+  "productDependencies": [
+    "SourceBattleKernel",
+    "SourceFourActionTurns",
+    "SourceMoveHistoryReducer",
+    "SourceRecipeContext.SourceGenericDamage",
+    "SourceRecipeContext.SecondaryEffect",
+    "SourceRecipeContext.FixedDamageAccuracy",
+    "SourceRecipeContext.FixedDamageAdjust",
+    "SourceRecipeContext.SubstitutePresent",
+    "SourceRecipeContext.SourceGenericContact"
+  ]
+}

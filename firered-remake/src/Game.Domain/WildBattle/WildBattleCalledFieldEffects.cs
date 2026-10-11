@@ -113,6 +113,9 @@ public static partial class WildBattleRules
         private void ExecuteCalledFieldEffect(PokemonCatalog catalog, WildBattleSide side, int slot,
             PokemonMoveDefinition move, string purpose, ref bool handled)
         {
+            if (SourceBattleAdmission.IsCanonicalSourceState(catalog, State) &&
+                move.Effect is "EFFECT_MUD_SPORT" or "EFFECT_WATER_SPORT")
+            { Recipes.ExecuteFieldSetting(S(side), slot, move, ref handled); return; }
             // Override weather replacement even for recipes already present in the base profile.
             bool existingFieldRecipe = move.Effect is "EFFECT_RAIN_DANCE" or "EFFECT_SANDSTORM" or "EFFECT_BRICK_BREAK";
             if (!HasCalledFieldRecipe(move.Effect) && !existingFieldRecipe) return;

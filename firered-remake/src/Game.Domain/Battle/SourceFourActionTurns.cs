@@ -68,11 +68,11 @@ public static partial class SourceFourActionTurns
             if (SourceMoveRestrictionRules.Validate(catalog, body) is { } restrictionError) return restrictionError;
             if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
             if (body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter != 0 ||
-                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || !SourceSubstituteRules.Supported(body) ||
-                !SourceFourEntryAbilities.OverlaySupported(body) ||
+                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || !SourceSubstituteRules.Supported(SourcePreparedMoveRules.WithoutPrepared(body)) ||
+                !SourceFourEntryAbilities.OverlaySupported(catalog, body) ||
                 body.ChargeTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
-                body.Rage || body.WaterSport || body.MudSport ||
+                body.Rage ||
                 cell.Registers.Turn is { } turn && (turn.Lock is { } locked && !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
                 cell.Position.Wish is not null)
                 return "source_four_action_residual_or_canceller_not_migrated";
@@ -181,7 +181,18 @@ public static partial class SourceFourActionTurns
             Rng = sorted.Rng, NextAction = 0, TurnStartAbsentMask = next.SourceAbsentMask,
             FourTurn = new(next.Turn, SourceFourActionPhase.Actions, []) };
         var published = SourceBattleEventHooks.Publish(next, (n, t) => new SourceOrderEvent(n, t, WildBattleOrderPhase.Actions, sorted.Order));
-        return new(published.State, [published.Event], selectionTrace.ToImmutable().AddRange(sorted.Trace), null);
+        next = published.State;
+        var preparedEvents = ImmutableArray.CreateBuilder<SourceBattleEvent>(); preparedEvents.Add(published.Event);
+        foreach (var chosen in next.Queue.OrderBy(a => a.Slot.Value))
+        {
+            if (chosen.Kind != SourceActionKind.Move || chosen.MoveSlot is not >= 0 || chosen.OriginalChosenMove is not { } selected) continue;
+            var cell = next.Get(chosen.Slot); var body = cell.Body!;
+            if (!WildBattleSourcePreparedMoves.FocusPunchSetup(selected, body.Status, body.TruantLoafing, false, false)) continue;
+            var setup = SourceBattleEventHooks.Publish(next, (n, t) => new SourceFocusPunchPreparedEvent(n, t,
+                chosen.Slot, chosen.MoveSlot.Value, cell.Member!.Value.Index));
+            next = setup.State; preparedEvents.Add(setup.Event);
+        }
+        return new(next, preparedEvents.ToImmutable(), selectionTrace.ToImmutable().AddRange(sorted.Trace), null);
     }
 
     private static SourceTargetResult ResolveLearnedTarget(PokemonCatalog catalog, SourceBattleFrame frame,
