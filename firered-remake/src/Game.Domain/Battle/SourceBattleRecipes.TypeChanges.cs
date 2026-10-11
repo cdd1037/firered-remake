@@ -23,8 +23,7 @@ internal abstract partial class SourceRecipeContext
 
     // TARGET_TURN_DAMAGED is retained SpecialStatus damage, including a prior delayed
     // physical receipt followed by a zero-loss special hit. ActionFinished owns cleanup.
-    // The singles adapter supplies dynamic Hidden Power/Weather Ball types; those recipes
-    // remain outside four-position admission.
+    // Both owners supply the live Hidden Power/Weather Ball type register.
     internal void SourceColorChange(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition? move)
     {
         if (!TypeChangeEnabled(catalog) || move is null || !MetronomeSourceMoveDefinition.Matches(move) ||

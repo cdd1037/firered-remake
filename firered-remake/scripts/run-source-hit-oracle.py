@@ -18,10 +18,12 @@ p.add_argument('--doubles', action='store_true')
 p.add_argument('--stats', action='store_true')
 p.add_argument('--stat-mask', action='store_true')
 p.add_argument('--stat-moves', action='store_true')
+p.add_argument('--explosions', action='store_true')
 p.add_argument('--motion-vectors', action='store_true')
 p.add_argument('--vacant-partner', action='store_true')
-p.add_argument('--reference', type=Path, default=Path((root / '.tools/reference-root').read_text().strip()))
+p.add_argument('--reference', type=Path, default=Path((root / '.tools/reference-root').read_text().strip()) if (root / '.tools/reference-root').exists() else None)
 a = p.parse_args()
+if a.reference is None: p.error('--reference is required without .tools/reference-root')
 if a.vacant_partner and not a.doubles: p.error("--vacant-partner requires --doubles")
 out = a.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -113,6 +115,14 @@ def run_stat_mask_oracle():
         hostSha256=hashlib.sha256(generated.encode()).hexdigest(), originalRuntimeCompared=False)
     (out / 'provenance.json').write_text(json.dumps(provenance, indent=2)+'\n')
     print('PASS original General_StatsChange callbacks and scheduler:', len(bodies), 'functions,', rows, 'frames, 330 vectors')
+
+if a.explosions:
+    if a.stats or a.stat_mask or a.stat_moves or a.motion_vectors or a.doubles or a.vacant_partner:
+        p.error('--explosions is exhaustive and cannot be combined with other fixture modes')
+    helper=importlib.util.spec_from_file_location('explosion_oracle',root/'scripts/source-explosion-oracle.py')
+    module=importlib.util.module_from_spec(helper);helper.loader.exec_module(module)
+    module.run(root,a.reference,out)
+    raise SystemExit(0)
 
 if a.stat_moves:
     helper=importlib.util.spec_from_file_location('stat_moves_oracle',root/'scripts/source-stat-moves-oracle.py')

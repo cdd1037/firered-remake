@@ -16,7 +16,7 @@ public partial class CampaignView
     private readonly Dictionary<WildBattleSide,int> _sourceSubstituteHp=[];
     private readonly Dictionary<string,ImageTexture> _sourceSubstituteTextures=[];
     private JsonDocument? _sourceMoveManifest;
-    private IReadOnlyDictionary<int,SourceAnimationScript>? _sourceStatMoveScripts;
+    private IReadOnlyDictionary<int,SourceAnimationScript>? _sourceStatMoveScripts,_sourceExplosionScripts;
     private SourceMetallicMaterial? _sourceMetallicMaterial;
     private SourceBattleFrameComposer? _sourceMoveComposer;
     private ImageTexture? _sourceMoveField;
@@ -175,8 +175,14 @@ public partial class CampaignView
     }
     private void StartSourceMoveAnimation(CampaignMoveAnimationDispatch dispatch,Dictionary<string,SourcePixelAsset> assets,List<AnimationBattler> battlers,bool doubles)
     {
+        if(SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourceExplosionScripts is null)
+        {
+            var imported=SourceExplosionAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/source-explosion-animations"));
+            _sourceExplosionScripts=imported.Scripts;_sourceMoveAssets["explosion"]=imported.Explosion;
+        }
+        if(SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId))assets["explosion"]=_sourceMoveAssets["explosion"];
         if(SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)&&_sourceStatMoveScripts is null)(_sourceStatMoveScripts,_sourceMetallicMaterial)=SourceStatMoveCatalog.Read(System.IO.Path.Combine(_root,"content/generated/source-stat-moves"));
-        var script=SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)?_sourceStatMoveScripts![dispatch.SourceMoveId]:SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId);
+        var script=SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceExplosionScripts![dispatch.SourceMoveId]:SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)?_sourceStatMoveScripts![dispatch.SourceMoveId]:SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId);
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value));
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
         if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){Apply(new("ack"));return;}

@@ -155,6 +155,17 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=FuchsiaRouteSynthManifestIdentity.CueCount)throw new InvalidDataException("Fuchsia route cry manifest contract differs.");
             cues=[..cues,..extension.Cues];
         }
+        // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
+        if(includeFuchsiaRoute)
+        {
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/source-explosion-animations/synth-manifest.json");
+            if(new FileInfo(path).Length!=831)throw new InvalidDataException("Explosion synth manifest length differs.");
+            var addition=File.ReadAllBytes(path);
+            if(Convert.ToHexStringLower(SHA256.HashData(addition))!="c8b16dbdac6ad1ad6cf101ffe3625886a8331d3a03d07d9e617aff50d834426a")throw new InvalidDataException("Explosion synth manifest differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(addition,options)??throw new InvalidDataException("Missing explosion sound metadata.");
+            if(extension.SourceCommit!=manifest.SourceCommit||extension.SchemaVersion!=1||extension.Cues.Length!=2)throw new InvalidDataException("Explosion sound metadata contract differs.");
+            cues=[..cues,..extension.Cues];
+        }
         _catalog = new(StringComparer.Ordinal);
         foreach (var cue in cues)
         {

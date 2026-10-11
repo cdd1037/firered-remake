@@ -58,6 +58,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
         PrepareCharge(invocation.Actor,move);
         PrepareDynamicPower(invocation.Actor, move);
+        PrepareDynamicType(move);
         if (ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose))
         {
             CompleteScriptTarget();
@@ -81,6 +82,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         var firstTarget = invocation.Target;
         PrepareCharge(invocation.Actor,move);
         PrepareDynamicPower(invocation.Actor, move);
+        PrepareDynamicType(move);
         bool blocked = ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose);
         if (blocked) CompleteScriptTarget();
         else
@@ -151,6 +153,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled && HasSleepAttackRecipe(move.Effect)) { ExecuteSleepAttack(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasSleepResidualRecipe(move.Effect)) { ExecuteSleepResidual(catalog, invocation.Actor, target, invocation.ChosenSlot, move); handled = true; }
                 if (!handled && HasTargetMarkRecipe(move.Effect)) { ExecuteTargetMark(invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
+                if (!handled && HasMoveRestrictionRecipe(move.Effect))
+                { ExecuteMoveRestriction(invocation.Actor, target, invocation.PpSlot, move, purpose); handled = true; }
                 if (!handled && HasCopyStateRecipe(move.Effect))
                 { ExecuteCopyState(catalog, invocation.Actor, target, invocation.PpSlot, move); handled = true; }
                 if (!handled) ExecuteTypeChange(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
@@ -163,6 +167,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled) ExecuteAdditionalPrimaryStatus(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteRetaliation(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled && HasGroundSpreadRecipe(move.Effect)) { ExecuteGroundSpread(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
+                if (!handled && HasDynamicTypeRecipe(move.Effect)) { ExecuteDynamicType(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasDynamicPowerRecipe(move.Effect)) { ExecuteDynamicPower(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasFixedDamageRecipe(move.Effect)) { ExecuteFixedDamage(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
@@ -241,7 +247,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             ApplyFrameHitItems();
             EndSubstitutePass();
             Frame = SourceMoveHistoryReducer.Apply(catalog, Frame, invocation,
-                Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect);
+                Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect, DynamicHitType(move));
         }
         completedTargetPasses++;
     }

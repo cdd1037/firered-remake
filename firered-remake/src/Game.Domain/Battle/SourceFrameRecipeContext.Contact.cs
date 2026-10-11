@@ -25,7 +25,8 @@ internal sealed partial class FrameRecipeContext
     private void RecordContactDamage(BattlerSlot target, MoveId id, int damage, int lost, bool substitute = false)
     {
         // Delayed datahpupdate executes with gCurrentMove=NONE, hence physical TYPE_NORMAL.
-        string type = delayedContactDamage ? "TYPE_NORMAL" : catalog.Moves[id].Type;
+        string type = delayedContactDamage ? "TYPE_NORMAL" : catalog.Moves[id].Effect == "EFFECT_HIDDEN_POWER"
+            ? catalog.Moves[id].Type : DynamicHitType(catalog.Moves[id]);
         bool physical = TypeRules.Category(Enum.Parse<ElementType>(type[5..], true)) == DamageCategory.Physical;
         bool noEffect = fixedDamageNoEffect ?? (damage == 0 && !HeldDamageEffectiveZero(target));
         HitItemsCommandDamage(damage, noEffect);
@@ -44,7 +45,7 @@ internal sealed partial class FrameRecipeContext
         SourceColorChange(catalog, actor, target, move);
         ContactAbility(catalog, actor, target, move, purpose, damage);
     }
-    internal override string TypeChangeHitType(PokemonMoveDefinition move) => move.Type;
+    internal override string TypeChangeHitType(PokemonMoveDefinition move) => DynamicHitType(move);
     internal override string? TypeChangeLastHitType(BattlerSlot actor) => Frame.Get(actor).Registers.History?.LastHitByType;
     internal override BattlerSlot? TypeChangeLastHitBy(BattlerSlot actor) => Frame.Get(actor).Registers.LastHitBy;
     internal override bool TypeChangeMultipleTurns(BattlerSlot source) =>

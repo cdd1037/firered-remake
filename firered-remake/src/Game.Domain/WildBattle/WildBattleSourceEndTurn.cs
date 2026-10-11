@@ -154,14 +154,7 @@ public static partial class WildBattleRules
         private void SourceEndTurnDisable(WildBattleSide side)
             => new SinglesEndTurnBridge(this).Disable(new((int)side));
         private void SourceEndTurnEncore(WildBattleSide side)
-        {
-            var mon = Get(side);
-            if (mon.EncoreMoveSlot is not { } slot) return;
-            if (mon.EncoredMove is { } move && mon.Pokemon.Moves[slot].Move != move)
-            { ChangeEncore(side, slot, 0, "move-changed"); return; }
-            int remaining = mon.Pokemon.Moves[slot].CurrentPp == 0 ? 0 : mon.EncoreTurnsRemaining - 1;
-            ChangeEncore(side, slot, remaining, remaining == 0 ? "expired" : "countdown");
-        }
+            => new SinglesEndTurnBridge(this).EncoreResidual(new((int)side));
 
         private void SourceEndTurnCheckTeamsLost()
         {

@@ -64,14 +64,14 @@ public static partial class SourceFourActionTurns
             if (frame.EntryAbilities is { } entry && entry.AppliedEntries[cell.Slot.Value] != cell.Occupant ||
                 frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(WildBattleTransformationRules.PersistentPokemon(body).AbilityId))
                 return "source_four_action_initial_entry_required";
+            if (SourceMoveRestrictionRules.Validate(catalog, body) is { } restrictionError) return restrictionError;
             if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
             if (body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter != 0 ||
                 (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || !SourceSubstituteRules.Supported(body) ||
                 body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) ||
-                body.DestinyBond || body.Imprison ||
+                body.DestinyBond ||
                 body.ChargeTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
-                body.EncoreMoveSlot is not null ||
                 body.Rage || body.WaterSport || body.MudSport ||
                 cell.Registers.Turn is { } turn && (turn.Lock is { } locked && !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
                 cell.Position.Wish is not null)
@@ -91,7 +91,8 @@ public static partial class SourceFourActionTurns
     /// Unsupported positive-PP moves must never earn a fallback Struggle.</summary>
     public static bool RequiresStruggle(PokemonCatalog catalog, SourceBattleFrame frame, BattlerSlot actor) =>
         actor.Value < frame.BattlerCount && frame.CanAct(actor) && frame.Get(actor).Registers.Turn?.Lock is null &&
-        WildBattleRules.IsCalledMoveSelectable(catalog, frame.Get(actor).Body!, WildBattleRules.StruggleSlot);
+        !Enumerable.Range(0, frame.Get(actor).Body!.Pokemon.Moves.Length).Any(slot =>
+            SourceMoveRestrictionRules.Selectable(catalog, frame.Get(actor).Body!, slot, SourceMoveRestrictionRules.Opponents(frame, actor)));
 
     private static bool CleanRecipe(PokemonMoveDefinition move) => SourceBattleKernel.SupportsRecipe(move);
 
@@ -133,6 +134,8 @@ public static partial class SourceFourActionTurns
             else if (recharge is null)
             {
                 var learned = body.Pokemon.Moves[action.MoveSlot.Value];
+                if (body.EncoreTurnsRemaining > 0 && body.EncoreMoveSlot != action.MoveSlot) return Fail(frame, "source_four_action_selection_encore");
+                if (SourceMoveRestrictionRules.Imprisoned(learned.Move, SourceMoveRestrictionRules.Opponents(next, action.Slot))) return Fail(frame, "source_four_action_selection_imprisoned");
                 if (body.DisableTurnsRemaining > 0 && learned.Move == body.DisabledMove) return Fail(frame, "source_four_action_selection_disabled");
                 if (learned.CurrentPp == 0) return Fail(frame, "source_four_action_selection_no_pp");
             }
@@ -228,25 +231,43 @@ public static partial class SourceFourActionTurns
                 next = SourceFourMedicineRules.Execute(frame, action);
             else
             {
-                var move = SourceBattleKernel.ActionMove(catalog, frame.Get(action.Slot), action.MoveSlot!.Value);
+                var actionFrame = frame;
+                bool encoreRedirect = action.MoveSlot != WildBattleRules.StruggleSlot && frame.Get(action.Slot).Registers.Turn?.Lock is null &&
+                    frame.Get(action.Slot).Body!.EncoreMoveSlot is not null;
+                if (encoreRedirect)
+                {
+                    var cell = frame.Get(action.Slot); var body = cell.Body!; int position = body.EncoreMoveSlot!.Value;
+                    if (position >= body.Pokemon.Moves.Length) return Fail(frame, "source_four_action_encore_empty_position_not_migrated");
+                    action = action with { MoveSlot = position };
+                    if (SourceMoveRestrictionRules.EncoreOverwritten(body))
+                    {
+                        var cleared = SourceBattleEventHooks.Publish(actionFrame, (n, t) => new SourceEncoreChangedEvent(n, t,
+                            action.Slot, position, body.EncoreTurnsRemaining, 0, "move-changed"));
+                        actionFrame = cleared.State; events.Add(cleared.Event); body = SourceMoveRestrictionRules.ClearEncore(body);
+                    }
+                    actionFrame = actionFrame with { Queue = actionFrame.Queue.SetItem(frame.NextAction, action),
+                        Slots = actionFrame.Slots.SetItem(action.Slot.Value, cell with { Body = body,
+                            Registers = cell.Registers with { ChosenMoveSlot = position, LastMoveSlot = position } }) };
+                }
+                var move = SourceBattleKernel.ActionMove(catalog, actionFrame.Get(action.Slot), action.MoveSlot!.Value);
                 // Source forced/recharge selection precedes the overwritten-selected-move branch.
                 bool struggle = action.MoveSlot == WildBattleRules.StruggleSlot;
-                var replaced = !struggle && frame.Get(action.Slot).Registers.Turn?.Lock is null && action.OriginalChosenMove != move.Id;
-                var selection = struggle ? SourceMoveTargeting.ResolveCalled(frame, action.Slot, move)
-                    : replaced ? SourceMoveTargeting.ResolveReplaced(frame, action.Slot, move)
-                    : ResolveLearnedTarget(catalog, frame, action.Slot, action.Target!.Value, move);
+                var replaced = encoreRedirect || !struggle && actionFrame.Get(action.Slot).Registers.Turn?.Lock is null && action.OriginalChosenMove != move.Id;
+                var selection = struggle ? SourceMoveTargeting.ResolveCalled(actionFrame, action.Slot, move)
+                    : replaced ? SourceMoveTargeting.ResolveReplaced(actionFrame, action.Slot, move)
+                    : ResolveLearnedTarget(catalog, actionFrame, action.Slot, action.Target!.Value, move);
                 if (selection.Fault is { } targetError) return Fail(frame, targetError);
                 var target = selection.Target ?? (move.Effect == "EFFECT_SPIKES" ? action.Slot.Opposite : (BattlerSlot?)null);
                 SourceKernelResult result;
                 if (target is null)
                 {
                     if (!CleanRecipe(move)) return Fail(frame, "source_four_action_effect_phase_not_migrated");
-                    var noTarget = new FrameRecipeContext(catalog, frame with { Rng = selection.Rng },
+                    var noTarget = new FrameRecipeContext(catalog, actionFrame with { Rng = selection.Rng },
                         new(token.Owner, frame.Revision, action.MoveSlot.Value, replaced ? action.Slot.Opposite : action.Target!.Value, frame.NextAction));
                     noTarget.RunNoTarget();
                     result = new(noTarget.Frame, noTarget.Events.ToImmutable(), noTarget.Trace.ToImmutable(), noTarget.Invocation, null);
                 }
-                else result = SourceBattleKernel.ResolveAction(catalog, frame with { Rng = selection.Rng },
+                else result = SourceBattleKernel.ResolveAction(catalog, actionFrame with { Rng = selection.Rng },
                     new(token.Owner, frame.Revision, action.MoveSlot.Value, target.Value, frame.NextAction) {
                         LightningRodRedirected = selection.LightningRodRedirected });
                 if (!result.Succeeded) return Fail(frame, result.Fault!);

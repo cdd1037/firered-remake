@@ -93,6 +93,9 @@ public sealed partial class SourceBattleAnimation
     private readonly int[] _oamY=Enumerable.Repeat(160,64).ToArray();
     public bool Active{get;private set;}=true;
     public CommittedMoveAnimation Cue=>_cue;
+    public int ActiveVisualCount=>_sprites.Count+_tasks.Count;
+    public bool PaletteFadeActive=>_fade?.Active==true;
+    public bool GraphicsLoaded=>_loaded.Count>0;
     public SourceBattleAnimation(SourceAnimationScript script,CommittedMoveAnimation cue,IEnumerable<AnimationBattler> battlers,bool doubles,ISourceAnimationAudio audio)
     {
         _script=script;_cue=cue;_audio=audio;_doubles=doubles;_battlerCount=doubles?4:2;_battlers=battlers.ToDictionary(x=>x.Slot.Value);
@@ -101,13 +104,13 @@ public sealed partial class SourceBattleAnimation
         if(script.Commands.Length is <1 or >32||script.Commands[^1].Op!="end")throw new InvalidDataException("Unbounded or unterminated script.");
         ValidateStatRoot();
         foreach(var command in script.Commands.Concat(script.Subroutines.Values.SelectMany(s=>s)))Validate(command);
-        if(script.Subroutines.Count>1||script.Subroutines.Any(p=>p.Key!="GrowthEffect"||p.Value.Length!=4||p.Value[^1].Op!="return"||p.Value.Any(c=>c.Op=="call")))throw new InvalidDataException("Unadmitted source subroutine.");
+        ValidateSubroutines();
     }
     private void Fail(SourceAnimationCommand c,string reason)=>throw new SourceAnimationException(new(_script.MoveId,_script.Label,c.Line,c.Op,reason));
     private void Validate(SourceAnimationCommand c)
     {
         if(!SupportedCommands.Contains(c.Op))Fail(c,"No accepted source adapter.");
-        if(ValidateStatMoveOperand(c))return;
+        if(ValidateExplosionOperand(c)||ValidateStatMoveOperand(c))return;
         int count=c.Op switch{"loadspritegfx" or "monbg" or "clearmonbg" or "delay"=>1,"setalpha" or "playsewithpan"=>2,"createsprite"=>c.Args.FirstOrDefault() switch
         {"gBasicHitSplatSpriteTemplate" or "gScratchSpriteTemplate"=>7,"gHorizontalLungeSpriteTemplate"=>5,"gCuttingSliceSpriteTemplate" or "gSlashSliceSpriteTemplate"=>6,"gFalseSwipeSliceSpriteTemplate"=>3,"gFalseSwipePositionedSliceSpriteTemplate"=>4,"gSlideMonToOffsetSpriteTemplate" or "gFistFootSpriteTemplate"=>8,"gSlideMonToOriginalPosSpriteTemplate"=>6,_=>-1},"createvisualtask"=>c.Args.FirstOrDefault() is "AnimTask_Flash" or "AnimTask_StatsChange"?2:7,"loopsewithpan"=>4,_=>0};
         if(c.Args.Length!=count)Fail(c,"Command argument shape differs.");
@@ -198,7 +201,7 @@ public sealed partial class SourceBattleAnimation
                     int slot=Enumerable.Range(0,64).First(i=>(!_battlers.TryGetValue(i,out var reserved)||!reserved.Visible)&&_sprites.All(s=>s.Slot!=i));
                     _oamY[slot]=a[0] is "gHorizontalLungeSpriteTemplate" or "gSlideMonToOffsetSpriteTemplate" or "gSlideMonToOriginalPosSpriteTemplate"?160:0;
                     int modifier=Number(a[2]);int priority=Math.Max(3,_battlers[Resolve(a[1]).Value].Subpriority+(modifier>=64?modifier-64:-modifier));
-                    if(a[0]=="gComplexPaletteBlendSpriteTemplate")_sprites.Add(new ComplexPaletteSprite(slot,priority,this));
+                    if(a[0]=="gComplexPaletteBlendSpriteTemplate")_sprites.Add(new ComplexPaletteSprite(slot,priority,a.Skip(3).Select(PaletteNumber).ToArray(),this));
                     else if(a[0]=="gBasicHitSplatSpriteTemplate")
                     {
                         var target=Resolve(a[5]);var center=_battlers[target.Value].Center(_doubles,true);
@@ -216,6 +219,7 @@ public sealed partial class SourceBattleAnimation
                     }
                     break;
                 case "createvisualtask":
+                    if(a[0]=="AnimTask_BlendBattleAnimPal"){var blend=new BlendPaletteTask(a.Skip(2).Select(PaletteNumber).ToArray(),this);blend.Step(this);if(!blend.Finished)_tasks.Add(blend);break;}
                     if(a[0]=="AnimTask_Minimize"){_tasks.Add(new MinimizeTask(this));break;}
                     if(a[0]=="AnimTask_Withdraw"){_tasks.Add(new WithdrawTask(this));break;}
                     if(a[0]=="AnimTask_MetallicShine"){_tasks.Add(new MetallicTask(this));break;}
@@ -225,7 +229,9 @@ public sealed partial class SourceBattleAnimation
                     if(a[0]=="AnimTask_Flash"){_tasks.Add(new FlashTask(this));break;}
                     if(a[0]=="AnimTask_TranslateMonEllipticalRespectSide")
                     {var ellipse=new EllipseTask(Resolve(a[2]),Number(a[3])*(_cue.Actor.IsPlayer?1:-1),Number(a[4]),Number(a[5]),Number(a[6]));ellipse.Step(this);if(!ellipse.Finished)_tasks.Add(ellipse);break;}
-                    var shake=new ShakeTask(Resolve(a[2]),Number(a[3]),Number(a[4]),Number(a[5]),Number(a[6]),a[0]=="AnimTask_ShakeMon2");
+                    var shakeSlot=ResolveShakeParticipant(Number(a[2]),a[0]=="AnimTask_ShakeMon2");
+                    if(shakeSlot is null)break;
+                    var shake=new ShakeTask(shakeSlot.Value,Number(a[3]),Number(a[4]),Number(a[5]),Number(a[6]),a[0]=="AnimTask_ShakeMon2");
                     _offsets[shake.Slot.Value]=new(shake.X,shake.Y);shake.Step(this);_tasks.Add(shake);break;
                 case "loopsewithpan":
                     var loop=new SoundLoop(a[0],AdjustPanning(a[1]=="SOUND_PAN_ATTACKER"?-64:63),Number(a[2]),Number(a[3]));loop.Step(this);if(!loop.Finished)_soundTasks.Add(loop);break;

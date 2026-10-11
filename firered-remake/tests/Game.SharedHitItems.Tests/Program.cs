@@ -32,6 +32,19 @@ foreach(string item in new[]{Rock,Bell})foreach(bool opponent in new[]{false,tru
  var result=WildBattleRules.ResolveMove(catalog,started.State!,0);if(!result.Succeeded)throw new Exception("canonical turn "+result.Fault);
  goldens.Add(new{species=recipe.Item1,move=recipe.Item2,item,opponent,seed,hash=Hash(result)});
 }
+var twoGoldens=new List<object>();
+foreach(var pair in new[]{("NIDORAN_M","DOUBLE_KICK"),("MAROWAK","BONEMERANG"),("BEEDRILL","TWINEEDLE")})
+foreach(uint seed in new uint[]{0,31,38,127})foreach(bool opponent in new[]{false,true}){
+ var attacker=Mon(pair.Item1,50,Bell,pair.Item2);attacker=Hp(attacker,attacker.Pokemon.CurrentHp/2);var defender=Mon("SNORLAX",100,"ITEM_NONE","DEFENSE_CURL");
+ var started=WildBattleRules.StartSourceWild(proof,BattleRulesProfile.CanonicalSourceSingles,[opponent?defender:attacker],0,opponent?attacker:defender,new(seed));if(!started.Succeeded)throw new Exception("fixed-two canonical start "+started.Fault);
+ var result=WildBattleRules.ResolveMove(catalog,started.State!,0);if(!result.Succeeded)throw new Exception("fixed-two canonical action "+result.Fault);
+ twoGoldens.Add(new{move=pair.Item2,seed,opponent,hash=Hash(result)});
+}
+if(args[2]=="capture-two"){
+ var path=Path.Combine(output,"fixed-two-singles-before.json");if(File.Exists(path))throw new Exception("Refuse golden overwrite");
+ File.WriteAllText(path,Json(new{baseCommit="db8579a28734e83ead8c3fa77bd57825a84370d3",twoGoldens})+"\n");return 0;
+}
+bool fixedTwoOnly=args[2]=="fixed-two";
 var goldenPath=Path.Combine(AppContext.BaseDirectory,"singles-before.json");
 if(args[2]=="capture"){
  if(typeof(SourceBattleKernel).Assembly.GetType("Game.Domain.Battle.FrameRecipeContext")!.GetMethod("ApplyFrameHitItems",BindingFlags.Instance|BindingFlags.NonPublic)is not null)throw new Exception("Capture requires unmodified frame source");
@@ -41,7 +54,7 @@ if(args[2]=="capture"){
 }
 int groups=0,checks=0,failures=0,actualActions=0,completeTurns=0,sourceVectors=0;var report=new List<object>();var actionEvidence=new List<object>();
 void Check(bool ok,string label){checks++;if(!ok)throw new Exception(label);}
-void Test(string label,Action body){groups++;try{body();report.Add(new{label,passed=true});Console.WriteLine("PASS "+label);}catch(Exception ex){failures++;report.Add(new{label,passed=false,error=ex.ToString()});Console.WriteLine("FAIL "+label+" "+ex);}}
+void Test(string label,Action body){if(fixedTwoOnly&&!label.StartsWith("fixed-two"))return;groups++;try{body();report.Add(new{label,passed=true});Console.WriteLine("PASS "+label);}catch(Exception ex){failures++;report.Add(new{label,passed=false,error=ex.ToString()});Console.WriteLine("FAIL "+label+" "+ex);}}
 Test("unchanged complete canonical singles results",()=>{
  using var old=JsonDocument.Parse(File.ReadAllText(goldenPath));Check(goldens.Count==96,"nonempty frozen corpus");
  Check(Json(old.RootElement.GetProperty("goldens"))==Json(goldens),"all 96 serialized state/event/RNG result hashes unchanged");
@@ -212,7 +225,26 @@ Test("unsupported dependent callers abilities and invalid order stay atomic",()=
  var malformed=Receipt(alone,3,new(-1,2));Atomic(malformed,SourceFourActionTurns.BeginActions(catalog,malformed,malformed.Revision,Choices(malformed,2)),"negative receipt");
  var begun=Ok(SourceFourActionTurns.BeginActions(catalog,alone,alone.Revision,Choices(alone,2)));var done=Ok(SourceFourActionTurns.Advance(catalog,begun.State,begun.Continuation!.Value));Atomic(done.State,SourceFourActionTurns.Advance(catalog,done.State,begun.Continuation.Value),"stale continuation");
 });
-File.WriteAllText(Path.Combine(output,"results.json"),Json(new{groups,checks,failures,runtime=Environment.Version.ToString(),canonicalHashes=goldens.Count,actualActions,completeTurns,sourceVectors,results=report})+"\n");
+Test("fixed-two unchanged canonical complete results and authentic source donors",()=>{
+ using var b=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"fixed-two-singles-before.json")));Check(Json(b.RootElement.GetProperty("twoGoldens"))==Json(twoGoldens),"24 frozen canonical full-result hashes unchanged");
+ foreach(var pair in new[]{("NIDORAN_M","DOUBLE_KICK"),("MAROWAK","BONEMERANG"),("BEEDRILL","TWINEEDLE")})Check(catalog.Species[new("pret:SPECIES_"+pair.Item1)].LevelUpMoves.Any(m=>m.Move==Id(pair.Item2)&&m.Level<=50),"natural donor "+pair.Item1+"/"+pair.Item2);
+});
+Test("fixed-two real holder positions finish two hits with one PP and no count draw",()=>{
+ foreach(var pair in new[]{("NIDORAN_M","DOUBLE_KICK"),("MAROWAK","BONEMERANG"),("BEEDRILL","TWINEEDLE")})foreach(int actor in Enumerable.Range(0,4)){
+  var f=Frame(actor,pair.Item1,pair.Item2,Bell,31);var r=First(f,actor);var count=r.Events.OfType<SourceMultiHitEvent>().Single();
+  Check(count.Actor.Value==actor&&count.Target.Value==(actor^1)&&count.PlannedHits==2&&count.ActualHits==2,"two distinct actual hit commands");Check(r.Events.OfType<SourceHpChangedEvent>().Count(e=>e.Actor.Value==actor&&e.Target.Value==(actor^1))==2,"two actual HP applications");
+  Check(!r.Trace.Any(t=>t.Purpose.Contains("multi-hit-count")),"fixed count consumes no count RNG");Check(r.Trace.Count(t=>t.Purpose.Contains("secondary-effect"))==1,"one final secondary command");
+  Check(r.State.Get(new(actor)).Body!.Pokemon.Moves[0].CurrentPp==catalog.Moves[Id(pair.Item2)].Pp-1,"one PP expenditure");Check(Heals(r).Length==2,"per-hit Shell Bell move end");Finish(r);
+ }
+});
+Test("fixed-two substitute break contact KO Endure immunity and item ownership",()=>{
+ var f=Frame(2,"NIDORAN_M","DOUBLE_KICK",Rock,31);f=Put(f,3,f.Slots[3].Body! with{CalledVolatile=new(){SubstituteHp=1}});int hp=f.Slots[3].Body!.Pokemon.CurrentHp;var r=First(f,2);Check(r.Events.OfType<SourceMultiHitEvent>().Single().ActualHits==2&&r.State.Slots[3].Body!.Pokemon.CurrentHp<hp,"second hit reaches body after doll breaks");Check(Rocks(r).Length==2,"doll-only first hit has no physical receipt; body second hit and final visit draw");
+ var endure=Frame(2,"NIDORAN_M","DOUBLE_KICK","ITEM_NONE",31);endure=Put(endure,3,Hp(endure.Slots[3].Body!,1) with{Enduring=true});var end=First(endure,2);Check(end.Events.OfType<SourceMultiHitEvent>().Single().ActualHits==1&&end.State.Slots[3].Body!.Pokemon.CurrentHp==1,"Endure ends loop after one command");
+ var rough=Frame(2,"NIDORAN_M","DOUBLE_KICK","ITEM_NONE",31);rough=Put(rough,2,Hp(rough.Slots[2].Body!,1));rough=Put(rough,3,Mon("CARVANHA",100,"ITEM_NONE","LEER"));var recoil=First(rough,2);Check(recoil.Events.OfType<SourceMultiHitEvent>().Single().ActualHits==1&&recoil.State.Slots[2].Body!.Pokemon.CurrentHp==0,"contact holder KO stops second strike");
+ var immune=Frame(2,"MAROWAK","BONEMERANG","ITEM_NONE",31);immune=Put(immune,3,Mon("PIDGEY",100,"ITEM_NONE","GROWL"));var no=First(immune,2);Check(no.Events.OfType<SourceMultiHitEvent>().Single().ActualHits==0&&!no.Trace.Any(t=>t.Purpose.EndsWith(".damage")),"immune fixed-two stops before damage multiplier draw");
+ var bad=f with{EventSequence=long.MaxValue};Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad,2)),"fixed-two publication overflow");
+});
+File.WriteAllText(Path.Combine(output,"results.json"),Json(new{groups,checks,failures,runtime=Environment.Version.ToString(),canonicalHashes=goldens.Count,fixedTwoHashes=twoGoldens.Count,fixedTwoOnly,recipeAdmission=catalog.Moves.Values.Count(SourceBattleKernel.SupportsRecipe),admittedMoves=catalog.Moves.Values.Where(SourceBattleKernel.SupportsRecipe).Select(m=>m.Id.Value).Order().ToArray(),actualActions,completeTurns,sourceVectors,results=report})+"\n");
 File.WriteAllText(Path.Combine(output,"actions.json"),Json(actionEvidence)+"\n");
 Console.WriteLine(Json(new{groups,checks,failures,actualActions,completeTurns,sourceVectors,runtime=Environment.Version.ToString()}));
-return failures==0&&groups>=10?0:1;
+return failures==0&&(fixedTwoOnly?groups==3:groups>=10)?0:1;

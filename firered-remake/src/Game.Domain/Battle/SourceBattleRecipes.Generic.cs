@@ -12,7 +12,7 @@ internal abstract partial class SourceRecipeContext
         "EFFECT_THAW_HIT" or "EFFECT_TRI_ATTACK" or "EFFECT_FREEZE_HIT" or "EFFECT_BURN_HIT" or "EFFECT_PARALYZE_HIT" or "EFFECT_POISON_HIT" or "EFFECT_CONFUSE_HIT" or
         "EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT" or "EFFECT_SPEED_DOWN_HIT" or
         "EFFECT_ACCURACY_DOWN_HIT" or "EFFECT_DEFENSE_DOWN_HIT" or "EFFECT_SPECIAL_DEFENSE_DOWN_HIT" or
-        "EFFECT_ATTACK_UP_HIT" or "EFFECT_TRAP" or "EFFECT_ABSORB" or "EFFECT_MULTI_HIT" or
+        "EFFECT_ATTACK_UP_HIT" or "EFFECT_TRAP" or "EFFECT_ABSORB" or "EFFECT_MULTI_HIT" or "EFFECT_DOUBLE_HIT" or "EFFECT_TWINEEDLE" or
         "EFFECT_EXPLOSION" or "EFFECT_POISON" or "EFFECT_SLEEP" or "EFFECT_CONFUSE" or "EFFECT_ATTACK_UP" or
         "EFFECT_ATTACK_DOWN_2" or "EFFECT_SPEED_DOWN_2" or "EFFECT_SPECIAL_DEFENSE_DOWN_2" or
         "EFFECT_RESTORE_HP" or "EFFECT_MEAN_LOOK";
@@ -63,6 +63,8 @@ internal abstract partial class SourceRecipeContext
                 case "EFFECT_THAW_HIT": ExecuteThawHit(catalog, side, target, slot, move, purpose); return;
                 case "EFFECT_TRI_ATTACK": ExecuteTriAttack(catalog, side, target, slot, move, purpose); return;
                 case "EFFECT_FREEZE_HIT": ExecuteFreezeHit(catalog, side, target, slot, move, purpose); return;
+                case "EFFECT_DOUBLE_HIT": SourceGenericMultiHit(catalog, side, target, slot, move, purpose, fixedTwoHits: true); return;
+                case "EFFECT_TWINEEDLE": SourceGenericMultiHit(catalog, side, target, slot, move, purpose, fixedTwoHits: true, twineedle: true); return;
                 case "EFFECT_MULTI_HIT": SourceGenericMultiHit(catalog, side, target, slot, move, purpose); return;
                 case "EFFECT_EXPLOSION": SourceGenericExplosion(catalog, side, target, slot, move, purpose); return;
                 default: SourceGenericHit(catalog, side, target, slot, move, purpose); return;
@@ -92,13 +94,13 @@ internal abstract partial class SourceRecipeContext
         }
 
         internal int SourceGenericDamage(PokemonCatalog catalog, WildBattleCombatant actor, WildBattleCombatant target,
-            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null) =>
+            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null, ElementType? effectiveType = null, int? damageMultiplier = null) =>
             ForestBattleDamage.Calculate(catalog, actor, target, move.Id, critical, percent,
                 true, true, true, true, route3Rules: true, dynamicPower: dynamicPower, mtMoonRules: true, ceruleanRules: true, billRules: true,
                 vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
                 rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(targetSide),
-                sourceDefinition: move, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
-                sourceDamageMultiplier: SourceChargeRules.DamageMultiplier(SemiInvulnerable(targetSide),move),
+                sourceDefinition: move, sourceEffectiveType: effectiveType, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
+                sourceDamageMultiplier: damageMultiplier ?? SourceChargeRules.DamageMultiplier(SemiInvulnerable(targetSide),move),
                 sourceSolarBeamWeakWeather: move.Effect == "EFFECT_SOLAR_BEAM" && (SourceCalledRain || StruggleSandstorm || SettingWeather.HailTurnsRemaining > 0),
                 weatherSuppressed: SourceDamageWeatherSuppressed, sourceDoubleBattle: SourceDoubleBattle,
                 sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor),

@@ -168,6 +168,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
     internal override void UnmigratedBattlerStep(SourceBattlerEndTurnStep step, BattlerSlot slot)
     {
         if (step == SourceBattlerEndTurnStep.Thrash) { RampageResidual(slot); return; }
+        if (step == SourceBattlerEndTurnStep.Encore) { EncoreResidual(slot); return; }
         if (step == SourceBattlerEndTurnStep.Disable) { Disable(slot); return; }
         if (step is SourceBattlerEndTurnStep.Items1 or SourceBattlerEndTurnStep.Items2)
         {

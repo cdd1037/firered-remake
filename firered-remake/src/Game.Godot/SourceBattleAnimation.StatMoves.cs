@@ -131,15 +131,20 @@ public sealed partial class SourceBattleAnimation
     }
     private sealed class ComplexPaletteSprite:VisualSprite
     {
-        private int _delay=8,_toggle=8,_remaining=2,_phase;
-        public ComplexPaletteSprite(int slot,int priority,SourceBattleAnimation owner):base(slot,priority){owner.BlendPalettes(0xe,14,0xffff);}
+        private int _delay,_toggle,_remaining,_phase;
+        private readonly uint _mask;private readonly ushort _firstColor,_secondColor;private readonly int _firstBlend,_secondBlend;
+        public ComplexPaletteSprite(int slot,int priority,int[] args,SourceBattleAnimation owner):base(slot,priority)
+        {
+            _mask=owner.SelectPalettes(args[0]);_delay=_toggle=args[1];_remaining=args[2];_firstColor=(ushort)args[3];_firstBlend=args[4];_secondColor=(ushort)args[5];_secondBlend=args[6];
+            owner.BlendPalettes(_mask,_firstBlend,_firstColor);
+        }
         public override SourceVisualSpriteFrame Frame=>new(Slot,"gComplexPaletteBlendSpriteTemplate",default,default,0,false,false,false,256,null,Subpriority);
         public override void Step(SourceBattleAnimation owner)
         {
-            if(_phase==1){if(owner._fade?.Active!=true){owner.BlendPalettes(0xe,0,0);Finished=true;}return;}
+            if(_phase==1){if(owner._fade?.Active!=true){owner.BlendPalettes(_mask,0,0);Finished=true;}return;}
             if(_delay>0){_delay--;return;}if(owner._fade?.Active==true)return;
             if(_remaining==0){_phase=1;return;}
-            owner.BlendPalettes(0xe,(_toggle&256)!=0?14:0,0xffff);_toggle^=256;_delay=_toggle&255;_remaining--;
+            owner.BlendPalettes(_mask,(_toggle&256)!=0?_firstBlend:_secondBlend,(_toggle&256)!=0?_firstColor:_secondColor);_toggle^=256;_delay=_toggle&255;_remaining--;
         }
     }
 }

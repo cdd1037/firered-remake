@@ -50,3 +50,8 @@ atomically gated; their original source vectors do not admit their frame recipes
 Serene Grace remains outside the existing ability gate. There is no campaign item
 inventory, AI, UI/audio or full-engine/ROM acceptance claim. No public assets are
 uploaded and no GUI or campaign replay runs.
+
+
+## Fixed two-hit moves
+
+`./dev test-fixed-two /absolute/new-output` verifies Double Kick, Bonemerang and Twineedle through the existing multi-hit recipe. `fixed-two-singles-before.json` preserves 24 complete canonical result hashes captured before this admission change. Each move executes from all four actor positions with actual four-action completion; bounded cases cover per-hit Shell Bell, Substitute break, Endure, contact recoil KO, immunity and atomic rejection. The source's one final Twineedle secondary command and approved strict comparison remain unchanged. A doll-only first hit has no physical HP-loss receipt and therefore does not make an extra King's Rock draw.

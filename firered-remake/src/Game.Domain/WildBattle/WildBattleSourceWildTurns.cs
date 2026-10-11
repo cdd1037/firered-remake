@@ -205,7 +205,10 @@ public static partial class WildBattleRules
             if (State.Outcome != WildBattleOutcome.Ongoing || Get(side).Pokemon.CurrentHp == 0) return;
             // A queued move may be redirected by Encore applied by the preceding move.
             if (slot >= 0 && Get(side).CalledTurnState?.Lock is null && ForcedMoveSlot(Get(side)) is null && Get(side).EncoreMoveSlot is { } encore)
+            {
                 slot = encore;
+                if (SourceMoveRestrictionRules.EncoreOverwritten(Get(side))) ChangeEncore(side, encore, 0, "move-changed");
+            }
             var turn = State.SourceWild!.Turn;
             int order = turn is null ? 1 : turn.First == side ? 0 : 1;
             var actionContext = new WildBattleCalledActionContext(order, WildBattleSourcePartyEffects.ActiveIndex(State.CalledParty!, side));

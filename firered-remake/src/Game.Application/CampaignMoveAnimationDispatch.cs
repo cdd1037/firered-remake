@@ -23,7 +23,7 @@ public static class CampaignMoveAnimationPresentation
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
         if (battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent used) return new(null, "not-attack-text");
-        int move = used.Move.Value switch { "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, _ => 0 };
+        int move = used.Move.Value switch { "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, "pret:MOVE_SELF_DESTRUCT" => 120, "pret:MOVE_EXPLOSION" => 153, _ => 0 };
         if (move == 0) return new(null, "script-outside-slice");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not WildBattleAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
@@ -35,6 +35,18 @@ public static class CampaignMoveAnimationPresentation
         var pp = action.OfType<WildBattlePpCommandEvent>().ToArray();
         if (pp.Length != 1 || pp[0].Actor != used.Actor || pp[0].Target != used.Target || pp[0].CurrentMove != used.Move)
             return new(null, "unmatched-source-pp-command");
+        if (move is 120 or 153)
+        {
+            // BattleScript_EffectExplosion animates once immediately after setatkhptozero,
+            // before every target pass, even when every pass later misses/is immune.
+            var committed=action.OfType<WildBattleSelfDestructEvent>().ToArray();
+            if(pp[0].ChosenMove!=used.Move||pp[0].PpSlot!=used.Slot||pp[0].Sequence<=used.Sequence||
+                pp[0].Before!=used.PpBefore||pp[0].After!=used.PpAfter||committed.Length!=1||
+                committed[0].Actor!=used.Actor||committed[0].Move!=used.Move||committed[0].HpBefore<=0||committed[0].Sequence<=pp[0].Sequence)
+                return new(null,"unmatched-source-self-destruct");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,committed[0].Sequence,move,
+                new((int)used.Actor),new((int)used.Target),false),"committed-source-animation");
+        }
         if (action.Any(e => e is WildBattleMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
             e is WildBattleMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move ||
             e is WildBattleAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
@@ -72,7 +84,7 @@ public static class CampaignMoveAnimationPresentation
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
-        int move = used.Move.Value switch { "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, _ => 0 };
+        int move = used.Move.Value switch { "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, "pret:MOVE_SELF_DESTRUCT" => 120, "pret:MOVE_EXPLOSION" => 153, _ => 0 };
         if (move == 0) return new(null, "script-outside-slice");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
@@ -104,6 +116,18 @@ public static class CampaignMoveAnimationPresentation
         }
         if (pp.Length != 1 || pp[0].Actor != used.Actor || pp[0].Target != used.Target || pp[0].CurrentMove != used.Move)
             return new(null, "unmatched-source-pp-command");
+        if (move is 120 or 153)
+        {
+            // BattleScript_EffectExplosion animates once immediately after setatkhptozero,
+            // before every target pass, even when every pass later misses/is immune.
+            var committed=action.OfType<SourceSelfDestructEvent>().ToArray();
+            if(pp[0].ChosenMove!=used.Move||pp[0].PpSlot!=used.Slot||pp[0].Sequence<=used.Sequence||
+                pp[0].Before!=used.PpBefore||pp[0].After!=used.PpAfter||committed.Length!=1||
+                committed[0].Actor!=used.Actor||committed[0].Move!=used.Move||committed[0].HpBefore<=0||committed[0].Sequence<=pp[0].Sequence)
+                return new(null,"unmatched-source-self-destruct");
+            return new(new(battle.Id,used.Sequence,attack.Sequence,pp[0].Sequence,committed[0].Sequence,move,
+                used.Actor,used.Target,false),"committed-source-animation");
+        }
         if (action.Any(e => e is SourceMoveMissedEvent m && m.Actor == used.Actor && m.Move == used.Move ||
             e is SourceMoveFailedEvent f && f.Actor == used.Actor && f.Move == used.Move ||
             e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||

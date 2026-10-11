@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "include/constants/songs.h",
+      "bytes": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "bytes": 9204,
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+    },
+    {
+      "path": "sound/songs/midi/se_m_self_destruct.mid",
+      "bytes": 156,
+      "sha256": "860349b3c616e2a85c3b33b19376af81298acb226bad6282859d981e233a4dfa"
+    },
+    {
+      "path": "sound/songs/midi/se_m_explosion.mid",
+      "bytes": 272,
+      "sha256": "2358126344bd6633046a4b63f6dd3a2000a502b25a27dd8e3c4b89e4f0b0db2d"
+    }
+  ],
+  "pack": {
+    "path": "content/generated/synth-audio/firered.pack",
+    "bytes": 2565436,
+    "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+  }
+}

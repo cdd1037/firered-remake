@@ -2,7 +2,7 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
-Current integrated checkpoint: **integrated working tree based on `d449a1d71e313ab5e6bac2a7ef7f8ae2fc41b3e3`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **277 / 354**, with **77 gated**; dedicated script coverage is **15 / 354**, with **339 remaining**. Neither is a complete battle-system percentage.
+Current integrated checkpoint: **integrated working tree based on `db8579a28734e83ead8c3fa77bd57825a84370d3`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **286 / 354**, with **68 gated**; dedicated script coverage is **17 / 354**, with **337 remaining**. Neither is a complete battle-system percentage.
 
 The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles now has a bounded authentic Route8 Twins public victory/save branch; full held-item/recipe and presentation completion remains open. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
@@ -22,6 +22,10 @@ Read with [source turn integration](source-turn-integration.md), [move implement
 | `interaction-unverified` | Implementation/helper and/or bounded tests may exist; expanded actor admission, full source branches, combinations or integration have not been established. |
 
 The initial per-move JSON marked the 350 registered recipes `interaction-unverified` for **complete battle-system acceptance**. It does not erase the bounded tests of their shared effect groups. It deliberately avoids assigning a complete label to every move based on a single registration assertion.
+
+## Stage exit: rules first, presentation continues in parallel
+
+User decision on 2026-10-11 (`Sentinel_23a5c65a12ac819190dd9441bae2d3fa`): resume the main campaign once the 354-move/76-ability core rules and affected key regressions are complete. Dedicated animation/audio completion is no longer a prerequisite for the next mainline region. Prioritize presentation needed by that region and clearly record any generic substitute; actual outcomes and settlement still require complete rules. Safari, roamers and other independent field/special-mode dependencies retain their explicit matrix boundaries and must not be silently counted as core acceptance.
 
 ## Priority and dependency order
 
@@ -695,3 +699,7 @@ pixel parity are not claimed. See `docs/source-affine-stat-choreography.md`.
 Transform/Mimic/Sketch, four one-hit-KO moves, Tri Attack/Flame Wheel/Sacred Fire and Rest/Snore/Dream Eater now use shared recipes in canonical singles and actual four-slot frames. King’s Rock/Shell Bell use the unchanged shared item formulas with actual battler ownership, per-target move-end timing and the already-approved King parameter correction. These thirteen admissions raise the predicate inventory from 264 to 277; 77 recipes remain gated.
 
 The [combined evidence](../evidence/shared-copy-ohko-hit-sleep-20261011/README.md) records the affected builds and cases. Immutable singles baselines, original source-fragment witnesses and narrow canonical corrections are identified separately. No new Application, campaign, rendered animation or physical-audio claim is made by this Domain increment. The [source animation grouping](battle-animation-batch-plan.md#current-script-grouping-2026-10-11) confirms 352 strict graphs, not a few dozen identical scripts; shared callback families remain the batching strategy.
+
+### Ground spread, restrictions, dynamic types and fixed-two hits — 2026-10-11
+
+Earthquake/Magnitude, Encore/Imprison, Hidden Power/Weather Ball and Double Kick/Bonemerang/Twineedle add nine shared recipes. The actual predicate reports **286/354 admitted, 68 gated**. Original all-other target order, source PP/RNG rules, copied slot identity and end-turn replacement remain under the shared owners. Dedicated Self-Destruct/Explosion roots raise presentation to **17/354**. [Combined evidence](../evidence/shared-ground-restriction-type-20261011/README.md) identifies affected builds/results, reused C comparisons, narrow canonical corrections and the separate animation native identity. No new full campaign or original-ROM replay is claimed.

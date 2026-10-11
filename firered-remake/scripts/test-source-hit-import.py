@@ -39,4 +39,24 @@ with tempfile.TemporaryDirectory(prefix='hit-import-test-') as t:
  # Copy only importer+lock; tamper the lock without touching production inputs.
  local=temp/'importer';local.mkdir();(local/'import-source-hit-animations.py').write_bytes((root/'scripts/import-source-hit-animations.py').read_bytes());lock=bytearray((root/'scripts/source-hit-animation.lock.json').read_bytes());lock[20]^=1;(local/'source-hit-animation.lock.json').write_bytes(lock)
  r=subprocess.run(['python3',local/'import-source-hit-animations.py',cache,temp/'lock-output'],capture_output=True,text=True,timeout=30);need(r.returncode!=0 and not (temp/'lock-output').exists(),'modified authenticated input lock rejected before output')
+# Shared batch source import negatives: no separate test project or per-move runner.
+explosion_spec=importlib.util.spec_from_file_location('explosion_importer',root/'scripts/import-source-explosion-animations.py');explosion=importlib.util.module_from_spec(explosion_spec);explosion_spec.loader.exec_module(explosion)
+explosion_source=explosion.authenticated(ref);explosion_expected=explosion.build(ref)
+with tempfile.TemporaryDirectory(prefix='explosion-import-test-') as t:
+ temp=Path(t);cache=temp/'source';cache.mkdir()
+ for name,data in explosion_source.items():
+  path=cache/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+ need(explosion.build(cache)==explosion_expected,'explosion cache/Git import identity')
+ for name,data in explosion_source.items():
+  path=cache/name;changed=bytearray(data);changed[len(changed)//2]^=1;path.write_bytes(changed)
+  reject(lambda:explosion.build(cache),'explosion same-length source corruption rejected: '+name);path.write_bytes(data)
+ asset=cache/'graphics/battle_anims/sprites/explosion.png';asset.write_bytes(b'bad');publish=temp/'publish'
+ run=subprocess.run(['python3',root/'scripts/import-source-explosion-animations.py','--reference',cache,'--output',publish],capture_output=True,text=True,timeout=30)
+ need(run.returncode!=0 and not publish.exists(),'explosion invalid source publishes no partial material')
+ asset.write_bytes(explosion_source['graphics/battle_anims/sprites/explosion.png'])
+ for name,data in zip(['manifest.json','explosion.rgb555'],explosion_expected):need((root/'content/generated/source-explosion-animations'/name).read_bytes()==data,'explosion generated output exact: '+name)
+ recipe=json.loads(explosion_expected[0]);flash=next(c for r in recipe['scripts'] if r['moveId']==153 for c in r['commands'] if c['op']=='createsprite')
+ need(flash['args'][6]=='RGB(26, 8, 8)' and flash['args'][-1]=='8','revision0 original red/black blend operands retained')
+ for r in recipe['scripts']:
+  calls=[c['args'][0] for c in r['commands'] if c['op']=='call'];need(len(calls)==2 and calls[0]==calls[1] and len(recipe['subroutines'][calls[0]])==16,'exact shared call closure '+r['label'])
 result=dict(passed=True,checks=len(checks),details=checks,oversizedPeakBytes=peak,sourceCommit=imp.COMMIT,resources=[dict(path=folder+'/'+name,bytes=len(blob),sha256=hashlib.sha256(blob).hexdigest()) for folder,files in expected.items() for name,blob in files.items()]);(out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print('PASS',len(checks),'source import checks')

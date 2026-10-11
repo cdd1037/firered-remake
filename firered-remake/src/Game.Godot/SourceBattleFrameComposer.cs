@@ -26,7 +26,13 @@ public sealed class SourceBattleFrameComposer
     {
         var pixels=new ushort[Width*112];
         var palettes=frame.PaletteBlends.ToDictionary(p=>p.Palette);
-        // These bounded scripts apply one shared transform to BG palettes 1, 2 and 3.
+        // The flattened terrain contains source BG palette banks 1..3 only. Every
+        // admitted selector transforms all three identically. Fail closed if a later
+        // script requests distinct banks; it then needs per-pixel bank provenance.
+        var backgroundBlend=palettes.GetValueOrDefault(1);
+        if(new[]{2,3}.Any(bank=>palettes.GetValueOrDefault(bank) is {} other
+            ?backgroundBlend is null||other.Coefficient!=backgroundBlend.Coefficient||other.Color!=backgroundBlend.Color
+            :backgroundBlend is not null))throw new InvalidDataException("Terrain palette banks require source membership data.");
         Blit(pixels,_assets["background"],0,0,palettes.GetValueOrDefault(1));
         void Battler(AnimationBattler b)
         {

@@ -9,7 +9,7 @@ internal sealed partial class FrameRecipeContext
     internal override void SourceMultiHitMoveEnd(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     { CompleteScriptTarget(); targetEventStart = Events.Count; }
     internal override void SourceMultiHitFinalMoveEnd() => CompleteScriptTarget();
-    internal override bool CancellerCompatibilityLocks(PokemonCatalog catalog, BattlerSlot slot, MoveId move) => DisabledPreventsMove(slot, move);
+    internal override bool CancellerCompatibilityLocks(PokemonCatalog catalog, BattlerSlot slot, MoveId move) => DisabledPreventsMove(slot, move) || ImprisonPreventsMove(slot, move);
     internal override void CancellerCancelMultiTurn(BattlerSlot slot, string reason)
     {
         if (RampageLocked(slot)) ChangeRechargeRampageLock(slot, null, reason);

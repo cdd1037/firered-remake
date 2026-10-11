@@ -93,8 +93,9 @@ public static partial class WildBattleRules
         var target = side == WildBattleSide.Player ? state.Opponent : state.Player;
         if (actor.CalledTurnState?.Lock is { } locked) return slot == locked.PpSlot ? null : "called_move_action_locked";
         if (ForcedMoveSlot(actor) is { } forced) return slot == forced ? null : "called_move_action_locked";
-        bool Available(int index) => IsCalledMoveSelectable(catalog, actor, index) &&
-            !IsImprisoned(actor, target, actor.Pokemon.Moves[index].Move);
+        bool Available(int index) => SourceBattleAdmission.IsCanonicalSourceState(catalog, state)
+            ? SourceMoveRestrictionRules.Selectable(catalog, actor, index, [target])
+            : IsCalledMoveSelectable(catalog, actor, index) && !IsImprisoned(actor, target, actor.Pokemon.Moves[index].Move);
         bool exhausted = !Enumerable.Range(0, actor.Pokemon.Moves.Length).Any(Available);
         if (exhausted) return slot == StruggleSlot ? null : "called_move_struggle_required";
         if (slot == StruggleSlot) return "called_move_struggle_not_required";

@@ -65,6 +65,9 @@ public static class SourceBattleKernel
                 return "source_kernel_recharge_selection";
             move = catalog.Moves[recharge.Move];
         }
+        else if (!struggle && actor.EncoreMoveSlot is { } encore &&
+            (action.ChosenSlot != encore || SourceMoveRestrictionRules.EncoreOverwritten(actor)))
+            return "source_kernel_encore_selection_owner_required";
         else if (!SupportsRecipe(move)) return "source_kernel_recipe_not_migrated";
         if (!frame.CanAct(action.Target) && move.Effect != "EFFECT_SPIKES") return "source_kernel_action_phase";
         if (move.Effect == "EFFECT_SPIKES" && frame.Layout == SourceBattleLayout.PresetDoubles && frame.EntryAbilities is null)
@@ -99,6 +102,7 @@ public static class SourceBattleKernel
         foreach (var cell in frame.Slots.Take(frame.BattlerCount))
         {
             if (cell.Body is not { } body) continue;
+            if (SourceMoveRestrictionRules.Validate(catalog, body) is { } restrictionError) return restrictionError;
             if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
             if (cell.Registers.History?.LastHitByType is { } hitType && hitType != "TYPE_MYSTERY" && !WildBattleEffective.IsSourceType(hitType) ||
                 body.LastLandedMove is { } landed && landed.Value is not ("pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE") && !catalog.Moves.ContainsKey(landed))
@@ -108,10 +112,9 @@ public static class SourceBattleKernel
             if (new[] { body.AttackStage, body.DefenseStage, body.SpeedStage, body.AccuracyStage, body.EvasionStage,
                 6 + body.SpecialAttackStageDelta, 6 + body.SpecialDefenseStageDelta }.Any(stage => stage is < 0 or > 12))
                 return "source_kernel_stat_stage";
-            if (!SourceSubstituteRules.Supported(body) || !SourceFourEntryAbilities.OverlaySupported(body) || body.DestinyBond || body.ChargeTurnsRemaining != 0 || body.Imprison || body.SourcePartyStatusOverride is not null ||
+            if (!SourceSubstituteRules.Supported(body) || !SourceFourEntryAbilities.OverlaySupported(body) || body.DestinyBond || body.ChargeTurnsRemaining != 0 || body.SourcePartyStatusOverride is not null ||
                 cell.Registers.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage) } || body.Rage ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
-                body.EncoreMoveSlot is not null ||
                 (body.HeldItem != "ITEM_NONE" && !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFrameBerryItems.SupportsHeldItem(body.HeldItem))) || body.WaterSport || body.MudSport)
                 return "source_kernel_volatile_not_migrated";
             if (body.ConfusionTurnsRemaining is < 0 or > 5 || body.TruantLoafing && body.Pokemon.CurrentHp == 0 ||
@@ -165,9 +168,9 @@ public static class SourceBattleKernel
 
     public static bool SupportsRecipe(PokemonMoveDefinition move) => MetronomeSourceMoveDefinition.Matches(move) &&
         move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_RANDOM" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_OPPONENTS_FIELD" or "MOVE_TARGET_DEPENDS" &&
-        (SourceRecipeContext.HasSleepAttackRecipe(move.Effect) || SourceRecipeContext.HasCopyStateRecipe(move.Effect) || SourceRecipeContext.HasRechargeRampageRecipe(move.Effect) || SourceRecipeContext.HasTargetMarkRecipe(move.Effect) || move.Effect == "EFFECT_SUBSTITUTE" || SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
+        (SourceRecipeContext.HasMoveRestrictionRecipe(move.Effect) || SourceRecipeContext.HasGroundSpreadRecipe(move.Effect) || SourceRecipeContext.HasSleepAttackRecipe(move.Effect) || SourceRecipeContext.HasCopyStateRecipe(move.Effect) || SourceRecipeContext.HasRechargeRampageRecipe(move.Effect) || SourceRecipeContext.HasTargetMarkRecipe(move.Effect) || move.Effect == "EFFECT_SUBSTITUTE" || SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
          SourceRecipeContext.HasTypeChangeRecipe(move.Effect) || SourceRecipeContext.HasRetaliationRecipe(move.Effect) || SourceRecipeContext.HasFixedDamageRecipe(move.Effect) ||
-        SourceRecipeContext.HasDynamicPowerRecipe(move.Effect) ||
+        SourceRecipeContext.HasDynamicTypeRecipe(move.Effect) || SourceRecipeContext.HasDynamicPowerRecipe(move.Effect) ||
          SourceRecipeContext.HasStatRecoveryRecipe(move.Effect) || SourceRecipeContext.HasFieldSettingRecipe(move.Effect) ||
          SourceRecipeContext.HasProtectionRecipe(move.Effect) || SourceRecipeContext.HasAllySupportRecipe(move.Effect) || SourceRecipeContext.HasTurnMoveRecipe(move.Effect) || SourceRecipeContext.HasSwitchRecipe(move.Effect));
 
