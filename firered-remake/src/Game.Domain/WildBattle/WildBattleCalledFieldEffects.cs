@@ -124,6 +124,13 @@ public static partial class WildBattleRules
             { Recipes.ExecuteThawHit(catalog, S(side), S(target), slot, move, purpose); return; }
             if (SourceRecipeContext.HasFreezeHitRecipe(move.Effect))
             { Recipes.ExecuteFreezeHit(catalog, S(side), S(target), slot, move, purpose); return; }
+            if (State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion &&
+                SourceRecipeContext.HasCriticalStatusHitRecipe(move.Effect))
+            {
+                if (activeInvocation is null) throw new UnsupportedAction("called_critical_status_invocation");
+                Recipes.ExecuteCriticalStatusHit(catalog, S(side), S(target), slot, move, purpose);
+                handled = true; return;
+            }
             if (move.Power > 0) { SourceCalledFieldHit(catalog, side, target, slot, move, purpose); return; }
             SpendEarlyPartyPp(side, target, slot, move);
             if (move.Effect == "EFFECT_TOXIC") { SourceCalledToxic(catalog, side, target, move, purpose); return; }
@@ -188,18 +195,19 @@ public static partial class WildBattleRules
             int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
             int damage = ScalarDamage(catalog, side, targetSide, move, critical, percent,
                 type: move.Effect == "EFFECT_WEATHER_BALL" ? type : null, multiplier: multiplier);
+            int effectiveDamage = damage;
             damage = ScalarAdjust(targetSide, move, damage, purpose);
             ScalarApplyDamage(catalog, side, targetSide, move, damage, critical, percent, type);
             ScalarReportType(catalog, side, targetSide, move, type);
-            int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-            int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
-            if (roll <= chance && damage > 0)
+            var secondary = Recipes.SecondaryEffect(S(side), move, purpose,
+                (Recipes.CanonicalSecondarySemantics ? effectiveDamage : damage) == 0);
+            if (secondary.Apply)
             {
                 switch (move.Effect)
                 {
                     case "EFFECT_POISON_FANG": SourceCalledInflictStatus(catalog, targetSide, WildBattleSourceFieldEffects.ToxicPoison); break;
-                    case "EFFECT_THUNDER": InflictStatus(catalog, targetSide, WildBattleStatus.Paralysis, false); break;
-                    case "EFFECT_THAW_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Burn, false); break;
+                    case "EFFECT_THUNDER": Recipes.InflictStatus(catalog, S(targetSide), WildBattleStatus.Paralysis, false, certain: secondary.Certain); break;
+                    case "EFFECT_THAW_HIT": Recipes.InflictStatus(catalog, S(targetSide), WildBattleStatus.Burn, false, certain: secondary.Certain); break;
                 }
             }
             ScalarFinish(catalog, side, targetSide, move, purpose, damage, type);

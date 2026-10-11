@@ -62,8 +62,9 @@ internal abstract partial class SourceRecipeContext
         int lost = FixedDamageApply(actor, target, move, damage, critical, percent, typeResult.Immune);
         if (critical && lost == 0 && !typeResult.Immune && !FixedDamageZeroCriticalPrinted(target))
             Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
+        bool guardReported = SourceTypeReport(catalog, actor, target, move);
         SourceDamageResultMessage(actor, target, move);
-        if (typeResult.Effectiveness is { } effectiveness && (swipe || typeResult.Immune))
+        if (!guardReported && typeResult.Effectiveness is { } effectiveness && (swipe || typeResult.Immune))
             Add(n => new SourceEffectivenessEvent(n, Turn, actor, target, move.Id, effectiveness));
         // Every one of these scripts reaches the ordinary zero-chance secondary command.
         // The previous canonical Super Fang adapter omitted this source RNG draw.
@@ -81,13 +82,17 @@ internal abstract partial class SourceRecipeContext
         SourceGenericApplyDamage(actor, target, move, immune ? 0 : damage, critical, percent);
     internal virtual bool FixedDamageZeroCriticalPrinted(BattlerSlot target) => false;
 
-    private bool FixedDamageAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose)
+    private bool FixedDamageAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, bool thunderWeather = false)
     {
         var user = Get(actor); var defender = Get(target);
         if (defender.Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) return false;
         if (CalledSureHit(actor, target)) return true;
         if (BillUnderground(actor, target, move)) return false;
-        int accuracy = WildBattleDamage.Accuracy(move.Accuracy, user.AccuracyStage, defender.Identified ? 6 : defender.EvasionStage);
+        // AccuracyCalcHelper checks Protect, sure-hit and semi-invulnerability before rain.
+        bool thunder = thunderWeather && move.Effect == "EFFECT_THUNDER" && !SourceCalledWeatherSuppressed;
+        if (thunder && SourceCalledRain) return true;
+        int baseAccuracy = thunder && SourceCalledSun ? 50 : move.Accuracy;
+        int accuracy = WildBattleDamage.Accuracy(baseAccuracy, user.AccuracyStage, defender.Identified ? 6 : defender.EvasionStage);
         if (WildBattleEffective.Ability(user) == "ABILITY_COMPOUND_EYES") accuracy = accuracy * 130 / 100;
         if (!SourceCalledWeatherSuppressed && StruggleSandstorm && WildBattleEffective.Ability(defender) == "ABILITY_SAND_VEIL") accuracy = accuracy * 80 / 100;
         if (WildBattleEffective.Ability(user) == "ABILITY_HUSTLE" && TypeRules.Category(FixedDamageElementType(move.Type)) == DamageCategory.Physical) accuracy = accuracy * 80 / 100;
@@ -99,16 +104,8 @@ internal abstract partial class SourceRecipeContext
     private (bool Immune, WildBattleEffectiveness? Effectiveness) FixedDamageType(PokemonCatalog catalog,
         BattlerSlot target, PokemonMoveDefinition move)
     {
-        var defender = Get(target); var types = WildBattleEffective.Types(catalog, defender);
-        var type = FixedDamageElementType(move.Type); int multiplier = 100;
-        foreach (var row in TypeRules.OrderedEffects(type, FixedDamageElementType(types.Type1), FixedDamageElementType(types.Type2)))
-        {
-            if (defender.Identified && row.Defense == ElementType.Ghost && type is ElementType.Normal or ElementType.Fighting) continue;
-            multiplier = multiplier * row.MultiplierTenths / 10;
-        }
-        bool immune = multiplier == 0 || WildBattleEffective.Ability(defender) == "ABILITY_WONDER_GUARD" && multiplier <= 100;
-        return (immune, immune ? WildBattleEffectiveness.NoEffect : multiplier < 100 ? WildBattleEffectiveness.NotVeryEffective :
-            multiplier > 100 ? WildBattleEffectiveness.SuperEffective : null);
+        var result = SourceTypeResult(catalog, target, move, apply: true);
+        return (result.Immune, result.Effectiveness);
     }
     private static ElementType FixedDamageElementType(string symbol) => Enum.Parse<ElementType>(symbol[5..], true);
 }

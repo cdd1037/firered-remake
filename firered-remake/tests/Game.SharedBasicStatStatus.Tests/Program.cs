@@ -19,7 +19,7 @@ var proof=SourceMechanicsCatalogLoader.LoadAuthenticated(root);var catalog=proof
 string tm=File.ReadAllText(Path.Combine(source,"src/data/pokemon/tmhm_learnsets.h"));
 int groups=0,checks=0,failures=0,turns=0;
 void Check(bool b,string why){checks++;if(!b)throw new Exception(why);}
-void Test(string name,Action run){groups++;try{run();Console.WriteLine("PASS "+name);}catch(Exception e){failures++;Console.WriteLine("FAIL "+name+" "+e);}}
+void Test(string name,Action run){if(Environment.GetEnvironmentVariable("COMMON_ABILITY_ADAPTERS_ONLY")=="1"&&name is not ("canonical singles admits authentic Hyper Cutter and White Smoke guards" or "frozen singles baseline with source-backed canonical ordering correction" or "real four-action Soundproof and Clear Body belong to separate holders"))return;groups++;try{run();Console.WriteLine("PASS "+name);}catch(Exception e){failures++;Console.WriteLine("FAIL "+name+" "+e);}}
 WildBattleCombatant Mon(string species="DROWZEE",string moves="MEDITATE",int level=70,uint pid=0){
  var p=SourcePokemonFactory.Create(proof,new(new("pret:SPECIES_"+species),level,42,IvPolicy.Fixed(31),PersonalityPolicy.Fixed(pid)),new(0)).Pokemon;
  var block=Regex.Match(tm,@"\[SPECIES_"+species+@"\].*?(?=\[SPECIES_|\z)",RegexOptions.Singleline).Value;
@@ -41,8 +41,8 @@ foreach(var (species,move) in fixtures)foreach(int variant in Enumerable.Range(0
  baseline.Add(new{move,variant,hash=Hash(r)});
 }
 if(output=="--baseline"){Console.WriteLine(J(baseline));return 0;}
-Test("canonical singles ability admission stays narrower than four-slot admission",()=>{
- foreach(var row in new[]{("PIKACHU","GROWL","KINGLER","HARDEN"),("PIDGEY","SAND_ATTACK","TORKOAL","AMNESIA")}){var state=Pair(Mon(row.Item1,row.Item2),Mon(row.Item3,row.Item4));var r=WildBattleRules.ResolveSourceMoveAction(catalog,state,new(WildBattleSide.Player,0));Check(!r.Succeeded&&r.Battle.Events.IsEmpty&&r.Battle.Trace.IsEmpty,"old canonical ability boundary unchanged "+row.Item3);}
+Test("canonical singles admits authentic Hyper Cutter and White Smoke guards",()=>{
+ foreach(var row in new[]{("PIKACHU","GROWL","KINGLER","HARDEN"),("PIDGEY","SAND_ATTACK","TORKOAL","AMNESIA")}){var state=Pair(Mon(row.Item1,row.Item2),Mon(row.Item3,row.Item4));var r=WildBattleRules.ResolveSourceMoveAction(catalog,state,new(WildBattleSide.Player,0));Check(r.Succeeded&&r.Battle.Events.OfType<WildBattleAbilityPreventedEvent>().Any(x=>x.Target==WildBattleSide.Opponent),"canonical source guard executes "+row.Item3);}
 });
 Test("frozen singles baseline with source-backed canonical ordering correction",()=>{
  var old=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"singles-baseline-3c78f0a7.json"))).RootElement;

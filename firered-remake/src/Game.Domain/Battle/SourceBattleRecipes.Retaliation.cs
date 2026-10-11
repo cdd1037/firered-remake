@@ -43,11 +43,12 @@ internal abstract partial class SourceRecipeContext
         SpendEarlyPartyPp(actor, target, slot, move);
         if (!hit) { SourceGenericMiss(actor, target, move); return; }
         // typecalc2 retains immunity alone; no STAB, resistance or weakness multiplier.
-        bool immune = FixedDamageType(catalog, target, move).Immune;
+        bool immune = SourceTypeResult(catalog, target, move, command: SourceTypeCommand.TypeCalc2, apply: true).Immune;
         int adjusted = FixedDamageAdjust(target, move, checked(damage * 2), purpose);
         int lost = FixedDamageApply(actor, target, move, adjusted, false, 100, immune);
         SourceDamageResultMessage(actor, target, move);
-        if (immune) Add(n => new SourceEffectivenessEvent(n, Turn, actor, target, move.Id, WildBattleEffectiveness.NoEffect));
+        bool guardReported = SourceTypeReport(catalog, actor, target, move, command: SourceTypeCommand.TypeCalc2);
+        if (immune && !guardReported) Add(n => new SourceEffectivenessEvent(n, Turn, actor, target, move.Id, WildBattleEffectiveness.NoEffect));
         SourceGenericSecondary(catalog, actor, target, move, purpose, immune ? 0 : adjusted);
         if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
         if (lost > 0) MtMoonRageOnDamage(actor, target, move.Id);

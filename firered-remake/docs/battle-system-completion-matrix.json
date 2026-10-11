@@ -970,9 +970,9 @@
     {
       "id": 4,
       "symbol": "ABILITY_BATTLE_ARMOR",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation.",
+      "assessment": "Authentic Kabuto critical prevention skips the critical draw in canonical singles and actual four-slot turns; shared armor command retained.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleCeruleanExecution.cs",
@@ -986,7 +986,8 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
       "id": 5,
@@ -1992,9 +1993,9 @@
     {
       "id": 25,
       "symbol": "ABILITY_WONDER_GUARD",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "Damage/type and copy-restriction branches exist; authentic actor admission and every affected source script are not proven.",
+      "assessment": "Shared type-result/history commands cover normal/fixed/OHKO/retaliation/crash/Present, real Shedinja/Trace/Transform, Focus Band raw adjustment, ordinary source misses and spread independence. 13 combined groups/3747 checks including weather/Serene and utility boundaries.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
@@ -2056,7 +2057,8 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
       "id": 26,
@@ -2363,9 +2365,9 @@
     {
       "id": 32,
       "symbol": "ABILITY_SERENE_GRACE",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "Secondary chance branches exist; current species admission and affected primary/certain/multihit scripts need proof.",
+      "assessment": "Shared source secondary-effect command handles multiplier, inclusive roll, certain flag and >=100 semantics; 11 groups/2331 checks and authentic donors/31 complete turns. Approved strict Twineedle retained, Kings Rock independent.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleGenericEffects.cs",
@@ -2395,7 +2397,8 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
       "id": 33,
@@ -2612,9 +2615,9 @@
     {
       "id": 40,
       "symbol": "ABILITY_MAGMA_ARMOR",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "Freeze-prevention/overlay cleanup branch exists; this is not a FireRed egg-hatching speed bonus.",
+      "assessment": "Authentic Slugma freeze/Tri Attack prevention and actual Trace acquisition with move-end cleanup tested in canonical singles and four slots.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleTransformationRules.cs",
@@ -2636,7 +2639,8 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
       "id": 41,
@@ -3167,9 +3171,9 @@
     {
       "id": 52,
       "symbol": "ABILITY_HYPER_CUTTER",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "Attack-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof.",
+      "assessment": "Canonical singles now uses shared stat command, matching four-slot direct/secondary/intimidation/certain self-drop branches.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleStatRecoveryEffects.cs",
@@ -3191,7 +3195,8 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
       "id": 53,
@@ -3320,7 +3325,7 @@
       "symbol": "ABILITY_PLUS",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C09",
-      "assessment": "M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure.",
+      "assessment": "Canonical scalar adapters now supply shared complementary-ability field query, matching generic/dynamic/four-slot arithmetic; authentic tutor Metronome Ice Beam used. Full lifecycle combinations remain scoped.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -3336,14 +3341,15 @@
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "testEvidence": [
         "tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md"
-      ]
+      ],
+      "currentEvidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
       "id": 58,
       "symbol": "ABILITY_MINUS",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C09",
-      "assessment": "M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure.",
+      "assessment": "Canonical scalar adapters now supply shared complementary-ability field query, matching generic/dynamic/four-slot arithmetic; authentic tutor Metronome Ice Beam used. Full lifecycle combinations remain scoped.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -3359,7 +3365,8 @@
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "testEvidence": [
         "tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md"
-      ]
+      ],
+      "currentEvidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
       "id": 59,
@@ -3736,9 +3743,9 @@
     {
       "id": 69,
       "symbol": "ABILITY_ROCK_HEAD",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation.",
+      "assessment": "Shared ordinary recoil exempts Rock Head; Struggle and crash remain distinct. Six recoil/crash recipes have actual singles/four-slot and double-KO/reward continuation proof.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
@@ -3756,7 +3763,8 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": "evidence/shared-recoil-critical-20261011/README.md"
     },
     {
       "id": 70,
@@ -3892,9 +3900,9 @@
     {
       "id": 73,
       "symbol": "ABILITY_WHITE_SMOKE",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "Stat-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof.",
+      "assessment": "Canonical singles now uses shared stat command, matching four-slot direct/secondary stat prevention and self-drop boundaries.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleStatRecoveryEffects.cs",
@@ -3920,7 +3928,8 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "currentEvidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
       "id": 74,
@@ -4126,7 +4135,7 @@
         "startLine": 81,
         "symbol": "MOVE_PAY_DAY"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_FIRE_PUNCH",
@@ -4341,7 +4350,7 @@
         "startLine": 211,
         "symbol": "MOVE_GUST"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WING_ATTACK",
@@ -4556,7 +4565,7 @@
         "startLine": 341,
         "symbol": "MOVE_JUMP_KICK"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ROLLING_KICK",
@@ -4776,7 +4785,7 @@
         "startLine": 471,
         "symbol": "MOVE_TAKE_DOWN"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_THRASH",
@@ -4818,7 +4827,7 @@
         "startLine": 497,
         "symbol": "MOVE_DOUBLE_EDGE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TAIL_WHIP",
@@ -5436,7 +5445,7 @@
         "startLine": 861,
         "symbol": "MOVE_SUBMISSION"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LOW_KICK",
@@ -5921,7 +5930,7 @@
         "startLine": 1134,
         "symbol": "MOVE_THUNDER"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ROCK_THROW",
@@ -6183,7 +6192,7 @@
         "startLine": 1290,
         "symbol": "MOVE_RAGE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_TELEPORT",
@@ -6204,7 +6213,7 @@
         "startLine": 1303,
         "symbol": "MOVE_TELEPORT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_NIGHT_SHADE",
@@ -6601,7 +6610,7 @@
         "startLine": 1524,
         "symbol": "MOVE_BIDE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_METRONOME",
@@ -6622,7 +6631,7 @@
         "startLine": 1537,
         "symbol": "MOVE_METRONOME"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_MIRROR_MOVE",
@@ -6643,7 +6652,7 @@
         "startLine": 1550,
         "symbol": "MOVE_MIRROR_MOVE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SELF_DESTRUCT",
@@ -7010,7 +7019,7 @@
         "startLine": 1771,
         "symbol": "MOVE_HI_JUMP_KICK"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_GLARE",
@@ -7324,7 +7333,7 @@
         "startLine": 1953,
         "symbol": "MOVE_SPLASH"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ACID_ARMOR",
@@ -7686,7 +7695,7 @@
         "startLine": 2174,
         "symbol": "MOVE_TRIPLE_KICK"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_THIEF",
@@ -7707,7 +7716,7 @@
         "startLine": 2187,
         "symbol": "MOVE_THIEF"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SPIDER_WEB",
@@ -7964,7 +7973,7 @@
         "startLine": 2343,
         "symbol": "MOVE_SPITE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_POWDER_SNOW",
@@ -8269,7 +8278,7 @@
         "startLine": 2525,
         "symbol": "MOVE_DESTINY_BOND"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_PERISH_SONG",
@@ -8290,7 +8299,7 @@
         "startLine": 2538,
         "symbol": "MOVE_PERISH_SONG"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_ICY_WIND",
@@ -8616,7 +8625,7 @@
         "startLine": 2733,
         "symbol": "MOVE_FURY_CUTTER"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_STEEL_WING",
@@ -8684,7 +8693,7 @@
         "startLine": 2772,
         "symbol": "MOVE_ATTRACT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SLEEP_TALK",
@@ -8705,7 +8714,7 @@
         "startLine": 2785,
         "symbol": "MOVE_SLEEP_TALK"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_HEAL_BELL",
@@ -8726,7 +8735,7 @@
         "startLine": 2798,
         "symbol": "MOVE_HEAL_BELL"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_RETURN",
@@ -8768,7 +8777,7 @@
         "startLine": 2824,
         "symbol": "MOVE_PRESENT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_FRUSTRATION",
@@ -8831,7 +8840,7 @@
         "startLine": 2863,
         "symbol": "MOVE_PAIN_SPLIT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SACRED_FIRE",
@@ -8999,7 +9008,7 @@
         "startLine": 2967,
         "symbol": "MOVE_PURSUIT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_RAPID_SPIN",
@@ -9020,7 +9029,7 @@
         "startLine": 2980,
         "symbol": "MOVE_RAPID_SPIN"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SWEET_SCENT",
@@ -9244,7 +9253,7 @@
         "startLine": 3110,
         "symbol": "MOVE_TWISTER"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_RAIN_DANCE",
@@ -9438,7 +9447,7 @@
         "startLine": 3227,
         "symbol": "MOVE_FUTURE_SIGHT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_ROCK_SMASH",
@@ -9506,7 +9515,7 @@
         "startLine": 3266,
         "symbol": "MOVE_BEAT_UP"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_FAKE_OUT",
@@ -9527,7 +9536,7 @@
         "startLine": 3279,
         "symbol": "MOVE_FAKE_OUT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_UPROAR",
@@ -9548,7 +9557,7 @@
         "startLine": 3292,
         "symbol": "MOVE_UPROAR"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_STOCKPILE",
@@ -9569,7 +9578,7 @@
         "startLine": 3305,
         "symbol": "MOVE_STOCKPILE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SPIT_UP",
@@ -9590,7 +9599,7 @@
         "startLine": 3318,
         "symbol": "MOVE_SPIT_UP"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SWALLOW",
@@ -9611,7 +9620,7 @@
         "startLine": 3331,
         "symbol": "MOVE_SWALLOW"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_HEAT_WAVE",
@@ -9674,7 +9683,7 @@
         "startLine": 3370,
         "symbol": "MOVE_TORMENT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_FLATTER",
@@ -9742,7 +9751,7 @@
         "startLine": 3409,
         "symbol": "MOVE_MEMENTO"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FACADE",
@@ -9763,7 +9772,7 @@
         "startLine": 3422,
         "symbol": "MOVE_FACADE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_FOCUS_PUNCH",
@@ -9784,7 +9793,7 @@
         "startLine": 3435,
         "symbol": "MOVE_FOCUS_PUNCH"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SMELLING_SALT",
@@ -9805,7 +9814,7 @@
         "startLine": 3448,
         "symbol": "MOVE_SMELLING_SALT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_FOLLOW_ME",
@@ -9847,7 +9856,7 @@
         "startLine": 3474,
         "symbol": "MOVE_NATURE_POWER"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_CHARGE",
@@ -9868,7 +9877,7 @@
         "startLine": 3487,
         "symbol": "MOVE_CHARGE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_TAUNT",
@@ -9889,7 +9898,7 @@
         "startLine": 3500,
         "symbol": "MOVE_TAUNT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_HELPING_HAND",
@@ -9931,7 +9940,7 @@
         "startLine": 3526,
         "symbol": "MOVE_TRICK"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_ROLE_PLAY",
@@ -9952,7 +9961,7 @@
         "startLine": 3539,
         "symbol": "MOVE_ROLE_PLAY"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_WISH",
@@ -9973,7 +9982,7 @@
         "startLine": 3552,
         "symbol": "MOVE_WISH"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_ASSIST",
@@ -9994,7 +10003,7 @@
         "startLine": 3565,
         "symbol": "MOVE_ASSIST"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_INGRAIN",
@@ -10057,7 +10066,7 @@
         "startLine": 3604,
         "symbol": "MOVE_MAGIC_COAT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_RECYCLE",
@@ -10078,7 +10087,7 @@
         "startLine": 3617,
         "symbol": "MOVE_RECYCLE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_REVENGE",
@@ -10099,7 +10108,7 @@
         "startLine": 3630,
         "symbol": "MOVE_REVENGE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_BRICK_BREAK",
@@ -10120,7 +10129,7 @@
         "startLine": 3643,
         "symbol": "MOVE_BRICK_BREAK"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_YAWN",
@@ -10162,7 +10171,7 @@
         "startLine": 3669,
         "symbol": "MOVE_KNOCK_OFF"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_ENDEAVOR",
@@ -10230,7 +10239,7 @@
         "startLine": 3708,
         "symbol": "MOVE_SKILL_SWAP"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_IMPRISON",
@@ -10293,7 +10302,7 @@
         "startLine": 3747,
         "symbol": "MOVE_GRUDGE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SNATCH",
@@ -10314,7 +10323,7 @@
         "startLine": 3760,
         "symbol": "MOVE_SNATCH"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_SECRET_POWER",
@@ -10335,7 +10344,7 @@
         "startLine": 3773,
         "symbol": "MOVE_SECRET_POWER"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_DIVE",
@@ -10398,7 +10407,7 @@
         "startLine": 3812,
         "symbol": "MOVE_CAMOUFLAGE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_TAIL_GLOW",
@@ -10503,7 +10512,7 @@
         "startLine": 3877,
         "symbol": "MOVE_TEETER_DANCE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_BLAZE_KICK",
@@ -10524,7 +10533,7 @@
         "startLine": 3890,
         "symbol": "MOVE_BLAZE_KICK"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MUD_SPORT",
@@ -10545,7 +10554,7 @@
         "startLine": 3903,
         "symbol": "MOVE_MUD_SPORT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_ICE_BALL",
@@ -10650,7 +10659,7 @@
         "startLine": 3968,
         "symbol": "MOVE_POISON_FANG"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CRUSH_CLAW",
@@ -10797,7 +10806,7 @@
         "startLine": 4059,
         "symbol": "MOVE_AROMATHERAPY"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_FAKE_TEARS",
@@ -11117,7 +11126,7 @@
         "startLine": 4254,
         "symbol": "MOVE_SKY_UPPERCUT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SAND_TOMB",
@@ -11442,7 +11451,7 @@
         "startLine": 4449,
         "symbol": "MOVE_POISON_TAIL"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_COVET",
@@ -11463,7 +11472,7 @@
         "startLine": 4462,
         "symbol": "MOVE_COVET"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_VOLT_TACKLE",
@@ -11484,7 +11493,7 @@
         "startLine": 4475,
         "symbol": "MOVE_VOLT_TACKLE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MAGICAL_LEAF",
@@ -11526,7 +11535,7 @@
         "startLine": 4501,
         "symbol": "MOVE_WATER_SPORT"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_CALM_MIND",
@@ -11673,7 +11682,7 @@
         "startLine": 4592,
         "symbol": "MOVE_DOOM_DESIRE"
       },
-      "fourSlotRecipeAdmission": "gated"
+      "fourSlotRecipeAdmission": "not-yet-migrated"
     },
     {
       "id": "pret:MOVE_PSYCHO_BOOST",
@@ -12491,36 +12500,48 @@
       "dateUtc": "2026-10-11",
       "baseCommit": "d449a1d71e313ab5e6bac2a7ef7f8ae2fc41b3e3",
       "scope": "Shared copied state, OHKO, fire-thaw/TriAttack, sleep attacks and four-slot King/ShellBell",
-      "details": "13 newly admitted move recipes,264→277; four-slot item callbacks reuse canonical formulas. Immutable canonical and historical baselines retained with narrow source corrections documented. Animation coverage remains15.",
+      "details": "13 newly admitted move recipes,264\u2192277; four-slot item callbacks reuse canonical formulas. Immutable canonical and historical baselines retained with narrow source corrections documented. Animation coverage remains15.",
       "evidence": "evidence/shared-copy-ohko-hit-sleep-20261011/README.md"
     },
     {
       "dateUtc": "2026-10-11",
       "baseCommit": "db8579a28734e83ead8c3fa77bd57825a84370d3",
       "scope": "Shared ground spread, selected-move restrictions, dynamic types and fixed-two hits; two explosion animation roots",
-      "details": "277→286 admitted recipes, 15→17 dedicated scripts. Core-rule stage exit precedes continued animation completion.",
+      "details": "277\u2192286 admitted recipes, 15\u219217 dedicated scripts. Core-rule stage exit precedes continued animation completion.",
       "evidence": "evidence/shared-ground-restriction-type-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "b01522c721121548c43c841371be2702b4b86833",
+      "scope": "Shared recoil/crash and critical-status recipes",
+      "details": "286\u2192295 admitted recipes; no ability admission change; dedicated scripts remain17. Concrete76-ability static gap map replaces interpretation of old36/40 labels as missing count.",
+      "evidence": "evidence/shared-recoil-critical-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "a51e8a633b36739e398e2e3ef95bab32f15d6a72",
+      "scope": "Utility HP, weather-hit and common/Serene/Wonder Guard ability command integration",
+      "details": "295\u2192302 shared recipe admission; canonical and kernel ability predicates76/76, bounded ability records43/33 with explicitly scoped evidence. Dedicatedscripts17 unchanged.",
+      "evidence": "evidence/shared-weather-abilities-20261011/README.md"
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
-    "method": "Runtime SourceBattleKernel.SupportsRecipe over all 354 authenticated definitions in the combined fixed-two runner; admission is separate from full interaction/Application/presentation.",
+    "method": "Runtime SourceBattleKernel.SupportsRecipe over all354 definitions and SourceBattleAdmission.SupportsAbility over all76 official identities in final combined WonderGuard runner; admission is not full interaction coverage.",
     "inventoryDateUtc": "2026-10-11",
-    "baseCommit": "db8579a28734e83ead8c3fa77bd57825a84370d3",
-    "workingTreeState": "evidence/shared-ground-restriction-type-20261011/main-source-files.json",
+    "baseCommit": "a51e8a633b36739e398e2e3ef95bab32f15d6a72",
+    "workingTreeState": "evidence/shared-weather-abilities-20261011/main-source-files.json",
     "singleRecipesRegistered": 354,
-    "fourSlotRecipeAdmission": 286,
-    "fourSlotRecipeNotAdmitted": 68,
+    "fourSlotRecipeAdmission": 302,
+    "fourSlotRecipeNotAdmitted": 52,
     "newFamilyMoveCounts": {
-      "fixedTwoHit": 3,
-      "groundSpread": 2,
-      "selectedMoveRestrictions": 2,
-      "dynamicType": 2
+      "utilityHp": 3,
+      "weatherHit": 4
     },
     "dedicatedSingleAnimationScriptsAccepted": 17,
     "dedicatedScriptsRemaining": 337,
     "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 17,
     "dedicatedFourSlotPresentationOnlyScripts": [],
-    "sourceKernelSha256": "9cd1437e822dc1e846fdd605a075caf73929b60fdbd4185e68fc35b9fe0ebb3b",
+    "sourceKernelSha256": "4e42b8a2c87b88165b3cf0a596ea8e68c520933f323f9f8c761eb55f7ac840be",
     "predicateInputs": [
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.ActionCancellers.cs",
@@ -12540,7 +12561,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Charge.cs",
-        "sha256": "9e875c390499c586d2225911c7960be0c51820a41b37db6a45c4c658dfe1fa74"
+        "sha256": "808cbbd3c7699ea5cc4a0073c76009909565f2259f71b5b5829ef3f2bbfd7313"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Contact.cs",
@@ -12549,6 +12570,10 @@
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.CopyState.cs",
         "sha256": "1490faef4006415fffb36b73672783013065a8390472861b2535f6936393e470"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.CriticalStatusHit.cs",
+        "sha256": "32903ca59df75ab9effdf05173ae8d2c18a932fc1efc2dd1ad01cfbc99f24ef6"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Delayed.cs",
@@ -12560,7 +12585,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.DynamicType.cs",
-        "sha256": "1c2794c67dfa4ea3095b8347d2812ac4af5d8a4b0ef2ca9b93b6e3881d6bf972"
+        "sha256": "92be30eb9d980da5aaea93f6dc1e41d40aee1a009858889d09305b3b97bfbaef"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FieldSetting.cs",
@@ -12572,23 +12597,23 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FixedDamage.cs",
-        "sha256": "f12aff2ebc503e8809a7e03a46e75faecc999a29cc4840c9e912ce42d46dd274"
+        "sha256": "6ef3165f16c781612baf611f32316b09ada0764411dd6a916323456dfcc3d12b"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FreezeHit.cs",
-        "sha256": "71c55a0c13f838282d192515d3f5ddbb11e49f88672db7077f077317a56fd68d"
+        "sha256": "a71c828c870b327dd040a2eeb4825b30144cdc704374335a1ef48393ca8bed3d"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Generic.cs",
-        "sha256": "4d73cd74b5f22308a1aaa35f29b5b912192f7925f181122d8211d1c30f0c89d9"
+        "sha256": "292e94f31c40afd2132f11f6eebd10ec848418d0674e72542706971da1d2670d"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.GroundSpread.cs",
-        "sha256": "442046e023187f4a6d040dca160820de33dee28a83a61375f44e4689bd13b2af"
+        "sha256": "678bfe9bb65f312639013509d8a301f6bb4b15af68eef0df0dda44602e4d63f7"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.HeldDamage.cs",
-        "sha256": "6580f5dbaeabccb2057ba63744bae2e81587ab5f86b8e21021e3a51c44b13842"
+        "sha256": "f3ae3eaef4f7f490f14eb5220bfcae420581e1bf3bd88d5e82f13a9fdf80c46c"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.HitItems.cs",
@@ -12608,7 +12633,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Primitives.cs",
-        "sha256": "93a69d76e1a68aa3c9d7636bace9bca6d23103c1ce55b1f9d967d36f08d23d12"
+        "sha256": "d3ccbee61036adb098c0f558bf158e696d17e3f56f8abeded7eb6e7d5b0e05ee"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Protection.cs",
@@ -12616,7 +12641,11 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.RechargeRampage.cs",
-        "sha256": "c4274d280b2af9e9e507c24021bf92d70a4a275bad317c5983dffdc0bf9e5031"
+        "sha256": "53e1eee14174d855367413660f7560c7b4efc53f0d1a3259fecd7d767128f9bc"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Recoil.cs",
+        "sha256": "cf6dcdd88cb4edc6d1c037af1762abd2adbbe9b8526bb9944fe6800572fb38d4"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.ResidualStatus.cs",
@@ -12624,11 +12653,15 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Retaliation.cs",
-        "sha256": "2e2d14faa5c380c993210653c8640efdc166817eef7fcc150ae25f28e88550a0"
+        "sha256": "7b0c339a5e4429e126e5f3675a552d62f0c27f77f8d123b1306df72442bb84e2"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.SecondaryEffect.cs",
+        "sha256": "458b5e5ffd33c740e671c4b4507e407741f562a8c68e2ebe90de4becb154f979"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.SleepAttacks.cs",
-        "sha256": "1fd86c819c646891b45427148e0eb6899a4668f688a55b15954a7b5b49d50ada"
+        "sha256": "bacc1c403dc35810a1f90434df0463b5f8edad5c5a9bb5a5f83240ad5e9c308f"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.SleepResidual.cs",
@@ -12640,7 +12673,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.StatRecovery.cs",
-        "sha256": "3a4ed5cf9e891055d29ddec29e9bb3f8f2638bcd08fd0b587cb85bbe7c163f72"
+        "sha256": "aed00ffb008c70e6a0ed9d3d9b79d3bc58b28732987eeb3baa5ccd822def2218"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Struggle.cs",
@@ -12660,24 +12693,32 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.TurnMoves.cs",
-        "sha256": "186c6e5f6233f24b72ea6e338b823c8c87784c212a407f76c8f5da7f7b376dd6"
+        "sha256": "ed54df706ec3a31faf87de75a697f3199a295bf03abaaa6d0056466e42206a2b"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.TypeChanges.cs",
         "sha256": "7e3ceb13161ae6a9ef394752c4bd43027a3f382990dcaa32e48bcd2d648f63f5"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.TypeResults.cs",
+        "sha256": "775dbc9361eaf25c0a2f99987625e0b27930635a5a5c9c34350ba88a7480ad54"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.UtilityHp.cs",
+        "sha256": "aeafaf7dca0eee4f872becac741f3993ad1d7cb6eb616e147e531e512d54d090"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.VolatileTargets.cs",
         "sha256": "adc7e6f0a1c7db78aeef37c3e9b648e03a634364bd8511e4395cd3ea9f83027e"
       },
       {
-        "path": "src/Game.Domain/Battle/SourceBattleKernel.cs",
-        "sha256": "9cd1437e822dc1e846fdd605a075caf73929b60fdbd4185e68fc35b9fe0ebb3b"
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.WeatherHit.cs",
+        "sha256": "096fb9f209dfdee323f2d453bfb2efba4d5e56866559341168496be4b966a8d4"
       }
     ],
     "continuationVersion": "firered-four-action-lifetimes-v7",
-    "abilityBoundedTestRecords": 36,
-    "abilityInteractionUnverifiedRecords": 40,
+    "abilityBoundedTestRecords": 43,
+    "abilityInteractionUnverifiedRecords": 33,
     "fixedDamageEvidence": {
       "result": "evidence/shared-battle-families-20261011/shared-fixed-main-01/result.json",
       "groups": 9,
@@ -12841,18 +12882,18 @@
         "physicalAudioVerified": false
       }
     },
-    "previousFourSlotRecipeAdmission": 277,
+    "previousFourSlotRecipeAdmission": 286,
     "admissionIncrease": 9,
     "newFamilyMoveIds": [
-      "pret:MOVE_DOUBLE_KICK",
-      "pret:MOVE_BONEMERANG",
-      "pret:MOVE_TWINEEDLE",
-      "pret:MOVE_EARTHQUAKE",
-      "pret:MOVE_MAGNITUDE",
-      "pret:MOVE_ENCORE",
-      "pret:MOVE_IMPRISON",
-      "pret:MOVE_HIDDEN_POWER",
-      "pret:MOVE_WEATHER_BALL"
+      "pret:MOVE_TAKE_DOWN",
+      "pret:MOVE_SUBMISSION",
+      "pret:MOVE_DOUBLE_EDGE",
+      "pret:MOVE_VOLT_TACKLE",
+      "pret:MOVE_JUMP_KICK",
+      "pret:MOVE_HI_JUMP_KICK",
+      "pret:MOVE_BLAZE_KICK",
+      "pret:MOVE_POISON_TAIL",
+      "pret:MOVE_POISON_FANG"
     ],
     "retaliationEvidence": {
       "result": "evidence/shared-target-families-20261011/retaliation-result.json",
@@ -12902,8 +12943,8 @@
       "limits": "Expands the already-bounded Hustle record; does not increase 36/40 ability counts. Poison Powder ability/move pairing is a controlled legal-register fixture, not a natural learnset or Metronome claim."
     },
     "dedicatedFourSlotPresentationOnlyScriptsNote": "All 17 registered roots have bounded actual kernel dispatch evidence. The older four same-side Counter geometry cases remain presentation-only.",
-    "focusedRuleCodeIdentity": "evidence/shared-ground-restriction-type-20261011/main-source-files.json",
-    "predicateInspectionUtc": "2026-10-11T15:03:00Z",
+    "focusedRuleCodeIdentity": "evidence/shared-recoil-critical-20261011/main-source-files.json",
+    "predicateInspectionUtc": "2026-10-11T15:10:00Z",
     "predicateEvidenceBoundary": "Current predicate inputs are a static source snapshot. Focused rule evidence and stat-host/native evidence retain their own code identities; later deferred-spread or other edits are not retroactively tested by those runs.",
     "currentEvidenceInputs": [
       {
@@ -13001,7 +13042,9 @@
       ],
       "scope": "Actual main combined Domain/Content builds and bounded actual actions/turns. Source witnesses reused by recorded hash, not regenerated. No new campaign/UI/native/physical audio acceptance."
     },
-    "sharedGroundRestrictionTypeEvidence": "evidence/shared-ground-restriction-type-20261011/README.md"
+    "sharedGroundRestrictionTypeEvidence": "evidence/shared-ground-restriction-type-20261011/README.md",
+    "sharedRecoilCriticalEvidence": "evidence/shared-recoil-critical-20261011/README.md",
+    "sharedWeatherAbilitiesEvidence": "evidence/shared-weather-abilities-20261011/README.md"
   },
   "stageExitPolicy": {
     "dateUtc": "2026-10-11",
@@ -13010,5 +13053,15 @@
     "dedicatedPresentationPrerequisite": false,
     "presentationPolicy": "Dedicated animation/audio continue in parallel; prioritize mainline needs, label generic effects, preserve complete real settlement.",
     "independentModes": "Report Safari/roamers/other field-dependent special modes separately; no implicit acceptance."
+  },
+  "abilityImplementationSnapshot": {
+    "sourceInventory": "docs/battle-ability-gap-map.json",
+    "combinedSourceManifest": "evidence/shared-weather-abilities-20261011/main-source-files.json",
+    "inspectionOnly": false,
+    "kernelPredicateAdmission": 76,
+    "canonicalSinglesPredicateAdmission": 76,
+    "officialDenominator": 76,
+    "evidence": "evidence/shared-weather-abilities-20261011/wonder-result.json",
+    "warning": "All official identities admitted; move/ability lifecycle closure remains incomplete. Bounded evidence records are not completion percentages."
   }
 }

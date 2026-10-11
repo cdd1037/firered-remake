@@ -176,6 +176,8 @@ public static partial class WildBattleRules
                 e is WildBattleConfusionSelfHitEvent || e is WildBattleInfatuationBlockedEvent ||
                 e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } ||
                 e is WildBattleAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" } ||
+                e is WildBattleAbilityPreventedEvent { Ability: "ABILITY_WONDER_GUARD" } guard && sourceHitItemCatalog is { } sourceCatalog &&
+                    SourceTypeResultRules.Calculate(sourceCatalog, Get(guard.Target), sourceCatalog.Moves[guard.Move], invocationEffectiveType).TypeImmune ||
                 e is WildBattleMoveFailedEvent { Reason: "disabled" or "imprison" or "taunted" });
             if (unable) ChangeCalledLock(side, locked with { UnableToUseMove = true }, "unable-to-use-move");
         }
@@ -275,14 +277,13 @@ public static partial class WildBattleRules
             int lost = SourceGenericApplyDamage(side, target, move, damage, critical, percent);
             ScalarReportType(catalog, side, target, move, ScalarType(move.Type));
             bool effective = !ScalarTypeResult(catalog, target, ScalarType(move.Type)).Immune;
-            int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
-            int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-            if (effective && roll <= chance)
+            var secondary = Recipes.SecondaryEffect(S(side), move, purpose, !effective);
+            if (secondary.Apply)
             {
                 if (move.Effect == "EFFECT_UPROAR" && Get(side).CalledTurnState?.Lock is null)
                     StartCalledLock(side, move, WildBattleCalledLockKind.Uproar, (Draw($"{purpose}.uproar-duration", 4) & 3) + 2);
-                else if (move.Effect is "EFFECT_SKY_ATTACK" or "EFFECT_TWISTER") ApplyFlinch(target);
-                else if (move.Id.Value == "pret:MOVE_BOUNCE") InflictStatus(catalog, target, WildBattleStatus.Paralysis, false);
+                else if (move.Effect is "EFFECT_SKY_ATTACK" or "EFFECT_TWISTER") Recipes.ApplySecondaryFlinch(S(target), secondary.Certain);
+                else if (move.Id.Value == "pret:MOVE_BOUNCE") Recipes.InflictStatus(catalog, S(target), WildBattleStatus.Paralysis, false, certain: secondary.Certain);
             }
             ScalarFinish(catalog, side, target, move, purpose, lost, ScalarType(move.Type));
         }

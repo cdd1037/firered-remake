@@ -28,7 +28,7 @@ internal static class SourceMoveHistoryReducer
         bool noEffect = commandNoEffect || !obeys || emitted.Any(e => e is SourceMoveMissedEvent || e is SourceActionBlockedEvent ||
             e is SourceMoveFailedEvent { Reason: not ("already-full-hp" or "already-asleep" or "already-poisoned" or "already-paralyzed" or "already-confused" or "nothing-happened" or "mist" or "already-substitute" or "substitute-insufficient-hp" or "stockpile-empty") } ||
             e is SourceStatAtMinimumEvent or SourceStatAtMaximumEvent ||
-            e is SourceAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE" } ||
+            e is SourceAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE" or "ABILITY_WONDER_GUARD" } ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect });
         MoveId unavailable = new("pret:MOVE_UNAVAILABLE");
         var history = actorCell.Registers.History ?? new();

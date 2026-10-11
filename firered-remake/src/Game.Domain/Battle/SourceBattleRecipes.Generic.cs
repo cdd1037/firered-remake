@@ -9,7 +9,7 @@ internal abstract partial class SourceRecipeContext
 {
     internal static bool HasGenericRecipe(string effect) => effect is
         "EFFECT_HIT" or "EFFECT_QUICK_ATTACK" or "EFFECT_HIGH_CRITICAL" or "EFFECT_ALWAYS_HIT" or
-        "EFFECT_THAW_HIT" or "EFFECT_TRI_ATTACK" or "EFFECT_FREEZE_HIT" or "EFFECT_BURN_HIT" or "EFFECT_PARALYZE_HIT" or "EFFECT_POISON_HIT" or "EFFECT_CONFUSE_HIT" or
+        "EFFECT_BLAZE_KICK" or "EFFECT_POISON_TAIL" or "EFFECT_POISON_FANG" or "EFFECT_THAW_HIT" or "EFFECT_TRI_ATTACK" or "EFFECT_FREEZE_HIT" or "EFFECT_BURN_HIT" or "EFFECT_PARALYZE_HIT" or "EFFECT_POISON_HIT" or "EFFECT_CONFUSE_HIT" or
         "EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT" or "EFFECT_SPEED_DOWN_HIT" or
         "EFFECT_ACCURACY_DOWN_HIT" or "EFFECT_DEFENSE_DOWN_HIT" or "EFFECT_SPECIAL_DEFENSE_DOWN_HIT" or
         "EFFECT_ATTACK_UP_HIT" or "EFFECT_TRAP" or "EFFECT_ABSORB" or "EFFECT_MULTI_HIT" or "EFFECT_DOUBLE_HIT" or "EFFECT_TWINEEDLE" or
@@ -60,6 +60,9 @@ internal abstract partial class SourceRecipeContext
                     ChangeStage(side, target, move.Effect == "EFFECT_ATTACK_DOWN_2" ? WildBattleStat.Attack :
                         move.Effect == "EFFECT_SPEED_DOWN_2" ? WildBattleStat.Speed : WildBattleStat.SpecialDefense, -2, move.Id);
                     return;
+                case "EFFECT_BLAZE_KICK":
+                case "EFFECT_POISON_TAIL":
+                case "EFFECT_POISON_FANG": ExecuteCriticalStatusHit(catalog, side, target, slot, move, purpose); return;
                 case "EFFECT_THAW_HIT": ExecuteThawHit(catalog, side, target, slot, move, purpose); return;
                 case "EFFECT_TRI_ATTACK": ExecuteTriAttack(catalog, side, target, slot, move, purpose); return;
                 case "EFFECT_FREEZE_HIT": ExecuteFreezeHit(catalog, side, target, slot, move, purpose); return;
@@ -73,14 +76,20 @@ internal abstract partial class SourceRecipeContext
 
         internal bool SourceGenericAccuracy(BattlerSlot side, BattlerSlot target, PokemonMoveDefinition move, string purpose)
         {
+            if (HasWeatherHitRecipe(move.Effect)) return FixedDamageAccuracy(side, target, move, purpose, thunderWeather: true);
             if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) return false;
             if (CalledSureHit(side, target)) return true;
             if (move.Effect is "EFFECT_ALWAYS_HIT" or "EFFECT_VITAL_THROW") return !BillUnderground(side, target, move);
             return EarlyPartyAccuracy(side, target, move, purpose, false);
         }
 
-        internal virtual void SourceGenericMiss(BattlerSlot side, BattlerSlot target, PokemonMoveDefinition move) =>
-            Add(n => new SourceMoveMissedEvent(n, Turn, side, target, move.Id));
+        internal virtual void SourceGenericMiss(BattlerSlot side, BattlerSlot target, PokemonMoveDefinition move)
+        {
+            if (SourceTypeResultsEnabled && WildBattleEffective.Ability(Get(target)) == "ABILITY_WONDER_GUARD" && !ChargeFirstTurn(move))
+                SourceTypeNoEffect(target, clearHitType: true); // JumpIfMoveFailed, even when the weakness would pass WG
+            if (!SourceTypeAccuracyMiss(side, target, move))
+                Add(n => new SourceMoveMissedEvent(n, Turn, side, target, move.Id));
+        }
 
         internal bool SourceGenericCritical(WildBattleCombatant actor, WildBattleCombatant target, PokemonMoveDefinition move, string purpose)
         {
@@ -94,8 +103,8 @@ internal abstract partial class SourceRecipeContext
         }
 
         internal int SourceGenericDamage(PokemonCatalog catalog, WildBattleCombatant actor, WildBattleCombatant target,
-            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null, ElementType? effectiveType = null, int? damageMultiplier = null) =>
-            ForestBattleDamage.Calculate(catalog, actor, target, move.Id, critical, percent,
+            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null, ElementType? effectiveType = null, int? damageMultiplier = null, bool suppressTypeMiss = true, SourceTypeCommand typeCommand = SourceTypeCommand.TypeCalc) =>
+            SourceTypeDamage(catalog, targetSide, move, ForestBattleDamage.Calculate(catalog, actor, target, move.Id, critical, percent,
                 true, true, true, true, route3Rules: true, dynamicPower: dynamicPower, mtMoonRules: true, ceruleanRules: true, billRules: true,
                 vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
                 rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(targetSide),
@@ -104,7 +113,8 @@ internal abstract partial class SourceRecipeContext
                 sourceSolarBeamWeakWeather: move.Effect == "EFFECT_SOLAR_BEAM" && (SourceCalledRain || StruggleSandstorm || SettingWeather.HailTurnsRemaining > 0),
                 weatherSuppressed: SourceDamageWeatherSuppressed, sourceDoubleBattle: SourceDoubleBattle,
                 sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor),
-                sourceHelpingHand: Invocation is { } invocation && HelpingHand(invocation.Actor)).Damage;
+                sourceHelpingHand: Invocation is { } invocation && HelpingHand(invocation.Actor)).Damage,
+                effectiveType is { } type ? SourceDynamicTypeRules.Symbol(type) : null, suppressTypeMiss, typeCommand);
 
         // The canonical owner emits result text here, after actual HP/critical commands.
         // Legacy singles retain their existing event timing through the empty default.
@@ -113,6 +123,7 @@ internal abstract partial class SourceRecipeContext
         internal void SourceGenericEffectiveness(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide,
             PokemonMoveDefinition move)
         {
+            if (SourceTypeReport(catalog, side, targetSide, move)) return;
             SourceDamageResultMessage(side, targetSide, move);
             var target = Get(targetSide);
             if (!target.Identified || move.Type is not ("TYPE_NORMAL" or "TYPE_FIGHTING"))
@@ -147,7 +158,7 @@ internal abstract partial class SourceRecipeContext
             PokemonMoveDefinition move, string purpose, int damage)
         {
             FireHitThaw(side, targetSide, move);
-            if (damage > 0 && SourceCalledHitReachedPokemon(targetSide) && WildBattleEffective.Ability(Get(targetSide)) == "ABILITY_STATIC" && Get(side).Pokemon.CurrentHp > 0 &&
+            if (!ContactCommandNoEffect && damage > 0 && SourceCalledHitReachedPokemon(targetSide) && WildBattleEffective.Ability(Get(targetSide)) == "ABILITY_STATIC" && Get(side).Pokemon.CurrentHp > 0 &&
                 move.Flags.Contains("FLAG_MAKES_CONTACT") && Draw($"{purpose}.static", 3) % 3 == 0)
             {
                 RecordAbility(targetSide, "ABILITY_STATIC");
@@ -160,19 +171,20 @@ internal abstract partial class SourceRecipeContext
             PokemonMoveDefinition move, string purpose, int damage)
         {
             // Cmd_seteffectwithchance consumes this draw even for a zero effect byte or immunity.
-            int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
-            int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-            if (roll > chance || damage == 0) return;
+            var secondary = SecondaryEffect(side, move, purpose, damage == 0);
+            if (!secondary.Apply) return;
             switch (move.Effect)
             {
                 case "EFFECT_BLAZE_KICK":
-                case "EFFECT_BURN_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Burn, false); break;
-                case "EFFECT_PARALYZE_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Paralysis, false); break;
+                case "EFFECT_BURN_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Burn, false, certain: secondary.Certain); break;
+                case "EFFECT_THUNDER":
+                case "EFFECT_PARALYZE_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Paralysis, false, certain: secondary.Certain); break;
                 case "EFFECT_POISON_TAIL":
-                case "EFFECT_POISON_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Poison, false); break;
+                case "EFFECT_POISON_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Poison, false, certain: secondary.Certain); break;
                 case "EFFECT_CONFUSE_HIT": ApplyConfusion(targetSide, purpose, true); break;
+                case "EFFECT_TWISTER":
                 case "EFFECT_FLINCH_HIT":
-                case "EFFECT_FLINCH_MINIMIZE_HIT": ApplyFlinch(targetSide); break;
+                case "EFFECT_FLINCH_MINIMIZE_HIT": ApplySecondaryFlinch(targetSide, secondary.Certain); break;
                 case "EFFECT_SPEED_DOWN_HIT": ChangeStage(side, targetSide, WildBattleStat.Speed, -1, move.Id, true); break;
                 case "EFFECT_ACCURACY_DOWN_HIT": ChangeStage(side, targetSide, WildBattleStat.Accuracy, -1, move.Id, true); break;
                 case "EFFECT_DEFENSE_DOWN_HIT": ChangeStage(side, targetSide, WildBattleStat.Defense, -1, move.Id, true); break;
@@ -196,6 +208,10 @@ internal abstract partial class SourceRecipeContext
             int effectiveDamage = damage;
             damage = AdjustHeldDamage(targetSide, move.Id, damage, purpose);
             int lost = SourceGenericApplyDamage(side, targetSide, move, damage, critical, percent);
+            // The migrated weather-hit prefixes reach critmessage even when Endure
+            // or Focus Band leaves zero loss. Singles may already print that command.
+            if (HasWeatherHitRecipe(move.Effect) && critical && lost == 0 && effectiveDamage > 0 && !FixedDamageZeroCriticalPrinted(targetSide))
+                Add(n => new SourceCriticalHitEvent(n, Turn, side, targetSide));
             SourceGenericEffectiveness(catalog, side, targetSide, move);
             if (move.Effect == "EFFECT_ABSORB")
             {
@@ -257,9 +273,9 @@ internal abstract partial class SourceRecipeContext
             if (twineedle)
             {
                 // Preserve the user-approved Twineedle comparison from its prior source delegate.
-                int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
-                if (lastEffectiveDamage > 0 && roll < move.SecondaryEffectChance)
-                    InflictStatus(catalog, targetSide, WildBattleStatus.Poison, false);
+                var secondary = SecondaryEffect(side, move, purpose, lastEffectiveDamage == 0, strictTwineedle: true);
+                if (secondary.Apply)
+                    InflictStatus(catalog, targetSide, WildBattleStatus.Poison, false, certain: secondary.Certain);
             }
             else SourceGenericSecondary(catalog, side, targetSide, move, purpose, lastEffectiveDamage);
             if (Get(targetSide).Pokemon.CurrentHp == 0) ForestFaint(targetSide);

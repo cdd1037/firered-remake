@@ -26,7 +26,9 @@ internal sealed partial class FrameRecipeContext
     {
         if (Frame.Get(invocation.Actor).Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Rampage } locked) return;
         if (Events.Any(e => e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } ||
-            e is SourceAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" }))
+            e is SourceAbilityPreventedEvent { Ability: "ABILITY_LEVITATE" } ||
+            e is SourceAbilityPreventedEvent { Ability: "ABILITY_WONDER_GUARD" } guard &&
+                SourceTypeResultRules.Calculate(catalog, Get(guard.Target), catalog.Moves[guard.Move], DynamicHitType(move)).TypeImmune))
             ChangeRechargeRampageLock(invocation.Actor, locked with { UnableToUseMove = true }, "unable-to-use-move");
     }
 }

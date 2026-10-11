@@ -47,9 +47,8 @@ internal abstract partial class SourceRecipeContext
         {
             // seteffectwithchance draws even when typecalc or Substitute prevents
             // the effect; effective zero-loss from Endure does not suppress it.
-            int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
-            int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(actor)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-            if (roll <= chance && effectiveDamage > 0) ApplyFlinch(target);
+            var secondary = SecondaryEffect(actor, move, purpose, effectiveDamage == 0);
+            if (secondary.Apply) ApplySecondaryFlinch(target, secondary.Certain);
         }
         else
         {

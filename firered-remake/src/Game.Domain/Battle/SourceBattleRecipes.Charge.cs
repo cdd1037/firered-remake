@@ -55,12 +55,11 @@ internal abstract partial class SourceRecipeContext
         int lost=SourceGenericApplyDamage(actor,target,move,damage,critical,percent);
         ChargeReportType(catalog,actor,target,move);
         bool effective=!ChargeImmune(catalog,target,move);
-        int roll=Draw($"{purpose}.secondary-effect",100)%100;
-        int chance=move.SecondaryEffectChance*(WildBattleEffective.Ability(Get(actor))=="ABILITY_SERENE_GRACE"?2:1);
-        if(effective&&roll<=chance)
+        var secondary=SecondaryEffect(actor,move,purpose,!effective);
+        if(secondary.Apply)
         {
-            if(move.Effect=="EFFECT_SKY_ATTACK")ApplyFlinch(target);
-            else if(move.Id.Value=="pret:MOVE_BOUNCE")InflictStatus(catalog,target,WildBattleStatus.Paralysis,false);
+            if(move.Effect=="EFFECT_SKY_ATTACK")ApplySecondaryFlinch(target,secondary.Certain);
+            else if(move.Id.Value=="pret:MOVE_BOUNCE")InflictStatus(catalog,target,WildBattleStatus.Paralysis,false,certain:secondary.Certain);
         }
         ChargeFinish(catalog,actor,target,move,purpose,lost);
     }

@@ -43,8 +43,9 @@ internal abstract partial class SourceRecipeContext
         }
         if (result is { } effect) Add(n => new SourceEffectivenessEvent(n, Turn, actor, target, move, effect));
     }
-    internal void InflictStatus(PokemonCatalog catalog, BattlerSlot target, uint status, bool ability, string? abilityReason = null)
+    internal void InflictStatus(PokemonCatalog catalog, BattlerSlot target, uint status, bool ability, string? abilityReason = null, bool certain = false)
     {
+        if (!ability && SecondaryStatusPrevention(target, status, certain)) return;
         var body = Get(target); string effective = WildBattleEffective.Ability(body);
         if (body.Pokemon.CurrentHp == 0 || body.Status != 0) return;
         if (status == WildBattleStatus.Poison && effective == "ABILITY_IMMUNITY") return;

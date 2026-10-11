@@ -61,8 +61,12 @@ internal abstract partial class SourceRecipeContext
     internal virtual void RolloutAttackString(BattlerSlot slot) => throw new SourceRecipeUnsupported("source_rollout_storage");
     internal virtual bool RolloutAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) => SourceGenericAccuracy(actor, target, move, purpose);
     internal virtual bool RolloutImmune(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
-        SourceGenericDamage(catalog, Get(actor), Get(target), target, move, false, 100) == 0;
-    internal virtual void RolloutReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) => SourceGenericEffectiveness(catalog, actor, target, move);
+        SourceTypeResult(catalog, target, move, command: SourceTypeCommand.TypeCalc2, apply: true).Immune;
+    internal virtual void RolloutReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    {
+        if (!SourceTypeReport(catalog, actor, target, move, command: SourceTypeCommand.TypeCalc2))
+            SourceGenericEffectiveness(catalog, actor, target, move);
+    }
     internal virtual int RolloutDamage(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool critical, int percent, int power, string purpose) =>
         AdjustHeldDamage(target, move.Id, SourceGenericDamage(catalog, Get(actor), Get(target), target, move, critical, percent, power), purpose);
     internal virtual void RolloutFinish(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int lost)
@@ -77,7 +81,15 @@ internal abstract partial class SourceRecipeContext
         int before = RolloutRemaining(actor);
         if (before == 0) SpendEarlyPartyPp(actor, target, Invocation!.PpSlot, move); else RolloutAttackString(actor);
         if (!RolloutAccuracy(actor, target, move, purpose))
-        { if (before != 0) ChangeRollout(actor, move, 0, "missed"); SourceGenericMiss(actor, target, move); return; }
+        {
+            if (before != 0) ChangeRollout(actor, move, 0, "missed");
+            if (SourceTypeResultsEnabled && WildBattleEffective.Ability(Get(target)) == "ABILITY_WONDER_GUARD")
+            {
+                SourceTypeNoEffect(target, clearHitType: true); // failed accuracy's JumpIfMoveFailed
+                if (SourceTypeReport(catalog, actor, target, move, command: SourceTypeCommand.TypeCalc2)) return;
+            }
+            SourceGenericMiss(actor, target, move); return;
+        }
         if (RolloutImmune(catalog, actor, target, move))
         { if (before != 0) ChangeRollout(actor, move, 0, "no-effect"); RolloutReportType(catalog, actor, target, move); return; }
         int remaining = (before == 0 ? 5 : before) - 1;

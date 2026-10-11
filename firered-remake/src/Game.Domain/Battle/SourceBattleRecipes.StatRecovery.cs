@@ -142,15 +142,8 @@ internal abstract partial class SourceRecipeContext
             SourceGenericApplyDamage(side, targetSide, move, damage, critical, percent);
             SourceGenericEffectiveness(catalog, side, targetSide, move);
             bool certain = move.Effect is "EFFECT_SUPERPOWER" or "EFFECT_OVERHEAT";
-            // The certain branch short-circuits Random only when MOVE_RESULT_NO_EFFECT
-            // is clear. An immune hit still executes Random in the following else-if.
-            bool apply = certain && effectiveDamage > 0;
-            if (!apply)
-            {
-                int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-                apply = Draw($"{purpose}.secondary-effect", 100) % 100 <= chance && effectiveDamage > 0;
-            }
-            if (apply)
+            var secondary = SecondaryEffect(side, move, purpose, effectiveDamage == 0, certain: certain);
+            if (secondary.Apply)
             {
                 switch (move.Effect)
                 {

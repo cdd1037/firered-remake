@@ -141,9 +141,11 @@ Test("Trace singles activates once, no ability RNG, authentic identity", () => {
         var t = Turn(s); Trace(s, t); Check(!t.Events.OfType<WildBattleAbilityActivatedEvent>().Any(e => e.Ability == "ABILITY_TRACE"), "no re-trace per turn"); Roundtrip(t);
     }
 });
-Test("Trace copies Trace and retains unmigrated donor admission gates", () => {
+Test("Trace copies Trace and the admitted Wonder Guard donor", () => {
     var r = WildBattleRules.StartSourceWild(mechanics, BattleRulesProfile.CanonicalSourceSingles, [Mon("PORYGON", ["PROTECT"])], 0, Mon("SHEDINJA", ["PROTECT"]), new(0));
-    Check(!r.Succeeded && r.Fault == "source_mechanics_ability_not_implemented" && r.Events.IsEmpty && r.Trace.IsEmpty, "Wonder Guard source query proven; full battle not admitted");
+    Check(r.Succeeded && WildBattleEffective.Ability(r.State!.Player) == "ABILITY_WONDER_GUARD" &&
+        r.State.Player.Pokemon.AbilityId == "ABILITY_TRACE", "real Wonder Guard donor now admitted; Trace keeps permanent identity");
+    Roundtrip(r);
     r = Entry(Mon("PORYGON", ["PROTECT"]), Mon("PORYGON2", ["PROTECT"]));
     Check(r.Events.OfType<WildBattleAbilityActivatedEvent>().Count(e => e.Ability == "ABILITY_TRACE") == 2, "both slots copy Trace once");
     Check(!r.State!.Player.SourceTracePending && !r.State.Opponent.SourceTracePending, "both pending bits consumed"); Roundtrip(r);

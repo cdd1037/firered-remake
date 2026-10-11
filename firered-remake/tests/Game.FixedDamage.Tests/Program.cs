@@ -162,10 +162,13 @@ Test("unsupported state and malformed actions fail atomically before PP, events 
  void Atomic(SourceBattleFrame input,SourceResolvedMoveAction action,string name){var r=SourceBattleKernel.ResolveAction(catalog,input,action);Check(!r.Succeeded&&ReferenceEquals(r.State,input)&&r.Events.IsEmpty&&r.Trace.IsEmpty,name+": "+r.Fault);}
  var valid=new SourceResolvedMoveAction(f.Slots[2].Occupant!.Value,f.Revision,0,new(3));
  Atomic(f,valid with{Revision=-1},"stale revision");Atomic(f,valid with{Actor=valid.Actor with{EntrySerial=9}},"stale occupant");Atomic(f,valid with{ChosenSlot=4},"bad move slot");
- var unsupported=Put(f,3,f.Slots[3].Body! with{HeldItem="ITEM_FOCUS_BAND"});Atomic(unsupported,valid,"unmigrated four-slot Focus Band");
+ var band=Put(f,3,f.Slots[3].Body! with{HeldItem="ITEM_FOCUS_BAND"});var admitted=SourceBattleKernel.ResolveAction(catalog,band,valid);Check(admitted.Succeeded,"previously migrated four-slot Focus Band remains admitted");
+ var unsupported=Put(f,3,f.Slots[3].Body! with{HeldItem="ITEM_MASTER_BALL"});Atomic(unsupported,valid,"unsupported held-item category");
  var overflow=f with{Rng=new(31,ulong.MaxValue)};Atomic(overflow,valid,"RNG overflow");
  var badDefinition=catalog.Moves[Id("SUPER_FANG")] with{Accuracy=100};Check(!SourceBattleKernel.SupportsRecipe(badDefinition),"modified move definition rejected");
- foreach(string excluded in new[]{"FISSURE","COUNTER","BIDE","DOUBLE_EDGE","ERUPTION"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(excluded)]),"outside bounded family "+excluded);
+ var fixedFamily=typeof(WildBattleRules).Assembly.GetType("Game.Domain.Battle.SourceRecipeContext")!.GetMethod("HasFixedDamageRecipe",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic)!;
+ Check((bool)fixedFamily.Invoke(null,[catalog.Moves[Id("FISSURE")].Effect])!,"later OHKO shared fixed-damage dispatch remains admitted");
+ foreach(string excluded in new[]{"COUNTER","BIDE","DOUBLE_EDGE","ERUPTION"})Check(!(bool)fixedFamily.Invoke(null,[catalog.Moves[Id(excluded)].Effect])!,"outside fixed-damage family "+excluded);
 });
 Test("original C adjustment and nominal-versus-actual receipt vectors match shared commands",()=>{
  var assembly=typeof(WildBattleRules).Assembly;

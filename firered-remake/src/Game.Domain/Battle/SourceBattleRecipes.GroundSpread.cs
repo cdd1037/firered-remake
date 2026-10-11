@@ -30,6 +30,8 @@ internal abstract partial class SourceRecipeContext
             // is recomputed for this target. Neither move uses seteffectwithchance.
             if (!FixedDamageAccuracy(actor, target, move, purpose))
             {
+                if (SourceTypeReport(catalog, actor, target, move, command: SourceTypeCommand.MissedTypeCalc))
+                { CompleteScriptTarget(); continue; }
                 var defender = Get(target);
                 var types = WildBattleEffective.Types(catalog, defender);
                 bool immune = WildBattleEffective.Ability(defender) == "ABILITY_LEVITATE" ||
@@ -64,6 +66,7 @@ internal abstract partial class SourceRecipeContext
     internal virtual void GroundSpreadReportType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         PokemonMoveDefinition move, bool missed)
     {
+        if (SourceTypeReport(catalog, actor, target, move)) return;
         if (!missed) SourceDamageResultMessage(actor, target, move);
         if (WildBattleEffective.Ability(Get(target)) == "ABILITY_LEVITATE") RecordAbility(target, "ABILITY_LEVITATE");
         ReportPewterEffectiveness(catalog, actor, target, move.Id);

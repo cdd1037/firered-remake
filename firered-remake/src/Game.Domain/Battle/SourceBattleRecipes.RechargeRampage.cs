@@ -27,15 +27,12 @@ internal abstract partial class SourceRecipeContext
         int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent);
         ChargeReportType(catalog, actor, target, move);
         bool effective = !ChargeImmune(catalog, target, move);
-        if (move.Effect == "EFFECT_RECHARGE" && effective)
-            StartRechargeRampageLock(actor, move, WildBattleCalledLockKind.Recharge, RechargeDuration);
-        else
+        var secondary = SecondaryEffect(actor, move, purpose, !effective, certain: move.Effect == "EFFECT_RECHARGE");
+        if (secondary.Apply)
         {
-            // CERTAIN recharge skips this draw. Rampage still draws on continuation,
-            // but only its first effective hit draws a new duration, after damage.
-            int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
-            int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(actor)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-            if (move.Effect == "EFFECT_RAMPAGE" && effective && roll <= chance && !RampageLocked(actor))
+            if (move.Effect == "EFFECT_RECHARGE")
+                StartRechargeRampageLock(actor, move, WildBattleCalledLockKind.Recharge, RechargeDuration);
+            else if (!RampageLocked(actor))
                 StartRechargeRampageLock(actor, move, WildBattleCalledLockKind.Rampage, (Draw($"{purpose}.rampage-duration", 2) & 1) + 2);
         }
         ChargeFinish(catalog, actor, target, move, purpose, lost);

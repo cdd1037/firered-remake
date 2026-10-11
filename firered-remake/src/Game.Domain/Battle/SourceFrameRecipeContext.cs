@@ -130,7 +130,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                     CancellerCancelMultiTurn(invocation.Actor, "protected");
                 }
                 bool handled = !HasSleepAttackRecipe(move.Effect) && !HasSleepResidualRecipe(move.Effect) &&
-                    SubstituteScriptBlocks(catalog, invocation.Actor, invocation.ChosenSlot, move);
+                    !HasUtilityHpRecipe(move.Effect) && SubstituteScriptBlocks(catalog, invocation.Actor, invocation.ChosenSlot, move);
                 if (!handled && move.Effect == "EFFECT_SUBSTITUTE") { ExecuteFrameSubstitute(); handled = true; }
                 if (!handled && HasProtectionRecipe(move.Effect))
                 {
@@ -141,6 +141,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                         action.ActionOrderIndex != Frame.BattlerCount - 1);
                     handled = true;
                 }
+                if (!handled && HasUtilityHpRecipe(move.Effect)) { ExecuteUtilityHp(catalog, invocation.Actor, target, invocation.ChosenSlot, move); handled = true; }
                 if (!handled) ExecuteAllySupport(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled && HasSwitchRecipe(move.Effect)) { ExecuteSwitch(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && move.Effect == "EFFECT_SPIKES") { ExecuteSpikes(invocation.Actor, invocation.ChosenSlot, move); handled = true; }
@@ -167,9 +168,11 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled) ExecuteAdditionalPrimaryStatus(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteRetaliation(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled && HasWeatherHitRecipe(move.Effect)) { ExecuteWeatherHit(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasGroundSpreadRecipe(move.Effect)) { ExecuteGroundSpread(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasDynamicTypeRecipe(move.Effect)) { ExecuteDynamicType(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasDynamicPowerRecipe(move.Effect)) { ExecuteDynamicPower(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
+                if (!handled && HasRecoilRecipe(move.Effect)) { ExecuteRecoil(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasFixedDamageRecipe(move.Effect)) { ExecuteFixedDamage(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) throw new SourceRecipeUnsupported("source_kernel_recipe_not_migrated");

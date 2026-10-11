@@ -49,6 +49,9 @@ internal abstract partial class SourceRecipeContext
         bool falseSwipe = false, bool normal2 = false, bool ohko = false, bool roll = true)
     {
         if (!SourceHeldDamageEnabled) return damage;
+        // typecalc's MISSED suppresses the eventual HP command, not the numeric
+        // register read by adjustnormaldamage. Preserve its Focus Band/Endure path.
+        damage = TypeCommandDamage(target, move, damage, out bool typeMiss);
         bool focus = roll ? RollFocusBand(target, purpose) : FocusBanded(target);
         var mon = Get(target);
         var result = SourceHeldDamageRules.Adjust(mon.Pokemon.CurrentHp, damage,
@@ -56,7 +59,7 @@ internal abstract partial class SourceRecipeContext
         heldDamageEndured.Remove(target);
         heldDamageHungOn.Remove(target);
         heldDamageEffectiveZeros.Remove(target);
-        if (damage > 0 && result.Damage == 0) heldDamageEffectiveZeros.Add(target);
+        if (!typeMiss && damage > 0 && result.Damage == 0) heldDamageEffectiveZeros.Add(target);
         if (result.Endured) { heldDamageEndured.Add(target); RecordEndureAdjustment(target); }
         if (result.HungOn) heldDamageHungOn.Add(target);
         // Mechanical adjustment receipt, not Cmd_resultmessage or an item-consumption event.
@@ -64,6 +67,6 @@ internal abstract partial class SourceRecipeContext
         if (result.Damage != damage || result.Endured || result.HungOn)
             Add(n => new SourceDamageAdjustedEvent(n, Turn, target, move, mon.HeldItem, damage,
                 result.Damage, result.Endured, result.HungOn));
-        return result.Damage;
+        return typeMiss ? 0 : result.Damage;
     }
 }

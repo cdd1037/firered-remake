@@ -45,6 +45,7 @@ internal abstract partial class SourceRecipeContext
         Route11WaterAbsorb(actor, target, move with { Type = type });
     internal virtual void DynamicTypeReport(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string type)
     {
+        if (SourceTypeReport(catalog, actor, target, move, type)) return;
         SourceDamageResultMessage(actor, target, move);
         var result = DynamicTypeResult(catalog, target, type);
         if (result.Immune && type == "TYPE_GROUND" && WildBattleEffective.Ability(Get(target)) == "ABILITY_LEVITATE")
@@ -57,18 +58,10 @@ internal abstract partial class SourceRecipeContext
     }
     private (bool Immune, WildBattleEffectiveness? Effectiveness) DynamicTypeResult(PokemonCatalog catalog, BattlerSlot target, string symbol)
     {
-        var body = Get(target); var types = WildBattleEffective.Types(catalog, body);
-        var type = FixedDamageElementType(symbol); int multiplier = 100;
-        foreach (var row in TypeRules.OrderedEffects(type, FixedDamageElementType(types.Type1), FixedDamageElementType(types.Type2)))
-        {
-            if (body.Identified && row.Defense == ElementType.Ghost && type is ElementType.Normal or ElementType.Fighting) continue;
-            multiplier = multiplier * row.MultiplierTenths / 10;
-        }
-        bool immune = multiplier == 0 || type == ElementType.Ground && WildBattleEffective.Ability(body) == "ABILITY_LEVITATE" ||
-            WildBattleEffective.Ability(body) == "ABILITY_WONDER_GUARD" && multiplier <= 100;
-        return (immune, immune ? WildBattleEffectiveness.NoEffect : multiplier < 100 ? WildBattleEffectiveness.NotVeryEffective :
-            multiplier > 100 ? WildBattleEffectiveness.SuperEffective : null);
+        var result = SourceTypeResult(catalog, target, catalog.Moves[Invocation!.CurrentMove], symbol);
+        return (result.Immune, result.Effectiveness);
     }
+
     internal void ExecuteDynamicType(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, int slot,
         PokemonMoveDefinition move, string purpose)
     {

@@ -518,8 +518,8 @@ public static partial class WildBattleRules
             int lost = SourceGenericApplyDamage(side, target, move, ScalarAdjust(target, move, damage, purpose), critical, percent);
             SourceGenericEffectiveness(catalog, side, target, move);
             // seteffectwithchance runs its own random command even for the 100% steal effect.
-            int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-            if (Draw($"{purpose}.secondary-effect", 100) % 100 <= chance && damage > 0 && !SourceCalledHasSubstitute(target))
+            var secondary = Recipes.SecondaryEffect(S(side), move, purpose, damage == 0);
+            if (secondary.Apply && !SourceCalledHasSubstitute(target))
                 SourceCalledStealItem(side, target, move);
             if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
             if (lost > 0 && SourceCalledHitReachedPokemon(target)) MtMoonRageOnDamage(side, target, move.Id);

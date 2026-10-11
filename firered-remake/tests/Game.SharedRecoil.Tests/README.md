@@ -1,0 +1,22 @@
+# Shared Gen III recoil and crash recipes
+
+Run `bash tests/Game.SharedRecoil.Tests/run.sh PRODUCT_ROOT PINNED_REFERENCE_ROOT NEW_OUTPUT_DIRECTORY` with the project's existing official toolchain. `PRODUCT_ROOT` supplies the authenticated local content and local-only NuGet configuration. The candidate contains Domain/Content and this focused runner; it does not build Application, Godot, or native presentation.
+
+The runner covers Take Down, Submission, Double-Edge, Volt Tackle, Jump Kick and Hi Jump Kick. All metadata comes from the authenticated catalog. Four-slot cases are diagnostic combinations, including deliberately selected ability/move combinations; they prove mechanics and admission boundaries, not obtainable FireRed learnsets or campaign availability. Volt Tackle remains the original FireRed definition: no modern paralysis secondary is added.
+
+`singles-before-db8579a.json` was captured before product edits, against commit `db8579a28734e83ead8c3fa77bd57825a84370d3`. It contains 96 complete results (state, ordered events, RNG, invocation and result envelope), plus whole-result SHA256 hashes. Capture refuses an existing file and refuses an assembly that already has the shared recoil registry. Do not regenerate this baseline to make a test pass.
+
+All 48 historical results stay byte-identical. Of 48 canonical results, 46 stay byte-identical. Two lethal crash cases gain exactly `CalledDamage` on the actor, mirrored in the result's two state views: one physical HP of actual loss with the original target as source. The test removes only that independently asserted new receipt and verifies the old whole-result hash. This preserves the original red evidence and rejects any unrelated state, event or RNG change. Source `Cmd_datahpupdate` records crash because its script lacks `HITMARKER_PASSIVE_DAMAGE`; ordinary recoil sets that flag and does not create a Counter receipt.
+
+The small source probe verifies pinned original commit `037335f4c725d7c9aecdac87066f2002b4bd7e14`, compiles verbatim arithmetic from `SetMoveEffect` and `Cmd_manipulatedamage`, and checks 180 boundary vectors under optimized C and UBSan. It hashes the commands, scripts and move definitions. This is extracted original C, not ROM execution.
+
+The focused runner checks all twelve distinct actor/target pairs (including allies), actual body versus Substitute loss, Endure/Focus Band zero loss, Rock Head, original RNG order, ordinary accuracy misses, Protect, Ghost immunity and Volt Absorb. Fly/Dig/Dive are established by real four-slot charge actions before the crash action. It also checks canonical singles semi-invulnerable immunity: caller target selection, damage variance and Focus Band draws remain in the correct order even though Ghost prevents HP loss.
+
+Real four-action turns cover all six moves in every actor position, King's Rock/Shell Bell/contact ordering and actor KO. A simultaneous attacker recoil KO plus opponent KO settles actual rewards once, permits the surviving queued actions, and replaces both real party members at the existing end-turn boundary. Every continuation and replacement is replayed from serialized JSON with exact result equality. Full canonical singles turns also run for every move. Unrelated Present, Triple Kick, Metronome and Pain Split remain outside the four-slot recipe admission.
+
+Evidence retains failed fixture/build attempts separately from the final result. Only one changed Domain compilation was needed; later fixture corrections rebuild the focused test executable. No large campaign or historical suite is included in this scope.
+
+
+## Shared HP utility slice
+
+`./dev test-utility-hp /absolute/new-output` runs the Pain Split, Memento and Splash groups using the same real four-turn/JSON/replacement helper. Its separate immutable `utility-hp-before-a51e8a6.json` contains 48 canonical complete-result hashes captured before this migration. Twelve actor-position turns and a thirteenth reserve-entry turn cover HP averaging, unchanged damage-history classes, Shell Bell sentinel handling, no extra RNG, Protected/Substitute/Clear Body/minimum-stage branches and end-turn-only Memento replacement. The first reserve fixture omitted required reward metadata and was corrected; its source validation rejected atomically. A subsequent nullable test annotation error was fixed before execution. See `docs/source-shared-utility-hp.md` for source commands and the explicit campaign Splash-statistics boundary.

@@ -64,11 +64,13 @@ public static class SourceBattleAdmission
     internal static bool SupportsAbility(PokemonCatalog catalog, string ability) =>
         SourceMechanicsCatalog.For(catalog) is { } proof && proof.Abilities.ContainsKey(ability) &&
         (FuchsiaBattleScope.SupportsAbility(ability) || ability is "ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or
-            "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or
+            "ABILITY_WONDER_GUARD" or "ABILITY_SERENE_GRACE" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or
             "ABILITY_VOLT_ABSORB" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_COLOR_CHANGE" or
             "ABILITY_TRUANT" or "ABILITY_SPEED_BOOST" or "ABILITY_SHADOW_TAG" or "ABILITY_SUCTION_CUPS" or
             "ABILITY_DRIZZLE" or "ABILITY_DROUGHT" or "ABILITY_SAND_STREAM" or "ABILITY_RAIN_DISH" or
-            "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK" or "ABILITY_TRACE" or "ABILITY_FORECAST");
+            "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK" or "ABILITY_TRACE" or "ABILITY_FORECAST" or
+            "ABILITY_BATTLE_ARMOR" or "ABILITY_MAGMA_ARMOR" or "ABILITY_HYPER_CUTTER" or
+            "ABILITY_WHITE_SMOKE" or "ABILITY_PLUS" or "ABILITY_MINUS");
 
     internal static string? ValidatePokemonCapabilities(PokemonCatalog catalog, PokemonInstance pokemon)
     {

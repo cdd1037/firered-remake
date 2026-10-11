@@ -15,7 +15,7 @@ var proof = SourceMechanicsCatalogLoader.LoadAuthenticated(args[0]); var catalog
 int checks=0, groups=0, failures=0, vectors=0, damageVectors=0, cleanTurns=0;
 var summary=new List<object>();
 void Check(bool value,string label){checks++;if(!value)throw new InvalidDataException(label);}
-void Test(string label,Action action){groups++;try{action();summary.Add(new{label,passed=true});Console.WriteLine("PASS "+label);}catch(Exception e){failures++;summary.Add(new{label,passed=false,error=e.ToString()});Console.WriteLine("FAIL "+label+" "+e);}}
+void Test(string label,Action action){if(Environment.GetEnvironmentVariable("COMMON_ABILITY_ADAPTERS_ONLY")=="1"&&!label.Contains("Plus")&&!label.Contains("Minus"))return;groups++;try{action();summary.Add(new{label,passed=true});Console.WriteLine("PASS "+label);}catch(Exception e){failures++;summary.Add(new{label,passed=false,error=e.ToString()});Console.WriteLine("FAIL "+label+" "+e);}}
 string Json<T>(T item)=>JsonSerializer.Serialize(item);
 MoveId Id(string name)=>new("pret:MOVE_"+name);
 WildBattleCombatant Mon(string species,string move="TACKLE",int level=50,uint personality=0){
@@ -150,28 +150,27 @@ Test("Explosion source absence and Damp scan retain different predicates",()=>{
 });
 Test("Plus and Minus boost from actual partner enemy fainted and source-absent donors",()=>{
  foreach(string species in new[]{"PLUSLE","MINUN"})foreach(int donorSlot in new[]{1,2,3})foreach(bool faint in new[]{false,true}){
-  var f=Frame([Mon(species,"THUNDER_SHOCK"),Mon("RATTATA"),Mon("RATTATA"),Mon("RATTATA")]);
-  string donor=species=="PLUSLE"?"MINUN":"PLUSLE";f=Body(f,donorSlot,Mon(donor));
+  var f=Frame([Mon(species,"SPARK"),Mon("RATTATA"),Mon("RATTATA"),Mon("RATTATA")]);
+  string donor=species=="PLUSLE"?"MINUN":"PLUSLE";f=Body(f,donorSlot,Mon(donor,"GROWL"));
   int target=donorSlot==1?3:1;if(faint)f=Hp(f,donorSlot,0) with{SourceAbsentMask=(byte)(1<<donorSlot),TurnStartAbsentMask=(byte)(1<<donorSlot)};
-  var r=Run(f,0,target);var hit=r.Events.OfType<SourceHpChangedEvent>().Single();Check(hit.Damage==Expected(f,hit,"THUNDER_SHOCK",boost:true),"source full-field Plus/Minus "+species+" donor="+donorSlot+" faint="+faint);
+  var r=Run(f,0,target);var hit=r.Events.OfType<SourceHpChangedEvent>().Single();Check(hit.Damage==Expected(f,hit,"SPARK",boost:true),"source full-field Plus/Minus "+species+" donor="+donorSlot+" faint="+faint);
  }
- var noDonor=Frame([Mon("PLUSLE","THUNDER_SHOCK"),Mon("RATTATA"),Mon("PLUSLE"),Mon("RATTATA")]);var plain=Run(noDonor);Check(plain.Events.OfType<SourceHpChangedEvent>().Single().Damage==Expected(noDonor,plain.Events.OfType<SourceHpChangedEvent>().Single(),"THUNDER_SHOCK"),"same ability not counterpart");
+ var noDonor=Frame([Mon("PLUSLE","SPARK"),Mon("RATTATA"),Mon("PLUSLE","GROWL"),Mon("RATTATA")]);var plain=Run(noDonor);Check(plain.Events.OfType<SourceHpChangedEvent>().Single().Damage==Expected(noDonor,plain.Events.OfType<SourceHpChangedEvent>().Single(),"SPARK"),"same ability not counterpart");
 });
 WildBattleState Singles(WildBattleCombatant player,WildBattleCombatant opponent)=>new(player,opponent,0,0,0,new(31),0,WildBattleOutcome.Ongoing,RulesVersion:WildBattleRules.FuchsiaRulesVersion){Terrain=WildBattleTerrain.Plain,SourceMechanicsRulesVersion=BattleRulesProfile.CanonicalSourceSinglesVersion};
-Test("real Plusle and Minun cannot silently enter legacy scalar or copied-ability actions",()=>{
+Test("real Plusle and Minun enter canonical dynamic and copied-ability actions",()=>{
  var control=WildBattleRules.ResolveSourceMoveAction(catalog,Singles(Mon("RATTATA","HIDDEN_POWER"),Mon("RATTATA")),new(WildBattleSide.Player,0));
- Check(control.Succeeded&&control.Battle.Events.OfType<WildBattleHpChangedEvent>().Any(),"legacy scalar positive control executes HIDDEN_POWER");
+ Check(control.Succeeded&&control.Battle.Events.OfType<WildBattleHpChangedEvent>().Any(),"canonical dynamic positive control executes HIDDEN_POWER");
  foreach(string species in new[]{"PLUSLE","MINUN"})foreach(bool opponent in new[]{false,true}){
   var actual=Mon(species,"HIDDEN_POWER");Check(actual.Pokemon.AbilityId==(species=="PLUSLE"?"ABILITY_PLUS":"ABILITY_MINUS"),"real scalar donor");
   var state=opponent?Singles(Mon("RATTATA"),actual):Singles(actual,Mon("RATTATA"));
   var result=WildBattleRules.ResolveSourceMoveAction(catalog,state,new(opponent?WildBattleSide.Opponent:WildBattleSide.Player,0));
-  string error=opponent?"wild_battle_opponent_ability_unsupported":"wild_battle_player_ability_unsupported";
-  Check(result.Fault==error&&ReferenceEquals(state,result.State)&&result.Battle.Events.IsEmpty&&result.Battle.Trace.IsEmpty&&result.Invocation is null,"scalar preflight atomically rejects "+species+" actual "+result.Fault);
-  Check(SourceBattleAdmission.ValidateEntry(proof,BattleRulesProfile.CanonicalSourceSingles,[state.Player],0,state.Opponent)=="source_mechanics_ability_not_implemented","entry separately rejects capability");
-  // A donor-authenticated overlay must pass through the same effective-ability preflight.
+  Check(result.Succeeded&&result.Battle.Events.OfType<WildBattleHpChangedEvent>().Any(),"dynamic action executes "+species+" actual "+result.Fault);
+  Check(SourceBattleAdmission.ValidateEntry(proof,BattleRulesProfile.CanonicalSourceSingles,[state.Player],0,state.Opponent)==null,"entry admits authenticated counterpart capability");
+  // The effective copied ability uses the same canonical field query.
   state=Singles(Mon("RATTATA","HIDDEN_POWER") with{CalledOverlay=new(){Ability=actual.Pokemon.AbilityId}},actual);
   result=WildBattleRules.ResolveSourceMoveAction(catalog,state,new(WildBattleSide.Player,0));
-  Check(result.Fault=="wild_battle_player_ability_unsupported"&&ReferenceEquals(state,result.State)&&result.Battle.Events.IsEmpty&&result.Battle.Trace.IsEmpty,"copied Plus/Minus scalar fails atomically "+result.Fault);
+  Check(result.Succeeded&&result.Battle.Events.OfType<WildBattleHpChangedEvent>().Any(),"copied Plus/Minus dynamic action executes "+result.Fault);
  }
 });
 Test("legacy singles and actual Transform retain Generation III Lightning Rod damage",()=>{
