@@ -4,6 +4,7 @@ using Game.Domain;
 using Game.Domain.Battle;
 using Game.Domain.Events;
 using Game.Domain.Ids;
+using Game.Domain.Items;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.Trainers;
@@ -145,6 +146,7 @@ public sealed partial class CampaignSession
         if(command.Kind=="double_cancel")
         {
             if(b.PlayerSelections.IsEmpty)return No("preset_double_no_selection");
+            if(b.PlayerSelections[^1].Kind==SourceActionKind.Item)return No("preset_double_item_already_used");
             return new(CommandStatus.Accepted,state with{DoubleBattle=b with{PlayerSelections=b.PlayerSelections.RemoveAt(b.PlayerSelections.Length-1)}});
         }
         var frame=b.Frame;
@@ -156,9 +158,23 @@ public sealed partial class CampaignSession
         var unselected=new[]{0,2}.Where(i=>frame.CanAct(new(i))&&!selections.Any(a=>a.Actor.Slot.Value==i)).ToArray();
         if(unselected.Length>0)
         {
-            if(command.PartyIndex!=unselected[0]||command.Kind is not ("double_move" or "double_switch"))return No("preset_double_action_required");
+            if(command.PartyIndex!=unselected[0]||command.Kind is not ("double_move" or "double_switch" or "double_medicine"))return No("preset_double_action_required");
             var cell=frame.Get(new(command.PartyIndex));SourceActionSelection selection;
-            if(command.Kind=="double_switch")
+            if(command.Kind=="double_medicine")
+            {
+                if(command.Choice is not {} target)return No("battle_medicine_target_identity");
+                var invalid=ValidateBattleMedicineCommand(state,command with{PartyIndex=target});
+                if(invalid is not null)return No(invalid);
+                var medicine=SourceFourMedicineRules.Select(ShopCatalog,Items,_content.PokemonContent!,DoubleBattlePokemon,
+                    frame,frame.Revision,cell.Occupant!.Value,ShopInventoryView(state.Inventory!),state.Party,
+                    new(new ItemId(command.Text!),command.TargetInstanceId!.Value));
+                if(!medicine.Succeeded)return No(medicine.Fault!);
+                // FR applies and spends ordinary medicine in the party menu, before the
+                // partner chooses. Publish this result first; a later queue marker cannot heal again.
+                return CommitDoubleResult(state with{Inventory=MergeShopInventory(state.Inventory!,medicine.Inventory),
+                    DoubleBattle=b with{PlayerSelections=selections.Add(medicine.Selection!)}},medicine.Battle);
+            }
+            else if(command.Kind=="double_switch")
             {
                 if(command.Choice is not {} incoming||!SourceBattleIdentityRules.LegalReserveIndices(frame,BattleSide.Player).Contains(incoming)||
                     selections.Any(s=>s.Incoming==new PartyMemberKey(BattleSide.Player,incoming)))return No("preset_double_reserve_invalid");
@@ -222,6 +238,11 @@ public sealed partial class CampaignSession
             case SourceAbilityDamageEvent x:Hp(x.Target,x.HpAfter);break;
             case SourceRecoveredEvent x:Hp(x.Side,x.HpAfter);break;
             case SourceDrainEvent x:Hp(x.Actor,x.HpAfter);break;
+            case SourceMedicineAppliedEvent x:
+                for(int i=0;i<members.Length;i++)
+                    if(members[i]==new PartyMemberKey(BattleSide.Player,x.PartyIndex))
+                    {Hp(new(i),x.HpAfter);bodies=bodies.SetItem(i,bodies[i] with{Status=x.StatusAfter});}
+                break;
             case SourceFaintedEvent x:Hp(x.Side,0);break;
             case SourceHeldItemConsumedEvent x:Hp(x.Side,x.HpAfter);bodies=bodies.SetItem(x.Side.Value,bodies[x.Side.Value] with{HeldItem="ITEM_NONE"});break;
             case SourceStatusChangedEvent x:bodies=bodies.SetItem(x.Side.Value,bodies[x.Side.Value] with{Status=x.After});break;

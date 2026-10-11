@@ -26,7 +26,7 @@ internal sealed partial class FrameRecipeContext
         // Delayed datahpupdate executes with gCurrentMove=NONE, hence physical TYPE_NORMAL.
         string type = delayedContactDamage ? "TYPE_NORMAL" : catalog.Moves[id].Type;
         bool physical = TypeRules.Category(Enum.Parse<ElementType>(type[5..], true)) == DamageCategory.Physical;
-        bool noEffect = damage == 0 && !HeldDamageEffectiveZero(target);
+        bool noEffect = fixedDamageNoEffect ?? (damage == 0 && !HeldDamageEffectiveZero(target));
         if (noEffect) commandNoEffect = true;
         SetHitItemReceipt(target, SourceHitItemRules.Record(HitItemReceipt(target), lost,
             substitute: false, noEffect, physical));

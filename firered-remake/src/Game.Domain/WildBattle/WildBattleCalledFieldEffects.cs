@@ -128,25 +128,7 @@ public static partial class WildBattleRules
 
         private void SourceCalledToxic(PokemonCatalog catalog, WildBattleSide side, WildBattleSide target,
             PokemonMoveDefinition move, string purpose)
-        {
-            var mon = Get(target); var species = WildBattleEffective.Types(catalog, mon);
-            if (WildBattleEffective.Ability(mon) == "ABILITY_IMMUNITY")
-            {
-                RecordAbility?.Invoke(target, "ABILITY_IMMUNITY");
-                Add(n => new WildBattleAbilityPreventedEvent(n, State.Turn, side, target, move.Id, "ABILITY_IMMUNITY")); return;
-            }
-            if (mon.Status == WildBattleStatus.Poison || WildBattleSourceFieldEffects.IsToxic(mon.Status))
-            { SourceCalledProtectionFailure(side, target, move.Id, "already-poisoned"); return; }
-            if (mon.Status != 0) { SourceCalledProtectionFailure(side, target, move.Id, "existing-status"); return; }
-            if (species.Type1 is "TYPE_POISON" or "TYPE_STEEL" || species.Type2 is "TYPE_POISON" or "TYPE_STEEL")
-            {
-                Add(n => new WildBattleEffectivenessEvent(n, State.Turn, side, target, move.Id, WildBattleEffectiveness.NoEffect)); return;
-            }
-            if (!SourceGenericAccuracy(side, target, move, purpose))
-            { SourceCalledProtectionFailure(side, target, move.Id, "accuracy"); return; }
-            if (SourceCalledSafeguardBlocks(side, target, move.Id)) return;
-            SourceCalledInflictStatus(catalog, target, WildBattleSourceFieldEffects.ToxicPoison, true);
-        }
+            => Recipes.ApplyAdditionalPrimaryStatus(catalog, S(side), S(target), move, purpose);
 
         private void SourceCalledInflictStatus(PokemonCatalog catalog, WildBattleSide targetSide, uint status, bool primary = false)
         {

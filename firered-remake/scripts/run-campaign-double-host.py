@@ -145,8 +145,13 @@ def main():
         else:
             font.symlink_to(os.path.relpath(font_source, assets))
 
-        # Hold the shared lock through launch: another cooperative build must not
-        # replace the host or product DLLs while this verification is running.
+        # This host loads its own copied dependency DLLs. Serialize this host's runs,
+        # but release the global compiler lock before its interactive/runtime checks.
+        # Another project can then compile without changing these executable copies.
+        host_run_lock = (host / '.godot' / 'double-host-run.lock')
+        host_run_lock.parent.mkdir(exist_ok=True)
+        host_lock = host_run_lock.open('a')
+        fcntl.flock(host_lock, fcntl.LOCK_EX)
         with Path('/tmp/firered-remake-build.lock').open('a') as lock:
             status['stage'] = 'build-lock'
             deadline = time.monotonic() + 240
@@ -173,6 +178,7 @@ def main():
             save('assembly-identity.before.json', identity)
             if source_manifest() != sources:
                 raise RuntimeError('Sources/checkpoint changed during build/import')
+            fcntl.flock(lock, fcntl.LOCK_UN)
             run([godot, *([] if args.native else ['--headless']), '--audio-driver', 'Dummy',
                  '--path', host, '--verbose'], 'runtime.log')
             status['stage'] = 'result-validation'

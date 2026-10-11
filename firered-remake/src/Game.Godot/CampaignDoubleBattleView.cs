@@ -194,6 +194,7 @@ public partial class CampaignView
             case SourceFocusPunchLostEvent x:Atk("sText_PkmnLostFocus",x.Actor);break;
             case SourceRecoveredEvent x:Def("sText_PkmnRegainedHealth",x.Side);break;
             case SourcePotionRecoveredEvent x:Source("gText_PkmnHPRestoredByVar2",("STR_VAR_1",DoubleName(x.Side.Value)),("STR_VAR_2",x.HpRestored.ToString()));break;
+            case SourceMedicineAppliedEvent x:pages.AddRange(DoubleMedicinePages(x));break;
             case SourceDrainEvent x:Def("sText_PkmnEnergyDrained",x.Target);break;
             case SourceCalledSpikesChangedEvent:break; // Mutation precedes the source attack/PP commands.
             case SourceMtMoonVolatileEvent {Volatile:"spikes",Reason:"move"}:Source("sText_SpikesScattered");break;
@@ -268,12 +269,12 @@ public partial class CampaignView
     private void DoubleSubmit(CampaignCommand command)
     {
         long revision=_session.Revision;Apply(command);
-        if(_session.Revision==revision)_doubleNotice=command.Kind=="double_switch"?"That POKéMON can't\nswitch in now.":"That choice can't be\nused now.";
+        if(_session.Revision==revision)_doubleNotice=_status=="preset_double_item_already_used"?"The item was already used.\nChoose this POKéMON's action.":command.Kind=="double_switch"?"That POKéMON can't\nswitch in now.":"That choice can't be\nused now.";
     }
     private void DoubleAcknowledge()
     {
         if(_sourceMoveAnimationGate.IsBlocking)return;
-        if(_doubleElapsed<(_session.State.DoubleBattle?.CurrentEvent is SourceAbilityDamageEvent ? .4 : .12))return;
+        if(_doubleElapsed<(_session.State.DoubleBattle?.CurrentEvent is SourceAbilityDamageEvent or SourceMedicineAppliedEvent ? .4 : .12))return;
         if(_doubleOpening&&_doublePage>0&&
             (_doubleElapsed<1||_doubleSecondCry is not null||_sourceAudio?.Snapshot().Cry?.Playing==true))return;
         if(_doublePage+1<_doublePages.Length){_doublePage++;_doubleElapsed=0;return;}
@@ -305,7 +306,7 @@ public partial class CampaignView
     {
         if(!DoubleBattleVisible||!key.Pressed)return false;
         if(key.Keycode is Key.Escape or Key.F5 or Key.F9 or Key.F12)return false;
-        if(_doubleNotice is not null){if(key.Keycode is Key.Enter or Key.Space or Key.Backspace)_doubleNotice=null;return true;}
+        if(_doubleNotice is not null){if(key.Keycode is Key.Enter or Key.Space or Key.Backspace or Key.B)_doubleNotice=null;return true;}
         var b=_session.State.DoubleBattle!;
         if(b.CurrentEvent is not null||b.Stage==CampaignDoubleBattleStage.Finished||_doubleMenu is "learn-intro" or "struggle")
         {if(key.Keycode is Key.Enter or Key.Space or Key.Backspace)DoubleAcknowledge();return true;}
@@ -323,6 +324,7 @@ public partial class CampaignView
         }
         int actor=b.ReplacementSlot??b.SelectingSlot??-1;
         if(actor<0)return true;
+        if(DoubleMedicineInput(key,actor))return true;
         if(_doubleMenu=="party")
         {
             if(back){if(b.ReplacementSlot is null){_doubleMenu="actions";_doubleCursor=2;}return true;}
@@ -356,7 +358,7 @@ public partial class CampaignView
                 {_doubleMenu="struggle";_doublePages=DoubleSource("sText_PkmnHasNoMovesLeft",("B_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(new(actor))));_doublePage=0;_doubleElapsed=0;}
                 else {_doubleMenu="moves";_doubleCursor=0;}
                 break;
-            case 1:_doubleNotice="Bag items in double\nbattles aren't available yet.";break;
+            case 1:OpenDoubleBag();break;
             case 2:_doubleMenu="party";_doubleCursor=0;break;
             case 3:_doubleNotice="No! There's no running\nfrom a TRAINER battle!";break;
         }
@@ -367,6 +369,7 @@ public partial class CampaignView
     private void DrawDoubleBattle()
     {
         var b=_session.State.DoubleBattle!;
+        if(DrawDoubleMedicineOverlay(b))return;
         _battleSkin.DrawBackground(this);DrawTexture(CurrentWildBattleTerrain,Vector2.Zero);
         if(_sourceMoveContinuation is not null)DrawTexture(_sourceMoveField!,Vector2.Zero);
         bool entry=_doubleOpening||b.CurrentEvent is SourceStartedEvent;
@@ -425,8 +428,11 @@ public partial class CampaignView
         int hp=mon.CurrentHp;
         if(_session.State.DoubleBattle!.CurrentEvent is SourceHpChangedEvent x&&x.Target.Value==slot)hp=(int)Math.Round(Mathf.Lerp(x.HpBefore,x.HpAfter,(float)Math.Clamp(_doubleElapsed/.4,0,1)));
         if(_session.State.DoubleBattle!.CurrentEvent is SourceAbilityDamageEvent abilityHit&&abilityHit.Target.Value==slot)hp=(int)Math.Round(Mathf.Lerp(abilityHit.HpBefore,abilityHit.HpAfter,(float)Math.Clamp(_doubleElapsed/.4,0,1)));
+        var medicine=_session.State.DoubleBattle.CurrentEvent as SourceMedicineAppliedEvent;
+        bool medicineTarget=medicine is not null&&_session.State.DoubleBattle.DisplayedMembers[slot]==new PartyMemberKey(BattleSide.Player,medicine.PartyIndex);
+        if(medicineTarget)hp=DoubleMedicineHp(medicine!);
         var barOrigin=center+new Vector2(player?0:-8,0);
-        uint status=ForestPresentationStatus(body.Status);
+        uint status=ForestPresentationStatus(medicineTarget?DoubleMedicineStatus(medicine!):body.Status);
         if(status==0)DrawTexture(_doubleTextures["hp-label"],barOrigin);
         else
         {
@@ -480,6 +486,8 @@ public partial class CampaignView
     private bool NavigateDoublePointer(Vector2 point,int direction)
     {
         var b=_session.State.DoubleBattle!;if(_doubleNotice is not null)return false;
+        if(_doubleMenu=="bag")return PointerList(point,direction,ref _doubleCursor,DoubleBagStacks.Length);
+        if(_doubleMenu=="medicine-target")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
         if(_doubleMenu=="party")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
         if(_doubleMenu=="learn-moves")return PointerRows(point,direction,ref _doubleCursor,b.Frame.Party(BattleSide.Player).Members[b.Frame.Rewards!.Pending!.Recipient.Index].Pokemon.Moves.Length+1,8,10,224);
         if(_doubleMenu=="learn-choice")return PointerYesNo(point,direction,ref _doubleCursor);
@@ -496,6 +504,8 @@ public partial class CampaignView
     {
         var b=_session.State.DoubleBattle!;
         if(_doubleNotice is not null)return MouseMessage.HasPoint(point)&&MouseKey();
+        if(_doubleMenu=="bag")return (!_doubleBerries&&MouseBagArrows(point,_doubleBagPocket))||MouseList(point,ref _doubleCursor,DoubleBagStacks.Length);
+        if(_doubleMenu=="medicine-target")return MouseSelect(point,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
         if(_doubleMenu=="party")return MouseSelect(point,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
         if(_doubleMenu=="learn-moves")return MouseSelect(point,ref _doubleCursor,b.Frame.Party(BattleSide.Player).Members[b.Frame.Rewards!.Pending!.Recipient.Index].Pokemon.Moves.Length+1,8,10,224);
         if(_doubleMenu=="learn-choice")return MouseSelect(point,ref _doubleCursor,2,184,72,56);
@@ -522,5 +532,6 @@ public partial class CampaignView
         if(b.CurrentEvent is SourcePlayerReplacedEvent y&&_doublePage==0)SourceCry(y.Replacement.Body.Pokemon);
         // First source cue of General_HeldItemEffect; its motion and remaining cues are not yet ported.
         if(b.CurrentEvent is SourceHeldItemConsumedEvent&&_doublePage==0)SourceSound("SE_M_TAKE_DOWN");
+        if(b.CurrentEvent is SourceMedicineAppliedEvent&&_doublePage==0)SourceSound("SE_USE_ITEM");
     }
 }

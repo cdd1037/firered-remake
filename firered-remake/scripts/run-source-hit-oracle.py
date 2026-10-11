@@ -15,6 +15,7 @@ spec.loader.exec_module(imp)
 p = argparse.ArgumentParser()
 p.add_argument('output', type=Path)
 p.add_argument('--doubles', action='store_true')
+p.add_argument('--motion-vectors', action='store_true')
 p.add_argument('--vacant-partner', action='store_true')
 p.add_argument('--reference', type=Path, default=Path((root / '.tools/reference-root').read_text().strip()))
 a = p.parse_args()
@@ -28,9 +29,11 @@ scheduler_bytes = raw[scheduler_path]
 scheduler_sha = hashlib.sha256(scheduler_bytes).hexdigest()
 functions = {
     'src/battle_anim.c': ['WaitAnimFrameCount', 'RunAnimScriptCommand', 'Cmd_createsprite', 'Cmd_createvisualtask', 'Cmd_delay', 'Cmd_waitforvisualfinish', 'Cmd_end', 'Cmd_clearmonbg', 'Task_ClearMonBg', 'BattleAnimAdjustPanning'],
-    'src/battle_anim_mon_movement.c': ['DoHorizontalLunge', 'ReverseHorizontalLungeDirection', 'AnimTask_ShakeMon', 'AnimTask_ShakeMon_Step', 'AnimTask_ShakeMon2', 'AnimTask_ShakeMon2Step'],
+    'src/battle_anim_mon_movement.c': ['DoHorizontalLunge', 'ReverseHorizontalLungeDirection', 'AnimTask_ShakeMon', 'AnimTask_ShakeMon_Step', 'AnimTask_ShakeMon2', 'AnimTask_ShakeMon2Step', 'AnimTask_TranslateMonEllipticalRespectSide', 'AnimTask_TranslateMonElliptical', 'AnimTask_TranslateMonElliptical_Step', 'SlideMonToOffset', 'SlideMonToOriginalPos', 'SlideMonToOriginalPos_Step'],
     'src/battle_anim_normal.c': ['AnimHitSplatBasic'],
-    'src/battle_anim_mons.c': ['TranslateSpriteLinearById', 'TranslateSpriteLinear', 'WaitAnimForDuration', 'RunStoredCallbackWhenAffineAnimEnds', 'RunStoredCallbackWhenAnimEnds', 'SetAnimSpriteInitialXOffset', 'InitSpritePosToAnimTarget', 'InitSpritePosToAnimAttacker', 'AnimSpriteOnMonPos', 'DestroySpriteAndMatrix', 'GetBattlerSpriteSubpriority'],
+    'src/battle_anim_fight.c': ['AnimBasicFistOrFoot'],
+    'src/trig.c': ['Sin', 'Cos'],
+    'src/battle_anim_mons.c': ['TranslateSpriteLinearById', 'TranslateSpriteLinear', 'WaitAnimForDuration', 'RunStoredCallbackWhenAffineAnimEnds', 'RunStoredCallbackWhenAnimEnds', 'SetAnimSpriteInitialXOffset', 'InitSpritePosToAnimTarget', 'InitSpritePosToAnimAttacker', 'AnimSpriteOnMonPos', 'DestroySpriteAndMatrix', 'GetBattlerSpriteSubpriority', 'InitSpriteDataForLinearTranslation', 'TranslateSpriteLinearByIdFixedPoint'],
     'src/battle_anim_effects_1.c': ['AnimCuttingSlice', 'AnimSlice_Step', 'AnimSlashSlice', 'AnimFalseSwipeSlice', 'AnimFalseSwipePositionedSlice', 'AnimFalseSwipeSlice_Step1', 'AnimFalseSwipeSlice_Step2', 'AnimFalseSwipeSlice_Step3'],
     'src/sprite.c': ['CreateSpriteAndAnimate', 'AnimateSprites', 'UpdateOamCoords', 'BuildSpritePriorities', 'SortSprites', 'AnimateSprite', 'BeginAnim', 'ContinueAnim', 'AnimCmd_frame', 'AnimCmd_end', 'AnimCmd_jump', 'AnimCmd_loop', 'BeginAnimLoop', 'ContinueAnimLoop', 'JumpToTopOfAnimLoop', 'DecrementAnimDelayCounter', 'SetSpriteOamFlipBits', 'StartSpriteAnim', 'BeginAffineAnim', 'ContinueAffineAnim', 'AffineAnimDelay', 'AffineAnimCmd_end', 'AffineAnimCmd_frame', 'AffineAnimStateRestartAnim', 'AffineAnimStateStartAnim', 'ApplyAffineAnimFrameAbsolute', 'DecrementAffineAnimDelayCounter', 'ApplyAffineAnimFrameRelativeAndUpdateMatrix', 'ConvertScaleParam', 'GetAffineAnimFrame', 'ApplyAffineAnimFrame', 'StartSpriteAffineAnim'],
 }
@@ -73,10 +76,12 @@ for path, name in [('src/battle_main.c', 'BattleMainCB2'), ('src/battle_anim.c',
 constant_names = {
     'src/sprite.c': ['sDummyAnim', 'gDummySpriteAnimTable', 'sDummyAffineAnim', 'gDummySpriteAffineAnimTable'],
     'src/battle_anim_normal.c': ['sAffineAnim_HitSplat_' + str(i) for i in range(4)] + ['sAffineAnims_HitSplat', 'gBasicHitSplatSpriteTemplate'],
-    'src/battle_anim_mon_movement.c': ['gHorizontalLungeSpriteTemplate'],
+    'src/battle_anim_mon_movement.c': ['gHorizontalLungeSpriteTemplate', 'gSlideMonToOffsetSpriteTemplate', 'gSlideMonToOriginalPosSpriteTemplate'],
     'src/battle_anim_effects_1.c': ['sCuttingSliceAnimCmds', 'sCuttingSliceAnimTable', 'gCuttingSliceSpriteTemplate', 'sSlashSliceAnimCmds1', 'sSlashSliceAnimCmds2', 'sSlashSliceAnimTable', 'gSlashSliceSpriteTemplate', 'gFalseSwipeSliceSpriteTemplate', 'gFalseSwipePositionedSliceSpriteTemplate'],
     'src/battle_anim_effects_3.c': ['sScratchAnimCmds', 'sScratchAnimTable', 'gScratchSpriteTemplate'],
 }
+constant_names['src/battle_anim_fight.c']=['sAnim_Fist','sAnim_FootWide','sAnim_FootTall','sAnim_HandLeft','sAnim_HandRight','sAnims_HandsAndFeet','gFistFootSpriteTemplate']
+constant_names['src/trig.c']=['gSineTable']
 constants = []
 if a.doubles:
     source=raw['src/battle_anim_mons.c'].decode()
@@ -92,9 +97,9 @@ for path, names in constant_names.items():
         constants.append(match[0])
         identify(path, name, source, match.start(), match[0], 'constant')
 
-template_names = ['gBasicHitSplatSpriteTemplate', 'gHorizontalLungeSpriteTemplate', 'gScratchSpriteTemplate', 'gCuttingSliceSpriteTemplate', 'gSlashSliceSpriteTemplate', 'gFalseSwipeSliceSpriteTemplate', 'gFalseSwipePositionedSliceSpriteTemplate']
-sound_names = ['SE_M_DOUBLE_SLAP', 'SE_M_COMET_PUNCH', 'SE_M_SCRATCH', 'SE_M_CUT', 'SE_M_RAZOR_WIND', 'SE_M_VITAL_THROW', 'SE_M_DOUBLE_TEAM']
-task_names = ['AnimTask_ShakeMon', 'AnimTask_ShakeMon2']
+template_names = ['gBasicHitSplatSpriteTemplate', 'gHorizontalLungeSpriteTemplate', 'gScratchSpriteTemplate', 'gCuttingSliceSpriteTemplate', 'gSlashSliceSpriteTemplate', 'gFalseSwipeSliceSpriteTemplate', 'gFalseSwipePositionedSliceSpriteTemplate', 'gSlideMonToOffsetSpriteTemplate', 'gSlideMonToOriginalPosSpriteTemplate', 'gFistFootSpriteTemplate']
+sound_names = ['SE_M_DOUBLE_SLAP', 'SE_M_COMET_PUNCH', 'SE_M_SCRATCH', 'SE_M_CUT', 'SE_M_RAZOR_WIND', 'SE_M_VITAL_THROW', 'SE_M_DOUBLE_TEAM', 'SE_M_VITAL_THROW2']
+task_names = ['AnimTask_ShakeMon', 'AnimTask_ShakeMon2', 'AnimTask_TranslateMonEllipticalRespectSide']
 ops = ['loadspritegfx', 'monbg', 'setalpha', 'playsewithpan', 'createsprite', 'createvisualtask', 'delay', 'waitforvisualfinish', 'clearmonbg', 'blendoff', 'end']
 source = raw['data/battle_anim_scripts.s'].decode()
 macros = set(re.findall(r'^\s*\.macro (\w+)', raw['asm/macros/battle_anim_script.inc'].decode(), re.M))
@@ -102,9 +107,14 @@ arrays = ['struct Command {int args[10];};']
 names, moves = [], []
 
 def integer(value):
-    return {'ANIM_ATTACKER': 0, 'ANIM_TARGET': 1, 'SOUND_PAN_TARGET': 63, 'SOUND_PAN_ATTACKER': -64}.get(value, None) if value in {'ANIM_ATTACKER', 'ANIM_TARGET', 'SOUND_PAN_TARGET', 'SOUND_PAN_ATTACKER'} else int(value, 0)
+    return {'ANIM_ATTACKER': 0, 'ANIM_TARGET': 1, 'ANIM_DEF_PARTNER': 3, 'SOUND_PAN_TARGET': 63, 'SOUND_PAN_ATTACKER': -64}.get(value, None) if value in {'ANIM_ATTACKER', 'ANIM_TARGET', 'ANIM_DEF_PARTNER', 'SOUND_PAN_TARGET', 'SOUND_PAN_ATTACKER'} else int(value, 0)
 
-for move, label in [(1, 'POUND'), (10, 'SCRATCH'), (15, 'CUT'), (33, 'TACKLE'), (163, 'SLASH'), (206, 'FALSE_SWIPE')]:
+script_ids=[(1, 'POUND'), (10, 'SCRATCH'), (15, 'CUT'), (33, 'TACKLE'), (163, 'SLASH'), (206, 'FALSE_SWIPE'), (68, 'COUNTER'), (233, 'VITAL_THROW')]
+if a.motion_vectors:
+    vector_scripts=json.loads((root/'tests/SourceHitAnimation.Oracle/motion-vectors.json').read_text())['scripts']
+    script_ids=[(r['moveId'],r['label'][5:]) for r in vector_scripts]
+    source='\n'.join(r['label']+':\n'+'\n'.join('\t'+c['op']+' '+', '.join(c['args']) for c in r['commands']) for r in vector_scripts)
+for move, label in script_ids:
     name = 'Move_' + label
     match = re.search(r'^' + name + r':\n', source, re.M)
     if match is None: raise ValueError('Missing source script ' + name)
@@ -143,14 +153,14 @@ for move, label in [(1, 'POUND'), (10, 'SCRATCH'), (15, 'CUT'), (33, 'TACKLE'), 
     names.append(name); moves.append(move)
     arrays.append('static const u8 ' + name + '[]={' + ','.join(map(str, bytecode)) + '};')
     arrays.append('static const struct Command ' + name + '_args[]={' + ','.join('{{' + (','.join(map(str, v)) or '0') + '}}' for v in args) + '};')
-arrays += ['static const u8 *scripts[]={' + ','.join(names) + '};',
+arrays += ['static const TaskFunc tasks[]={' + ','.join(task_names) + '};', 'static const u8 *scripts[]={' + ','.join(names) + '};',
            'static const struct Command *commands[]={' + ','.join(x + '_args' for x in names) + '};',
            'static const int moveIds[]={' + ','.join(map(str, moves)) + '};',
            'static const struct SpriteTemplate *templates[]={' + ','.join('&' + x for x in template_names) + '};',
            'static const char *templateNames[]={' + ','.join(json.dumps(x) for x in template_names) + '};']
 # The tags are resource lookup identifiers only; actual tiles are reported relative to each sheet.
 tags = sorted(set(re.findall(r'\bANIM_TAG_\w+', '\n'.join(constants))))
-source = '\n'.join([('#define DOUBLE_FIXTURE 1\n' if a.doubles else '')+('#define VACANT_FIXTURE 1\n' if a.vacant_partner else '')+'\n'.join('#define ' + tag + ' ' + str(i + 1) for i, tag in enumerate(tags)),
+source = '\n'.join([('#define MOTION_VECTORS 1\n' if a.motion_vectors else '')+('#define DOUBLE_FIXTURE 1\n' if a.doubles else '')+('#define VACANT_FIXTURE 1\n' if a.vacant_partner else '')+'\n'.join('#define ' + tag + ' ' + str(i + 1) for i, tag in enumerate(tags)),
                    (root / 'tests/SourceHitAnimation.Oracle/host.h').read_text(),
                    '\n'.join(sig + ';' for sig, body in bodies), '\n'.join(constants),
                    '\n'.join(body for sig, body in bodies), '\n'.join(arrays),
@@ -171,7 +181,7 @@ if rows <= 0: raise SystemExit('Empty source trace')
     soundIds={str(i + 1): name for i, name in enumerate(sound_names)},
     schedulingReferences=[x for x in identities if x['kind'] == 'schedulingReference'],
     schedulerSource=dict(path=scheduler_path, bytes=len(scheduler_bytes), sha256=scheduler_sha),
-    doubles=a.doubles,vacantPartner=a.vacant_partner, displayOffsets='Non-monbg battlers use the pre-task OAM position (nine-bit X wrap normalized for screen rendering); each visible monbg target/partner follows post-task offsets via priority-10 background updates.',
+    doubles=a.doubles,vacantPartner=a.vacant_partner,motionBoundaryVectors=a.motion_vectors, displayOffsets='Non-monbg battlers use the pre-task OAM position (nine-bit X wrap normalized for screen rendering); each visible monbg target/partner follows post-task offsets via priority-10 background updates.',
     spriteFields=['slot', 'template', 'x', 'y', 'x2', 'y2', 'tile', 'visible', 'hFlip', 'blend', 'scale', 'subpriority', 'oamRank'],
     spriteIds='Lowest available source sprite slot; fixture battlers reserve slots 0 through 3.' if a.doubles else 'Lowest available source sprite slot; fixture battlers reserve slots 0 and 1.',
     oamOrder='Original persistent 64-slot SortSprites; one extra leading host sentinel safely covers the original documented unused gSpriteOrder[-1] read.',

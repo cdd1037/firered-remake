@@ -2,6 +2,8 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
+Current integrated checkpoint: **dirty working tree based on `3c78f0a71871c39143b04650e3bccd4564bb81bc`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **211 / 354**, with **143 gated**; dedicated script coverage is **8 / 354**, with **346 remaining**. Neither is a complete battle-system percentage.
+
 The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles now has a bounded authentic Route8 Twins public victory/save branch; full held-item/recipe and presentation completion remains open. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
 Read with [source turn integration](source-turn-integration.md), [move implementation plan](called-move-implementation.md) and [implementation roadmap](implementation-roadmap.md). The [machine-readable companion](battle-system-completion-matrix.json) contains every one of the 354 move IDs, all 76 official abilities, source/implementation locations, dependency lists and evidence hashes. The initial inventory itself did not execute tests. Later bounded implementation results are identified below and in their test directories.
@@ -142,7 +144,7 @@ Next acceptance:
 <a id="c06"></a>
 ### C06 — Move effect groups and cross-state interactions
 
-Parameterized damage/status/stages/recovery, fields, turn locks, delayed/volatile and party recipes have focused source tests. All combinations of 354 registered moves are not verified.
+Shared generic, recovery, field, turn-lock and party recipes retain bounded source tests. The dirty 3c78f0a-based integration adds eight fixed-damage moves plus 18 basic-stat and five additional primary-status moves to actual four-slot execution. Static admission is 211/354; this is not complete interaction acceptance.
 
 Dependencies: C01, C02, C03, C07, C08, C09.
 
@@ -192,7 +194,7 @@ Next acceptance:
 <a id="c09"></a>
 ### C09 — Ability blocking and topology gaps
 
-Shadow Tag and Suction Cups have authenticated canonical singles execution. M04 now provides learned/called target selection, Gen III Lightning Rod redirection and Plus/Minus shared generic damage on actual four slots. Full trapping/presence and unported recipe interactions remain open.
+Shadow Tag and Suction Cups have authenticated canonical singles execution. M04 now provides learned/called target selection, Gen III Lightning Rod redirection and Plus/Minus shared generic damage on actual four slots. Full trapping/presence and unported recipe interactions remain open. Actual four-slot cases now bound Limber, Immunity, Synchronize, Clear Body, Water Veil and Soundproof; primitive-only Hyper Cutter/White Smoke vectors do not upgrade their ledger status.
 
 Dependencies: C10, C11.
 
@@ -211,7 +213,7 @@ Next acceptance:
 
 M01 identities through M06 reward/learning and end-of-turn KO replacement are integrated. Initial, KO and voluntary/Baton/Roar entry share weather/Trace/Intimidate/Forecast recipes. Four choices, numeric immunity, Follow Me/Helping Hand, Rollout/Disable/Defense Curl/Minimize, multihit and Cute Charm are integrated. Authentic Route8 Twins roster/default moves/CHECK_BAD_MOVE AI now has a full-original-party public victory/save branch, source insufficient-team and sight admission, and controlled exhausted-PP Struggle defeat through nurse restoration, save/reload and retry (138 commands/284 checks).
 
-The first branch used public PC preparation; the current branch retains all six earned creatures and its Pecha Berry. Seven active and five source-inert berries and forced Struggle are integrated. Source-map positioning and controlled defeat HP/PP are explicit fixtures, not a newly walked route. General battle bag use, remaining recipes/residuals/callers, expanded AI and dedicated doubles animations remain open. See `docs/preset-doubles-route8.md` for current presentation evidence and boundaries.
+The first branch used public PC preparation; the current branch retains all six earned creatures and its Pecha Berry. Seven active and five source-inert berries and forced Struggle are integrated. Source-map positioning and controlled defeat HP/PP are explicit fixtures, not a newly walked route. Ordinary medicine now has bounded public and native four-slot acceptance. Remaining battle item categories, recipes/residuals/callers, expanded AI and wider dedicated doubles animations remain open. See `docs/preset-doubles-route8.md` for current presentation evidence and boundaries.
 Dependencies: C04, C05, C18.
 
 Evidence: `src/Game.Domain/Battle/SourceFourActionTurns.cs`, `src/Game.Domain/Battle/SourceFourRewards.cs`, `src/Game.Application/CampaignDoubleBattle.cs`, `tests/Game.Route8TwinsCampaign.Tests/README.md`, `tests/Game.FourStruggle.Tests/README.md`.
@@ -289,18 +291,18 @@ Next acceptance:
 <a id="c15"></a>
 ### C15 — Bag medicine, flute and remaining battle items
 
-Shared medicine validates all owned party members and reuses authoritative inventory effects. Trainer item decisions remain pure until committed. This is not all battle-use item categories.
+Shared ordinary medicine now executes in the genuine four-slot owner and public Twins Application. Selection immediately applies owned HP/status/inventory changes and records prepared markers; execution does not apply or spend twice. Partner/bench use, two medicines, capped HP, no-effect/stale identity/overflow atomicity and continuation pass 3 cases/102 checks/44 commands. Main X11 native BAG/party/input/presentation verification passes 223 checks with source and DLL identities unchanged across the run and exit 0. Flute, revival, PP and stat items remain separate doubles gaps; physical audio is unverified.
 
 Dependencies: C05, C18.
 
 Evidence: `src/Game.Domain/Items/SourceBattleItemRules.cs`, `src/Game.Domain/Trainers/SourceTrainerItems.cs`, `src/Game.Domain/WildBattle/WildBattleSourceWildItems.cs`, `src/Game.Domain/Items/EarlyShopMedicineRules.cs`.
-Bounded tests/evidence: `tests/Game.SourceTrainerItems.Tests/README.md`, `tests/Game.SourceWildTurns.Tests/README.md`, `tests/Game.BattleMedicineCampaign.Tests/README.md`.
+Bounded tests/evidence: `tests/Game.SourceTrainerItems.Tests/README.md`, `tests/Game.SourceWildTurns.Tests/README.md`, `tests/Game.BattleMedicineCampaign.Tests/README.md`, `evidence/shared-battle-families-20261011/double-medicine-main-02/result.json`, `evidence/shared-battle-families-20261011/native/result.json`, `evidence/shared-battle-families-20261011/native/runner-result.json`.
 Pinned source: `src/battle_main.c:HandleAction_UseItem`, `src/battle_script_commands.c:Cmd_various`, `src/item_use.c`.
 
 Next acceptance:
 
 - Inventory actual battle-use items; add missing X-item/Guard Spec/Dire Hit/revival/PP paths only after checking existing medicine implementations and content admission.
-- Verify active/reserve targets, cannot-use/no-effect atomicity, item-before-action ordering, locks, faint/EXP and delayed continuation.
+- Extend the verified active/reserve identity, no-effect atomicity, source selection-time use and prepared-marker continuation contract to each newly admitted item category; retain the ban on player battle saves.
 
 <a id="c16"></a>
 ### C16 — Held-item effects and ownership
@@ -387,7 +389,7 @@ Next acceptance:
 <a id="c21"></a>
 ### C21 — Battle event text, controls and presentation routing
 
-Versioned source trainer/wild event adapter and move selection exist; retained BCL adapter tests cover 14 event types. Current fifth-badge Application pass does not establish native completion.
+The actual campaign view has bounded four-slot healthbox, target/party/replacement and ordinary medicine BAG controls. Main X11 medicine verification passes 223 checks with unchanged source/DLL identity and exit 0. Six common hit scripts, including False Swipe, now receive actual four-slot kernel invocations in current BCL tests. Counter/Vital Throw have real successful singles scripts and typed-only four-slot presentation fixtures. Their eight representative native cases belong to the separate worker source identity, before the main actual-False-Swipe test-fixture update; no fresh integrated native hit-animation run is claimed.
 
 Dependencies: C10, C11, C18.
 
@@ -398,13 +400,13 @@ Pinned source: `src/battle_message.c`, `src/battle_controller_player.c`, `src/ba
 Next acceptance:
 
 - Use typed event/cue mapping with exact owner/battler identity and invocation deduplication; preserve authoritative ACK sequencing.
-- Add four healthboxes, two move selections/target choices and replacement controls for doubles, including cancellation and repeated input.
+- Extend bounded four-slot controls and presentation to newly admitted effect/item families, preserving cancellation, repeated input, owner identity and authoritative ACK sequencing.
 - Verify real Godot and native inputs separately from the BCL text adapter and headless draw probes.
 
 <a id="c22"></a>
 ### C22 — Move/ability animation and audio inventory
 
-The authenticated 354-root script inventory now records calls, graphics and sound dependencies (`docs/battle-animation-catalog.md`). It is a conservative script graph, not full C callback execution or dedicated animation acceptance. Existing imported cues, synthesis and portraits are reusable; generic effects are not dedicated original move animations.
+All 354 source animation roots retain an authenticated conservative dependency inventory. Eight bounded dedicated scripts are now implemented (Pound, Tackle, Scratch, Cut, Slash, False Swipe, Counter, Vital Throw); 346 lack that layer. The current BCL batch passes 42,069 checks over 20,706 source-C comparison frames, including 9,864 explicitly synthetic callback frames. Six common scripts have actual four-slot kernel dispatch, including False Swipe; Counter/Vital Throw four-slot cases are typed presentation only. Eight representative new-script native cases passed on the worker source identity, not the later combined main identity. Original-ROM pixel equality, general animation coverage and physical listening remain unverified.
 
 Dependencies: C21.
 
@@ -447,7 +449,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 4 | `ABILITY_BATTLE_ARMOR` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 5 | `ABILITY_STURDY` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 6 | `ABILITY_DAMP` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
-| 7 | `ABILITY_LIMBER` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 7 | `ABILITY_LIMBER` | `implemented-with-bounded-tests` | C06 | Authentic Persian prevents Stun Spore before accuracy in an actual selected-slot four-slot kernel action; PP is spent once and no status/RNG mutation occurs. Full-turn combinations, other status sources and presentation remain unverified. |
 | 8 | `ABILITY_SAND_VEIL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 9 | `ABILITY_STATIC` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 10 | `ABILITY_VOLT_ABSORB` | `implemented-with-bounded-tests` | C08 | Both real holder sides, dynamic Electric type, full-HP absorption and shared PP/history verified in canonical singles; no doubles or audible claim. |
@@ -457,19 +459,19 @@ Each of the 76 entries below has source and current execution locations in the J
 | 14 | `ABILITY_COMPOUND_EYES` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 15 | `ABILITY_INSOMNIA` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 16 | `ABILITY_COLOR_CHANGE` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles exact HP-loss receipt, dynamic type, Explosion/recoil/BeatUp/Pursuit, copied abilities and presentation pairing verified. Full four-slot move-end remains gated. |
-| 17 | `ABILITY_IMMUNITY` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 17 | `ABILITY_IMMUNITY` | `implemented-with-bounded-tests` | C06 | Authentic Snorlax prevents Toxic before accuracy in an actual selected-slot four-slot kernel action; PP is spent once and no status/RNG mutation occurs. Full-turn combinations, other poison sources and presentation remain unverified. |
 | 18 | `ABILITY_FLASH_FIRE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 19 | `ABILITY_SHIELD_DUST` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 20 | `ABILITY_OWN_TEMPO` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 21 | `ABILITY_SUCTION_CUPS` | `implemented-with-bounded-tests` | C09 | Authentic Octillery/Lileep/Cradily cover Roar/Whirlwind after PP and before Rooted/accuracy, effective ability changes and full source turn continuation; canonical trainer admission remains separate. |
-| 22 | `ABILITY_INTIMIDATE` | `interaction-unverified` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
+| 22 | `ABILITY_INTIMIDATE` | `implemented-with-bounded-tests` | C07 | Shared canonical and actual four-slot entry callbacks have bounded order/occupant tests. Original earned Gyarados forced replacement additionally reached actual native Intimidate text/stat event in the Twins view. This does not certify all entry/hazard/ability-change combinations. |
 | 23 | `ABILITY_SHADOW_TAG` | `implemented-with-bounded-tests` | C09 | Authenticated Wobbuffet/Wynaut and real ability-changing moves cover Run, Teleport, voluntary switch, Baton, forced and faint replacement distinctions; no Gen IV Ghost/self exemption. Four-slot field scan remains separate. |
-| 24 | `ABILITY_ROUGH_SKIN` | `implemented-with-bounded-tests` | C08 | Both real holder sides, per-hit actual HP loss, source 1/16 passive damage and faint order verified; no doubles or native effect claim. |
+| 24 | `ABILITY_ROUGH_SKIN` | `implemented-with-bounded-tests` | C08 | One shared recipe now covers authenticated singles and actual four-slot contact, retained receipt guards, per-hit status/KO, reward pauses and delayed replacements. Controlled canonical receipt/Substitute and future Bide boundaries remain documented; this is not complete ability/campaign/animation acceptance. |
 | 25 | `ABILITY_WONDER_GUARD` | `interaction-unverified` | C06 | Damage/type and copy-restriction branches exist; authentic actor admission and every affected source script are not proven. |
 | 26 | `ABILITY_LEVITATE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
-| 27 | `ABILITY_EFFECT_SPORE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
-| 28 | `ABILITY_SYNCHRONIZE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
-| 29 | `ABILITY_CLEAR_BODY` | `interaction-unverified` | C06 | Stat-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
+| 27 | `ABILITY_EFFECT_SPORE` | `implemented-with-bounded-tests` | C06 | One shared recipe now covers authenticated singles and actual four-slot contact, retained receipt guards, per-hit status/KO, reward pauses and delayed replacements. Controlled canonical receipt/Substitute and future Bide boundaries remain documented; this is not complete ability/campaign/animation acceptance. |
+| 28 | `ABILITY_SYNCHRONIZE` | `implemented-with-bounded-tests` | C06 | Authentic Abra receives ally-targeted paralysis/Toxic in actual four-slot kernel actions and reflects to the real actor only; Gen III Toxic reflection becomes ordinary poison. Full-turn combinations, all status sources and presentation remain unverified. |
+| 29 | `ABILITY_CLEAR_BODY` | `implemented-with-bounded-tests` | C06 | Authentic Regice blocks its Growl stat drop in a complete four-action turn while the other opposing holder independently uses Soundproof. Source command vectors also cover stat/Mist precedence; Intimidate/secondary/ability-change combinations and presentation are not fully accepted. |
 | 30 | `ABILITY_NATURAL_CURE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 31 | `ABILITY_LIGHTNING_ROD` | `implemented-with-bounded-tests` | C09 | M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure. |
 | 32 | `ABILITY_SERENE_GRACE` | `interaction-unverified` | C06 | Secondary chance branches exist; current species admission and affected primary/certain/multihit scripts need proof. |
@@ -478,18 +480,18 @@ Each of the 76 entries below has source and current execution locations in the J
 | 35 | `ABILITY_ILLUMINATE` | `implemented-with-bounded-tests` | C20 | Field encounter modifier exists with source fixed-point/RNG checks; no battle effect is required by this source. |
 | 36 | `ABILITY_TRACE` | `implemented-with-bounded-tests` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
 | 37 | `ABILITY_HUGE_POWER` | `implemented-with-bounded-tests` | C08 | Real Azumarill source full turn and damage match independently extracted C; four-slot interactions unverified. |
-| 38 | `ABILITY_POISON_POINT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 38 | `ABILITY_POISON_POINT` | `implemented-with-bounded-tests` | C06 | One shared recipe now covers authenticated singles and actual four-slot contact, retained receipt guards, per-hit status/KO, reward pauses and delayed replacements. Controlled canonical receipt/Substitute and future Bide boundaries remain documented; this is not complete ability/campaign/animation acceptance. |
 | 39 | `ABILITY_INNER_FOCUS` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 40 | `ABILITY_MAGMA_ARMOR` | `interaction-unverified` | C06 | Freeze-prevention/overlay cleanup branch exists; this is not a FireRed egg-hatching speed bonus. |
-| 41 | `ABILITY_WATER_VEIL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 41 | `ABILITY_WATER_VEIL` | `implemented-with-bounded-tests` | C06 | Authentic Seaking prevents Will-O-Wisp before accuracy in an actual selected-slot four-slot kernel action; PP is spent once and no status/RNG mutation occurs. Full-turn combinations, other burn sources and presentation remain unverified. |
 | 42 | `ABILITY_MAGNET_PULL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
-| 43 | `ABILITY_SOUNDPROOF` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 43 | `ABILITY_SOUNDPROOF` | `implemented-with-bounded-tests` | C06 | Authentic Mr. Mime blocks its Growl pass in a complete four-action turn while a separate Regice uses Clear Body; only the Soundproof holder skips accuracy. Other sound moves, lifecycle combinations and presentation remain unverified. |
 | 44 | `ABILITY_RAIN_DISH` | `implemented-with-bounded-tests` | C08 | Authentic canonical donor heals in the sole source ability phase, with suppression, poison order and JSON tests; four-turn residual dispatch remains pending. |
 | 45 | `ABILITY_SAND_STREAM` | `implemented-with-bounded-tests` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
-| 46 | `ABILITY_PRESSURE` | `interaction-unverified` | C09 | PP command helper exists; current authentic roster admission and four-slot counts/targets require validation. |
+| 46 | `ABILITY_PRESSURE` | `implemented-with-bounded-tests` | C09 | Authentic donor single-turn, ally slot equality, spread/all-target stored-ability counts and retained-fainted no-target costs have bounded tests. Forced Struggle calculates the Pressure command but spends no learned PP. All callers and remaining shared recipes still need their own coverage. |
 | 47 | `ABILITY_THICK_FAT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 48 | `ABILITY_EARLY_BIRD` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
-| 49 | `ABILITY_FLAME_BODY` | `implemented-with-bounded-tests` | C08 | Both real holder sides, raw contact RNG before status/type guards and shared burn projection verified; no doubles or native effect claim. |
+| 49 | `ABILITY_FLAME_BODY` | `implemented-with-bounded-tests` | C08 | One shared recipe now covers authenticated singles and actual four-slot contact, retained receipt guards, per-hit status/KO, reward pauses and delayed replacements. Controlled canonical receipt/Substitute and future Bide boundaries remain documented; this is not complete ability/campaign/animation acceptance. |
 | 50 | `ABILITY_RUN_AWAY` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 51 | `ABILITY_KEEN_EYE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 52 | `ABILITY_HYPER_CUTTER` | `interaction-unverified` | C06 | Attack-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
@@ -528,7 +530,9 @@ Each of the 76 entries below has source and current execution locations in the J
 - For each finished effect group, preserve exact source references, actual commands, nonempty results and failure history. Native animation/audio scenes may be directly triggered in a test battle; they need not wait for natural move acquisition.
 - Do not infer coverage percentages or delivery time from registration totals, test counts or random samples.
 
-## Retained evidence inspected, not rerun
+## Historical evidence and integration notes (2026-10-10–2026-10-11)
+
+These entries describe the scope at their earlier checkpoints, not the latest dirty-tree acceptance below. Retained evidence was inspected, not rerun for this documentation update.
 
 - `tests/Game.SourceEndTurn.Tests/evidence/result.json`: 21 groups / 405 checks / zero failures; integrated historical evidence, phase contract only.
 - `tests/Game.SourceTrainerTurns.Tests/evidence/run2.log`: 5 groups / 514 turns / 727 commands / 495 called transitions; controlled supplied party.
@@ -551,36 +555,37 @@ Combined presentation increment: Original Pound/Tackle/Scratch/Cut/Slash/False S
 
 M06 integration shares actual EXP/EV/learning and delayed callbacks with the permanent party authority, and combines weather/screens with KO reward and replacement resume. The authoritative continuation version is now `firered-four-action-reward-continuation-v3`; old diagnostic cursors reject. This remains a Domain boundary, not campaign doubles or player in-battle save support. See `tests/Game.FourRewards.Tests/README.md`.
 
-## Shared cancellation and Focus Band integration (2026-10-11)
+## Historical shared cancellation and Focus Band integration (2026-10-11)
 
 Canonical singles and four-slot frames now share ordered sleep, natural thaw, Truant, recharge, flinch, confusion and paralysis cancellation. Actual M06 no-target actions run these checks before PP or an attack string. Canonical singles Focus Band uses shared post-random damage adjustment and slot-owned protection through action completion, including confusion and delayed attacks. Other four-slot held effects, additional locks/recipes, AI, Application and full doubles presentation remain open. See [shared cancellers](source-action-cancellers.md) and the [Focus Band tests](../tests/Game.SourceFocusBand.Tests/README.md).
 
-## Shared initial and KO-entry callbacks (2026-10-11)
+## Historical shared initial and KO-entry callbacks (2026-10-11)
 
 Drizzle, Drought, Sand Stream, Intimidate, Trace and Forecast use the same slot-typed entry recipes for canonical singles and the actual four-slot owner. Initial ordering and ties, delayed Intimidate/Trace, real KO replacements, and weather/form suppression are tested. Current four-slot tests include 14 full turns and 3 actual KO replacements. Spikes, voluntary/Baton/Roar entry integration, general move-end immunity and Application/AI remain open. See [entry ownership and evidence](source-four-slot-entry-abilities.md).
 
-## Shared slice animation increment (2026-10-11)
+## Historical shared slice animation increment (2026-10-11)
 
 Scratch, Cut, Slash and False Swipe now share the original script/callback renderer with Pound and Tackle: six bounded scripts, 444 exact source-C snapshots and 14 final native animation cases. Existing panX and cue ownership remain in use. The prior native quit timeout is retained as an unresolved intermittent failure; final uninstrumented retry exited normally. Other 348 scripts and general doubles presentation remain incomplete. See [source slice animation coverage](source-basic-slice-animations.md).
 
-## Shared support and move-end immunity (2026-10-11)
+## Historical shared support and move-end immunity (2026-10-11)
 
 Follow Me and Helping Hand now execute through shared single/four-slot recipes, including exact PP/target ordering, pre-type damage and distinct cleanup timing. The main integrated support suite passes 16 groups/5,834 checks and eight complete turns; shared numeric immunity adds four groups/193 checks. Original singles support-action hashes remain exact. Source-only infatuation/Nightmare vectors do not establish complete four-slot lifecycles. The next playable target is the original Route8 Twins encounter, with its actual party and AI; complete battle/UI coverage is still open. See the two test READMEs.
 
-## Current remaining-work inventory (2026-10-11, source f7e26f6)
+## Historical inventory checkpoints
 
-The current four-slot recipe whitelist statically admits176 of354 moves;178 are not admitted. This is a definition/target/effect gate count, not176 completely verified moves: live status, ability, item and phase guards still apply. The JSON records each move's admission and the snapshot commit. All354 single-battle recipes are registered, but complete cross-state/caller/party interaction acceptance remains open.
+The f7e26f6 inventory recorded 176 / 354 statically admitted four-slot recipes and 28 bounded / 48 interaction-unverified ability records. The subsequent shared protection, Spikes and contact checkpoint recorded 180 / 354, 30 bounded / 46 interaction-unverified abilities and six dedicated scripts. At that earlier checkpoint five scripts had real four-slot dispatch and False Swipe was a presentation-only fixture. These are historical counts; the JSON retains the previous snapshot and its recorded hashes separately.
 
-The ability ledger now has28 entries with identified bounded implementation tests and48 marked interaction-unverified. Two stale labels, Intimidate and Pressure, were corrected using existing entry/native and source-target/PP/Struggle evidence. These numbers do not mean28 fully complete and48 absent. A fuller ability-by-context audit remains necessary.
+## Current shared-family checkpoint (2026-10-11, dirty tree based on 3c78f0a)
 
-Six dedicated original single-battle move animation scripts are accepted (Pound, Tackle, Scratch, Cut, Slash, False Swipe);348 lack that layer of acceptance. Four-slot reuse of those six is in development. General event pages, source sound availability and a working synthesis stream do not count as dedicated original animation/audio sequence completion.
+Static evaluation of the actual `SourceBattleKernel.SupportsRecipe` target/effect conditions and referenced family predicates admits **211 / 354** authenticated moves, with **143 gated**. This adds eight fixed-damage moves, 18 basic-stat moves and five additional primary-status moves to the prior 180. Live status, ability, item and phase guards still apply. Every move's admission is recorded in the JSON; its complete battle-system status is not upgraded merely by that admission.
 
-Main remaining groups are further doubles move/volatile/caller families, hazards and held items, battle bag and expanded AI/special modes, full ability-context combinations, and dedicated presentation. The current parallel small modules are Spikes entry, Protect/Detect/Endure, remaining contact abilities and six-script doubles rendering. The inventory carries no completion percentage or short finish estimate.
+- Fixed damage: False Swipe, Dragon Rage, Sonic Boom, Seismic Toss, Night Shade, Psywave, Super Fang and Endeavor. Main evidence passes **9 groups / 5,924 checks**, including actual actor/target slots, immunity, Pressure, Protect/Endure, contact, exact Psywave RNG and four-action KO/reward continuation. It retains 347 unchanged full singles hashes and 37 explicitly declared Super Fang source-RNG corrections. Public Wonder Guard, Substitute and four-slot Focus Band remain outside this family acceptance. See `tests/Game.FixedDamage.Tests/README.md` and `evidence/shared-battle-families-20261011/shared-fixed-main-01/result.json`.
+- Basic stats and primary status: **23 moves**, with main evidence passing **16 groups / 32,267 checks / 29 complete four-action turns**. Source ordering, BOTH-target ownership, per-slot PP/Pressure, caps, Protect/Mist/Safeguard, ally targeting and atomic failures are bounded. The immutable singles baseline retains 170 unchanged hashes and 14 declared Screech/Sweet Scent source-order corrections. See `tests/Game.SharedBasicStatStatus.Tests/Program.cs` and `evidence/shared-battle-families-20261011/shared-stats-main-01/results.json`.
+- Abilities: **36 bounded-test records / 40 interaction-unverified records**. Actual four-slot cases support precise upgrades for Limber, Immunity, Synchronize, Clear Body, Water Veil and Soundproof. Clear Body/Soundproof have complete four-action holder-separation cases; the other four are bounded actual kernel actions. The 4,368 original-C stat-command vectors use controlled registers and do not establish authentic full-turn coverage for Hyper Cutter or White Smoke; those remain interaction-unverified.
+- Ordinary medicine: public Twins and Domain evidence passes **3 cases / 102 checks / 44 commands**, including partner/bench use, two medicines, selection-time effects, prepared-marker execution, capped HP, no-effect/stale identity/overflow atomicity and continuation. The main X11 native run passes **223 checks**, exits 0 and retains identical source/DLL identities before and after. Representative BAG, party and medicine-result screenshots were visually reviewed. The earlier capped-HP test failure remains retained. HP/status/inventory are controlled field fixtures; revival, PP, stat items and Poké Flute remain separate doubles gaps. See `tests/Game.BattleMedicineCampaign.Tests/README.md`, `evidence/shared-battle-families-20261011/double-medicine-main-02/result.json` and `evidence/shared-battle-families-20261011/native/runner-result.json`.
 
-## Current shared lifecycle and batch presentation checkpoint
+Dedicated script coverage is now **8 / 354**, with **346 remaining**: Pound, Tackle, Scratch, Cut, Slash, False Swipe, Counter and Vital Throw. The current BCL animation batch passes **42,069 checks / 20,706 source-C comparison frames**: 834 singles, 5,004 all-visible four-slot, 5,004 absent-partner and 9,864 explicitly synthetic callback frames. The latter are callback boundary vectors, not additional move scripts. All six common scripts now have actual four-slot kernel dispatch, including False Swipe (72 combined real dispatches, zero False Swipe presentation-only dispatches). Counter and Vital Throw remain unadmitted four-slot rules; their 24 four-slot dispatch fixtures are typed presentation only. See `docs/source-motion-animations.md` and `tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/main/result.json.gz`.
 
-Four-slot move recipe admission is now **180 / 354**, with **174** still gated. This adds Protect, Detect, Endure and Spikes; it does not count all possible interactions as finished. Poison Point, Flame Body, Effect Spore and Rough Skin now share the same contact recipe with the singles adapters and have actual four-action/reward/replacement cases. The ability ledger now has **30 bounded-test records / 46 interaction-unverified records**; the latter is not a count of missing implementations.
+The new motion scripts passed eight representative native cases on the separate worker identity: six real singles and two typed-only four-slot cases. That retained source manifest predates the main actual-False-Swipe fixture update; it does not certify a fresh native replay of this combined dirty tree. Evidence is retained under `tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/`. No additional combined native hit-animation run is claimed. Original-ROM pixel parity and physical audible quality/alignment remain unverified; the native medicine run also does not close that audio gate.
 
-The six dedicated hit scripts are batch-checked across four actor positions, targets and absent partners in one existing host. Five have real four-slot kernel dispatch; False Swipe is explicitly presentation-only until its rule family is migrated. Thus dedicated script coverage remains **6 / 354**, not 354. The same batch verifies source frame state, resource/termination/position safety, scene toggling and repeated input; native inspection samples callback families and special layouts. Automated C frame equality and native screenshot inspection remain separate from original-ROM pixel parity and audible output.
-
-The current source hash and per-move admission are in the JSON matrix. Shared Spikes/Protection/contact regressions use the existing bounded suites and immutable singles goldens. Routine validation does not rebuild historical trees or replay already accepted regions.
+Remaining work includes further doubles move/volatile/caller/residual families, general held-item and battle-item categories, broader trainer AI and special modes, full ability-context combinations, and the remaining dedicated animations. Tail Whip's sound-loop/non-damaging invocation and palette/fade families remain distinct presentation work. Source comparison, real rule execution, native rendering and audible playback stay separate acceptance layers. The current predicate input hashes are in the JSON; initial inventory hashes and prior isolated native identities remain historical. This documentation refresh ran no product builds, tests or native sessions.

@@ -97,6 +97,9 @@ public sealed record SourceQueuedAction(BattlerSlot Slot, SourceActionToken? Tok
 }
 public sealed record SourceSwitchReservation(OccupantToken Outgoing, PartyMemberKey Incoming,
     WildBattleCalledSwitchKind Kind);
+/// <summary>Player medicine is paid/applied in the party selection menu, before the turn queue.
+/// This bounded, current-turn receipt prevents the later item action from applying it again.</summary>
+public sealed record SourcePreparedMedicine(OccupantToken Actor, ItemId Item, PartyMemberKey Target);
 public sealed record SourceMoveInvocation(BattlerSlot Actor, int ChosenSlot, int PpSlot,
     MoveId OriginalChosenMove, MoveId ChosenMove, MoveId CurrentMove, MoveId? CalledMove,
     BattlerSlot Target, WildBattleAttackCancellerPhase CancellerPhase, WildBattleInvocationFlags Flags)
@@ -154,6 +157,7 @@ public sealed record SourceBattleFrame
     public int NextAction { get; init; }
     public ImmutableArray<SourceSwitchReservation> Reservations { get; init; } = [];
     public ImmutableArray<SourcePendingSwitch> PendingSwitches { get; init; } = [];
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<SourcePreparedMedicine>? PreparedMedicines { get; init; }
     public SourceWildTurnCursor? WildTurn { get; init; }
     public SourceFourActionCursor? FourTurn { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceFourRewardState? Rewards { get; init; }

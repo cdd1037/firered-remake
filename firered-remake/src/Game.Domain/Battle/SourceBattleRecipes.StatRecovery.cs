@@ -14,8 +14,8 @@ internal abstract partial class SourceRecipeContext
         internal void ExecuteStatRecovery(PokemonCatalog catalog, BattlerSlot side, int slot,
             PokemonMoveDefinition move, string purpose, ref bool handled)
         {
-            // Swords Dance already has the authenticated Fuchsia v1 executor. Do not
-            // duplicate or supersede that delegate merely because it is in batch B03.
+            // Swords Dance is owned by the basic-stat recipe; the historical Fuchsia
+            // delegate is a thin adapter to that same result script.
             if (!HasStatRecoveryRecipe(move.Effect)) return;
             if (Invocation is null || !MetronomeSourceMoveDefinition.Matches(move))
                 throw new SourceRecipeUnsupported("called_stat_recovery_source_definition");

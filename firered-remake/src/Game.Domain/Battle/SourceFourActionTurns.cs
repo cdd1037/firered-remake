@@ -113,6 +113,11 @@ public static partial class SourceFourActionTurns
                 if (ValidateVoluntarySwitch(catalog, next, action.Slot) is { } switchError) return Fail(frame, switchError);
                 continue;
             }
+            if (action.Kind == SourceActionKind.Item)
+            {
+                if (!SourceFourMedicineRules.IsPrepared(next, action)) return Fail(frame, "source_medicine_not_prepared");
+                continue;
+            }
             if (action.Kind != SourceActionKind.Move || action.MoveSlot is null or < -1 || action.Target is null)
                 return Fail(frame, "source_four_action_selection_not_migrated");
             bool struggle = action.MoveSlot == WildBattleRules.StruggleSlot;
@@ -206,6 +211,8 @@ public static partial class SourceFourActionTurns
                 var immunity = SourceFrameImmunityRules.Apply(switched.State);
                 next = immunity.State; events.AddRange(switched.Events); events.AddRange(immunity.Events); trace = switched.Trace;
             }
+            else if (action.Kind == SourceActionKind.Item)
+                next = SourceFourMedicineRules.Execute(frame, action);
             else
             {
                 var move = SourceBattleKernel.ActionMove(catalog, frame.Get(action.Slot), action.MoveSlot!.Value);

@@ -124,6 +124,7 @@ public static class SourceBattleIdentityRules
                 r.Incoming == action.Incoming && r.Kind == WildBattleCalledSwitchKind.Voluntary)) return "source_frame_switch_action_reservation";
         }
         var pendingSlots = new HashSet<BattlerSlot>();
+        if (SourceFourMedicineRules.Validate(frame) is { } medicineError) return medicineError;
         foreach (var pending in frame.PendingSwitches)
             if (pending is null || pending.Slot.Value >= frame.BattlerCount || !pendingSlots.Add(pending.Slot) ||
                 !Enum.IsDefined(pending.Kind) || pending.LegalPartyIndices.IsDefaultOrEmpty ||

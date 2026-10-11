@@ -133,7 +133,10 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled && move.Effect == "EFFECT_SPIKES") { ExecuteSpikes(invocation.Actor, invocation.ChosenSlot, move); handled = true; }
                 if (!handled) ExecuteFieldSetting(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled) ExecuteTurnMove(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled) ExecuteBasicStat(invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled) ExecuteAdditionalPrimaryStatus(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled && HasFixedDamageRecipe(move.Effect)) { ExecuteFixedDamage(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) throw new SourceRecipeUnsupported("source_kernel_recipe_not_migrated");
             }

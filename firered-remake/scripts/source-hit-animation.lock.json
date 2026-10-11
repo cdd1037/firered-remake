@@ -134,6 +134,21 @@
       "gitBlobBytes": 179,
       "gitBlobSha256": "76bb16f7343a9cf52895ef14f5155e5d69322ce9c15262df027327ea4e3d7446",
       "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "src/battle_anim_fight.c",
+      "bytes": 29324,
+      "sha256": "343a674d3230233af2ecd681c104f550b13e51485b011534c1d60d68ba65f5f5"
+    },
+    {
+      "path": "src/trig.c",
+      "bytes": 22537,
+      "sha256": "4144065a90e5376ce0259796a01ebaae33c6cc6c7ef716de95b9d9a13c85a810"
+    },
+    {
+      "path": "graphics/battle_anims/sprites/hands_and_feet.png",
+      "bytes": 461,
+      "sha256": "d3196d88d1c4793ad3e10ff5d4744cb4c076b055966591cfa0a384ab1b1a267c"
     }
   ]
 }

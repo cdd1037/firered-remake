@@ -55,7 +55,7 @@ public static partial class WildBattleRules
             {
                 // BattleScript_EffectStatUp: no accuracy check, even at the cap.
                 SpendEarlyPartyPp(side, side, slot, move);
-                ChangeStage(side, side, WildBattleStat.Attack, 2, move.Id);
+                Recipes.ApplyBasicStat(S(side), S(side), move);
                 return true;
             }
             if (move.Effect != "EFFECT_FURY_CUTTER") return false;
