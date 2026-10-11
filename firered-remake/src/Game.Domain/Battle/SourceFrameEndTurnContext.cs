@@ -118,6 +118,8 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     }
     internal override void Prepare()
     {
+        // TurnValuesCleanUp(TRUE) resets Follow Me before residuals, retaining Helping Hand.
+        Frame = Frame with { Sides = Frame.Sides.Select(s => s with { FollowMeTimer = 0, FollowMeTarget = null }).ToImmutableArray() };
         foreach (var cell in Frame.Slots.Take(BattlerCount))
             Set(cell.Slot, cell.Body! with { Flinched = false, Protected = false, Enduring = false });
     }
@@ -135,6 +137,7 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     }
     internal override void UnmigratedBattlerStep(SourceBattlerEndTurnStep step, BattlerSlot slot)
     {
+        if (step == SourceBattlerEndTurnStep.Disable) { Disable(slot); return; }
         var m = Get(slot); var r = Frame.Get(slot).Registers;
         bool nonempty = step switch {
             SourceBattlerEndTurnStep.Ingrain => m.Rooted,
@@ -143,7 +146,7 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
             SourceBattlerEndTurnStep.Nightmare => m.Nightmare,
             SourceBattlerEndTurnStep.Curse => m.Cursed,
             SourceBattlerEndTurnStep.Wrap => m.BindTurnsRemaining != 0,
-            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not WildBattleCalledLockKind.Recharge } || m.RampageTurnsRemaining != 0,
+            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout) } || m.RampageTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Disable => m.DisabledMove is not null,
             SourceBattlerEndTurnStep.Encore => m.EncoreMoveSlot is not null,
             SourceBattlerEndTurnStep.LockOn => r.Turn?.SureHitTurnsRemaining > 0,
@@ -181,8 +184,13 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         // Final cleanup retains one slot traversal: damage lifetime and the source recharge timer.
         foreach (var prior in Frame.Slots.Take(BattlerCount))
         {
-            var cell = prior with { Registers = prior.Registers with { Damage = null } };
+            var cell = prior with { Registers = prior.Registers with { Damage = null, HelpingHand = false } };
             Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, cell) };
+            if (WildBattleStatus.IsSleeping(cell.Body!.Status) && cell.Registers.Turn?.Lock is { Kind: WildBattleCalledLockKind.Rollout } rollout)
+            {
+                Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, cell with { Registers = cell.Registers with { Turn = null } }) };
+                Add(n => new SourceMtMoonVolatileEvent(n, Turn, cell.Slot, "called-rollout", rollout.TurnsRemaining, 0, "sleep"));
+            }
             if (cell.Registers.Turn?.Lock is { Kind: WildBattleCalledLockKind.Recharge } recharge)
             {
                 int after = SourceTurnBoundaryRules.RechargeAfterReady(recharge.TurnsRemaining);

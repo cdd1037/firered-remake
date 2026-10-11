@@ -159,12 +159,7 @@ public static partial class WildBattleRules
             else TowerHp(side, "nightmare", Math.Max(1, mon.Pokemon.Stats.MaxHp / 4));
         }
         private void SourceEndTurnDisable(WildBattleSide side)
-        {
-            var mon = Get(side);
-            if (mon.DisabledMove is { } move && !mon.Pokemon.Moves.Any(m => m.Move == move))
-                ChangeDisable(side, move, 0, "move-changed");
-            else Route3DisableResidual(side);
-        }
+            => new SinglesEndTurnBridge(this).Disable(new((int)side));
         private void SourceEndTurnEncore(WildBattleSide side)
         {
             var mon = Get(side);

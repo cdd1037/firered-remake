@@ -14,6 +14,7 @@ internal abstract partial class SourceRecipeContext
     internal virtual bool CancellerEarlyBirdEnabled => true;
     internal virtual bool CancellerSleepingMovesEnabled => true;
     internal virtual bool CancellerTruantEnabled => true;
+    internal virtual bool CancellerInfatuationEnabled => true;
     internal virtual bool ConfusionTowerRules => true;
     internal virtual bool ConfusionExpandedRules(PokemonCatalog catalog) => true;
     internal virtual bool ConfusionCanonicalRules(PokemonCatalog catalog) => true;
@@ -30,7 +31,8 @@ internal abstract partial class SourceRecipeContext
         CancellerFreezeEnabled && FreezePreventsMove(actor, move, purpose) ||
         TruantPreventsMove(actor, move) || RechargePreventsMove(actor, move) ||
         CancellerEarlyPartyEnabled && FlinchLocksConfusionPreventMove(catalog, actor, move, purpose) ||
-        ParalysisPreventsMove(actor, move, purpose);
+        ParalysisPreventsMove(actor, move, purpose) ||
+        CancellerInfatuationEnabled && InfatuationPreventsMove(actor, move, purpose);
 
     internal bool SleepPreventsMove(BattlerSlot actor, MoveId move)
     {
@@ -89,6 +91,7 @@ internal abstract partial class SourceRecipeContext
         int damage = SourceConfusionDamage(actor, percent, ConfusionTowerRules, ConfusionExpandedRules(catalog),
             catalog.Moves.TryGetValue(move, out var selected) && selected.Effect == "EFFECT_EXPLOSION", ConfusionCanonicalRules(catalog));
         if (SourceHeldDamageEnabled) damage = AdjustHeldDamage(actorSlot, move, damage, purpose, normal2: true);
+        HitItemsConfusionDamage(actorSlot, damage);
         int before = actor.Pokemon.CurrentHp, after = Math.Max(0, before - damage);
         Set(actorSlot, actor with { Pokemon = actor.Pokemon with { CurrentHp = after } });
         Add(n => new SourceConfusionSelfHitEvent(n, Turn, actorSlot, move, before, after, damage, percent));

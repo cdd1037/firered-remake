@@ -291,8 +291,7 @@ public static partial class WildBattleRules
             SourceCalledSynchronizeParties(); var party = State.CalledParty!;
             var legal = WildBattleSourcePartyEffects.LegalReserveIndices(party, side);
             if (legal.IsEmpty) throw new UnsupportedAction("called_party_force_out_no_reserve");
-            int next;
-            do { next = Draw("wild-battle.force-out.choose-party", 6) % 6; } while (!legal.Contains(next));
+            int next = SourceSwitchRules.ChooseForcedReserve(legal, Draw);
             SourceCalledPartySwitch(catalog, side, next, WildBattleCalledSwitchKind.Forced, null);
             // switchindataupdate calls SwitchInClearSetData, which clears the current-move register.
             if (activeInvocation is not null) activeInvocation = activeInvocation with { CurrentMove = new("pret:MOVE_NONE") };
@@ -376,7 +375,7 @@ public static partial class WildBattleRules
                 case "EFFECT_CONVERSION_2": CalledConversion2(catalog, side, move, purpose); break;
                 case "EFFECT_SPIKES": CalledSpikes(side, move); break;
                 case "EFFECT_HEAL_BELL": CalledPartyHeal(side, move); break;
-                case "EFFECT_BATON_PASS": CalledBatonPass(side, move); break;
+                case "EFFECT_BATON_PASS": CalledBatonPass(catalog, side, move); break;
                 case "EFFECT_BEAT_UP": CalledBeatUp(catalog, side, target, move, purpose); break;
                 case "EFFECT_MEMENTO": CalledMemento(side, target, move); break;
                 case "EFFECT_ROLE_PLAY":
@@ -461,15 +460,8 @@ public static partial class WildBattleRules
             }
             State = State with { CalledParty = WildBattleSourcePartyEffects.SetParty(State.CalledParty!, side, party) };
         }
-        private void CalledBatonPass(WildBattleSide side, PokemonMoveDefinition move)
-        {
-            SpendInvocationPp(side, side, move); SourceCalledSynchronizeParties();
-            var legal = WildBattleSourcePartyEffects.LegalReserveIndices(State.CalledParty!, side);
-            if (legal.IsEmpty) { choiceBatonPassFailed = true; CalledPartyFailure(side, side, move, "no-eligible-reserve"); return; }
-            var pending = new WildBattleCalledPendingSwitch(side, WildBattleCalledSwitchKind.BatonPass, legal, activeInvocation);
-            State = State with { CalledParty = State.CalledParty! with { PendingSwitch = pending } };
-            Add(n => new WildBattleCalledPartySwitchRequiredEvent(n, State.Turn, pending));
-        }
+        private void CalledBatonPass(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move) =>
+            Recipes.ExecuteSwitch(catalog, S(side), activeInvocation!.PpSlot, move, "");
         private void CalledBeatUp(PokemonCatalog catalog, WildBattleSide side, WildBattleSide target, PokemonMoveDefinition move, string purpose)
         {
             bool hit = SourceGenericAccuracy(side, target, move, purpose); SpendInvocationPp(side, target, move);
@@ -490,6 +482,7 @@ public static partial class WildBattleRules
                 if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
                 SourceColorChange(catalog, side, target, move);
                 VermilionImmunityAbilities(); SourceCalledApplyChangedItems(); VermilionMoveEndBerries();
+                SourceHitItemsEnd(side, target, move.Id, move.Flags.Contains("FLAG_KINGS_ROCK_AFFECTED"));
                 SourceCalledMoveEndSubstitute();
             }
             ForestOutcome(true);
@@ -500,6 +493,7 @@ public static partial class WildBattleRules
             if (!foe.Protected && foe.AttackStage == 0 && foe.SpecialAttackStageDelta == -6)
             { CalledPartyFailure(side, target, move, "stats-at-minimum"); return; }
             var actor = Get(side); int hp = actor.Pokemon.CurrentHp;
+            Recipes.HitItemsCommandDamage(hp, noEffect: foe.Protected);
             Set(side, actor with { Pokemon = actor.Pokemon with { CurrentHp = 0 } });
             Add(n => new WildBattleHpChangedEvent(n, State.Turn, side, side, move.Id, hp, 0, hp, false, 100));
             if (foe.Protected) CalledPartyFailure(side, target, move, "protected");
@@ -598,25 +592,7 @@ public static partial class WildBattleRules
             SourceCalledSynchronizeParties(); var context = State.CalledParty!;
             int outgoingIndex = WildBattleSourcePartyEffects.ActiveIndex(context, side);
             var incoming = WildBattleSourcePartyEffects.Party(context, side)[index];
-            var next = new WildBattleCombatant(incoming.Pokemon, HeldItem: incoming.KnockedOffItem is not null ? "ITEM_NONE" : WildBattleSourcePartyEffects.PersistentHeldItem(incoming),
-                Status: WildBattleSourceFieldEffects.ResetToxicCounter(incoming.Status), AttackBadgeBoost: departing.AttackBadgeBoost)
-                { SpeedBadgeBoost = departing.SpeedBadgeBoost, DefenseBadgeBoost = departing.DefenseBadgeBoost,
-                    FirstTurnCounter = 2, KnockedOffItem = incoming.KnockedOffItem, CalledDamage = departing.CalledDamage };
-            if (baton)
-            {
-                next = next with {
-                    AttackStage = departing.AttackStage, DefenseStage = departing.DefenseStage,
-                    SpeedStage = departing.SpeedStage, AccuracyStage = departing.AccuracyStage, EvasionStage = departing.EvasionStage,
-                    SpecialAttackStageDelta = departing.SpecialAttackStageDelta, SpecialDefenseStageDelta = departing.SpecialDefenseStageDelta,
-                    ConfusionTurnsRemaining = departing.ConfusionTurnsRemaining, FocusEnergy = departing.FocusEnergy,
-                    MeanLookSource = departing.MeanLookSource, Cursed = departing.Cursed, LeechSeedSource = departing.LeechSeedSource,
-                    Rooted = departing.Rooted, MudSport = departing.MudSport, WaterSport = departing.WaterSport,
-                    CalledVolatile = departing.CalledVolatile is { } v && (v.SubstituteHp > 0 || v.PerishSongTimer is not null)
-                        ? new() { SubstituteHp = v.SubstituteHp, PerishSongTimer = v.PerishSongTimer } : null,
-                    CalledTurnState = departing.CalledTurnState is { SureHitTurnsRemaining: > 0 } turn
-                        ? new() { SureHitTurnsRemaining = turn.SureHitTurnsRemaining, SureHitSource = turn.SureHitSource } : null
-                };
-            }
+            var next = SourceSwitchRules.PrepareBody(departing, incoming, baton);
             var otherSide = Other(side); var other = Get(otherSide);
             // Battle slot source references survive Baton except infatuation/binding, which always clear.
             var history = other.SourceMoveHistory;

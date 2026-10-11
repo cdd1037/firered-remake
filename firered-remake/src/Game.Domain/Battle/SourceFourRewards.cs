@@ -188,7 +188,7 @@ public static class SourceFourRewards
             {
                 var party = next.Party(key.Side); var member = party.Members[key.Index];
                 next = next with { Parties = next.Parties.SetItem((int)key.Side, party with { Members = party.Members.SetItem(key.Index, member with { Pokemon = pokemon }) }),
-                    Slots = next.Slots.Select(c => c.Member == key ? c with { Body = WildBattleTransformationRules.ApplyPersistentPokemon(c.Body!, pokemon) } : c).ToImmutableArray() };
+                    Slots = next.Slots.Select(c => c.Member == key ? SourceTurnMoveRules.ProjectPokemon(c, pokemon) : c).ToImmutableArray() };
             }
             SourceFourActionResult Commit()
             {

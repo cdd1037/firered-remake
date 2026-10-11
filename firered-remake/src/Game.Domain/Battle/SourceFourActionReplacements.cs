@@ -39,11 +39,7 @@ public static partial class SourceFourActionTurns
         try
         {
             var previous = frame.Get(slot); var member = frame.Party(incoming.Side).Members[incoming.Index];
-            var body = new WildBattleCombatant(member.Pokemon,
-                HeldItem: member.KnockedOffItem is not null ? "ITEM_NONE" : WildBattleSourcePartyEffects.PersistentHeldItem(member),
-                Status: WildBattleSourceFieldEffects.ResetToxicCounter(member.Status), AttackBadgeBoost: previous.Body!.AttackBadgeBoost)
-            { SpeedBadgeBoost = previous.Body.SpeedBadgeBoost, DefenseBadgeBoost = previous.Body.DefenseBadgeBoost,
-                FirstTurnCounter = 2, KnockedOffItem = member.KnockedOffItem };
+            var body = SourceSwitchRules.PrepareBody(previous.Body!, member, false);
             var party = frame.Party(incoming.Side);
             // Retire the current defeat token before its slot is rebound. The six completion bits
             // survive for opposing party identities, so entry cannot erase one-time settlement.

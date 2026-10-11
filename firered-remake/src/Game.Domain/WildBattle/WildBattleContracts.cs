@@ -96,6 +96,8 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceHitDamageReceipt? SourcePlayerHitReceipt { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceHitDamageReceipt? SourceOpponentHitReceipt { get; init; }
     // SpecialStatus.focusBanded is owned by numeric battler slots and survives residual callbacks.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public byte SourceFocusBandedMask { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourcePermanentWeather? PermanentWeather { get; init; }
@@ -196,6 +198,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleInfatuationBlockedEvent), "infatuation-blocked")]
 [JsonDerivedType(typeof(WildBattleAbilityActivatedEvent), "ability-activated")]
 [JsonDerivedType(typeof(WildBattleAbilityDamageEvent), "ability-damage")]
+[JsonDerivedType(typeof(WildBattleHeldItemHealEvent), "held-item-heal")]
 [JsonDerivedType(typeof(WildBattleHeldItemConsumedEvent), "held-item-consumed")]
 [JsonDerivedType(typeof(WildBattleMtMoonVolatileEvent), "mtmoon-volatile")]
 [JsonDerivedType(typeof(WildBattleEncoreChangedEvent), "encore-changed")]
@@ -334,6 +337,7 @@ public sealed record WildBattleAbilityDamageEvent(long Sequence, int Turn, WildB
     WildBattleSide Target, MoveId TriggeringMove, string Ability, int HpBefore, int HpAfter,
     int Damage) : WildBattleEvent(Sequence, Turn);
 /// <summary>Source Oran Berry end-turn healing and one-time consumption; no RNG is consumed.</summary>
+public sealed record WildBattleHeldItemHealEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target, MoveId Move, string Item, int DamageReceipt, int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleHeldItemConsumedEvent(long Sequence, int Turn, WildBattleSide Side,
     string Item, int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn);
 

@@ -11430,6 +11430,12 @@
       "scope": "Six bounded source move animation scripts",
       "details": "Shared original Scratch/Cut/Slash/False Swipe callbacks and resources join Pound/Tackle. 444 independent source C/C# snapshots, 1021 source/application checks and final 14-case native uninstrumented retry pass. A prior native quit timeout is retained as unclassified intermittent failure, not claimed fixed. Other348 scripts and broad doubles presentation remain incomplete.",
       "evidence": "docs/source-basic-slice-animations.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "scope": "Shared Follow Me/Helping Hand and numeric immunity",
+      "details": "Actual four-slot support16groups5834checks/8fullturns and shared immunity4groups193checks pass together. Support cleanup lifetimes and pre-type damage are source verified; entry alone does not cure status. Old singles full support hashes and general parity remain exact.",
+      "evidence": "tests/Game.AllySupport.Tests/README.md; tests/Game.SourceMoveEndImmunity.Tests/README.md"
     }
   ]
 }

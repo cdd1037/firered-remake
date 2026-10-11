@@ -18,7 +18,7 @@ internal abstract partial class SourceRecipeContext
         "EFFECT_RESTORE_HP" or "EFFECT_MEAN_LOOK";
 
     internal static bool HasStatRecoveryRecipe(string effect) => effect is
-        "EFFECT_DEFENSE_UP_2" or "EFFECT_SPECIAL_ATTACK_UP_2" or "EFFECT_SPECIAL_DEFENSE_UP_2" or
+        "EFFECT_DEFENSE_CURL" or "EFFECT_MINIMIZE" or "EFFECT_DEFENSE_UP_2" or "EFFECT_SPECIAL_ATTACK_UP_2" or "EFFECT_SPECIAL_DEFENSE_UP_2" or
         "EFFECT_HAZE" or "EFFECT_PSYCH_UP" or "EFFECT_SOFTBOILED" or "EFFECT_BELLY_DRUM" or
         "EFFECT_SWAGGER" or "EFFECT_FLATTER" or "EFFECT_MORNING_SUN" or "EFFECT_SYNTHESIS" or "EFFECT_MOONLIGHT" or
         "EFFECT_REFRESH" or "EFFECT_TICKLE" or "EFFECT_BULK_UP" or "EFFECT_CALM_MIND" or
@@ -85,14 +85,15 @@ internal abstract partial class SourceRecipeContext
         }
 
         internal int SourceGenericDamage(PokemonCatalog catalog, WildBattleCombatant actor, WildBattleCombatant target,
-            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent) =>
+            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null) =>
             ForestBattleDamage.Calculate(catalog, actor, target, move.Id, critical, percent,
-                true, true, true, true, route3Rules: true, mtMoonRules: true, ceruleanRules: true, billRules: true,
+                true, true, true, true, route3Rules: true, dynamicPower: dynamicPower, mtMoonRules: true, ceruleanRules: true, billRules: true,
                 vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
                 rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(targetSide),
                 sourceDefinition: move, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
                 weatherSuppressed: SourceDamageWeatherSuppressed, sourceDoubleBattle: SourceDoubleBattle,
-                sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor)).Damage;
+                sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor),
+                sourceHelpingHand: Invocation is { } invocation && HelpingHand(invocation.Actor)).Damage;
 
         internal void SourceGenericEffectiveness(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide,
             PokemonMoveDefinition move)
@@ -186,6 +187,8 @@ internal abstract partial class SourceRecipeContext
                     bool ooze = WildBattleEffective.Ability(target) == "ABILITY_LIQUID_OOZE";
                     int before = Get(side).Pokemon.CurrentHp, drain = Math.Max(1, lost / 2);
                     int after = ooze ? Math.Max(0, before - drain) : Math.Min(Get(side).Pokemon.Stats.MaxHp, before + drain);
+                    HitItemsCommandDamage(ooze ? drain : -drain);
+                    if (ooze) RecordHitItemDamage(side, before - after, substitute: false, noEffect: false, physical: false);
                     if (ooze) { RecordAbility(targetSide, "ABILITY_LIQUID_OOZE"); Add(n => new SourceAbilityActivatedEvent(n, Turn, targetSide, "ABILITY_LIQUID_OOZE")); }
                     Set(side, Get(side) with { Pokemon = Get(side).Pokemon with { CurrentHp = after } });
                     Add(n => new SourceDrainEvent(n, Turn, side, targetSide, move.Id, lost, before, after, after - before));
@@ -215,7 +218,8 @@ internal abstract partial class SourceRecipeContext
             for (int i = 0; i < planned; i++)
             {
                 var actor = Get(side); var target = Get(targetSide);
-                if (actor.Pokemon.CurrentHp == 0 || target.Pokemon.CurrentHp == 0 || WildBattleStatus.IsSleeping(actor.Status)) break;
+                if (actor.Pokemon.CurrentHp == 0 || target.Pokemon.CurrentHp == 0 || WildBattleStatus.IsSleeping(actor.Status) &&
+                    !(SourceHeldDamageEnabled && Invocation?.ChosenMove.Value == "pret:MOVE_SLEEP_TALK")) break;
                 bool critical = SourceGenericCritical(actor, target, move, purpose);
                 // MultiHit tests type immunity before adjustnormaldamage, which owns the damage draw.
                 if (SourceGenericDamage(catalog, actor, target, targetSide, move, critical, 100) == 0) break;
@@ -227,7 +231,8 @@ internal abstract partial class SourceRecipeContext
                 actual++;
                 MtMoonRageOnDamage(side, targetSide, move.Id);
                 SourceGenericContact(catalog, side, targetSide, move, purpose, lastDamage);
-                SourceCalledMoveEndSubstitute();
+                HitItemsPerHitMoveEnd(catalog, side, targetSide, move);
+                SourceMultiHitMoveEnd(catalog, side, targetSide, move);
                 if (Endured(targetSide)) break;
             }
             SourceGenericEffectiveness(catalog, side, targetSide, move);
@@ -242,6 +247,7 @@ internal abstract partial class SourceRecipeContext
             else SourceGenericSecondary(catalog, side, targetSide, move, purpose, lastEffectiveDamage);
             if (Get(targetSide).Pokemon.CurrentHp == 0) ForestFaint(targetSide);
             ForestOutcome(true);
+            SourceMultiHitFinalMoveEnd();
         }
 
         internal void SourceGenericExplosion(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide, int slot,

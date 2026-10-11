@@ -127,6 +127,17 @@ internal abstract class SourceEndTurnContext
         }
     }
 
+    internal void Disable(BattlerSlot slot)
+    {
+        var body = Get(slot);
+        if (body.DisableTurnsRemaining == 0) return;
+        bool changed = !body.Pokemon.Moves.Any(m => m.Move == body.DisabledMove);
+        int after = changed ? 0 : body.DisableTurnsRemaining - 1;
+        Set(slot, body with { DisableTurnsRemaining = after, DisabledMove = after == 0 ? null : body.DisabledMove });
+        Add(n => new SourceDisableChangedEvent(n, Turn, slot, body.DisabledMove, body.DisableTurnsRemaining, after,
+            changed ? "move-changed" : after == 0 ? "expired" : "countdown"));
+    }
+
     internal void TickTimer(BattleSide side, string effect)
     {
         int before = GetTimer(side, effect);

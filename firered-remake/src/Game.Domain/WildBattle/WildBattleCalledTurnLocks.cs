@@ -204,7 +204,7 @@ public static partial class WildBattleRules
             invocationCommandNoEffect = false;
             invocationSkipsMoveEnd = false;
             var originalActorLastUsedMove = Get(side).LastUsedMove;
-            BeginPreparedMoveInvocation(originalActorLastUsedMove);
+            BeginPreparedMoveInvocation(catalog, originalActorLastUsedMove);
             int eventStart = Events.Count;
             earlyPartyActed.Add(side);
             ForestMove(catalog, side, locked.PpSlot, current);
@@ -360,25 +360,7 @@ public static partial class WildBattleRules
         }
         private void CalledRollout(PokemonCatalog catalog, WildBattleSide side, WildBattleSide target,
             PokemonMoveDefinition move, string purpose)
-        {
-            var locked = Get(side).CalledTurnState?.Lock;
-            if (locked is null) SpendInvocationPp(side, target, move); else PrintInvocationAttackString();
-            if (!ScalarAccuracy(side, target, move, purpose, ScalarType(move.Type)))
-            { CancelCalledTurnLock(side, "missed"); SourceGenericMiss(side, target, move); return; }
-            if (ScalarTypeResult(catalog, target, ScalarType(move.Type)).Immune)
-            { CancelCalledTurnLock(side, "no-effect"); ScalarReportType(catalog, side, target, move, ScalarType(move.Type)); return; }
-            int remaining = (locked?.TurnsRemaining ?? 5) - 1;
-            int power = (move.Power << (4 - remaining)) * (Get(side).DefenseCurled ? 2 : 1);
-            if (locked is null) StartCalledLock(side, move, WildBattleCalledLockKind.Rollout, 4);
-            else ChangeCalledLock(side, remaining == 0 ? null : locked with { TurnsRemaining = remaining }, remaining == 0 ? "finished" : "countdown");
-            bool critical = SourceGenericCritical(Get(side), Get(target), move, purpose);
-            int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
-            int damage = ScalarAdjust(target, move, ScalarDamage(catalog, side, target, move, critical, percent, power), purpose);
-            int lost = SourceGenericApplyDamage(side, target, move, damage, critical, percent);
-            ScalarReportType(catalog, side, target, move, ScalarType(move.Type));
-            Draw($"{purpose}.secondary-effect", 100);
-            ScalarFinish(catalog, side, target, move, purpose, lost, ScalarType(move.Type));
-        }
+            => Recipes.SourceRollout(catalog, S(side), S(target), move, purpose);
         // Source CANCELLER_BIDE is after infatuation and before ability/no-PP/Protect checks.
         private bool CalledBideContinuation(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move, string purpose)
         {

@@ -11,7 +11,7 @@ internal static class ForestBattleDamage
     // pokemon.c:2385-2652; battle_script_commands.c:1210-1550. Historical options retain
     // their original defaults; new Sun/LightScreen/suppression require an authenticated called definition.
     internal static DamageResult Calculate(PokemonCatalog catalog, WildBattleCombatant user,
-        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false, bool sourceSolarBeamWeakWeather = false, bool sourceDoubleBattle = false, int sourceDefenderCount = 1, bool sourcePlusMinusBoost = false)
+        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false, bool sourceSolarBeamWeakWeather = false, bool sourceDoubleBattle = false, int sourceDefenderCount = 1, bool sourcePlusMinusBoost = false, bool sourceHelpingHand = false)
     {
         route11Rules |= rockTunnelRules;
         bool canonicalSource = SourceBattleAdmission.HasCapability(catalog, SourceBattleCapability.SourceMoveRecipes);
@@ -25,7 +25,7 @@ internal static class ForestBattleDamage
             throw new NotSupportedException("wild_battle_damage_move");
         if (sourceSolarBeamWeakWeather && (!sourceMove || move!.Effect != "EFFECT_SOLAR_BEAM")) throw new NotSupportedException("called_solar_weather_context");
         if ((sun || lightScreen || weatherSuppressed) && !sourceMove) throw new NotSupportedException("called_damage_field_context");
-        if ((sourceDoubleBattle || sourcePlusMinusBoost) && !sourceMove || sourceDefenderCount is < 0 or > 2)
+        if ((sourceDoubleBattle || sourcePlusMinusBoost || sourceHelpingHand) && !sourceMove || sourceDefenderCount is < 0 or > 2)
             throw new NotSupportedException("called_damage_topology_context");
         bool validEffectiveType = sourceEffectiveType is { } effective && Enum.IsDefined(effective) && move!.Effect switch {
             "EFFECT_HIDDEN_POWER" => effective is not (ElementType.Normal or ElementType.Mystery),
@@ -195,6 +195,8 @@ internal static class ForestBattleDamage
         if (sourceDamageMultiplier != 1) { value = checked(value * sourceDamageMultiplier); steps.Add(new("source-damage-multiplier", value)); }
         if (rockTunnelRules && move?.Effect == "EFFECT_REVENGE" && user.DamagedByOpponentThisTurn) { value *= 2; steps.Add(new("revenge", value)); }
         if (mtMoonRules && user.ChargeTurnsRemaining > 0 && (sourceMove ? move!.Type == "TYPE_ELECTRIC" : type == ElementType.Electric)) { value *= 2; steps.Add(new("charge", value)); }
+        // Cmd_damagecalc: after base damage, critical/script multiplier and Charge; before typecalc/STAB and random.
+        if (sourceHelpingHand) { value = checked(value * 15) / 10; steps.Add(new("helping-hand", value)); }
         if (mtMoonRules && move?.Effect == "EFFECT_FLINCH_MINIMIZE_HIT" && target.Minimized) { value *= 2; steps.Add(new("minimized", value)); }
         if (pursuitSwitch)
         {

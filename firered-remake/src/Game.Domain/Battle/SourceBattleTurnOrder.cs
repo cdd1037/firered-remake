@@ -50,6 +50,9 @@ public static class SourceBattleTurnOrder
         }
         int Priority(SourceQueuedAction action) => (action.Kind != SourceActionKind.Move && !(phase == WildBattleOrderPhase.EndTurn && action.Kind == SourceActionKind.Cancelled && action.Token is not null)) || action.MoveSlot is null
             ? 0 : action.MoveSlot == -1 ? catalog.Moves[new("pret:MOVE_STRUGGLE")].Priority
+            // GetWhoStrikesFirst reads the current body's four move positions, not gChosenMove.
+            // Compact permanent movesets omit source MOVE_NONE padding after an entry.
+            : action.MoveSlot.Value >= frame.Get(action.Slot).Body!.Pokemon.Moves.Length ? 0
             : catalog.Moves[frame.Get(action.Slot).Body!.Pokemon.Moves[action.MoveSlot.Value].Move].Priority;
         try
         {

@@ -5,7 +5,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-public enum SourceFourActionPhase { Actions, EndTurn, RewardsPending, ReplacementsPending, BattleEnded, EndTurnResume }
+public enum SourceFourActionPhase { Actions, EndTurn, RewardsPending, ReplacementsPending, BattleEnded, EndTurnResume, ActionSwitchPending }
 public sealed record SourceDefeatedOccupant(OccupantToken Occupant, long FaintEventSequence, bool RequiresExperience);
 public sealed record SourceFourActionCursor(int Turn, SourceFourActionPhase Phase,
     ImmutableArray<SourceDefeatedOccupant> Defeats)
@@ -33,7 +33,7 @@ public sealed record SourceFourActionResult(SourceBattleFrame State, ImmutableAr
 /// This capability is not encounter, AI, all residual effects or campaign admission.</summary>
 public static partial class SourceFourActionTurns
 {
-    public const string Version = "firered-four-action-reward-continuation-v4";
+    public const string Version = "firered-four-action-switch-continuation-v5";
 
     public static string? ValidateCapability(PokemonCatalog catalog, SourceBattleFrame frame)
     {
@@ -46,15 +46,15 @@ public static partial class SourceFourActionTurns
         if (new[] { frame.Field.RainTurnsRemaining, frame.Field.SandstormTurnsRemaining, frame.Field.SunTurnsRemaining, frame.Field.HailTurnsRemaining }.Count(t => t > 0) > 1)
             return "source_four_action_weather_conflict";
         if (frame.Slots.Any(c => c.Body is null)) return "source_four_action_body_required";
-        // Positive admission: only the shared weather and side-protection phases are enabled.
-        // Spikes and Follow Me still require their own lifecycle owners.
+        // Shared weather, side protections and ally support own their admitted lifetimes.
+        // Spikes still requires its own lifecycle owner.
         if (frame.Field != new SourceFieldRegisters { Terrain = frame.Field.Terrain, PayDayMoney = frame.Field.PayDayMoney,
                 RainTurnsRemaining = frame.Field.RainTurnsRemaining, SandstormTurnsRemaining = frame.Field.SandstormTurnsRemaining,
                 SunTurnsRemaining = frame.Field.SunTurnsRemaining, HailTurnsRemaining = frame.Field.HailTurnsRemaining,
                 PermanentWeather = frame.Field.PermanentWeather } ||
             frame.Sides.Any(s => s != new SourceSideRegisters(s.Side) { ReflectTurnsRemaining = s.ReflectTurnsRemaining,
                 LightScreenTurnsRemaining = s.LightScreenTurnsRemaining, MistTurnsRemaining = s.MistTurnsRemaining,
-                SafeguardTurnsRemaining = s.SafeguardTurnsRemaining }))
+                SafeguardTurnsRemaining = s.SafeguardTurnsRemaining, FollowMeTimer = s.FollowMeTimer, FollowMeTarget = s.FollowMeTarget }))
             return "source_four_action_field_phase_not_migrated";
         foreach (var cell in frame.Slots)
         {
@@ -69,12 +69,13 @@ public static partial class SourceFourActionTurns
                 body.Nightmare || body.DestinyBond || body.Imprison || body.YawnTurnsRemaining != 0 ||
                 body.ChargeTurnsRemaining != 0 || body.BindTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
-                body.EncoreMoveSlot is not null || body.DisabledMove is not null || body.Protected || body.Enduring ||
+                body.EncoreMoveSlot is not null || body.Protected || body.Enduring ||
                 body.Rage || body.WaterSport || body.MudSport ||
-                cell.Registers.Turn is { } turn && (turn.SureHitTurnsRemaining != 0 || turn.Lock is not { } locked || !SourceBattleKernel.SupportsRecharge(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
+                cell.Registers.Turn is { } turn && (turn.SureHitTurnsRemaining != 0 || turn.Lock is not { } locked || !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
                 cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null ||
-                cell.Registers.InfatuationSource is not null || cell.Position.FocusBanded || cell.Position.Wish is not null)
+                cell.Position.FocusBanded || cell.Position.Wish is not null)
                 return "source_four_action_residual_or_canceller_not_migrated";
+            if (SourceTurnMoveRules.Validate(body, catalog) is { } turnMoveError) return turnMoveError;
             if (cell.Position.FutureAttack is { } future && (future.Move.Value is not ("pret:MOVE_FUTURE_SIGHT" or "pret:MOVE_DOOM_DESIRE") ||
                 future.Damage > 65535 || !catalog.Moves.ContainsKey(future.Move))) return "source_four_action_future_contract";
         }
@@ -97,10 +98,16 @@ public static partial class SourceFourActionTurns
         foreach (var action in next.Queue)
         {
             if (action.Kind == SourceActionKind.Cancelled) continue;
+            if (action.Kind == SourceActionKind.Switch)
+            {
+                if (ValidateVoluntarySwitch(catalog, next, action.Slot) is { } switchError) return Fail(frame, switchError);
+                continue;
+            }
             if (action.Kind != SourceActionKind.Move || action.MoveSlot is null or < 0 || action.Target is null)
                 return Fail(frame, "source_four_action_selection_not_migrated");
             var learned = next.Get(action.Slot).Body!.Pokemon.Moves[action.MoveSlot.Value];
             var recharge = next.Get(action.Slot).Registers.Turn?.Lock;
+            if (recharge is null && learned.Move == next.Get(action.Slot).Body!.DisabledMove) return Fail(frame, "source_four_action_selection_disabled");
             if (recharge is null && learned.CurrentPp == 0) return Fail(frame, "source_four_action_selection_no_pp");
             if (recharge is not null && (action.MoveSlot != recharge.PpSlot || action.Target != recharge.Target))
                 return Fail(frame, "source_four_action_recharge_selection");
@@ -145,6 +152,7 @@ public static partial class SourceFourActionTurns
         if (frame.FourTurn is not { } cursor || continuation != new SourceTurnContinuation(frame.Revision, frame.EventSequence, frame.NextAction, cursor.Phase))
             return Fail(frame, "source_four_action_stale_continuation");
         if (cursor.Phase == SourceFourActionPhase.RewardsPending) return SourceFourRewards.Settle(catalog, frame, continuation);
+        if (cursor.Phase == SourceFourActionPhase.ActionSwitchPending) return Fail(frame, "source_four_action_switch_choice_required");
         if (cursor.Phase == SourceFourActionPhase.ReplacementsPending) return Fail(frame, "source_four_action_replacement_choice_required");
         if (cursor.Phase == SourceFourActionPhase.BattleEnded) return Fail(frame, "source_four_action_battle_ended");
         try
@@ -157,6 +165,13 @@ public static partial class SourceFourActionTurns
             if (action.Kind == SourceActionKind.Cancelled || action.Token is not { } token || !frame.IsCurrent(token.Owner) || !frame.CanAct(action.Slot))
                 next = next with { Revision = checked(next.Revision + 1), Queue = next.Queue.SetItem(next.NextAction,
                     action with { Kind = SourceActionKind.Cancelled, CancellationReason = action.CancellationReason ?? "original-occupant-unavailable" }) };
+            else if (action.Kind == SourceActionKind.Switch)
+            {
+                var switched = BindActionSwitch(catalog, frame, action.Slot, action.Incoming!.Value, WildBattleCalledSwitchKind.Voluntary);
+                if (!switched.Succeeded) return Fail(frame, switched.Fault!);
+                var immunity = SourceFrameImmunityRules.Apply(switched.State);
+                next = immunity.State; events.AddRange(switched.Events); events.AddRange(immunity.Events); trace = switched.Trace;
+            }
             else
             {
                 var move = SourceBattleKernel.ActionMove(catalog, frame.Get(action.Slot), action.MoveSlot!.Value);
@@ -206,15 +221,16 @@ public static partial class SourceFourActionTurns
                     next = ended.State; events.Add(ended.Event);
                 }
             }
-            var phase = HasPendingRewards(next) ? SourceFourActionPhase.RewardsPending :
+            var phase = !next.PendingSwitches.IsEmpty ? SourceFourActionPhase.ActionSwitchPending : HasPendingRewards(next) ? SourceFourActionPhase.RewardsPending :
                 next.Outcome != WildBattleOutcome.Ongoing ? SourceFourActionPhase.BattleEnded :
                 next.NextAction == next.Queue.Length ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.Actions;
             next = next with { FourTurn = next.FourTurn! with { Phase = phase } };
             // The source fainted-action callbacks run after each complete action. Pending
             // actual KO entries defer their settlement to the approved end-turn boundary.
-            if (next.Outcome == WildBattleOutcome.Ongoing && !HasPendingRewards(next) &&
-                !next.Slots.Any(c => next.IsDeferredKoVacant(c.Slot) &&
-                    !SourceBattleIdentityRules.LegalReserveIndices(next, c.Slot.Side).IsEmpty))
+            if (next.Outcome == WildBattleOutcome.Ongoing && next.PendingSwitches.IsEmpty && !HasPendingRewards(next) &&
+                (next.Slots.Any(c => c.Occupant != frame.Get(c.Slot).Occupant) ||
+                 !next.Slots.Any(c => next.IsDeferredKoVacant(c.Slot) &&
+                    !SourceBattleIdentityRules.LegalReserveIndices(next, c.Slot.Side).IsEmpty)))
             {
                 var settled = SourceFourEntryAbilities.Settle(next);
                 next = settled.State; events.AddRange(settled.Events); trace = trace.AddRange(settled.Trace);

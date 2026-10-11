@@ -117,6 +117,7 @@ public static partial class WildBattleRules
                         if (target.DigMoveSlot is not null) { Fail("semi-invulnerable"); return true; }
                         if (target.Cursed) { Fail("already-cursed"); return true; }
                         SetTowerFlag(targetSide, "curse", true, "move");
+                        SourceHitItemsRecord(side, move.Id, Math.Max(1, actor.Pokemon.Stats.MaxHp / 2), Math.Min(actor.Pokemon.CurrentHp, Math.Max(1, actor.Pokemon.Stats.MaxHp / 2)), substitute: false);
                         TowerHp(side, "curse-cost", Math.Max(1, actor.Pokemon.Stats.MaxHp / 2));
                         ForestOutcome(true);
                     }

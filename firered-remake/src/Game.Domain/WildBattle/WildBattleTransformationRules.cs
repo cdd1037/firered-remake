@@ -111,22 +111,6 @@ public static partial class WildBattleRules
 {
     internal sealed partial class Execution
     {
-        private void TransformImmunityAbilities(WildBattleSide side)
-        {
-            var mon = Get(side); string ability = WildBattleEffective.Ability(mon);
-            bool confusion = ability == "ABILITY_OWN_TEMPO" && mon.ConfusionTurnsRemaining > 0;
-            bool attraction = ability == "ABILITY_OBLIVIOUS" && mon.InfatuationSource is not null;
-            bool status = ability is "ABILITY_INSOMNIA" or "ABILITY_VITAL_SPIRIT" && WildBattleStatus.IsSleeping(mon.Status) ||
-                ability == "ABILITY_WATER_VEIL" && mon.Status == WildBattleStatus.Burn ||
-                ability == "ABILITY_MAGMA_ARMOR" && mon.Status == WildBattleStatus.Freeze;
-            if (!confusion && !attraction && !status) return;
-            RecordAbility?.Invoke(side, ability);
-            Add(n => new WildBattleAbilityActivatedEvent(n, State.Turn, side, ability));
-            if (confusion) ChangeConfusion(side, 0, "own-tempo");
-            if (attraction) ChangeInfatuation(side, null, "oblivious");
-            if (status) ChangeStatus(side, WildBattleStatus.None, "transform-immunity");
-        }
-
         private bool TransformScript(PokemonCatalog catalog, WildBattleSide side, int slot, PokemonMoveDefinition move)
         {
             if (move.Effect != "EFFECT_TRANSFORM") return false;

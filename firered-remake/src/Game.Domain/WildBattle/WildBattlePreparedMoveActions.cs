@@ -54,8 +54,9 @@ public static partial class WildBattleRules
         private bool preparedSwapAttackerTarget;
         private MoveId? preparedPpOwnerPreviousMove;
 
-        private void BeginPreparedMoveInvocation(MoveId? previousMove)
+        private void BeginPreparedMoveInvocation(PokemonCatalog catalog, MoveId? previousMove)
         {
+            SourceHitItemsBegin(catalog);
             choiceBatonPassFailed = false;
             preparedSwapAttackerTarget = false;
             preparedPpOwnerPreviousMove = previousMove;

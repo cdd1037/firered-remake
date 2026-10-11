@@ -1,3 +1,5 @@
+using Game.Domain.Battle;
+
 namespace Game.Domain.WildBattle;
 
 public sealed record VermilionPayDaySettlement(int Money,int Awarded,int Collected);
@@ -29,16 +31,16 @@ public static partial class WildBattleRules
             if (!Vermilion) return;
             foreach (var side in new[]{WildBattleSide.Player,WildBattleSide.Opponent})
             {
-                if (State.RulesVersion == FuchsiaRulesVersion) TransformImmunityAbilities(side);
-                if (Snorlax && WildBattleEffective.Ability(Get(side)) == "ABILITY_IMMUNITY" && (Get(side).Status & 0xF88u) != 0)
-                { RecordAbility?.Invoke(side,"ABILITY_IMMUNITY"); Add(n => new WildBattleAbilityActivatedEvent(n,State.Turn,side,"ABILITY_IMMUNITY")); ChangeStatus(side,WildBattleStatus.None,"immunity"); }
-                if (WildBattleEffective.Ability(Get(side)) == "ABILITY_LIMBER" && Get(side).Status == WildBattleStatus.Paralysis)
-                {
-                    RecordAbility?.Invoke(side,"ABILITY_LIMBER");
-                    Add(n=>new WildBattleAbilityActivatedEvent(n,State.Turn,side,"ABILITY_LIMBER"));
-                    ChangeStatus(side,WildBattleStatus.None,"limber");
-                }
-        }
+                var mon = Get(side); string ability = WildBattleEffective.Ability(mon);
+                var cure = SourceImmunityRules.Resolve(ability, mon.Status, mon.ConfusionTurnsRemaining,
+                    mon.InfatuationSource is not null, expanded: State.RulesVersion == FuchsiaRulesVersion, poison: Snorlax);
+                if (cure.Cure == SourceImmunityCure.None) continue;
+                RecordAbility?.Invoke(side, ability);
+                Add(n => new WildBattleAbilityActivatedEvent(n, State.Turn, side, ability));
+                if (cure.Cure == SourceImmunityCure.PrimaryStatus) ChangeStatus(side, WildBattleStatus.None, cure.Reason);
+                else if (cure.Cure == SourceImmunityCure.Confusion) ChangeConfusion(side, 0, cure.Reason);
+                else ChangeInfatuation(side, null, cure.Reason);
+            }
         }
         // battle_util.c ITEMEFFECT_MOVE_END scans battler IDs, not speed order. Oran only runs at residuals.
         private void VermilionMoveEndBerries()

@@ -92,6 +92,9 @@ public static class SourceFourEntryAbilities
         if (prior.AppliedEntries[slot.Value] == frame.Get(slot).Occupant) return Fail(frame, "source_entry_already_applied");
         var next = frame with { EntryAbilities = prior with { AppliedEntries = prior.AppliedEntries.SetItem(slot.Value, frame.Get(slot).Occupant),
             PendingIntimidateMask = (byte)(prior.PendingIntimidateMask & ~slot.Mask) } };
+        var cell = next.Get(slot);
+        if (cell.Body!.Pokemon.CurrentHp > 0 && WildBattleEffective.Ability(cell.Body) == "ABILITY_TRUANT")
+            next = next with { Slots = next.Slots.SetItem(slot.Value, cell with { Body = cell.Body with { TruantLoafing = true } }) };
         var execution = new FrameEntryContext(next);
         execution.SwitchIn(slot);
         if (settle) execution.Settle();

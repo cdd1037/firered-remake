@@ -25,9 +25,12 @@ internal abstract partial class SourceRecipeContext
             if (move.Effect is "EFFECT_SWAGGER" or "EFFECT_FLATTER")
             { SourceStatRecoveryConfuse(side, targetSide, slot, move, purpose); return; }
 
+            if (move.Effect == "EFFECT_MINIMIZE") ApplyMinimize(side);
             SpendEarlyPartyPp(side, targetSide, slot, move);
             switch (move.Effect)
             {
+                case "EFFECT_MINIMIZE": ChangeStage(side, side, WildBattleStat.Evasion, 1, move.Id); return;
+                case "EFFECT_DEFENSE_CURL": ApplyDefenseCurl(side); ChangeStage(side, side, WildBattleStat.Defense, 1, move.Id); return;
                 case "EFFECT_DEFENSE_UP_2": SourceChangeStat(side, side, WildBattleStat.Defense, 2, move.Id); return;
                 case "EFFECT_SPECIAL_ATTACK_UP_2": SourceChangeStat(side, side, WildBattleStat.SpecialAttack, 2, move.Id); return;
                 case "EFFECT_SPECIAL_DEFENSE_UP_2": SourceChangeStat(side, side, WildBattleStat.SpecialDefense, 2, move.Id); return;
@@ -54,6 +57,8 @@ internal abstract partial class SourceRecipeContext
                     if (half == 0)
                     { SourceStatRecoveryFail(side, side, move, "belly-drum-condition"); return; }
                     SourceAssignStat(side, side, WildBattleStat.Attack, 12);
+                    HitItemsCommandDamage(half);
+                    RecordHitItemDamage(side, half, substitute: false, noEffect: false, physical: true);
                     int after = actor.Pokemon.CurrentHp - half;
                     Set(side, Get(side) with { Pokemon = Get(side).Pokemon with { CurrentHp = after } });
                     Add(n => new SourceHpChangedEvent(n, Turn, side, side, move.Id, actor.Pokemon.CurrentHp, after, half, false, 100));
@@ -86,6 +91,7 @@ internal abstract partial class SourceRecipeContext
         internal void SourceStatRecoveryHeal(BattlerSlot side, PokemonMoveDefinition move, int amount)
         {
             var actor = Get(side); int before = actor.Pokemon.CurrentHp, after = Math.Min(actor.Pokemon.Stats.MaxHp, before + amount);
+            if (before != after || move.Effect is "EFFECT_RESTORE_HP" or "EFFECT_SOFTBOILED") HitItemsCommandDamage(-amount);
             if (before == after) { SourceStatRecoveryFail(side, side, move, "already-full-hp"); return; }
             Set(side, actor with { Pokemon = actor.Pokemon with { CurrentHp = after } });
             Add(n => new SourceRecoveredEvent(n, Turn, side, move.Id, before, after, after - before));

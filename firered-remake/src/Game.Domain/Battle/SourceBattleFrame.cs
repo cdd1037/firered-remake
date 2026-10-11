@@ -27,6 +27,7 @@ public sealed record SourceTurnRegisters(string RulesVersion, SourceTurnLock? Lo
 /// <summary>The only authority for live battler references; the reusable scalar body must contain none.</summary>
 public sealed record SourceSlotRegisters
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool HelpingHand { get; init; }
     public BattlerSlot? LeechSeedSource { get; init; }
     public BattlerSlot? MeanLookSource { get; init; }
     public BattlerSlot? LastHitBy { get; init; }
@@ -42,6 +43,7 @@ public sealed record SourceFutureAttack(int TurnsRemaining, MoveId Move, Battler
 /// <summary>These records survive an occupant change independently of combatant volatiles.</summary>
 public sealed record SourcePositionRegisters
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceHitDamageReceipt? HitItemReceipt { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool FocusBanded { get; init; }
     public WildBattleCalledWish? Wish { get; init; }
     public SourceFutureAttack? FutureAttack { get; init; }

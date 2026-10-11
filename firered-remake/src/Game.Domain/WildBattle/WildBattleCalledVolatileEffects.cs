@@ -170,6 +170,7 @@ public static partial class WildBattleRules
                     var mon = Get(side); int cost = Math.Max(1, mon.Pokemon.Stats.MaxHp / 4);
                     if (mon.Pokemon.CurrentHp <= cost) { SourceCalledVolatileFail(side, side, move.Id, "substitute-insufficient-hp"); return; }
                     int hp = mon.Pokemon.CurrentHp;
+                    SourceHitItemsRecord(side, move.Id, cost, cost, substitute: false);
                     Set(side, mon with { Pokemon = mon.Pokemon with { CurrentHp = hp - cost }, BindTurnsRemaining = 0, BindingMove = null,
                         CalledVolatile = v with { SubstituteHp = cost } });
                     Add(n => new WildBattleHpChangedEvent(n, State.Turn, side, side, move.Id, hp, hp - cost, cost, false, 100));
@@ -299,11 +300,15 @@ public static partial class WildBattleRules
         {
             sourceContactDamage = null;
             if (SourceCalledConsumeSubstituteDamage(side, targetSide, move, damage, critical, percent, out int substituteLost))
+            {
+                SourceHitItemsRecord(targetSide, move, damage, substituteLost, substitute: true);
                 return substituteLost;
+            }
             if (applyEndure) damage = RockTunnelAdjustDamage(targetSide, damage);
             var target = Get(targetSide);
             int before = target.Pokemon.CurrentHp, after = Math.Max(0, before - damage);
             sourceContactDamage = (side, targetSide, move, before - after);
+            SourceHitItemsRecord(targetSide, move, damage, before - after, substitute: false);
             Set(targetSide, target with { Pokemon = target.Pokemon with { CurrentHp = after } });
             Add(n => new WildBattleHpChangedEvent(n, State.Turn, side, targetSide, move, before, after, damage, critical, percent));
             if (critical && (damage > 0 || criticalMessageOnZero || SourceHeldDamageEnabled && Recipes.HeldDamageEffectiveZero(S(targetSide)))) Add(n => new WildBattleCriticalHitEvent(n, State.Turn, side, targetSide));
@@ -417,11 +422,13 @@ public static partial class WildBattleRules
             SetCalledFuture(target, after == 0 ? null : future with { TurnsRemaining = after });
             Add(n => new WildBattleCalledDelayedEvent(n, State.Turn, target, future.Move, future.TurnsRemaining, after, after == 0 ? "resolved" : "countdown"));
             if (after != 0 || Get(target).Pokemon.CurrentHp == 0) return;
+            if (SourceHeldDamageEnabled) Recipes.SetHitItemReceipt(S(target), Recipes.HitItemReceipt(S(target)) with { Damage = 0xFFFF });
             var move = catalog.Moves[future.Move]; string purpose = $"wild-battle.{future.Attacker.ToString().ToLowerInvariant()}.future-attack";
             var hit = Recipes.PrepareFutureHit(S(future.Attacker), S(target), move, future.Damage, purpose);
             if (!hit.Hit) return;
             int percent = hit.Percent;
             int damage = SourceHeldDamageEnabled ? SourceAdjustHeldDamage(target, move, hit.Damage, purpose, normal2: true) : ScalarAdjust(target, move, hit.Damage, purpose);
+            sourceHitItemCatalog = catalog;
             calledPassiveDelayed = true;
             try
             {
@@ -431,6 +438,7 @@ public static partial class WildBattleRules
                 // HandleAction_ActionFinished cleared gCurrentMove to MOVE_NONE; the source's
                 // MOVEEND_RAGE case therefore fails its power != 0 test for this delayed script.
                 VermilionMoveEndBerries();
+                SourceHitItemsEnd(future.Attacker, target, new("pret:MOVE_NONE"), affected: false);
                 SourceCalledMoveEndSubstitute();
             }
             finally { calledPassiveDelayed = false; }

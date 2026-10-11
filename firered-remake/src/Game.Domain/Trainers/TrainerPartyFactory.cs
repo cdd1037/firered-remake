@@ -26,9 +26,10 @@ public static class TrainerPartyFactory
 
     // Both bounded trainer profiles validate their own roster before reaching this unchanged
     // source construction path. Sharing it does not widen the public lab catalog contract.
-    internal static TrainerPartyCreationResult CreateValidated(TrainerDefinition trainer, PokemonCatalog pokemon, RngState rng)
+    internal static TrainerPartyCreationResult CreateValidated(TrainerDefinition trainer, PokemonCatalog pokemon, RngState rng, SourceMechanicsCatalog? source = null)
     {
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) throw new NotSupportedException("Unsupported RNG algorithm.");
+        if (source is not null && !ReferenceEquals(source.Catalog, pokemon)) throw new ArgumentException("Source mechanics proof belongs to a different catalog.");
         foreach (var member in trainer.Party)
         {
             if (!pokemon.Species.TryGetValue(member.Species, out var species) || species.SourceSpeciesId != member.SourceSpeciesId)
@@ -45,7 +46,7 @@ public static class TrainerPartyFactory
             var member = trainer.Party[index];
             foreach (int value in trainer.EncodedTrainerName) nameHash = unchecked(nameHash + (uint)value);
             foreach (int value in member.EncodedSpeciesName) nameHash = unchecked(nameHash + (uint)value);
-            uint personality = unchecked(((trainer.EncounterMusicGender & 0x80) != 0 ? 0x78u : 0x88u) + (nameHash << 8));
+            uint personality = unchecked((trainer.DoubleBattle ? 0x80u : (trainer.EncounterMusicGender & 0x80) != 0 ? 0x78u : 0x88u) + (nameHash << 8));
             int fixedIv = member.SourceIv * 31 / 255;
             uint ot;
             ulong attempt = 0;
@@ -64,8 +65,8 @@ public static class TrainerPartyFactory
 
             // Fixed/fixed creation consumes no more draws. Initial moves, PP, nature, gender and stats
             // intentionally reuse the already-source-verified Pokemon factory instead of duplicating it.
-            var created = PokemonFactory.Create(pokemon,
-                new(member.Species, member.Level, ot, IvPolicy.Fixed(fixedIv), PersonalityPolicy.Fixed(personality)), rng);
+            var request = new CreatePokemonRequest(member.Species, member.Level, ot, IvPolicy.Fixed(fixedIv), PersonalityPolicy.Fixed(personality));
+            var created = source is null ? PokemonFactory.Create(pokemon, request, rng) : SourcePokemonFactory.Create(source, request, rng);
             if (created.Rng != rng || !created.Trace.IsEmpty)
                 throw new InvalidOperationException("Fixed Pokemon creation unexpectedly consumed RNG.");
             result.Add(new(created.Pokemon, member.HeldItem));

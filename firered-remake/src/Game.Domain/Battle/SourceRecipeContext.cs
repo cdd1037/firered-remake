@@ -58,6 +58,8 @@ internal abstract partial class SourceRecipeContext : SourceStatRecipeContext
     internal abstract void ForestOutcome(bool allowReplacement);
     internal abstract void MtMoonRageOnDamage(BattlerSlot actor, BattlerSlot target, MoveId move);
     internal abstract void SourceCalledMoveEndSubstitute();
+    internal virtual void SourceMultiHitMoveEnd(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) => SourceCalledMoveEndSubstitute();
+    internal virtual void SourceMultiHitFinalMoveEnd() { }
     internal abstract bool Endured(BattlerSlot slot);
     internal abstract bool EarlyStarterPrimaryMove(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose);
     internal abstract bool EarlyPartyScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose);

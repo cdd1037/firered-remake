@@ -9,6 +9,16 @@ namespace Game.Domain.Battle;
 internal sealed record SourceHeldOrderEffect(int SourceItemId, string HoldEffect, int Parameter);
 internal static class SourceBattleHeldItems
 {
+    internal static readonly SourceHeldOrderEffect KingsRock = new(187, "HOLD_EFFECT_FLINCH", 10);
+    internal static readonly SourceHeldOrderEffect ShellBell = new(219, "HOLD_EFFECT_SHELL_BELL", 8);
+    // ItemBattleEffects receives battlerId 0 even for an opponent attacker. Ordinary item
+    // parameters (including medicines with no hold effect) therefore matter to King's Rock.
+    internal static int Parameter(string item) => item switch {
+        "ITEM_HYPER_POTION" => 200, "ITEM_SUPER_POTION" => 50, "ITEM_QUICK_CLAW" => 20,
+        "ITEM_ETHER" or "ITEM_ORAN_BERRY" or "ITEM_HARD_STONE" or "ITEM_BLACK_GLASSES" or
+        "ITEM_SPELL_TAG" or "ITEM_FOCUS_BAND" or "ITEM_KINGS_ROCK" => 10,
+        "ITEM_SHELL_BELL" => 8, _ => 0
+    };
     internal static readonly SourceHeldOrderEffect FocusBand = new(196, "HOLD_EFFECT_FOCUS_BAND", 10);
     internal static readonly SourceHeldOrderEffect ChoiceBand = new(186, "HOLD_EFFECT_CHOICE_BAND", 0);
 

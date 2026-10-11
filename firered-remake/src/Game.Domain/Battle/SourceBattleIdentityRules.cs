@@ -173,8 +173,21 @@ public static class SourceBattleIdentityRules
                 !four.Defeats.Any(d => d.RequiresExperience)) ||
             four.Phase == SourceFourActionPhase.Actions && frame.NextAction >= 4 ||
             four.Phase is SourceFourActionPhase.EndTurn or SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.ReplacementsPending && frame.NextAction != 4 ||
-            four.Phase == SourceFourActionPhase.RewardsPending && !four.Defeats.Any(d => d.RequiresExperience)))
+            four.Phase == SourceFourActionPhase.RewardsPending && !four.Defeats.Any(d => d.RequiresExperience) ||
+            four.Phase == SourceFourActionPhase.ActionSwitchPending && (frame.NextAction < 1 ||
+                frame.PendingSwitches is not [{ Kind: WildBattleCalledSwitchKind.BatonPass, Invocation: { } }])))
             return "source_frame_four_action_continuation";
+        if (frame.Layout == SourceBattleLayout.PresetDoubles && frame.FourTurn is { } actionCursor &&
+            frame.PendingSwitches.Any(p => p.Kind == WildBattleCalledSwitchKind.BatonPass))
+        {
+            int index = actionCursor.Phase == SourceFourActionPhase.ActionSwitchPending ? frame.NextAction - 1 : frame.NextAction;
+            if (frame.PendingSwitches is not [{ Kind: WildBattleCalledSwitchKind.BatonPass, Invocation: { } invocation } pending] ||
+                index < 0 || index >= frame.Queue.Length || frame.Queue[index] is not { Kind: SourceActionKind.Move, Token: { } owner } action ||
+                action.Slot != pending.Slot || !frame.IsCurrent(owner.Owner) || invocation.Actor != pending.Slot ||
+                invocation.Target != pending.Slot || invocation.PpOwner != pending.Slot || invocation.ChosenSlot != action.MoveSlot ||
+                invocation.PpSlot != action.MoveSlot || !invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys))
+                return "source_frame_action_switch_owner";
+        }
         if (SourceFourRewards.Validate(frame) is { } rewardError) return rewardError;
         return null;
     }
@@ -185,6 +198,7 @@ public static class SourceBattleIdentityRules
     private static string? ValidateRegisters(SourceBattleFrame frame, SourceBattleSlot cell)
     {
         var r = cell.Registers;
+        if (!SourceHitItemRules.Valid(cell.Position.HitItemReceipt)) return "source_frame_hit_receipt";
         if (new[] { r.LeechSeedSource, r.MeanLookSource, r.LastHitBy, r.InfatuationSource, r.WrappedBy,
                 r.Damage?.PhysicalSource, r.Damage?.SpecialSource, r.Turn?.SureHitSource,
                 r.Turn?.Lock?.Target, r.Turn?.Lock?.StoredDamageSource, cell.Position.FutureAttack?.Attacker }
@@ -340,7 +354,7 @@ public static class SourceBattleIdentityRules
             {
                 r = r with { LeechSeedSource = kind == SourceDepartureKind.BatonPass ? r.LeechSeedSource : null,
                     MeanLookSource = kind == SourceDepartureKind.BatonPass ? r.MeanLookSource : null,
-                    InfatuationSource = null, WrappedBy = null, LastHitBy = null, History = history,
+                    InfatuationSource = null, WrappedBy = null, LastHitBy = null, History = history, HelpingHand = false,
                     Turn = kind == SourceDepartureKind.BatonPass && r.Turn is { } ownTurn ? ownTurn with { Lock = null } : null };
                 if (cell.Body is { } ownBody) cell = cell with { Body = ownBody with { BindTurnsRemaining = 0, BindingMove = null } };
             }

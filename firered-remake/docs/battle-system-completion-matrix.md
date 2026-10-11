@@ -566,3 +566,7 @@ Drizzle, Drought, Sand Stream, Intimidate, Trace and Forecast use the same slot-
 ## Shared slice animation increment (2026-10-11)
 
 Scratch, Cut, Slash and False Swipe now share the original script/callback renderer with Pound and Tackle: six bounded scripts, 444 exact source-C snapshots and 14 final native animation cases. Existing panX and cue ownership remain in use. The prior native quit timeout is retained as an unresolved intermittent failure; final uninstrumented retry exited normally. Other 348 scripts and general doubles presentation remain incomplete. See [source slice animation coverage](source-basic-slice-animations.md).
+
+## Shared support and move-end immunity (2026-10-11)
+
+Follow Me and Helping Hand now execute through shared single/four-slot recipes, including exact PP/target ordering, pre-type damage and distinct cleanup timing. The main integrated support suite passes 16 groups/5,834 checks and eight complete turns; shared numeric immunity adds four groups/193 checks. Original singles support-action hashes remain exact. Source-only infatuation/Nightmare vectors do not establish complete four-slot lifecycles. The next playable target is the original Route8 Twins encounter, with its actual party and AI; complete battle/UI coverage is still open. See the two test READMEs.

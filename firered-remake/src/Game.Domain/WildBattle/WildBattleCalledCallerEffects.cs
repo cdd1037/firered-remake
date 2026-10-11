@@ -138,7 +138,7 @@ public static partial class WildBattleRules
             invocationCommandNoEffect = false;
             invocationSkipsMoveEnd = false;
             var originalActorLastUsedMove = Get(side).LastUsedMove;
-            BeginPreparedMoveInvocation(originalActorLastUsedMove);
+            BeginPreparedMoveInvocation(catalog, originalActorLastUsedMove);
             activeInvocation = new(side, action.ChosenSlot, action.ChosenSlot, chosen.Id, chosen.Id, chosen.Id,
                 null, chosen.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? side : Other(side),
                 WildBattleAttackCancellerPhase.Start, WildBattleInvocationFlags.None);
@@ -171,7 +171,7 @@ public static partial class WildBattleRules
             invocationCommandNoEffect = false;
             invocationSkipsMoveEnd = false;
             var originalActorLastUsedMove = Get(side).LastUsedMove;
-            BeginPreparedMoveInvocation(originalActorLastUsedMove);
+            BeginPreparedMoveInvocation(catalog, originalActorLastUsedMove);
             activeInvocation = new(side, chosenPosition, StruggleSlot, current.Id, current.Id, current.Id, null,
                 Other(side), WildBattleAttackCancellerPhase.Start, WildBattleInvocationFlags.NoPpDeduct);
             int eventStart = Events.Count;
