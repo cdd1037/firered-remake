@@ -80,7 +80,7 @@ public static partial class SourceFourActionTurns
                     }
             }
             var settled = next.PendingSwitches.IsEmpty && next.Outcome == WildBattleOutcome.Ongoing && !HasPendingRewards(next)
-                ? SourceFourEntryAbilities.Settle(next) : new SourceFourActionResult(next, [], [], null);
+                ? SourceFourEntryAbilities.Settle(next, catalog) : new SourceFourActionResult(next, [], [], null);
             if (ValidateCapability(catalog, settled.State) is { } nextError) return Fail(frame, nextError);
             return new(settled.State, [.. events, .. settled.Events], [.. entry.Trace, .. settled.Trace], null);
         }

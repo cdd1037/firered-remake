@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Game.Domain;
+using Game.Domain.Battle;
 using Game.Domain.Events;
 using Game.Domain.FirstBattle;
 using Game.Domain.Ids;
@@ -13,7 +14,10 @@ namespace Game.Application;
 
 public enum CampaignForestTrainerStage { Intro, Combat, Rewards, Finished }
 public sealed record CampaignForestTrainerHistory(string Id, string TrainerId, WildBattleOutcome Outcome,
-    int ExperienceGained, int MoneyGained, ImmutableArray<int> OpponentsSent);
+    int ExperienceGained, int MoneyGained, ImmutableArray<int> OpponentsSent)
+{
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? MoneyMultiplier { get; init; }
+}
 
 /// <summary>Owned party, EXP and script continuation stay here; the deterministic multi-opponent
 /// controller owns turn execution. Presentation deliberately shares the existing wild event types.</summary>
@@ -522,8 +526,10 @@ public sealed partial class CampaignSession
         trainer=WithSsAnnePartyContext(state,trainer);
         if ((state.ForestTrainerHistory ?? []).Any(h => h.Id == trainer.Id)) throw new InvalidDataException("forest_trainer_settlement_duplicate");
         bool won = trainer.Combat.Battle.Outcome == WildBattleOutcome.Won;
-        int award = won ? 4 * OrdinaryTrainer(trainer.Trainer).Party[^1].Level * OrdinaryTrainer(trainer.Trainer).BaseMoney : 0;
-        int money = Math.Min(LabBattleRewards.MaximumMoney, checked(state.Money + award));
+        var prize = SourceBattleMoneyRules.SettleTrainerPrize(state.Money,
+            4 * OrdinaryTrainer(trainer.Trainer).Party[^1].Level * OrdinaryTrainer(trainer.Trainer).BaseMoney,
+            trainer.Combat.Battle.Outcome,trainer.Combat.Battle.SourceMoneyMultiplier);
+        int award=prize.DisplayAmount,money=prize.Money;
         var pages = ImmutableArray.CreateBuilder<CampaignWildPage>();
         if (won)
         {
@@ -541,13 +547,13 @@ public sealed partial class CampaignSession
                 pages.Add(new(page.Replace("{PLAYER}", state.PlayerName, StringComparison.Ordinal)));
         }
         var history = new CampaignForestTrainerHistory(trainer.Id, trainer.Trainer.Value, trainer.Combat.Battle.Outcome,
-            trainer.ExperienceGained, money - state.Money, trainer.OpponentsSent);
+            trainer.ExperienceGained, prize.Awarded, trainer.OpponentsSent){MoneyMultiplier=trainer.Combat.Battle.SourceMoneyMultiplier};
         if (_content.VermilionEnabled && won)
         {
-            var payday = VermilionPayDayRules.Settle(money, trainer.Combat.Battle.PayDayMoney, WildBattleOutcome.Won);
+            var payday = SourceBattleMoneyRules.SettlePayDay(money, trainer.Combat.Battle.PayDayMoney, WildBattleOutcome.Won,trainer.Combat.Battle.SourceMoneyMultiplier);
             var pickup = VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, WildBattleOutcome.Won,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
             money = payday.Money;
-            if (payday.Collected != 0) pages.Add(new($"{state.PlayerName} picked up\n¥{payday.Collected}!"));
+            if (payday.Amount != 0) pages.Add(new($"{state.PlayerName} picked up\n¥{payday.DisplayAmount}!"));
             state = state with { Party = pickup.Party, World = state.World with { Rng = pickup.Rng } };
             trainer = trainer with { Combat = trainer.Combat with { Battle = trainer.Combat.Battle with { Rng = pickup.Rng } } };
             if(trainer.Combat.SourceMoveRulesVersion is not null)

@@ -10,13 +10,13 @@ internal static class SourceItemTransferRules
     {
         foreach (var party in frame.Parties)
             foreach (var member in party.Members)
-                if (!SourceFrameBerryItems.SupportsHeldItem(member.HeldItem) ||
-                    !SourceFrameBerryItems.SupportsHeldItem(WildBattleSourcePartyEffects.PersistentHeldItem(member)) ||
-                    member.KnockedOffItem is { } knocked && (knocked == "ITEM_NONE" || !SourceFrameBerryItems.SupportsHeldItem(knocked)))
+                if (!SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
+                    !SourceFrameBerryItems.SupportsHeldItem(WildBattleSourcePartyEffects.PersistentHeldItem(member), catalog) ||
+                    member.KnockedOffItem is { } knocked && (knocked == "ITEM_NONE" || !SourceFrameBerryItems.SupportsHeldItem(knocked, catalog)))
                     return "source_item_party_receipt";
         foreach (var cell in frame.Slots.Take(frame.BattlerCount))
         {
-            if (cell.Position.UsedHeldItem is { } used && (used == "ITEM_NONE" || used is not ("ITEM_ORAN_BERRY" or "ITEM_CHERI_BERRY" or "ITEM_CHESTO_BERRY" or "ITEM_PECHA_BERRY" or "ITEM_RAWST_BERRY" or "ITEM_ASPEAR_BERRY" or "ITEM_PERSIM_BERRY")))
+            if (cell.Position.UsedHeldItem is { } used && (used == "ITEM_NONE" || !SourceHeldItemCatalog.Consumable(catalog, used) && used is not ("ITEM_ORAN_BERRY" or "ITEM_CHERI_BERRY" or "ITEM_CHESTO_BERRY" or "ITEM_PECHA_BERRY" or "ITEM_RAWST_BERRY" or "ITEM_ASPEAR_BERRY" or "ITEM_PERSIM_BERRY")))
                 return "source_item_used_receipt";
             if (cell.Body?.SourceChoiceMove is { } chosen && chosen.Value is not ("pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE") && !catalog.Moves.ContainsKey(chosen))
                 return "source_item_choice_receipt";

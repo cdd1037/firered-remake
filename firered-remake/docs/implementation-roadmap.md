@@ -116,3 +116,9 @@ checkpoint, not fifth-badge or whole-route completion.
 用户明确同意规则完成后并行推进主线（Sentinel_23a5c65a12ac819190dd9441bae2d3fa）。阶段出口是 354 招式、76 个有效第三世代特性在既定普通单打／预设双打中的实际规则及关键交互回归，并包括合法选择、行动与回合末、切换替补、奖励学习、道具／捕获、状态持久化等当前核心合同。不能用定义已导入、recipe准入或测试数代替这一出口。剩余特殊战斗模式与场景依赖按矩阵单列，Safari／漫游等较大独立块要报告其实际缺口，不能借核心出口暗称完成。
 
 核心规则收稳后恢复后续主线；专属动画、声音和视觉对照保持独立并行。主线即将用到的表现优先，尚未专属还原的招式可使用明确登记的通用效果，不阻塞真实结算已完整的可玩链。通用效果不计为专属还原，动画和声音进度仍分别统计。批量播放／资源与结束检查覆盖重复结构，每类代表和特殊单双打构图做实际窗口抽查，不逐招式新建测试工程。
+
+### 2026-10-11 ordinary battle core exit
+
+The shared ordinary-core integration and bounded refactor passed the affected rule, Application, strict provenance-save and actual menu-host checks recorded in [the checkpoint](../evidence/held-obedience-items-20261011/README.md). Mew/Deoxys use ordinary OT/badge obedience; modern-fateful provenance remains save metadata without battle effect. Dedicated animations/audio continue independently.
+
+Resume the campaign with Fuchsia Safari's actual special action/step loop and necessary Surf / Gold Teeth-to-Strength rewards, then Saffron/Silph. Safari capture must have its own source contract rather than reuse ordinary ball behavior. Continue ordinary regional interactions alongside the route. Other declared special modes and later NPC-trade provenance remain content-dependent work, not implicitly completed by this core exit.

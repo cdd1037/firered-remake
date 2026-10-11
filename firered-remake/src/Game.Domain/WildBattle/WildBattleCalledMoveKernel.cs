@@ -12,7 +12,7 @@ public enum WildBattleAttackCancellerPhase { Start, ConditionsPassed }
 public enum WildBattleInvocationFlags
 {
     None = 0, AttackStringPrinted = 1, NoPpDeduct = 2, NoAttackString = 4,
-    AllowNoPp = 8, Obeys = 16, PpNotAffectedByPressure = 32
+    AllowNoPp = 8, Obeys = 16, PpNotAffectedByPressure = 32, DisobedientMove = 64
 }
 
 /// <summary>Action-local source registers. CurrentMove need not occupy any learned slot.</summary>

@@ -195,6 +195,7 @@ public partial class CampaignView
         {
             if (ForestTrainerEventPages(Source)) { _wildPages = pages.ToImmutable(); return; }
             var current = WildCurrentEvent(b) ?? throw new InvalidDataException("Battle event missing.");
+            if (SingleMedicineEffectMessage(current) is {} itemEffect) { Source(itemEffect.Symbol,itemEffect.Values); _wildPages=pages.ToImmutable(); return; }
             if (SourceTrainerEventPages(b, Source, pages)) { _wildPages = pages.ToImmutable(); return; }
             if(current is WildBattleInfatuationBlockedEvent love) Source("sText_PkmnInLove",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(love.Side)),("B_SCR_ACTIVE_NAME_WITH_PREFIX",WildPrefixedName(love.Source)));
             var forestMessage = FuchsiaRouteWildMessage(current) ?? SnorlaxWildMessage(current) ?? PokemonTowerWildMessage(current) ?? RocketHideoutWildMessage(current) ?? CeladonGymWildMessage(current) ?? RockTunnelWildMessage(current) ?? Route11WildMessage(b,current) ?? SsAnneWildMessage(current) ?? VermilionWildMessage(current) ?? MtMoonWildMessage(b,current) ?? Route3WildMessage(b,current) ?? ForestWildMessage(current);
@@ -218,6 +219,7 @@ public partial class CampaignView
                     Source("sText_PkmnRegainedHealth", ("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(recovered.Side)));break;
                 case WildBattlePotionRecoveredEvent potion:
                     Source("gText_PkmnHPRestoredByVar2", ("STR_VAR_1", WildName(potion.Side)), ("STR_VAR_2", potion.HpRestored.ToString())); break;
+                case WildBattleMedicineAppliedEvent medicine when SingleMedicinePages(medicine,Source): break;
                 case WildBattleMedicineAppliedEvent medicine:
                     string targetName=_session.State.Party.Single(p=>p.InstanceId==medicine.TargetInstanceId).Nickname;
                     string medicineText=medicine.HpAfter>medicine.HpBefore?"gText_PkmnHPRestoredByVar2":
@@ -235,7 +237,12 @@ public partial class CampaignView
                     Source("sText_PkmnsXPreventsYLoss", ("B_SCR_ACTIVE_NAME_WITH_PREFIX", WildPrefixedName(ability.Target)), ("B_SCR_ACTIVE_ABILITY", "KEEN EYE"), ("B_BUFF1", "accuracy")); break;
                 case WildBattleFaintedEvent fainted:
                     Source("sText_TargetFainted", ("B_DEF_NAME_WITH_PREFIX", WildPrefixedName(fainted.Side))); break;
-                case WildBattleRunAttemptEvent run: Source(run.Escaped ? "sText_GotAwaySafely" : "sText_CantEscape"); break;
+                case WildBattleRunAttemptEvent run:
+                    if (run.Escaped && run.EscapingItem is { } escapingItem)
+                        Source("sText_PkmnFledUsingIts", ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(WildBattleSide.Player)),
+                            ("B_LAST_ITEM", escapingItem == "ITEM_SMOKE_BALL" ? "SMOKE BALL" : throw new InvalidDataException("Unadmitted escape item: " + escapingItem)));
+                    else Source(run.Escaped ? "sText_GotAwaySafely" : "sText_CantEscape");
+                    break;
                 case WildBattleBallThrownEvent thrown:
                     Source("sText_PlayerUsedItem", ("B_LAST_ITEM", CaptureBallName(thrown.Ball))); break;
                 case WildBattleCaptureResultEvent captured:
@@ -401,7 +408,7 @@ public partial class CampaignView
             if (key.Keycode is Key.Enter or Key.Backspace)
             {
                 _wildNotice = null;
-                if (_wildNoticeReturn is { } target) { _wildMenu = target; if(target!="medicine-target")_wildCursor = 0; _wildNoticeReturn = null; }
+                if (_wildNoticeReturn is { } target) { _wildMenu = target; if(target is not ("medicine-target" or "medicine-move"))_wildCursor = 0; _wildNoticeReturn = null; }
             }
             return true;
         }
@@ -438,6 +445,7 @@ public partial class CampaignView
             else if (key.Keycode == Key.Enter) { _wildMenu = "medicine-target"; _wildCursor = 0; }
             return true;
         }
+        if (SingleMedicineInput(key,b)) return true;
         if (_wildMenu == "medicine-target")
         {
             if(_session.BattleMedicineEnabled&&_wildMedicineItem is {} medicine)
@@ -519,6 +527,7 @@ public partial class CampaignView
     private void DrawWildBattle()
     {
         var b = PresentedWildBattle!;
+        if (DrawSingleMedicineMove(b)) return;
         if (DrawForestTrainerChoice(b)) return;
         if (DrawCaptureWildOverlay(b)) return;
         if (b.Phase == CampaignBattlePhase.ChooseMove && _wildMenu is "bag" or "bag-actions" && _session.State.Inventory is { } inventory)

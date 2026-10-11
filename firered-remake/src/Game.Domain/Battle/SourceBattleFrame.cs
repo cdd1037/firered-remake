@@ -69,6 +69,7 @@ public sealed record SourceSideRegisters(BattleSide Side)
 }
 public sealed record SourceFieldRegisters
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? MoneyMultiplier { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourcePermanentWeather? PermanentWeather { get; init; }
     public int SandstormTurnsRemaining { get; init; }
     public int RainTurnsRemaining { get; init; }
@@ -140,6 +141,7 @@ public sealed record SourceBattleFrame
     public const string IdentityVersion = "firered-source-battler-identity-v1";
     public string Version { get; init; } = IdentityVersion;
     public string SourceCommit { get; init; } = WildBattleRules.SourceCommit;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceObedienceContext? Obedience { get; init; }
     public string RulesVersion { get; init; } = WildBattleRules.FuchsiaRulesVersion;
     public string? SourceMechanicsRulesVersion { get; init; }
     public SourceBattleLayout Layout { get; init; }

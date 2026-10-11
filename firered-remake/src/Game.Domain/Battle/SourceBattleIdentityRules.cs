@@ -49,7 +49,12 @@ public static class SourceBattleIdentityRules
                 side.FollowMeTarget is { } target && (target.Value >= frame.BattlerCount || target.Side != side.Side))
                 return "source_frame_side_registers";
         }
+        if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";
+        if (SourceObedienceRules.Validate(frame.Obedience, frame.Parties[0].Members) is { } obedienceError) return obedienceError;
         var field = frame.Field;
+        if (!SourceBattleMoneyRules.ValidMultiplier(field.MoneyMultiplier) ||
+            field.MoneyMultiplier is not null && (frame.SourceMechanicsRulesVersion is null || frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion))
+            return "source_money_multiplier";
         if (field.PermanentWeather is not null && frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion) return "source_weather_profile";
         if (SourceWeatherRules.Validate(field.PermanentWeather, frame.SourceMechanicsRulesVersion, field.RainTurnsRemaining,
             field.SandstormTurnsRemaining, field.SunTurnsRemaining, field.HailTurnsRemaining) is { } weatherError) return weatherError;
@@ -187,8 +192,11 @@ public static class SourceBattleIdentityRules
             if (frame.PendingSwitches is not [{ Kind: WildBattleCalledSwitchKind.BatonPass, Invocation: { } invocation } pending] ||
                 index < 0 || index >= frame.Queue.Length || frame.Queue[index] is not { Kind: SourceActionKind.Move, Token: { } owner } action ||
                 action.Slot != pending.Slot || !frame.IsCurrent(owner.Owner) || invocation.Actor != pending.Slot ||
-                invocation.Target != pending.Slot || invocation.PpOwner != pending.Slot || invocation.ChosenSlot != action.MoveSlot ||
-                invocation.PpSlot != action.MoveSlot || !invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys))
+                invocation.Target != pending.Slot || invocation.PpOwner != pending.Slot ||
+                (invocation.Flags.HasFlag(WildBattleInvocationFlags.DisobedientMove) ? frame.Obedience is null ||
+                    invocation.ChosenSlot is < 0 or > 3 || invocation.ChosenSlot >= frame.Get(pending.Slot).Body!.Pokemon.Moves.Length ||
+                    invocation.ChosenSlot != invocation.PpSlot || invocation.OriginalChosenMove != action.OriginalChosenMove :
+                    invocation.ChosenSlot != action.MoveSlot || invocation.PpSlot != action.MoveSlot) || !invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys))
                 return "source_frame_action_switch_owner";
         }
         if (SourceFourActionTurns.ValidatePursuitSwitch(frame) is { } pursuitError) return pursuitError;

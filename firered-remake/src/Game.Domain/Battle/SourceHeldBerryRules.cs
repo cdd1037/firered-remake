@@ -2,15 +2,15 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal enum SourceBerryPhase { Normal, NormalMoveTurn, MoveEnd }
+internal enum SourceBerryPhase { Normal, NormalMoveTurn, MoveEnd, SwitchIn }
 internal readonly record struct SourceBerryEffect(bool CureStatus, bool CureConfusion, int HpRestored)
 {
     internal bool Consumed => CureStatus || CureConfusion || HpRestored > 0;
 }
 
 /// <summary>The existing campaign berry cohort from ItemBattleEffects. Owners supply storage,
-/// source phase order and compatibility-profile switches; berries never consume RNG.</summary>
-internal static class SourceHeldBerryRules
+/// source phase order and compatibility-profile switches. This historical cohort never draws RNG.</summary>
+internal static partial class SourceHeldBerryRules
 {
     internal static bool Supports(string item) => item is "ITEM_ORAN_BERRY" or "ITEM_CHERI_BERRY" or
         "ITEM_CHESTO_BERRY" or "ITEM_PECHA_BERRY" or "ITEM_RAWST_BERRY" or "ITEM_ASPEAR_BERRY" or

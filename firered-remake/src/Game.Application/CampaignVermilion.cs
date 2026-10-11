@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Events;
+using Game.Domain.Battle;
 using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
 
@@ -22,7 +23,7 @@ public sealed partial class CampaignSession
         var battle = state.WildBattle!;
         if (!_content.VermilionEnabled || battle.PostBattleItemsSettled)
             return BeginWildEvolution(state);
-        var money = VermilionPayDayRules.Settle(state.Money, battle.State.PayDayMoney, battle.State.Outcome);
+        var money = SourceBattleMoneyRules.SettlePayDay(state.Money, battle.State.PayDayMoney, battle.State.Outcome,battle.State.SourceMoneyMultiplier);
         var pickup = VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, battle.State.Outcome,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
         state = state with
         {
@@ -30,9 +31,9 @@ public sealed partial class CampaignSession
             WildBattle = battle with
             {
                 PostBattleItemsSettled = true, State = battle.State with { Rng = pickup.Rng }, RandomTrace = pickup.Trace,
-                Pages = money.Collected == 0 ? [] : [new($"{state.PlayerName} picked up\n¥{money.Collected}!")], PageIndex = 0
+                Pages = money.Amount == 0 ? [] : [new($"{state.PlayerName} picked up\n¥{money.DisplayAmount}!")], PageIndex = 0
             }
         };
-        return money.Collected == 0 ? BeginWildEvolution(state) : state;
+        return money.Amount == 0 ? BeginWildEvolution(state) : state;
     }
 }

@@ -117,12 +117,12 @@ internal sealed partial class FrameRecipeContext
         EnterCalledMove(current, true);
     }
 
-    private void EnterCalledMove(PokemonMoveDefinition current, bool writesCalled)
+    private void EnterCalledMove(PokemonMoveDefinition current, bool writesCalled, bool rawTarget = false)
     {
         invocation = invocation with { CurrentMove = current.Id, CalledMove = writesCalled ? current.Id : invocation.CalledMove,
             Flags = invocation.Flags & ~WildBattleInvocationFlags.AttackStringPrinted };
         var selected = SourceMoveTargeting.ResolveCalled(Frame, invocation.Actor, current,
-            SourceBattleKernel.SelectedTargetOverride(catalog, Frame, invocation.Actor, current));
+            rawTarget ? null : SourceBattleKernel.SelectedTargetOverride(catalog, Frame, invocation.Actor, current));
         if (selected.Fault is { } fault) throw new SourceRecipeUnsupported(fault);
         Frame = Frame with { Rng = selected.Rng }; Trace.AddRange(selected.Trace);
         invocation = invocation with { Target = selected.Target ?? invocation.Actor.Opposite };

@@ -165,7 +165,7 @@ public static partial class WildBattleRules
             if (context.BattleKind == WildBattleCalledBattleKind.Wild && context.Opponent.Length != 1) return "called_party_wild_opponent_size";
             if (context.PlayerSpikes is < 0 or > 3 || context.OpponentSpikes is < 0 or > 3) return "called_party_spikes";
             foreach (var item in new[] { context.PlayerUsedHeldItem, context.OpponentUsedHeldItem })
-                if (item is not null && (item == "ITEM_NONE" || !FuchsiaBattleScope.SupportsHeldItem(item))) return "called_party_used_item";
+                if (item is not null && (item == "ITEM_NONE" || !(SourceBattleAdmission.IsCanonicalSourceState(catalog, state) ? SourceHeldItemCatalog.Consumable(catalog, item) || FuchsiaBattleScope.SupportsHeldItem(item) : FuchsiaBattleScope.SupportsHeldItem(item)))) return "called_party_used_item";
             foreach (var side in new[] { WildBattleSide.Player, WildBattleSide.Opponent })
             {
                 var party = WildBattleSourcePartyEffects.Party(context, side); int active = WildBattleSourcePartyEffects.ActiveIndex(context, side);
@@ -211,7 +211,8 @@ public static partial class WildBattleRules
                 if (pending.Kind == WildBattleCalledSwitchKind.BatonPass && (pending.Invocation is not { } invocation || invocation.Actor != pending.Side || invocation.PpOwner != pending.Side ||
                     invocation.CurrentMove.Value != "pret:MOVE_BATON_PASS" || invocation.Target != pending.Side ||
                     invocation.PpSlot < 0 || invocation.PpSlot >= active.Pokemon.Moves.Length || invocation.ChosenSlot < 0 || invocation.ChosenSlot >= active.Pokemon.Moves.Length ||
-                    active.Pokemon.Moves[invocation.ChosenSlot].Move != invocation.OriginalChosenMove ||
+                    (invocation.Flags.HasFlag(WildBattleInvocationFlags.DisobedientMove) ? state.Obedience is null :
+                        active.Pokemon.Moves[invocation.ChosenSlot].Move != invocation.OriginalChosenMove) ||
                     !catalog.Moves.TryGetValue(invocation.OriginalChosenMove, out var chosen) || !MetronomeSourceMoveDefinition.Matches(chosen) ||
                     !invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys) || invocation.CancellerPhase != WildBattleAttackCancellerPhase.ConditionsPassed)) return "called_party_pending_invocation";
             }
@@ -240,7 +241,7 @@ public static partial class WildBattleRules
             else if (state.Player.Pokemon.CurrentHp == 0) outcome = WildBattleOutcome.Lost;
             else if (state.Opponent.Pokemon.CurrentHp == 0) outcome = WildBattleOutcome.Won;
         }
-        return state with { CalledParty = null, Outcome = outcome, AwaitingReplacement = false };
+        return state with { CalledParty = null, Obedience = null, Outcome = outcome, AwaitingReplacement = false };
     }
 
     /// <summary>One genuine switch boundary. It does not schedule the opposing action or residual turn.</summary>
@@ -573,6 +574,7 @@ public static partial class WildBattleRules
         internal void SourceCalledPartySwitch(PokemonCatalog catalog, WildBattleSide side, int index,
             WildBattleCalledSwitchKind kind, WildBattleMoveInvocation? suspended)
         {
+            sourceHeldCatalog = catalog;
             var departing = Get(side); bool baton = kind == WildBattleCalledSwitchKind.BatonPass;
             if (WildBattleEffective.Ability(departing) == "ABILITY_NATURAL_CURE")
             {
@@ -618,6 +620,7 @@ public static partial class WildBattleRules
             {
                 SourceTurnCycleSwitchIn(side);
                 ApplyRoute3EntryAbility(side);
+                SourceCanonicalHeldItem(side, SourceBerryPhase.SwitchIn);
             }
             // BattleScript_ActionSwitch explicitly runs only the immunity and Mirror Move end cases.
             if (kind == WildBattleCalledSwitchKind.Voluntary) VermilionImmunityAbilities();

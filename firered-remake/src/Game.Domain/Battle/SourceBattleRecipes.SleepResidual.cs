@@ -28,18 +28,23 @@ internal abstract partial class SourceRecipeContext
         int slot, PokemonMoveDefinition move)
     {
         bool statCurse = move.Effect == "EFFECT_CURSE" && !WildBattleEffective.HasType(catalog, Get(actor), "TYPE_GHOST");
+        bool disobedientStatCurse = statCurse && Invocation!.Flags.HasFlag(WildBattleInvocationFlags.DisobedientMove);
+        var selectedTarget = target;
         if (statCurse) target = actor;
-        SleepResidualPrepare(actor, target, move);
-        SpendEarlyPartyPp(actor, target, slot, move);
+        // Disobedience calls raw GetMoveTarget. Non-Ghost Curse retargets only after
+        // attackstring/ppreduce and its stat-limit guard; Pressure sees the original target.
+        SleepResidualPrepare(actor, disobedientStatCurse ? selectedTarget : target, move);
+        SpendEarlyPartyPp(actor, disobedientStatCurse ? selectedTarget : target, slot, move);
         // These branches end through BattleScript_ButItFailed/resultmessage. The
         // attackcanceler Protect miss has text priority, after script-specific checks.
         // Direct ability/Safeguard messages below deliberately bypass this projection.
-        void Fail(string reason) => Add(n => new SourceMoveFailedEvent(n, Turn, actor, target, move.Id,
+        void Fail(string reason) => Add(n => new SourceMoveFailedEvent(n, Turn, actor, disobedientStatCurse ? Invocation!.Target : target, move.Id,
             Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") ? "protected" : reason));
         var body = Get(target);
         if (statCurse)
         {
             if (body.SpeedStage == 0 && body.AttackStage == 12 && body.DefenseStage == 12) { Fail("stat-limits"); return; }
+            if (disobedientStatCurse) SetPreparedInvocation(Invocation! with { Target = actor });
             CurseStat(actor, WildBattleStat.Speed, -1, move);
             CurseStat(actor, WildBattleStat.Attack, 1, move);
             CurseStat(actor, WildBattleStat.Defense, 1, move);

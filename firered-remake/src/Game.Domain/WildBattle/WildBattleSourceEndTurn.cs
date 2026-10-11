@@ -76,6 +76,7 @@ public static partial class WildBattleRules
         internal WildBattleSourceEndTurnCursor AdvanceSourceEndTurn(PokemonCatalog catalog,
             WildBattleSourceEndTurnCursor? cursor = null)
         {
+            sourceHeldCatalog = catalog;
             if (!deferForestOutcome) throw new UnsupportedAction("source_end_turn_requires_deferred_execution");
             if (State.CalledParty is null) throw new UnsupportedAction("source_end_turn_real_parties_required");
             if (State.CalledParty.PendingSwitch is not null || State.AwaitingReplacement)
@@ -112,6 +113,7 @@ public static partial class WildBattleRules
 
         private WildBattleSide SourceOrder(PokemonCatalog catalog, WildBattleOrderPhase phase)
         {
+            sourceHeldCatalog = catalog;
             uint Speed(WildBattleCombatant mon, bool playerSide)
             {
                 bool boosted = !SourceCalledWeatherSuppressed &&
@@ -145,8 +147,11 @@ public static partial class WildBattleRules
         private void SourceEndTurnFieldTimer(WildBattleSide side, string effect) =>
             new SinglesEndTurnBridge(this).TickTimer((BattleSide)side, effect);
 
-        internal void SourceEndTurnBattlerEffects(PokemonCatalog catalog, WildBattleSide side) =>
+        internal void SourceEndTurnBattlerEffects(PokemonCatalog catalog, WildBattleSide side)
+        {
+            sourceHeldCatalog = catalog;
             new SinglesEndTurnBridge(this).BattlerEffects(new((int)side));
+        }
 
         private void SourceEndTurnAbility(WildBattleSide side) => new SinglesEndTurnBridge(this).Ability(new((int)side));
         private void SourceEndTurnStatusDamage(WildBattleSide side, uint status) =>

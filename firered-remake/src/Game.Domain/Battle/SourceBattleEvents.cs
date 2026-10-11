@@ -9,6 +9,7 @@ namespace Game.Domain.Battle;
 
 /// <summary>Typed canonical events. Shared hooks consume positions; singles conversion occurs only at a boundary.</summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(SourceObedienceEvent), "obedience")]
 [JsonDerivedType(typeof(SourceRewardAppliedEvent), "SourceRewardAppliedEvent")]
 [JsonDerivedType(typeof(SourceRewardLearningEvent), "SourceRewardLearningEvent")]
 [JsonDerivedType(typeof(SourceOpponentRewardCompletedEvent), "SourceOpponentRewardCompletedEvent")]
@@ -199,7 +200,10 @@ public sealed record SourceRecoilEvent(long Sequence, int Turn, BattlerSlot Acto
 public sealed record SourceRecoveredEvent(long Sequence, int Turn, BattlerSlot Side, MoveId Move, int HpBefore, int HpAfter, int Recovered) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRolloutChangedEvent(long Sequence, int Turn, BattlerSlot Side, int Before, int After, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRootsChangedEvent(long Sequence, int Turn, BattlerSlot Side, bool Rooted, string Reason) : SourceBattleEvent(Sequence, Turn);
-public sealed record SourceRunAttemptEvent(long Sequence, int Turn, int AttemptsBefore, int AttemptsAfter, int PlayerSpeed, int OpponentSpeed, int? Threshold, int? Roll, bool Escaped) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceRunAttemptEvent(long Sequence, int Turn, int AttemptsBefore, int AttemptsAfter, int PlayerSpeed, int OpponentSpeed, int? Threshold, int? Roll, bool Escaped) : SourceBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? EscapingItem { get; init; }
+}
 public sealed record SourceSelfDestructEvent(long Sequence, int Turn, BattlerSlot Actor, MoveId Move, int HpBefore) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceSleepTalkEvent(long Sequence, int Turn, BattlerSlot Side, int CalledSlot, MoveId CalledMove) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceSnatchPressurePpEvent(long Sequence, int Turn, BattlerSlot PressuringActor, BattlerSlot Snatcher, int Slot, int Before, int After) : SourceBattleEvent(Sequence, Turn);
@@ -298,7 +302,7 @@ public static class SourceBattleEventAdapter
         WildBattleRecoveredEvent x => new SourceRecoveredEvent(x.Sequence, x.Turn, Slot(x.Side), x.Move, x.HpBefore, x.HpAfter, x.Recovered),
         WildBattleRolloutChangedEvent x => new SourceRolloutChangedEvent(x.Sequence, x.Turn, Slot(x.Side), x.Before, x.After, x.Reason),
         WildBattleRootsChangedEvent x => new SourceRootsChangedEvent(x.Sequence, x.Turn, Slot(x.Side), x.Rooted, x.Reason),
-        WildBattleRunAttemptEvent x => new SourceRunAttemptEvent(x.Sequence, x.Turn, x.AttemptsBefore, x.AttemptsAfter, x.PlayerSpeed, x.OpponentSpeed, x.Threshold, x.Roll, x.Escaped),
+        WildBattleRunAttemptEvent x => new SourceRunAttemptEvent(x.Sequence, x.Turn, x.AttemptsBefore, x.AttemptsAfter, x.PlayerSpeed, x.OpponentSpeed, x.Threshold, x.Roll, x.Escaped) { EscapingItem = x.EscapingItem },
         WildBattleSelfDestructEvent x => new SourceSelfDestructEvent(x.Sequence, x.Turn, Slot(x.Actor), x.Move, x.HpBefore),
         WildBattleSleepTalkEvent x => new SourceSleepTalkEvent(x.Sequence, x.Turn, Slot(x.Side), x.CalledSlot, x.CalledMove),
         WildBattleSnatchPressurePpEvent x => new SourceSnatchPressurePpEvent(x.Sequence, x.Turn, Slot(x.PressuringActor), Slot(x.Snatcher), x.Slot, x.Before, x.After),
@@ -315,6 +319,7 @@ public static class SourceBattleEventAdapter
         WildBattleTowerGhostActionEvent x => new SourceTowerGhostActionEvent(x.Sequence, x.Turn, Slot(x.Side), x.StringId),
         WildBattleTowerHpEvent x => new SourceTowerHpEvent(x.Sequence, x.Turn, Slot(x.Side), x.Effect, x.HpBefore, x.HpAfter, x.Damage),
         WildBattleTowerVolatileEvent x => new SourceTowerVolatileEvent(x.Sequence, x.Turn, Slot(x.Side), x.Effect, x.Applied, x.Reason),
+        WildBattleObedienceEvent x => new SourceObedienceEvent(x.Sequence, x.Turn, Slot(x.Actor), x.AttemptedMove, x.Decision),
         WildBattleTransformedEvent x => new SourceTransformedEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.OriginalSpecies, x.AppearanceSpecies, x.AppearancePersonality, x.AppearanceOriginalTrainerId, x.BattleView),
         WildBattleTurnReadyEvent x => new SourceTurnReadyEvent(x.Sequence, x.Turn, x.RandomTurnNumber),
         WildBattleWeatherDamageEvent x => new SourceWeatherDamageEvent(x.Sequence, x.Turn, Slot(x.Side), x.Weather, x.HpBefore, x.HpAfter, x.Damage),
@@ -395,7 +400,7 @@ public static class SourceBattleEventAdapter
         SourceRecoveredEvent x => new WildBattleRecoveredEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.HpBefore, x.HpAfter, x.Recovered),
         SourceRolloutChangedEvent x => new WildBattleRolloutChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason),
         SourceRootsChangedEvent x => new WildBattleRootsChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Rooted, x.Reason),
-        SourceRunAttemptEvent x => new WildBattleRunAttemptEvent(x.Sequence, x.Turn, x.AttemptsBefore, x.AttemptsAfter, x.PlayerSpeed, x.OpponentSpeed, x.Threshold, x.Roll, x.Escaped),
+        SourceRunAttemptEvent x => new WildBattleRunAttemptEvent(x.Sequence, x.Turn, x.AttemptsBefore, x.AttemptsAfter, x.PlayerSpeed, x.OpponentSpeed, x.Threshold, x.Roll, x.Escaped) { EscapingItem = x.EscapingItem },
         SourceSelfDestructEvent x => new WildBattleSelfDestructEvent(x.Sequence, x.Turn, Side(x.Actor), x.Move, x.HpBefore),
         SourceSleepTalkEvent x => new WildBattleSleepTalkEvent(x.Sequence, x.Turn, Side(x.Side), x.CalledSlot, x.CalledMove),
         SourceSnatchPressurePpEvent x => new WildBattleSnatchPressurePpEvent(x.Sequence, x.Turn, Side(x.PressuringActor), Side(x.Snatcher), x.Slot, x.Before, x.After),
@@ -412,6 +417,7 @@ public static class SourceBattleEventAdapter
         SourceTowerGhostActionEvent x => new WildBattleTowerGhostActionEvent(x.Sequence, x.Turn, Side(x.Side), x.StringId),
         SourceTowerHpEvent x => new WildBattleTowerHpEvent(x.Sequence, x.Turn, Side(x.Side), x.Effect, x.HpBefore, x.HpAfter, x.Damage),
         SourceTowerVolatileEvent x => new WildBattleTowerVolatileEvent(x.Sequence, x.Turn, Side(x.Side), x.Effect, x.Applied, x.Reason),
+        SourceObedienceEvent x => new WildBattleObedienceEvent(x.Sequence, x.Turn, Side(x.Actor), x.AttemptedMove, x.Decision),
         SourceTransformedEvent x => new WildBattleTransformedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.OriginalSpecies, x.AppearanceSpecies, x.AppearancePersonality, x.AppearanceOriginalTrainerId, x.BattleView),
         SourceTurnReadyEvent x => new WildBattleTurnReadyEvent(x.Sequence, x.Turn, x.RandomTurnNumber),
         SourceWeatherDamageEvent x => new WildBattleWeatherDamageEvent(x.Sequence, x.Turn, Side(x.Side), x.Weather, x.HpBefore, x.HpAfter, x.Damage),
@@ -488,6 +494,7 @@ public static class SourceBattleEventHooks
             SourceAbilityDamageEvent x => [x.Holder, x.Target],
             SourceAbilityPreventedEvent x => [x.Actor, x.Target],
             SourceActionBlockedEvent x => [x.Side],
+            SourceObedienceEvent x => [x.Actor],
             SourceAttackStringEvent x => [x.Actor],
             SourceBallThrownEvent x => [x.Actor, x.Target],
             SourceBindingChangedEvent x => [x.Side],

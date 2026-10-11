@@ -122,7 +122,7 @@ public sealed partial class CampaignSession
             if (h is null || h.Id != "forest-trainer-battle:" + (i + 1) || h.TrainerId is null ||
                 !OrdinaryTrainerIds.Contains(new TrainerId(h.TrainerId)) ||
                 h.Outcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) ||
-                h.ExperienceGained < 0 || h.MoneyGained < 0 || h.OpponentsSent.IsDefaultOrEmpty ||
+                h.ExperienceGained < 0 || h.MoneyGained < 0 || h.MoneyMultiplier is not (null or 2) || h.MoneyMultiplier is not null && !_content.PresetDoublesEnabled || h.OpponentsSent.IsDefaultOrEmpty ||
                 h.OpponentsSent[0] != 0 || h.OpponentsSent.Length > OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length ||
                 h.OpponentsSent.Distinct().Count() != h.OpponentsSent.Length ||
                 h.OpponentsSent.Any(n => n < 0 || n >= OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length) || winners.Contains(h.TrainerId))
@@ -132,7 +132,7 @@ public sealed partial class CampaignSession
                 return "save_forest_trainer_seen_missing";
             int maximumExp = trainer.Party.Sum(p => Math.Max(1, BattlePokemon.Species[p.Species].ExperienceYield * p.Level / 7) * 150 / 100);
             if (h.ExperienceGained > maximumExp || h.Outcome == WildBattleOutcome.Won &&
-                (h.OpponentsSent.Length != trainer.Party.Length || h.MoneyGained > 4 * trainer.Party[^1].Level * trainer.BaseMoney) ||
+                (h.OpponentsSent.Length != trainer.Party.Length || h.MoneyGained > 4 * trainer.Party[^1].Level * trainer.BaseMoney * (h.MoneyMultiplier ?? 1)) ||
                 h.Outcome != WildBattleOutcome.Won && h.MoneyGained != 0)
                 return "save_forest_trainer_reward_invalid";
             if (h.Outcome == WildBattleOutcome.Won) winners.Add(h.TrainerId);

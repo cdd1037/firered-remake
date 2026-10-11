@@ -20,7 +20,8 @@ FIELDS = ("id seed attacker target defenderAbility moveFlags resultFlags confusi
           "attackerAbility type1 type2 safeguard uproarMask initialDamage repeatCount").split()
 HEADERS = ["include/constants/abilities.h", "include/constants/pokemon.h", "include/constants/battle.h",
            "include/constants/battle_script_commands.h", "include/constants/moves.h",
-           "include/constants/battle_string_ids.h"]
+           "include/constants/battle_string_ids.h", "include/constants/items.h",
+           "include/constants/hold_effects.h", "include/constants/battle_move_effects.h"]
 SOURCES = ["src/battle_util.c", "src/battle_script_commands.c", "src/random.c", "include/random.h",
            "include/battle.h", "data/battle_scripts_1.s", "asm/macros/battle_script.inc", *HEADERS]
 
@@ -65,16 +66,21 @@ typedef int32_t s32; typedef uint8_t bool8; typedef uint32_t bool32;
 #define TRUE 1
 #define FALSE 0
 /* CONSTANTS */
-struct Mon {u16 hp,maxHP; u32 status1,status2; u8 ability,type1,type2;} gBattleMons[4];
-struct Protect {s32 physicalDmg,specialDmg; u8 physicalBattlerId,specialBattlerId,confusionSelfDmg;} gProtectStructs[4];
+struct Mon {u16 hp,maxHP,item; u32 status1,status2; u8 ability,type1,type2;} gBattleMons[4];
+struct Protect {s32 physicalDmg,specialDmg; u8 physicalBattlerId,specialBattlerId,confusionSelfDmg,endured;} gProtectStructs[4];
 struct Disable {u16 substituteHP; u8 rolloutTimer,furyCutterCounter;} gDisableStructs[4];
 struct Scripting {u8 battler;} gBattleScripting;
 struct Battle {u8 dynamicMoveType,synchronizeMoveEffect;} battle,*gBattleStruct=&battle;
-struct Move {u8 flags,type;} gBattleMoves[1];
+struct Move {u8 flags,type,effect;} gBattleMoves[1];
 struct SpecialStatus gSpecialStatuses[4];
 u8 gBattlerAttacker,gBattlerTarget,gEffectBattler,gActiveBattler,gLastUsedAbility,gMoveResultFlags;
 u8 gBattleCommunication[8],gBattlersCount=4,gTakenDmgByBattler[4];
-u16 gCurrentMove;
+u16 gCurrentMove,gLastUsedItem;
+u8 gPotentialItemEffectBattler;
+struct Enigma {u8 holdEffect,holdEffectParam;} gEnigmaBerries[4];
+static u8 ItemId_GetHoldEffect(u16 item){if(item==ITEM_FOCUS_BAND)return HOLD_EFFECT_FOCUS_BAND;if(item==ITEM_NONE)return 0;exit(5);}
+static u8 ItemId_GetHoldEffectParam(u16 item){if(item==ITEM_FOCUS_BAND)return 10;if(item==ITEM_NONE)return 0;exit(5);}
+static void RecordItemEffectBattle(u8 battler,u8 effect){(void)battler;(void)effect;}
 u32 gHitMarker,gSideStatuses[2],gBattleTypeFlags,gBattleControllerExecFlags,gStatuses3[4],gTakenDmg[4],gRngValue;
 s32 gBattleMoveDamage,gHpDealt;
 static u8 command[8];
@@ -152,14 +158,38 @@ static void run(long long *v){
  for(unsigned i=0;i<4;i++)printf("%s{\"hp\":%u,\"status\":%u,\"status2\":%u,\"receipt\":%d,\"physicalDmg\":%d,\"specialDmg\":%d,\"takenDamage\":%u}",i?",":"",gBattleMons[i].hp,gBattleMons[i].status1,gBattleMons[i].status2,gSpecialStatuses[i].dmg,gSpecialStatuses[i].physicalDmg,gSpecialStatuses[i].specialDmg,gTakenDmg[i]);
  puts("]}");
 }
+static int static_sequence(void){
+ /* Bounded original-command witness. Starting HP and RNG come from the real
+    seed-13 managed turn, before delayed variance. No damage receipts are seeded.
+    Scheduling/accuracy/base damage are outside this C host. */
+ gBattlerAttacker=0;gBattlerTarget=1;gLastUsedAbility=ABILITY_STATIC;
+ gBattleMons[0].hp=271;gBattleMons[0].maxHP=271;
+ gBattleMons[1].hp=70;gBattleMons[1].maxHP=70;gBattleMons[1].item=ITEM_FOCUS_BAND;
+ gBattleMons[1].ability=ABILITY_STATIC;gRngValue=1596246704;
+ gCurrentMove=MOVE_NONE;gBattleMoves[0].type=TYPE_NORMAL;gBattleMoveDamage=330;
+ gBattlescriptCurrInstr=command;Cmd_adjustnormaldamage2();
+ command[1]=BS_TARGET;gBattlescriptCurrInstr=command;Cmd_datahpupdate();
+ u16 futureHp=gBattleMons[1].hp;s32 futurePhysical=gSpecialStatuses[1].physicalDmg;
+ /* The real next boundary draws turn random, two opponent slot choices,
+    accuracy and critical, while retaining SpecialStatus. */
+ for(unsigned i=0;i<5;i++)Random();
+ gMoveResultFlags=0;gBattleMoves[0].type=TYPE_DARK;gBattleMoves[0].flags=FLAG_MAKES_CONTACT;
+ gBattleMoveDamage=742;gBattlescriptCurrInstr=command;Cmd_adjustnormaldamage();
+ command[1]=BS_TARGET;gBattlescriptCurrInstr=command;Cmd_datahpupdate();
+ Random(); /* existing secondary-effect chance before the contact callback */
+ unsigned effect=ProbeContact();if(effect){gBattlescriptCurrInstr=command;Cmd_seteffectsecondary();}
+ printf("{\"futureHp\":%u,\"futurePhysical\":%d,\"finalHp\":%u,\"zeroDamage\":%d,\"physical\":%d,\"special\":%d,\"focusBanded\":%u,\"effect\":%u,\"attackerStatus\":%u,\"staticDraw\":%u,\"rng\":%u}\n",futureHp,futurePhysical,gBattleMons[1].hp,gBattleMoveDamage,gSpecialStatuses[1].physicalDmg,gSpecialStatuses[1].specialDmg,gSpecialStatuses[1].focusBanded,effect,gBattleMons[0].status1,draws[drawCount-1],gRngValue);
+ return 0;
+}
 int main(int argc,char **argv){
+ if(argc==2&&!strcmp(argv[1],"--static-sequence"))return static_sequence();
  long long values[22];char *end;
  if(argc!=1&&argc!=23){fputs("expected 22 fields\n",stderr);return 2;}
  if(argc==23){for(unsigned i=0;i<22;i++){errno=0;values[i]=strtoll(argv[i+1],&end,10);if(errno||*end)return 2;}}
  do{
   if(argc==1){for(unsigned i=0;i<22;i++){int n=scanf("%lld",&values[i]);if(n==EOF&&i==0)return 0;if(n!=1)return 2;}}
   if(values[1]<0||values[1]>UINT32_MAX||values[2]<0||values[2]>3||values[3]<0||values[3]>3||values[2]==values[3]||values[21]<1||values[21]>8)return 2;
-  if(values[4]!=ABILITY_ROUGH_SKIN&&values[4]!=ABILITY_EFFECT_SPORE&&values[4]!=ABILITY_POISON_POINT&&values[4]!=ABILITY_FLAME_BODY)return 2;
+  if(values[4]!=ABILITY_ROUGH_SKIN&&values[4]!=ABILITY_EFFECT_SPORE&&values[4]!=ABILITY_POISON_POINT&&values[4]!=ABILITY_FLAME_BODY&&values[4]!=ABILITY_STATIC)return 2;
   if(values[10]<0||values[10]>65535||values[11]<1||values[11]>65535||values[12]<0||values[12]>65535)return 2;
   if(values[5]<0||values[5]>255||values[6]<0||values[6]>255||values[15]<0||values[15]>=ABILITIES_COUNT)return 2;
   run(values);
@@ -199,7 +229,7 @@ def vectors():
                     chosen.setdefault("sleep_duration_" + str((draws[nonzero+1] & 3)+2), seed)
         if len(chosen) == 23: break
     assert all(k in chosen for k in ["third_0", "third_1", "third_2", "spore_1", "spore_2", "spore_3", "spore_reroll_1"])
-    for ability, label in [(24,"rough_skin"),(27,"effect_spore"),(38,"poison_point"),(49,"flame_body")]:
+    for ability, label in [(24,"rough_skin"),(27,"effect_spore"),(38,"poison_point"),(49,"flame_body"),(9,"static")]:
         seed = chosen["spore_1" if ability == 27 else "third_0"]
         base = {"defenderAbility": ability, "seed": seed}
         for attacker in range(4):
@@ -220,7 +250,7 @@ def vectors():
     for maximum in [1,15,16,31,32,100,160,65535]:
         add("rough_skin", f"rough_skin_maxhp_{maximum}", attackerMaxHp=maximum, attackerHp=min(50,maximum))
     for hp in [1,6,7]: add("rough_skin", f"rough_skin_attacker_hp_{hp}", attackerHp=hp)
-    for ability,label in [(38,"poison_point"),(49,"flame_body")]:
+    for ability,label in [(38,"poison_point"),(49,"flame_body"),(9,"static")]:
         for remainder in range(3): add(label,f"{label}_modulo_{remainder}",defenderAbility=ability,seed=chosen["third_"+str(remainder)])
     for remainder in range(10):
         add("effect_spore",f"effect_spore_modulo_{remainder}",defenderAbility=27,seed=chosen["tenth_"+str(remainder)])
@@ -236,6 +266,7 @@ def vectors():
               ("soundproof_uproar",{"attackerAbility":43,"uproarMask":8}),("all_slot_uproar",{"uproarMask":4})]),
               (27,"spore_poison",chosen["spore_2"],[("poison_type",{"type1":3}),("steel_type",{"type2":8}),("immunity",{"attackerAbility":17})]),
               (27,"paralysis",chosen["spore_3"],[("limber",{"attackerAbility":7}),("electric_type_not_immune",{"type1":13}),("ground_type_not_immune",{"type2":4})]),
+              (9,"static",chosen["third_0"],[("limber",{"attackerAbility":7}),("electric_type_not_immune",{"type1":13}),("ground_type_not_immune",{"type2":4})]),
               (38,"poison",chosen["third_0"],[("poison_type",{"type1":3}),("steel_type",{"type2":8}),("immunity",{"attackerAbility":17})]),
               (49,"burn",chosen["third_0"],[("fire_type",{"type1":10}),("fire_second_type",{"type2":10}),("water_veil",{"attackerAbility":41})])]
     for ability,label,seed,cases in guards:
@@ -274,7 +305,7 @@ def run(root, out):
     status_table=commands[commands.index(b"static const u32 sStatusFlagsForMoveEffects"):commands.index(b"static const u8 *const sMoveEffectBS_Ptrs")].rstrip()
     constants+=record("src/battle_script_commands.c","status flags table",status_table)+b"\n"
     selected=[]
-    for ability,next_ability in [("ROUGH_SKIN","EFFECT_SPORE"),("EFFECT_SPORE","POISON_POINT"),("POISON_POINT","STATIC"),("FLAME_BODY","CUTE_CHARM")]:
+    for ability,next_ability in [("ROUGH_SKIN","EFFECT_SPORE"),("EFFECT_SPORE","POISON_POINT"),("POISON_POINT","STATIC"),("STATIC","FLAME_BODY"),("FLAME_BODY","CUTE_CHARM")]:
         start=util.index(("            case ABILITY_"+ability+":").encode())
         end=util.index(("            case ABILITY_"+next_ability+":").encode(),start)
         selected.append(record("src/battle_util.c","ABILITY_"+ability,util[start:end]))
@@ -292,6 +323,8 @@ def run(root, out):
     cancel=record("src/battle_util.c","CancelMultiTurnMoves",extract(util,"void CancelMultiTurnMoves(u8 battler)"))
     cancel+=b'''\nstatic void ProbeCancel(u8 battler){cancelCalls++;CancelMultiTurnMoves(battler);}\n#define CancelMultiTurnMoves ProbeCancel\n'''
     hp=record("src/battle_script_commands.c","Cmd_datahpupdate",extract(commands,"static void Cmd_datahpupdate(void)"))
+    adjustments=b"\n".join(record("src/battle_script_commands.c",signature,extract(commands,signature)) for signature in
+        ["static inline void ApplyRandomDmgMultiplier(void)","static void Cmd_adjustnormaldamage(void)","static void Cmd_adjustnormaldamage2(void)"])
     secondary=record("src/battle_script_commands.c","Cmd_seteffectsecondary",extract(commands,"static void Cmd_seteffectsecondary(void)"))
     def script_part(start,end):
         a=re.search(rb"(?m)^"+start.encode()+rb"::?\s*$",scripts).start()
@@ -310,7 +343,7 @@ def run(root, out):
              ["jumpifhasnohp BS_ATTACKER","jumpifhasnohp BS_TARGET","gChosenMove, MOVE_SLEEP_TALK", "jumpifstatus BS_ATTACKER, STATUS1_SLEEP",
               "datahpupdate BS_TARGET","moveendto MOVEEND_NEXT_TARGET","moveendfrom MOVEEND_UPDATE_LAST_MOVES"])
     contract("src/battle_script_commands.c","MoveValuesCleanUp retains turn receipts",extract(commands,"static void MoveValuesCleanUp(void)"),["gMoveResultFlags = 0;"],["gSpecialStatuses","gBattleMoveDamage"])
-    generated=PREFIX.encode().replace(b"/* CONSTANTS */",constants)+b"\n"+random+b"\n"+cancel+b"\n"+effect+b"\n"+secondary+b"\n"+hp+b"\n"+contact+MAIN.encode()
+    generated=PREFIX.encode().replace(b"/* CONSTANTS */",constants)+b"\n"+random+b"\n"+cancel+b"\n"+effect+b"\n"+secondary+b"\n"+hp+b"\n"+adjustments+b"\n"+contact+MAIN.encode()
     out.mkdir(parents=True,exist_ok=True)
     cfile=out/"contact-oracle.c";cfile.write_bytes(generated)
     rows=vectors();encoded="".join(" ".join(str(v["input"][f]) for f in FIELDS)+"\n" for v in rows)
@@ -324,7 +357,12 @@ def run(root, out):
         assert not result.stderr,result.stderr
         if stdout is None: stdout=result.stdout
         else: assert stdout==result.stdout
-        checks.append({"name":name,"command":command,"binarySha256":sha(binary.read_bytes()),"outputSha256":sha(result.stdout.encode())})
+        sequence=subprocess.run([str(binary),"--static-sequence"],text=True,capture_output=True,check=True)
+        assert not sequence.stderr,sequence.stderr
+        seq=json.loads(sequence.stdout)
+        assert seq=={"futureHp":1,"futurePhysical":69,"finalHp":1,"zeroDamage":0,"physical":69,"special":0,"focusBanded":1,"effect":1,"attackerStatus":64,"staticDraw":11904,"rng":780187821},seq
+        (out/("static-sequence-"+name+".json")).write_text(sequence.stdout)
+        checks.append({"name":name,"staticSequence":seq,"command":command,"binarySha256":sha(binary.read_bytes()),"outputSha256":sha(result.stdout.encode())})
     lines=stdout.splitlines();assert len(lines)==len(rows) and rows
     for row,line in zip(rows,lines):
         row["expected"]=json.loads(line);assert row["expected"]["id"]==row["input"]["id"]
@@ -335,7 +373,10 @@ def run(root, out):
            "flame_body_shield_dust":{"statusWrites":1},"flame_body_safeguard":{"statusWrites":1},
            "flame_body_attacker_substitute":{"statusWrites":1},"poison_immunity":{"statusWrites":0},
            "sleep_all_slot_uproar":{"statusWrites":0},"sleep_soundproof_uproar":{"statusWrites":1},
-           "paralysis_electric_type_not_immune":{"statusWrites":1},"burn_water_veil":{"statusWrites":0}}
+           "paralysis_electric_type_not_immune":{"statusWrites":1},"burn_water_veil":{"statusWrites":0},
+           "static_zero_current_damage_retains_receipt":{"drawCount":1,"statusWrites":1},
+           "static_no_turn_damage":{"drawCount":0,"statusWrites":0},
+           "static_limber":{"drawCount":1,"statusWrites":0}}
     for name,values in fixed.items():
         for key,value in values.items(): assert by_name[name]["expected"][key]==value,(name,key,by_name[name]["expected"])
     for name, hp in [("rough_skin_attacker_hp_1", 1), ("rough_skin_attacker_hp_6", 6)]:
@@ -357,7 +398,7 @@ def run(root, out):
             "scriptContracts":contracts,"compilerChecks":checks,"inputFields":FIELDS,"vectorCount":len(rows),
             "groups":dict(collections.Counter(row["group"] for row in rows)),"fixedAssertions":fixed,
             "generatedCSha256":sha(generated),"vectorsSha256":sha(jsonl.encode()),"harnessSha256":sha(Path(__file__).read_bytes()),
-            "boundaries":["Four complete unchanged AbilityBattleEffects cases are compiled; surrounding ability dispatch and unrelated abilities are omitted.",
+            "boundaries":["Five complete unchanged AbilityBattleEffects cases are compiled; surrounding ability dispatch and unrelated abilities are omitted.",
               "Original Random function and LCG macros are compiled; a wrapper records the actual ordered u16 outputs without supplying or replacing them.",
               "Original SetMoveEffect gates, sleep/poison/burn/paralysis cases and primary-status commit are compiled unchanged; freeze/toxic/volatile cases omitted.",
               "Original CancelMultiTurnMoves, Cmd_seteffectsecondary and complete Cmd_datahpupdate are compiled unchanged.",
@@ -365,7 +406,8 @@ def run(root, out):
               "Rough Skin script's marker/HP steps are explicitly driven by the host after source assertions; faintCalls records required tryfaintmon dispatch, not original faint cleanup.",
               "Status synchronization scheduling is source-asserted and its pending marker observed; Synchronize reflection itself is outside this oracle.",
               "repeatCount explicitly supplies repeated eligible callback phases over retained state; original multihit loop scheduling is source-asserted, not executed.",
-              "Input physical/special turn-damage receipts are supplied directly; move accuracy, damage calculation, Substitute damage routing and source action scheduling are outside this oracle."]}
+              "The separate Static sequence executes original adjustment and HP commands to produce its receipt from zero, using reached managed HP/RNG; action scheduling, base damage and intervening draw purposes are host inputs.",
+              "Input physical/special turn-damage receipts in the differential table are supplied directly; move accuracy, damage calculation, Substitute damage routing and source action scheduling are outside this oracle."]}
     (out/"source-probe.json").write_text(json.dumps(report,indent=2)+"\n")
     print(json.dumps({"vectorCount":len(rows),"output":str(out),"vectorsSha256":report["vectorsSha256"]}))
 

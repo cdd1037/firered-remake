@@ -19,6 +19,7 @@ internal abstract partial class SourceRecipeContext
         if (WildBattleEffective.Ability(Get(actor)) == "ABILITY_HUSTLE" &&
             TypeRules.Category(Enum.Parse<ElementType>(move.Type[5..], true)) == DamageCategory.Physical)
             accuracy = accuracy * 80 / 100;
+        accuracy = HeldAccuracy(accuracy, Get(target));
         bool hit = Draw($"{purpose}.accuracy", 100) % 100 + 1 <= accuracy;
         if (!hit && reportMiss) SourceGenericMiss(actor, target, move);
         return hit;

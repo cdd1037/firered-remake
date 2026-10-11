@@ -16,8 +16,8 @@ internal sealed partial class FrameRecipeContext
         Frame = afterFaint;
         if (!delayedHitItemsPending) return;
         // The end-turn owner clears a fainted target before move-end berries/items.
-        var berries = SourceFrameBerryItems.Apply(Frame, SourceBerryPhase.MoveEnd);
-        Frame = berries.State; Events.AddRange(berries.Events);
+        var berries = SourceFrameBerryItems.ApplyCanonical(Frame, SourceBerryPhase.MoveEnd, catalog: catalog);
+        Frame = berries.State; Events.AddRange(berries.Events); Trace.AddRange(berries.Trace);
         ApplyFrameHitItems(delayed: true);
         EndSubstitutePass();
     }

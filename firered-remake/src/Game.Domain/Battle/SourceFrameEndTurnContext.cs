@@ -6,7 +6,7 @@ using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
 
 /// <summary>Actual four-slot storage and KO ownership for the common residual commands.</summary>
-internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, PokemonCatalog? catalog = null) : SourceEndTurnContext
 {
     internal SourceBattleFrame Frame { get; private set; } = frame;
     private ImmutableArray<SourceBattleParty> reportedParties = frame.Parties;
@@ -165,9 +165,9 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
     internal override void ExposeFaintedActions() => CheckTeamsLost();
     internal override void FaintedActionItems()
     {
-        if (Frame.Slots.Any(c => !SourceFrameBerryItems.SupportsHeldItem(c.Body!.HeldItem)))
+        if (Frame.Slots.Any(c => !SourceFrameBerryItems.SupportsHeldItem(c.Body!.HeldItem, catalog)))
             throw new SourceRecipeUnsupported("source_four_action_fainted_item_phase_not_migrated");
-        var settled = SourceFourEntryAbilities.Settle(Frame);
+        var settled = SourceFourEntryAbilities.Settle(Frame, catalog);
         Frame = settled.State; Events.AddRange(settled.Events); Trace.AddRange(settled.Trace);
     }
     internal override void Wish(PokemonCatalog catalog, BattlerSlot slot)
@@ -183,9 +183,9 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
         if (step == SourceBattlerEndTurnStep.Disable) { Disable(slot); return; }
         if (step is SourceBattlerEndTurnStep.Items1 or SourceBattlerEndTurnStep.Items2)
         {
-            var berries = SourceFrameBerryItems.Apply(Frame, step == SourceBattlerEndTurnStep.Items1
-                ? SourceBerryPhase.Normal : SourceBerryPhase.NormalMoveTurn, slot);
-            Frame = berries.State; Events.AddRange(berries.Events); return;
+            var berries = SourceFrameBerryItems.ApplyCanonical(Frame, step == SourceBattlerEndTurnStep.Items1
+                ? SourceBerryPhase.Normal : SourceBerryPhase.NormalMoveTurn, slot, catalog);
+            Frame = berries.State; Events.AddRange(berries.Events); Trace.AddRange(berries.Trace); return;
         }
         var m = Get(slot); var r = Frame.Get(slot).Registers;
         bool nonempty = step switch {

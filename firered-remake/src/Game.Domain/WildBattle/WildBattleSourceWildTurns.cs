@@ -78,6 +78,7 @@ public static partial class WildBattleRules
         if (ValidateSourceWild(catalog, state) is { } error) return Fail(null, error);
         return Execute(null, state, context =>
         {
+            context.sourceHeldCatalog = catalog;
             for (int slot = 0; slot < 4; slot++) context.Draw($"wild-battle.entry.ai-setup.slot-{slot}", 16);
             // The mechanics profile starts a supplied battle fixture, not a campaign encounter.
             // Its explicit held item is preserved; only real campaign entry rolls wild loot.
@@ -102,6 +103,8 @@ public static partial class WildBattleRules
             context.ApplyRoute3EntryAbility(WildBattleSide.Player, weather: false);
             context.ApplyRoute3EntryAbility(WildBattleSide.Opponent, weather: false);
             context.SourceTraceResolvePending();
+            context.SourceCanonicalHeldItem(first, SourceBerryPhase.SwitchIn);
+            context.SourceCanonicalHeldItem(Other(first), SourceBerryPhase.SwitchIn);
             context.Ready(false);
         });
     }

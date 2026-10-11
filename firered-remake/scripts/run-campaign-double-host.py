@@ -26,6 +26,7 @@ def main():
     parser.add_argument('--checkpoint', type=Path,
                         default=root / 'tests/Game.Route8TwinsCampaign.Tests/Fixtures/original-party-before-twins.json',
                         help='actual public before-Twins checkpoint')
+    parser.add_argument('--single-item-fixture', type=Path, help='controlled current single-battle menu fixture emitted by the public singles item test')
     parser.add_argument('--native', action='store_true',
                         help='capture native viewports only after coordinating the GUI; requires DOUBLE_UI_NATIVE_COORDINATED=1')
     args = parser.parse_args()
@@ -81,7 +82,8 @@ def main():
                          if path.is_file() and not {'bin', 'obj', '.godot'}.intersection(path.relative_to(directory).parts)
                          and (path.suffix in {'.cs', '.csproj', '.props', '.targets'} or path.name == 'packages.lock.json'))
         return {'files': {str(path.relative_to(root)): sha256(path) for path in sorted(files)},
-                'checkpoint': {'path': str(checkpoint), 'sha256': sha256(checkpoint)}}
+                'checkpoint': {'path': str(checkpoint), 'sha256': sha256(checkpoint)},
+                'singleItemFixture': None if single_fixture is None else {'path': str(single_fixture), 'sha256': sha256(single_fixture)}}
 
     def assembly_identity():
         binary = host / '.godot/mono/temp/bin/Debug'
@@ -97,6 +99,7 @@ def main():
         if args.native and os.environ.get('DOUBLE_UI_NATIVE_COORDINATED') != '1':
             raise RuntimeError('--native needs a coordinated GUI slot and DOUBLE_UI_NATIVE_COORDINATED=1')
         checkpoint = args.checkpoint.resolve(strict=True)
+        single_fixture = args.single_item_fixture.resolve(strict=True) if args.single_item_fixture else None
         tools_setting = os.environ.get('FIRERED_TOOLCHAIN_ROOT')
         tools = Path(tools_setting or (root / '.tools/toolchain-root').read_text().strip()).resolve(strict=True)
         dotnet = tools / 'dotnet/dotnet'
@@ -108,7 +111,7 @@ def main():
             if not path.exists():
                 raise FileNotFoundError(f'Required installed official tool/package path: {path}')
         env = {key: value for key, value in os.environ.items()
-               if not key.startswith(('FIRERED_', 'DOUBLE_UI_', 'HIT_'))}
+               if not key.startswith(('FIRERED_', 'DOUBLE_UI_', 'SINGLE_ITEM_', 'HIT_'))}
         env.pop('DoubleTestReferenceRoot', None)
         env.update(FIRERED_TOOLCHAIN_ROOT=str(tools), DOTNET_ROOT=str(tools / 'dotnet'),
                    DOTNET_CLI_HOME=str(output / 'dotnet-home'), NUGET_PACKAGES=str(packages),
@@ -119,13 +122,15 @@ def main():
                    FIRERED_PLAYER_ENTRY='0', FIRERED_AUDIO='0', FIRERED_AUDIO_BACKEND='synth',
                    FIRERED_CAMPAIGN_CHECKPOINT=str(checkpoint), FIRERED_EVIDENCE=str(output / 'campaign'),
                    DOUBLE_UI_EVIDENCE=str(output), DOUBLE_UI_VERIFY_ENTRY='1')
+        if single_fixture is not None:
+            env.update(SINGLE_ITEM_UI_ONLY='1', SINGLE_ITEM_UI_FIXTURE=str(single_fixture))
         for key, directory in [('XDG_DATA_HOME', 'data'), ('XDG_CONFIG_HOME', 'config'), ('XDG_CACHE_HOME', 'cache')]:
             path = output / 'runtime' / directory
             path.mkdir(parents=True)
             env[key] = str(path)
         (output / 'campaign').mkdir()
         save('environment.json', {key: value for key, value in env.items()
-                                 if key.startswith(('FIRERED_', 'DOUBLE_UI_', 'DOTNET_', 'XDG_'))
+                                 if key.startswith(('FIRERED_', 'DOUBLE_UI_', 'SINGLE_ITEM_', 'DOTNET_', 'XDG_'))
                                  or key in {'NUGET_PACKAGES', 'GODOT_SILENCE_ROOT_WARNING'}})
         config = output / 'nuget.config'
         config.write_text('<configuration><packageSources><clear/>'
@@ -188,6 +193,10 @@ def main():
                         'actual public before-Twins checkpoint',
                         'keyboard completed Intro enters four-slot combat',
                         'mouse completed Intro enters four-slot combat'}
+            if single_fixture is not None:
+                required = {'latest single source menu active', 'single bag opened',
+                            'Ether opens permanent PP moves', 'nested cancel preserves complete state and RNG',
+                            'mouse PP row sends one successful public command', 'Doll exits through real UI outcome continuation'}
             if (result.get('passed') is not True or not isinstance(result.get('checks'), int)
                     or result['checks'] < 40 or not isinstance(checks, list)
                     or len(checks) != result['checks'] or not required.issubset(checks)):
@@ -195,7 +204,8 @@ def main():
             if (not isinstance(result.get('display'), str) or not result['display']
                     or (result['display'] == 'headless') == args.native):
                 raise RuntimeError('Host display mode does not match the requested mode')
-            if args.native and not (output / '01-trainer.png').is_file():
+            native_frame = 'single-ether-moves.png' if single_fixture else '01-trainer.png'
+            if args.native and not (output / native_frame).is_file():
                 raise RuntimeError('Native run did not save its viewport evidence')
             after_sources, after_identity = source_manifest(), assembly_identity()
             save('source-manifest.after.json', after_sources)

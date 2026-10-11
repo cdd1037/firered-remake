@@ -160,7 +160,7 @@ internal abstract partial class SourceRecipeContext
             PokemonMoveDefinition move, string purpose, int damage)
         {
             FireHitThaw(side, targetSide, move);
-            if (!ContactCommandNoEffect && damage > 0 && SourceCalledHitReachedPokemon(targetSide) && WildBattleEffective.Ability(Get(targetSide)) == "ABILITY_STATIC" && Get(side).Pokemon.CurrentHp > 0 &&
+            if (!CanonicalContactReceipts && !ContactCommandNoEffect && damage > 0 && SourceCalledHitReachedPokemon(targetSide) && WildBattleEffective.Ability(Get(targetSide)) == "ABILITY_STATIC" && Get(side).Pokemon.CurrentHp > 0 &&
                 move.Flags.Contains("FLAG_MAKES_CONTACT") && Draw($"{purpose}.static", 3) % 3 == 0)
             {
                 RecordAbility(targetSide, "ABILITY_STATIC");

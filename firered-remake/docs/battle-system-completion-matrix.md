@@ -2,7 +2,7 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
-Current integrated checkpoint: **working tree based on `948d9810a709c48b46f1950159b4db5afcba27fd`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **354 / 354**, with **0 gated by recipe identity**; the public full-turn inventory completed 1,416 controlled turns at `f95f065`. This does not establish all interactions or special battle modes. Dedicated script coverage is **20 / 354**, with **334 remaining**, including the new three-root trace batch's isolated source/host proof; current combined host verification is recorded separately. Neither figure is a complete battle-system percentage.
+Current integrated checkpoint: **working tree based on `194227ef455811343144eec43c0ee2129da00572`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **354 / 354**, with **0 gated by recipe identity**; the public full-turn inventory completed 1,416 controlled turns at `f95f065`. This does not establish all interactions or special battle modes. Dedicated script coverage is **20 / 354**, with **334 remaining**, including the new three-root trace batch's isolated source/host proof; current combined host verification is recorded separately. Neither figure is a complete battle-system percentage.
 
 The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles now has a bounded authentic Route8 Twins public victory/save branch; full held-item/recipe and presentation completion remains open. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
@@ -33,7 +33,7 @@ User decision on 2026-10-11 (`Sentinel_23a5c65a12ac819190dd9441bae2d3fa`): resum
 - C15: the authenticated 307-item table supplies fixed battle effects, PP selection, revival, side/stat items and reusable flutes; ordinary escape items retain battle-mode restrictions. Application now routes the real owned party identity and full inventory through this common owner. Dynamic Enigma Berry data and field-only item uses are separate capabilities.
 - C19: original FireRed AI flags 1/7 execute the pinned script program. The four-position controller composes switch, item, then move decisions in source order with shared trainer inventory and current-move register. Generic future-trainer Application state is not inferred from the current two-member, no-item Twins encounter.
 - C21: event-time snapshots, original typed item messages and permanent/live PP projection are integrated; source-page and actual-host checks remain separately identified.
-- Still active: remaining held-item lifecycle and money settlement, explicit obedience facts, shared Static contact alignment, and removal of obsolete migration-only test expectations. These close rule/owner gaps before the next campaign region; dedicated animations continue in parallel.
+- The ordinary shared-core story gate is now met by the affected combined tests and actual single menu host. Held/Smoke/money/obedience, strict provenance save round-trip, current single-battle item menus and preset-double identity composition are covered in [current evidence](../evidence/held-obedience-items-20261011/README.md). Dedicated presentation and the declared special modes remain separate; this is not exhaustive combinatorial acceptance.
 
 ## Priority and dependency order
 
@@ -303,7 +303,7 @@ Next acceptance:
 <a id="c15"></a>
 ### C15 — Bag medicine, flute and remaining battle items
 
-Shared ordinary medicine now executes in the genuine four-slot owner and public Twins Application. Selection immediately applies owned HP/status/inventory changes and records prepared markers; execution does not apply or spend twice. Partner/bench use, two medicines, capped HP, no-effect/stale identity/overflow atomicity and continuation pass 3 cases/102 checks/44 commands. Main X11 native BAG/party/input/presentation verification passes 223 checks with source and DLL identities unchanged across the run and exit 0. Flute, revival, PP and stat items remain separate doubles gaps; physical audio is unverified.
+The authenticated 307-item source table now feeds one common effect owner for canonical singles and four-slot battles: permanent PP, revival, HP/status, X items, Dire Hit, Guard Spec, reusable flutes and ordinary escape items. Public double selection/typed pages/PP submenu passed the combined 496-check host at 194227e. The current regional single-battle menu now uses this same owner through an explicit regional capability; no historical-profile or Dynamic Enigma admission is inferred.
 
 Dependencies: C05, C18.
 
@@ -313,13 +313,12 @@ Pinned source: `src/battle_main.c:HandleAction_UseItem`, `src/battle_script_comm
 
 Next acceptance:
 
-- Inventory actual battle-use items; add missing X-item/Guard Spec/Dire Hit/revival/PP paths only after checking existing medicine implementations and content admission.
-- Extend the verified active/reserve identity, no-effect atomicity, source selection-time use and prepared-marker continuation contract to each newly admitted item category; retain the ban on player battle saves.
+- Preserve these common effects as new source items become legitimately obtainable. Dynamic Enigma requires a separate authenticated payload; battle saves remain forbidden.
 
 <a id="c16"></a>
 ### C16 — Held-item effects and ownership
 
-Canonical singles Choice Band now executes physical Attack scaling, chosen-move locking, called/copied moves, item transfer and departure cleanup. Quick Claw/Macho Brace order and reward modifiers are shared. Canonical singles Focus Band now shares post-random damage adjustment, slot-sticky protection and actual ActionFinished cleanup across ordinary, scalar, confusion and delayed attacks. General four-slot held-item execution remains unfinished. See `docs/source-choice-band.md`.
+One authenticated item proof is reused by bag and held rules. Shared singles/four-slot phase owners now cover applicable fixed berries, Leppa permanent PP, herbs, Leftovers, species/type/stat modifiers and existing Choice/Focus/King/Shell effects. Smoke Ball bypasses escape trapping without run RNG or item consumption; Amulet Coin latches battle money and Application caps/receipts separately. Worker evidence and current combined integration have distinct source identities; dynamic Enigma remains a separate capability.
 
 Dependencies: C04, C05, C18.
 
@@ -329,9 +328,7 @@ Pinned source: `src/battle_util.c:ItemBattleEffects`, `src/battle_main.c:GetWhoS
 
 Next acceptance:
 
-- Implement remaining King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.
-- Prove threshold/RNG timing, Choice lock after copied moves, consumed-item history, permanent versus battle-only Knock Off and wild/trainer restoration.
-- An item constant, a helper branch or a species held-item slot is not full execution admission.
+- Preserve Gen III fixed-item semantics and permanent identity during later campaign/mode admission; dynamic Enigma is explicitly separate.
 
 <a id="c17"></a>
 ### C17 — EXP, EV, levels, move learning and settlement
@@ -368,7 +365,7 @@ Next acceptance:
 <a id="c19"></a>
 ### C19 — Trainer AI and legal actions
 
-The authenticated original flags 1/7 interpreter now covers all 121 viability dispatches and 57 reachable commands, with live overlays and observed histories. A source-derived bytecode pack is rebuilt from the pinned source before use. Generic four-position move and switch/replacement owners are present; final item/action composition and campaign routing remain the next integration boundary. FireRed’s AI_DoubleBattle script is empty; no later-generation partner strategy is invented. See [source AI program](source-trainer-ai-program.md).
+The pinned FireRed flags 1/7 interpreter covers all 121 viability dispatches and 57 reachable commands. Four-position preparation composes switch, item and move choices in source order with shared inventory/current-move state. FireRed AI_DoubleBattle is empty; no invented ally scoring is required. Explicit ordinary OT/name/badge obedience now shares the singles/four-slot action owner; the preset-double campaign entry now supplies real identity and badge facts. Generic future-trainer campaign roster/inventory integration remains content work.
 
 Dependencies: C02, C03, C09, C10, C16.
 
@@ -378,10 +375,7 @@ Pinned source: `data/battle_ai_scripts.s`, `src/battle_ai_script_commands.c`, `s
 
 Next acceptance:
 
-- Inventory used source AI flags and effect dispatch; add missing newly admitted effects/abilities without inventing a stronger strategy.
-- Prove PP/Disable/Encore/Imprison/Taunt/Torment/choice locks and forced Struggle; test no illegal action choice or RNG on rejected commands.
-- Add doubles target/ally scoring and replacement only over actual four-slot state.
-- Inspect ownership/obedience explicitly: the current cancellation path marks Obeys, which is not a disobedience engine.
+- Use this common controller and real ownership context when future trainer parties, item lists or NPC trade acquisition are imported. Do not invent unused AI flags or partner scoring.
 
 <a id="c20"></a>
 ### C20 — FireRed field abilities and post-battle Pickup
@@ -436,18 +430,14 @@ Next acceptance:
 <a id="c23"></a>
 ### C23 — Useful refactor: shared rule policy and effect hooks
 
-Shared Execution, PP/caller recipes, SourceBattleItemRules, source end-turn cursor and permanent-party projection remain the shared seams. Explicit authenticated mechanics capability now separates386-species source definitions from107-species campaign admission, reusing existing factory/stat algorithms. Four-slot identity, bounded shared recipes and clean turn ownership now exist. Remaining effect/phase migration consumes these shared interfaces.
+The bounded refactor now shares recipe execution, slot/party identity, held phase dispatch, item proof/effects, original AI program and money settlement. Existing historical adapters remain explicit. Obsolete incremental admission assertions were replaced with current rule expectations while business/RNG/identity checks were retained. The latest single menu bridge reuses common effects and extracts presentation responsibilities without migrating historical campaigns or rewriting the engine.
 
 Evidence: `src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs`, `src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs`, `src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs`, `src/Game.Domain/Items/SourceBattleItemRules.cs`, `src/Game.Domain/WildBattle/ForestBattleDamage.cs`, `src/Game.Domain/WildBattle/WildVictoryRewards.cs`.
 Bounded factory/turn parity is recorded in `docs/source-mechanics-admission.md`; serialized-state value equality is covered by `tests/Game.SourcePartyRoundTrip.Tests/README.md`.
 
 Next acceptance:
 
-- Preserve explicit authenticated capabilities for the new profile instead of spreading further species-count checks; retain historical adapters and unchanged old snapshots.
-- Separate battler slot from side through a narrow state/access interface, then port shared effect helpers once instead of cloning a doubles engine.
-- Consolidate entry/absorption/contact/immunity/move-end/end-turn/field ability and held-item dispatch by source phase; do not create a monolithic rewritten battle engine.
-- Factor shared pause/resume orchestration only where trainer/wild duplication demonstrably causes inconsistent behavior; keep mode-specific AI, capture, EXP and outcomes explicit.
-- Keep Godot free of rules; render typed cues. Require output/event/RNG parity for every behavior-preserving refactor.
+- Continue localized reuse when future content exposes a real duplicate; no large engine rewrite is required before the next story node.
 
 ## Official ability inventory
 
@@ -765,3 +755,9 @@ The existing four-action host now drives all354 moves at all four actual actor p
 ## 2026-10-11 ordinary capture and full source AI script integration
 
 The main composition passed capture 12 groups / 48,447 checks and AI 283 source-command vectors + 7 actual controller cases / 1,214 checks. The worker’s 3,011 capture C vectors, frozen 872 complete prior results and bounded historical AI suites are reused with source hashes; they were not repeated on the main tree. These are Domain rules checks, not new campaign-ball or complete trainer-item/native acceptance. Required generated AI data remain outside source-only GitHub exports and have an authenticated importer. Timer Ball’s extreme `u8` multiplier wrap is retained and recorded as an unapproved candidate.
+
+## 2026-10-11 ordinary core closure and bounded refactor
+
+[The combined checkpoint](../evidence/held-obedience-items-20261011/README.md) closes the current ordinary bag/held/escape/money/obedience and menu integration work. The 354-recipe turn inventory and 76 official ability admission remain bounded evidence, not a claim about every pairwise interaction. New regional work can resume with dedicated animations/audio progressing independently. Safari actions, roaming encounters, legitimate traded acquisition, special trainer-mode inputs and dynamic Enigma payloads retain their explicit later contracts.
+
+The useful refactor is concrete: one authenticated item object serves both bag and held effects; ordinary single and double bag adapters call the same effect owner; held/contact callbacks share phase/identity ownership; prize and Pay Day settlement use common arithmetic; a small single-medicine view owns its PP/party pages; obsolete incremental admission assertions are refreshed while state/event/RNG and identity checks remain. The existing historical rule adapters remain, and no whole-engine rewrite is implied.

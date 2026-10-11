@@ -45,7 +45,8 @@ internal abstract partial class SourceRecipeContext
     {
         string ability = WildBattleEffective.Ability(Get(target));
         if (ability == "ABILITY_CUTE_CHARM") { ContactCuteCharm(actor, target, move, purpose, damage); return; }
-        if (ability is not ("ABILITY_ROUGH_SKIN" or "ABILITY_POISON_POINT" or "ABILITY_FLAME_BODY" or "ABILITY_EFFECT_SPORE") ||
+        if (ability is not ("ABILITY_ROUGH_SKIN" or "ABILITY_POISON_POINT" or "ABILITY_FLAME_BODY" or "ABILITY_EFFECT_SPORE" or "ABILITY_STATIC") ||
+            ability == "ABILITY_STATIC" && (!CanonicalContactReceipts || move is null) ||
             ability == "ABILITY_EFFECT_SPORE" && !ContactEffectSporeEnabled) return;
         var attacker = Get(actor);
         bool retained = ContactUsesRetainedDamage(ability);
@@ -69,13 +70,20 @@ internal abstract partial class SourceRecipeContext
             if (after == 0) ForestFaint(actor);
             return;
         }
-        string reason = ability switch { "ABILITY_POISON_POINT" => "poison-point", "ABILITY_FLAME_BODY" => "flame-body", _ => "effect-spore" };
+        string reason = ability switch { "ABILITY_POISON_POINT" => "poison-point", "ABILITY_FLAME_BODY" => "flame-body", "ABILITY_STATIC" => "static", _ => "effect-spore" };
         int bound = ability == "ABILITY_EFFECT_SPORE" ? 10 : 3;
         if (Draw($"{purpose}.{reason}", bound) % bound != 0) return;
-        int effect = ability == "ABILITY_POISON_POINT" ? 2 : 4;
+        int effect = ability switch { "ABILITY_POISON_POINT" => 2, "ABILITY_STATIC" => 3, _ => 4 };
         if (ability == "ABILITY_EFFECT_SPORE")
             do effect = Draw($"{purpose}.effect-spore-status", 4) & 3; while (effect == 0);
         RecordAbility(target, ability);
+        // Static keeps its established status event and shared immunity/Synchronize path.
+        // Other contact abilities retain their explicit activation event.
+        if (ability == "ABILITY_STATIC")
+        {
+            InflictStatus(catalog, actor, WildBattleStatus.Paralysis, true);
+            return;
+        }
         if (attacker.Status != 0) return;
         if (effect == 1)
         {

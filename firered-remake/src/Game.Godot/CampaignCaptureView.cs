@@ -14,14 +14,15 @@ public partial class CampaignView
     private CaptureDexDocument? _captureDex;
     private readonly Dictionary<string, ImageTexture> _captureTextures = new(StringComparer.Ordinal);
     private SourceGameFont _captureDexNormal = null!, _captureDexSmall = null!, _captureDexDescription = null!, _captureDexTitle = null!, _captureDexFooter = null!;
-    private int _captureBagPocket, _captureBagSelected;
+    private int _captureBagPocket, _captureBagSelected, _capturePouchSelected;
+    private bool _captureBerries;
 
     // CampaignView combines this with the existing starter naming condition. The shared
     // LineEdit owns text/edit/submit; global F5/F9/F12/Escape stay with CampaignView.
     private bool CaptureNamingActive => _catalog.CaptureEnabled &&
         _session.State.WildBattle?.Capture?.Stage == CampaignCaptureStage.Naming;
 
-    private void ResetCaptureBag() { _captureBagPocket = 0; _captureBagSelected = 0; }
+    private void ResetCaptureBag() { _captureBagPocket = 0; _captureBagSelected = 0; _captureBerries = false; }
 
     private void LoadCapturePresentation()
     {
@@ -73,7 +74,7 @@ public partial class CampaignView
     }
 
     private ImmutableArray<InventoryStack> CaptureBagStacks => _session.State.Inventory is not { } inventory ? [] :
-        _captureBagPocket switch { 0 => inventory.BagItems, 1 => inventory.KeyItems ?? [], _ => inventory.Balls ?? [] };
+        _captureBerries ? inventory.Berries ?? [] : _captureBagPocket switch { 0 => inventory.BagItems, 1 => inventory.KeyItems ?? [], _ => inventory.Balls ?? [] };
 
     private bool TryCaptureWildInput(InputEventKey key, CampaignWildBattle battle)
     {
@@ -127,6 +128,7 @@ public partial class CampaignView
             { _wildMenu = "bag"; _wildCursor = _captureBagSelected; }
             else if (key.Keycode == Key.Enter)
             {
+                if (TryOpenSingleBattleItem(CaptureBagStacks[_captureBagSelected].Item,battle)) return true;
                 if (_captureBagPocket == 0) {
                     var item=CaptureBagStacks[_captureBagSelected].Item;
                     bool enabled=_session.BattleMedicineEnabled&&EarlyItem(item)?.UseSupport is EarlyShopUseSupport.Potion or EarlyShopUseSupport.StatusCure or EarlyShopUseSupport.DeferredSleep;
@@ -153,7 +155,7 @@ public partial class CampaignView
             }
             return true;
         }
-        if (key.Keycode is Key.Left or Key.Right)
+        if (!_captureBerries && key.Keycode is Key.Left or Key.Right)
         {
             _captureBagPocket = Math.Clamp(_captureBagPocket + (key.Keycode == Key.Left ? -1 : 1), 0, 2);
             _wildCursor = 0; _captureBagSelected = 0; return true;
@@ -163,7 +165,8 @@ public partial class CampaignView
         if (key.Keycode == Key.Up) _wildCursor = Math.Max(0, _wildCursor - 1);
         if (key.Keycode == Key.Down) _wildCursor = Math.Min(stacks.Length, _wildCursor + 1);
         if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _wildCursor == stacks.Length)
-        { _wildMenu = "actions"; _wildCursor = 0; }
+        { if(_captureBerries){_captureBerries=false;_wildCursor=_capturePouchSelected;}
+          else {_wildMenu = "actions"; _wildCursor = 0;} }
         else if (key.Keycode == Key.Enter)
         { _captureBagSelected = _wildCursor; _wildMenu = "bag-actions"; _wildCursor = 0; }
         return true;
@@ -226,7 +229,11 @@ public partial class CampaignView
     {
         var stacks = CaptureBagStacks;
         int selected = Math.Clamp(_wildMenu == "bag-actions" ? _captureBagSelected : _wildCursor, 0, stacks.Length);
-        if (_captureBagPocket == 0) DrawItemList(_session.State.Inventory!, "bag", selected);
+        if (_captureBagPocket == 0 || _captureBerries)
+        {
+            if(_session.FullBattleItemsEnabled) DrawSingleBattleItemList(stacks,selected);
+            else DrawItemList(_session.State.Inventory!, "bag", selected);
+        }
         else
         {
             DrawQuestPocketAsset(_captureBagPocket == 1 ? "bag-key-items-background" : "bag-poke-balls-background");
@@ -259,7 +266,7 @@ public partial class CampaignView
             for (int i = 0; i < actions.Length; i++) SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionText(i), actions[i]);
             SourceText(_sourceNormal, OpeningItemUiSkin.BattleBagActionCursor(_wildCursor), _itemSkin.Text("gText_SelectorArrow2"));
             _itemSkin.DrawStandardFrame(this, OpeningItemUiSkin.BagSelectedFrame);
-            var name = _captureBagPocket == 0 ? InventoryName(stacks[selected].Item) : QuestPocketItem(stacks[selected]).Name;
+            var name = _captureBagPocket == 0 || _captureBerries ? SingleBattleItemName(stacks[selected].Item) : QuestPocketItem(stacks[selected]).Name;
             ItemLines(_sourceNormal, OpeningItemUiSkin.BagSelectedText, _itemSkin.FormatText("gText_Var1IsSelected", name));
         }
         if (_wildNotice is not null) ItemMessageBox(_wildNotice);

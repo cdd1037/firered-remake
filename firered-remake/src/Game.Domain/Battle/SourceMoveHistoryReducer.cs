@@ -43,7 +43,9 @@ internal static class SourceMoveHistoryReducer
         var targetCell = get(targetSlot); var target = targetCell.Body!; var targetHistory = targetCell.Registers.History ?? new();
         bool landed = !noEffect && invocation.ChosenMove != unavailable;
         bool mirror = landed && target.Pokemon.CurrentHp > 0 && targetSlot != invocation.Actor &&
-            catalog.Moves[invocation.OriginalChosenMove].Flags.Contains("FLAG_MIRROR_MOVE_AFFECTED");
+            // jumptocalledmove 0 replaced gChosenMove before this disobedient MOVEEND.
+            catalog.Moves[invocation.Flags.HasFlag(WildBattleInvocationFlags.DisobedientMove)
+                ? invocation.ChosenMove : invocation.OriginalChosenMove].Flags.Contains("FLAG_MIRROR_MOVE_AFFECTED");
         set(targetSlot, targetCell with {
             Body = target with { LastLandedMove = landed ? invocation.CurrentMove : unavailable },
             Registers = targetCell.Registers with { LastHitBy = target.Pokemon.CurrentHp > 0 ? invocation.Actor : targetCell.Registers.LastHitBy,

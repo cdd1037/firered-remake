@@ -13,7 +13,9 @@ using Game.Domain.Randomness;
 using Game.Domain.Rules;
 using Game.Domain.WildBattle;
 
-if(args.Length!=3)return 2;
+if(args.Length is not (3 or 4))return 2;
+bool staticOnly=args.Length==4&&args[3]=="--static-only";
+if(args.Length==4&&!staticOnly)return 2;
 string root=args[0],source=args[1],output=args[2];
 string Json<T>(T o)=>JsonSerializer.Serialize(o);
 string Hash<T>(T o)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Json(o))));
@@ -23,7 +25,7 @@ string tm=File.ReadAllText(Path.Combine(source,"src/data/pokemon/tmhm_learnsets.
 string tutor=File.ReadAllText(Path.Combine(source,"src/data/pokemon/tutor_learnsets.h"));
 int groups=0,checks=0,failures=0,vectors=0,turns=0;var results=new List<object>();
 void Check(bool ok,string reason){checks++;if(!ok)throw new InvalidDataException(reason);}
-void Test(string name,Action run){groups++;try{run();results.Add(new{name,passed=true});Console.WriteLine("PASS "+name);}catch(Exception e){failures++;results.Add(new{name,passed=false,error=e.ToString()});Console.WriteLine("FAIL "+name+" "+e);}}
+void Test(string name,Action run){if(staticOnly && !(name.StartsWith("Static ") || name=="immutable canonical ordinary singles state event RNG hashes" || name=="exact original C contact source guard, status, slot and RNG vectors" || name=="established singles retained receipt plus Substitute boundary remains explicit"))return;groups++;try{run();results.Add(new{name,passed=true});Console.WriteLine("PASS "+name);}catch(Exception e){failures++;results.Add(new{name,passed=false,error=e.ToString()});Console.WriteLine("FAIL "+name+" "+e);}}
 WildBattleCombatant Mon(string species,string[] moves,uint pid=200,int level=50){
  var p=SourcePokemonFactory.Create(proof,new(new("pret:SPECIES_"+species),level,42,IvPolicy.Fixed(31),PersonalityPolicy.Fixed(pid)),new(0)).Pokemon;
  var block=Regex.Match(tm,@"\[SPECIES_"+species+@"\].*?(?=\[SPECIES_|\z)",RegexOptions.Singleline).Value;
@@ -47,6 +49,15 @@ if(output=="--probe"){
  }
  return 0;
 }
+List<WildBattleResult> StaticSequence(uint seed=13){
+ var actor=Mon("ABSOL",["FUTURE_SIGHT","CALM_MIND","BITE"],level:100);
+ var holder=Mon("PIKACHU",["GROWL"],0,30) with{HeldItem="ITEM_FOCUS_BAND"};
+ var entry=WildBattleRules.StartSourceWild(proof,BattleRulesProfile.CanonicalSourceSingles,[actor],0,holder,new(seed));Check(entry.Succeeded,"Static entry "+entry.Fault);
+ var stages=new List<WildBattleResult>{entry};var state=entry.State!;
+ foreach(int slot in new[]{0,1,1,2}){var r=WildBattleRules.ResolveMove(catalog,state,slot);Check(r.Succeeded,"Static full turn "+r.Fault);stages.Add(r);state=r.State!;}
+ return stages;
+}
+if(output=="--static-sequence"){Console.WriteLine(Json(new{seed=13,stages=StaticSequence()}));return 0;}
 Test("immutable canonical ordinary singles state event RNG hashes",()=>Check(Json(baseline)==File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"singles-baseline-2c3e33e6.json")).Trim(),"24 baseline hashes"));
 WildBattleCalledPartyMember Member(WildBattleCombatant b)=>new(b.Pokemon,b.HeldItem,b.Status);
 SourceBattleFrame Frame(uint seed=0){WildBattleCombatant[] b=[Mon("RATICATE",["TACKLE"]),Mon("CLEFAIRY",["CALM_MIND"],0),Mon("RATICATE",["TACKLE"],202),Mon("JIGGLYPUFF",["LIGHT_SCREEN"],0)];return new(){Layout=SourceBattleLayout.PresetDoubles,KoReplacementTiming=KoReplacementTiming.EndOfTurn,SourceMechanicsRulesVersion=SourceBattleKernel.Version,BattleKind=WildBattleCalledBattleKind.Trainer,Rng=new(seed),Parties=[new(BattleSide.Player,[Member(b[0]),Member(b[2])]),new(BattleSide.Opponent,[Member(b[1]),Member(b[3])])],Slots=Enumerable.Range(0,4).Select(i=>new SourceBattleSlot(new(i),new((BattleSide)(i&1),i/2),1,b[i])).ToImmutableArray()};}
@@ -87,12 +98,60 @@ Test("exact original C contact source guard, status, slot and RNG vectors",()=>{
   if((I("attackerStatus2")&0x1000)!=0)Check(actual.Slots[a].Registers.Turn?.Lock is null&&expected.GetProperty("cancelCalls").GetInt32()>0,label+" shared cancellation clears the supported Rollout lock; source Bide/Thrash bits remain original-only");
   PartySync(actual);vectors++;
  }
- Check(vectors==165&&sourceOnly==6,"171 original vectors; 165 applicable frame vectors and six source-only closed phases");
+ Check(vectors==199&&sourceOnly==7,"206 original vectors; 199 applicable frame vectors and seven source-only closed phases");
 });
 Test("established singles retained receipt plus Substitute boundary remains explicit",()=>{
- foreach(string species in new[]{"NIDORAN_F","MAGMAR","PARAS","PIKACHU"}){
+ foreach(string species in new[]{"NIDORAN_F","MAGMAR","PARAS"}){
   string move=species switch{"MAGMAR"=>"LEER","PARAS"=>"GROWTH",_=>"GROWL"};var s=Pair(Mon("CROBAT",["BITE"],level:100),Mon(species,[move],0,100));s=s with{Opponent=s.Opponent with{CalledVolatile=new(){SubstituteHp=1}},SourceOpponentHitReceipt=new(65535,7)};var r=Single(s);
   Check(r.Events.OfType<WildBattleSubstituteDamagedEvent>().Count()==1&&!r.Trace.Any(x=>x.Purpose.Contains("poison-point")||x.Purpose.Contains("flame-body")||x.Purpose.Contains("effect-spore")||x.Purpose.Contains(".static")),"injected combination keeps baseline singles contract "+species);
+ }
+});
+Test("Static naturally retained Future Sight receipt reaches zero-loss Bite across four complete singles turns",()=>{
+ var stages=StaticSequence();var initial=stages[0].State!;var future=stages[3];var contact=stages[4];
+ Check(initial.Opponent.Pokemon.CurrentHp==initial.Opponent.Pokemon.Stats.MaxHp&&initial.SourceOpponentHitReceipt is null,"full HP entry without receipt/volatile/stat injections");
+ Check(stages.Skip(1).All(s=>s.State!.SourceWild!.Turn is null),"four complete source turns");
+ Check(future.State!.Opponent.Pokemon.CurrentHp==1&&future.State.SourceOpponentHitReceipt==new SourceHitDamageReceipt(65535,69,0),"Future Sight writes actual 69 physical receipt");
+ Check(future.Events.OfType<WildBattleDamageAdjustedEvent>().Single().HungOn,"real Focus Band survival");
+ Check(contact.Events.OfType<WildBattleDamageAdjustedEvent>().Single().DamageAfter==0,"Bite really loses zero HP");
+ var roll=contact.Trace.Single(t=>t.Purpose.EndsWith(".static"));Check(roll.Raw==11904&&roll.Bound==3,"original C sequence contact word/bound");
+ Check(contact.State!.Player.Status==WildBattleStatus.Paralysis&&contact.State.Opponent.Pokemon.CurrentHp==1,"retained physical receipt triggers paralysis on zero special damage");
+ Check(contact.Events.OfType<WildBattleStatusChangedEvent>().Single(e=>e.Reason=="static").After==WildBattleStatus.Paralysis&&!contact.Events.OfType<WildBattleAbilityActivatedEvent>().Any(e=>e.Ability=="ABILITY_STATIC"),"Static preserves status event shape");
+ Check(contact.State.SourceOpponentHitReceipt is null,"existing ActionFinished clearing unchanged");
+ File.WriteAllText(Path.Combine(output,"static-natural-after.json"),Json(new{seed=13,stages}));
+});
+Test("Static four-position ordinary contact still rolls once per hit and honors guards",()=>{
+ foreach(int actor in new[]{0,1,2,3}){
+  int target=actor^1;var f=Rebind(Rebind(Frame(0),actor,Mon("SPEAROW",["FURY_ATTACK"],200,30)),target,Mon("PIKACHU",["GROWL"],0,100));
+  var r=Act(f,actor,target);int hits=r.Events.OfType<SourceHpChangedEvent>().Count(e=>e.Actor.Value==actor&&e.Target.Value==target);
+  Check(hits>=2&&r.Trace.Count(t=>t.Purpose.EndsWith(".static"))==hits,"one Static roll per hit at actual slot "+actor);PartySync(r.State);
+ }
+ var confused=Rebind(Frame(0),2,Frame(0).Slots[2].Body! with{ConfusionTurnsRemaining=2});confused=Rebind(confused,3,Mon("PIKACHU",["GROWL"],0,100));var c=Act(confused,2,3);
+ Check(c.Events.OfType<SourceConfusionSelfHitEvent>().Any()&&!c.Trace.Any(t=>t.Purpose.EndsWith(".static")),"real confusion self-hit never invokes Static");
+});
+Test("Static injected retained receipt plus Substitute remains a labeled diagnostic",()=>{
+ var s=Pair(Mon("CROBAT",["BITE"],level:100),Mon("PIKACHU",["GROWL"],0,100));
+ s=s with{Opponent=s.Opponent with{CalledVolatile=new(){SubstituteHp=1}},SourceOpponentHitReceipt=new(65535,7)};
+ var canonical=Single(s);Check(canonical.Events.OfType<WildBattleSubstituteDamagedEvent>().Count()==1&&canonical.Trace.Count(t=>t.Purpose.EndsWith(".static"))==1,"explicit injected diagnostic retains canonical receipt");
+
+});
+Test("Static historical Route 3 whole turns retain one fresh-hit roll",()=>{
+ string Read(string name)=>File.ReadAllText(Path.Combine(root,"content/generated/"+name+"/catalog.json"));
+ var legacy=PretRoute3Pokemon.LoadContent(Read("route1-pokemon"),Read("old-man-tutorial"),Read("forest-pokemon"),Read("pewter-pokemon"),Read("route22-pokemon"),Read("route3-pokemon")).Catalog;
+ WildBattleCombatant Old(string species,string move,int level)=>new(PokemonFactory.Create(legacy,new(new("pret:SPECIES_"+species),level,42,IvPolicy.Fixed(31),PersonalityPolicy.Fixed(0)),new(0)).Pokemon with{Moves=[new(Id(move),legacy.Moves[Id(move)].Pp,legacy.Moves[Id(move)].Pp)]});
+ var results=new List<object>();int hits=0;foreach(uint seed in new uint[]{0,1,31,38}){
+  var s=new WildBattleState(Old("RATICATE","TACKLE",30),Old("PIKACHU","GROWL",100),0,0,0,new(seed),0,WildBattleOutcome.Ongoing,RulesVersion:WildBattleRules.Route3RulesVersion);
+  var r=WildBattleRules.ResolveMove(legacy,s,0);Check(r.Succeeded,"historical Route 3 accepted "+r.Fault);
+  bool hit=r.State!.Opponent.Pokemon.CurrentHp<s.Opponent.Pokemon.CurrentHp;if(hit)hits++;
+  Check(r.Trace.Count(t=>t.Purpose.EndsWith(".static"))==(hit?1:0),"historical fresh-hit roll count seed "+seed+" "+Json(r.Trace));results.Add(new{seed,hit,hash=Hash(r),result=r});
+ }
+ File.WriteAllText(Path.Combine(output,"static-historical-turns.json"),Json(results));Check(hits>=3,"at least three historical positive-hit controls");
+});
+Test("Static canonical Pursuit interception calls the shared contact hook once",()=>{
+ foreach(uint seed in new uint[]{0,31,127}){
+  var holder=Mon("PIKACHU",["GROWL"],0,100);var entrant=Mon("RATICATE",["TACKLE"],200,100);var pursuer=Mon("FEAROW",["PURSUIT"],200,30);
+  var entry=WildBattleRules.StartSourceWild(proof,BattleRulesProfile.CanonicalSourceSingles,[holder,entrant],0,pursuer,new(seed));Check(entry.Succeeded,"Pursuit entry "+entry.Fault);
+  var r=WildBattleRules.SwitchSourceWildPlayer(catalog,entry.State!,1);Check(r.Succeeded,"Pursuit switch "+r.Fault);
+  Check(r.Events.OfType<WildBattlePursuitInterceptedEvent>().Count()==1&&r.Trace.Count(t=>t.Purpose.EndsWith(".static"))==1,"one interception and one Static roll");
  }
 });
 Test("contact source absence and holder KO guards use actual holder identity",()=>{
@@ -138,4 +197,5 @@ Test("Color Change, fire thaw and foreign permanent identities remain closed ato
  var bad=Frame();bad=Rebind(bad,3,bad.Slots[3].Body! with{Pokemon=bad.Slots[3].Body!.Pokemon with{AbilityId="ABILITY_ROUGH_SKIN"}});var br=SourceBattleKernel.ResolveAction(catalog,bad,new(bad.Slots[2].Occupant!.Value,bad.Revision,0,new(3)));Check(!br.Succeeded&&ReferenceEquals(br.State,bad)&&br.Trace.IsEmpty,"forged permanent ability rejected");
 });
 
-Test("nonempty meaningful proof",()=>Check(groups>0&&checks>0&&vectors==165&&turns>=25,"nonempty proof"));var report=new{groups,checks,failures,vectors,turns,runtime=Environment.Version.ToString(),canonicalHashes=baseline.Count,sourceOnly,results};File.WriteAllText(Path.Combine(output,"report.json"),Json(report));Console.WriteLine(Json(report));return failures==0?0:1;
+Test("nonempty meaningful proof",()=>Check(groups>0&&checks>0&&vectors==199&&turns>=25,"nonempty proof"));
+if(staticOnly)Check(groups>=5&&checks>0&&vectors==199,"nonempty focused Static proof");var report=new{groups,checks,failures,vectors,turns,runtime=Environment.Version.ToString(),canonicalHashes=baseline.Count,sourceOnly,results};File.WriteAllText(Path.Combine(output,"report.json"),Json(report));Console.WriteLine(Json(report));return failures==0?0:1;

@@ -541,9 +541,9 @@
     {
       "id": "C15",
       "title": "Bag medicine, flute and remaining battle items",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "priority": "P2",
-      "scope": "Shared ordinary medicine now executes in the genuine four-slot owner and public Twins Application. Selection immediately applies owned HP/status/inventory changes and records prepared markers; execution does not apply or spend twice. Partner/bench use, two medicines, capped HP, no-effect/stale identity/overflow atomicity and continuation pass 3 cases/102 checks/44 commands. Main X11 native BAG/party/input/presentation verification passes 223 checks with source and DLL identities unchanged across the run and exit 0. Flute, revival, PP and stat items remain separate doubles gaps; physical audio is unverified.",
+      "scope": "The authenticated 307-item source table now feeds one common effect owner for canonical singles and four-slot battles: permanent PP, revival, HP/status, X items, Dire Hit, Guard Spec, reusable flutes and ordinary escape items. Public double selection/typed pages/PP submenu passed the combined 496-check host at 194227e. The current regional single-battle menu now uses this same owner through an explicit regional capability; no historical-profile or Dynamic Enigma admission is inferred.",
       "implementationEvidence": [
         "src/Game.Domain/Items/SourceBattleItemRules.cs",
         "src/Game.Domain/Trainers/SourceTrainerItems.cs",
@@ -559,7 +559,8 @@
         "tests/Game.BattleMedicineCampaign.Tests/README.md",
         "evidence/shared-battle-families-20261011/double-medicine-main-02/result.json",
         "evidence/shared-battle-families-20261011/native/result.json",
-        "evidence/shared-battle-families-20261011/native/runner-result.json"
+        "evidence/shared-battle-families-20261011/native/runner-result.json",
+        "evidence/held-obedience-items-20261011/README.md"
       ],
       "sourceEvidence": [
         "src/battle_main.c:HandleAction_UseItem",
@@ -567,8 +568,7 @@
         "src/item_use.c"
       ],
       "nextAcceptance": [
-        "Inventory actual battle-use items; add missing X-item/Guard Spec/Dire Hit/revival/PP paths only after checking existing medicine implementations and content admission.",
-        "Extend the verified active/reserve identity, no-effect atomicity, source selection-time use and prepared-marker continuation contract to each newly admitted item category; retain the ban on player battle saves."
+        "Preserve these common effects as new source items become legitimately obtainable. Dynamic Enigma requires a separate authenticated payload; battle saves remain forbidden."
       ],
       "dependsOn": [
         "C05",
@@ -579,9 +579,9 @@
     {
       "id": "C16",
       "title": "Held-item effects and ownership",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "priority": "P2",
-      "scope": "Canonical singles Choice Band now executes physical Attack scaling, chosen-move locking, called/copied moves, item transfer and departure cleanup. Quick Claw/Macho Brace order and reward modifiers are shared. Canonical singles Focus Band now shares post-random damage adjustment, slot-sticky protection and actual ActionFinished cleanup across ordinary, scalar, confusion and delayed attacks. General four-slot held-item execution remains unfinished.",
+      "scope": "One authenticated item proof is reused by bag and held rules. Shared singles/four-slot phase owners now cover applicable fixed berries, Leppa permanent PP, herbs, Leftovers, species/type/stat modifiers and existing Choice/Focus/King/Shell effects. Smoke Ball bypasses escape trapping without run RNG or item consumption; Amulet Coin latches battle money and Application caps/receipts separately. Worker evidence and current combined integration have distinct source identities; dynamic Enigma remains a separate capability.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
@@ -598,7 +598,8 @@
         "tests/Game.CalledTurnLocks.Tests/README.md",
         "tests/Game.SourceOrderHeldItems.Tests/README.md",
         "tests/Game.SourceChoiceBand.Tests/README.md",
-        "tests/Game.SourceFocusBand.Tests/README.md"
+        "tests/Game.SourceFocusBand.Tests/README.md",
+        "evidence/held-obedience-items-20261011/README.md"
       ],
       "sourceEvidence": [
         "src/battle_util.c:ItemBattleEffects",
@@ -606,9 +607,7 @@
         "src/pokemon.c:CalculateBaseDamage"
       ],
       "nextAcceptance": [
-        "Implement remaining King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.",
-        "Prove threshold/RNG timing, Choice lock after copied moves, consumed-item history, permanent versus battle-only Knock Off and wild/trainer restoration.",
-        "An item constant, a helper branch or a species held-item slot is not full execution admission."
+        "Preserve Gen III fixed-item semantics and permanent identity during later campaign/mode admission; dynamic Enigma is explicitly separate."
       ],
       "dependsOn": [
         "C04",
@@ -693,9 +692,9 @@
     {
       "id": "C19",
       "title": "Trainer AI and legal actions",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "priority": "P2",
-      "scope": "Source adapter reuses bounded original scoring/switch/item/replacement logic, live overlays, known/unknown abilities and source RNG quirks; not all trainer AI flags or doubles AI.",
+      "scope": "The pinned FireRed flags 1/7 interpreter covers all 121 viability dispatches and 57 reachable commands. Four-position preparation composes switch, item and move choices in source order with shared inventory/current-move state. FireRed AI_DoubleBattle is empty; no invented ally scoring is required. Explicit ordinary OT/name/badge obedience now shares the singles/four-slot action owner; the preset-double campaign entry now supplies real identity and badge facts. Generic future-trainer campaign roster/inventory integration remains content work.",
       "implementationEvidence": [
         "src/Game.Domain/Trainers/SourceTrainerAi.cs",
         "src/Game.Domain/Trainers/CeruleanTrainerAi.cs",
@@ -704,7 +703,8 @@
       ],
       "testEvidence": [
         "tests/Game.SourceTrainerAi.Tests/README.md",
-        "tests/Game.CalledSelection.Tests/README.md"
+        "tests/Game.CalledSelection.Tests/README.md",
+        "evidence/held-obedience-items-20261011/README.md"
       ],
       "sourceEvidence": [
         "data/battle_ai_scripts.s",
@@ -712,10 +712,7 @@
         "src/battle_ai_switch_items.c"
       ],
       "nextAcceptance": [
-        "Inventory used source AI flags and effect dispatch; add missing newly admitted effects/abilities without inventing a stronger strategy.",
-        "Prove PP/Disable/Encore/Imprison/Taunt/Torment/choice locks and forced Struggle; test no illegal action choice or RNG on rejected commands.",
-        "Add doubles target/ally scoring and replacement only over actual four-slot state.",
-        "Inspect ownership/obedience explicitly: the current cancellation path marks Obeys, which is not a disobedience engine."
+        "Use this common controller and real ownership context when future trainer parties, item lists or NPC trade acquisition are imported. Do not invent unused AI flags or partner scoring."
       ],
       "dependsOn": [
         "C02",
@@ -871,9 +868,9 @@
     {
       "id": "C23",
       "title": "Useful refactor: shared rule policy and effect hooks",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "priority": "P0",
-      "scope": "Authenticated 386-species mechanics capabilities and current 107-species campaign admission are separate. New factory/stat/validation paths share existing algorithms and retain old creation/turn hashes. Four-slot identity and common recipe migration remain in progress.",
+      "scope": "The bounded refactor now shares recipe execution, slot/party identity, held phase dispatch, item proof/effects, original AI program and money settlement. Existing historical adapters remain explicit. Obsolete incremental admission assertions were replaced with current rule expectations while business/RNG/identity checks were retained. The latest single menu bridge reuses common effects and extracts presentation responsibilities without migrating historical campaigns or rewriting the engine.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
@@ -885,15 +882,12 @@
       "testEvidence": [
         "tests/Game.SourceMechanicsAdmission.Tests/Program.cs",
         "tests/Game.SourceMechanicsParity.Tests/Program.cs",
-        "tests/Game.SourcePartyRoundTrip.Tests/README.md"
+        "tests/Game.SourcePartyRoundTrip.Tests/README.md",
+        "evidence/held-obedience-items-20261011/README.md"
       ],
       "sourceEvidence": [],
       "nextAcceptance": [
-        "Introduce explicit authenticated capabilities for the new profile instead of spreading further species-count checks; retain historical adapters and unchanged old snapshots.",
-        "Separate battler slot from side through a narrow state/access interface, then port shared effect helpers once instead of cloning a doubles engine.",
-        "Consolidate entry/absorption/contact/immunity/move-end/end-turn/field ability and held-item dispatch by source phase; do not create a monolithic rewritten battle engine.",
-        "Factor shared pause/resume orchestration only where trainer/wild duplication demonstrably causes inconsistent behavior; keep mode-specific AI, capture, EXP and outcomes explicit.",
-        "Keep Godot free of rules; render typed cues. Require output/event/RNG parity for every behavior-preserving refactor."
+        "Continue localized reuse when future content exposes a real duplicate; no large engine rewrite is required before the next story node."
       ],
       "dependsOn": [],
       "workShape": "bounded-enabling-work"
@@ -12501,28 +12495,28 @@
       "dateUtc": "2026-10-11",
       "baseCommit": "d449a1d71e313ab5e6bac2a7ef7f8ae2fc41b3e3",
       "scope": "Shared copied state, OHKO, fire-thaw/TriAttack, sleep attacks and four-slot King/ShellBell",
-      "details": "13 newly admitted move recipes,264\u2192277; four-slot item callbacks reuse canonical formulas. Immutable canonical and historical baselines retained with narrow source corrections documented. Animation coverage remains15.",
+      "details": "13 newly admitted move recipes,264→277; four-slot item callbacks reuse canonical formulas. Immutable canonical and historical baselines retained with narrow source corrections documented. Animation coverage remains15.",
       "evidence": "evidence/shared-copy-ohko-hit-sleep-20261011/README.md"
     },
     {
       "dateUtc": "2026-10-11",
       "baseCommit": "db8579a28734e83ead8c3fa77bd57825a84370d3",
       "scope": "Shared ground spread, selected-move restrictions, dynamic types and fixed-two hits; two explosion animation roots",
-      "details": "277\u2192286 admitted recipes, 15\u219217 dedicated scripts. Core-rule stage exit precedes continued animation completion.",
+      "details": "277→286 admitted recipes, 15→17 dedicated scripts. Core-rule stage exit precedes continued animation completion.",
       "evidence": "evidence/shared-ground-restriction-type-20261011/README.md"
     },
     {
       "dateUtc": "2026-10-11",
       "baseCommit": "b01522c721121548c43c841371be2702b4b86833",
       "scope": "Shared recoil/crash and critical-status recipes",
-      "details": "286\u2192295 admitted recipes; no ability admission change; dedicated scripts remain17. Concrete76-ability static gap map replaces interpretation of old36/40 labels as missing count.",
+      "details": "286→295 admitted recipes; no ability admission change; dedicated scripts remain17. Concrete76-ability static gap map replaces interpretation of old36/40 labels as missing count.",
       "evidence": "evidence/shared-recoil-critical-20261011/README.md"
     },
     {
       "dateUtc": "2026-10-11",
       "baseCommit": "a51e8a633b36739e398e2e3ef95bab32f15d6a72",
       "scope": "Utility HP, weather-hit and common/Serene/Wonder Guard ability command integration",
-      "details": "295\u2192302 shared recipe admission; canonical and kernel ability predicates76/76, bounded ability records43/33 with explicitly scoped evidence. Dedicatedscripts17 unchanged.",
+      "details": "295→302 shared recipe admission; canonical and kernel ability predicates76/76, bounded ability records43/33 with explicitly scoped evidence. Dedicatedscripts17 unchanged.",
       "evidence": "evidence/shared-weather-abilities-20261011/README.md"
     },
     {
@@ -12543,6 +12537,13 @@
       "id": "all-recipe-public-turn-sweep",
       "details": "Existing four-action host now has one controlled public-turn sweep:354moves in all4actor slots,1416turns/31302checks, zero failures. One seed and normal inapplicable outcomes, not full interactions.",
       "evidence": "evidence/shared-recipe-turn-sweep-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "id": "held-obedience-items-core-exit",
+      "baseCommit": "194227ef455811343144eec43c0ee2129da00572",
+      "evidence": "evidence/held-obedience-items-20261011/README.md",
+      "scope": "ordinary shared core story gate; dedicated presentation and independently sourced special modes excluded"
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
@@ -13136,8 +13137,8 @@
   },
   "currentClosureSnapshot": {
     "dateUtc": "2026-10-11",
-    "baseCommit": "948d9810a709c48b46f1950159b4db5afcba27fd",
-    "state": "combined working tree, current focused proof reported separately",
+    "baseCommit": "194227ef455811343144eec43c0ee2129da00572",
+    "state": "bounded ordinary core integration and useful-refactor story gate passed; special modes and dedicated visuals remain explicit",
     "fullTurnInventory": {
       "baseCommit": "f95f06522c2a6320f12ff8032e02b7ef2a1c5fca",
       "moveIdentities": 354,
@@ -13154,17 +13155,19 @@
       "evidence": "docs/source-trace-choreography.md",
       "currentCombinedHostNotInferredFromWorker": true
     },
-    "activeRuleClosure": [
-      "held-item lifecycle and money multiplier settlement",
-      "explicit source obedience facts and action cancellation",
-      "shared Static retained-contact receipt alignment",
-      "migration-only regression gate cleanup"
-    ],
+    "activeRuleClosure": [],
     "notImplied": [
       "all special capture modes",
       "generic campaign trainer inventory/AI owner integration",
       "354 dedicated animations",
       "exhaustive move-by-ability combinations"
+    ],
+    "evidence": "evidence/held-obedience-items-20261011/README.md",
+    "completedScopes": [
+      "fixed held-item phase effects, Smoke Ball and money settlement",
+      "common ordinary bag effects through current single/double Application and menu controls",
+      "explicit canonical obedience and provenance-only fateful metadata",
+      "shared Static contact and bounded owner/test refactor"
     ]
   }
 }

@@ -96,6 +96,8 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? SourceMoneyMultiplier { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceObedienceContext? Obedience { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceHitDamageReceipt? SourcePlayerHitReceipt { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceHitDamageReceipt? SourceOpponentHitReceipt { get; init; }
     // SpecialStatus.focusBanded is owned by numeric battler slots and survives residual callbacks.
@@ -117,6 +119,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 }
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(WildBattleObedienceEvent), "obedience")]
 [JsonDerivedType(typeof(WildBattlePermanentWeatherChangedEvent), "permanent-weather-changed")]
 [JsonDerivedType(typeof(WildBattleAbilityRecoveredEvent), "ability-recovered")]
 [JsonDerivedType(typeof(WildBattleCalledOverlayChangedEvent), "called-party-overlaychanged")]
@@ -250,7 +253,10 @@ public sealed record WildBattleEndedEvent(long Sequence, int Turn, WildBattleOut
 public sealed record WildBattleTurnReadyEvent(long Sequence, int Turn, ushort RandomTurnNumber) : WildBattleEvent(Sequence, Turn);
 /// <summary>Threshold is the source u8 value, null for guaranteed escape. Roll is null if no escape draw occurs.</summary>
 public sealed record WildBattleRunAttemptEvent(long Sequence, int Turn, int AttemptsBefore, int AttemptsAfter,
-    int PlayerSpeed, int OpponentSpeed, int? Threshold, int? Roll, bool Escaped) : WildBattleEvent(Sequence, Turn);
+    int PlayerSpeed, int OpponentSpeed, int? Threshold, int? Roll, bool Escaped) : WildBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? EscapingItem { get; init; }
+}
 public sealed record WildBattleBallThrownEvent(long Sequence, int Turn, WildBattleSide Actor,
     WildBattleSide Target, CaptureBall Ball) : WildBattleEvent(Sequence, Turn);
 /// <summary>AnimationCode 4 means three-shake success, not four visible shakes. The captured instance

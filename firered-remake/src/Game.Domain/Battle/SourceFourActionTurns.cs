@@ -54,6 +54,7 @@ public static partial class SourceFourActionTurns
         if (frame.Sides.Any(s => s.Spikes != 0) && frame.EntryAbilities is null)
             return "source_four_spikes_entry_owner_required";
         if (frame.Field != new SourceFieldRegisters { Terrain = frame.Field.Terrain, PayDayMoney = frame.Field.PayDayMoney,
+                MoneyMultiplier = frame.Field.MoneyMultiplier,
                 RainTurnsRemaining = frame.Field.RainTurnsRemaining, SandstormTurnsRemaining = frame.Field.SandstormTurnsRemaining,
                 SunTurnsRemaining = frame.Field.SunTurnsRemaining, HailTurnsRemaining = frame.Field.HailTurnsRemaining,
                 PermanentWeather = frame.Field.PermanentWeather } ||
@@ -70,7 +71,7 @@ public static partial class SourceFourActionTurns
             if (SourceMoveRestrictionRules.Validate(catalog, body) is { } restrictionError) return restrictionError;
             if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
             if ((body.Rage || body.FuryCutterCounter > 0) && body.Pokemon.CurrentHp == 0 || body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter is < 0 or > 5 ||
-                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || !SourceSubstituteRules.Supported(SourcePreparedMoveRules.WithoutPrepared(body)) ||
+                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem, catalog) || !SourceSubstituteRules.Supported(SourcePreparedMoveRules.WithoutPrepared(body)) ||
                 !SourceFourEntryAbilities.OverlaySupported(catalog, body) ||
                 body.ChargeTurnsRemaining is < 0 or > 2 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
@@ -353,7 +354,7 @@ public static partial class SourceFourActionTurns
                  !next.Slots.Any(c => next.IsDeferredKoVacant(c.Slot) &&
                     !SourceBattleIdentityRules.LegalReserveIndices(next, c.Slot.Side).IsEmpty)))
             {
-                var settled = SourceFourEntryAbilities.Settle(next);
+                var settled = SourceFourEntryAbilities.Settle(next, catalog);
                 next = settled.State; events.AddRange(settled.Events); trace = trace.AddRange(settled.Trace);
             }
             return new(next, events.ToImmutable(), trace, null);
@@ -375,14 +376,14 @@ public static partial class SourceFourActionTurns
         var cursor = frame.FourTurn!.EndTurn;
         if (cursor is null)
         {
-            var preparation = new FrameEndTurnContext(next); preparation.Prepare(); next = preparation.Frame;
+            var preparation = new FrameEndTurnContext(next, catalog); preparation.Prepare(); next = preparation.Frame;
             events.AddRange(preparation.Events); trace.AddRange(preparation.Trace);
             var order = SourceBattleTurnOrder.Resolve(catalog, next, WildBattleOrderPhase.EndTurn);
             if (order.Fault is { } fault) return Fail(frame, fault);
             next = next with { Rng = order.Rng };
             var published = SourceBattleEventHooks.Publish(next, (n, t) => new SourceOrderEvent(n, t, WildBattleOrderPhase.EndTurn, order.Order));
             next = published.State; events.Add(published.Event); trace.AddRange(order.Trace);
-            var normal = new FrameEndTurnContext(next);
+            var normal = new FrameEndTurnContext(next, catalog);
             cursor = normal.Advance(catalog, order.Order);
             next = normal.Frame; events.AddRange(normal.Events); trace.AddRange(normal.Trace);
             // PokemonUseItemEffects can re-enable an absent position while reviving a reserve.
@@ -406,7 +407,7 @@ public static partial class SourceFourActionTurns
                 return Pause(SourceFourActionPhase.ReplacementsPending);
             }
         }
-        var delayed = new FrameEndTurnContext(next);
+        var delayed = new FrameEndTurnContext(next, catalog);
         cursor = delayed.Advance(catalog, cursor.Order, cursor);
         next = delayed.Frame; events.AddRange(delayed.Events); trace.AddRange(delayed.Trace);
         if (HasPendingRewards(next)) return Pause(SourceFourActionPhase.RewardsPending);

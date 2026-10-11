@@ -81,7 +81,7 @@ public static partial class SourceFourActionTurns
             var switched = BindActionSwitch(catalog, frame, slot, incoming, pending.Kind);
             if (!switched.Succeeded) return Fail(frame, switched.Fault!);
             var immunity = SourceFrameImmunityRules.Apply(switched.State);
-            var berries = SourceFrameBerryItems.Apply(immunity.State, SourceBerryPhase.MoveEnd);
+            var berries = SourceFrameBerryItems.ApplyCanonical(immunity.State, SourceBerryPhase.MoveEnd, catalog: catalog);
             var actionEvents = switched.Events.AddRange(immunity.Events).AddRange(berries.Events);
             var next = SourceMoveHistoryReducer.Apply(catalog, berries.State,
                 invocation with { CurrentMove = new("pret:MOVE_NONE") }, actionEvents, false);
@@ -89,7 +89,7 @@ public static partial class SourceFourActionTurns
                 : next.Outcome != WildBattleOutcome.Ongoing ? SourceFourActionPhase.BattleEnded
                 : next.NextAction == next.Queue.Length ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.Actions } };
             var settled = next.Outcome == WildBattleOutcome.Ongoing && !HasPendingRewards(next)
-                ? SourceFourEntryAbilities.Settle(next) : new SourceFourActionResult(next, [], [], null);
+                ? SourceFourEntryAbilities.Settle(next, catalog) : new SourceFourActionResult(next, [], [], null);
             if (ValidateCapability(catalog, settled.State) is { } error) return Fail(frame,error);
             return new(settled.State, [.. actionEvents, .. settled.Events], [.. switched.Trace, .. settled.Trace], null);
         }

@@ -274,6 +274,7 @@ public partial class CampaignView
             _catalog.CaptureEnabled ? CaptureBagStacks.Length : _session.State.Inventory?.BagItems.Length ?? 0,
             scrolls: !_catalog.CaptureEnabled || _captureBagPocket == 0 || _catalog.SsAnneEnabled);
         if (_wildMenu == "bag-actions") return PointerRows(point, direction, ref _wildCursor, 2, 168, 130, 72);
+        if (_wildMenu == "medicine-move") return PointerRows(point,direction,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
         if (_wildMenu == "party" && _catalog.CaptureEnabled && _catalog.PartyTrainingEnabled ||
             _wildMenu == "medicine-target" && _session.BattleMedicineEnabled)
             return PointerRows(point, direction, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
@@ -430,11 +431,12 @@ public partial class CampaignView
         if (battle.Phase != CampaignBattlePhase.ChooseMove) return MouseConfirm(point, MouseMessage);
         if (_wildMenu == "bag")
         {
-            if (_catalog.CaptureEnabled) return MouseBagArrows(point, _captureBagPocket) ||
+            if (_catalog.CaptureEnabled) return !_captureBerries && MouseBagArrows(point, _captureBagPocket) ||
                 MouseList(point, ref _wildCursor, CaptureBagStacks.Length, scrolls: _captureBagPocket == 0 || _catalog.SsAnneEnabled);
             return MouseList(point, ref _wildCursor, _session.State.Inventory?.BagItems.Length ?? 0);
         }
         if (_wildMenu == "bag-actions") return MouseSelect(point, ref _wildCursor, 2, 168, 130, 72);
+        if (_wildMenu == "medicine-move") return MouseSelect(point,ref _wildCursor,_session.State.Party[_singleMedicinePartyIndex].Pokemon.Moves.Length+1,12,10,220);
         if (_wildMenu == "party" && _catalog.CaptureEnabled && _catalog.PartyTrainingEnabled)
             return MouseSelect(point, ref _wildCursor, _session.State.Party.Length + 1, 8, 8, 224, 14);
         if(_wildMenu=="medicine-target"&&_session.BattleMedicineEnabled)

@@ -6,7 +6,7 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-internal sealed class FrameEntryContext(SourceBattleFrame frame) : SourceEntryAbilityContext
+internal sealed class FrameEntryContext(SourceBattleFrame frame, PokemonCatalog? catalog = null) : SourceEntryAbilityContext
 {
     internal SourceBattleFrame Frame { get; private set; } = frame;
     internal readonly ImmutableArray<SourceBattleEvent>.Builder Events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
@@ -57,6 +57,12 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame) : SourceEntryAb
         if (mon.Pokemon.CurrentHp == 0) return;
         if (WildBattleEffective.Ability(mon) == "ABILITY_TRUANT") Set(slot, mon with { TruantLoafing = true });
         SwitchIn(slot);
+        SwitchInItems(slot);
+    }
+    internal void SwitchInItems(BattlerSlot slot)
+    {
+        var items = SourceFrameBerryItems.ApplyCanonical(Frame, SourceBerryPhase.SwitchIn, slot, catalog);
+        Frame = items.State; Events.AddRange(items.Events); Trace.AddRange(items.Trace);
     }
     internal void Settle(bool forecast = true, bool items = true)
     {
@@ -72,8 +78,8 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame) : SourceEntryAb
         // HandleFaintedMonActions case 6 runs normal(moveTurn=TRUE) for battler 0 only.
         if (items)
         {
-            var berries = SourceFrameBerryItems.Apply(Frame, SourceBerryPhase.NormalMoveTurn, new(0));
-            Frame = berries.State; Events.AddRange(berries.Events);
+            var berries = SourceFrameBerryItems.ApplyCanonical(Frame, SourceBerryPhase.NormalMoveTurn, new(0), catalog);
+            Frame = berries.State; Events.AddRange(berries.Events); Trace.AddRange(berries.Trace);
         }
         if (forecast) ForecastAll();
     }

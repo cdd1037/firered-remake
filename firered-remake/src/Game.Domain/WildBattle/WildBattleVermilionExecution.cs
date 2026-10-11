@@ -45,10 +45,11 @@ public static partial class WildBattleRules
         // battle_util.c ITEMEFFECT_MOVE_END scans battler IDs, not speed order. Oran only runs at residuals.
         private void VermilionMoveEndBerries()
         {
-            VermilionHeldBerry(WildBattleSide.Player);VermilionHeldBerry(WildBattleSide.Opponent);
+            VermilionHeldBerry(WildBattleSide.Player, SourceBerryPhase.MoveEnd);VermilionHeldBerry(WildBattleSide.Opponent, SourceBerryPhase.MoveEnd);
         }
-        private void VermilionHeldBerry(WildBattleSide side)
+        private void VermilionHeldBerry(WildBattleSide side, SourceBerryPhase phase = SourceBerryPhase.NormalMoveTurn)
         {
+            if (SourceCanonicalHeldItem(side, phase)) return;
             var mon=Get(side);
             // Preserve historical profile boundaries while sharing the actual berry recipe.
             var effect=SourceHeldBerryRules.Resolve(mon,SourceBerryPhase.NormalMoveTurn,

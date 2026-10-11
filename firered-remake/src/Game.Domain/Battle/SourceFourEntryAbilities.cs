@@ -79,9 +79,10 @@ public static class SourceFourEntryAbilities
             if (order.Fault is { } sortError) return Fail(frame, sortError);
             next = next with { Rng = order.Rng };
             var ordered = SourceBattleEventHooks.Publish(next, (n, t) => new SourceOrderEvent(n, t, WildBattleOrderPhase.Entry, order.Order));
-            var execution = new FrameEntryContext(ordered.State);
+            var execution = new FrameEntryContext(ordered.State, catalog);
             foreach (var slot in order.Order) execution.SwitchIn(slot);
             execution.Settle(forecast: false, items: false); // Initial source pass has no final Forecast query after Trace.
+            foreach (var slot in order.Order) execution.SwitchInItems(slot);
             // Source initial entry finishes with TurnValuesCleanUp(FALSE), before
             // the first selection. Switch-in during a turn remains at 2 until Ready.
             next = execution.Frame with { Revision = checked(frame.Revision + 1),
@@ -103,15 +104,15 @@ public static class SourceFourEntryAbilities
         if (prior.AppliedEntries[slot.Value] == frame.Get(slot).Occupant) return Fail(frame, "source_entry_already_applied");
         var next = frame with { EntryAbilities = prior with { AppliedEntries = prior.AppliedEntries.SetItem(slot.Value, frame.Get(slot).Occupant),
             PendingIntimidateMask = (byte)(prior.PendingIntimidateMask & ~slot.Mask) } };
-        var execution = new FrameEntryContext(next);
+        var execution = new FrameEntryContext(next, catalog);
         execution.Spikes(catalog, slot);
         execution.ReplacementAbilities(slot);
         return new(execution.Frame, execution.Events.ToImmutable(), execution.Trace.ToImmutable(), null);
     }
 
-    internal static SourceFourActionResult Settle(SourceBattleFrame frame)
+    internal static SourceFourActionResult Settle(SourceBattleFrame frame, PokemonCatalog? catalog = null)
     {
-        var execution = new FrameEntryContext(frame); execution.Settle();
+        var execution = new FrameEntryContext(frame, catalog); execution.Settle();
         return new(execution.Frame, execution.Events.ToImmutable(), execution.Trace.ToImmutable(), null);
     }
 

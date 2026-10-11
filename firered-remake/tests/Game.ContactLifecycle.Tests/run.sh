@@ -23,8 +23,8 @@ dotnet tests/Game.SourceContactAbsorb.Tests/bin/Debug/net10.0/Game.SourceContact
 python3 - "$OUTPUT" <<'PY'
 import json, pathlib, sys
 p=pathlib.Path(sys.argv[1]);r=json.loads((p/'report.json').read_text());c=json.loads((p/'source-probe.json').read_text());l=json.loads((p/'legacy-contact/report.json').read_text())
-assert r['failures']==0 and r['vectors']==165 and r['turns']==25 and r['canonicalHashes']==24 and r['sourceOnly']==6
-assert c['vectorCount']==171
+assert r['failures']==0 and r['vectors']==199 and r['turns']==25 and r['canonicalHashes']==24 and r['sourceOnly']==7
+assert c['vectorCount']==206
 assert l['failures']==0 and l['vectors']==156 and l['turns']==19 and l['legacyWholeTurnHashes']==30
 print(json.dumps({'contact':r,'historicalContact':l,'originalCVectorCount':c['vectorCount']}))
 PY

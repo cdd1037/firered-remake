@@ -168,7 +168,7 @@ public sealed partial class PretCampaignCatalog:ICampaignCatalog
         if(includePresetDoubles&&!includeFuchsiaGym)throw new ArgumentException("Preset doubles requires Fuchsia Gym predecessor.");
         var twins=includePresetDoubles?PretRoute8Twins.Load(projectRoot):null;
         var doubleMechanics=includePresetDoubles?SourceMechanicsCatalogLoader.LoadAuthenticated(projectRoot):null;
-        var doubleItems=includePresetDoubles?SourceBattleItemCatalogLoader.LoadAuthenticated(projectRoot):null;
+        var doubleItems=includePresetDoubles?Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics!.Catalog)??throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog."):null;
         if(includeFuchsiaGym&&!includeFuchsiaRoute)throw new ArgumentException("Fuchsia Gym requires the complete Fuchsia route predecessor.");
         if(includeFuchsiaRoute&&!includeRegionalInteriorServices)throw new ArgumentException("Fuchsia route requires the complete regional interiors predecessor.");
         if(includeRegionalInteriorServices&&!includeRegionalServices)throw new ArgumentException("Regional interiors require Tea/Eevee predecessor.");

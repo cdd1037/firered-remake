@@ -30,7 +30,10 @@ public sealed record CampaignDoubleBattle(string Id, TrainerId Trainer, string A
         Frame.PendingSwitches.Where(s => s.Slot.Side == BattleSide.Player).Select(s => (int?)s.Slot.Value).FirstOrDefault();
 }
 public sealed record CampaignDoubleBattleHistory(string Id, string TrainerId, WildBattleOutcome Outcome,
-    int ExperienceGained, int MoneyGained, ImmutableArray<int> OpponentsSeen);
+    int ExperienceGained, int MoneyGained, ImmutableArray<int> OpponentsSeen)
+{
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? MoneyMultiplier { get; init; }
+}
 
 public sealed partial class CampaignSession
 {
@@ -52,7 +55,7 @@ public sealed partial class CampaignSession
         // This successor still accepts only the original local gifts/captures. Its stable
         // schema has no infection or trade route. ValidatePlayerSave enforces that closed
         // provenance; a future Pokerus/trade profile must provide its own authoritative facts.
-        var frame=entry.State! with{Rewards=new(){Context=new(SourceRewardBattleKind.OrdinaryTrainer,state.TrainerId,state.PlayerName,
+        var frame=entry.State! with{Obedience=CampaignObedienceContext(state),Rewards=new(){Context=new(SourceRewardBattleKind.OrdinaryTrainer,state.TrainerId,state.PlayerName,
             _content.MapDefinition(state.World.Player.MapId).RegionMapSection),Metadata=state.Party.Select((p,i)=>new SourceRewardMetadata(
             new(BattleSide.Player,i),p.OriginalTrainerName,p.MetLocation,p.Ball,SourceRewardPokerusHistory.NeverInfected)).ToImmutableArray()}};
         if(SourceFourActionTurns.ValidateCapability(DoubleBattlePokemon,frame) is {} error)throw new InvalidDataException(error);
@@ -338,8 +341,9 @@ public sealed partial class CampaignSession
         var b=state.DoubleBattle!;
         if(b.Frame.Outcome==WildBattleOutcome.Ongoing||b.Frame.Rewards?.Pending is not null||
             (state.DoubleBattleHistory??[]).Any(h=>h.Id==b.Id))throw new InvalidDataException("preset_double_settlement_context");
-        bool won=b.Frame.Outcome==WildBattleOutcome.Won;int award=won?TwinsDefinition.VictoryMoney:0;
-        int money=Math.Min(999999,checked(state.Money+award));
+        bool won=b.Frame.Outcome==WildBattleOutcome.Won;
+        var prize=SourceBattleMoneyRules.SettleTrainerPrize(state.Money,TwinsDefinition.VictoryMoney,b.Frame.Outcome,b.Frame.Field.MoneyMultiplier);
+        int award=prize.DisplayAmount,money=prize.Money;
         var pages=ImmutableArray.CreateBuilder<string>();
         if(won)
         {
@@ -352,11 +356,11 @@ public sealed partial class CampaignSession
             pages.Add($"{state.PlayerName} is out of usable\nPOKéMON!");
             int loss=WhiteOutLoss(state);pages.Add(state.Money==0?$"{state.PlayerName} whited out!":$"{state.PlayerName} panicked and lost\n{loss}...\n{state.PlayerName} whited out!");
         }
-        var history=new CampaignDoubleBattleHistory(b.Id,b.Trainer.Value,b.Frame.Outcome,b.ExperienceGained,money-state.Money,[0,1]);
+        var history=new CampaignDoubleBattleHistory(b.Id,b.Trainer.Value,b.Frame.Outcome,b.ExperienceGained,prize.Awarded,[0,1]){MoneyMultiplier=b.Frame.Field.MoneyMultiplier};
         if(won)
         {
-            var payday=VermilionPayDayRules.Settle(money,b.Frame.Field.PayDayMoney,WildBattleOutcome.Won);money=payday.Money;
-            if(payday.Collected!=0)pages.Add($"{state.PlayerName} picked up\n¥{payday.Collected}!");
+            var payday=SourceBattleMoneyRules.SettlePayDay(money,b.Frame.Field.PayDayMoney,WildBattleOutcome.Won,b.Frame.Field.MoneyMultiplier);money=payday.Money;
+            if(payday.Amount!=0)pages.Add($"{state.PlayerName} picked up\n¥{payday.DisplayAmount}!");
             var pickup=VermilionPickupRules.Apply(BattlePokemon,state.Party,state.World.Rng,WildBattleOutcome.Won,
                 ssAnneRules:true,route11Rules:true,rockTunnelRules:true,celadonApproachRules:true,celadonGymRules:true,rocketHideoutRules:true,pokemonTowerRules:true,snorlaxRules:true,fuchsiaRules:true);
             state=state with{Party=pickup.Party,World=state.World with{Rng=pickup.Rng}};
@@ -400,7 +404,7 @@ public sealed partial class CampaignSession
             var h=history[i];
             if(h is null||winner||h.Id!="double-trainer-battle:"+(i+1)||h.TrainerId!=SourceTwinsTrainerEncounter.TrainerId.Value||
                 h.Outcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw)||h.ExperienceGained<0||h.ExperienceGained>TwinsDefinition.Trainer.Party.Sum(p=>DoubleBattlePokemon.Species[p.Species].ExperienceYield*p.Level/7*150/100)||
-                h.MoneyGained<0||h.MoneyGained>(h.Outcome==WildBattleOutcome.Won?528:0)||h.OpponentsSeen.IsDefault||!h.OpponentsSeen.SequenceEqual(new[]{0,1})||
+                !SourceBattleMoneyRules.ValidMultiplier(h.MoneyMultiplier)||h.MoneyGained<0||h.MoneyGained>(h.Outcome==WildBattleOutcome.Won?TwinsDefinition.VictoryMoney*(h.MoneyMultiplier??1):0)||h.OpponentsSeen.IsDefault||!h.OpponentsSeen.SequenceEqual(new[]{0,1})||
                 !state.SeenSpecies.Contains(35)||!state.SeenSpecies.Contains(39))return "save_preset_double_history_invalid";
             winner=h.Outcome==WildBattleOutcome.Won;
         }

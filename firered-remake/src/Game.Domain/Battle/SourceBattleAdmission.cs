@@ -50,16 +50,19 @@ public static class SourceBattleAdmission
         HasCapability(catalog, SourceBattleCapability.CanonicalSpecies);
 
     internal static string? ValidateRulesProfile(PokemonCatalog? catalog, WildBattleState state) =>
+        (!SourceBattleMoneyRules.ValidMultiplier(state.SourceMoneyMultiplier) ||
+            state.SourceMoneyMultiplier is not null && !IsCanonicalSourceState(catalog, state)) ? "source_money_multiplier" :
         (state.SourcePlayerHitReceipt is not null || state.SourceOpponentHitReceipt is not null) &&
             (!IsCanonicalSourceState(catalog, state) || !SourceHitItemRules.Valid(state.SourcePlayerHitReceipt) || !SourceHitItemRules.Valid(state.SourceOpponentHitReceipt)) ? "source_hit_item_receipt" :
         state.SourceFocusBandedMask != 0 && (state.SourceFocusBandedMask > 3 || !IsCanonicalSourceState(catalog, state)) ? "source_focus_band_state" :
+        SourceObedienceRules.Validate(state) ??
         SourceTraceForecastRules.Validate(state.Player, state.SourceMechanicsRulesVersion) ??
         SourceTraceForecastRules.Validate(state.Opponent, state.SourceMechanicsRulesVersion) ?? SourceWeatherRules.Validate(state) ?? (SourceMechanicsCatalog.For(catalog) is not null || state.SourceMechanicsRulesVersion is not null
             ? IsCanonicalSourceState(catalog, state) ? null : "source_mechanics_rules_profile" : null);
 
     internal static bool SupportsHeldItem(PokemonCatalog? catalog, string item) =>
         FuchsiaBattleScope.SupportsHeldItem(item) ||
-        HasCapability(catalog, SourceBattleCapability.SourceHeldItems) && (SourceBattleHeldItems.OrderEffect(item) is not null || item is "ITEM_CHOICE_BAND" or "ITEM_FOCUS_BAND" or "ITEM_KINGS_ROCK" or "ITEM_SHELL_BELL");
+        HasCapability(catalog, SourceBattleCapability.SourceHeldItems) && (SourceHeldItemCatalog.Supported(catalog, item) || SourceBattleHeldItems.OrderEffect(item) is not null || item is "ITEM_CHOICE_BAND" or "ITEM_FOCUS_BAND" or "ITEM_KINGS_ROCK" or "ITEM_SHELL_BELL");
 
     internal static bool SupportsAbility(PokemonCatalog catalog, string ability) =>
         SourceMechanicsCatalog.For(catalog) is { } proof && proof.Abilities.ContainsKey(ability) &&

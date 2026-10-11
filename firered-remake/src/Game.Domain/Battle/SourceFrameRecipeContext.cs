@@ -69,8 +69,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             FinishAction();
             return;
         }
-        invocation = invocation with { CancellerPhase = WildBattleAttackCancellerPhase.ConditionsPassed,
-            Flags = invocation.Flags | WildBattleInvocationFlags.Obeys };
+        invocation = invocation with { CancellerPhase = WildBattleAttackCancellerPhase.ConditionsPassed };
+        if (ObedienceRedirectsAction(purpose)) { FinishAction(); return; }
         BeginScriptTarget(action.Target);
         ReleaseChargeWithoutTarget(invocation.Actor,move);
         SpendEarlyPartyPp(action.Actor.Slot, action.Target, action.ChosenSlot, move);
@@ -87,6 +87,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     private void RunCurrentMove(bool resumed)
     {
         var scriptMove = move;
+        bool obedienceRedirected = false;
         string purpose = Frame.Layout == SourceBattleLayout.Singles
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
         var firstTarget = invocation.Target;
@@ -103,7 +104,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         }
         // MOVEEND_NEXT_TARGET uses HP only. It does not test source absence or restart action
         // ownership, so PP exhaustion and the attacker's zero HP cannot cancel the second pass.
-        if (!blocked && !ChargeFirstTurn(scriptMove) && Frame.Layout == SourceBattleLayout.PresetDoubles && scriptMove.Target == "MOVE_TARGET_BOTH" &&
+        if (!blocked && !obedienceRedirected && !ChargeFirstTurn(scriptMove) && Frame.Layout == SourceBattleLayout.PresetDoubles && scriptMove.Target == "MOVE_TARGET_BOTH" &&
             Frame.Get(invocation.Target.Partner).Body?.Pokemon.CurrentHp > 0)
         {
             invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.NoAttackString };
@@ -115,7 +116,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             int completed = completedTargetPasses;
             if (WildBattleSourceCommands.IsSoundMove(move.Id) && WildBattleEffective.Ability(Get(target)) == "ABILITY_SOUNDPROOF")
             {
-                if ((invocation.Flags & WildBattleInvocationFlags.NoAttackString) == 0)
+                if ((invocation.Flags & (WildBattleInvocationFlags.NoAttackString | WildBattleInvocationFlags.DisobedientMove)) == 0)
                     invocation = invocation with { Flags = invocation.Flags & ~WildBattleInvocationFlags.Obeys };
                 if (UproarLocked(invocation.Actor)) invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.NoPpDeduct };
                 SpendEarlyPartyPp(invocation.Actor, target, invocation.PpSlot, move);
@@ -130,6 +131,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             }
             else
             {
+                if (ObedienceRedirectsAction(purpose)) { obedienceRedirected = true; return; }
                 invocation = invocation with { Flags = (invocation.Flags | WildBattleInvocationFlags.Obeys) & ~WildBattleInvocationFlags.AllowNoPp };
                 while (TryPreparedInterception(move))
                 {
@@ -289,8 +291,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 var immunity = SourceFrameImmunityRules.Apply(Frame);
                 Frame = immunity.State; Events.AddRange(immunity.Events);
                 FinishChangedItems();
-                var berries = SourceFrameBerryItems.Apply(Frame, SourceBerryPhase.MoveEnd);
-                Frame = berries.State; Events.AddRange(berries.Events);
+                var berries = SourceFrameBerryItems.ApplyCanonical(Frame, SourceBerryPhase.MoveEnd, catalog: catalog);
+                Frame = berries.State; Events.AddRange(berries.Events); Trace.AddRange(berries.Trace);
                 ApplyFrameHitItems();
                 EndSubstitutePass();
             }

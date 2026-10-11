@@ -96,8 +96,8 @@ internal abstract partial class SourceRecipeContext
         CancellerCancelMultiTurn(actorSlot, "confusion");
         var actor = Get(actorSlot);
         int percent = 100 - Draw($"{purpose}.confusion-damage", 16) % 16;
-        int damage = SourceConfusionDamage(actor, percent, ConfusionTowerRules, ConfusionExpandedRules(catalog),
-            catalog.Moves.TryGetValue(move, out var selected) && selected.Effect == "EFFECT_EXPLOSION", ConfusionCanonicalRules(catalog));
+        int damage = SourceConfusionDamageWithItems(actor, percent, ConfusionTowerRules, ConfusionExpandedRules(catalog),
+            catalog.Moves.TryGetValue(move, out var selected) && selected.Effect == "EFFECT_EXPLOSION", ConfusionCanonicalRules(catalog), catalog);
         if (SourceHeldDamageEnabled) damage = AdjustHeldDamage(actorSlot, move, damage, purpose, normal2: true);
         HitItemsConfusionDamage(actorSlot, damage);
         int before = actor.Pokemon.CurrentHp, after = Math.Max(0, before - damage);
@@ -117,11 +117,14 @@ internal abstract partial class SourceRecipeContext
     }
         // CalculateBaseDamage(self,self,MOVE_POUND,0,40,0,self,self), then adjustnormaldamage2.
         // No STAB, type calculation, critical draw, PP consumption or contact effects.
-        internal static int SourceConfusionDamage(WildBattleCombatant actor, int percent, bool tower = false, bool fuchsia = false, bool explosion = false, bool canonicalSource = false)
+        internal static int SourceConfusionDamage(WildBattleCombatant actor, int percent, bool tower = false, bool fuchsia = false, bool explosion = false, bool canonicalSource = false) =>
+            SourceConfusionDamageWithItems(actor, percent, tower, fuchsia, explosion, canonicalSource);
+        internal static int SourceConfusionDamageWithItems(WildBattleCombatant actor, int percent, bool tower = false, bool fuchsia = false, bool explosion = false, bool canonicalSource = false, PokemonCatalog? catalog = null)
         {
             int attack = actor.Pokemon.Stats.Attack;
             if (canonicalSource && WildBattleEffective.Ability(actor) is "ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER") attack *= 2;
             if (actor.AttackBadgeBoost) attack = attack * 110 / 100;
+            if (canonicalSource) attack = SourceHeldItemModifiers.TypeAttack(catalog, actor, Game.Domain.Rules.ElementType.Normal, attack);
             if (canonicalSource) attack = SourceBattleHeldItems.PhysicalAttack(attack, actor.HeldItem);
             if (tower && actor.HeldItem == "ITEM_THICK_CLUB" && actor.Pokemon.SourceSpeciesId is 104 or 105) attack *= 2;
             if (canonicalSource && WildBattleEffective.Ability(actor) == "ABILITY_HUSTLE") attack = attack * 150 / 100;
@@ -130,6 +133,7 @@ internal abstract partial class SourceRecipeContext
             int defense = actor.Pokemon.Stats.Defense;
             if (fuchsia && actor.DefenseBadgeBoost) defense = defense * 110 / 100;
             if (fuchsia && actor.HeldItem == "ITEM_METAL_POWDER" && actor.Pokemon.SourceSpeciesId == 132) defense *= 2;
+            if (canonicalSource && WildBattleEffective.Ability(actor) == "ABILITY_MARVEL_SCALE" && actor.Status != 0) defense = defense * 150 / 100;
             // CalculateBaseDamage still reads gCurrentMove's effect during a Pound self-hit.
             if (fuchsia && explosion) defense = Math.Max(1, defense / 2);
             defense = Math.Max(1, WildBattleDamage.Stat(defense, actor.DefenseStage));

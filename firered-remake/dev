@@ -292,6 +292,16 @@ def main():
  if len(args)==2 and args[0]=='test-trainer-preparation':
   run(['bash',ROOT/'tests/Game.SourceTrainerPreparation.Tests/run.sh',ROOT,ENV.get('FIRERED_ORIGINAL_REFERENCE',''),pathlib.Path(args[1]).resolve()])
   return 0
+ if len(args)==2 and args[0] in ('test-held-items','test-money-items'):
+  suite={'test-held-items':'Game.HeldItemCompletion.Tests','test-money-items':'Game.SourceMoneyItems.Tests'}[args[0]]
+  run(['bash',ROOT/'tests'/suite/'run.sh',ENV.get('FIRERED_ORIGINAL_REFERENCE',''),ROOT,ROOT,pathlib.Path(args[1]).resolve()])
+  return 0
+ if len(args)==2 and args[0]=='test-obedience':
+  run(['bash',ROOT/'tests/Game.SourceObedience.Tests/run.sh',ROOT,ENV.get('FIRERED_ORIGINAL_REFERENCE',''),pathlib.Path(args[1]).resolve()])
+  return 0
+ if len(args)==2 and args[0]=='test-static-contact':
+  run(['bash',ROOT/'tests/Game.ContactLifecycle.Tests/run-static.sh',ROOT,ENV.get('FIRERED_ORIGINAL_REFERENCE',''),pathlib.Path(args[1]).resolve()])
+  return 0
  if len(args)==2 and args[0]=='test-utility-hp':
   run(['bash',ROOT/'tests/Game.SharedRecoil.Tests/run.sh',ROOT,ENV.get('FIRERED_ORIGINAL_REFERENCE',''),pathlib.Path(args[1]).resolve(),'utility'])
   return 0
