@@ -14,6 +14,7 @@ public sealed record WildBattleCalledOverlay
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Type1 { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Type2 { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Ability { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceCastformForm? CastformForm { get; init; }
 }
 public enum WildBattleCalledBattleKind { Wild, Trainer }
 public enum WildBattleCalledSwitchKind { Voluntary, BatonPass, FaintedReplacement, Forced }
@@ -174,8 +175,8 @@ public static partial class WildBattleRules
                 {
                     if (mon?.Pokemon is null || SourcePokemonValidator.ValidateForBattle(catalog, mon.Pokemon) is not null) return "called_party_member";
                     if (SourceBattleAdmission.ValidatePokemonCapabilities(catalog, mon.Pokemon) is { } capabilityError) return capabilityError;
-                    if (!FuchsiaBattleScope.SupportsHeldItem(mon.HeldItem) || !FuchsiaBattleScope.SupportsHeldItem(WildBattleSourcePartyEffects.PersistentHeldItem(mon))) return "called_party_item";
-                    if (mon.KnockedOffItem is { } knocked && (knocked == "ITEM_NONE" || !FuchsiaBattleScope.SupportsHeldItem(knocked))) return "called_party_knocked_off";
+                    if (!SourceBattleAdmission.SupportsHeldItem(catalog, mon.HeldItem) || !SourceBattleAdmission.SupportsHeldItem(catalog, WildBattleSourcePartyEffects.PersistentHeldItem(mon))) return "called_party_item";
+                    if (mon.KnockedOffItem is { } knocked && (knocked == "ITEM_NONE" || !SourceBattleAdmission.SupportsHeldItem(catalog, knocked))) return "called_party_knocked_off";
                     if (mon.Status != 0 && mon.Status is not (WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
                         !WildBattleStatus.IsSleeping(mon.Status) && mon.Status != SourcePartyStatusRules.Toxic) return "called_party_status";
                 }
@@ -483,6 +484,7 @@ public static partial class WildBattleRules
                 int lost = SourceGenericApplyDamage(side, target, move, damage, critical, percent);
                 if (lost > 0 && SourceCalledHitReachedPokemon(target)) MtMoonRageOnDamage(side, target, move.Id);
                 if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
+                SourceColorChange(catalog, side, target, move);
                 VermilionImmunityAbilities(); SourceCalledApplyChangedItems(); VermilionMoveEndBerries();
                 SourceCalledMoveEndSubstitute();
             }
@@ -660,6 +662,7 @@ public static partial class WildBattleRules
                 FinishCalledMoveHistory(catalog, 0);
             }
             SourceCalledSynchronizeParties(); ForestOutcome(true);
+            SourceTraceForecastFaintedActions();
         }
 
         private void SourceCalledStealItem(WildBattleSide side, WildBattleSide target, PokemonMoveDefinition move)

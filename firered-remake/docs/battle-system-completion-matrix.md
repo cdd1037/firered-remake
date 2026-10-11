@@ -119,13 +119,13 @@ Pinned source: `src/battle_main.c:GetWhoStrikesFirst`, `src/battle_main.c:SetAct
 Next acceptance:
 
 - Retain the slot-three Baton Pass/Transform regression: absent compact-array slot means source MOVE_NONE, not the old chosen move ID.
-- Add Macho Brace and Quick Claw at source integer/order boundaries; Quick Claw uses retained randomTurnNumber, not an invented per-comparison roll.
+- Quick Claw/Macho Brace now share canonical singles entry/action/end-turn speed calculation; four-slot held-item execution and Macho Brace EV rewards remain separate. See `docs/source-order-held-items.md`.
 - For four battlers, preserve source comparator invocation order and every tie draw; do not substitute a generic stable-sort policy.
 
 <a id="c05"></a>
 ### C05 — Residual and delayed callback scheduling
 
-Shared phase cursor preserves normal field/battler residuals, EXP/replacement suspension, Future Sight/Doom Desire, Perish Song and final damage-register cleanup for two active battlers.
+Shared phase cursor preserves normal field/battler residuals, EXP/replacement suspension, Future Sight/Doom Desire, Perish Song and final damage-register cleanup for two active battlers. One shared scheduler now serves singles and a four-slot temporary-weather/status/end-turn-ability subset; genuine reward/replacement pauses remain, with unported residuals gated.
 
 Dependencies: C04.
 
@@ -158,7 +158,7 @@ Next acceptance:
 <a id="c07"></a>
 ### C07 — Ability entry, weather and forms
 
-Authenticated permanent Drizzle/Drought/Sand Stream, Rain Dish and distinct source weather suppression queries now have bounded canonical singles coverage. Trace, Forecast and Color Change remain separate unfinished blocks; four-slot entry/form phases are not enabled. See `docs/source-weather-abilities.md`.
+Authenticated permanent weather, Rain Dish, Trace and Forecast have bounded canonical singles coverage. Color Change now has actual HP-receipt and source move-end canonical singles coverage. Four-slot entry/form phases remain unfinished.
 
 Dependencies: C01, C05, C18.
 
@@ -169,13 +169,13 @@ Pinned source: `src/battle_util.c:AbilityBattleEffects`, `src/battle_util.c:Cast
 Next acceptance:
 
 - Carry the tested weather register and shared queries into full four-slot entry and residual ownership without duplicating recipes.
-- Implement Trace/Color Change/Forecast with actual battle identity and source immunity/cleanup hooks; prove role-play/skill-swap/Transform interactions.
+- Carry tested Color Change and Trace/Forecast into the four-slot owner with preserved actual identity and source immunity/cleanup hooks.
 - Admit authentic ability fixtures without fabricating ability provenance or silently unlocking unrelated campaign species.
 
 <a id="c08"></a>
 ### C08 — Ability damage, absorption, contact and residual gaps
 
-Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Truant and Speed Boost now have authentic-donor complete-turn and lifecycle tests; Rain Dish remains open; full-field and remaining interaction coverage is separate. Real damage donors use independent source-C comparisons. See `docs/source-mechanics-admission.md` and `docs/source-contact-absorb-abilities.md`.
+Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Truant and Speed Boost now have authentic-donor complete-turn and lifecycle tests; Rain Dish and Color Change now have bounded canonical singles coverage; full-field and remaining interaction coverage is separate.
 
 Dependencies: C04, C05, C07.
 
@@ -192,7 +192,7 @@ Next acceptance:
 <a id="c09"></a>
 ### C09 — Ability blocking and topology gaps
 
-Shadow Tag and Suction Cups now have authenticated canonical singles execution and source-order tests. Lightning Rod has no four-slot redirect executor; Plus/Minus and full-field trapping/presence interactions remain open.
+Shadow Tag and Suction Cups have authenticated canonical singles execution. M04 now provides learned/called target selection, Gen III Lightning Rod redirection and Plus/Minus shared generic damage on actual four slots. Full trapping/presence and unported recipe interactions remain open.
 
 Dependencies: C10, C11.
 
@@ -209,7 +209,7 @@ Next acceptance:
 <a id="c10"></a>
 ### C10 — Genuine four-slot doubles owner
 
-M01 bounded evidence: `tests/Game.SourceBattleIdentity.Tests/README.md` and `evidence/battle-four-slot-identity/result.json`. This does not complete the owner.
+M01 identities, M02 shared actions, M03 four-action turns, M04 targeting/spread and M05 shared residual subsets are integrated. Actual KO records pause for EXP/replacement; settlement, entry continuation, full cancellers/recipes/residuals, AI and campaign admission remain unfinished.
 
 M01 provides four fixed battler slots, party/occupant identities, reservations and distinct absence/KO masks. M02 executes shared slot-typed hit/stat/status/recovery actions; the same recipes serve existing singles. M03 executes real four-action clean turns and pauses at explicit KO EXP/replacement boundaries. Full residuals, entry/rewards, target redirection/spread, AI and campaign admission remain unfinished. See `docs/source-shared-battle-kernel.md` and `tests/Game.FourActionTurns.Tests/README.md`.
 
@@ -319,7 +319,7 @@ Pinned source: `src/battle_util.c:ItemBattleEffects`, `src/battle_main.c:GetWhoS
 
 Next acceptance:
 
-- Enumerate authenticated hold effects, then implement missing Quick Claw/Macho Brace, Choice Band, Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.
+- Enumerate authenticated hold effects, then implement missing Choice Band, Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.
 - Prove threshold/RNG timing, Choice lock after copied moves, consumed-item history, permanent versus battle-only Knock Off and wild/trainer restoration.
 - An item constant, a helper branch or a species held-item slot is not full execution admission.
 
@@ -546,3 +546,7 @@ The remaining work should close these named gaps and interaction classes. Furthe
 Truant/Speed Boost bounded integration: `docs/source-turn-cycle-abilities.md` and `evidence/battle-turn-cycle-integration/result.json`. Existing source singles and all old golden outputs remain covered; this does not enable canonical species in player saves or four-action turns.
 
 Shared kernel/weather integration: `evidence/battle-kernel-weather-integration/result.json`. Permanent weather uses the same recipe queries across the singles bridge and canonical action context. The four-action owner currently rejects weather and other nonempty end-turn phases; no general doubles battle is claimed.
+
+Recovery integration (2026-10-11): Quick Claw/Macho Brace and Trace/Forecast were reconstructed after the workspace reset and freshly tested. See `evidence/recovery-20261011/held-trace/result.json`; old unuploaded candidate hashes are not recovered Git identities.
+
+M04/M05 combined recovery increment: actual four-slot learned/called targeting, Lightning Rod, Plus/Minus, generic spread/Explosion and a shared temporary-weather/status/end-turn-ability scheduler now pass together with canonical singles Color Change, Trace/Forecast and held-item order. See `tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md`, `docs/source-four-slot-end-turn.md`, `docs/source-color-change-ability.md` and `evidence/recovery-20261011/combined-four/result.json`. EXP/entry continuation, no-target costs, the remaining recipes/residuals/cancellers, AI and campaign doubles remain distinct open work.

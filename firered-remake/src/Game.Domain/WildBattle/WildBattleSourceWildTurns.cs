@@ -101,6 +101,7 @@ public static partial class WildBattleRules
             context.SourceWeatherInitialEntry(first);
             context.ApplyRoute3EntryAbility(WildBattleSide.Player, weather: false);
             context.ApplyRoute3EntryAbility(WildBattleSide.Opponent, weather: false);
+            context.SourceTraceResolvePending();
             context.Ready(false);
         });
     }

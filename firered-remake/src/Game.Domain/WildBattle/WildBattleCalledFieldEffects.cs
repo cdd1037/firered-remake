@@ -151,14 +151,12 @@ public static partial class WildBattleRules
                 SourcePermanentWeatherKind.Rain => "rain", SourcePermanentWeatherKind.Sun => "sun", _ => "sandstorm" })) before = 1;
             if (before == 0)
             {
-                // Forecast must gain an authenticated form/ability overlay before it is representable.
-                if (new[] { State.Player, State.Opponent }.Any(m => WildBattleEffective.Ability(m) == "ABILITY_FORECAST"))
-                    throw new UnsupportedAction("called_field_forecast_overlay_required");
                 State = State with { PermanentWeather = null, RainTurnsRemaining = weather == "rain" ? 5 : 0,
                     SandstormTurnsRemaining = weather == "sandstorm" ? 5 : 0,
                     CalledField = field with { SunTurnsRemaining = weather == "sun" ? 5 : 0, HailTurnsRemaining = weather == "hail" ? 5 : 0 } };
             }
             SourceCalledFieldSetEvent(side, target, move, weather, before);
+            if (before == 0) SourceForecastApplyAll();
         }
 
         private void SourceCalledFieldSetEvent(WildBattleSide side, WildBattleSide target, PokemonMoveDefinition move, string field, int before)
@@ -301,27 +299,9 @@ public static partial class WildBattleRules
                 HailTurnsRemaining = Tick(WildBattleSide.Player, "hail", field.HailTurnsRemaining) };
             State = State with { CalledField = next };
         }
-        internal void CalledFieldHailDamage(PokemonCatalog catalog, WildBattleSide side)
-        {
-            if ((State.CalledField?.HailTurnsRemaining ?? 0) == 0 || SourceCalledWeatherSuppressed ||
-                State.Outcome != WildBattleOutcome.Ongoing || TowerDisguised && side == WildBattleSide.Opponent) return;
-            var mon = Get(side); var species = WildBattleEffective.Types(catalog, mon);
-            if (mon.Pokemon.CurrentHp == 0 || CalledSemiInvulnerable(mon) is WildBattleSemiInvulnerable.Underground or WildBattleSemiInvulnerable.Underwater || species.Type1 == "TYPE_ICE" || species.Type2 == "TYPE_ICE") return;
-            int before = mon.Pokemon.CurrentHp, damage = Math.Max(1, mon.Pokemon.Stats.MaxHp / 16), after = Math.Max(0, before - damage);
-            Set(side, mon with { Pokemon = mon.Pokemon with { CurrentHp = after } });
-            Add(n => new WildBattleWeatherDamageEvent(n, State.Turn, side, "hail", before, after, damage));
-            if (after == 0) ForestFaint(side);
-            ForestOutcome(false);
-        }
-        internal void CalledFieldToxicResidual(WildBattleSide side)
-        {
-            var mon = Get(side);
-            if (State.CalledField is null || mon.Pokemon.CurrentHp == 0 || !WildBattleSourceFieldEffects.IsValidToxic(mon.Status)) return;
-            var tick = WildBattleSourceFieldEffects.ToxicTick(mon.Status, mon.Pokemon.Stats.MaxHp);
-            int before = mon.Pokemon.CurrentHp, after = Math.Max(0, before - tick.Damage);
-            Set(side, mon with { Status = tick.Status, Pokemon = mon.Pokemon with { CurrentHp = after } });
-            Add(n => new WildBattleStatusDamageEvent(n, State.Turn, side, tick.Status, before, after, tick.Damage));
-            if (after == 0) { ForestFaint(side); ForestOutcome(false); }
-        }
+        internal void CalledFieldHailDamage(PokemonCatalog catalog, WildBattleSide side) =>
+            new SinglesEndTurnBridge(this).WeatherDamage(catalog, new((int)side), "hail");
+        internal void CalledFieldToxicResidual(WildBattleSide side) =>
+            new SinglesEndTurnBridge(this).ToxicDamage(new((int)side));
     }
 }

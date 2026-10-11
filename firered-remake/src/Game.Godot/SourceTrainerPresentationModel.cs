@@ -60,6 +60,16 @@ internal static class SourceTrainerPresentationModel
         SourceTrainerEventDisplay Atk(string symbol, WildBattleSide side) => Text(symbol, ("B_ATK_NAME_WITH_PREFIX", name(side)));
         switch (events[index])
         {
+            case WildBattleAbilityActivatedEvent { Ability: "ABILITY_COLOR_CHANGE" } color:
+                return index + 1 < events.Count && events[index + 1] is WildBattleCalledOverlayChangedEvent nextColorOverlay &&
+                    nextColorOverlay.Side == color.Side && nextColorOverlay.After?.Type1 is { } nextColorType && nextColorType == nextColorOverlay.After.Type2 &&
+                    nextColorType.StartsWith("TYPE_", StringComparison.Ordinal)
+                    ? Text("sText_PkmnChangedTypeWith", ("B_DEF_NAME_WITH_PREFIX", name(color.Side)),
+                        ("B_DEF_ABILITY", "COLOR CHANGE"), ("B_BUFF1", nextColorType[5..])) : Unsupported;
+            case WildBattleCalledOverlayChangedEvent changed when index > 0 &&
+                events[index - 1] is WildBattleAbilityActivatedEvent { Ability: "ABILITY_COLOR_CHANGE" } color && color.Side == changed.Side:
+                return changed.After?.Type1 is { } colorType && colorType == changed.After.Type2 &&
+                    colorType.StartsWith("TYPE_", StringComparison.Ordinal) ? Silent : Unsupported;
             case WildBattleAbilityActivatedEvent { Ability: "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_VOLT_ABSORB" }:
                 return Silent;
             case WildBattleAbilityDamageEvent ability:

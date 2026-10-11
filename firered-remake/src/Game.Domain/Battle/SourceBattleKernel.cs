@@ -9,7 +9,10 @@ namespace Game.Domain.Battle;
 /// <summary>An action after target resolution. Target selection/redirection and the four-action owner
 /// are separate contracts; callers must not infer a unique opposing battler.</summary>
 public sealed record SourceResolvedMoveAction(OccupantToken Actor, long Revision, int ChosenSlot,
-    BattlerSlot Target, int ActionOrderIndex = 0);
+    BattlerSlot Target, int ActionOrderIndex = 0)
+{
+    public bool LightningRodRedirected { get; init; }
+}
 public sealed record SourceKernelResult(SourceBattleFrame State, ImmutableArray<SourceBattleEvent> Events,
     ImmutableArray<RandomTrace> Trace, SourceMoveInvocation? Invocation, string? Fault)
 {
@@ -54,6 +57,16 @@ public static class SourceBattleKernel
         if (move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" && action.Target != action.Actor.Slot ||
             move.Target == "MOVE_TARGET_SELECTED" && action.Target == action.Actor.Slot)
             return "source_kernel_target_mode";
+        if (action.LightningRodRedirected && WildBattleEffective.Ability(frame.Get(action.Target).Body!) != "ABILITY_LIGHTNING_ROD")
+            return "source_kernel_redirection_metadata";
+        if (frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_BOTH" && action.Target.Side == action.Actor.Slot.Side)
+            return "source_kernel_target_mode";
+        if (frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_FOES_AND_ALLY")
+        {
+            if (frame.DeferredKoVacancyMask != 0) return "source_kernel_spread_deferred_target_not_migrated";
+            if (SourceMoveTargeting.NumericScriptTargets(frame, action.Actor.Slot).Any(s => frame.Get(s).Body?.Pokemon.CurrentHp is not > 0))
+                return "source_kernel_spread_zero_hp_target_not_migrated";
+        }
         if (new[] { frame.Field.RainTurnsRemaining, frame.Field.SunTurnsRemaining, frame.Field.SandstormTurnsRemaining, frame.Field.HailTurnsRemaining }.Count(t => t > 0) > 1)
             return "source_kernel_weather_conflict";
         // These source branches still belong to the compatibility executor. Reject the whole
@@ -76,29 +89,25 @@ public static class SourceBattleKernel
                 cell.Registers.InfatuationSource is not null || cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null || cell.Registers.WrappedBy is not null || body.HeldItem != "ITEM_NONE" || body.WaterSport || body.MudSport)
                 return "source_kernel_volatile_not_migrated";
             string ability = WildBattleEffective.Ability(body);
-            if (!FuchsiaBattleScope.SupportsAbility(ability) && ability is not ("ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or "ABILITY_VOLT_ABSORB" or "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK"))
+            if (!FuchsiaBattleScope.SupportsAbility(ability) && ability is not ("ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or "ABILITY_VOLT_ABSORB" or "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK" or "ABILITY_LIGHTNING_ROD" or "ABILITY_PLUS" or "ABILITY_MINUS" or "ABILITY_SPEED_BOOST" or "ABILITY_RAIN_DISH"))
                 return "source_kernel_ability_not_migrated";
             if (body.Status == WildBattleStatus.Burn && ability == "ABILITY_WATER_VEIL" ||
                 body.Status == WildBattleStatus.Paralysis && ability == "ABILITY_LIMBER" ||
                 (body.Status == WildBattleStatus.Poison || WildBattleSourceFieldEffects.IsToxic(body.Status)) && ability == "ABILITY_IMMUNITY")
                 return "source_kernel_move_end_immunity_not_migrated";
-            if (ability is "ABILITY_LIGHTNING_ROD" or "ABILITY_TRUANT" or "ABILITY_COLOR_CHANGE" or
+            if (ability is "ABILITY_TRUANT" or "ABILITY_COLOR_CHANGE" or
                 "ABILITY_HUSTLE" or "ABILITY_POISON_POINT" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_EFFECT_SPORE" or "ABILITY_CUTE_CHARM")
                 return "source_kernel_ability_not_migrated";
         }
         if (WildBattleStatus.IsSleeping(actor.Status) || actor.Status is WildBattleStatus.Freeze or WildBattleStatus.Paralysis)
             return "source_kernel_canceller_not_migrated";
-        if (frame.Sides.Any(s => s.FollowMeTimer != 0)) return "source_kernel_redirection_not_migrated";
-        if (frame.Layout == SourceBattleLayout.PresetDoubles && move.Power > 0 &&
-            frame.Sides.Any(s => s.ReflectTurnsRemaining != 0 || s.LightScreenTurnsRemaining != 0))
-            return "source_kernel_screen_topology_not_migrated";
         return null;
     }
 
     public static bool SupportsRecipe(PokemonMoveDefinition move) => MetronomeSourceMoveDefinition.Matches(move) &&
-        move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" &&
+        move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" &&
         (SourceRecipeContext.HasGenericRecipe(move.Effect) && move.Effect is not
-            ("EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT" or "EFFECT_CONFUSE" or "EFFECT_MEAN_LOOK" or "EFFECT_TRAP" or "EFFECT_MULTI_HIT" or "EFFECT_EXPLOSION") ||
+            ("EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT" or "EFFECT_CONFUSE" or "EFFECT_MEAN_LOOK" or "EFFECT_TRAP" or "EFFECT_MULTI_HIT") ||
          SourceRecipeContext.HasStatRecoveryRecipe(move.Effect));
 
     public static SourceKernelResult ResolveAction(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action)

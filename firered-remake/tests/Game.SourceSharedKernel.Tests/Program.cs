@@ -74,7 +74,7 @@ Test("Haze scans all four slots through same stat recipe", () => {
     Check(result.Events.OfType<SourceStatChangedEvent>().Select(e => e.Target.Value).Distinct().Count() == 4, "all four events");
 });
 Test("unmigrated paths and stale occupants fail atomically", () => {
-    foreach (string move in new[] { "METRONOME", "EARTHQUAKE", "SNATCH", "FOCUS_PUNCH", "SURF", "DOUBLE_SLAP" }) {
+    foreach (string move in new[] { "METRONOME", "EARTHQUAKE", "SNATCH", "FOCUS_PUNCH", "DOUBLE_SLAP" }) {
         var f = Four(move); var r = Act(f, 0, 1); Check(!r.Succeeded && ReferenceEquals(f, r.State) && r.Events.IsEmpty && r.Trace.IsEmpty, move + " atomic rejection");
     }
     var state = Four(); var stale = new SourceResolvedMoveAction(state.Slots[0].Occupant!.Value with { EntrySerial = 99 }, state.Revision, 0, new(1));

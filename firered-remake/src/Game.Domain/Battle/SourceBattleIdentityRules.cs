@@ -74,6 +74,7 @@ public static class SourceBattleIdentityRules
                 if (cell.Body.Pokemon is null || cell.Body.Pokemon.Moves.IsDefault ||
                     cell.Body.Transform is { } transform && (transform.OriginalPokemon is null || transform.OriginalPokemon.Moves.IsDefault))
                     return "source_frame_pokemon_shape";
+                if (SourceTraceForecastRules.Validate(cell.Body, frame.SourceMechanicsRulesVersion) is { } formError) return formError;
                 var key = cell.Member!.Value;
                 if (key.Side != cell.Slot.Side || key.Index >= frame.Party(key.Side).Members.Length || cell.EntrySerial == 0)
                     return "source_frame_party_binding";
@@ -155,6 +156,16 @@ public static class SourceBattleIdentityRules
                 d.RequiresExperience != (d.Occupant.Member.Side == BattleSide.Opponent)) ||
             four.Defeats.Select(d => d.Occupant).Distinct().Count() != four.Defeats.Length ||
             four.EndTurnOrder.IsDefault || four.EndTurnOrder.Length != 0 && !ValidOrder(four.EndTurnOrder, 4) ||
+            (four.EndTurn is null) != four.EndTurnOrder.IsEmpty ||
+            four.Phase == SourceFourActionPhase.ReplacementsPending && four.EndTurn is null ||
+            four.EndTurn is { } residual && (!ValidOrder(residual.Order, 4) || !residual.Order.SequenceEqual(four.EndTurnOrder) ||
+                residual.Turn != frame.Turn || residual.NextBattler is < 0 or > 4 || !Enum.IsDefined(residual.Stage) ||
+                residual.RulesVersion != WildBattleRules.SourceEndTurnRulesVersion || residual.MinimumRevision < 0 ||
+                residual.MinimumRevision > frame.Revision || residual.MinimumEventSequence < 0 || residual.MinimumEventSequence > frame.EventSequence ||
+                frame.NextAction != 4 || four.Phase is not (SourceFourActionPhase.RewardsPending or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.BattleEnded) ||
+                (four.Phase == SourceFourActionPhase.BattleEnded
+                    ? residual.Stage != WildBattleSourceEndTurnStage.Complete || residual.NextBattler != 4 || frame.Outcome == WildBattleOutcome.Ongoing
+                    : residual.Stage != WildBattleSourceEndTurnStage.FutureAttacks || residual.NextBattler != 0)) ||
             four.OutcomeAfterRewards is { } pendingOutcome && (pendingOutcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) ||
                 !four.Defeats.Any(d => d.RequiresExperience)) ||
             four.Phase == SourceFourActionPhase.Actions && frame.NextAction >= 4 ||

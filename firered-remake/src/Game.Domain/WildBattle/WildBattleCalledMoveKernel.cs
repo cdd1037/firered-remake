@@ -362,6 +362,7 @@ public static partial class WildBattleRules
                 },
                 (slot, cell) => Set(SinglesBattleAdapter.Side(slot), SinglesBattleAdapter.ExportBody(cell.Body!, cell.Registers)),
                 invocationEffectiveType, recordDamage: false);
+            SourceTraceForecastFaintedActions();
 
         }
     }

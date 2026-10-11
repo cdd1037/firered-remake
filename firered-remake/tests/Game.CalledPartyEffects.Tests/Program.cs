@@ -354,10 +354,15 @@ Test("Baton passes sure-hit source state, resets other-side duration, cures inco
     Check(result.Player.ConfusionTurnsRemaining == 0, "source move-end Own Tempo cures passed confusion");
 });
 Test("true toxic reserve entry resets counter while preserving side weather and delayed slots", () => {
-    var state = Party(Pair(), [Member("SQUIRTLE", status: WildBattleSourceFieldEffects.ToxicPoison | 0xA00)]);
+    // Stored party status has no active Toxic counter. Reject an impossible boxed counter first.
+    var invalid = Party(Pair(), [Member("SQUIRTLE", status: WildBattleSourceFieldEffects.ToxicPoison | 0xA00)]);
+    Atomic(invalid, WildBattleRules.ResolveCalledPartySwitch(catalog, invalid, new(WildBattleSide.Player, 1)), "invalid reserve toxic counter");
+    var state = Party(Pair(), [Member("SQUIRTLE", status: WildBattleSourceFieldEffects.ToxicPoison)]);
     state = state with { RainTurnsRemaining = 3, CalledField = new() { OpponentLightScreenTurnsRemaining = 4 } };
-    var result = Switch(state, WildBattleSide.Player, 1);
-    Check(result.Player.Status == WildBattleSourceFieldEffects.ToxicPoison && result.CalledParty!.Player[1].Status == WildBattleSourceFieldEffects.ToxicPoison, "source toxic counter reset and genuine party sync");
+    var entered = Switch(state, WildBattleSide.Player, 1);
+    entered = entered with { Player = entered.Player with { Status = WildBattleSourceFieldEffects.ToxicPoison | 0xA00 } };
+    var result = Switch(Switch(entered, WildBattleSide.Player, 0), WildBattleSide.Player, 1);
+    Check(result.Player.Status == WildBattleSourceFieldEffects.ToxicPoison && result.CalledParty!.Player[1].Status == WildBattleSourceFieldEffects.ToxicPoison, "source active toxic counter resets across actual switch and genuine party sync");
     Check(result.RainTurnsRemaining == 3 && result.CalledField!.OpponentLightScreenTurnsRemaining == 4, "side weather preserved");
 });
 

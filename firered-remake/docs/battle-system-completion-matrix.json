@@ -133,7 +133,7 @@
       "title": "Singles order, priority, speed and ties",
       "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "Shared action/end-turn comparator covers selected priority, current chosen slot, weather speed, stages, badges, paralysis and tie RNG in the admitted singles profile.",
+      "scope": "Shared action/end-turn comparator covers selected priority, current chosen slot, weather speed, stages, badges, paralysis and tie RNG in the admitted singles profile. Canonical singles now shares authenticated Quick Claw/Macho Brace ordering at entry, actions and residual ordering.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
         "src/Game.Domain/Trainers/SourceTrainerExecution.cs",
@@ -142,7 +142,8 @@
       "testEvidence": [
         "tests/Game.SourceEndTurn.Tests/README.md",
         "tests/Game.SourceTrainerTurns.Tests/README.md",
-        "tests/Game.SourceWildTurns.Tests/README.md"
+        "tests/Game.SourceWildTurns.Tests/README.md",
+        "tests/Game.SourceOrderHeldItems.Tests/README.md"
       ],
       "sourceEvidence": [
         "src/battle_main.c:GetWhoStrikesFirst",
@@ -150,7 +151,6 @@
       ],
       "nextAcceptance": [
         "Retain the slot-three Baton Pass/Transform regression: absent compact-array slot means source MOVE_NONE, not the old chosen move ID.",
-        "Add Macho Brace and Quick Claw at source integer/order boundaries; Quick Claw uses retained randomTurnNumber, not an invented per-comparison roll.",
         "For four battlers, preserve source comparator invocation order and every tie draw; do not substitute a generic stable-sort policy."
       ],
       "dependsOn": [
@@ -163,7 +163,7 @@
       "title": "Residual and delayed callback scheduling",
       "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "Shared phase cursor preserves normal field/battler residuals, EXP/replacement suspension, Future Sight/Doom Desire, Perish Song and final damage-register cleanup for two active battlers.",
+      "scope": "Shared phase cursor preserves normal field/battler residuals, EXP/replacement suspension, Future Sight/Doom Desire, Perish Song and final damage-register cleanup for two active battlers. One shared scheduler now serves singles and a four-slot temporary-weather/status/end-turn-ability subset; genuine reward/replacement pauses remain, with unported residuals gated.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledVolatileEffects.cs",
@@ -173,7 +173,9 @@
       "testEvidence": [
         "tests/Game.SourceEndTurn.Tests/evidence/result.json",
         "tests/Game.SourceTrainerTurns.Tests/evidence/run2.log",
-        "tests/Game.SourceWildTurns.Tests/evidence/run-3.log"
+        "tests/Game.SourceWildTurns.Tests/evidence/run-3.log",
+        "tests/Game.FourEndTurn.Tests/README.md",
+        "tests/Game.FourEndTurnParity.Tests/baseline-3a0344d.json"
       ],
       "sourceEvidence": [
         "src/battle_main.c:HandleEndTurn_ContinueBattle",
@@ -232,20 +234,24 @@
     {
       "id": "C07",
       "title": "Ability entry, weather and forms",
-      "status": "missing",
+      "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "Authenticated permanent Drizzle/Drought/Sand Stream, Rain Dish and distinct source weather suppression queries have bounded canonical singles coverage. Trace, Forecast and Color Change remain separate unfinished blocks; four-slot entry/form phases are not enabled.",
+      "scope": "Authenticated permanent weather, Rain Dish, Trace and Forecast have bounded canonical singles coverage. Color Change now has actual HP-receipt and source move-end canonical singles coverage. Four-slot entry/form phases remain unfinished.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledFieldEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleTransformationRules.cs",
-        "src/Game.Domain/Battle/SourceWeatherRules.cs"
+        "src/Game.Domain/Battle/SourceWeatherRules.cs",
+        "src/Game.Domain/Battle/SourceTraceForecastRules.cs",
+        "src/Game.Domain/WildBattle/WildBattleSourceTraceForecast.cs"
       ],
       "testEvidence": [
         "tests/Game.CalledFieldEffects.Tests/README.md",
         "tests/Game.CalledPartyEffects.Tests/README.md",
-        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs",
+        "docs/source-trace-forecast.md",
+        "tests/Game.SourceTraceForecast.Tests/Program.cs"
       ],
       "sourceEvidence": [
         "src/battle_util.c:AbilityBattleEffects",
@@ -254,7 +260,7 @@
       ],
       "nextAcceptance": [
         "Carry the tested weather register and shared queries into full four-slot entry and residual ownership without duplicating recipes.",
-        "Implement Trace/Color Change/Forecast with actual battle identity and source immunity/cleanup hooks; prove role-play/skill-swap/Transform interactions.",
+        "Migrate the tested entry/form and Color Change lifecycle into the four-slot owner without changing source ability provenance.",
         "Admit authentic ability fixtures without fabricating ability provenance or silently unlocking unrelated campaign species."
       ],
       "dependsOn": [
@@ -269,7 +275,7 @@
       "title": "Ability damage, absorption, contact and residual gaps",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Truant and Speed Boost now have authentic-donor complete-turn and lifecycle tests; Rain Dish remains open; full-field and remaining interaction coverage is separate.",
+      "scope": "Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Truant and Speed Boost now have authentic-donor complete-turn and lifecycle tests; Rain Dish and Color Change now have bounded canonical singles coverage; full-field and remaining interaction coverage is separate.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
         "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
@@ -304,9 +310,9 @@
     {
       "id": "C09",
       "title": "Ability blocking and topology gaps",
-      "status": "missing",
+      "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "Shadow Tag and Suction Cups have authenticated canonical singles execution and source-order tests. Lightning Rod has no four-slot redirect executor; Plus/Minus and full-field trapping/presence interactions remain open.",
+      "scope": "Shadow Tag and Suction Cups have authenticated canonical singles execution. M04 now provides learned/called target selection, Gen III Lightning Rod redirection and Plus/Minus shared generic damage on actual four slots. Full trapping/presence and unported recipe interactions remain open.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleEarlyPartyExecution.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceWildSwitches.cs",
@@ -315,7 +321,9 @@
         "src/Game.Domain/Trainers/CeruleanTrainerActionAi.cs"
       ],
       "testEvidence": [
-        "docs/source-trapping-abilities.md"
+        "docs/source-trapping-abilities.md",
+        "tests/Game.SourceTargeting.Tests/README.md",
+        "tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md"
       ],
       "sourceEvidence": [
         "data/battle_scripts_1.s:BattleScript_EffectRoar",
@@ -339,7 +347,7 @@
       "title": "Genuine four-slot doubles owner",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "M01 identities, M02 shared slot-typed hit/stat/status/recovery actions and M03 clean four-action turns are integrated. KO actions expose exact EXP and end-turn replacement boundaries; unported phases, targeting/spread, AI and campaign admission remain explicit gaps.",
+      "scope": "M01 identities, M02 shared actions, M03 four-action turns, M04 targeting/spread and M05 shared residual subsets are integrated. Actual KO records pause for EXP/replacement; settlement, entry continuation, full cancellers/recipes/residuals, AI and campaign admission remain unfinished.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleContracts.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
@@ -356,7 +364,9 @@
         "tests/Game.SourceBattleIdentity.Tests/README.md",
         "evidence/battle-four-slot-identity/result.json",
         "tests/Game.SourceSharedKernel.Tests/README.md",
-        "tests/Game.FourActionTurns.Tests/README.md"
+        "tests/Game.FourActionTurns.Tests/README.md",
+        "tests/Game.SourceTargeting.Tests/README.md",
+        "tests/Game.FourEndTurn.Tests/README.md"
       ],
       "sourceEvidence": [
         "include/constants/battle.h",
@@ -535,7 +545,7 @@
       "title": "Held-item effects and ownership",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "Oran/status berries, selected type/species modifiers, Leftovers and Knock Off/Trick/Thief/Recycle ownership have implementations. Focus Band appears in narrow damage helpers but remains unadmitted; full held-item dispatch is absent.",
+      "scope": "Oran/status berries, selected type/species modifiers, Leftovers and Knock Off/Trick/Thief/Recycle ownership have implementations. Focus Band appears in narrow damage helpers but remains unadmitted; full held-item dispatch is absent. Quick Claw/Macho Brace ordering now executes in canonical singles; Macho Brace EV rewards and general four-slot held items remain separate.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
@@ -547,7 +557,8 @@
         "tests/Game.SourceTrainerItems.Tests/README.md",
         "tests/Game.CalledPartyEffects.Tests/README.md",
         "tests/Game.RockTunnelHeldItemRecovery.Tests/README.md",
-        "tests/Game.CalledTurnLocks.Tests/README.md"
+        "tests/Game.CalledTurnLocks.Tests/README.md",
+        "tests/Game.SourceOrderHeldItems.Tests/README.md"
       ],
       "sourceEvidence": [
         "src/battle_util.c:ItemBattleEffects",
@@ -555,7 +566,7 @@
         "src/pokemon.c:CalculateBaseDamage"
       ],
       "nextAcceptance": [
-        "Enumerate authenticated hold effects, then implement missing Quick Claw/Macho Brace, Choice Band, Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.",
+        "Enumerate authenticated hold effects, then implement missing Choice Band, Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.",
         "Prove threshold/RNG timing, Choice lock after copied moves, consumed-item history, permanent versus battle-only Knock Off and wild/trainer restoration.",
         "An item constant, a helper branch or a species held-item slot is not full execution admission."
       ],
@@ -1425,9 +1436,9 @@
     {
       "id": 16,
       "symbol": "ABILITY_COLOR_CHANGE",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "Authenticated canonical singles exact HP-loss receipt, dynamic type, Explosion/recoil/BeatUp/Pursuit, copied abilities and presentation pairing verified. Full four-slot move-end remains gated.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -1436,7 +1447,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "testEvidence": [
+        "docs/source-color-change-ability.md",
+        "tests/Game.SourceColorChange.Tests/Program.cs"
+      ]
     },
     {
       "id": 17,
@@ -2177,9 +2192,9 @@
     {
       "id": 31,
       "symbol": "ABILITY_LIGHTNING_ROD",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C09",
-      "assessment": "Present in authenticated species/scope data; no four-slot redirect executor. Preserve Gen III behavior, without Electric immunity/stat gain.",
+      "assessment": "M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -2204,7 +2219,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "testEvidence": [
+        "tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md"
+      ]
     },
     {
       "id": 32,
@@ -2333,9 +2351,9 @@
     {
       "id": 36,
       "symbol": "ABILITY_TRACE",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "Authenticated canonical singles entry, full turns, copied abilities/forms, source position queries, identity and failure atomicity verified after recovery. Full four-slot execution and native form graphics remain unimplemented.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -2352,7 +2370,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "testEvidence": [
+        "docs/source-trace-forecast.md",
+        "tests/Game.SourceTraceForecast.Tests/Program.cs"
+      ]
     },
     {
       "id": 37,
@@ -3123,9 +3145,9 @@
     {
       "id": 57,
       "symbol": "ABILITY_PLUS",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C09",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -3138,14 +3160,17 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "testEvidence": [
+        "tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md"
+      ]
     },
     {
       "id": 58,
       "symbol": "ABILITY_MINUS",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C09",
-      "assessment": "No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission.",
+      "assessment": "M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -3158,14 +3183,17 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "testEvidence": [
+        "tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md"
+      ]
     },
     {
       "id": 59,
       "symbol": "ABILITY_FORECAST",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Weather recipe explicitly throws called_field_forecast_overlay_required; a token match is a rejection boundary.",
+      "assessment": "Authenticated canonical singles entry, full turns, copied abilities/forms, source position queries, identity and failure atomicity verified after recovery. Full four-slot execution and native form graphics remain unimplemented.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleCalledFieldEffects.cs",
@@ -3187,7 +3215,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "testEvidence": [
+        "docs/source-trace-forecast.md",
+        "tests/Game.SourceTraceForecast.Tests/Program.cs"
+      ]
     },
     {
       "id": 60,
@@ -11308,6 +11340,20 @@
       "scope": "M02 shared recipe kernel, bounded M03 four-action owner and canonical permanent weather abilities",
       "evidence": "evidence/battle-kernel-weather-integration/result.json",
       "acceptanceLimits": "No general preset-doubles, EXP/entry continuation, AI or campaign admission. Genuine four-action clean turns and source ordering are bounded foundations. Dedicated weather ability presentation remains pending."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "3a0344d0231cf270801c34d5458944103c39f6cd",
+      "scope": "Reconstructed Quick Claw/Macho Brace ordering and Trace/Forecast canonical singles",
+      "evidence": "evidence/recovery-20261011/held-trace/result.json",
+      "acceptanceLimits": "Fresh focused tests plus historical single-battle golden, identity and weather regression; no four-slot held-item/entry/form admission, canonical campaign saves or native graphics claim."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "eae4df332469f1df0cec8d5406f72e298b733a10",
+      "scope": "M04 targeting/spread, shared M05 residual subset and canonical singles Color Change integrated after recovery",
+      "evidence": "evidence/recovery-20261011/combined-four/result.json",
+      "acceptanceLimits": "Genuine four-slot actions/residuals with explicit reward/entry and unsupported effect boundaries. No full doubles/campaign/AI or native presentation claim."
     }
   ]
 }

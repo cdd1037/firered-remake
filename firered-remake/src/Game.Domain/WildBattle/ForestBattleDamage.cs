@@ -11,7 +11,7 @@ internal static class ForestBattleDamage
     // pokemon.c:2385-2652; battle_script_commands.c:1210-1550. Historical options retain
     // their original defaults; new Sun/LightScreen/suppression require an authenticated called definition.
     internal static DamageResult Calculate(PokemonCatalog catalog, WildBattleCombatant user,
-        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false, bool sourceSolarBeamWeakWeather = false)
+        WildBattleCombatant target, MoveId moveId, bool critical, int randomPercent, bool pewterRules = false, bool earlyStarterRules = false, bool earlyPartyRules = false, bool route22Rules = false, bool pursuitSwitch = false, bool route3Rules = false, int? dynamicPower = null, bool mtMoonRules = false, bool ceruleanRules = false, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, PokemonMoveDefinition? sourceDefinition = null, ElementType? sourceEffectiveType = null, int sourceDamageMultiplier = 1, bool sun = false, bool lightScreen = false, bool weatherSuppressed = false, bool sourceSolarBeamWeakWeather = false, bool sourceDoubleBattle = false, int sourceDefenderCount = 1, bool sourcePlusMinusBoost = false)
     {
         route11Rules |= rockTunnelRules;
         bool canonicalSource = SourceBattleAdmission.HasCapability(catalog, SourceBattleCapability.SourceMoveRecipes);
@@ -25,6 +25,8 @@ internal static class ForestBattleDamage
             throw new NotSupportedException("wild_battle_damage_move");
         if (sourceSolarBeamWeakWeather && (!sourceMove || move!.Effect != "EFFECT_SOLAR_BEAM")) throw new NotSupportedException("called_solar_weather_context");
         if ((sun || lightScreen || weatherSuppressed) && !sourceMove) throw new NotSupportedException("called_damage_field_context");
+        if ((sourceDoubleBattle || sourcePlusMinusBoost) && !sourceMove || sourceDefenderCount is < 0 or > 2)
+            throw new NotSupportedException("called_damage_topology_context");
         bool validEffectiveType = sourceEffectiveType is { } effective && Enum.IsDefined(effective) && move!.Effect switch {
             "EFFECT_HIDDEN_POWER" => effective is not (ElementType.Normal or ElementType.Mystery),
             "EFFECT_WEATHER_BALL" => effective is ElementType.Normal or ElementType.Water or ElementType.Rock or ElementType.Fire or ElementType.Ice,
@@ -128,6 +130,8 @@ internal static class ForestBattleDamage
         { defense *= 2; steps.Add(new("metal-powder", defense)); }
         if (sourceMove && physical && WildBattleEffective.Ability(user) == "ABILITY_HUSTLE")
         { attack = attack * 150 / 100; steps.Add(new("hustle", attack)); }
+        if (sourceMove && sourcePlusMinusBoost && !physical)
+        { attack = attack * 150 / 100; steps.Add(new("plus-minus", attack)); }
         if (physical && WildBattleEffective.Ability(user) == "ABILITY_GUTS" && user.Status != 0)
             attack = attack * 150 / 100;
         if (sourceMove && physical && WildBattleEffective.Ability(target) == "ABILITY_MARVEL_SCALE" && target.Status != 0)
@@ -152,10 +156,16 @@ internal static class ForestBattleDamage
         value /= 50; steps.Add(new("divide-50", value));
         if (physical && user.Status == WildBattleStatus.Burn && WildBattleEffective.Ability(user) != "ABILITY_GUTS") value /= 2;
         steps.Add(new("burn", value));
-        if (rockTunnelRules && reflect && physical && !critical) { value /= 2; steps.Add(new("reflect", value)); }
+        bool twoDefenders = sourceDoubleBattle && sourceDefenderCount == 2;
+        bool spread = twoDefenders && move!.Target == "MOVE_TARGET_BOTH";
+        if (rockTunnelRules && reflect && physical && !critical)
+        { value = twoDefenders ? 2 * (value / 3) : value / 2; steps.Add(new("reflect", value)); }
+        if (physical && spread) { value /= 2; steps.Add(new("source-both-targets", value)); }
         if (physical) value = Math.Max(1, value);
         steps.Add(new("physical-minimum-before-plus-two", value));
-        if (sourceMove && lightScreen && !physical && !critical) { value /= 2; steps.Add(new("light-screen", value)); }
+        if (sourceMove && lightScreen && !physical && !critical)
+        { value = twoDefenders ? 2 * (value / 3) : value / 2; steps.Add(new("light-screen", value)); }
+        if (!physical && spread) { value /= 2; steps.Add(new("source-both-targets", value)); }
         if (route11Rules && rain && !physical && !weatherSuppressed)
         {
             if (type == ElementType.Fire) value /= 2;

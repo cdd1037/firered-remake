@@ -12,6 +12,22 @@ public sealed record SourceTurnOrderResult(ImmutableArray<BattlerSlot> Order, Rn
 /// ordering only: item/switch execution, entry effects and recipe admission belong to the owner.</summary>
 public static class SourceBattleTurnOrder
 {
+    // GetWhoStrikesFirst's one shared integer recipe. The caller owns weather suppression,
+    // turn-number lifetime, item admission and random low-bit tie draws.
+    internal static uint EffectiveSpeed(WildBattleCombatant mon, bool weatherBoosted, bool playerSide, ushort randomTurnNumber)
+    {
+        if (mon.SpeedStage is < 0 or > 12 || mon.Pokemon.Stats.Speed is < 1 or > 65535)
+            throw new ArgumentOutOfRangeException(nameof(mon));
+        uint basis = (uint)mon.Pokemon.Stats.Speed * (weatherBoosted ? 2u : 1u);
+        uint speed = mon.SpeedStage < 6 ? basis * 2 / (uint)(8 - mon.SpeedStage) : basis * (uint)(mon.SpeedStage - 4) / 2;
+        if (mon.SpeedBadgeBoost && playerSide) speed = speed * 110 / 100;
+        var item = SourceBattleHeldItems.OrderEffect(mon.HeldItem);
+        if (item?.HoldEffect == "HOLD_EFFECT_MACHO_BRACE") speed /= 2;
+        if (mon.Status == WildBattleStatus.Paralysis) speed /= 4;
+        if (item?.HoldEffect == "HOLD_EFFECT_QUICK_CLAW" && randomTurnNumber < 65535 * item.Parameter / 100) speed = uint.MaxValue;
+        return speed;
+    }
+
     public static SourceTurnOrderResult Resolve(PokemonCatalog catalog, SourceBattleFrame frame,
         WildBattleOrderPhase phase)
     {
@@ -30,16 +46,7 @@ public static class SourceBattleTurnOrder
             var mon = frame.Get(slot).Body!;
             bool boosted = !suppressWeather && (WildBattleEffective.Ability(mon) == "ABILITY_SWIFT_SWIM" && frame.Field.RainTurnsRemaining > 0 ||
                 WildBattleEffective.Ability(mon) == "ABILITY_CHLOROPHYLL" && frame.Field.SunTurnsRemaining > 0);
-            if (mon.SpeedStage is < 0 or > 12 || mon.Pokemon.Stats.Speed is < 1 or > 65535)
-                throw new ArgumentOutOfRangeException(nameof(frame));
-            uint basis = (uint)mon.Pokemon.Stats.Speed * (boosted ? 2u : 1u);
-            uint speed = mon.SpeedStage < 6 ? basis * 2 / (uint)(8 - mon.SpeedStage) : basis * (uint)(mon.SpeedStage - 4) / 2;
-            if (mon.SpeedBadgeBoost && slot.Side == BattleSide.Player) speed = speed * 110 / 100;
-            if (mon.HeldItem == "ITEM_MACHO_BRACE") speed /= 2;
-            if (mon.Status == WildBattleStatus.Paralysis) speed /= 4;
-            // The source item table specifies Quick Claw's hold-effect parameter as 20.
-            if (mon.HeldItem == "ITEM_QUICK_CLAW" && frame.RandomTurnNumber < 65535 * 20 / 100) speed = uint.MaxValue;
-            return speed;
+            return EffectiveSpeed(mon, boosted, slot.Side == BattleSide.Player, frame.RandomTurnNumber);
         }
         int Priority(SourceQueuedAction action) => (action.Kind != SourceActionKind.Move && !(phase == WildBattleOrderPhase.EndTurn && action.Kind == SourceActionKind.Cancelled && action.Token is not null)) || action.MoveSlot is null
             ? 0 : action.MoveSlot == -1 ? catalog.Moves[new("pret:MOVE_STRUGGLE")].Priority

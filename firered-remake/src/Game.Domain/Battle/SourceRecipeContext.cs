@@ -8,6 +8,18 @@ namespace Game.Domain.Battle;
 /// canonical kernel or the explicitly singles-only historical boundary bridge.</summary>
 internal abstract partial class SourceRecipeContext
 {
+    internal virtual bool SourceDoubleBattle => false;
+    internal virtual int SourceDefenderCount(BattlerSlot target) => 1;
+    internal virtual bool SourcePlusMinusBoost(WildBattleCombatant actor)
+    {
+        string partnerAbility = WildBattleEffective.Ability(actor) switch {
+            "ABILITY_PLUS" => "ABILITY_MINUS", "ABILITY_MINUS" => "ABILITY_PLUS", _ => "" };
+        // ABILITY_ON_FIELD2 uses FIELD_SPORT's default all-body scan: no side/HP/absence test.
+        return partnerAbility.Length != 0 && ActiveSlots.Any(s => WildBattleEffective.Ability(Get(s)) == partnerAbility);
+    }
+    internal virtual IEnumerable<BattlerSlot> SourceNumericTargets(BattlerSlot actor, BattlerSlot initialTarget) => [initialTarget];
+    internal virtual void BeginScriptTarget(BattlerSlot target) { }
+    internal virtual void CompleteScriptTarget() { }
     internal abstract int Turn { get; }
     internal abstract SourceMoveInvocation? Invocation { get; }
     internal abstract IEnumerable<BattlerSlot> ActiveSlots { get; }
@@ -39,6 +51,12 @@ internal abstract partial class SourceRecipeContext
     internal abstract bool SsAnneFlashFire(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move);
     internal abstract bool Route11Damp(BattlerSlot actor, PokemonMoveDefinition move);
     internal abstract void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int damage);
+    // Color Change remains explicitly closed in the slot kernel until its complete move-end phase is migrated.
+    internal virtual void SourceColorChange(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    {
+        if (WildBattleEffective.Ability(Get(target)) == "ABILITY_COLOR_CHANGE")
+            throw new SourceRecipeUnsupported("source_kernel_color_change_not_migrated");
+    }
     internal abstract void ApplyConfusion(BattlerSlot target, string purpose, bool secondary);
     internal abstract void ApplyFlinch(BattlerSlot target);
     internal abstract void ApplyBinding(BattlerSlot target, string purpose, MoveId move);

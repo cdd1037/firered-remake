@@ -16,6 +16,8 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
     private SourceMoveInvocation invocation;
     private bool commandNoEffect;
     private bool skipsMoveEnd;
+    private int targetEventStart;
+    private int completedTargetPasses;
     internal SourceBattleFrame Frame { get; private set; }
     internal readonly ImmutableArray<SourceBattleEvent>.Builder Events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
     internal readonly ImmutableArray<RandomTrace>.Builder Trace = ImmutableArray.CreateBuilder<RandomTrace>();
@@ -30,27 +32,46 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
     {
         string purpose = Frame.Layout == SourceBattleLayout.Singles
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
-        if (WildBattleSourceCommands.IsSoundMove(move.Id) && WildBattleEffective.Ability(Get(invocation.Target)) == "ABILITY_SOUNDPROOF")
+        var firstTarget = invocation.Target;
+        ExecutePass(firstTarget);
+        // MOVEEND_NEXT_TARGET uses HP only. It does not test source absence or restart action
+        // ownership, so PP exhaustion and the attacker's zero HP cannot cancel the second pass.
+        if (Frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_BOTH" &&
+            Frame.Get(firstTarget.Partner).Body?.Pokemon.CurrentHp > 0)
         {
-            invocation = invocation with { Flags = WildBattleInvocationFlags.None };
-            SpendEarlyPartyPp(invocation.Actor, invocation.Target, invocation.PpSlot, move);
-            Add(n => new SourceAbilityPreventedEvent(n, Turn, invocation.Actor, invocation.Target, move.Id, "ABILITY_SOUNDPROOF"));
+            invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.NoAttackString };
+            ExecutePass(firstTarget.Partner);
         }
-        else if (Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0)
+        void ExecutePass(BattlerSlot target)
         {
-            invocation = invocation with { Flags = WildBattleInvocationFlags.AttackStringPrinted };
-            Add(n => new SourceAttackStringEvent(n, Turn, invocation.Actor, move.Id, move.Id));
-            Add(n => new SourceMoveFailedEvent(n, Turn, invocation.Actor, invocation.Target, move.Id, "no-pp"));
+            BeginScriptTarget(target);
+            int completed = completedTargetPasses;
+            if (WildBattleSourceCommands.IsSoundMove(move.Id) && WildBattleEffective.Ability(Get(target)) == "ABILITY_SOUNDPROOF")
+            {
+                if ((invocation.Flags & WildBattleInvocationFlags.NoAttackString) == 0)
+                    invocation = invocation with { Flags = invocation.Flags & ~WildBattleInvocationFlags.Obeys };
+                SpendEarlyPartyPp(invocation.Actor, target, invocation.PpSlot, move);
+                Add(n => new SourceAbilityPreventedEvent(n, Turn, invocation.Actor, target, move.Id, "ABILITY_SOUNDPROOF"));
+            }
+            else if (Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0 &&
+                (invocation.Flags & WildBattleInvocationFlags.NoAttackString) == 0)
+            {
+                invocation = invocation with { Flags = WildBattleInvocationFlags.AttackStringPrinted };
+                Add(n => new SourceAttackStringEvent(n, Turn, invocation.Actor, move.Id, move.Id));
+                Add(n => new SourceMoveFailedEvent(n, Turn, invocation.Actor, target, move.Id, "no-pp"));
+            }
+            else
+            {
+                invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.Obeys };
+                if (action.LightningRodRedirected)
+                    Add(n => new SourceAbilityActivatedEvent(n, Turn, target, "ABILITY_LIGHTNING_ROD"));
+                bool handled = false;
+                ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled) throw new SourceRecipeUnsupported("source_kernel_recipe_not_migrated");
+            }
+            if (completed == completedTargetPasses) CompleteScriptTarget();
         }
-        else
-        {
-            bool handled = false;
-            ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
-            if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
-            if (!handled) throw new SourceRecipeUnsupported("source_kernel_recipe_not_migrated");
-        }
-        if (skipsMoveEnd) Set(action.Actor.Slot, Get(action.Actor.Slot) with { LastUsedMove = initial.Get(action.Actor.Slot).Body!.LastUsedMove });
-        else Frame = SourceMoveHistoryReducer.Apply(catalog, Frame, invocation, Events.ToImmutable(), commandNoEffect);
         // Party storage stayed synchronized during each mutation; report the same action-end delta
         // once per actual member. Equal species never serve as the identity key.
         if (Frame.Layout == SourceBattleLayout.PresetDoubles || Frame.SinglesEncoding?.HasPartyExtension == true)
@@ -63,7 +84,24 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
             }
         Frame = Frame with { Revision = checked(Frame.Revision + 1) };
     }
-    internal override bool UproarPreventsSleep(BattlerSlot slot) => false; // Uproar locks are gated across the whole frame.
+    internal override bool SourceDoubleBattle => Frame.Layout == SourceBattleLayout.PresetDoubles;
+    internal override int SourceDefenderCount(BattlerSlot target) => SourceMoveTargeting.CountSourcePresentDefenders(Frame, target);
+    internal override IEnumerable<BattlerSlot> SourceNumericTargets(BattlerSlot actor, BattlerSlot initialTarget) =>
+        SourceDoubleBattle ? SourceMoveTargeting.NumericScriptTargets(Frame, actor) : [initialTarget];
+    internal override void BeginScriptTarget(BattlerSlot target)
+    {
+        invocation = invocation with { Target = target };
+        commandNoEffect = false; skipsMoveEnd = false;
+        targetEventStart = Events.Count;
+    }
+    internal override void CompleteScriptTarget()
+    {
+        if (skipsMoveEnd) Set(action.Actor.Slot, Get(action.Actor.Slot) with { LastUsedMove = initial.Get(action.Actor.Slot).Body!.LastUsedMove });
+        else Frame = SourceMoveHistoryReducer.Apply(catalog, Frame, invocation,
+            Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect);
+        completedTargetPasses++;
+    }
+    internal override bool UproarPreventsSleep(BattlerSlot slot) => false;
     internal override void SynchronizeStatus(PokemonCatalog catalog, BattlerSlot target, uint status)
     {
         if (WildBattleEffective.Ability(Get(target)) != "ABILITY_SYNCHRONIZE") return;
@@ -195,19 +233,25 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
         // source FaintClearSetData here; only replacement scheduling is deferred by M03.
         if (Frame.Layout == SourceBattleLayout.Singles) throw new SourceRecipeUnsupported("source_kernel_singles_faint_compatibility");
         if (Get(slot).Pokemon.CurrentHp != 0) throw new SourceRecipeUnsupported("source_kernel_faint_requires_zero_hp");
+        if (Frame.IsSourceAbsent(slot)) return; // Cmd_tryfaintmon tests absence, independently of HP.
         Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         Frame = SourceBattleIdentityRules.ClearDepartureReferences(Frame, slot, SourceDepartureKind.Faint);
         ChangeStatus(slot, WildBattleStatus.None, "faint");
         Add(n => new SourceFaintedEvent(n, Turn, slot));
-        // Actual party HP/status is already synchronized by Set. M03 owns the vacancy mask,
-        // cancelled retained action, reward ledger, pending replacement and final outcome.
     }
-    internal override void ForestOutcome(bool allowReplacement) { } // The turn owner owns all outcomes and replacement boundaries.
-    internal override void MtMoonRageOnDamage(BattlerSlot actor, BattlerSlot target, MoveId move) { } // Rage is gated.
-    internal override void SourceCalledMoveEndSubstitute() { } // Substitute is gated.
+    internal override void ForestOutcome(bool allowReplacement) { }
+    internal override void MtMoonRageOnDamage(BattlerSlot actor, BattlerSlot target, MoveId move) { }
+    internal override void SourceCalledMoveEndSubstitute() { }
     internal override bool Endured(BattlerSlot slot) => false;
-    internal override void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int damage) { } // Non-Static contact abilities gated.
-    internal override bool Route11Damp(BattlerSlot actor, PokemonMoveDefinition move) => throw new SourceRecipeUnsupported("source_kernel_spread_not_migrated");
+    internal override void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int damage) { }
+    internal override bool Route11Damp(BattlerSlot actor, PokemonMoveDefinition move)
+    {
+        // Cmd_tryexplosion scans stored abilities before selecting the numeric first target.
+        var damp = ActiveSlots.Where(s => WildBattleEffective.Ability(Get(s)) == "ABILITY_DAMP").Cast<BattlerSlot?>().FirstOrDefault();
+        if (damp is not { } holder) return false;
+        Add(n => new SourceAbilityPreventedEvent(n, Turn, actor, holder, move.Id, "ABILITY_DAMP"));
+        return true;
+    }
     internal override void ApplyFlinch(BattlerSlot target) => throw new SourceRecipeUnsupported("source_kernel_flinch_order_not_migrated");
     internal override void ApplyBinding(BattlerSlot target, string purpose, MoveId move) => throw new SourceRecipeUnsupported("source_kernel_binding_not_migrated");
     internal override bool EarlyStarterPrimaryMove(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_primary_status_not_migrated");

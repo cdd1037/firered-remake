@@ -91,7 +91,8 @@ internal abstract partial class SourceRecipeContext
                 vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
                 rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(targetSide),
                 sourceDefinition: move, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
-                weatherSuppressed: SourceDamageWeatherSuppressed).Damage;
+                weatherSuppressed: SourceDamageWeatherSuppressed, sourceDoubleBattle: SourceDoubleBattle,
+                sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor)).Damage;
 
         internal void SourceGenericEffectiveness(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide,
             PokemonMoveDefinition move)
@@ -236,19 +237,25 @@ internal abstract partial class SourceRecipeContext
             int hp = Get(side).Pokemon.CurrentHp;
             Set(side, Get(side) with { Pokemon = Get(side).Pokemon with { CurrentHp = 0 } });
             Add(n => new SourceSelfDestructEvent(n, Turn, side, move.Id, hp));
-            var actor = Get(side); var target = Get(targetSide);
-            bool critical = SourceGenericCritical(actor, target, move, purpose);
-            int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
-            int damage = SourceGenericDamage(catalog, actor, target, targetSide, move, critical, percent);
-            // Explosion's accuracy command follows damage calculation and its random multiplier.
-            if (SourceGenericAccuracy(side, targetSide, move, purpose))
+            foreach (var target in SourceNumericTargets(side, targetSide))
             {
-                SourceGenericApplyDamage(side, targetSide, move, damage, critical, percent);
-                SourceGenericEffectiveness(catalog, side, targetSide, move);
-                if (Get(targetSide).Pokemon.CurrentHp == 0) ForestFaint(targetSide);
-                if (damage > 0) MtMoonRageOnDamage(side, targetSide, move.Id);
+                BeginScriptTarget(target);
+                var actor = Get(side); var defender = Get(target);
+                bool critical = SourceGenericCritical(actor, defender, move, purpose);
+                int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
+                int damage = SourceGenericDamage(catalog, actor, defender, target, move, critical, percent);
+                // Explosion computes damage and its random multiplier before accuracy.
+                if (SourceGenericAccuracy(side, target, move, purpose))
+                {
+                    SourceGenericApplyDamage(side, target, move, damage, critical, percent);
+                    SourceGenericEffectiveness(catalog, side, target, move);
+                    if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
+                    if (damage > 0) MtMoonRageOnDamage(side, target, move.Id);
+                    SourceGenericContact(catalog, side, target, move, purpose, damage);
+                }
+                else SourceGenericMiss(side, target, move);
+                CompleteScriptTarget();
             }
-            else SourceGenericMiss(side, targetSide, move);
             ForestFaint(side);
             ForestOutcome(true);
         }

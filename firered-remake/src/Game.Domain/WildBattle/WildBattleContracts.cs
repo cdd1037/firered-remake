@@ -36,6 +36,7 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleTransformation? Transform { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleCopiedMoves? CopyMoves { get; init; }
     // Source Poké Flute may wake a party member independently of its current Soundproof battler.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool SourceTracePending { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public uint? SourcePartyStatusOverride { get; init; }
     // Historical profiles use this only for Sleep Talk. The explicit called-action
     // contract also carries an unlearned result, authenticated by SourceMoveHistory.

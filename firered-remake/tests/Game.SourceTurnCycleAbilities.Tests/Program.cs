@@ -89,7 +89,7 @@ Test("72 original C end-turn vectors match shared ability executor", () => {
         var s = Start(Mon(species, [species == "NINJASK" ? "HARDEN" : "AMNESIA"]), Mon("MAGIKARP", ["SPLASH"]));
         s = s with { Player = s.Player with { Pokemon = s.Player.Pokemon with { CurrentHp = N("hp") }, SpeedStage = N("speed"), FirstTurnCounter = N("first"), TruantLoafing = N("truant") != 0 } };
         var executor = Activator.CreateInstance(type, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [s, false, true], null)!;
-        type.GetMethod("SourceTurnCycleEndTurnAbility", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(executor, [WildBattleSide.Player]);
+        type.GetMethod("SourceEndTurnAbility", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(executor, [WildBattleSide.Player]);
         var after = (WildBattleState)type.GetField("State")!.GetValue(executor)!;
         var events = (ImmutableArray<WildBattleEvent>.Builder)type.GetField("Events")!.GetValue(executor)!;
         var trace = (ImmutableArray<RandomTrace>.Builder)type.GetField("Trace")!.GetValue(executor)!;

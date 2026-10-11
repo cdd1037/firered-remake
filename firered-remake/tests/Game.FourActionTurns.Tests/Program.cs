@@ -53,7 +53,7 @@ Test("every action and endturn pause survives JSON with exact state events and R
  }Check(r.CompletedCleanTurn,"resumed full turn");cleanTurns++;
 });
 Test("unported phases and marker bypasses fail before selection costs ordering and RNG",()=>{
- var f=Frame();foreach(var bad in new[]{f with{SourceMechanicsRulesVersion=null},f with{SourceMechanicsRulesVersion=BattleRulesProfile.CanonicalSourceSinglesVersion},f with{Field=new(){RainTurnsRemaining=3}},RebindBody(f,0,f.Slots[0].Body! with{Status=WildBattleStatus.Poison}),RebindBody(f,0,Mon("PIDGEY",50,"EARTHQUAKE")),RebindBody(f,0,Mon("PIDGEY",50,"POISON_POWDER"))})Rejected(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"unsupported capability");
+ var f=Frame();foreach(var bad in new[]{f with{SourceMechanicsRulesVersion=null},f with{SourceMechanicsRulesVersion=BattleRulesProfile.CanonicalSourceSinglesVersion},RebindBody(f,0,Mon("PIDGEY",50,"EARTHQUAKE")),RebindBody(f,0,Mon("VENONAT",50,"SLEEP_POWDER"))})Rejected(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"unsupported capability");
  Rejected(f,SourceFourActionTurns.BeginActions(catalog with{},f,f.Revision,Choices(f)),"catalog clone carries no authority");
  Rejected(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f).RemoveAt(2)),"missing actor");
 });
