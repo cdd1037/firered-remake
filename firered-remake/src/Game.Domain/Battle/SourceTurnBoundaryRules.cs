@@ -6,6 +6,8 @@ namespace Game.Domain.Battle;
 /// the bounded slot owner. Residual effects and recharge timers must run before this boundary.</summary>
 public static class SourceTurnBoundaryRules
 {
+    public static int RechargeAfterReady(int turnsRemaining) => Math.Max(0, turnsRemaining - 1);
+
     public static WildBattleCombatant ReadyBody(WildBattleCombatant body, bool firstTurn, bool damageFlags, bool flinch)
     {
         if (firstTurn) body = body with { FirstTurnCounter = Math.Max(0, body.FirstTurnCounter - 1) };

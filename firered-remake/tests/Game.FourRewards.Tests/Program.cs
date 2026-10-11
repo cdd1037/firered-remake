@@ -187,6 +187,20 @@ Test("no-target failure keeps retained fainted Pressure PP semantics and no hit 
  Check(f.Slots[1].Body!.Pokemon.AbilityId=="ABILITY_PRESSURE","genuine Pressure species/personality");var r=Begin(f,[1,0,1,2]);r=Next(r);r=Settle(r);r=Settle(r);
  while(r.State.FourTurn!.Phase==SourceFourActionPhase.Actions){var actor=r.State.Queue[r.State.NextAction].Slot;r=Next(r);if(actor.Value==2){Check(r.Trace.IsEmpty&&r.Events.OfType<SourcePpCommandEvent>().Single().CommandCost==2,"retained HP0 Pressure costs two with no target/hit RNG");Check(!r.Events.OfType<SourceHpChangedEvent>().Any(),"no fabricated damage");}}
 });
+Test("no-target queued action still applies earlier sleep flinch and Truant cancellers",()=>{
+ foreach(string blocker in new[]{"sleep","flinch","truant"}){
+  var actor=Mon(blocker=="truant"?"SLAKOTH":"SPEAROW",50,"PECK");
+  actor=blocker switch{"sleep"=>actor with{Status=3},"flinch"=>actor with{Flinched=true},_=>actor with{TruantLoafing=true}};
+  var f=Frame([Mon("RATTATA",100,"SURF"),Mon("DUSCLOPS",1,"BARRIER",hp:1),actor,Mon("DODUO",1,"BARRIER",hp:1)],opponentReserve:1);
+  var r=Begin(f,[1,0,1,2]);r=Next(r);r=Settle(r);r=Settle(r);bool checkedActor=false;
+  while(r.State.FourTurn!.Phase==SourceFourActionPhase.Actions){var slot=r.State.Queue[r.State.NextAction].Slot;r=Next(r);if(slot.Value!=2)continue;checkedActor=true;
+   Check(r.Trace.IsEmpty&&!r.Events.OfType<SourcePpCommandEvent>().Any()&&!r.Events.OfType<SourceAttackStringEvent>().Any(),blocker+" cancels before no-target PP or attack string");
+   Check(r.State.Party(BattleSide.Player).Members[1].Pokemon.Moves[0].CurrentPp==catalog.Moves[Id("PECK")].Pp,blocker+" retains PP despite fainted Pressure");
+   Check(!r.Events.OfType<SourceMoveFailedEvent>().Any(e=>e.Reason=="deferred-ko-no-target"),blocker+" owns the failure reason");
+  }
+  Check(checkedActor,"real remaining action visited");r=Finish(r);Check(r.CompletedCleanTurn,"blocked no-target action continues normal turn");
+ }
+});
 Test("two delayed opposing KOs retain separate callback positions and settlement bits",()=>{
  var f=Frame([Mon(move:"BARRIER"),Mon("PIDGEY",30,"BARRIER",hp:1),Mon("SPEAROW",50,"BARRIER"),Mon("DODUO",30,"BARRIER",hp:1)],opponentReserve:1);
  foreach(int slot in new[]{1,3})f=f with{Slots=f.Slots.SetItem(slot,f.Slots[slot] with{Position=new(){FutureAttack=new(1,Id("FUTURE_SIGHT"),new(2),10000)}})};

@@ -269,6 +269,7 @@ public static partial class WildBattleRules
         if (error is not null) return Fail(state, error);
         return Execute(state, state, execution => {
             execution.SourceCalledPartySwitch(catalog, action.Side, action.PartyIndex, pending?.Kind ?? WildBattleCalledSwitchKind.Voluntary, pending?.Invocation);
+            execution.SourceHeldStandaloneActionFinished();
             execution.State = execution.State with { Revision = checked(state.Revision + 1) };
             execution.SourceCalledSynchronizeParties();
         });

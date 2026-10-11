@@ -9,6 +9,7 @@ namespace Game.Domain.Battle;
 internal sealed record SourceHeldOrderEffect(int SourceItemId, string HoldEffect, int Parameter);
 internal static class SourceBattleHeldItems
 {
+    internal static readonly SourceHeldOrderEffect FocusBand = new(196, "HOLD_EFFECT_FOCUS_BAND", 10);
     internal static readonly SourceHeldOrderEffect ChoiceBand = new(186, "HOLD_EFFECT_CHOICE_BAND", 0);
 
     // pokemon.c CalculateBaseDamage stores Attack in u16 before subsequent modifiers.

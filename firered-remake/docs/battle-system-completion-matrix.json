@@ -237,7 +237,7 @@
       "title": "Ability entry, weather and forms",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "Authenticated permanent weather, Rain Dish, Trace and Forecast have bounded canonical singles coverage. Color Change now has actual HP-receipt and source move-end canonical singles coverage. Four-slot entry/form phases remain unfinished.",
+      "scope": "Shared actual initial/KO-entry recipes now cover Drizzle, Drought, Sand Stream, Intimidate, Trace and Forecast, with real four-slot occupant tokens, source tie RNG and ordered pending callbacks. Four-slot Color Change, general move-end immunity and voluntary/Baton/Roar entry integration remain unfinished.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledFieldEffects.cs",
@@ -245,14 +245,18 @@
         "src/Game.Domain/WildBattle/WildBattleTransformationRules.cs",
         "src/Game.Domain/Battle/SourceWeatherRules.cs",
         "src/Game.Domain/Battle/SourceTraceForecastRules.cs",
-        "src/Game.Domain/WildBattle/WildBattleSourceTraceForecast.cs"
+        "src/Game.Domain/WildBattle/WildBattleSourceTraceForecast.cs",
+        "src/Game.Domain/Battle/SourceEntryAbilityContext.cs",
+        "src/Game.Domain/Battle/SourceFourEntryAbilities.cs"
       ],
       "testEvidence": [
         "tests/Game.CalledFieldEffects.Tests/README.md",
         "tests/Game.CalledPartyEffects.Tests/README.md",
         "tests/Game.SourceWeatherAbilities.Tests/Program.cs",
         "docs/source-trace-forecast.md",
-        "tests/Game.SourceTraceForecast.Tests/Program.cs"
+        "tests/Game.SourceTraceForecast.Tests/Program.cs",
+        "tests/Game.FourEntryAbilities.Tests/README.md",
+        "docs/source-four-slot-entry-abilities.md"
       ],
       "sourceEvidence": [
         "src/battle_util.c:AbilityBattleEffects",
@@ -260,9 +264,9 @@
         "src/battle_main.c:TryDoEventsBeforeFirstTurn"
       ],
       "nextAcceptance": [
-        "Carry the tested weather register and shared queries into full four-slot entry and residual ownership without duplicating recipes.",
-        "Migrate the tested entry/form and Color Change lifecycle into the four-slot owner without changing source ability provenance.",
-        "Admit authentic ability fixtures without fabricating ability provenance or silently unlocking unrelated campaign species."
+        "Carry the shared entry lifecycle through voluntary/Baton/Roar switching and source Spikes ordering.",
+        "Migrate Color Change and remaining move-end immunity without duplicating singles recipes.",
+        "Keep exact occupant tokens and acquisition-versus-entry semantics through full AI/Application admission."
       ],
       "dependsOn": [
         "C01",
@@ -348,7 +352,7 @@
       "title": "Genuine four-slot doubles owner",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "M01 identities through M06 bounded reward/learning and clean end-turn KO replacement are integrated. Actual parties remain authoritative; six opponent completion bits and one recipient cursor avoid an unbounded ledger. Full entry abilities, cancellers/recipes/residuals, AI, preset encounter and campaign presentation remain unfinished.",
+      "scope": "M01 identities through M06 bounded reward/learning and clean end-turn KO replacement are integrated. Actual parties remain authoritative; six opponent completion bits and one recipient cursor avoid an unbounded ledger. Shared ordered sleep/freeze/Truant/recharge/flinch/confusion/paralysis cancellers now run on actual slots, including no-target M06 actions. Initial and actual KO-entry callbacks now share source weather/Trace/Intimidate/Forecast recipes. Voluntary/Baton/Roar/Spikes, remaining recipes/residuals, AI, preset encounter and campaign presentation remain unfinished.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleContracts.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
@@ -368,7 +372,9 @@
         "tests/Game.FourActionTurns.Tests/README.md",
         "tests/Game.SourceTargeting.Tests/README.md",
         "tests/Game.FourEndTurn.Tests/README.md",
-        "tests/Game.FourRewards.Tests/README.md"
+        "tests/Game.FourRewards.Tests/README.md",
+        "tests/Game.SourceActionCancellers.Tests/README.md",
+        "tests/Game.FourEntryAbilities.Tests/README.md"
       ],
       "sourceEvidence": [
         "include/constants/battle.h",
@@ -551,14 +557,15 @@
       "title": "Held-item effects and ownership",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "Canonical singles Choice Band now executes physical Attack scaling, chosen-move locking, called/copied moves, item transfer and departure cleanup. Quick Claw/Macho Brace order and reward modifiers are shared. Focus Band and general four-slot held-item execution remain unfinished.",
+      "scope": "Canonical singles Choice Band now executes physical Attack scaling, chosen-move locking, called/copied moves, item transfer and departure cleanup. Quick Claw/Macho Brace order and reward modifiers are shared. Canonical singles Focus Band now shares post-random damage adjustment, slot-sticky protection and actual ActionFinished cleanup across ordinary, scalar, confusion and delayed attacks. General four-slot held-item execution remains unfinished.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
         "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
         "src/Game.Domain/WildBattle/FuchsiaBattleScope.cs",
-        "src/Game.Domain/Battle/SourceBattleHeldItems.cs"
+        "src/Game.Domain/Battle/SourceBattleHeldItems.cs",
+        "src/Game.Domain/Battle/SourceBattleRecipes.HeldDamage.cs"
       ],
       "testEvidence": [
         "tests/Game.SourceTrainerItems.Tests/README.md",
@@ -566,7 +573,8 @@
         "tests/Game.RockTunnelHeldItemRecovery.Tests/README.md",
         "tests/Game.CalledTurnLocks.Tests/README.md",
         "tests/Game.SourceOrderHeldItems.Tests/README.md",
-        "tests/Game.SourceChoiceBand.Tests/README.md"
+        "tests/Game.SourceChoiceBand.Tests/README.md",
+        "tests/Game.SourceFocusBand.Tests/README.md"
       ],
       "sourceEvidence": [
         "src/battle_util.c:ItemBattleEffects",
@@ -574,7 +582,7 @@
         "src/pokemon.c:CalculateBaseDamage"
       ],
       "nextAcceptance": [
-        "Implement remaining Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.",
+        "Implement remaining King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.",
         "Prove threshold/RNG timing, Choice lock after copied moves, consumed-item history, permanent versus battle-only Knock Off and wild/trainer restoration.",
         "An item constant, a helper branch or a species held-item slot is not full execution admission."
       ],
@@ -729,7 +737,7 @@
       "title": "Battle event text, controls and presentation routing",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "Versioned source trainer/wild event adapter and move selection exist; retained BCL adapter tests cover 14 event types. Current fifth-badge Application pass does not establish native completion. Original Pound/Tackle scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these two moves; sound uses Dummy. The later external-pan increment verifies signed source control and four actual stereo captures; physical listening remains unverified.",
+      "scope": "Versioned source trainer/wild event adapter and move selection exist; retained BCL adapter tests cover 14 event types. Current fifth-badge Application pass does not establish native completion. Original Pound/Tackle/Scratch/Cut/Slash/False Swipe scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these six moves; sound uses Dummy. The later external-pan increment verifies signed source control and four actual stereo captures; physical listening remains unverified.",
       "implementationEvidence": [
         "src/Game.Godot/SourceTrainerPresentationModel.cs",
         "src/Game.Godot/CampaignSourceTrainerPresentationView.cs",
@@ -740,7 +748,9 @@
         "tests/Game.FuchsiaGymPresentation.Tests/README.md",
         "tests/Game.FuchsiaGymUi.Tests/README.md",
         "docs/source-hit-animation-slice.md",
-        "evidence/recovery-20261011/hit-combined-proof/RESULT.json"
+        "evidence/recovery-20261011/hit-combined-proof/RESULT.json",
+        "docs/source-basic-slice-animations.md",
+        "evidence/recovery-20261011/basic-slice-animations/RESULT.json"
       ],
       "sourceEvidence": [
         "src/battle_message.c",
@@ -764,7 +774,7 @@
       "title": "Move/ability animation and audio inventory",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "All 354 source animation roots have an authenticated conservative script/call/graphic/sound inventory. Dedicated animation execution, native timing and audible playback are separately incomplete; C callback dependencies exceed the script-only graph. Original Pound/Tackle scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these two moves; sound uses Dummy. The later external-pan increment verifies signed source control and four actual stereo captures; physical listening remains unverified.",
+      "scope": "All 354 source animation roots have an authenticated conservative script/call/graphic/sound inventory. Dedicated animation execution, native timing and audible playback are separately incomplete; C callback dependencies exceed the script-only graph. Original Pound/Tackle/Scratch/Cut/Slash/False Swipe scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these six moves; sound uses Dummy. The later external-pan increment verifies signed source control and four actual stereo captures; physical listening remains unverified.",
       "implementationEvidence": [
         "src/Game.Godot/CampaignAudioView.cs",
         "src/Game.Godot/SynthSourceAudioPlayer.cs",
@@ -779,7 +789,9 @@
         "tests/Game.BattleAnimationInventory.Tests/verify.py",
         "docs/battle-animation-catalog.md",
         "docs/source-hit-animation-slice.md",
-        "evidence/recovery-20261011/hit-combined-proof/RESULT.json"
+        "evidence/recovery-20261011/hit-combined-proof/RESULT.json",
+        "docs/source-basic-slice-animations.md",
+        "evidence/recovery-20261011/basic-slice-animations/RESULT.json"
       ],
       "sourceEvidence": [
         "data/battle_anim_scripts.s",
@@ -860,7 +872,7 @@
       "symbol": "ABILITY_DRIZZLE",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Authenticated canonical singles permanent-rain entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending.",
+      "assessment": "Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -872,7 +884,8 @@
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "implementationEvidence": [
         "docs/source-weather-abilities.md",
-        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs",
+        "docs/source-four-slot-entry-abilities.md"
       ]
     },
     {
@@ -1788,7 +1801,7 @@
       "symbol": "ABILITY_INTIMIDATE",
       "status": "interaction-unverified",
       "workPackage": "C07",
-      "assessment": "One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation.",
+      "assessment": "Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
@@ -1834,7 +1847,10 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-four-slot-entry-abilities.md"
+      ]
     },
     {
       "id": 23,
@@ -2370,7 +2386,7 @@
       "symbol": "ABILITY_TRACE",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Authenticated canonical singles entry, full turns, copied abilities/forms, source position queries, identity and failure atomicity verified after recovery. Full four-slot execution and native form graphics remain unimplemented.",
+      "assessment": "Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -2391,6 +2407,9 @@
       "testEvidence": [
         "docs/source-trace-forecast.md",
         "tests/Game.SourceTraceForecast.Tests/Program.cs"
+      ],
+      "implementationEvidence": [
+        "docs/source-four-slot-entry-abilities.md"
       ]
     },
     {
@@ -2772,7 +2791,7 @@
       "symbol": "ABILITY_SAND_STREAM",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Authenticated canonical singles permanent-sand entry, source order, suppression and residual tests pass; four-turn entry remains pending.",
+      "assessment": "Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -2784,7 +2803,8 @@
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "implementationEvidence": [
         "docs/source-weather-abilities.md",
-        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs",
+        "docs/source-four-slot-entry-abilities.md"
       ]
     },
     {
@@ -3210,7 +3230,7 @@
       "symbol": "ABILITY_FORECAST",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Authenticated canonical singles entry, full turns, copied abilities/forms, source position queries, identity and failure atomicity verified after recovery. Full four-slot execution and native form graphics remain unimplemented.",
+      "assessment": "Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleCalledFieldEffects.cs",
@@ -3236,6 +3256,9 @@
       "testEvidence": [
         "docs/source-trace-forecast.md",
         "tests/Game.SourceTraceForecast.Tests/Program.cs"
+      ],
+      "implementationEvidence": [
+        "docs/source-four-slot-entry-abilities.md"
       ]
     },
     {
@@ -3604,7 +3627,7 @@
       "symbol": "ABILITY_DROUGHT",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Authenticated canonical singles permanent-sun entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending.",
+      "assessment": "Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -3616,7 +3639,8 @@
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "implementationEvidence": [
         "docs/source-weather-abilities.md",
-        "tests/Game.SourceWeatherAbilities.Tests/Program.cs"
+        "tests/Game.SourceWeatherAbilities.Tests/Program.cs",
+        "docs/source-four-slot-entry-abilities.md"
       ]
     },
     {
@@ -11378,6 +11402,34 @@
       "scope": "M06 four-slot rewards/learning/clean replacement with shared weather and side protections",
       "evidence": "evidence/recovery-20261011/m06-weather-combined/result.json",
       "acceptanceLimits": "Bounded Domain continuations, original singles hash control and actual combined end-turn KO case. General entry abilities, campaign/AI/presentation and other recipes remain separate."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "topic": "Shared action cancellers and canonical Focus Band",
+      "rules": "One ordered canceller recipe for legacy singles and four-slot actions; M06 no-target actions cancel before PP. Canonical singles Focus Band retains a slot-sticky bit until actual action finish and uses shared post-random damage adjustment.",
+      "evidence": [
+        "docs/source-action-cancellers.md",
+        "tests/Game.SourceActionCancellers.Tests/README.md",
+        "tests/Game.SourceFocusBand.Tests/README.md",
+        "evidence/recovery-20261011/focus-canceller-combined/result.json"
+      ],
+      "limits": "Four-slot general held damage and remaining locks/recipes remain gated; no Application, AI or native acceptance added."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "topic": "Four-slot entry abilities integrated with M06 v4 and action cancellation",
+      "evidence": [
+        "docs/source-four-slot-entry-abilities.md",
+        "evidence/recovery-20261011/four-entry-combined/proof.json"
+      ],
+      "verified": "13 groups /4871 checks,531 entries,14 full turns,3 actual KO replacements; shared canceller10/16466; immutable legacy golden unchanged.",
+      "limits": "No AI/Application/GUI claim; Spikes and other switch owners remain bounded."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "scope": "Six bounded source move animation scripts",
+      "details": "Shared original Scratch/Cut/Slash/False Swipe callbacks and resources join Pound/Tackle. 444 independent source C/C# snapshots, 1021 source/application checks and final 14-case native uninstrumented retry pass. A prior native quit timeout is retained as unclassified intermittent failure, not claimed fixed. Other348 scripts and broad doubles presentation remain incomplete.",
+      "evidence": "docs/source-basic-slice-animations.md"
     }
   ]
 }

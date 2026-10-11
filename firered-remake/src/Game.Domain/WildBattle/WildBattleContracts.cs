@@ -96,6 +96,8 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestPlayerLastMoveSlot = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int ForestOpponentLastMoveSlot = 0)
 {
+    // SpecialStatus.focusBanded is owned by numeric battler slots and survives residual callbacks.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public byte SourceFocusBandedMask { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourcePermanentWeather? PermanentWeather { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? SourceMechanicsRulesVersion { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSourceWildState? SourceWild { get; init; }
@@ -145,6 +147,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleSpiteEvent), "spite")]
 [JsonDerivedType(typeof(WildBattleTowerHpEvent), "tower-hp")]
 [JsonDerivedType(typeof(WildBattleHeldItemKnockedOffEvent), "held-item-knocked-off")]
+[JsonDerivedType(typeof(WildBattleDamageAdjustedEvent), "source-damage-adjusted")]
 [JsonDerivedType(typeof(WildBattleWeatherDamageEvent), "weather-damage")]
 [JsonDerivedType(typeof(WildBattleProtectAttemptEvent), "protect-attempt")]
 [JsonDerivedType(typeof(WildBattlePayDayEvent), "pay-day")]
@@ -368,3 +371,7 @@ public sealed record WildBattlePermanentWeatherChangedEvent(long Sequence, int T
     SourcePermanentWeatherKind? Before, SourcePermanentWeatherKind After) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleAbilityRecoveredEvent(long Sequence, int Turn, WildBattleSide Side, string Ability,
     int HpBefore, int HpAfter, int Recovered) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>The source adjustment command result; display and HP application may follow later.</summary>
+public sealed record WildBattleDamageAdjustedEvent(long Sequence, int Turn, WildBattleSide Target, MoveId Move, string Item,
+    int DamageBefore, int DamageAfter, bool Endured, bool HungOn) : WildBattleEvent(Sequence, Turn);

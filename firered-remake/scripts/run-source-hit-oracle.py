@@ -1,50 +1,169 @@
 #!/usr/bin/env python3
-"""Re-extract authenticated source callback bodies; no reference build scripts/ROM."""
-import argparse,hashlib,importlib.util,json,re,subprocess
+"""Compile authenticated original animation bodies with bounded native platform shims."""
+import argparse
+import hashlib
+import importlib.util
+import json
+import re
+import subprocess
 from pathlib import Path
-root=Path(__file__).resolve().parent.parent
-spec=importlib.util.spec_from_file_location('hit_importer',root/'scripts/import-source-hit-animations.py');imp=importlib.util.module_from_spec(spec);spec.loader.exec_module(imp)
-p=argparse.ArgumentParser();p.add_argument('output',type=Path);p.add_argument('--reference',type=Path,default=Path((root/'.tools/reference-root').read_text().strip()));a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
-raw=imp.authenticated(a.reference)
-functions={
-'src/battle_anim.c':['WaitAnimFrameCount','RunAnimScriptCommand','Cmd_delay','Cmd_waitforvisualfinish','Cmd_end','Cmd_clearmonbg','Task_ClearMonBg','BattleAnimAdjustPanning'],
-'src/battle_anim_mon_movement.c':['DoHorizontalLunge','ReverseHorizontalLungeDirection','AnimTask_ShakeMon','AnimTask_ShakeMon_Step'],
-'src/battle_anim_normal.c':['AnimHitSplatBasic'],
-'src/battle_anim_mons.c':['TranslateSpriteLinearById','RunStoredCallbackWhenAffineAnimEnds','SetAnimSpriteInitialXOffset','InitSpritePosToAnimTarget','InitSpritePosToAnimAttacker'],
-'src/sprite.c':['BeginAffineAnim','ContinueAffineAnim','AffineAnimDelay','AffineAnimCmd_end','AffineAnimCmd_frame','AffineAnimStateRestartAnim','AffineAnimStateStartAnim','ApplyAffineAnimFrameAbsolute','DecrementAffineAnimDelayCounter','ApplyAffineAnimFrameRelativeAndUpdateMatrix','ConvertScaleParam','GetAffineAnimFrame','ApplyAffineAnimFrame','StartSpriteAffineAnim']}
-bodies=[];identities=[]
-for path,names in functions.items():
- text=raw[path].decode()
- for name in names:
-  match=re.search(r'^((?:static )?\w+ '+name+r'\([^;]*?\))\n\{',text,re.M);assert match,name
-  start=match.start();pos=match.end();depth=1
-  while depth:
-   if text[pos]=='{':depth+=1
-   if text[pos]=='}':depth-=1
-   pos+=1
-  body=text[start:pos];bodies.append((match[1],body));identities.append(dict(path=path,name=name,line=text.count('\n',0,start)+1,sha256=hashlib.sha256(body.encode()).hexdigest()))
-constants=[]
-text=raw['src/battle_anim_normal.c'].decode()
-for name in ['sAffineAnim_HitSplat_'+str(i) for i in range(4)]+['sAffineAnims_HitSplat']:
- match=re.search(r'^static const union AffineAnimCmd [^\n]*'+name+r'\[\] =\n\{.*?^\};',text,re.M|re.S);assert match,name
- constants.append(match[0]);identities.append(dict(path='src/battle_anim_normal.c',name=name,line=text.count('\n',0,match.start())+1,sha256=hashlib.sha256(match[0].encode()).hexdigest()))
-manifest=json.loads(imp.build(a.reference)['source-hit-animations']['manifest.json']);ops=['loadspritegfx','monbg','setalpha','playsewithpan','createsprite','createvisualtask','delay','waitforvisualfinish','clearmonbg','blendoff','end']
-arrays=['struct Command {int args[5];};'];names=[]
-for row in manifest['scripts']:
- bytecode=[];args=[];name=row['label'];names.append(name)
- for c in row['commands']:
-  op=c['op'];v=c['args'];bytecode.append(ops.index(op));av=[]
-  if op=='setalpha':av=list(map(int,v))
-  elif op=='playsewithpan':av=[1 if v[0]=='SE_M_DOUBLE_SLAP' else 2]
-  elif op=='createsprite':av=[int(v[0]=='gBasicHitSplatSpriteTemplate')]+[1 if x=='ANIM_TARGET' else int(x) for x in v[3:]]
-  elif op=='createvisualtask':av=[1 if x=='ANIM_TARGET' else int(x) for x in v[2:]]
-  args.append(av)
-  if op in ['delay','clearmonbg']:bytecode.append(1 if v[0]=='ANIM_TARGET' else int(v[0]));args.append([])
- arrays.append('static const u8 '+name+'[]={'+','.join(map(str,bytecode))+'};')
- arrays.append('static const struct Command '+name+'_args[]={'+','.join('{{'+(','.join(map(str,v)) or '0')+'}}' for v in args)+'};')
-arrays.append('static const u8 *scripts[]={'+','.join(names)+'};');arrays.append('static const struct Command *commands[]={'+','.join(x+'_args' for x in names)+'};')
-source=(root/'tests/SourceHitAnimation.Oracle/host.h').read_text()+'\n'+'\n'.join(sig+';' for sig,body in bodies)+'\n'+'\n'.join(body for sig,body in bodies)+'\n'+'\n'.join(constants)+'\n'+'\n'.join(arrays)+'\n'+(root/'tests/SourceHitAnimation.Oracle/driver.c').read_text();(out/'oracle.c').write_text(source)
-result=subprocess.run(['cc','-std=c99','-O0','-Wall','-Wextra','-Werror',out/'oracle.c','-o',out/'oracle'],capture_output=True,text=True);(out/'compile.log').write_text(result.stdout+result.stderr)
-if result.returncode:raise SystemExit(result.stderr)
-result=subprocess.run([out/'oracle'],capture_output=True,text=True,timeout=10);(out/'source-c.csv').write_text(result.stdout);assert result.returncode==0,result.stderr
-(out/'provenance.json').write_text(json.dumps(dict(commit=imp.COMMIT,functions=identities[:len(bodies)],constantArrays=identities[len(bodies):],hostSha256=hashlib.sha256(source.encode()).hexdigest(),rows=len(result.stdout.splitlines())-1,originalRuntimeCompared=False),indent=2)+'\n');print('PASS independently compiled source C callbacks:',len(bodies),'functions + 5 arrays,',len(result.stdout.splitlines())-1,'frames')
+
+root = Path(__file__).resolve().parent.parent
+spec = importlib.util.spec_from_file_location('hit_importer', root / 'scripts/import-source-hit-animations.py')
+imp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(imp)
+p = argparse.ArgumentParser()
+p.add_argument('output', type=Path)
+p.add_argument('--reference', type=Path, default=Path((root / '.tools/reference-root').read_text().strip()))
+a = p.parse_args()
+out = a.output.resolve()
+out.mkdir(parents=True, exist_ok=False)
+raw = imp.authenticated(a.reference)
+# The existing authenticated lock also pins this display-scheduler provenance source.
+scheduler_path = 'src/battle_main.c'
+scheduler_bytes = raw[scheduler_path]
+scheduler_sha = hashlib.sha256(scheduler_bytes).hexdigest()
+functions = {
+    'src/battle_anim.c': ['WaitAnimFrameCount', 'RunAnimScriptCommand', 'Cmd_createsprite', 'Cmd_createvisualtask', 'Cmd_delay', 'Cmd_waitforvisualfinish', 'Cmd_end', 'Cmd_clearmonbg', 'Task_ClearMonBg', 'BattleAnimAdjustPanning'],
+    'src/battle_anim_mon_movement.c': ['DoHorizontalLunge', 'ReverseHorizontalLungeDirection', 'AnimTask_ShakeMon', 'AnimTask_ShakeMon_Step', 'AnimTask_ShakeMon2', 'AnimTask_ShakeMon2Step'],
+    'src/battle_anim_normal.c': ['AnimHitSplatBasic'],
+    'src/battle_anim_mons.c': ['TranslateSpriteLinearById', 'TranslateSpriteLinear', 'WaitAnimForDuration', 'RunStoredCallbackWhenAffineAnimEnds', 'RunStoredCallbackWhenAnimEnds', 'SetAnimSpriteInitialXOffset', 'InitSpritePosToAnimTarget', 'InitSpritePosToAnimAttacker', 'AnimSpriteOnMonPos', 'DestroySpriteAndMatrix', 'GetBattlerSpriteSubpriority'],
+    'src/battle_anim_effects_1.c': ['AnimCuttingSlice', 'AnimSlice_Step', 'AnimSlashSlice', 'AnimFalseSwipeSlice', 'AnimFalseSwipePositionedSlice', 'AnimFalseSwipeSlice_Step1', 'AnimFalseSwipeSlice_Step2', 'AnimFalseSwipeSlice_Step3'],
+    'src/sprite.c': ['CreateSpriteAndAnimate', 'AnimateSprites', 'UpdateOamCoords', 'BuildSpritePriorities', 'SortSprites', 'AnimateSprite', 'BeginAnim', 'ContinueAnim', 'AnimCmd_frame', 'AnimCmd_end', 'AnimCmd_jump', 'AnimCmd_loop', 'BeginAnimLoop', 'ContinueAnimLoop', 'JumpToTopOfAnimLoop', 'DecrementAnimDelayCounter', 'SetSpriteOamFlipBits', 'StartSpriteAnim', 'BeginAffineAnim', 'ContinueAffineAnim', 'AffineAnimDelay', 'AffineAnimCmd_end', 'AffineAnimCmd_frame', 'AffineAnimStateRestartAnim', 'AffineAnimStateStartAnim', 'ApplyAffineAnimFrameAbsolute', 'DecrementAffineAnimDelayCounter', 'ApplyAffineAnimFrameRelativeAndUpdateMatrix', 'ConvertScaleParam', 'GetAffineAnimFrame', 'ApplyAffineAnimFrame', 'StartSpriteAffineAnim'],
+}
+bodies, identities = [], []
+
+def identify(path, name, source, start, body, kind):
+    identities.append(dict(path=path, name=name, line=source.count('\n', 0, start) + 1,
+                           sha256=hashlib.sha256(body.encode()).hexdigest(), kind=kind))
+
+for path, names in functions.items():
+    source = raw[path].decode()
+    for name in names:
+        match = re.search(r'^((?:static )?\w+ ' + name + r'\([^;]*?\))\n\{', source, re.M)
+        if match is None:
+            raise ValueError('Missing original function: ' + name)
+        start, pos, depth = match.start(), match.end(), 1
+        while depth:
+            if source[pos] == '{': depth += 1
+            if source[pos] == '}': depth -= 1
+            pos += 1
+        body = source[start:pos]
+        bodies.append((match[1], body))
+        identify(path, name, source, start, body, 'function')
+
+# These identities explain platform scheduling while keeping GPU/palette calls out of the host.
+for path, name in [('src/battle_main.c', 'BattleMainCB2'), ('src/battle_anim.c', 'Cmd_monbg'), ('src/battle_anim.c', 'Task_InitUpdateMonBg')]:
+    source = raw[path].decode()
+    match = re.search(r'^((?:static )?\w+ ' + name + r'\([^;]*?\))\n\{', source, re.M)
+    if match is None: raise ValueError('Missing scheduling reference: ' + name)
+    pos, depth = match.end(), 1
+    while depth:
+        if source[pos] == '{': depth += 1
+        if source[pos] == '}': depth -= 1
+        pos += 1
+    identify(path, name, source, match.start(), source[match.start():pos], 'schedulingReference')
+
+constant_names = {
+    'src/sprite.c': ['sDummyAnim', 'gDummySpriteAnimTable', 'sDummyAffineAnim', 'gDummySpriteAffineAnimTable'],
+    'src/battle_anim_normal.c': ['sAffineAnim_HitSplat_' + str(i) for i in range(4)] + ['sAffineAnims_HitSplat', 'gBasicHitSplatSpriteTemplate'],
+    'src/battle_anim_mon_movement.c': ['gHorizontalLungeSpriteTemplate'],
+    'src/battle_anim_effects_1.c': ['sCuttingSliceAnimCmds', 'sCuttingSliceAnimTable', 'gCuttingSliceSpriteTemplate', 'sSlashSliceAnimCmds1', 'sSlashSliceAnimCmds2', 'sSlashSliceAnimTable', 'gSlashSliceSpriteTemplate', 'gFalseSwipeSliceSpriteTemplate', 'gFalseSwipePositionedSliceSpriteTemplate'],
+    'src/battle_anim_effects_3.c': ['sScratchAnimCmds', 'sScratchAnimTable', 'gScratchSpriteTemplate'],
+}
+constants = []
+for path, names in constant_names.items():
+    source = raw[path].decode()
+    for name in names:
+        match = re.search(r'^(?:static )?const [^\n;]*\b' + name + r'(?:\[\])?\s*=\s*\{.*?\};', source, re.M | re.S)
+        if match is None:
+            raise ValueError('Missing original constant: ' + name)
+        constants.append(match[0])
+        identify(path, name, source, match.start(), match[0], 'constant')
+
+template_names = ['gBasicHitSplatSpriteTemplate', 'gHorizontalLungeSpriteTemplate', 'gScratchSpriteTemplate', 'gCuttingSliceSpriteTemplate', 'gSlashSliceSpriteTemplate', 'gFalseSwipeSliceSpriteTemplate', 'gFalseSwipePositionedSliceSpriteTemplate']
+sound_names = ['SE_M_DOUBLE_SLAP', 'SE_M_COMET_PUNCH', 'SE_M_SCRATCH', 'SE_M_CUT', 'SE_M_RAZOR_WIND', 'SE_M_VITAL_THROW', 'SE_M_DOUBLE_TEAM']
+task_names = ['AnimTask_ShakeMon', 'AnimTask_ShakeMon2']
+ops = ['loadspritegfx', 'monbg', 'setalpha', 'playsewithpan', 'createsprite', 'createvisualtask', 'delay', 'waitforvisualfinish', 'clearmonbg', 'blendoff', 'end']
+source = raw['data/battle_anim_scripts.s'].decode()
+macros = set(re.findall(r'^\s*\.macro (\w+)', raw['asm/macros/battle_anim_script.inc'].decode(), re.M))
+arrays = ['struct Command {int args[10];};']
+names, moves = [], []
+
+def integer(value):
+    return {'ANIM_ATTACKER': 0, 'ANIM_TARGET': 1, 'SOUND_PAN_TARGET': 63, 'SOUND_PAN_ATTACKER': -64}.get(value, None) if value in {'ANIM_ATTACKER', 'ANIM_TARGET', 'SOUND_PAN_TARGET', 'SOUND_PAN_ATTACKER'} else int(value, 0)
+
+for move, label in [(1, 'POUND'), (10, 'SCRATCH'), (15, 'CUT'), (33, 'TACKLE'), (163, 'SLASH'), (206, 'FALSE_SWIPE')]:
+    name = 'Move_' + label
+    match = re.search(r'^' + name + r':\n', source, re.M)
+    if match is None: raise ValueError('Missing source script ' + name)
+    bytecode, args = [], []
+    for line in source[match.end():].splitlines():
+        line = line.split('@', 1)[0].strip()
+        if not line: continue
+        if line.endswith(':'): raise ValueError('Unexpected branch in ' + name)
+        op, *tail = line.split(None, 1)
+        values = [s.strip() for s in tail[0].split(',')] if tail else []
+        if op not in ops or op not in macros: raise ValueError('Unsupported original command ' + op)
+        bytecode.append(ops.index(op))
+        av = []
+        if op == 'setalpha': av = [integer(s) for s in values]
+        elif op == 'playsewithpan': av = [sound_names.index(values[0]) + 1, integer(values[1])]
+        elif op in ['createsprite', 'createvisualtask']:
+            if op == 'createsprite':
+                pointer = template_names.index(values[0])
+                mode = (128 if values[1] == 'ANIM_TARGET' else 0) | (integer(values[2]) & 127)
+                tail_values = values[3:]
+            else:
+                pointer = task_names.index(values[0])
+                mode = integer(values[1])
+                tail_values = values[2:]
+            payload = [pointer, 0, 0, 0, mode, len(tail_values)]
+            for value in tail_values:
+                number = integer(value) & 65535
+                payload += [number & 255, number >> 8]
+            bytecode.extend(payload)
+            args.extend([[]] * len(payload))
+        args.append(av)
+        if op in ['delay', 'clearmonbg']:
+            bytecode.append(integer(values[0])); args.append([])
+        if op == 'end': break
+    else: raise ValueError('Unterminated source script ' + name)
+    names.append(name); moves.append(move)
+    arrays.append('static const u8 ' + name + '[]={' + ','.join(map(str, bytecode)) + '};')
+    arrays.append('static const struct Command ' + name + '_args[]={' + ','.join('{{' + (','.join(map(str, v)) or '0') + '}}' for v in args) + '};')
+arrays += ['static const u8 *scripts[]={' + ','.join(names) + '};',
+           'static const struct Command *commands[]={' + ','.join(x + '_args' for x in names) + '};',
+           'static const int moveIds[]={' + ','.join(map(str, moves)) + '};',
+           'static const struct SpriteTemplate *templates[]={' + ','.join('&' + x for x in template_names) + '};',
+           'static const char *templateNames[]={' + ','.join(json.dumps(x) for x in template_names) + '};']
+# The tags are resource lookup identifiers only; actual tiles are reported relative to each sheet.
+tags = sorted(set(re.findall(r'\bANIM_TAG_\w+', '\n'.join(constants))))
+source = '\n'.join(['\n'.join('#define ' + tag + ' ' + str(i + 1) for i, tag in enumerate(tags)),
+                   (root / 'tests/SourceHitAnimation.Oracle/host.h').read_text(),
+                   '\n'.join(sig + ';' for sig, body in bodies), '\n'.join(constants),
+                   '\n'.join(body for sig, body in bodies), '\n'.join(arrays),
+                   (root / 'tests/SourceHitAnimation.Oracle/driver.c').read_text()])
+(out / 'oracle.c').write_text(source)
+# The pinned PositionedSlice callback contains a redundant chained assignment; preserve it verbatim.
+result = subprocess.run(['cc', '-std=c99', '-O0', '-Wall', '-Wextra', '-Werror', '-Wno-error=sequence-point', str(out / 'oracle.c'), '-o', str(out / 'oracle')], capture_output=True, text=True)
+(out / 'compile.log').write_text(result.stdout + result.stderr)
+if result.returncode: raise SystemExit(result.stderr)
+result = subprocess.run([str(out / 'oracle')], capture_output=True, text=True, timeout=10)
+(out / 'source-c.csv').write_text(result.stdout)
+if result.returncode: raise SystemExit('Source oracle failed: ' + result.stderr)
+rows = len(result.stdout.splitlines()) - 1
+if rows <= 0: raise SystemExit('Empty source trace')
+(out / 'provenance.json').write_text(json.dumps(dict(commit=imp.COMMIT,
+    functions=[x for x in identities if x['kind'] == 'function'],
+    constantArrays=[x for x in identities if x['kind'] == 'constant'],
+    soundIds={str(i + 1): name for i, name in enumerate(sound_names)},
+    schedulingReferences=[x for x in identities if x['kind'] == 'schedulingReference'],
+    schedulerSource=dict(path=scheduler_path, bytes=len(scheduler_bytes), sha256=scheduler_sha),
+    displayOffsets='Non-monbg battlers use the pre-task OAM position; the monbg target follows post-task offsets via priority-10 Task_InitUpdateMonBg.',
+    spriteFields=['slot', 'template', 'x', 'y', 'x2', 'y2', 'tile', 'visible', 'hFlip', 'blend', 'scale', 'subpriority', 'oamRank'],
+    spriteIds='Lowest available source sprite slot; fixture battlers reserve slots 0 and 1.',
+    oamOrder='Original persistent 64-slot SortSprites; one extra leading host sentinel safely covers the original documented unused gSpriteOrder[-1] read.',
+    coordinates={'player': {'x': 72, 'rawY': 80, 'pictureY': 92}, 'enemy': {'x': 176, 'rawY': 40, 'pictureY': 53}},
+    hostSha256=hashlib.sha256(source.encode()).hexdigest(), rows=rows, originalRuntimeCompared=False), indent=2) + '\n')
+print('PASS independently compiled source C callbacks:', len(bodies), 'functions +', len(constants), 'constants,', rows, 'frames')

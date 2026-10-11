@@ -1,3 +1,4 @@
+using Game.Domain.Battle;
 using System.Text.Json.Serialization;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
@@ -93,6 +94,7 @@ public static partial class WildBattleRules
         WildBattleMoveInvocation? invocation = null;
         var result = Execute(state, state, context => {
             context.ExecuteCalledMoveContinuation(catalog, side, actionContext);
+            context.SourceHeldStandaloneActionFinished();
             context.State = context.State with { Revision = checked(state.Revision + 1) };
             invocation = context.activeInvocation;
         });
@@ -177,14 +179,9 @@ public static partial class WildBattleRules
             if (damage <= 0 || Get(target).CalledTurnState?.Lock is not { Kind: WildBattleCalledLockKind.Bide } locked) return;
             ChangeCalledLock(target, locked with { StoredDamage = checked(locked.StoredDamage + damage), StoredDamageSource = source }, "stored-damage");
         }
-        private bool CalledRechargePreventsMove(WildBattleSide side, MoveId move)
-        {
-            if (Get(side).CalledTurnState?.Lock?.Kind != WildBattleCalledLockKind.Recharge) return false;
-            ChangeCalledLock(side, null, "recharged");
-            CancelRoute3Rollout(side, "recharged");
-            Add(n => new WildBattleMoveFailedEvent(n, State.Turn, side, Other(side), move, "must-recharge"));
-            return true;
-        }
+        private bool CalledRechargePreventsMove(WildBattleSide side, MoveId move) =>
+            new SinglesRecipeBridge(this).RechargePreventsMove(SinglesBattleAdapter.Slot(side), move);
+
         private void RecordCalledTurnInability(int eventStart, WildBattleSide side)
         {
             if (Get(side).CalledTurnState?.Lock is not { Kind: WildBattleCalledLockKind.Rampage or WildBattleCalledLockKind.Uproar } locked) return;

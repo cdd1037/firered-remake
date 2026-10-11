@@ -306,7 +306,7 @@ public static partial class WildBattleRules
             sourceContactDamage = (side, targetSide, move, before - after);
             Set(targetSide, target with { Pokemon = target.Pokemon with { CurrentHp = after } });
             Add(n => new WildBattleHpChangedEvent(n, State.Turn, side, targetSide, move, before, after, damage, critical, percent));
-            if (critical && (damage > 0 || criticalMessageOnZero)) Add(n => new WildBattleCriticalHitEvent(n, State.Turn, side, targetSide));
+            if (critical && (damage > 0 || criticalMessageOnZero || SourceHeldDamageEnabled && Recipes.HeldDamageEffectiveZero(S(targetSide)))) Add(n => new WildBattleCriticalHitEvent(n, State.Turn, side, targetSide));
             return before - after;
         }
 
@@ -421,7 +421,7 @@ public static partial class WildBattleRules
             var hit = Recipes.PrepareFutureHit(S(future.Attacker), S(target), move, future.Damage, purpose);
             if (!hit.Hit) return;
             int percent = hit.Percent;
-            int damage = ScalarAdjust(target, move, hit.Damage, purpose);
+            int damage = SourceHeldDamageEnabled ? SourceAdjustHeldDamage(target, move, hit.Damage, purpose, normal2: true) : ScalarAdjust(target, move, hit.Damage, purpose);
             calledPassiveDelayed = true;
             try
             {

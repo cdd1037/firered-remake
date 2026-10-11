@@ -20,10 +20,10 @@ public static class CampaignMoveAnimationPresentation
         if (scene != SourceBattleScene.On) return new(null, "animations-disabled");
         if (battle.Phase != CampaignBattlePhase.Events || battle.EventIndex < 0 || battle.EventIndex >= battle.Events.Length)
             return new(null, "not-attack-text");
-        // Pound/Tackle always print through SpendInvocationPp. The paired AttackString is silent;
+        // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
         if (battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent used) return new(null, "not-attack-text");
-        int move = used.Move.Value switch { "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, _ => 0 };
+        int move = used.Move.Value switch { "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, _ => 0 };
         if (move == 0) return new(null, "script-outside-slice");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not WildBattleAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)

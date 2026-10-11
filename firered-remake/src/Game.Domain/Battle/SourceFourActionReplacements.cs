@@ -39,10 +39,6 @@ public static partial class SourceFourActionTurns
         try
         {
             var previous = frame.Get(slot); var member = frame.Party(incoming.Side).Members[incoming.Index];
-            // No entry-effect capability is inferred from the action/residual capability.
-            if (member.Pokemon.AbilityId is "ABILITY_INTIMIDATE" or "ABILITY_TRACE" or "ABILITY_FORECAST" or
-                "ABILITY_DRIZZLE" or "ABILITY_DROUGHT" or "ABILITY_SAND_STREAM")
-                return Fail(frame, "source_four_replacement_entry_ability_not_migrated");
             var body = new WildBattleCombatant(member.Pokemon,
                 HeldItem: member.KnockedOffItem is not null ? "ITEM_NONE" : WildBattleSourcePartyEffects.PersistentHeldItem(member),
                 Status: WildBattleSourceFieldEffects.ResetToxicCounter(member.Status), AttackBadgeBoost: previous.Body!.AttackBadgeBoost)
@@ -64,11 +60,14 @@ public static partial class SourceFourActionTurns
             if (!bound.Succeeded) return Fail(frame, bound.Fault!);
             var next = PrepareReplacements(bound.State);
             if (next.PendingSwitches.IsEmpty) next = next with { FourTurn = next.FourTurn! with { Phase = SourceFourActionPhase.EndTurnResume } };
-            if (ValidateCapability(catalog, next) is { } nextError) return Fail(frame, nextError);
             var switched = SourceBattleEventHooks.Publish(next, (n, t) => new SourceCalledPartySwitchedEvent(n, t, slot,
                 previous.Member!.Value.Index, incoming.Index, WildBattleCalledSwitchKind.FaintedReplacement));
-            return new(switched.State, [switched.Event], [], null);
+            var entry = SourceFourEntryAbilities.OnReplacement(switched.State, slot, next.PendingSwitches.IsEmpty);
+            if (!entry.Succeeded) return Fail(frame, entry.Fault!);
+            if (ValidateCapability(catalog, entry.State) is { } nextError) return Fail(frame, nextError);
+            return new(entry.State, [switched.Event, .. entry.Events], entry.Trace, null);
         }
+        catch (SourceRecipeUnsupported e) { return Fail(frame, e.Message); }
         catch (OverflowException) { return Fail(frame, "source_four_replacement_counter_exhausted"); }
         catch (ArgumentException) { return Fail(frame, "source_four_replacement_invalid_transition"); }
     }

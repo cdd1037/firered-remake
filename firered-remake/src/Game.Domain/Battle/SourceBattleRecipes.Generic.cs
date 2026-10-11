@@ -175,11 +175,13 @@ internal abstract partial class SourceRecipeContext
             bool critical = SourceGenericCritical(actor, target, move, purpose);
             int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
             int damage = SourceGenericDamage(catalog, actor, target, targetSide, move, critical, percent);
+            int effectiveDamage = damage;
+            damage = AdjustHeldDamage(targetSide, move.Id, damage, purpose);
             int lost = SourceGenericApplyDamage(side, targetSide, move, damage, critical, percent);
             SourceGenericEffectiveness(catalog, side, targetSide, move);
             if (move.Effect == "EFFECT_ABSORB")
             {
-                if (damage > 0)
+                if (effectiveDamage > 0)
                 {
                     bool ooze = WildBattleEffective.Ability(target) == "ABILITY_LIQUID_OOZE";
                     int before = Get(side).Pokemon.CurrentHp, drain = Math.Max(1, lost / 2);
@@ -190,7 +192,7 @@ internal abstract partial class SourceRecipeContext
                     if (after == 0) ForestFaint(side);
                 }
             }
-            else SourceGenericSecondary(catalog, side, targetSide, move, purpose, damage);
+            else SourceGenericSecondary(catalog, side, targetSide, move, purpose, effectiveDamage);
             if (Get(targetSide).Pokemon.CurrentHp == 0) ForestFaint(targetSide);
             if (damage > 0) MtMoonRageOnDamage(side, targetSide, move.Id);
             SourceGenericContact(catalog, side, targetSide, move, purpose, damage);
@@ -198,14 +200,18 @@ internal abstract partial class SourceRecipeContext
         }
 
         internal void SourceGenericMultiHit(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide, int slot,
-            PokemonMoveDefinition move, string purpose)
+            PokemonMoveDefinition move, string purpose, bool fixedTwoHits = false, bool twineedle = false)
         {
             bool hit = SourceGenericAccuracy(side, targetSide, move, purpose);
             SpendEarlyPartyPp(side, targetSide, slot, move);
             if (!hit) { SourceGenericMiss(side, targetSide, move); return; }
-            int roll = Draw($"{purpose}.multi-hit-count", 4) & 3;
-            int planned = roll > 1 ? (Draw($"{purpose}.multi-hit-count-extra", 4) & 3) + 2 : roll + 2;
-            int actual = 0, lastDamage = 0;
+            int planned = 2;
+            if (!fixedTwoHits)
+            {
+                int roll = Draw($"{purpose}.multi-hit-count", 4) & 3;
+                planned = roll > 1 ? (Draw($"{purpose}.multi-hit-count-extra", 4) & 3) + 2 : roll + 2;
+            }
+            int actual = 0, lastDamage = 0, lastEffectiveDamage = 0;
             for (int i = 0; i < planned; i++)
             {
                 var actor = Get(side); var target = Get(targetSide);
@@ -215,6 +221,8 @@ internal abstract partial class SourceRecipeContext
                 if (SourceGenericDamage(catalog, actor, target, targetSide, move, critical, 100) == 0) break;
                 int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
                 lastDamage = SourceGenericDamage(catalog, actor, target, targetSide, move, critical, percent);
+                lastEffectiveDamage = lastDamage;
+                lastDamage = AdjustHeldDamage(targetSide, move.Id, lastDamage, purpose);
                 SourceGenericApplyDamage(side, targetSide, move, lastDamage, critical, percent);
                 actual++;
                 MtMoonRageOnDamage(side, targetSide, move.Id);
@@ -224,7 +232,14 @@ internal abstract partial class SourceRecipeContext
             }
             SourceGenericEffectiveness(catalog, side, targetSide, move);
             Add(n => new SourceMultiHitEvent(n, Turn, side, targetSide, move.Id, planned, actual));
-            SourceGenericSecondary(catalog, side, targetSide, move, purpose, lastDamage);
+            if (twineedle)
+            {
+                // Preserve the user-approved Twineedle comparison from its prior source delegate.
+                int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
+                if (lastEffectiveDamage > 0 && roll < move.SecondaryEffectChance)
+                    InflictStatus(catalog, targetSide, WildBattleStatus.Poison, false);
+            }
+            else SourceGenericSecondary(catalog, side, targetSide, move, purpose, lastEffectiveDamage);
             if (Get(targetSide).Pokemon.CurrentHp == 0) ForestFaint(targetSide);
             ForestOutcome(true);
         }
@@ -244,6 +259,7 @@ internal abstract partial class SourceRecipeContext
                 bool critical = SourceGenericCritical(actor, defender, move, purpose);
                 int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
                 int damage = SourceGenericDamage(catalog, actor, defender, target, move, critical, percent);
+                damage = AdjustHeldDamage(target, move.Id, damage, purpose);
                 // Explosion computes damage and its random multiplier before accuracy.
                 if (SourceGenericAccuracy(side, target, move, purpose))
                 {

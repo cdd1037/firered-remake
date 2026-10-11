@@ -88,6 +88,7 @@ public static class SourceBattleIdentityRules
             }
             if (ValidateRegisters(frame, cell) is { } registerError) return registerError;
         }
+        if (SourceFourEntryAbilities.ValidateState(frame) is { } entryError) return entryError;
         if (frame.Reservations.IsDefault || frame.Queue.IsDefault || frame.PendingSwitches.IsDefault) return "source_frame_collections";
         var reserves = new HashSet<PartyMemberKey>(); var outgoing = new HashSet<BattlerSlot>();
         foreach (var reservation in frame.Reservations)
@@ -360,7 +361,8 @@ public static class SourceBattleIdentityRules
             }
             cells = cells.SetItem(i, cell with { Registers = r });
         }
-        return frame with { Slots = cells };
+        return frame with { Slots = cells, EntryAbilities = frame.EntryAbilities is { } entry ? entry with {
+            PendingIntimidateMask = (byte)(entry.PendingIntimidateMask & ~departed.Mask) } : null };
     }
 
     public static string? ValidateContinuation(SourceBattleFrame frame, SourceContinuationToken token)

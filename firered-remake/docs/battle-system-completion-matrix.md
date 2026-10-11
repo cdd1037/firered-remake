@@ -158,7 +158,7 @@ Next acceptance:
 <a id="c07"></a>
 ### C07 — Ability entry, weather and forms
 
-Authenticated permanent weather, Rain Dish, Trace and Forecast have bounded canonical singles coverage. Color Change now has actual HP-receipt and source move-end canonical singles coverage. Four-slot entry/form phases remain unfinished.
+Shared actual initial/KO-entry recipes now cover Drizzle, Drought, Sand Stream, Intimidate, Trace and Forecast, with real four-slot occupant tokens, source tie RNG and ordered pending callbacks. Four-slot Color Change, general move-end immunity and voluntary/Baton/Roar entry integration remain unfinished.
 
 Dependencies: C01, C05, C18.
 
@@ -209,7 +209,7 @@ Next acceptance:
 <a id="c10"></a>
 ### C10 — Genuine four-slot doubles owner
 
-M01 identities through M06 bounded reward/learning and clean end-turn KO replacement are integrated. Actual parties remain authoritative; six opponent completion bits and one recipient cursor avoid an unbounded ledger. Full entry abilities, cancellers/recipes/residuals, AI, preset encounter and campaign presentation remain unfinished.
+M01 identities through M06 bounded reward/learning and clean end-turn KO replacement are integrated. Actual parties remain authoritative; six opponent completion bits and one recipient cursor avoid an unbounded ledger. Shared ordered sleep/freeze/Truant/recharge/flinch/confusion/paralysis cancellers now run on actual slots, including no-target M06 actions. Initial and actual KO-entry callbacks now share source weather/Trace/Intimidate/Forecast recipes. Voluntary/Baton/Roar/Spikes, remaining recipes/residuals, AI, preset encounter and campaign presentation remain unfinished.
 
 M01 provides four fixed battler slots, party/occupant identities, reservations and distinct absence/KO masks. M02 executes shared slot-typed hit/stat/status/recovery actions; the same recipes serve existing singles. M03 executes real four-action clean turns and pauses at explicit KO EXP/replacement boundaries. Full residuals, entry/rewards, target redirection/spread, AI and campaign admission remain unfinished. See `docs/source-shared-battle-kernel.md` and `tests/Game.FourActionTurns.Tests/README.md`.
 
@@ -309,7 +309,7 @@ Next acceptance:
 <a id="c16"></a>
 ### C16 — Held-item effects and ownership
 
-Canonical singles Choice Band now executes physical Attack scaling, chosen-move locking, called/copied moves, item transfer and departure cleanup. Quick Claw/Macho Brace order and reward modifiers are shared. Focus Band and general four-slot held-item execution remain unfinished. See `docs/source-choice-band.md`.
+Canonical singles Choice Band now executes physical Attack scaling, chosen-move locking, called/copied moves, item transfer and departure cleanup. Quick Claw/Macho Brace order and reward modifiers are shared. Canonical singles Focus Band now shares post-random damage adjustment, slot-sticky protection and actual ActionFinished cleanup across ordinary, scalar, confusion and delayed attacks. General four-slot held-item execution remains unfinished. See `docs/source-choice-band.md`.
 
 Dependencies: C04, C05, C18.
 
@@ -319,7 +319,7 @@ Pinned source: `src/battle_util.c:ItemBattleEffects`, `src/battle_main.c:GetWhoS
 
 Next acceptance:
 
-- Implement remaining Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.
+- Implement remaining King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.
 - Prove threshold/RNG timing, Choice lock after copied moves, consumed-item history, permanent versus battle-only Knock Off and wild/trainer restoration.
 - An item constant, a helper branch or a species held-item slot is not full execution admission.
 
@@ -446,7 +446,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | ID | Ability | Status | Work | Specific boundary |
 | --- | --- | --- | --- | --- |
 | 1 | `ABILITY_STENCH` | `implemented-with-bounded-tests` | C20 | Field encounter modifier exists and has bounded fixed-point/RNG tests. FireRed Stench does not gain a later-generation flinch effect. |
-| 2 | `ABILITY_DRIZZLE` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-rain entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending. |
+| 2 | `ABILITY_DRIZZLE` | `implemented-with-bounded-tests` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
 | 3 | `ABILITY_SPEED_BOOST` | `implemented-with-bounded-tests` | C08 | Authentic Ninjask complete-turn tests cover lead versus switched-in timing, stage cap, faint/status order, copied/acquired ability and frame/JSON continuation. Four-slot ordering remains unverified. |
 | 4 | `ABILITY_BATTLE_ARMOR` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 5 | `ABILITY_STURDY` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
@@ -466,7 +466,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 19 | `ABILITY_SHIELD_DUST` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 20 | `ABILITY_OWN_TEMPO` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 21 | `ABILITY_SUCTION_CUPS` | `implemented-with-bounded-tests` | C09 | Authentic Octillery/Lileep/Cradily cover Roar/Whirlwind after PP and before Rooted/accuracy, effective ability changes and full source turn continuation; canonical trainer admission remains separate. |
-| 22 | `ABILITY_INTIMIDATE` | `interaction-unverified` | C07 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 22 | `ABILITY_INTIMIDATE` | `interaction-unverified` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
 | 23 | `ABILITY_SHADOW_TAG` | `implemented-with-bounded-tests` | C09 | Authenticated Wobbuffet/Wynaut and real ability-changing moves cover Run, Teleport, voluntary switch, Baton, forced and faint replacement distinctions; no Gen IV Ghost/self exemption. Four-slot field scan remains separate. |
 | 24 | `ABILITY_ROUGH_SKIN` | `implemented-with-bounded-tests` | C08 | Both real holder sides, per-hit actual HP loss, source 1/16 passive damage and faint order verified; no doubles or native effect claim. |
 | 25 | `ABILITY_WONDER_GUARD` | `interaction-unverified` | C06 | Damage/type and copy-restriction branches exist; authentic actor admission and every affected source script are not proven. |
@@ -480,7 +480,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 33 | `ABILITY_SWIFT_SWIM` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 34 | `ABILITY_CHLOROPHYLL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 35 | `ABILITY_ILLUMINATE` | `implemented-with-bounded-tests` | C20 | Field encounter modifier exists with source fixed-point/RNG checks; no battle effect is required by this source. |
-| 36 | `ABILITY_TRACE` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles entry, full turns, copied abilities/forms, source position queries, identity and failure atomicity verified after recovery. Full four-slot execution and native form graphics remain unimplemented. |
+| 36 | `ABILITY_TRACE` | `implemented-with-bounded-tests` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
 | 37 | `ABILITY_HUGE_POWER` | `implemented-with-bounded-tests` | C08 | Real Azumarill source full turn and damage match independently extracted C; four-slot interactions unverified. |
 | 38 | `ABILITY_POISON_POINT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 39 | `ABILITY_INNER_FOCUS` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
@@ -489,7 +489,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 42 | `ABILITY_MAGNET_PULL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 43 | `ABILITY_SOUNDPROOF` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 44 | `ABILITY_RAIN_DISH` | `implemented-with-bounded-tests` | C08 | Authentic canonical donor heals in the sole source ability phase, with suppression, poison order and JSON tests; four-turn residual dispatch remains pending. |
-| 45 | `ABILITY_SAND_STREAM` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-sand entry, source order, suppression and residual tests pass; four-turn entry remains pending. |
+| 45 | `ABILITY_SAND_STREAM` | `implemented-with-bounded-tests` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
 | 46 | `ABILITY_PRESSURE` | `interaction-unverified` | C09 | PP command helper exists; current authentic roster admission and four-slot counts/targets require validation. |
 | 47 | `ABILITY_THICK_FAT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 48 | `ABILITY_EARLY_BIRD` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
@@ -503,7 +503,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 56 | `ABILITY_CUTE_CHARM` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 57 | `ABILITY_PLUS` | `implemented-with-bounded-tests` | C09 | M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure. |
 | 58 | `ABILITY_MINUS` | `implemented-with-bounded-tests` | C09 | M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure. |
-| 59 | `ABILITY_FORECAST` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles entry, full turns, copied abilities/forms, source position queries, identity and failure atomicity verified after recovery. Full four-slot execution and native form graphics remain unimplemented. |
+| 59 | `ABILITY_FORECAST` | `implemented-with-bounded-tests` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
 | 60 | `ABILITY_STICKY_HOLD` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 61 | `ABILITY_SHED_SKIN` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 62 | `ABILITY_GUTS` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
@@ -514,7 +514,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 67 | `ABILITY_TORRENT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 68 | `ABILITY_SWARM` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 69 | `ABILITY_ROCK_HEAD` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
-| 70 | `ABILITY_DROUGHT` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-sun entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending. |
+| 70 | `ABILITY_DROUGHT` | `implemented-with-bounded-tests` | C07 | Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending. |
 | 71 | `ABILITY_ARENA_TRAP` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 72 | `ABILITY_VITAL_SPIRIT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 73 | `ABILITY_WHITE_SMOKE` | `interaction-unverified` | C06 | Stat-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
@@ -551,6 +551,18 @@ Recovery integration (2026-10-11): Quick Claw/Macho Brace and Trace/Forecast wer
 
 M04/M05 combined recovery increment: actual four-slot learned/called targeting, Lightning Rod, Plus/Minus, generic spread/Explosion and a shared temporary-weather/status/end-turn-ability scheduler now pass together with canonical singles Color Change, Trace/Forecast and held-item order. See `tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md`, `docs/source-four-slot-end-turn.md`, `docs/source-color-change-ability.md` and `evidence/recovery-20261011/combined-four/result.json`. EXP/entry continuation, no-target costs, the remaining recipes/residuals/cancellers, AI and campaign doubles remain distinct open work.
 
-Combined presentation increment: Original Pound/Tackle scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these two moves; sound uses Dummy and actual pan/listening remain unverified. See `docs/source-hit-animation-slice.md` and `evidence/recovery-20261011/hit-combined-proof/RESULT.json`.
+Combined presentation increment: Original Pound/Tackle/Scratch/Cut/Slash/False Swipe scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these six moves; sound uses Dummy and actual pan/listening remain unverified. See `docs/source-hit-animation-slice.md` and `evidence/recovery-20261011/hit-combined-proof/RESULT.json`.
 
 M06 integration shares actual EXP/EV/learning and delayed callbacks with the permanent party authority, and combines weather/screens with KO reward and replacement resume. The authoritative continuation version is now `firered-four-action-reward-continuation-v3`; old diagnostic cursors reject. This remains a Domain boundary, not campaign doubles or player in-battle save support. See `tests/Game.FourRewards.Tests/README.md`.
+
+## Shared cancellation and Focus Band integration (2026-10-11)
+
+Canonical singles and four-slot frames now share ordered sleep, natural thaw, Truant, recharge, flinch, confusion and paralysis cancellation. Actual M06 no-target actions run these checks before PP or an attack string. Canonical singles Focus Band uses shared post-random damage adjustment and slot-owned protection through action completion, including confusion and delayed attacks. Other four-slot held effects, additional locks/recipes, AI, Application and full doubles presentation remain open. See [shared cancellers](source-action-cancellers.md) and the [Focus Band tests](../tests/Game.SourceFocusBand.Tests/README.md).
+
+## Shared initial and KO-entry callbacks (2026-10-11)
+
+Drizzle, Drought, Sand Stream, Intimidate, Trace and Forecast use the same slot-typed entry recipes for canonical singles and the actual four-slot owner. Initial ordering and ties, delayed Intimidate/Trace, real KO replacements, and weather/form suppression are tested. Current four-slot tests include 14 full turns and 3 actual KO replacements. Spikes, voluntary/Baton/Roar entry integration, general move-end immunity and Application/AI remain open. See [entry ownership and evidence](source-four-slot-entry-abilities.md).
+
+## Shared slice animation increment (2026-10-11)
+
+Scratch, Cut, Slash and False Swipe now share the original script/callback renderer with Pound and Tackle: six bounded scripts, 444 exact source-C snapshots and 14 final native animation cases. Existing panX and cue ownership remain in use. The prior native quit timeout is retained as an unresolved intermittent failure; final uninstrumented retry exited normally. Other 348 scripts and general doubles presentation remain incomplete. See [source slice animation coverage](source-basic-slice-animations.md).

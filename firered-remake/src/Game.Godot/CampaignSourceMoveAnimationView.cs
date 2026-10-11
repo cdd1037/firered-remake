@@ -32,10 +32,11 @@ public partial class CampaignView
         if(_sourceMoveManifest is not null)return;
         string folder=System.IO.Path.Combine(_root,"content/generated/source-hit-animations");
         _sourceMoveManifest=SourceHitAnimationCatalog.Read(folder);
-        _sourceMoveAssets.Add("impact",SourceHitAnimationCatalog.Asset(_sourceMoveManifest,folder,"impact"));
+        foreach(var row in _sourceMoveManifest.RootElement.GetProperty("assets").EnumerateArray())
+        {string id=row.GetProperty("id").GetString()!;_sourceMoveAssets.Add(id,SourceHitAnimationCatalog.Asset(_sourceMoveManifest,folder,id));}
         folder=System.IO.Path.Combine(_root,"content/generated/campaign-hit-art");
         var bytes=SourceHitAnimationCatalog.ReadBounded(System.IO.Path.Combine(folder,"manifest.json"),132335,132335);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!="ebd2987c58c7a889d21b35c8377804d8597b318eaa56483c8ca621336e68869c")throw new InvalidDataException("Campaign hit art manifest differs.");
+        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!="c339e00190e5b407380ff8d26c11a1e132c93adf98e17acbf079428fde82255a")throw new InvalidDataException("Campaign hit art manifest differs.");
         using var doc=JsonDocument.Parse(bytes);
         foreach(var row in doc.RootElement.GetProperty("geometry").EnumerateArray())
         {
@@ -128,7 +129,7 @@ public partial class CampaignView
         if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId),cue,battlers,false,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){Apply(new("ack"));return;}
         _sourceMoveComposer=new(assets,battlers.ToArray());_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;
         PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
-        Write("sourceMoveAnimationStarted",new{dispatch,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=false});QueueRedraw();
+        Write("sourceMoveAnimationStarted",new{dispatch,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();
     }
     private void PresentSourceMoveFrame(SourceAnimationFrame frame)
     {

@@ -101,6 +101,39 @@
       "path": "graphics/battle_anims/sprites/substitute_back.png",
       "bytes": 405,
       "sha256": "52df6795b0e09adbd36d0367dc0638e89516dc4e41249510793b892e5299b8c3"
+    },
+    {
+      "path": "src/battle_anim_effects_1.c",
+      "bytes": 160557,
+      "sha256": "80de93553f73982ca5b1abab6af952fe96e0b4763fefddf8aa1dc5071ad20682"
+    },
+    {
+      "path": "src/battle_anim_effects_3.c",
+      "bytes": 157260,
+      "sha256": "bdf8ba956af35ca232d7e5101090e2ff31a35f0ae91286a21b216e7787ba6c1f"
+    },
+    {
+      "path": "graphics/battle_anims/sprites/scratch.png",
+      "bytes": 377,
+      "sha256": "7e23319bb67eb8acc6f44a9ac0da7e6c68aea76ebab1f965dbca0aa61104d37d"
+    },
+    {
+      "path": "graphics/battle_anims/sprites/cut.png",
+      "bytes": 234,
+      "sha256": "1afb812f767d52a17ff042f46a419cce15c0bc5a83c38d33792ac4b874053ae1"
+    },
+    {
+      "path": "graphics/battle_anims/sprites/slash.png",
+      "bytes": 546,
+      "sha256": "5cfb2406b6e1d564fe87ac205fce48246867003c504c8d6f76becb2a4b3507c3"
+    },
+    {
+      "path": "graphics/battle_anims/sprites/slash_2.pal",
+      "bytes": 198,
+      "sha256": "925f81608bf61b1ccd7bf32e0aafcddadf22bdf5eda3981b1a047a8a153a3c0e",
+      "gitBlobBytes": 179,
+      "gitBlobSha256": "76bb16f7343a9cf52895ef14f5155e5d69322ce9c15262df027327ea4e3d7446",
+      "gitTextLineEndings": "lf"
     }
   ]
 }

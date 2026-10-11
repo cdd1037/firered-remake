@@ -47,7 +47,7 @@ public static partial class SourceFourActionTurns
             return "source_four_action_weather_conflict";
         if (frame.Slots.Any(c => c.Body is null)) return "source_four_action_body_required";
         // Positive admission: only the shared weather and side-protection phases are enabled.
-        // Entry abilities, Spikes and Follow Me still require their own lifecycle owners.
+        // Spikes and Follow Me still require their own lifecycle owners.
         if (frame.Field != new SourceFieldRegisters { Terrain = frame.Field.Terrain, PayDayMoney = frame.Field.PayDayMoney,
                 RainTurnsRemaining = frame.Field.RainTurnsRemaining, SandstormTurnsRemaining = frame.Field.SandstormTurnsRemaining,
                 SunTurnsRemaining = frame.Field.SunTurnsRemaining, HailTurnsRemaining = frame.Field.HailTurnsRemaining,
@@ -59,31 +59,29 @@ public static partial class SourceFourActionTurns
         foreach (var cell in frame.Slots)
         {
             var body = cell.Body!;
+            if (frame.EntryAbilities is { } entry && entry.AppliedEntries[cell.Slot.Value] != cell.Occupant ||
+                frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(body.Pokemon.AbilityId))
+                return "source_four_action_initial_entry_required";
             if (SourcePokemonValidator.ValidateForBattle(catalog, body.Pokemon) is not null) return "source_four_action_pokemon";
             if (body.FirstTurnCounter is < 0 or > 2 || body.ProtectConsecutiveUses != 0 || body.FuryCutterCounter != 0 ||
-                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFourRewards.SupportsRewardHeldItem(body.HeldItem) || body.CalledVolatile is not null ||
-                body.SourceChoiceMove is not null || body.CalledOverlay is not null || body.Transform is not null || body.CopyMoves is not null || body.Cursed || body.Rooted ||
-                body.Nightmare || body.DestinyBond || body.Imprison || body.TruantLoafing || body.YawnTurnsRemaining != 0 ||
-                body.ChargeTurnsRemaining != 0 || body.BindTurnsRemaining != 0 || body.ConfusionTurnsRemaining != 0 ||
+                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFourRewards.SupportsRewardHeldItem(body.HeldItem) || body.CalledVolatile is not null ||
+                body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null || body.Cursed || body.Rooted ||
+                body.Nightmare || body.DestinyBond || body.Imprison || body.YawnTurnsRemaining != 0 ||
+                body.ChargeTurnsRemaining != 0 || body.BindTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
-                body.EncoreMoveSlot is not null || body.DisabledMove is not null || body.Protected || body.Enduring || body.Flinched ||
-                body.Rage || body.WaterSport || body.MudSport || cell.Registers.Turn is not null ||
+                body.EncoreMoveSlot is not null || body.DisabledMove is not null || body.Protected || body.Enduring ||
+                body.Rage || body.WaterSport || body.MudSport ||
+                cell.Registers.Turn is { } turn && (turn.SureHitTurnsRemaining != 0 || turn.Lock is not { } locked || !SourceBattleKernel.SupportsRecharge(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
                 cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null ||
-                cell.Registers.InfatuationSource is not null || cell.Position.Wish is not null)
+                cell.Registers.InfatuationSource is not null || cell.Position.FocusBanded || cell.Position.Wish is not null)
                 return "source_four_action_residual_or_canceller_not_migrated";
             if (cell.Position.FutureAttack is { } future && (future.Move.Value is not ("pret:MOVE_FUTURE_SIGHT" or "pret:MOVE_DOOM_DESIRE") ||
                 future.Damage > 65535 || !catalog.Moves.ContainsKey(future.Move))) return "source_four_action_future_contract";
-            if (WildBattleEffective.Ability(body) is "ABILITY_TRUANT" or "ABILITY_STATIC" or "ABILITY_TRACE" or "ABILITY_FORECAST")
-                return "source_four_action_ability_phase_not_migrated";
         }
         return null;
     }
 
-    // Each omitted source effect can introduce an unported canceller/residual in this same turn.
-    // This restricts selected capabilities, not the authentic catalog or a Pokemon's unselected moves.
-    private static bool CleanRecipe(PokemonMoveDefinition move) => SourceBattleKernel.SupportsRecipe(move) && move.Effect is not
-        ("EFFECT_PARALYZE_HIT" or "EFFECT_CONFUSE_HIT" or
-         "EFFECT_SLEEP" or "EFFECT_SWAGGER" or "EFFECT_FLATTER");
+    private static bool CleanRecipe(PokemonMoveDefinition move) => SourceBattleKernel.SupportsRecipe(move);
 
     public static SourceFourActionResult BeginActions(PokemonCatalog catalog, SourceBattleFrame frame,
         long expectedRevision, ImmutableArray<SourceActionSelection> selections)
@@ -102,9 +100,12 @@ public static partial class SourceFourActionTurns
             if (action.Kind != SourceActionKind.Move || action.MoveSlot is null or < 0 || action.Target is null)
                 return Fail(frame, "source_four_action_selection_not_migrated");
             var learned = next.Get(action.Slot).Body!.Pokemon.Moves[action.MoveSlot.Value];
-            if (learned.CurrentPp == 0) return Fail(frame, "source_four_action_selection_no_pp");
-            var move = catalog.Moves[learned.Move];
-            if (!CleanRecipe(move)) return Fail(frame, "source_four_action_effect_phase_not_migrated");
+            var recharge = next.Get(action.Slot).Registers.Turn?.Lock;
+            if (recharge is null && learned.CurrentPp == 0) return Fail(frame, "source_four_action_selection_no_pp");
+            if (recharge is not null && (action.MoveSlot != recharge.PpSlot || action.Target != recharge.Target))
+                return Fail(frame, "source_four_action_recharge_selection");
+            var move = SourceBattleKernel.ActionMove(catalog, next.Get(action.Slot), action.MoveSlot.Value);
+            if (recharge is null && !CleanRecipe(move)) return Fail(frame, "source_four_action_effect_phase_not_migrated");
             // Preflight never publishes target-selection RNG; execution resolves against retained order.
             var selection = SourceMoveTargeting.ResolveLearned(next, action.Slot, action.Target.Value, move);
             if (selection.Fault is { } targetError) return Fail(frame, targetError);
@@ -158,8 +159,9 @@ public static partial class SourceFourActionTurns
                     action with { Kind = SourceActionKind.Cancelled, CancellationReason = action.CancellationReason ?? "original-occupant-unavailable" }) };
             else
             {
-                var move = catalog.Moves[frame.Get(action.Slot).Body!.Pokemon.Moves[action.MoveSlot!.Value].Move];
-                var replaced = action.OriginalChosenMove != move.Id;
+                var move = SourceBattleKernel.ActionMove(catalog, frame.Get(action.Slot), action.MoveSlot!.Value);
+                // Source forced/recharge selection precedes the overwritten-selected-move branch.
+                var replaced = frame.Get(action.Slot).Registers.Turn?.Lock is null && action.OriginalChosenMove != move.Id;
                 var selection = replaced ? SourceMoveTargeting.ResolveReplaced(frame, action.Slot, move)
                     : SourceMoveTargeting.ResolveLearned(frame, action.Slot, action.Target!.Value, move);
                 if (selection.Fault is { } targetError) return Fail(frame, targetError);
@@ -208,6 +210,15 @@ public static partial class SourceFourActionTurns
                 next.Outcome != WildBattleOutcome.Ongoing ? SourceFourActionPhase.BattleEnded :
                 next.NextAction == next.Queue.Length ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.Actions;
             next = next with { FourTurn = next.FourTurn! with { Phase = phase } };
+            // The source fainted-action callbacks run after each complete action. Pending
+            // actual KO entries defer their settlement to the approved end-turn boundary.
+            if (next.Outcome == WildBattleOutcome.Ongoing && !HasPendingRewards(next) &&
+                !next.Slots.Any(c => next.IsDeferredKoVacant(c.Slot) &&
+                    !SourceBattleIdentityRules.LegalReserveIndices(next, c.Slot.Side).IsEmpty))
+            {
+                var settled = SourceFourEntryAbilities.Settle(next);
+                next = settled.State; events.AddRange(settled.Events); trace = trace.AddRange(settled.Trace);
+            }
             return new(next, events.ToImmutable(), trace, null);
         }
         catch (SourceRecipeUnsupported ex) { return Fail(frame, ex.Message); }

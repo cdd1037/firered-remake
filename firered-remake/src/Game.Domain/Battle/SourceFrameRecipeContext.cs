@@ -24,9 +24,9 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
     internal FrameRecipeContext(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action, PokemonMoveDefinition? delayedMove = null)
     {
         this.catalog = catalog; this.action = action; Frame = initial = frame;
-        move = delayedMove ?? catalog.Moves[Get(action.Actor.Slot).Pokemon.Moves[action.ChosenSlot].Move];
+        move = delayedMove ?? SourceBattleKernel.ActionMove(catalog, frame.Get(action.Actor.Slot), action.ChosenSlot);
         invocation = new(action.Actor.Slot, action.ChosenSlot, action.ChosenSlot, move.Id, move.Id, move.Id, null,
-            action.Target, WildBattleAttackCancellerPhase.ConditionsPassed, WildBattleInvocationFlags.Obeys);
+            action.Target, WildBattleAttackCancellerPhase.Start, WildBattleInvocationFlags.None);
     }
     // BattleScript_MonTookFutureAttack reuses accuracycheck and the ordinary damage update.
     // Admission excludes Focus Band, Substitute, Endure and move-end item side effects.
@@ -45,6 +45,16 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
     // there is no hit/accuracy/secondary-effect recipe and no newly selected recipient.
     internal void RunNoTarget()
     {
+        string purpose = Frame.Layout == SourceBattleLayout.Singles
+            ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
+        if (ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose))
+        {
+            CompleteScriptTarget();
+            FinishAction();
+            return;
+        }
+        invocation = invocation with { CancellerPhase = WildBattleAttackCancellerPhase.ConditionsPassed,
+            Flags = invocation.Flags | WildBattleInvocationFlags.Obeys };
         BeginScriptTarget(action.Target);
         SpendEarlyPartyPp(action.Actor.Slot, action.Target, action.ChosenSlot, move);
         Add(n => new SourceMoveFailedEvent(n, Turn, action.Actor.Slot, action.Target, move.Id, "deferred-ko-no-target"));
@@ -57,10 +67,16 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
         string purpose = Frame.Layout == SourceBattleLayout.Singles
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
         var firstTarget = invocation.Target;
-        ExecutePass(firstTarget);
+        bool blocked = ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose);
+        if (blocked) CompleteScriptTarget();
+        else
+        {
+            invocation = invocation with { CancellerPhase = WildBattleAttackCancellerPhase.ConditionsPassed };
+            ExecutePass(firstTarget);
+        }
         // MOVEEND_NEXT_TARGET uses HP only. It does not test source absence or restart action
         // ownership, so PP exhaustion and the attacker's zero HP cannot cancel the second pass.
-        if (Frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_BOTH" &&
+        if (!blocked && Frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_BOTH" &&
             Frame.Get(firstTarget.Partner).Body?.Pokemon.CurrentHp > 0)
         {
             invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.NoAttackString };
@@ -112,6 +128,14 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
                     Add(n => new SourceCalledPartyChangedEvent(n, Turn, key.Side, key.Index, "active-sync", before, after));
             }
         Frame = Frame with { Revision = checked(Frame.Revision + 1) };
+    }
+    internal override bool CancellerHasRecharge(BattlerSlot slot) => Frame.Get(slot).Registers.Turn?.Lock?.Kind == WildBattleCalledLockKind.Recharge;
+    internal override void CancellerClearRecharge(BattlerSlot slot)
+    {
+        var cell = Frame.Get(slot); var turn = cell.Registers.Turn!; var locked = turn.Lock!;
+        Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Registers = cell.Registers with {
+            Turn = turn.SureHitTurnsRemaining == 0 ? null : turn with { Lock = null } } }) };
+        Add(n => new SourceMtMoonVolatileEvent(n, Turn, slot, "called-recharge", locked.TurnsRemaining, 0, "recharged"));
     }
     internal override bool SourceDoubleBattle => Frame.Layout == SourceBattleLayout.PresetDoubles;
     internal override int SourceDefenderCount(BattlerSlot target) => SourceMoveTargeting.CountSourcePresentDefenders(Frame, target);
@@ -171,6 +195,11 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
     }
     internal override SourceFieldRegisters SettingWeather => Frame.Field;
     internal override void ReplaceSettingWeather(SourceFieldRegisters weather) => Frame = Frame with { Field = weather };
+    internal override void SettingWeatherChanged()
+    {
+        var entry = new FrameEntryContext(Frame); entry.ForecastAll();
+        Frame = entry.Frame; Events.AddRange(entry.Events); Trace.AddRange(entry.Trace);
+    }
     internal override int SandstormTurnsRemaining => Frame.Field.SandstormTurnsRemaining;
     internal override bool Safeguard(BattlerSlot slot) => Frame.Sides[(int)slot.Side].SafeguardTurnsRemaining > 0;
     internal override int RainTurnsRemaining => Frame.Field.RainTurnsRemaining;
@@ -288,7 +317,17 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
         Add(n => new SourceAbilityPreventedEvent(n, Turn, actor, holder, move.Id, "ABILITY_DAMP"));
         return true;
     }
-    internal override void ApplyFlinch(BattlerSlot target) => throw new SourceRecipeUnsupported("source_kernel_flinch_order_not_migrated");
+    internal override void ApplyFlinch(BattlerSlot target)
+    {
+        if (Frame.FourTurn?.Phase != SourceFourActionPhase.Actions || action.ActionOrderIndex != Frame.NextAction ||
+            Frame.Queue[Frame.NextAction].Token?.Owner != action.Actor)
+            throw new SourceRecipeUnsupported("source_kernel_flinch_order_not_migrated");
+        var body = Get(target);
+        bool alreadyActed = Frame.Queue.Take(Frame.NextAction + 1).Any(a => a.Slot == target);
+        if (body.Pokemon.CurrentHp == 0 || alreadyActed || WildBattleEffective.Ability(body) is "ABILITY_SHIELD_DUST" or "ABILITY_INNER_FOCUS") return;
+        Set(target, body with { Flinched = true });
+        Add(n => new SourceFlinchEvent(n, Turn, target, true));
+    }
     internal override void ApplyBinding(BattlerSlot target, string purpose, MoveId move) => throw new SourceRecipeUnsupported("source_kernel_binding_not_migrated");
     internal override bool EarlyStarterPrimaryMove(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_primary_status_not_migrated");
     internal override bool EarlyPartyScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_legacy_script_not_migrated");

@@ -50,6 +50,7 @@ namespace Game.Domain.Battle;
 [JsonDerivedType(typeof(SourceGrudgePpEvent), "SourceGrudgePpEvent")]
 [JsonDerivedType(typeof(SourceHeldItemConsumedEvent), "SourceHeldItemConsumedEvent")]
 [JsonDerivedType(typeof(SourceHeldItemKnockedOffEvent), "SourceHeldItemKnockedOffEvent")]
+[JsonDerivedType(typeof(SourceDamageAdjustedEvent), "SourceDamageAdjustedEvent")]
 [JsonDerivedType(typeof(SourceHeldItemStolenEvent), "SourceHeldItemStolenEvent")]
 [JsonDerivedType(typeof(SourceHpChangedEvent), "SourceHpChangedEvent")]
 [JsonDerivedType(typeof(SourceInfatuationBlockedEvent), "SourceInfatuationBlockedEvent")]
@@ -143,6 +144,7 @@ public sealed record SourceFocusPunchPreparedEvent(long Sequence, int Turn, Batt
 public sealed record SourceForcedOutEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, bool TrainerBattle) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceGrudgePpEvent(long Sequence, int Turn, BattlerSlot Fainted, BattlerSlot Attacker, MoveId Move, int ChosenSlot, int Before) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHeldItemConsumedEvent(long Sequence, int Turn, BattlerSlot Side, string Item, int HpBefore, int HpAfter, int HpRestored) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceDamageAdjustedEvent(long Sequence, int Turn, BattlerSlot Target, MoveId Move, string Item, int DamageBefore, int DamageAfter, bool Endured, bool HungOn) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHeldItemKnockedOffEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string Item) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHeldItemStolenEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string Item) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHpChangedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, int HpBefore, int HpAfter, int Damage, bool Critical, int RandomPercent) : SourceBattleEvent(Sequence, Turn);
@@ -238,6 +240,7 @@ public static class SourceBattleEventAdapter
         WildBattleForcedOutEvent x => new SourceForcedOutEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.TrainerBattle),
         WildBattleGrudgePpEvent x => new SourceGrudgePpEvent(x.Sequence, x.Turn, Slot(x.Fainted), Slot(x.Attacker), x.Move, x.ChosenSlot, x.Before),
         WildBattleHeldItemConsumedEvent x => new SourceHeldItemConsumedEvent(x.Sequence, x.Turn, Slot(x.Side), x.Item, x.HpBefore, x.HpAfter, x.HpRestored),
+        WildBattleDamageAdjustedEvent x => new SourceDamageAdjustedEvent(x.Sequence, x.Turn, Slot(x.Target), x.Move, x.Item, x.DamageBefore, x.DamageAfter, x.Endured, x.HungOn),
         WildBattleHeldItemKnockedOffEvent x => new SourceHeldItemKnockedOffEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.Item),
         WildBattleHeldItemStolenEvent x => new SourceHeldItemStolenEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.Item),
         WildBattleHpChangedEvent x => new SourceHpChangedEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent),
@@ -331,6 +334,7 @@ public static class SourceBattleEventAdapter
         SourceForcedOutEvent x => new WildBattleForcedOutEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.TrainerBattle),
         SourceGrudgePpEvent x => new WildBattleGrudgePpEvent(x.Sequence, x.Turn, Side(x.Fainted), Side(x.Attacker), x.Move, x.ChosenSlot, x.Before),
         SourceHeldItemConsumedEvent x => new WildBattleHeldItemConsumedEvent(x.Sequence, x.Turn, Side(x.Side), x.Item, x.HpBefore, x.HpAfter, x.HpRestored),
+        SourceDamageAdjustedEvent x => new WildBattleDamageAdjustedEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Item, x.DamageBefore, x.DamageAfter, x.Endured, x.HungOn),
         SourceHeldItemKnockedOffEvent x => new WildBattleHeldItemKnockedOffEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
         SourceHeldItemStolenEvent x => new WildBattleHeldItemStolenEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
         SourceHpChangedEvent x => new WildBattleHpChangedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.HpBefore, x.HpAfter, x.Damage, x.Critical, x.RandomPercent),
@@ -468,6 +472,7 @@ public static class SourceBattleEventHooks
             SourceForcedOutEvent x => [x.Actor, x.Target],
             SourceGrudgePpEvent x => [x.Fainted, x.Attacker],
             SourceHeldItemConsumedEvent x => [x.Side],
+            SourceDamageAdjustedEvent x => [x.Target],
             SourceHeldItemKnockedOffEvent x => [x.Actor, x.Target],
             SourceHeldItemStolenEvent x => [x.Actor, x.Target],
             SourceHpChangedEvent x => [x.Actor, x.Target],

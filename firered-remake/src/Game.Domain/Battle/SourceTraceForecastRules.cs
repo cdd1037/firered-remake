@@ -50,7 +50,7 @@ public static class SourceTraceForecastRules
     internal static string? Validate(WildBattleCombatant? mon, string? profile)
     {
         if (mon is null) return null;
-        if ((mon.SourceTracePending || mon.CalledOverlay?.CastformForm is not null) && profile != BattleRulesProfile.CanonicalSourceSinglesVersion)
+        if ((mon.SourceTracePending || mon.CalledOverlay?.CastformForm is not null) && profile is not (BattleRulesProfile.CanonicalSourceSinglesVersion or SourceBattleKernel.Version))
             return "source_trace_forecast_profile";
         if (mon.SourceTracePending && (mon.Pokemon?.CurrentHp == 0 ||
             (mon.Transform?.OriginalPokemon?.AbilityId ?? mon.Pokemon?.AbilityId) != "ABILITY_TRACE")) return "source_trace_pending_identity";

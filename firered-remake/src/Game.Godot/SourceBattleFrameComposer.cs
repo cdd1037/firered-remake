@@ -25,9 +25,15 @@ public sealed class SourceBattleFrameComposer
         var pixels=new ushort[Width*112];Blit(pixels,_assets["background"],0,0);
         foreach(var b in _battlers.OrderBy(b=>frame.BackgroundSlots.Contains(b.Slot.Value)?0:1).ThenBy(b=>b.Slot.IsPlayer?1:0))
         {
-            var center=b.DisplayCenter??b.Center(false);var offset=frame.Offsets[b.Slot.Value];Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y);
+            var center=b.DisplayCenter??b.Center(false);var offset=(frame.BackgroundSlots.Contains(b.Slot.Value)?frame.Offsets:frame.ObjectOffsets)[b.Slot.Value];Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y);
         }
-        foreach(var hit in frame.HitSplats)AffineImpact(pixels,_assets[hit.Asset],hit,frame.AlphaA,frame.AlphaB);
+        // The VM carries source persistent OAM order, including ties and reused slots.
+        foreach(var sprite in frame.Sprites.OrderByDescending(s=>s.OamRank))
+        {
+            if(!sprite.Visible||sprite.Asset is null)continue;
+            if(sprite.Template=="gBasicHitSplatSpriteTemplate")AffineImpact(pixels,_assets[sprite.Asset],new(sprite.Position,sprite.Scale,sprite.Asset),frame.AlphaA,frame.AlphaB,frame.BlendEnabled);
+            else BlitSprite(pixels,_assets[sprite.Asset],sprite,frame.AlphaA,frame.AlphaB,frame.BlendEnabled);
+        }
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=255;}return rgba;
     }
@@ -36,7 +42,27 @@ public sealed class SourceBattleFrameComposer
         for(int sy=0;sy<source.Height;sy++)for(int sx=0;sx<source.Width;sx++)
         {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0)dest[dy*240+dx]=p;}
     }
-    private static void AffineImpact(ushort[] dest,SourcePixelAsset source,HitSplatFrame hit,int eva,int evb)
+    private static void BlitSprite(ushort[] dest,SourcePixelAsset sheet,SourceVisualSpriteFrame sprite,int eva,int evb,bool blendEnabled)
+    {
+        // Source 32x32 4bpp frames are 16 sequential 8x8 tiles, stacked in the imported sheet.
+        if(sprite.Tile<0||sprite.Tile%16!=0||sprite.Tile/16*32+32>sheet.Height)throw new InvalidDataException("Source sprite tile frame exceeds sheet.");
+        int top=sprite.Tile/16*32;
+        for(int y=0;y<32;y++)for(int x=0;x<32;x++)
+        {
+            int dx=sprite.Position.X+sprite.Offset.X-16+x,dy=sprite.Position.Y+sprite.Offset.Y-16+y;
+            if(dx<0||dx>=240||dy<0||dy>=112)continue;
+            int sx=sprite.HFlip?31-x:x;ushort pixel=sheet.Pixels[(top+y)*sheet.Width+sx];
+            if((pixel&0x8000)==0)continue;
+            int at=dy*240+dx;dest[at]=sprite.Blend&&blendEnabled?Blend(pixel,dest[at],eva,evb):pixel;
+        }
+    }
+    private static ushort Blend(int pixel,int under,int eva,int evb)
+    {
+        int result=0x8000;
+        for(int shift=0;shift<=10;shift+=5)result|=Math.Min(31,((((pixel>>shift)&31)*eva+((under>>shift)&31)*evb)>>4))<<shift;
+        return (ushort)result;
+    }
+    private static void AffineImpact(ushort[] dest,SourcePixelAsset source,HitSplatFrame hit,int eva,int evb,bool blendEnabled)
     {
         // Original ConvertScaleParam: inverse OAM matrix, zero rotation, normal 32x32 canvas.
         int inverse=0x10000/hit.Scale;
@@ -45,9 +71,8 @@ public sealed class SourceBattleFrameComposer
             int sx=((dx*inverse)>>8)+16,sy=((dy*inverse)>>8)+16,x=hit.Center.X+dx,y=hit.Center.Y+dy;
             if(sx<0||sx>=32||sy<0||sy>=32||x<0||x>=240||y<0||y>=112)continue;
             int pixel=source.Pixels[sy*32+sx];if((pixel&0x8000)==0)continue;
-            int at=y*240+x,under=dest[at],result=0x8000;
-            for(int shift=0;shift<=10;shift+=5)result|=Math.Min(31,((((pixel>>shift)&31)*eva+((under>>shift)&31)*evb)>>4))<<shift;
-            dest[at]=(ushort)result;
+            int at=y*240+x;
+            dest[at]=blendEnabled?Blend(pixel,dest[at],eva,evb):(ushort)pixel;
         }
     }
 }

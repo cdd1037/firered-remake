@@ -216,12 +216,16 @@ public static partial class WildBattleRules
         }
         internal void ResumeSourceWildMoves(PokemonCatalog catalog)
         {
+            // Resumed Baton or a completed item/switch action precedes the next queued move.
+            if (State.SourceWild!.Turn is { NextAction: > 0 }) SourceHeldActionFinished();
             while (State.SourceWild!.Turn is { NextAction: < 2 } turn)
             {
                 var side = turn.NextAction == 0 ? turn.First : Other(turn.First);
                 SetSourceWildTurn(turn with { NextAction = turn.NextAction + 1 });
+                bool attempted = State.Outcome == WildBattleOutcome.Ongoing && Get(side).Pokemon.CurrentHp > 0;
                 ExecuteSourceWildMove(catalog, side, side == WildBattleSide.Player ? turn.PlayerSlot : turn.OpponentSlot);
                 if (SourceWildPauseForReplacement()) { SourceWildCommitRevision(); return; }
+                if (attempted) SourceHeldActionFinished();
                 if (State.Outcome != WildBattleOutcome.Ongoing || State.Player.Pokemon.CurrentHp == 0 || State.Opponent.Pokemon.CurrentHp == 0) break;
             }
             FinishSourceWildTurn(catalog);

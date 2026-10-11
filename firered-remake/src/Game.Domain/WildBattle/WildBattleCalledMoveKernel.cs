@@ -221,6 +221,7 @@ public static partial class WildBattleRules
         var result = Execute(state, state, context => {
             context.calledActionContext = action.Context!;
             context.ExecuteCalledMoveAction(catalog, action, chosen!, current!);
+            context.SourceHeldStandaloneActionFinished();
             context.State = context.State with { Revision = checked(state.Revision + 1) };
             invocation = context.activeInvocation;
         });

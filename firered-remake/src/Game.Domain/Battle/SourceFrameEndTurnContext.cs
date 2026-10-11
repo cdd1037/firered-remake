@@ -124,8 +124,10 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     internal override void ExposeFaintedActions() => CheckTeamsLost();
     internal override void FaintedActionItems()
     {
-        if (Frame.Slots.Any(c => !SourceFourRewards.SupportsRewardHeldItem(c.Body!.HeldItem) || WildBattleEffective.Ability(c.Body) is "ABILITY_TRACE" or "ABILITY_FORECAST"))
-            throw new SourceRecipeUnsupported("source_four_action_fainted_ability_or_item_phase_not_migrated");
+        if (Frame.Slots.Any(c => !SourceFourRewards.SupportsRewardHeldItem(c.Body!.HeldItem)))
+            throw new SourceRecipeUnsupported("source_four_action_fainted_item_phase_not_migrated");
+        var settled = SourceFourEntryAbilities.Settle(Frame);
+        Frame = settled.State; Events.AddRange(settled.Events); Trace.AddRange(settled.Trace);
     }
     internal override void Wish(PokemonCatalog catalog, BattlerSlot slot)
     {
@@ -141,7 +143,7 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
             SourceBattlerEndTurnStep.Nightmare => m.Nightmare,
             SourceBattlerEndTurnStep.Curse => m.Cursed,
             SourceBattlerEndTurnStep.Wrap => m.BindTurnsRemaining != 0,
-            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is not null || m.RampageTurnsRemaining != 0,
+            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not WildBattleCalledLockKind.Recharge } || m.RampageTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Disable => m.DisabledMove is not null,
             SourceBattlerEndTurnStep.Encore => m.EncoreMoveSlot is not null,
             SourceBattlerEndTurnStep.LockOn => r.Turn?.SureHitTurnsRemaining > 0,
@@ -176,7 +178,20 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     }
     internal override void Cleanup()
     {
-        Frame = Frame with { Slots = Frame.Slots.Select(c => c with { Registers = c.Registers with { Damage = null } }).ToImmutableArray() };
+        // Final cleanup retains one slot traversal: damage lifetime and the source recharge timer.
+        foreach (var prior in Frame.Slots.Take(BattlerCount))
+        {
+            var cell = prior with { Registers = prior.Registers with { Damage = null } };
+            Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, cell) };
+            if (cell.Registers.Turn?.Lock is { Kind: WildBattleCalledLockKind.Recharge } recharge)
+            {
+                int after = SourceTurnBoundaryRules.RechargeAfterReady(recharge.TurnsRemaining);
+                var turn = cell.Registers.Turn;
+                Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, cell with { Registers = cell.Registers with {
+                    Turn = after == 0 ? null : turn with { Lock = recharge with { TurnsRemaining = after } } } }) };
+                Add(n => new SourceMtMoonVolatileEvent(n, Turn, cell.Slot, "called-recharge", recharge.TurnsRemaining, after, "recharge-timer"));
+            }
+        }
         SynchronizePartyEvents();
     }
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Authenticated, bounded Pound/Tackle and current-battler geometry import. No ROM input."""
+"""Authenticated, bounded Basic hit/slice scripts and current-battler geometry import. No ROM input."""
 import argparse,hashlib,io,json,re,struct,subprocess,tempfile,os
 from pathlib import Path
 from PIL import Image
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-LOCK_SHA='9845b38fd872de73ddb8ae67aab9e19da62b635ee41048dd061acc431d78a2ec'
+LOCK_SHA='ad19ce3e366abb0435edbb3e214bc493dfb6fb713416f36d15763df38cc22864'
 OPS={'loadspritegfx','monbg','setalpha','playsewithpan','createsprite','createvisualtask','delay','waitforvisualfinish','clearmonbg','blendoff','end'}
 def sha(data):return hashlib.sha256(data).hexdigest()
 def read_bounded(path,maximum,exact=None):
@@ -27,9 +27,10 @@ def authenticated(reference):
   if (reference/'.git').exists():
    blob=COMMIT+':'+name
    n=int(subprocess.check_output(['git','-C',str(reference),'cat-file','-s',blob]))
-   if n!=size:raise ValueError('Source blob length differs: '+name)
+   if n!=row.get('gitBlobBytes',size):raise ValueError('Source blob length differs: '+name)
    expected=subprocess.check_output(['git','-C',str(reference),'show',blob])
-   if expected!=data:raise ValueError('Source differs from pinned Git blob: '+name)
+   compared=data.replace(b'\r\n',b'\n') if row.get('gitTextLineEndings')=='lf' else data
+   if sha(expected)!=row.get('gitBlobSha256',row['sha256']) or expected!=compared:raise ValueError('Source differs from pinned Git blob: '+name)
   raw[name]=data
  return raw
 
@@ -47,7 +48,7 @@ def rgb555(data,size,palette=None):
 def build(reference):
  raw=authenticated(reference);script=raw['data/battle_anim_scripts.s'].decode();scripts=[]
  macros=set(re.findall(r'^\s*\.macro (\w+)',raw['asm/macros/battle_anim_script.inc'].decode(),re.M))
- for move,name in [(1,'POUND'),(33,'TACKLE')]:
+ for move,name in [(1,'POUND'),(10,'SCRATCH'),(15,'CUT'),(33,'TACKLE'),(163,'SLASH'),(206,'FALSE_SWIPE')]:
   start=re.search(r'^Move_'+name+r':\n',script,re.M)
   if start is None:raise ValueError('Missing original move script')
   rows=[]
@@ -61,7 +62,45 @@ def build(reference):
    if op=='end':break
   if not rows or rows[-1]['op']!='end':raise ValueError('Unterminated original script')
   scripts.append({'moveId':move,'label':'Move_'+name,'commands':rows})
- impact=rgb555(raw['graphics/battle_anims/sprites/impact.png'],(32,32))
+ # Original graphics table shares Impact's palette for Scratch and Cut; SLASH_2
+ # shares Slash's sheet but its own source JASC palette. Do not use PNG palette guesses.
+ with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/impact.png'])) as image:impact_pal=image.getpalette()
+ pal_text=raw['graphics/battle_anims/sprites/slash_2.pal'].decode().splitlines()
+ if pal_text[:3]!=['JASC-PAL','0100','16']:raise ValueError('Slash2 source palette header differs')
+ slash2_pal=[int(c) for line in pal_text[3:] for c in line.split()]
+ if len(slash2_pal)!=48 or any(c<0 or c>255 for c in slash2_pal):raise ValueError('Slash2 palette shape differs')
+ images={'impact':rgb555(raw['graphics/battle_anims/sprites/impact.png'],(32,32)),
+  'scratch':rgb555(raw['graphics/battle_anims/sprites/scratch.png'],(32,160),impact_pal),
+  'cut':rgb555(raw['graphics/battle_anims/sprites/cut.png'],(32,128),impact_pal),
+  'slash':rgb555(raw['graphics/battle_anims/sprites/slash.png'],(32,128)),
+  'slash-2':rgb555(raw['graphics/battle_anims/sprites/slash.png'],(32,128),slash2_pal)}
+ recipes=[]
+ for path,template,asset,table in [
+  ('src/battle_anim_effects_3.c','gScratchSpriteTemplate','scratch','sScratchAnimTable'),
+  ('src/battle_anim_effects_1.c','gCuttingSliceSpriteTemplate','cut','sCuttingSliceAnimTable'),
+  ('src/battle_anim_effects_1.c','gSlashSliceSpriteTemplate','slash','sSlashSliceAnimTable'),
+  ('src/battle_anim_effects_1.c','gFalseSwipeSliceSpriteTemplate','slash-2','sSlashSliceAnimTable'),
+  ('src/battle_anim_effects_1.c','gFalseSwipePositionedSliceSpriteTemplate','slash-2','sSlashSliceAnimTable')]:
+  text=raw[path].decode()
+  match=re.search(r'const struct SpriteTemplate '+template+r' =\s*\{(.*?)\};',text,re.S)
+  if match is None:raise ValueError('Missing source sprite template')
+  body=match[1];callback=re.search(r'\.callback = (\w+)',body)[1];oam=re.search(r'\.oam = &(\w+)',body)[1]
+  if oam not in ['gOamData_AffineOff_ObjBlend_32x32','gOamData_AffineOff_ObjNormal_32x32'] or '.anims = '+table not in body:raise ValueError('Original template recipe differs')
+  table_body=re.search(r'static const union AnimCmd \*const '+table+r'\[\] =\s*\{(.*?)\};',text,re.S)[1]
+  frames=[]
+  for array in re.findall(r'\b(s\w+)\s*,',table_body):
+   animation=re.search(r'static const union AnimCmd '+array+r'\[\] =\s*\{(.*?)\};',text,re.S)[1]
+   values=[]
+   for line in animation.splitlines():
+    line=line.strip().rstrip(',')
+    if not line:continue
+    frame=re.fullmatch(r'ANIMCMD_FRAME\((\d+), (\d+)\)',line)
+    if frame:values.append(dict(tile=int(frame[1]),duration=int(frame[2]),hFlip=False,vFlip=False))
+    elif line!='ANIMCMD_END':raise ValueError('Unsupported source sprite frame command: '+line)
+   if not values or not animation.strip().endswith('ANIMCMD_END,'):raise ValueError('Source frame table has no end')
+   frames.append(values)
+  recipes.append(dict(template=template,asset=asset,callback=callback,blend='ObjBlend' in oam,animations=frames,
+   sourcePath=path,sourceLine=text.count('\n',0,match.start())+1,sourceTemplateSha256=sha(match[0].encode())))
  with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/substitute.png'])) as image:pal=image.getpalette()
  front=rgb555(raw['graphics/battle_anims/sprites/substitute.png'],(64,64),pal)
  back=rgb555(raw['graphics/battle_anims/sprites/substitute_back.png'],(64,64),pal)
@@ -78,10 +117,10 @@ def build(reference):
  if len(geometry)!=880:raise ValueError('Expected exact pinned 880 geometry records')
  if len({(x['species'],x['side']) for x in geometry})!=880:raise ValueError('Duplicate geometry')
  def asset(id,data):return {'id':id,'path':id+'.rgb555','bytes':len(data),'sha256':sha(data)}
- anim={'schemaVersion':1,'sourceCommit':COMMIT,'sourceLockSha256':LOCK_SHA,'scripts':scripts,'assets':[asset('impact',impact)]}
+ anim={'schemaVersion':1,'sourceCommit':COMMIT,'sourceLockSha256':LOCK_SHA,'scripts':scripts,'assets':[asset(id,data) for id,data in images.items()],'spriteRecipes':recipes}
  art={'schemaVersion':1,'sourceCommit':COMMIT,'sourceLockSha256':LOCK_SHA,'geometry':geometry,'assets':[asset('substitute-front',front),asset('substitute-back',back)]}
  def encode(x):return (json.dumps(x,indent=2)+'\n').encode()
- return {'source-hit-animations':{'manifest.json':encode(anim),'impact.rgb555':impact},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back}}
+ return {'source-hit-animations':{'manifest.json':encode(anim),**{id+'.rgb555':data for id,data in images.items()}},'campaign-hit-art':{'manifest.json':encode(art),'substitute-front.rgb555':front,'substitute-back.rgb555':back}}
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('new_output_root',type=Path);a=p.parse_args()

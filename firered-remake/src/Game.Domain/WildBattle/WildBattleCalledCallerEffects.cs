@@ -73,6 +73,7 @@ public static partial class WildBattleRules
         WildBattleMoveInvocation? invocation = null;
         var result = Execute(state, state, context => {
             context.ExecuteSourceMoveAction(catalog, action, chosen!);
+            context.SourceHeldStandaloneActionFinished();
             context.State = context.State with { Revision = checked(state.Revision + 1) };
             invocation = context.activeInvocation;
         });
