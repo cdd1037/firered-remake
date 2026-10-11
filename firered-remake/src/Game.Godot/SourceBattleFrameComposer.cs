@@ -22,12 +22,15 @@ public sealed class SourceBattleFrameComposer
     public SourcePixelAsset Asset(string id)=>_assets[id];
     public byte[] ComposeField(SourceAnimationFrame frame)
     {
-        var pixels=new ushort[Width*112];Blit(pixels,_assets["background"],0,0);
+        var pixels=new ushort[Width*112];
+        var palettes=frame.PaletteBlends.ToDictionary(p=>p.Palette);
+        // These bounded scripts apply one shared transform to BG palettes 1, 2 and 3.
+        Blit(pixels,_assets["background"],0,0,palettes.GetValueOrDefault(1));
         void Battler(AnimationBattler b)
         {
             if(!b.Visible)return;
             var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=(frame.BackgroundSlots.Contains(b.Slot.Value)?frame.Offsets:frame.ObjectOffsets)[b.Slot.Value];
-            Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y);
+            Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y,palettes.GetValueOrDefault(16+b.Slot.Value));
         }
         void Sprite(SourceVisualSpriteFrame sprite)
         {
@@ -55,10 +58,10 @@ public sealed class SourceBattleFrameComposer
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=255;}return rgba;
     }
-    private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y)
+    private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y,SourcePaletteBlend? palette=null)
     {
         for(int sy=0;sy<source.Height;sy++)for(int sx=0;sx<source.Width;sx++)
-        {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0)dest[dy*240+dx]=p;}
+        {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0)dest[dy*240+dx]=palette is null?p:SourcePaletteMath.Blend(p,palette.Coefficient,palette.Color);}
     }
     private static void BlitSprite(ushort[] dest,SourcePixelAsset sheet,SourceVisualSpriteFrame sprite,int eva,int evb,bool blendEnabled)
     {

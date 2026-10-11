@@ -49,7 +49,8 @@ public static class SourceMoveTargeting
             "MOVE_TARGET_DEPENDS" or "MOVE_TARGET_OPPONENTS_FIELD")) return Fail("source_target_mode");
         var rng = frame.Rng; var trace = ImmutableArray.CreateBuilder<RandomTrace>();
         // Applied only at this action's target-selection boundary. Never change SourceAbsentMask
-        // or reuse this predicate for damage, ability scans, or script target traversal.
+        // or reuse this predicate for damage or ability scans. Script traversal applies its
+        // own explicit deferred-KO boundary below.
         bool Unavailable(BattlerSlot slot) => frame.IsSourceAbsent(slot) || frame.IsDeferredKoVacant(slot);
         bool HasBody(BattlerSlot slot) => frame.Get(slot).Body is not null;
         bool Rod(BattlerSlot slot) => frame.Get(slot).Body is { } b && WildBattleEffective.Ability(b) == "ABILITY_LIGHTNING_ROD";
@@ -137,6 +138,12 @@ public static class SourceMoveTargeting
                     else target = Fallback(selected);
                 }
             }
+            // Explosion's script also targets allies. Deferred opponent vacancies must not
+            // turn a surviving ally into a no-target failure before that script can begin.
+            // Keep ordinary source selection unchanged when its selected position remains valid.
+            if (frame.Layout == SourceBattleLayout.PresetDoubles && targetMode == "MOVE_TARGET_FOES_AND_ALLY" &&
+                frame.DeferredKoVacancyMask != 0 && (target is null || target == actor || Unavailable(target.Value)))
+                target = NumericScriptTargetsAfterDeferredKo(frame, actor).Cast<BattlerSlot?>().FirstOrDefault();
             // Preserve original source-absent/zero-HP Lightning Rod result for its owner to gate;
             // only a deferred vacancy is the explicit new no-target boundary.
             if (target is { } resolved && (resolved.Value >= frame.BattlerCount || !HasBody(resolved) || !preserveIntermediateTarget && frame.IsDeferredKoVacant(resolved))) target = null;
@@ -149,6 +156,12 @@ public static class SourceMoveTargeting
     public static int CountSourcePresentDefenders(SourceBattleFrame frame, BattlerSlot target) =>
         Enumerable.Range(0, frame.BattlerCount).Select(i => new BattlerSlot(i)).Count(s => s.Side == target.Side && !frame.IsSourceAbsent(s));
 
+    // Source Cmd_tryexplosion/Cmd_jumpifnexttargetvalid test absence, not HP.
     internal static IEnumerable<BattlerSlot> NumericScriptTargets(SourceBattleFrame frame, BattlerSlot actor) =>
         Enumerable.Range(0, frame.BattlerCount).Select(i => new BattlerSlot(i)).Where(s => s != actor && !frame.IsSourceAbsent(s));
+
+    // Approved end-turn KO replacement leaves a separate vacancy until entry. Exclude only
+    // those slots from actual script hits; never feed this list into source damage/ability scans.
+    internal static IEnumerable<BattlerSlot> NumericScriptTargetsAfterDeferredKo(SourceBattleFrame frame, BattlerSlot actor) =>
+        NumericScriptTargets(frame, actor).Where(s => !frame.IsDeferredKoVacant(s));
 }

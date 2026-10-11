@@ -390,34 +390,14 @@ public static partial class WildBattleRules
                 case "EFFECT_THIEF": CalledThief(catalog, side, target, move, purpose); break;
             }
         }
-        private void CalledConversion(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move, string purpose)
+        private void CalledConversion(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move, string purpose) =>
+            SharedTypeChange(catalog, side, move, purpose);
+        private void CalledConversion2(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move, string purpose) =>
+            SharedTypeChange(catalog, side, move, purpose);
+        private void SharedTypeChange(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move, string purpose)
         {
-            SpendInvocationPp(side, side, move); var actor = Get(side);
-            string MoveType(int index)
-            {
-                string type = catalog.Moves[actor.Pokemon.Moves[index].Move].Type;
-                return type == "TYPE_MYSTERY" ? WildBattleEffective.HasType(catalog, actor, "TYPE_GHOST") ? "TYPE_GHOST" : "TYPE_NORMAL" : type;
-            }
-            if (!Enumerable.Range(0, actor.Pokemon.Moves.Length).Any(i => !WildBattleEffective.HasType(catalog, actor, MoveType(i))))
-            { CalledPartyFailure(side, side, move, "no-different-move-type"); return; }
-            int index; string chosen;
-            do { do { index = Draw($"{purpose}.conversion-slot", 4) & 3; } while (index >= actor.Pokemon.Moves.Length); chosen = MoveType(index); }
-            while (WildBattleEffective.HasType(catalog, actor, chosen));
-            SetCalledType(side, move, chosen);
-        }
-        private void CalledConversion2(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move, string purpose)
-        {
-            SpendInvocationPp(side, side, move); var actor = Get(side);
-            if (actor.LastLandedMove is not { } landed || landed.Value is "pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" || actor.SourceMoveHistory?.LastHitByType is not { } attackType)
-            { CalledPartyFailure(side, side, move, "no-landed-move"); return; }
-            if (actor.LastHitBy is { } source && catalog.Moves[landed].Effect is "EFFECT_RAZOR_WIND" or "EFFECT_SKULL_BASH" or "EFFECT_SKY_ATTACK" or "EFFECT_SOLAR_BEAM" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_BIDE" &&
-                Get(source).CalledTurnState?.Lock is { Kind: not WildBattleCalledLockKind.Recharge })
-            { CalledPartyFailure(side, side, move, "source-still-multiple-turns"); return; }
-            var types = WildBattleEffective.Types(catalog, actor);
-            var candidates = WildBattleSourcePartyEffects.Conversion2Candidates(attackType, types.Type1, types.Type2);
-            if (candidates.IsEmpty) { CalledPartyFailure(side, side, move, "no-resistant-type"); return; }
-            int index = WildBattleSourcePartyEffects.Conversion2ChoiceIndex(Draw($"{purpose}.conversion2-candidate", candidates.Length), candidates.Length);
-            SetCalledType(side, move, candidates[index]);
+            bool handled = false;
+            new SinglesRecipeBridge(this).ExecuteTypeChange(catalog, SinglesBattleAdapter.Slot(side), activeInvocation!.PpSlot, move, purpose, ref handled);
         }
         private void CalledAbilityChange(WildBattleSide side, WildBattleSide target, PokemonMoveDefinition move)
         {

@@ -149,6 +149,26 @@
       "path": "graphics/battle_anims/sprites/hands_and_feet.png",
       "bytes": 461,
       "sha256": "d3196d88d1c4793ad3e10ff5d4744cb4c076b055966591cfa0a384ab1b1a267c"
+    },
+    {
+      "path": "src/battle_anim_utility_funcs.c",
+      "bytes": 34923,
+      "sha256": "8dbf0d05319980658ac1f698b1fed5a9dba02d1bda5aba487fec42d9ae16d297"
+    },
+    {
+      "path": "src/blend_palette.c",
+      "bytes": 1460,
+      "sha256": "219a02b2ed9ab3010e203e0131fa8133571dcc271e025d7f6f14bf7993a51090"
+    },
+    {
+      "path": "include/palette.h",
+      "bytes": 3545,
+      "sha256": "3f5ee66bab01538193629ffef3ff3cd6ad7555f7e294f52ae3ccfa36f94ac418"
+    },
+    {
+      "path": "include/gba/types.h",
+      "bytes": 4213,
+      "sha256": "d83a5cb845180b881f3de081ef9c2694b2da017a406fd3d6b0830329cc64ed93"
     }
   ]
 }

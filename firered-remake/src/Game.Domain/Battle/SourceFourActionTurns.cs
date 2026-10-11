@@ -69,14 +69,15 @@ public static partial class SourceFourActionTurns
                 (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || body.CalledVolatile is not null ||
                 body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null || body.Cursed || body.Rooted ||
                 body.Nightmare || body.DestinyBond || body.Imprison || body.YawnTurnsRemaining != 0 ||
-                body.ChargeTurnsRemaining != 0 || body.BindTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
+                body.ChargeTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.EncoreMoveSlot is not null ||
                 body.Rage || body.WaterSport || body.MudSport ||
                 cell.Registers.Turn is { } turn && (turn.SureHitTurnsRemaining != 0 || turn.Lock is not { } locked || !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
-                cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null ||
+                cell.Registers.LeechSeedSource is not null ||
                 cell.Position.FocusBanded || cell.Position.Wish is not null)
                 return "source_four_action_residual_or_canceller_not_migrated";
+            if (SourceVolatileTargetRules.Validate(catalog, frame, cell) is { } volatileError) return volatileError;
             if (SourceProtectionRules.Validate(body) is { } protectionError) return protectionError;
             if (SourceTurnMoveRules.Validate(body, catalog) is { } turnMoveError) return turnMoveError;
             if (cell.Position.FutureAttack is { } future && (future.Move.Value is not ("pret:MOVE_FUTURE_SIGHT" or "pret:MOVE_DOOM_DESIRE") ||

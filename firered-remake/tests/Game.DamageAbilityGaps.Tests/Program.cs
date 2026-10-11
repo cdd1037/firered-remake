@@ -8,6 +8,7 @@ using Game.Domain.Pokemon;
 using Game.Domain.Rules;
 using Game.Domain.WildBattle;
 
+if (args.Length == 3 && args[1] == "four-hustle") { FourHustleChecks.Run(args[0], args[2]); return; }
 if (args.Length != 2) throw new ArgumentException("CONTENT_REPOSITORY_ROOT SOURCE_VECTOR_JSON");
 string root = Path.GetFullPath(args[0]), vectorsPath = Path.GetFullPath(args[1]);
 int checks = 0, groups = 0, failures = 0, numericVectors = 0, sourceTurns = 0;

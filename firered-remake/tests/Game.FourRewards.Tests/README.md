@@ -35,3 +35,37 @@ dotnet tests/Game.FourRewards.Tests/bin/Debug/net10.0/Game.FourRewards.Tests.dll
 ```
 
 The focused suite exercises actual complete-turn KOs; remaining actions and no-target PP; poison and separate delayed callback positions; both opponents, reserves and shared modifiers; both-slot leveling; genuine learning/decline/HM/PP Ups; actual Explosion with no living recipients; level100; proven Transform projection; serialized pending state; and stale/duplicate/overflow rollback. The existing four-action source vectors, shared reward source/C vectors and untouched singles end-turn golden are separate regression checks. No native UI/audio, AI, preset encounter or campaign claim is made.
+
+## Deferred Explosion / Selfdestruct target boundary
+
+A legal turn that was accepted with four living battlers could previously stop after
+an earlier KO: the later Explosion returned
+`source_kernel_spread_deferred_target_not_migrated`. The focused reproduction
+uses the public BeginActions, Advance and EXP settlement APIs; it does not inject
+a fabricated mid-turn vacancy.
+
+Original FireRed `037335f4c725d7c9aecdac87066f2002b4bd7e14`
+(`src/battle_script_commands.c:6255–6331`) selects Explosion targets in numeric
+order, excluding the attacker and source-absent slots, without testing HP.
+The approved end-turn KO policy adds a separate filter for deferred vacancies.
+The source absence list remains intact, and non-deferred HP0 bodies still reject
+at the existing unsupported boundary. Defender counts, spread damage rules,
+Damp/Pressure and weather/side-ability scans are unchanged.
+
+If both opposing positions are deferred, a remaining ally is still a real
+Explosion/Selfdestruct target. If all other positions are unavailable, the
+existing deferred no-target sequence consumes PP once and fails without hit RNG,
+damage, or self-faint. No reserve enters the target list before end-turn entry.
+
+Run only these three focused groups after building the existing project:
+
+```sh
+dotnet tests/Game.FourRewards.Tests/bin/Debug/net10.0/Game.FourRewards.Tests.dll "$CONTENT_PROJECT" deferred-spread
+```
+
+The groups cover all four attacker positions across opposing/player directions,
+prior KO then Explosion, two opposing KOs then ally-only Selfdestruct, and the
+sole remaining actor's no-target action. They check actual EXP/completion exactly
+once, permanent EXP totals, JSON continuation equality, stale continuation
+rollback, original non-deferred HP0 rejection, retained source defender counts,
+and complete residual/replacement continuation with untouched reserves.

@@ -72,14 +72,14 @@ object? Call(object kernel, string method, params object?[] values) => execution
 WildBattleState State(object kernel) => (WildBattleState)execution.GetField("State", flags)!.GetValue(kernel)!;
 WildBattleEvent[] Events(object kernel) => ((IEnumerable<WildBattleEvent>)execution.GetField("Events", flags)!.GetValue(kernel)!).ToArray();
 
-Test("authentic Kecleon admitted in canonical singles; campaign and four-slot gates stay closed", () => {
+Test("authentic Kecleon admitted by shared action kernel; campaign stays closed", () => {
     Check(Environment.Version.Major == 10, "actual .NET 10"); var k = Mon("KECLEON", 1); Check(k.AbilityId == Ability, "official donor");
     Check(!CampaignAdmissionPolicy.CurrentFuchsia.Admits(k.Species), "no campaign expansion");
-    var s = Pair(Mon("SQUIRTLE", 13), k);
+    var s = Pair(Mon("SQUIRTLE", 13), Mon("KECLEON", 100));
     var frame = SinglesBattleAdapter.Import(catalog, Party(s)).Frame!;
     var action = new SourceResolvedMoveAction(frame.Get(new(0)).Occupant!.Value, frame.Revision, Slot(s.Player.Pokemon, "WATER_GUN"), new(1));
-    var closed = SourceBattleKernel.ResolveAction(catalog, frame, action);
-    Check(!closed.Succeeded && closed.Fault == "source_kernel_ability_not_migrated" && ReferenceEquals(frame, closed.State) && closed.Events.IsEmpty && closed.Trace.IsEmpty, "unmigrated kernel gate atomic");
+    var shared = SourceBattleKernel.ResolveAction(catalog, frame, action);
+    Check(shared.Succeeded && shared.Events.OfType<SourceAbilityActivatedEvent>().Any(e => e.Ability == Ability), "shared kernel Color Change admitted: " + shared.Fault);
 });
 Test("factory-built complete turns activate as opponent and player with normal actions", () => {
     foreach (var side in new[] { P, O }) {
@@ -201,6 +201,26 @@ Test("delayed Future Sight resolves HP without ordinary damage abilities", () =>
     Check(State(kernel).Opponent.Pokemon.CurrentHp < s.Opponent.Pokemon.CurrentHp, "actual delayed damage resolved");
     Check(!Events(kernel).OfType<WildBattleAbilityActivatedEvent>().Any(e => e.Ability == Ability), "source delayed script skips Color Change");
 });
+Test("real Future Sight receipt makes zero-loss Focus Band special hit activate Color Change", () => {
+    var s = Pair(Mon("CLEFAIRY", 29), Mon("KECLEON", 100));
+    s = s with {Opponent = s.Opponent with {HeldItem="ITEM_FOCUS_BAND"}};
+    s = Act(s, "FUTURE_SIGHT", called: true).State!;
+    var fullHp = Kernel(s);
+    for(int i=0;i<3;i++) Call(fullHp,"SourceCalledFutureResidual",catalog,O);
+    int delayed = s.Opponent.Pokemon.CurrentHp-State(fullHp).Opponent.Pokemon.CurrentHp;
+    Check(delayed>0,"actual delayed damage reference");
+    s = s with {Opponent=s.Opponent with {Pokemon=s.Opponent.Pokemon with {CurrentHp=delayed+1}}};
+    var kernel = Kernel(s);
+    for (int i=0;i<3;i++) Call(kernel,"SourceCalledFutureResidual",catalog,O);
+    var ready = State(kernel);
+    Check(ready.Opponent.Pokemon.CurrentHp == 1 && ready.SourceOpponentHitReceipt is {Physical:>0},"actual delayed command leaves one HP and physical receipt");
+    Check(!Events(kernel).OfType<WildBattleAbilityActivatedEvent>().Any(e=>e.Ability==Ability),"delayed script has no Color Change");
+    var result = Branch(ready,"WATER_GUN", r=>r.Events.OfType<WildBattleHpChangedEvent>().Any(e=>e.Target==O && e.HpBefore==1 && e.HpAfter==1),called:true);
+    Changed(result,O,"TYPE_WATER");
+    Check(result.Events.OfType<WildBattleDamageAdjustedEvent>().Any(e=>e.HungOn && e.DamageAfter==0),"actual Focus Band zero-damage command");
+    Check(result.State!.SourceOpponentHitReceipt is null,"ordinary action then clears receipts");
+    evidence.Add(new {naturalSequence="Future Sight damage -> retained physical receipt -> Focus Band special hit at one HP -> Color Change",priorHp=ready.Opponent.Pokemon.CurrentHp,priorPhysical=ready.SourceOpponentHitReceipt!.Physical,actualHpLost=0});
+});
 Test("Struggle and source zero-power moves never change type", () => {
     var s = Pair(Mon("CLEFAIRY", 29), Mon("KECLEON", 100)); s = s with { Opponent = s.Opponent with { CalledOverlay = new() { Type1 = "TYPE_WATER", Type2 = "TYPE_WATER" } } };
     foreach (string move in new[] { "SPLASH", "PAIN_SPLIT" }) {
@@ -214,10 +234,11 @@ Test("Struggle and source zero-power moves never change type", () => {
     Check(struggle.Succeeded && struggle.Events.OfType<WildBattleHpChangedEvent>().Any(e => e.Move == Id("STRUGGLE")) && Activations(struggle).Length == 0, "real whole-turn Struggle excludes Color Change: " + struggle.Fault);
     Trace(before, struggle);
 });
-Test("no receipt, wrong receipt, wrong profile and delayed guard cannot mutate", () => {
+Test("no retained receipt, wrong profile and delayed guard cannot mutate", () => {
     var s = Pair(Mon("SQUIRTLE", 13), Mon("KECLEON", 100)); var move = catalog.Moves[Id("WATER_GUN")];
-    foreach (string gate in new[] { "none", "actor", "target", "move", "zero", "profile", "delayed", "forged" }) {
-        var kernel = Kernel(gate == "profile" ? s with { SourceMechanicsRulesVersion = null } : s);
+    foreach (string gate in new[] { "none", "zero", "profile", "delayed", "forged" }) {
+        var input = s with {SourceOpponentHitReceipt = gate is "none" or "zero" ? null : new(1,1)};
+        var kernel = Kernel(gate == "profile" ? input with { SourceMechanicsRulesVersion = null } : input);
         if (gate != "none") execution.GetField("sourceContactDamage", flags)!.SetValue(kernel, (gate == "actor" ? O : P, gate == "target" ? P : O, gate == "move" ? Id("TACKLE") : move.Id, gate == "zero" ? 0 : 1));
         if (gate == "delayed") execution.GetField("calledPassiveDelayed", flags)!.SetValue(kernel, true);
         Call(kernel, "SourceColorChange", catalog, P, O, gate == "forged" ? move with { Power = move.Power + 1 } : move);
@@ -263,7 +284,7 @@ Test("unchanged original C branch matches live executor across type pairs and gu
     Check(process.ExitCode == 0 && lines.Length == rows.Count && lines.Length >= 600, "nonempty exact original C vector count");
     for (int i = 0; i < rows.Count; i++) {
         var row = rows[i]; var expected = lines[i].Split(' ').Select(int.Parse).ToArray();
-        var s = Pair(actor with { CurrentHp = row.AttackerHp }, holder with { CurrentHp = row.Hp });
+        var s = Pair(actor with { CurrentHp = row.AttackerHp }, holder with { CurrentHp = row.Hp }) with {SourceOpponentHitReceipt = row.Damaged ? new(1,1) : null};
         s = s with { Opponent = s.Opponent with { CalledOverlay = new() { Type1 = "TYPE_" + row.First.ToString().ToUpperInvariant(), Type2 = "TYPE_" + row.Second.ToString().ToUpperInvariant() } } };
         var kernel = Kernel(s);
         execution.GetField("sourceContactDamage", flags)!.SetValue(kernel, (P, O, row.Move.Id, row.Damaged ? 1 : 0));

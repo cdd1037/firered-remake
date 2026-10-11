@@ -43,12 +43,6 @@ internal abstract partial class SourceRecipeContext : SourceStatRecipeContext
     internal abstract bool SsAnneFlashFire(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move);
     internal abstract bool Route11Damp(BattlerSlot actor, PokemonMoveDefinition move);
     internal abstract void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, int damage);
-    // Color Change remains explicitly closed in the slot kernel until its complete move-end phase is migrated.
-    internal virtual void SourceColorChange(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
-    {
-        if (WildBattleEffective.Ability(Get(target)) == "ABILITY_COLOR_CHANGE")
-            throw new SourceRecipeUnsupported("source_kernel_color_change_not_migrated");
-    }
     internal abstract void ApplyConfusion(BattlerSlot target, string purpose, bool secondary);
     internal abstract void ApplyFlinch(BattlerSlot target);
     internal abstract void ApplyBinding(BattlerSlot target, string purpose, MoveId move);

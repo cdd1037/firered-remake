@@ -38,7 +38,7 @@ public partial class CampaignView
         {string id=row.GetProperty("id").GetString()!;_sourceMoveAssets.Add(id,SourceHitAnimationCatalog.Asset(_sourceMoveManifest,folder,id));}
         folder=System.IO.Path.Combine(_root,"content/generated/campaign-hit-art");
         var bytes=SourceHitAnimationCatalog.ReadBounded(System.IO.Path.Combine(folder,"manifest.json"),132335,132335);
-        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!="a19bc9a60b1eec7a1d8bc0f923f477a15fcf14934e2c2a9676f1c36db9980cc1")throw new InvalidDataException("Campaign hit art manifest differs.");
+        if(Convert.ToHexStringLower(SHA256.HashData(bytes))!="f65895babddf0327ad6884ba4d86d2c582e780c17bf91064599a657361acc94c")throw new InvalidDataException("Campaign hit art manifest differs.");
         using var doc=JsonDocument.Parse(bytes);
         foreach(var row in doc.RootElement.GetProperty("geometry").EnumerateArray())
         {

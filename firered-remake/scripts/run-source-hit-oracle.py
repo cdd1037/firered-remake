@@ -15,6 +15,7 @@ spec.loader.exec_module(imp)
 p = argparse.ArgumentParser()
 p.add_argument('output', type=Path)
 p.add_argument('--doubles', action='store_true')
+p.add_argument('--stats', action='store_true')
 p.add_argument('--motion-vectors', action='store_true')
 p.add_argument('--vacant-partner', action='store_true')
 p.add_argument('--reference', type=Path, default=Path((root / '.tools/reference-root').read_text().strip()))
@@ -40,6 +41,11 @@ functions = {
 if a.doubles:
     functions['src/battle_anim.c'] += ['Cmd_monbg']
     functions['src/battle_anim_mons.c'] += ['GetBattlerSpriteFinal_Y']
+if a.stats:
+    functions['src/battle_anim.c'] += ['Cmd_loopsewithpan','Task_LoopAndPlaySE']
+    functions['src/battle_anim_utility_funcs.c'] = ['AnimTask_Flash','AnimTask_Flash_Step','SetPalettesToColor']
+    functions['src/battle_anim_mons.c'] += ['GetBattlePalettesMask','GetBattleMonSpritePalettesMask']
+    functions['src/blend_palette.c'] = ['BlendPalette']
 bodies, identities = [], []
 
 def identify(path, name, source, start, body, kind):
@@ -98,9 +104,12 @@ for path, names in constant_names.items():
         identify(path, name, source, match.start(), match[0], 'constant')
 
 template_names = ['gBasicHitSplatSpriteTemplate', 'gHorizontalLungeSpriteTemplate', 'gScratchSpriteTemplate', 'gCuttingSliceSpriteTemplate', 'gSlashSliceSpriteTemplate', 'gFalseSwipeSliceSpriteTemplate', 'gFalseSwipePositionedSliceSpriteTemplate', 'gSlideMonToOffsetSpriteTemplate', 'gSlideMonToOriginalPosSpriteTemplate', 'gFistFootSpriteTemplate']
-sound_names = ['SE_M_DOUBLE_SLAP', 'SE_M_COMET_PUNCH', 'SE_M_SCRATCH', 'SE_M_CUT', 'SE_M_RAZOR_WIND', 'SE_M_VITAL_THROW', 'SE_M_DOUBLE_TEAM', 'SE_M_VITAL_THROW2']
+sound_names = ['SE_M_DOUBLE_SLAP', 'SE_M_COMET_PUNCH', 'SE_M_SCRATCH', 'SE_M_CUT', 'SE_M_RAZOR_WIND', 'SE_M_VITAL_THROW', 'SE_M_DOUBLE_TEAM', 'SE_M_VITAL_THROW2', 'SE_M_TAIL_WHIP', 'SE_M_LEER']
 task_names = ['AnimTask_ShakeMon', 'AnimTask_ShakeMon2', 'AnimTask_TranslateMonEllipticalRespectSide']
 ops = ['loadspritegfx', 'monbg', 'setalpha', 'playsewithpan', 'createsprite', 'createvisualtask', 'delay', 'waitforvisualfinish', 'clearmonbg', 'blendoff', 'end']
+if a.stats:
+    task_names += ['AnimTask_Flash']
+    ops += ['loopsewithpan']
 source = raw['data/battle_anim_scripts.s'].decode()
 macros = set(re.findall(r'^\s*\.macro (\w+)', raw['asm/macros/battle_anim_script.inc'].decode(), re.M))
 arrays = ['struct Command {int args[10];};']
@@ -110,6 +119,7 @@ def integer(value):
     return {'ANIM_ATTACKER': 0, 'ANIM_TARGET': 1, 'ANIM_DEF_PARTNER': 3, 'SOUND_PAN_TARGET': 63, 'SOUND_PAN_ATTACKER': -64}.get(value, None) if value in {'ANIM_ATTACKER', 'ANIM_TARGET', 'ANIM_DEF_PARTNER', 'SOUND_PAN_TARGET', 'SOUND_PAN_ATTACKER'} else int(value, 0)
 
 script_ids=[(1, 'POUND'), (10, 'SCRATCH'), (15, 'CUT'), (33, 'TACKLE'), (163, 'SLASH'), (206, 'FALSE_SWIPE'), (68, 'COUNTER'), (233, 'VITAL_THROW')]
+if a.stats:script_ids=[(39, 'TAIL_WHIP'), (148, 'FLASH')]
 if a.motion_vectors:
     vector_scripts=json.loads((root/'tests/SourceHitAnimation.Oracle/motion-vectors.json').read_text())['scripts']
     script_ids=[(r['moveId'],r['label'][5:]) for r in vector_scripts]
@@ -130,6 +140,10 @@ for move, label in script_ids:
         av = []
         if op == 'setalpha': av = [integer(s) for s in values]
         elif op == 'playsewithpan': av = [sound_names.index(values[0]) + 1, integer(values[1])]
+        elif op == 'loopsewithpan':
+            sound=sound_names.index(values[0])+1
+            payload=[sound&255,sound>>8,integer(values[1])&255,integer(values[2]),integer(values[3])]
+            bytecode.extend(payload);args.extend([[]]*len(payload))
         elif op in ['createsprite', 'createvisualtask']:
             if op == 'createsprite':
                 pointer = template_names.index(values[0])
@@ -160,7 +174,7 @@ arrays += ['static const TaskFunc tasks[]={' + ','.join(task_names) + '};', 'sta
            'static const char *templateNames[]={' + ','.join(json.dumps(x) for x in template_names) + '};']
 # The tags are resource lookup identifiers only; actual tiles are reported relative to each sheet.
 tags = sorted(set(re.findall(r'\bANIM_TAG_\w+', '\n'.join(constants))))
-source = '\n'.join([('#define MOTION_VECTORS 1\n' if a.motion_vectors else '')+('#define DOUBLE_FIXTURE 1\n' if a.doubles else '')+('#define VACANT_FIXTURE 1\n' if a.vacant_partner else '')+'\n'.join('#define ' + tag + ' ' + str(i + 1) for i, tag in enumerate(tags)),
+source = '\n'.join([('#define STATS_FAMILY 1\n' if a.stats else '')+('#define MOTION_VECTORS 1\n' if a.motion_vectors else '')+('#define DOUBLE_FIXTURE 1\n' if a.doubles else '')+('#define VACANT_FIXTURE 1\n' if a.vacant_partner else '')+'\n'.join('#define ' + tag + ' ' + str(i + 1) for i, tag in enumerate(tags)),
                    (root / 'tests/SourceHitAnimation.Oracle/host.h').read_text(),
                    '\n'.join(sig + ';' for sig, body in bodies), '\n'.join(constants),
                    '\n'.join(body for sig, body in bodies), '\n'.join(arrays),
@@ -170,7 +184,7 @@ source = '\n'.join([('#define MOTION_VECTORS 1\n' if a.motion_vectors else '')+(
 result = subprocess.run(['cc', '-std=c99', '-O0', '-Wall', '-Wextra', '-Werror', '-Wno-error=sequence-point', str(out / 'oracle.c'), '-o', str(out / 'oracle')], capture_output=True, text=True)
 (out / 'compile.log').write_text(result.stdout + result.stderr)
 if result.returncode: raise SystemExit(result.stderr)
-result = subprocess.run([str(out / 'oracle')], capture_output=True, text=True, timeout=10)
+result = subprocess.run([str(out / 'oracle')], cwd=out, capture_output=True, text=True, timeout=10)
 (out / 'source-c.csv').write_text(result.stdout)
 if result.returncode: raise SystemExit('Source oracle failed: ' + result.stderr)
 rows = len(result.stdout.splitlines()) - 1
@@ -181,7 +195,7 @@ if rows <= 0: raise SystemExit('Empty source trace')
     soundIds={str(i + 1): name for i, name in enumerate(sound_names)},
     schedulingReferences=[x for x in identities if x['kind'] == 'schedulingReference'],
     schedulerSource=dict(path=scheduler_path, bytes=len(scheduler_bytes), sha256=scheduler_sha),
-    doubles=a.doubles,vacantPartner=a.vacant_partner,motionBoundaryVectors=a.motion_vectors, displayOffsets='Non-monbg battlers use the pre-task OAM position (nine-bit X wrap normalized for screen rendering); each visible monbg target/partner follows post-task offsets via priority-10 background updates.',
+    statScripts=a.stats, doubles=a.doubles,vacantPartner=a.vacant_partner,motionBoundaryVectors=a.motion_vectors, displayOffsets='Non-monbg battlers use the pre-task OAM position (nine-bit X wrap normalized for screen rendering); each visible monbg target/partner follows post-task offsets via priority-10 background updates.',
     spriteFields=['slot', 'template', 'x', 'y', 'x2', 'y2', 'tile', 'visible', 'hFlip', 'blend', 'scale', 'subpriority', 'oamRank'],
     spriteIds='Lowest available source sprite slot; fixture battlers reserve slots 0 through 3.' if a.doubles else 'Lowest available source sprite slot; fixture battlers reserve slots 0 and 1.',
     oamOrder='Original persistent 64-slot SortSprites; one extra leading host sentinel safely covers the original documented unused gSpriteOrder[-1] read.',

@@ -82,6 +82,8 @@ public static partial class WildBattleRules
                 return true;
             }
             if (move.Effect is not ("EFFECT_SPITE" or "EFFECT_CURSE" or "EFFECT_MEAN_LOOK" or "EFFECT_NIGHTMARE" or "EFFECT_DESTINY_BOND")) return false;
+            if (move.Effect == "EFFECT_MEAN_LOOK")
+            { Recipes.ExecuteVolatileTarget(S(side), S(activeInvocation?.Target ?? targetSide), slot, move, purpose); return true; }
             bool self = move.Effect == "EFFECT_DESTINY_BOND";
             var species = WildBattleEffective.Types(catalog, Get(side));
             bool ghost = species.Type1 == "TYPE_GHOST" || species.Type2 == "TYPE_GHOST";
@@ -121,12 +123,6 @@ public static partial class WildBattleRules
                         TowerHp(side, "curse-cost", Math.Max(1, actor.Pokemon.Stats.MaxHp / 2));
                         ForestOutcome(true);
                     }
-                    break;
-                case "EFFECT_MEAN_LOOK":
-                    // NO_ACC_CALC: no accuracy RNG and no Normal/Ghost type immunity in Gen III.
-                    if (target.DigMoveSlot is not null) { Fail("semi-invulnerable"); return true; }
-                    if (target.MeanLookSource is not null) { Fail("already-trapped"); return true; }
-                    SetMeanLook(targetSide, side, "move");
                     break;
                 case "EFFECT_NIGHTMARE":
                     if (target.Nightmare || !WildBattleStatus.IsSleeping(target.Status)) { Fail(target.Nightmare ? "already-nightmare" : "target-awake"); return true; }

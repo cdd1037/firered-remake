@@ -4,8 +4,8 @@ import argparse,hashlib,io,json,re,struct,subprocess,tempfile,os
 from pathlib import Path
 from PIL import Image
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-LOCK_SHA='132ab1bd43c68ad70fa69d87228fc50518b8323d5b7a7da827812a164d3384a6'
-OPS={'loadspritegfx','monbg','setalpha','playsewithpan','createsprite','createvisualtask','delay','waitforvisualfinish','clearmonbg','blendoff','end'}
+LOCK_SHA='2507bdbea068e5855c051cfc46a5f4ba3c22423262d1a71fbf86cfa3bce3a0aa'
+OPS={'loadspritegfx','monbg','setalpha','playsewithpan','loopsewithpan','createsprite','createvisualtask','delay','waitforvisualfinish','clearmonbg','blendoff','end'}
 def sha(data):return hashlib.sha256(data).hexdigest()
 def read_bounded(path,maximum,exact=None):
  with path.open('rb') as f:
@@ -49,7 +49,7 @@ def rgb555(data,size,palette=None):
 def build(reference):
  raw=authenticated(reference);script=raw['data/battle_anim_scripts.s'].decode();scripts=[]
  macros=set(re.findall(r'^\s*\.macro (\w+)',raw['asm/macros/battle_anim_script.inc'].decode(),re.M))
- for move,name in [(1,'POUND'),(10,'SCRATCH'),(15,'CUT'),(33,'TACKLE'),(163,'SLASH'),(206,'FALSE_SWIPE'),(68,'COUNTER'),(233,'VITAL_THROW')]:
+ for move,name in [(1,'POUND'),(10,'SCRATCH'),(15,'CUT'),(33,'TACKLE'),(163,'SLASH'),(206,'FALSE_SWIPE'),(68,'COUNTER'),(233,'VITAL_THROW'),(39,'TAIL_WHIP'),(148,'FLASH')]:
   start=re.search(r'^Move_'+name+r':\n',script,re.M)
   if start is None:raise ValueError('Missing original move script')
   rows=[]
@@ -67,7 +67,7 @@ def build(reference):
    'spriteTemplates':sorted({r['args'][0] for r in rows if r['op']=='createsprite'}),
    'taskCallbacks':sorted({r['args'][0] for r in rows if r['op']=='createvisualtask'}),
    'graphicsTags':sorted({r['args'][0] for r in rows if r['op']=='loadspritegfx'}),
-   'sounds':sorted({r['args'][0] for r in rows if r['op']=='playsewithpan'})}})
+   'sounds':sorted({r['args'][0] for r in rows if r['op'] in ['playsewithpan','loopsewithpan']})}})
  # Original graphics table shares Impact's palette for Scratch and Cut; SLASH_2
  # shares Slash's sheet but its own source JASC palette. Do not use PNG palette guesses.
  with Image.open(io.BytesIO(raw['graphics/battle_anims/sprites/impact.png'])) as image:impact_pal=image.getpalette()

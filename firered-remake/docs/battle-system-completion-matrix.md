@@ -2,7 +2,7 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
-Current integrated checkpoint: **dirty working tree based on `3c78f0a71871c39143b04650e3bccd4564bb81bc`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **211 / 354**, with **143 gated**; dedicated script coverage is **8 / 354**, with **346 remaining**. Neither is a complete battle-system percentage.
+Current integrated checkpoint: **dirty working tree based on `16a45ea4d803a2656a6cbf27fa6b7262de22c780`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **228 / 354**, with **126 gated**; dedicated script coverage is **10 / 354**, with **344 remaining**. Neither is a complete battle-system percentage.
 
 The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles now has a bounded authentic Route8 Twins public victory/save branch; full held-item/recipe and presentation completion remains open. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
@@ -127,7 +127,7 @@ Next acceptance:
 <a id="c05"></a>
 ### C05 — Residual and delayed callback scheduling
 
-One shared phase cursor serves singles and four-slot weather, screen, status and end-turn-ability commands. Four-slot Future Sight/Doom Desire, bounded reward/learning pauses and end-turn KO entry now resume without replaying ordinary residuals. Wish, Perish and other unported four-slot residuals remain gated.
+One shared phase cursor serves singles and four-slot weather, screen, status and end-turn-ability commands. Four-slot binding residuals, Future Sight/Doom Desire, bounded reward/learning pauses and end-turn KO entry now resume without replaying ordinary residuals. Wish, Perish and other unported four-slot residuals remain gated.
 
 Dependencies: C04.
 
@@ -144,7 +144,7 @@ Next acceptance:
 <a id="c06"></a>
 ### C06 — Move effect groups and cross-state interactions
 
-Shared generic, recovery, field, turn-lock and party recipes retain bounded source tests. The dirty 3c78f0a-based integration adds eight fixed-damage moves plus 18 basic-stat and five additional primary-status moves to actual four-slot execution. Static admission is 211/354; this is not complete interaction acceptance.
+Shared generic, recovery, field, turn-lock and party recipes retain bounded source tests. The dirty 16a45ea-based integration adds Counter, Mirror Coat and Vital Throw plus 12 selected confusion/trapping moves to the previous 211 admitted recipes. Static four-slot admission is 228/354 (126 gated). Actual retaliation and volatile-target evidence passes 13 groups/922 checks and 16 groups/616 checks/14 complete turns respectively; this is not complete interaction acceptance.
 
 Dependencies: C01, C02, C03, C07, C08, C09.
 
@@ -160,7 +160,7 @@ Next acceptance:
 <a id="c07"></a>
 ### C07 — Ability entry, weather and forms
 
-Shared actual initial/KO-entry recipes now cover Drizzle, Drought, Sand Stream, Intimidate, Trace and Forecast, with real four-slot occupant tokens, source tie RNG and ordered pending callbacks. Four-slot Color Change, general move-end immunity and voluntary/Baton/Roar entry integration remain unfinished.
+Shared actual initial/KO-entry recipes now cover Drizzle, Drought, Sand Stream, Intimidate, Trace and Forecast, with real four-slot occupant tokens, source tie RNG and ordered pending callbacks. Voluntary/Baton/Roar entry and Spikes ordering now have bounded actual coverage. Color Change shares its canonical recipe with the four-slot owner; remaining move-end immunity and full AI/Application combinations remain open.
 
 Dependencies: C01, C05, C18.
 
@@ -171,13 +171,13 @@ Pinned source: `src/battle_util.c:AbilityBattleEffects`, `src/battle_util.c:Cast
 Next acceptance:
 
 - Carry the tested weather register and shared queries into full four-slot entry and residual ownership without duplicating recipes.
-- Carry tested Color Change and Trace/Forecast into the four-slot owner with preserved actual identity and source immunity/cleanup hooks.
+- Complete remaining copied-ability/move-end combinations while preserving the tested Color Change, Trace/Forecast and actual occupant lifecycle.
 - Admit authentic ability fixtures without fabricating ability provenance or silently unlocking unrelated campaign species.
 
 <a id="c08"></a>
 ### C08 — Ability damage, absorption, contact and residual gaps
 
-Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Truant and Speed Boost now have authentic-donor complete-turn and lifecycle tests; Rain Dish and Color Change now have bounded canonical singles coverage; full-field and remaining interaction coverage is separate.
+Authentic mechanics donors execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Hustle now has 3 cases/196 checks covering all four actor positions, physical-type damage/status accuracy cutoffs, unaffected special accuracy and one whole four-action turn. Truant and Speed Boost retain authentic-donor complete-turn/lifecycle tests; Rain Dish retains bounded canonical coverage; Color Change now also has bounded actual four-slot shared-recipe coverage. Ability labels remain 36 bounded/40 interaction-unverified; broader combinations remain separate.
 
 Dependencies: C04, C05, C07.
 
@@ -389,7 +389,7 @@ Next acceptance:
 <a id="c21"></a>
 ### C21 — Battle event text, controls and presentation routing
 
-The actual campaign view has bounded four-slot healthbox, target/party/replacement and ordinary medicine BAG controls. Main X11 medicine verification passes 223 checks with unchanged source/DLL identity and exit 0. Six common hit scripts, including False Swipe, now receive actual four-slot kernel invocations in current BCL tests. Counter/Vital Throw have real successful singles scripts and typed-only four-slot presentation fixtures. Their eight representative native cases belong to the separate worker source identity, before the main actual-False-Swipe test-fixture update; no fresh integrated native hit-animation run is claimed.
+The actual campaign view has bounded four-slot healthbox, target/party/replacement and ordinary medicine BAG controls. Main X11 medicine verification passes 223 checks with unchanged source/DLL identity and exit 0. Ten dedicated scripts now have bounded actual four-slot kernel animation dispatch evidence. The current focused Counter/Vital Throw batch passes 99 checks with 20 real four-slot cases; four same-side Counter cases remain visual-only. Tail Whip/Flash pass 151 checks with eight real four-slot stat invocations. Earlier native runs retain their separate source identities; no combined current-main native replay is claimed. Main headless stat presentation passes 4,455 checks (three real singles/four real four-slot cases); a separate worker X11 Flash sample passes 6,443 checks/exit 0. These retain distinct executable/source identities and Dummy-audio limits.
 
 Dependencies: C10, C11, C18.
 
@@ -406,7 +406,7 @@ Next acceptance:
 <a id="c22"></a>
 ### C22 — Move/ability animation and audio inventory
 
-All 354 source animation roots retain an authenticated conservative dependency inventory. Eight bounded dedicated scripts are now implemented (Pound, Tackle, Scratch, Cut, Slash, False Swipe, Counter, Vital Throw); 346 lack that layer. The current BCL batch passes 42,069 checks over 20,706 source-C comparison frames, including 9,864 explicitly synthetic callback frames. Six common scripts have actual four-slot kernel dispatch, including False Swipe; Counter/Vital Throw four-slot cases are typed presentation only. Eight representative new-script native cases passed on the worker source identity, not the later combined main identity. Original-ROM pixel equality, general animation coverage and physical listening remain unverified.
+All 354 source animation roots retain an authenticated conservative dependency inventory. Ten bounded dedicated scripts are accepted: Pound, Tackle, Scratch, Cut, Slash, False Swipe, Counter, Vital Throw, Tail Whip and Flash; 344 lack that layer. Current Counter/Vital Throw dispatch has 20 actual four-slot rule cases and four explicitly visual-only same-side Counter fixtures. Tail Whip/Flash add 151 checks, 2,730 source-comparison frames and 1,671,168 RGB555 vectors, with real singles/four-slot stat invocations. Main comparisons reuse hashed fixed original-C output from the worker rather than rerunning C. Prior eight-script frame/native evidence remains historical; original-ROM pixel equality and physical listening remain unverified. Main headless stat presentation passes 4,455 checks (three real singles/four real four-slot cases); a separate worker X11 Flash sample passes 6,443 checks/exit 0. These retain distinct executable/source identities and Dummy-audio limits.
 
 Dependencies: C21.
 
@@ -497,7 +497,7 @@ Each of the 76 entries below has source and current execution locations in the J
 | 52 | `ABILITY_HYPER_CUTTER` | `interaction-unverified` | C06 | Attack-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
 | 53 | `ABILITY_PICKUP` | `implemented-with-bounded-tests` | C20 | Original victory-only ordered party checks and item buckets exist; test ownership after newly admitted modes/items. |
 | 54 | `ABILITY_TRUANT` | `implemented-with-bounded-tests` | C08 | Authentic Slakoth/Slaking complete-turn tests cover raw loafing register, cancellation precedence, ability changes, switches, prepared actions, recharge expiry and serialized continuation. Four-slot and campaign admission remain separate. |
-| 55 | `ABILITY_HUSTLE` | `implemented-with-bounded-tests` | C08 | Real Togetic damage and physical-accuracy miss full turns verified; four-slot interactions unverified. |
+| 55 | `ABILITY_HUSTLE` | `implemented-with-bounded-tests` | C08 | Real Togetic singles damage and physical-accuracy miss turns remain verified. New bounded four-slot evidence covers authentic Corsola in all four actor positions, natural Togetic Charm and controlled Poison Powder physical-type status cutoffs, unaffected Bubble accuracy, one complete four-action turn and stale-turn atomicity (3 cases/196 checks). Wider ability/caller/campaign combinations remain unverified. |
 | 56 | `ABILITY_CUTE_CHARM` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 57 | `ABILITY_PLUS` | `implemented-with-bounded-tests` | C09 | M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure. |
 | 58 | `ABILITY_MINUS` | `implemented-with-bounded-tests` | C09 | M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure. |
@@ -575,7 +575,7 @@ Follow Me and Helping Hand now execute through shared single/four-slot recipes, 
 
 The f7e26f6 inventory recorded 176 / 354 statically admitted four-slot recipes and 28 bounded / 48 interaction-unverified ability records. The subsequent shared protection, Spikes and contact checkpoint recorded 180 / 354, 30 bounded / 46 interaction-unverified abilities and six dedicated scripts. At that earlier checkpoint five scripts had real four-slot dispatch and False Swipe was a presentation-only fixture. These are historical counts; the JSON retains the previous snapshot and its recorded hashes separately.
 
-## Current shared-family checkpoint (2026-10-11, dirty tree based on 3c78f0a)
+## Historical shared-family checkpoint (2026-10-11, dirty tree based on 3c78f0a)
 
 Static evaluation of the actual `SourceBattleKernel.SupportsRecipe` target/effect conditions and referenced family predicates admits **211 / 354** authenticated moves, with **143 gated**. This adds eight fixed-damage moves, 18 basic-stat moves and five additional primary-status moves to the prior 180. Live status, ability, item and phase guards still apply. Every move's admission is recorded in the JSON; its complete battle-system status is not upgraded merely by that admission.
 
@@ -589,3 +589,25 @@ Dedicated script coverage is now **8 / 354**, with **346 remaining**: Pound, Tac
 The new motion scripts passed eight representative native cases on the separate worker identity: six real singles and two typed-only four-slot cases. That retained source manifest predates the main actual-False-Swipe fixture update; it does not certify a fresh native replay of this combined dirty tree. Evidence is retained under `tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/`. No additional combined native hit-animation run is claimed. Original-ROM pixel parity and physical audible quality/alignment remain unverified; the native medicine run also does not close that audio gate.
 
 Remaining work includes further doubles move/volatile/caller/residual families, general held-item and battle-item categories, broader trainer AI and special modes, full ability-context combinations, and the remaining dedicated animations. Tail Whip's sound-loop/non-damaging invocation and palette/fade families remain distinct presentation work. Source comparison, real rule execution, native rendering and audible playback stay separate acceptance layers. The current predicate input hashes are in the JSON; initial inventory hashes and prior isolated native identities remain historical. This documentation refresh ran no product builds, tests or native sessions.
+
+## Current shared-family checkpoint (2026-10-11, dirty tree based on 16a45ea)
+
+Read-only evaluation of the actual `SourceBattleKernel.SupportsRecipe` target whitelist and every referenced effect-family predicate admits **226 / 354** authenticated moves, with **128 gated**. Exactly 15 IDs are newly admitted from the historical 211 checkpoint; none were removed. Live capability and phase guards still apply. Individual complete battle-system labels remain conservative.
+
+- Retaliation: **Counter, Mirror Coat and Vital Throw**, with main evidence passing **13 groups / 922 checks**. Actual complete turns retain independent last physical/special HP-loss source positions, ally invalidation, Follow Me, failure-time Pressure suppression, contact identity, exact PP/RNG, source-position persistence through real switching, reward/deferred replacement and JSON continuation. The unchanged-C proof has 144 calculator and 36 accuracy vectors plus 11 script assertions; 128 calculator and 15 accuracy inputs are within actual kernel admission. Sixty immutable complete-turn singles hashes remain unchanged. Canonical Vital Throw's pre-existing Bounce/Dig source charge-lock defect is corrected separately; historical profiles and ordinary goldens are retained. Wonder Guard and source-only guarded vectors do not become four-slot acceptance. See `tests/Game.Retaliation.Tests/README.md`, `tests/Game.Retaliation.Tests/vital-throw-correction.json` and `evidence/shared-target-families-20261011/retaliation-result.json`.
+- Selected volatile targets: **Supersonic, Confuse Ray, Sweet Kiss; Bind, Wrap, Fire Spin, Clamp, Whirlpool, Sand Tomb; Spider Web, Mean Look and Block**, with **16 groups / 616 checks / 14 complete four-action turns**. Actual slot targeting, Follow Me, ally Pressure, Own Tempo/Soundproof, Safeguard/Protect, PP/RNG and early failures are bounded. Independent same-species targets, binding expiry, source/target switch/Baton Pass/Roar/faint lifetimes and Wrap KO/reward/deferred replacement retain serialized cursor parity without replaying residuals. Sixteen original-C duration/RNG and six residual vectors, 36 unchanged singles actions and 36 canonical adapter comparisons are retained. The earlier adapter fixture-validation failure remains recorded. Combatant definitions are authenticated; selected move sets do not claim natural learnsets. Teeter Dance and other volatile/caller/residual families remain separate. See `tests/Game.FourVolatileTargets.Tests/README.md` and `evidence/shared-target-families-20261011/volatile-result.json`.
+- Hustle expands its existing bounded record; the ability ledger remains **36 bounded / 40 interaction-unverified**. **3 cases / 196 checks** cover natural Corsola in all four actor positions, physical Tackle's 76/77 cutoff, unaffected special Bubble, natural Togetic Charm's 80/81 cutoff and a controlled Poison Powder 60/61 cutoff. Original Gen III accuracy applies the physical-type 80% integer floor to zero-power status moves too. One actual complete four-action turn retains both natural Hustle identities and rejects stale continuation atomically. Poison Powder is a controlled ability/move pairing, not a natural learnset or Metronome claim. See `tests/Game.DamageAbilityGaps.Tests/FourHustleChecks.cs` and `evidence/shared-target-families-20261011/hustle-result.json`.
+
+Dedicated script acceptance is now **10 / 354**, with **344 remaining**: the previous eight plus **Tail Whip and battle Flash**. The current focused Counter/Vital Throw dispatch batch passes **99 checks**, with four real singles successes, two failures and **20 actual four-slot rule cases** (eight Counter, 12 Vital Throw). Four same-side Counter cases remain explicit visual fixtures. See `evidence/shared-target-families-20261011/motion-result.json`.
+
+Tail Whip/Flash pass **151 checks / 2,730 source-comparison frames / 1,671,168 RGB555 blend vectors**, including three real singles successes, one suppressed singles invocation and eight actual four-slot stat invocations. Frame counts are 210 singles, 1,260 all-visible four-slot and 1,260 absent-partner. Tail Whip retains source loop-sound frames 0/24/49 and BOTH-target ownership with one PP expenditure; a capped first target can yield a successful second-target animation. Caps, Keen Eye, malformed PP passes, missing results, Scene Off, cancellation and the source 90-frame sound bound are covered. The unchanged six-script 444-frame pixel digest is retained. This main C# run reuses the worker's hashed fixed original-C outputs; it does not claim a new C oracle run. See `docs/source-stat-animations.md`, `evidence/shared-target-families-20261011/stat-result.json` and `evidence/shared-target-families-20261011/reused-stat-source-inputs.json`.
+
+Integrated main Godot stat presentation passes **4,455 headless checks**, with three real singles/four real four-slot animation cases, zero typed-only cases and exit 0. Scene On/Off final state/RNG/ACK, repeated input/synchronization, cancellation and quit are bounded; source/DLL identities stayed unchanged during that run. See `evidence/shared-target-families-20261011/stat-host-result.json`, its source/assembly identities and quit result. The host evidence is tied to that retained source snapshot before the subsequent deferred-spread change.
+
+The separate stat-animation worker passes **one representative X11 battle Flash sample / 6,443 checks / exit 0**. It contains one real singles animation and no native four-slot cases. Its 718-file source/executable identity differs from the main 724-file headless host. The earlier failed assertion on transparent healthbox background pixels is retained; the corrected check verifies opaque healthbox pixels and the text panel. See `tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/delivery.json`, `native-flash/result.json.gz` and `native-mask-diagnostic/result.json` within that evidence directory. These records do not establish one combined current-main native run, original-ROM pixel equality or physical listening. Battle Flash does not establish new field-lighting acceptance. General stat scripts and independently transformed background subpalettes remain outside this increment.
+
+This refresh edits documentation only and runs no product builds, test executables or native sessions. The JSON preserves the full previous snapshot, records all 354 per-move admission decisions, and hashes current predicate inputs separately from retained evidence.
+
+## Shared type-change follow-on
+
+Conversion and Conversion 2 add two recipes to the preceding 226 checkpoint: **228/354 admitted, 126 gated**. Color Change is already one of the 36 bounded ability records; this expands its scope without changing that count. Main integration passes seven groups/1,038 checks, nine complete turns and 64 exact singles/shared state/event/RNG comparisons. Type-only overlays preserve Trace and clear on actual departure. Original Color Change uses retained SpecialStatus damage, including the independently demonstrated delayed-hit/zero-loss case. Conversion 2 retains the user-approved modern sampler. See [source details](source-four-type-changes.md) and `evidence/shared-type-changes-20261011/README.md`. Dedicated-script coverage remains ten; no new campaign/native run or general caller/Transform admission is claimed.

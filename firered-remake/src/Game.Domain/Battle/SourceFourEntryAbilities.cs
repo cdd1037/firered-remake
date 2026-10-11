@@ -44,6 +44,10 @@ public static class SourceFourEntryAbilities
         bool trace = body.Pokemon.AbilityId == "ABILITY_TRACE";
         if (overlay.Ability is not null && !trace) return false;
         if (overlay.Type1 is null && overlay.Type2 is null && overlay.CastformForm is null) return trace;
+        // Conversion and Color Change set both live slots; Trace may retain its copied ability.
+        // A legal type overlay does not admit Transform, copied moves, or other callers.
+        if (overlay.CastformForm is null)
+            return overlay.Type1 == overlay.Type2 && WildBattleEffective.IsSourceType(overlay.Type1);
         if (body.Pokemon.Species.Value != "pret:SPECIES_CASTFORM" || body.Pokemon.AbilityId != "ABILITY_FORECAST" ||
             overlay.Ability is not null || overlay.Type1 != overlay.Type2 || overlay.CastformForm is not { } form) return false;
         return overlay.Type1 == (form switch { SourceCastformForm.Normal => "TYPE_NORMAL", SourceCastformForm.Sunny => "TYPE_FIRE",

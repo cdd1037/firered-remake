@@ -131,11 +131,13 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled) ExecuteAllySupport(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled && HasSwitchRecipe(move.Effect)) { ExecuteSwitch(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && move.Effect == "EFFECT_SPIKES") { ExecuteSpikes(invocation.Actor, invocation.ChosenSlot, move); handled = true; }
+                if (!handled) ExecuteTypeChange(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteFieldSetting(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled) ExecuteTurnMove(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteBasicStat(invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteAdditionalPrimaryStatus(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled) ExecuteRetaliation(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled && HasFixedDamageRecipe(move.Effect)) { ExecuteFixedDamage(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) throw new SourceRecipeUnsupported("source_kernel_recipe_not_migrated");
@@ -186,7 +188,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     internal override bool SourceDoubleBattle => Frame.Layout == SourceBattleLayout.PresetDoubles;
     internal override int SourceDefenderCount(BattlerSlot target) => SourceMoveTargeting.CountSourcePresentDefenders(Frame, target);
     internal override IEnumerable<BattlerSlot> SourceNumericTargets(BattlerSlot actor, BattlerSlot initialTarget) =>
-        SourceDoubleBattle ? SourceMoveTargeting.NumericScriptTargets(Frame, actor) : [initialTarget];
+        SourceDoubleBattle ? SourceMoveTargeting.NumericScriptTargetsAfterDeferredKo(Frame, actor) : [initialTarget];
     internal override void BeginScriptTarget(BattlerSlot target)
     {
         invocation = invocation with { Target = target };
@@ -370,8 +372,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         if (Frame.Layout == SourceBattleLayout.Singles) throw new SourceRecipeUnsupported("source_kernel_singles_faint_compatibility");
         if (Get(slot).Pokemon.CurrentHp != 0) throw new SourceRecipeUnsupported("source_kernel_faint_requires_zero_hp");
         if (Frame.IsSourceAbsent(slot)) return; // Cmd_tryfaintmon tests absence, independently of HP.
-        Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         Frame = SourceBattleIdentityRules.ClearDepartureReferences(Frame, slot, SourceDepartureKind.Faint);
+        Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         ChangeStatus(slot, WildBattleStatus.None, "faint");
         Add(n => new SourceFaintedEvent(n, Turn, slot));
     }
@@ -425,7 +427,6 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         Set(target, body with { Flinched = true });
         Add(n => new SourceFlinchEvent(n, Turn, target, true));
     }
-    internal override void ApplyBinding(BattlerSlot target, string purpose, MoveId move) => throw new SourceRecipeUnsupported("source_kernel_binding_not_migrated");
     internal override bool EarlyStarterPrimaryMove(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_primary_status_not_migrated");
     internal override bool EarlyPartyScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_legacy_script_not_migrated");
     internal override bool TowerScript(PokemonCatalog catalog, BattlerSlot actor, int slot, PokemonMoveDefinition move, string purpose) => throw new SourceRecipeUnsupported("source_kernel_legacy_script_not_migrated");

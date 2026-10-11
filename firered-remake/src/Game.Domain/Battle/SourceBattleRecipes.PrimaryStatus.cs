@@ -24,9 +24,7 @@ internal abstract partial class SourceRecipeContext
         { RecordAbility(targetSlot, ability); Add(n => new SourceAbilityPreventedEvent(n, Turn, actorSlot, targetSlot, move.Id, ability)); return; }
         if (move.Effect == "EFFECT_SLEEP" && UproarPreventsSleep(targetSlot)) { Fail("uproar"); return; }
         if (target.Status != WildBattleStatus.None) { Fail("existing-status"); return; }
-        int accuracy = WildBattleDamage.Accuracy(move.Accuracy, actor.AccuracyStage, target.EvasionStage);
-        if (WildBattleEffective.Ability(actor) == "ABILITY_COMPOUND_EYES") accuracy = accuracy * 130 / 100;
-        if (target.Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") || BillUnderground(actorSlot, targetSlot, move) || !CalledSureHit(actorSlot, targetSlot) && Draw($"{purpose}.accuracy", 100) % 100 + 1 > accuracy)
+        if (!SourceGenericAccuracy(actorSlot, targetSlot, move, purpose))
         { SourceGenericMiss(actorSlot, targetSlot, move); return; }
         if (SourceCalledSafeguardBlocks(actorSlot, targetSlot, move.Id)) return;
         if (move.Effect == "EFFECT_POISON") { ChangeStatus(targetSlot, WildBattleStatus.Poison, "move"); SynchronizeStatus(catalog, targetSlot, WildBattleStatus.Poison); }

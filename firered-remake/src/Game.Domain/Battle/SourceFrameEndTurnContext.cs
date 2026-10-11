@@ -29,6 +29,11 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Body = body }),
             Parties = Frame.Parties.SetItem((int)key.Side, party with { Members = party.Members.SetItem(key.Index, member) }) };
     }
+    internal override void ClearBindingSource(BattlerSlot slot)
+    {
+        var cell = Frame.Get(slot);
+        Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Registers = cell.Registers with { WrappedBy = null } }) };
+    }
     internal override bool IsAbsent(BattlerSlot slot) => Frame.IsSourceAbsent(slot);
     internal override bool WeatherSuppressed => SourceWeatherRules.IsSuppressed(Frame);
     internal override bool HasWeather(string weather) => weather switch {
@@ -82,8 +87,8 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         var occupant = Frame.Get(slot).Occupant!.Value;
         if (Get(slot).Pokemon.CurrentHp != 0 || Frame.FourTurn!.Defeats.Any(d => d.Occupant == occupant))
             throw new SourceRecipeUnsupported("source_end_turn_faint_contract");
-        Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         Frame = SourceBattleIdentityRules.ClearDepartureReferences(Frame, slot, SourceDepartureKind.Faint);
+        Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         ChangeStatus(slot, WildBattleStatus.None, "faint");
         Add(n => new SourceFaintedEvent(n, Turn, slot));
         Frame = Frame with { DeferredKoVacancyMask = (byte)(Frame.DeferredKoVacancyMask | slot.Mask),
@@ -150,7 +155,6 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
             SourceBattlerEndTurnStep.LeechSeed => r.LeechSeedSource is not null,
             SourceBattlerEndTurnStep.Nightmare => m.Nightmare,
             SourceBattlerEndTurnStep.Curse => m.Cursed,
-            SourceBattlerEndTurnStep.Wrap => m.BindTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout) } || m.RampageTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Disable => m.DisabledMove is not null,
             SourceBattlerEndTurnStep.Encore => m.EncoreMoveSlot is not null,

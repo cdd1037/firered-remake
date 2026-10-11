@@ -82,3 +82,14 @@ complete pass.
 ## Main integration
 
 The combined Mimic/Sketch + arithmetic product passed all 6 groups / 161 assertions / 33 numeric vectors / 5 real turns again in `evidence/integrated-with-oracle/`. The earlier `integrated-copy/` attempt omitted the executable oracle required by two dynamic cases; its setup failure is retained. Regenerating that oracle from the pinned reference fixed the harness input, with no product edit. The extracted C source and executable are reproducible local outputs and are excluded from Git.
+
+## Four-position Hustle increment
+
+After building the same project, run `dotnet tests/Game.DamageAbilityGaps.Tests/bin/Debug/net10.0/Game.DamageAbilityGaps.Tests.dll CONTENT_ROOT four-hustle NEW_RESULT_JSON`.
+This selects only the new bounded checks, without re-running the older arithmetic suite.
+Natural Corsola and Togetic holders exercise exact physical accuracy cutoffs, special
+moves, physical-type Charm, all four actor positions, actual PP ownership and a
+complete four-action turn. A separately labelled controlled Poison Powder moveset
+checks the same accuracy command for primary status; it is not a campaign learnset
+or Metronome demonstration. FireRed's Hustle test is based on type category even
+when move power is zero. The existing source damage arithmetic remains shared.

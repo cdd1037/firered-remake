@@ -29,6 +29,8 @@ public sealed partial class SourceBattleAnimation
             try{value=Number(c.Args[index]);}catch(FormatException){Fail(c,"Invalid numeric operand.");return;}catch(OverflowException){Fail(c,"Numeric operand overflow.");return;}
             if(value<min||value>max)Fail(c,$"Operand {index} outside accepted range {min}..{max}.");
         }
+        if(c.Op=="loopsewithpan"){Range(2,0,255);Range(3,2,255);}
+        if(c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_Flash"){Range(1,2,2);return;}
         if(c.Op=="delay")Range(0,0,255);
         if(c.Op=="setalpha"){Range(0,0,16);Range(1,0,16);}
         if(c.Op=="createvisualtask")

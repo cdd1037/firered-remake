@@ -42,11 +42,11 @@ internal abstract partial class SourceRecipeContext
             {
                 case "EFFECT_POISON":
                 case "EFFECT_SLEEP": SourcePrimaryStatus(catalog, side, slot, move, purpose); return;
-                case "EFFECT_CONFUSE": EarlyPartyScript(catalog, side, slot, move, purpose); return;
+                case "EFFECT_CONFUSE": ExecuteVolatileTarget(side, target, slot, move, purpose); return;
                 case "EFFECT_RESTORE_HP":
                     SpendEarlyPartyPp(side, side, slot, move);
                     SourceStatRecoveryHeal(side, move, Math.Max(1, Get(side).Pokemon.Stats.MaxHp / 2)); return;
-                case "EFFECT_MEAN_LOOK": TowerScript(catalog, side, slot, move, purpose); return;
+                case "EFFECT_MEAN_LOOK": ExecuteVolatileTarget(side, target, slot, move, purpose); return;
                 case "EFFECT_ATTACK_UP":
                     SpendEarlyPartyPp(side, side, slot, move);
                     ChangeStage(side, side, WildBattleStat.Attack, 1, move.Id); return;
@@ -70,7 +70,7 @@ internal abstract partial class SourceRecipeContext
         {
             if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) return false;
             if (CalledSureHit(side, target)) return true;
-            if (move.Effect == "EFFECT_ALWAYS_HIT") return !BillUnderground(side, target, move);
+            if (move.Effect is "EFFECT_ALWAYS_HIT" or "EFFECT_VITAL_THROW") return !BillUnderground(side, target, move);
             return EarlyPartyAccuracy(side, target, move, purpose, false);
         }
 

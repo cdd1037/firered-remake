@@ -8,7 +8,8 @@ using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.WildBattle;
 
-if (args.Length != 3) return 2;
+if (args.Length is not (3 or 4) || args.Length == 4 && args[3] != "--type-changes") return 2;
+bool typeChangesOnly = args.Length == 4;
 var proof = SourceMechanicsCatalogLoader.LoadAuthenticated(args[0]); var catalog = proof.Catalog;
 string reference = args[1], output = args[2];
 string tm = File.ReadAllText(Path.Combine(reference, "src/data/pokemon/tmhm_learnsets.h"));
@@ -26,7 +27,7 @@ WildBattleCombatant Mon(string species, string move, int level = 50, uint pid = 
     string tmBlock = Regex.Match(tm, @"\[SPECIES_" + species + @"\].*?(?=\[SPECIES_|\z)", RegexOptions.Singleline).Value;
     string tutorBlock = Regex.Match(tutor, @"\[SPECIES_" + species + @"\].*?(?=\[SPECIES_|\z)", RegexOptions.Singleline).Value;
     Check(catalog.Species[p.Species].LevelUpMoves.Any(m => m.Move == Move(move) && m.Level <= level) ||
-        Regex.IsMatch(tmBlock, @"TM\d\d_" + move + @"\)") || tutorBlock.Contains("TUTOR(MOVE_" + move + ")"), "authentic move " + species + "/" + move);
+        Regex.IsMatch(tmBlock, @"(?:TM|HM)\d\d_" + move + @"\)") || tutorBlock.Contains("TUTOR(MOVE_" + move + ")"), "authentic move " + species + "/" + move);
     Check(SourcePokemonValidator.ValidatePermanent(proof, p) is null, "authentic identity " + species);
     return new(p with {Moves = [new(Move(move), catalog.Moves[Move(move)].Pp, catalog.Moves[Move(move)].Pp)]});
 }
@@ -77,6 +78,8 @@ SourceFourActionResult KnockOutPlayers(WildBattleCombatant[] reserves)
     var r = Begin(f); while(r.State.FourTurn?.Phase == SourceFourActionPhase.Actions) r = Next(r);
     r = Next(r); Check(r.State.FourTurn?.Phase == SourceFourActionPhase.ReplacementsPending && r.State.PendingSwitches.Length == 2, "two genuine deferred KO entries"); return r;
 }
+if (!typeChangesOnly)
+{
 Test("official runtime and four authentic source positions", () => { Check(Environment.Version.Major == 10, "runtime10"); Check(catalog.Species.Count == 386 && catalog.Moves.Count == 354, "authenticated catalog"); Entry(Plain()); });
 Test("competing entry weather uses one fastest-first sort then slower final setter", () => {
     var f = Frame([Mon("KYOGRE","CALM_MIND"),Mon("GROUDON","BULK_UP"),Mon("TYRANITAR","CRUNCH"),Mon("CASTFORM","TACKLE")]); var r = Entry(f);
@@ -214,6 +217,124 @@ Test("initial and replacement rejection and overflow leave state events and RNG 
     var badEntry=pending.State with{EventSequence=long.MaxValue-1};
     Atomic(badEntry,SourceFourActionTurns.ChooseReplacement(catalog,badEntry,new(badEntry.Revision,badEntry.EventSequence,badEntry.NextAction,badEntry.FourTurn!.Phase),new(0),new(BattleSide.Player,2)),"replacement event overflow");
 });
+}
+
+if (typeChangesOnly)
+{
+    WildBattleCombatant Moves(string species, int level, params string[] names)
+    {
+        var body = Mon(species, names[0], level);
+        foreach (var name in names.Skip(1)) Mon(species, name, level);
+        return body with { Pokemon = body.Pokemon with { Moves = names.Select(n => new PokemonMoveSlot(Move(n), catalog.Moves[Move(n)].Pp, catalog.Moves[Move(n)].Pp)).ToImmutableArray() } };
+    }
+    void VerifyTrace(SourceBattleFrame before, SourceFourActionResult r)
+    {
+        uint seed = before.Rng.Seed;
+        foreach (var draw in r.Trace) { seed = unchecked(seed * 1103515245 + 24691); Check(draw.Raw == (ushort)(seed >> 16), "actual LCG"); }
+        Check(r.State.Rng.Seed == seed && r.State.Rng.Cursor == before.Rng.Cursor + (ulong)r.Trace.Length, "actual cursor");
+    }
+    SourceFourActionResult Finish(SourceFourActionResult r)
+    {
+        for (int i = 0; i < 30 && r.State.FourTurn is not null; i++) r = Next(r);
+        Check(r.CompletedCleanTurn, "type-change complete turn"); turns++; return r;
+    }
+    SourceFourActionResult Switch(SourceBattleFrame f, int slot, int reserve)
+    {
+        var choices = f.Slots.Select(c => c.Slot.Value == slot
+            ? new SourceActionSelection(c.Occupant!.Value, SourceActionKind.Switch, null, null, new(c.Slot.Side, reserve))
+            : new SourceActionSelection(c.Occupant!.Value, SourceActionKind.Move, 0, new(catalog.Moves[c.Body!.Pokemon.Moves[0].Move].Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? c.Slot.Value : c.Slot.Value ^ 1))).ToImmutableArray();
+        return Finish(Success(SourceFourActionTurns.BeginActions(catalog, f, f.Revision, choices)));
+    }
+    Test("authentic spread Color Change updates both opposing positions and retains source identity", () => {
+        var f = Entry(Frame([Mon("BLASTOISE", "SURF", 40), Mon("KECLEON", "TAIL_WHIP", 100), Mon("METAPOD", "HARDEN", 20), Mon("KECLEON", "TAIL_WHIP", 100)])).State;
+        var result = Turn(f);
+        var colors = result.Events.OfType<SourceAbilityActivatedEvent>().Where(e => e.Ability == "ABILITY_COLOR_CHANGE").ToArray();
+        Check(colors.Select(e => e.Side.Value).Order().SequenceEqual(new[]{1,3}), "both exact recipients");
+        foreach (var color in colors) {
+            var change = result.Events.OfType<SourceCalledOverlayChangedEvent>().Single(e => e.Sequence == color.Sequence + 1);
+            Check(change.Side == color.Side && change.After is {Type1:"TYPE_WATER", Type2:"TYPE_WATER"}, "adjacent activation overlay");
+            Check(WildBattleEffective.Types(catalog,result.State.Get(color.Side).Body!) == ("TYPE_WATER", "TYPE_WATER"), "retained live type");
+            Check(result.State.Party(BattleSide.Opponent).Members[color.Side.Value / 2].Pokemon.AbilityId == "ABILITY_COLOR_CHANGE", "permanent ability");
+        }
+        Check(result.State.Slots.All(c => c.Position.HitItemReceipt is null), "ActionFinished clears receipts");
+        var restored = JsonSerializer.Deserialize<SourceBattleFrame>(Json(result.State))!;
+        Check(Json(restored) == Json(result.State), "type overlay JSON round trip");
+        Turn(restored);
+    });
+    Test("Conversion retains slot rejection RNG, Trace overlay, and real switch lifetime", () => {
+        var f = Entry(Frame([Moves("PORYGON", 50, "CONVERSION", "PSYBEAM"), Mon("METAPOD", "HARDEN", 20), Mon("METAPOD", "HARDEN", 20), Mon("METAPOD", "HARDEN", 20)], playerReserves:[Mon("METAPOD", "HARDEN", 20)])).State;
+        var begin = Begin(f); var r = Next(begin); VerifyTrace(begin.State, r);
+        Check(r.Events.OfType<SourceCalledOverlayChangedEvent>().Single().Side == new BattlerSlot(0), "actor overlay");
+        Check(r.State.Slots[0].Body!.CalledOverlay is { Type1:"TYPE_PSYCHIC", Type2:"TYPE_PSYCHIC", Ability:"ABILITY_SHED_SKIN" }, "Conversion preserves copied Trace ability");
+        Check(r.Trace.Any(d => d.Purpose.EndsWith(".conversion-slot")) && r.Trace.Where(d => d.Purpose.EndsWith(".conversion-slot")).Last().Raw % 4 == 1, "original move-position sampling");
+        r = Finish(r); var away = Switch(r.State, 0, 2); var back = Switch(away.State, 0, 0);
+        Check(back.State.Slots[0].Body!.CalledOverlay is {Type1:null,Type2:null,Ability:"ABILITY_SHED_SKIN"}, "switch clears types and reruns Trace");
+        Check(back.State.Party(BattleSide.Player).Members[0].Pokemon.AbilityId == "ABILITY_TRACE", "Trace permanent identity");
+    });
+    Test("Conversion2 consumes actual slot-three hit history and one approved candidate draw", () => {
+        var f = Entry(Frame([Mon("METAPOD", "HARDEN", 20), Mon("METAPOD", "HARDEN", 20), Mon("PORYGON", "CONVERSION_2", 20), Mon("PIKACHU", "THUNDER_SHOCK", 25)], seed:19)).State;
+        var r = Begin(f, [0,1,2,2]); bool saw = false;
+        while(r.State.FourTurn?.Phase == SourceFourActionPhase.Actions) {
+            var before = r.State; r = Next(r); VerifyTrace(before,r);
+            if (r.Events.OfType<SourceMoveUsedEvent>().Any(e => e.Move == Move("CONVERSION_2"))) {
+                Check(before.Slots[2].Registers.LastHitBy == new BattlerSlot(3) && before.Slots[2].Registers.History?.LastHitByType == "TYPE_ELECTRIC", "actual last attacker position and type");
+                var draw = r.Trace.Single(d => d.Purpose.EndsWith(".conversion2-candidate"));
+                var chosen = WildBattleSourcePartyEffects.Conversion2Candidates("TYPE_ELECTRIC", "TYPE_NORMAL", "TYPE_NORMAL")[draw.Raw % WildBattleSourcePartyEffects.Conversion2Candidates("TYPE_ELECTRIC", "TYPE_NORMAL", "TYPE_NORMAL").Length];
+                Check(r.State.Slots[2].Body!.CalledOverlay is {} overlay && overlay.Type1 == chosen && overlay.Type2 == chosen, "one approved integer candidate selection"); saw = true;
+            }
+        }
+        Check(saw, "Conversion2 executed"); Finish(r);
+    });
+    Test("Conversion and Conversion2 failures consume PP without candidate RNG", () => {
+        foreach (var move in new[]{"CONVERSION","CONVERSION_2"}) {
+            var f = Entry(Frame([Mon("PORYGON",move,50), Mon("METAPOD","HARDEN",20),Mon("METAPOD","HARDEN",20),Mon("METAPOD","HARDEN",20)])).State;
+            var r = Next(Begin(f));
+            Check(r.Events.OfType<SourceMoveFailedEvent>().Single().Reason == (move == "CONVERSION" ? "no-different-move-type" : "no-landed-move"), "normal failure");
+            Check(!r.Trace.Any(d => d.Purpose.Contains("conversion")), "no candidate draw");
+            Check(r.State.Slots[0].Body!.Pokemon.Moves[0].CurrentPp == catalog.Moves[Move(move)].Pp - 1, "PP retained on failure"); Finish(r);
+        }
+    });
+    Test("Trace copies Color Change then activates without rewriting permanent ability", () => {
+        var f = Entry(Frame([Mon("PORYGON","RECOVER",100),Mon("KECLEON","PSYBEAM",30),Mon("METAPOD","HARDEN",20),Mon("KECLEON","TAIL_WHIP",100)])).State;
+        Check(f.Slots[0].Body!.CalledOverlay?.Ability == "ABILITY_COLOR_CHANGE", "source donor copied");
+        var r = Turn(f, [1,0,2,2]);
+        Check(r.Events.OfType<SourceAbilityActivatedEvent>().Any(e => e.Side == new BattlerSlot(0) && e.Ability == "ABILITY_COLOR_CHANGE"), "copied ability triggered");
+        Check(r.State.Slots[0].Body!.CalledOverlay is {Type1:"TYPE_PSYCHIC",Type2:"TYPE_PSYCHIC",Ability:"ABILITY_COLOR_CHANGE"}, "overlay fields coexist");
+        Check(r.State.Slots[0].Body!.Pokemon.AbilityId == "ABILITY_TRACE", "permanent Trace unchanged");
+    });
+    Test("canonical singles adapters match shared Conversion and Conversion2 state events and RNG", () => {
+        foreach (string name in new[]{"CONVERSION","CONVERSION_2"}) foreach (uint seed in Enumerable.Range(0,32).Select(i=>(uint)i)) {
+            var actor = Moves("PORYGON",50,name,"PSYBEAM"); var target = Mon("METAPOD","HARDEN",30);
+            if(name=="CONVERSION_2") actor=actor with {LastLandedMove=Move("EMBER"),LastHitBy=WildBattleSide.Opponent,SourceMoveHistory=new(){LastHitByType="TYPE_FIRE"}};
+            var single = new WildBattleState(actor,target,0,0,0,new(seed),0,WildBattleOutcome.Ongoing,RulesVersion:WildBattleRules.FuchsiaRulesVersion) {
+                Terrain=WildBattleTerrain.Plain,SourceMechanicsRulesVersion=BattleRulesProfile.CanonicalSourceSinglesVersion,
+                CalledParty=new([Member(actor)],[Member(target)],0,0)};
+            var imported = SinglesBattleAdapter.Import(catalog,single); Check(imported.Succeeded,"parity import "+imported.Fault); var frame=imported.Frame!;
+            var legacy = WildBattleRules.ResolveSourceMoveAction(catalog,single,new(WildBattleSide.Player,0)).Battle;
+            var shared = SourceBattleKernel.ResolveAction(catalog,frame,new(frame.Slots[0].Occupant!.Value,frame.Revision,0,new(0)));
+            Check(legacy.Succeeded && shared.Succeeded,"parity success "+legacy.Fault+"/"+shared.Fault);
+            var exported = SinglesBattleAdapter.Export(shared.State); Check(exported.Succeeded,"parity export "+exported.Fault);
+            Check(Json(exported.State)==Json(legacy.State),"whole singles state parity "+name+" seed="+seed);
+            Check(Json(shared.Events.Select(SourceBattleEventAdapter.Export).ToArray())==Json(legacy.Events),"whole singles events parity "+name);
+            Check(Json(shared.Trace)==Json(legacy.Trace),"whole singles RNG parity "+name);
+        }
+    });
+    Test("malformed type overlays and unmigrated callers remain atomically closed", () => {
+        var f = Entry(Plain()).State;
+        foreach (var overlay in new WildBattleCalledOverlay[]{new(){Type1="TYPE_FIRE"},new(){Type1="TYPE_MYSTERY",Type2="TYPE_MYSTERY"},new(){Type1="TYPE_FIRE",Type2="TYPE_WATER"},new(){Type1="TYPE_FIRE",Type2="TYPE_FIRE",Ability="ABILITY_COLOR_CHANGE"},new(){Type1="TYPE_FIRE",Type2="TYPE_FIRE",CastformForm=SourceCastformForm.Sunny}}) {
+            var bad = f with {Slots=f.Slots.SetItem(0,f.Slots[0] with {Body=f.Slots[0].Body! with {CalledOverlay=overlay}})};
+            Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,bad.Slots.Select(c=>new SourceActionSelection(c.Occupant!.Value,SourceActionKind.Move,0,new(c.Slot.Value^1))).ToImmutableArray()),"malformed overlay");
+        }
+        foreach (var bad in new[]{
+            f with {Slots=f.Slots.SetItem(0,f.Slots[0] with {Registers=f.Slots[0].Registers with {History=new(){LastHitByType="TYPE_INVALID"}}})},
+            f with {Slots=f.Slots.SetItem(0,f.Slots[0] with {Body=f.Slots[0].Body! with {LastLandedMove=Move("UNKNOWN")}})}}) {
+            var rejected=SourceBattleKernel.ResolveAction(catalog,bad,new(bad.Slots[0].Occupant!.Value,bad.Revision,0,new(1)));
+            Check(rejected.Fault=="source_kernel_type_change_history" && ReferenceEquals(rejected.State,bad) && rejected.Events.IsEmpty && rejected.Trace.IsEmpty,"invalid type history atomic");
+        }
+        Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("TRANSFORM")]) && !SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("METRONOME")]) && !SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("ROLE_PLAY")]), "caller and transform admission unchanged");
+    });
+}
+
 var summary=new {passed=failures==0,groups,checks,failures,entries,turns,replacements,runtime=Environment.Version.ToString(),results};
 Directory.CreateDirectory(output);File.WriteAllText(Path.Combine(output,"result.json"),JsonSerializer.Serialize(summary,new JsonSerializerOptions{WriteIndented=true}));
 Console.WriteLine($"RESULT groups={groups} checks={checks} entries={entries} turns={turns} replacements={replacements} failures={failures} runtime={Environment.Version}");

@@ -4,7 +4,7 @@
   "baseCommit": "67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba",
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "scope": "Living battle-completion matrix. Initial inventory is bound to baseCommit; later implementation updates identify their own tested scope.",
-  "snapshotNote": "Initial inspectedFiles and retained evidence hashes remain the 67c89d3 inventory. Additive implementationUpdates preserve historical snapshots; currentFourSlotAdmissionSnapshot explicitly identifies the dirty 3c78f0a-based working tree and separately hashed predicate inputs. Later source/native evidence does not relabel historical hashes or the motion worker identity as current main.",
+  "snapshotNote": "Initial inspectedFiles and retained evidence hashes remain the 67c89d3 inventory. Additive implementationUpdates preserve historical snapshots, including the 211/354 eight-script checkpoint. currentFourSlotAdmissionSnapshot identifies the dirty 16a45ea-based working tree and separately hashed predicate inputs. Later rules evidence does not relabel earlier animation/native identities as current main.",
   "statusDefinitions": {
     "implemented-with-bounded-tests": "An identified implementation and bounded retained tests exist. Only the stated scope is credited; no exhaustive coverage or fresh run is implied.",
     "missing": "A required executable branch/state/owner is absent or explicitly rejected in the inspected scope, even when metadata/AI references exist.",
@@ -163,7 +163,7 @@
       "title": "Residual and delayed callback scheduling",
       "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "One shared phase cursor serves singles and four-slot weather, screen, status and end-turn-ability commands. Four-slot Future Sight/Doom Desire, bounded reward/learning pauses and end-turn KO entry now resume without replaying ordinary residuals. Wish, Perish and other unported four-slot residuals remain gated.",
+      "scope": "One shared phase cursor serves singles and four-slot weather, screen, status and end-turn-ability commands. Four-slot binding residuals, Future Sight/Doom Desire, bounded reward/learning pauses and end-turn KO entry now resume without replaying ordinary residuals. Wish, Perish and other unported four-slot residuals remain gated.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledVolatileEffects.cs",
@@ -176,7 +176,8 @@
         "tests/Game.SourceWildTurns.Tests/evidence/run-3.log",
         "tests/Game.FourEndTurn.Tests/README.md",
         "tests/Game.FourEndTurnParity.Tests/baseline-3a0344d.json",
-        "tests/Game.FourRewards.Tests/README.md"
+        "tests/Game.FourRewards.Tests/README.md",
+        "evidence/shared-target-families-20261011/volatile-result.json"
       ],
       "sourceEvidence": [
         "src/battle_main.c:HandleEndTurn_ContinueBattle",
@@ -198,7 +199,7 @@
       "title": "Move effect groups and cross-state interactions",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "Shared generic, recovery, field, turn-lock and party recipes retain bounded source tests. The dirty 3c78f0a-based integration adds eight fixed-damage moves plus 18 basic-stat and five additional primary-status moves to actual four-slot execution. Static admission is 211/354; this is not complete interaction acceptance.",
+      "scope": "Shared generic, recovery, field, turn-lock and party recipes retain bounded source tests. The dirty 16a45ea-based integration adds Counter, Mirror Coat and Vital Throw plus 12 selected confusion/trapping moves to the previous 211 admitted recipes. Static four-slot admission is 228/354 (126 gated). Actual retaliation and volatile-target evidence passes 13 groups/922 checks and 16 groups/616 checks/14 complete turns respectively; this is not complete interaction acceptance. Two shared Conversion recipes add seven groups/1,038 checks with Color Change lifecycle.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleGenericEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleStatRecoveryEffects.cs",
@@ -209,7 +210,12 @@
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
         "src/Game.Domain/Battle/SourceBattleRecipes.FixedDamage.cs",
         "src/Game.Domain/Battle/SourceBattleRecipes.BasicStats.cs",
-        "src/Game.Domain/Battle/SourceBattleRecipes.AdditionalPrimaryStatus.cs"
+        "src/Game.Domain/Battle/SourceBattleRecipes.AdditionalPrimaryStatus.cs",
+        "src/Game.Domain/Battle/SourceBattleRecipes.Retaliation.cs",
+        "src/Game.Domain/Battle/SourceBattleRecipes.VolatileTargets.cs",
+        "src/Game.Domain/Battle/SourceFrameVolatileTargets.cs",
+        "src/Game.Domain/Battle/SourceVolatileTargetRules.cs",
+        "src/Game.Domain/Battle/SourceBattleRecipes.TypeChanges.cs"
       ],
       "testEvidence": [
         "docs/called-move-implementation.md",
@@ -218,7 +224,15 @@
         "evidence/shared-battle-families-20261011/shared-fixed-main-01/result.json",
         "evidence/shared-battle-families-20261011/shared-stats-main-01/results.json",
         "tests/Game.FixedDamage.Tests/README.md",
-        "tests/Game.SharedBasicStatStatus.Tests/Program.cs"
+        "tests/Game.SharedBasicStatStatus.Tests/Program.cs",
+        "evidence/shared-target-families-20261011/retaliation-result.json",
+        "evidence/shared-target-families-20261011/volatile-result.json",
+        "tests/Game.Retaliation.Tests/README.md",
+        "tests/Game.Retaliation.Tests/source-proof.json",
+        "tests/Game.Retaliation.Tests/vital-throw-correction.json",
+        "tests/Game.FourVolatileTargets.Tests/README.md",
+        "tests/Game.FourVolatileTargets.Tests/source-vectors.json",
+        "evidence/shared-type-changes-20261011/result.json"
       ],
       "sourceEvidence": [
         "data/battle_scripts_1.s",
@@ -244,7 +258,7 @@
       "title": "Ability entry, weather and forms",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "Shared actual initial/KO-entry recipes now cover Drizzle, Drought, Sand Stream, Intimidate, Trace and Forecast, with real four-slot occupant tokens, source tie RNG and ordered pending callbacks. Four-slot Color Change, general move-end immunity and voluntary/Baton/Roar entry integration remain unfinished.",
+      "scope": "Shared initial/KO/voluntary/Baton/Roar entry and source Spikes ordering have bounded actual coverage. Color Change now shares its canonical recipe with four-slot actions, preserving Trace ability overlays and original retained damage-category conditions; Conversion/Conversion 2 share overlay lifetime. Remaining move-end immunity and complete AI/Application combinations remain open.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledFieldEffects.cs",
@@ -254,7 +268,8 @@
         "src/Game.Domain/Battle/SourceTraceForecastRules.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceTraceForecast.cs",
         "src/Game.Domain/Battle/SourceEntryAbilityContext.cs",
-        "src/Game.Domain/Battle/SourceFourEntryAbilities.cs"
+        "src/Game.Domain/Battle/SourceFourEntryAbilities.cs",
+        "src/Game.Domain/Battle/SourceBattleRecipes.TypeChanges.cs"
       ],
       "testEvidence": [
         "tests/Game.CalledFieldEffects.Tests/README.md",
@@ -263,7 +278,9 @@
         "docs/source-trace-forecast.md",
         "tests/Game.SourceTraceForecast.Tests/Program.cs",
         "tests/Game.FourEntryAbilities.Tests/README.md",
-        "docs/source-four-slot-entry-abilities.md"
+        "docs/source-four-slot-entry-abilities.md",
+        "docs/source-four-type-changes.md",
+        "evidence/shared-type-changes-20261011/result.json"
       ],
       "sourceEvidence": [
         "src/battle_util.c:AbilityBattleEffects",
@@ -271,9 +288,8 @@
         "src/battle_main.c:TryDoEventsBeforeFirstTurn"
       ],
       "nextAcceptance": [
-        "Carry the shared entry lifecycle through voluntary/Baton/Roar switching and source Spikes ordering.",
-        "Migrate Color Change and remaining move-end immunity without duplicating singles recipes.",
-        "Keep exact occupant tokens and acquisition-versus-entry semantics through full AI/Application admission."
+        "Complete remaining move-end immunity and copied-ability interactions without duplicating singles recipes.",
+        "Preserve exact occupant tokens and acquisition-versus-entry semantics through full AI/Application admission."
       ],
       "dependsOn": [
         "C01",
@@ -287,20 +303,24 @@
       "title": "Ability damage, absorption, contact and residual gaps",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "Authentic mechanics donors now execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Truant and Speed Boost now have authentic-donor complete-turn and lifecycle tests; Rain Dish and Color Change now have bounded canonical singles coverage; full-field and remaining interaction coverage is separate.",
+      "scope": "Authentic mechanics donors execute Huge Power, Pure Power, Hustle, Marvel Scale and Pressure, plus Volt Absorb, Rough Skin and Flame Body through shared paths. Hustle now has 3 cases/196 checks covering all four actor positions, physical-type damage/status accuracy cutoffs, unaffected special accuracy and one whole four-action turn. Truant and Speed Boost retain authentic-donor complete-turn/lifecycle tests; Rain Dish and Color Change retain bounded canonical singles coverage. Ability labels remain 36 bounded/40 interaction-unverified; broader combinations remain separate.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
         "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleRoute11Execution.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
-        "src/Game.Domain/WildBattle/WildBattleGenericEffects.cs"
+        "src/Game.Domain/WildBattle/WildBattleGenericEffects.cs",
+        "src/Game.Domain/Battle/SourceBattleRecipes.Primitives.cs"
       ],
       "testEvidence": [
         "tests/Game.CalledScalarDamage.Tests/README.md",
         "tests/Game.SourceEndTurn.Tests/README.md",
         "tests/Game.DamageAbilityGaps.Tests/README.md",
         "tests/Game.SourceMechanicsAdmission.Tests/Program.cs",
-        "tests/Game.SourceContactAbsorb.Tests/Program.cs"
+        "tests/Game.SourceContactAbsorb.Tests/Program.cs",
+        "evidence/shared-target-families-20261011/hustle-result.json",
+        "evidence/recovery-20261011/four-hustle-02/source-proof.json",
+        "tests/Game.DamageAbilityGaps.Tests/FourHustleChecks.cs"
       ],
       "sourceEvidence": [
         "src/pokemon.c:CalculateBaseDamage",
@@ -741,7 +761,7 @@
       "title": "Battle event text, controls and presentation routing",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "The actual campaign view has bounded four-slot healthbox, target/party/replacement and ordinary medicine BAG controls. Main X11 medicine verification passes 223 checks with unchanged source/DLL identity and exit 0. Six common hit scripts, including False Swipe, now receive actual four-slot kernel invocations in current BCL tests. Counter/Vital Throw have real successful singles scripts and typed-only four-slot presentation fixtures. Their eight representative native cases belong to the separate worker source identity, before the main actual-False-Swipe test-fixture update; no fresh integrated native hit-animation run is claimed.",
+      "scope": "The actual campaign view has bounded four-slot healthbox, target/party/replacement and ordinary medicine BAG controls. Main X11 medicine verification passes 223 checks with unchanged source/DLL identity and exit 0. Ten dedicated scripts now have bounded actual four-slot kernel animation dispatch evidence. The current focused Counter/Vital Throw batch passes 99 checks with 20 real four-slot cases; four same-side Counter cases remain visual-only. Tail Whip/Flash pass 151 checks with eight real four-slot stat invocations. Earlier native runs retain their separate source identities; no combined current-main native replay is claimed. Main headless stat presentation passes 4,455 checks (three real singles/four real four-slot cases); a separate worker X11 Flash sample passes 6,443 checks/exit 0. These retain distinct executable/source identities and Dummy-audio limits.",
       "implementationEvidence": [
         "src/Game.Godot/SourceTrainerPresentationModel.cs",
         "src/Game.Godot/CampaignSourceTrainerPresentationView.cs",
@@ -759,7 +779,20 @@
         "evidence/shared-battle-families-20261011/native/result.json",
         "docs/source-motion-animations.md",
         "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/main/result.json.gz",
-        "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/worker/delivery.json"
+        "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/worker/delivery.json",
+        "evidence/shared-target-families-20261011/motion-result.json",
+        "evidence/shared-target-families-20261011/stat-result.json",
+        "evidence/shared-target-families-20261011/reused-stat-source-inputs.json",
+        "docs/source-stat-animations.md",
+        "evidence/shared-target-families-20261011/stat-host-result.json",
+        "evidence/shared-target-families-20261011/stat-host-quit-result.json",
+        "evidence/shared-target-families-20261011/stat-host-source-manifest.json",
+        "evidence/shared-target-families-20261011/stat-host-assembly-identity.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/delivery.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/result.json.gz",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/source-manifest.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/assembly-identity.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-mask-diagnostic/result.json"
       ],
       "sourceEvidence": [
         "src/battle_message.c",
@@ -783,7 +816,7 @@
       "title": "Move/ability animation and audio inventory",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "All 354 source animation roots retain an authenticated conservative dependency inventory. Eight bounded dedicated scripts are now implemented (Pound, Tackle, Scratch, Cut, Slash, False Swipe, Counter, Vital Throw); 346 lack that layer. The current BCL batch passes 42,069 checks over 20,706 source-C comparison frames, including 9,864 explicitly synthetic callback frames. Six common scripts have actual four-slot kernel dispatch, including False Swipe; Counter/Vital Throw four-slot cases are typed presentation only. Eight representative new-script native cases passed on the worker source identity, not the later combined main identity. Original-ROM pixel equality, general animation coverage and physical listening remain unverified.",
+      "scope": "All 354 source animation roots retain an authenticated conservative dependency inventory. Ten bounded dedicated scripts are accepted: Pound, Tackle, Scratch, Cut, Slash, False Swipe, Counter, Vital Throw, Tail Whip and Flash; 344 lack that layer. Current Counter/Vital Throw dispatch has 20 actual four-slot rule cases and four explicitly visual-only same-side Counter fixtures. Tail Whip/Flash add 151 checks, 2,730 source-comparison frames and 1,671,168 RGB555 vectors, with real singles/four-slot stat invocations. Main comparisons reuse hashed fixed original-C output from the worker rather than rerunning C. Prior eight-script frame/native evidence remains historical; original-ROM pixel equality and physical listening remain unverified. Main headless stat presentation passes 4,455 checks (three real singles/four real four-slot cases); a separate worker X11 Flash sample passes 6,443 checks/exit 0. These retain distinct executable/source identities and Dummy-audio limits.",
       "implementationEvidence": [
         "src/Game.Godot/CampaignAudioView.cs",
         "src/Game.Godot/SynthSourceAudioPlayer.cs",
@@ -803,7 +836,20 @@
         "evidence/recovery-20261011/basic-slice-animations/RESULT.json",
         "docs/source-motion-animations.md",
         "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/main/result.json.gz",
-        "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/worker/delivery.json"
+        "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/worker/delivery.json",
+        "evidence/shared-target-families-20261011/motion-result.json",
+        "evidence/shared-target-families-20261011/stat-result.json",
+        "evidence/shared-target-families-20261011/reused-stat-source-inputs.json",
+        "docs/source-stat-animations.md",
+        "evidence/shared-target-families-20261011/stat-host-result.json",
+        "evidence/shared-target-families-20261011/stat-host-quit-result.json",
+        "evidence/shared-target-families-20261011/stat-host-source-manifest.json",
+        "evidence/shared-target-families-20261011/stat-host-assembly-identity.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/delivery.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/result.json.gz",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/source-manifest.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/assembly-identity.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-mask-diagnostic/result.json"
       ],
       "sourceEvidence": [
         "data/battle_anim_scripts.s",
@@ -1491,7 +1537,7 @@
       "symbol": "ABILITY_COLOR_CHANGE",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Authenticated canonical singles exact HP-loss receipt, dynamic type, Explosion/recoil/BeatUp/Pursuit, copied abilities and presentation pairing verified. Full four-slot move-end remains gated.",
+      "assessment": "Shared canonical/four-slot Color Change uses original retained physical/special damage conditions. Real Surf targets, Trace overlay and switching, plus natural delayed Future Sight then zero-loss Focus Band Water Gun are bounded-tested. Wider caller/dynamic-type/four-slot item interactions remain separate.",
       "implementationBranchLocations": [],
       "sourceOccurrenceLocations": [
         {
@@ -1503,7 +1549,9 @@
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "testEvidence": [
         "docs/source-color-change-ability.md",
-        "tests/Game.SourceColorChange.Tests/Program.cs"
+        "tests/Game.SourceColorChange.Tests/Program.cs",
+        "docs/source-four-type-changes.md",
+        "evidence/shared-type-changes-20261011/result.json"
       ]
     },
     {
@@ -3208,7 +3256,7 @@
       "symbol": "ABILITY_HUSTLE",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "Real Togetic damage and physical-accuracy miss full turns verified; four-slot interactions unverified.",
+      "assessment": "Real Togetic singles damage and physical-accuracy miss turns remain verified. New bounded four-slot evidence covers authentic Corsola in all four actor positions, natural Togetic Charm and controlled Poison Powder physical-type status cutoffs, unaffected Bubble accuracy, one complete four-action turn and stale-turn atomicity (3 cases/196 checks). Wider ability/caller/campaign combinations remain unverified.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
@@ -3228,7 +3276,10 @@
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "currentEvidence": [
-        "docs/source-mechanics-admission.md"
+        "docs/source-mechanics-admission.md",
+        "evidence/shared-target-families-20261011/hustle-result.json",
+        "evidence/recovery-20261011/four-hustle-02/source-proof.json",
+        "tests/Game.DamageAbilityGaps.Tests/FourHustleChecks.cs"
       ]
     },
     {
@@ -4374,7 +4425,12 @@
         "startLine": 263,
         "symbol": "MOVE_BIND"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_SLAM",
@@ -4694,7 +4750,12 @@
         "startLine": 458,
         "symbol": "MOVE_WRAP"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_TAKE_DOWN",
@@ -4783,6 +4844,11 @@
         "family": "basic-stat",
         "result": "evidence/shared-battle-families-20261011/shared-stats-main-01/results.json",
         "scope": "Actual authenticated four-slot kernel execution; complete battle-system interactions and dedicated presentation remain separate."
+      },
+      "boundedAnimationEvidence": {
+        "result": "evidence/shared-target-families-20261011/stat-result.json",
+        "sourceInputs": "evidence/shared-target-families-20261011/reused-stat-source-inputs.json",
+        "scope": "Dedicated original script with successful actual singles/four-slot stat-result admission, source-frame/palette comparisons and bounded suppression/cancellation. Fixed worker C output is reused by current main; native verification is separate."
       }
     },
     {
@@ -4982,7 +5048,12 @@
         "startLine": 627,
         "symbol": "MOVE_SUPERSONIC"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_SONIC_BOOM",
@@ -5407,7 +5478,16 @@
         "startLine": 887,
         "symbol": "MOVE_COUNTER"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "retaliation",
+        "result": "evidence/shared-target-families-20261011/retaliation-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      },
+      "boundedAnimationEvidence": {
+        "result": "evidence/shared-target-families-20261011/motion-result.json",
+        "scope": "Dedicated source script with actual singles success/failure and actual four-slot rule dispatch. Same-side Counter geometry cases are explicitly visual-only; native evidence belongs to the earlier separate worker identity."
+      }
     },
     {
       "id": "pret:MOVE_SEISMIC_TOSS",
@@ -5747,7 +5827,12 @@
         "startLine": 1082,
         "symbol": "MOVE_FIRE_SPIN"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_THUNDER_SHOCK",
@@ -6333,7 +6418,12 @@
         "startLine": 1420,
         "symbol": "MOVE_CONFUSE_RAY"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_WITHDRAW",
@@ -6742,7 +6832,12 @@
         "startLine": 1667,
         "symbol": "MOVE_CLAMP"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_SWIFT",
@@ -7177,6 +7272,11 @@
         "family": "basic-stat",
         "result": "evidence/shared-battle-families-20261011/shared-stats-main-01/results.json",
         "scope": "Actual authenticated four-slot kernel execution; complete battle-system interactions and dedicated presentation remain separate."
+      },
+      "boundedAnimationEvidence": {
+        "result": "evidence/shared-target-families-20261011/stat-result.json",
+        "sourceInputs": "evidence/shared-target-families-20261011/reused-stat-source-inputs.json",
+        "scope": "Dedicated original script with successful actual singles/four-slot stat-result admission, source-frame/palette comparisons and bounded suppression/cancellation. Fixed worker C output is reused by current main; native verification is separate."
       }
     },
     {
@@ -7434,7 +7534,7 @@
         "startLine": 2083,
         "symbol": "MOVE_CONVERSION"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TRI_ATTACK",
@@ -7628,7 +7728,12 @@
         "startLine": 2200,
         "symbol": "MOVE_SPIDER_WEB"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_MIND_READER",
@@ -7775,7 +7880,7 @@
         "startLine": 2291,
         "symbol": "MOVE_CONVERSION_2"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_AEROBLAST",
@@ -7988,7 +8093,12 @@
         "startLine": 2421,
         "symbol": "MOVE_SWEET_KISS"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_BELLY_DRUM",
@@ -8548,7 +8658,12 @@
         "startLine": 2759,
         "symbol": "MOVE_MEAN_LOOK"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_ATTRACT",
@@ -8994,7 +9109,16 @@
         "startLine": 3032,
         "symbol": "MOVE_VITAL_THROW"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "retaliation",
+        "result": "evidence/shared-target-families-20261011/retaliation-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      },
+      "boundedAnimationEvidence": {
+        "result": "evidence/shared-target-families-20261011/motion-result.json",
+        "scope": "Dedicated source script with actual singles success/failure and actual four-slot rule dispatch. Same-side Counter geometry cases are explicitly visual-only; native evidence belongs to the earlier separate worker identity."
+      }
     },
     {
       "id": "pret:MOVE_MORNING_SUN",
@@ -9204,7 +9328,12 @@
         "startLine": 3162,
         "symbol": "MOVE_MIRROR_COAT"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "retaliation",
+        "result": "evidence/shared-target-families-20261011/retaliation-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_PSYCH_UP",
@@ -9351,7 +9480,12 @@
         "startLine": 3253,
         "symbol": "MOVE_WHIRLPOOL"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_BEAT_UP",
@@ -11004,7 +11138,12 @@
         "startLine": 4267,
         "symbol": "MOVE_SAND_TOMB"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_SHEER_COLD",
@@ -11151,7 +11290,12 @@
         "startLine": 4358,
         "symbol": "MOVE_BLOCK"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "boundedFourSlotEvidence": {
+        "family": "selected-volatile-target",
+        "result": "evidence/shared-target-families-20261011/volatile-result.json",
+        "scope": "Actual authenticated four-slot execution with bounded full-turn, target/PP/RNG, lifetime and continuation cases; complete interactions, campaign/AI and dedicated presentation remain separate."
+      }
     },
     {
       "id": "pret:MOVE_HOWL",
@@ -12121,33 +12265,195 @@
       "retainedCorrections": "Fixed family retains 347 unchanged full singles hashes and 37 declared Super Fang source-RNG corrections. Stat/status family retains 170 unchanged hashes and 14 declared Screech/Sweet Scent source-order corrections. Medicine main-01 capped-HP test failure is retained; main-02 passes. Goldens were not rewritten.",
       "nativeBoundary": "Main medicine: X11 223 checks, exit 0 and identical before/after source/DLL identities. Motion: eight representative cases on the separate worker identity before the main actual-False-Swipe test-fixture change. No additional combined native hit run is claimed.",
       "limits": "No complete interaction percentage; no Hyper Cutter/White Smoke upgrade from primitive vectors; no Counter/Vital Throw four-slot rule admission; no physical listening or original-ROM pixel parity."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "16a45ea4d803a2656a6cbf27fa6b7262de22c780",
+      "workingTreeState": "dirty integrated tree; not a new commit",
+      "scope": "Shared retaliation and selected volatile-target families, expanded four-slot Hustle and ten bounded animation scripts",
+      "previousAdmissionSnapshotAsRecorded": {
+        "method": "Read-only static evaluation of actual SourceBattleKernel.SupportsRecipe target whitelist, all referenced shared family predicates and generic exclusions over the 354 authenticated move inventory entries. This is recipe admission, not execution or cross-state completeness; no product build/test was run by the inventory refresh.",
+        "inventoryDateUtc": "2026-10-11",
+        "baseCommit": "3c78f0a71871c39143b04650e3bccd4564bb81bc",
+        "workingTreeState": "dirty integrated tree based on baseCommit; hashes below identify inspected current predicate inputs, not a clean commit",
+        "singleRecipesRegistered": 354,
+        "fourSlotRecipeAdmission": 211,
+        "fourSlotRecipeNotAdmitted": 143,
+        "newFamilyMoveCounts": {
+          "fixed-damage": 8,
+          "basic-stat": 18,
+          "additional-primary-status": 5
+        },
+        "dedicatedSingleAnimationScriptsAccepted": 8,
+        "dedicatedScriptsRemaining": 346,
+        "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 6,
+        "dedicatedFourSlotPresentationOnlyScripts": [
+          "pret:MOVE_COUNTER",
+          "pret:MOVE_VITAL_THROW"
+        ],
+        "sourceKernelSha256": "700faec7e1f0b1db32c9440c5738e760e7e0ccba5872ca0424e3681e56364209",
+        "predicateInputs": [
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleKernel.cs",
+            "sha256": "700faec7e1f0b1db32c9440c5738e760e7e0ccba5872ca0424e3681e56364209"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.AdditionalPrimaryStatus.cs",
+            "sha256": "ecf883e7f9db57d1c9d0fd0f77f2d9ee09b068a584372b29ccbb990c66cb7755"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.AllySupport.cs",
+            "sha256": "ae0399798987ba3b0d6c07b99dde1a41d6d05fe1021ddcc5f2cc18d35b303a0c"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.BasicStats.cs",
+            "sha256": "4d98da18ff93810eea1b3dc9f98230fbde7afaeda53ae680a1170d86a8a458c3"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.FieldSetting.cs",
+            "sha256": "135ac55fb2dddbf96f1da5a7594aff08f82d368caf8b0f3618a4607f03f1db17"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.FixedDamage.cs",
+            "sha256": "aec6c50e44959182ea980ee6d019a02b2e58f519dbb38501a1a73fd2915a0f82"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.Generic.cs",
+            "sha256": "1f3991f44965ad7cb56eb1bdbed7861449804e0c3955b0c00fefdf1550f0e8a4"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.Protection.cs",
+            "sha256": "fe3a9dd9b9f217ed28dba531dfb1d52068087cf8aad6a48b4bf63f12401ddb57"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.Switching.cs",
+            "sha256": "2a02bffdb141463f5db4931e1f58b034bceea22997b13bdd82319ff95334d2d1"
+          },
+          {
+            "path": "src/Game.Domain/Battle/SourceBattleRecipes.TurnMoves.cs",
+            "sha256": "186c6e5f6233f24b72ea6e338b823c8c87784c212a407f76c8f5da7f7b376dd6"
+          },
+          {
+            "path": "src/Game.Domain/WildBattle/MetronomeSourceMoveDefinition.cs",
+            "sha256": "2bd9a8d78cfa9f20d00dbffe4f61e9ec06e8e3e581256a8d999e7fd9a65dcd26"
+          }
+        ],
+        "continuationVersion": "firered-four-action-lifetimes-v7",
+        "abilityBoundedTestRecords": 36,
+        "abilityInteractionUnverifiedRecords": 40,
+        "fixedDamageEvidence": {
+          "result": "evidence/shared-battle-families-20261011/shared-fixed-main-01/result.json",
+          "groups": 9,
+          "checks": 5924,
+          "unchangedSinglesHashes": 347,
+          "declaredSourceCorrections": 37
+        },
+        "basicStatStatusEvidence": {
+          "result": "evidence/shared-battle-families-20261011/shared-stats-main-01/results.json",
+          "groups": 16,
+          "checks": 32267,
+          "completeFourActionTurns": 29,
+          "unchangedSinglesHashes": 170,
+          "declaredSourceOrderCorrections": 14,
+          "primitiveSourceCommandVectors": 4368
+        },
+        "ordinaryMedicineEvidence": {
+          "result": "evidence/shared-battle-families-20261011/double-medicine-main-02/result.json",
+          "cases": 3,
+          "checks": 102,
+          "commands": 44,
+          "retainedFailedAttempt": "evidence/recovery-20261011/double-medicine-main-01/result.json",
+          "nativeResult": "evidence/shared-battle-families-20261011/native/result.json",
+          "nativeRunnerResult": "evidence/shared-battle-families-20261011/native/runner-result.json",
+          "nativePassed": true,
+          "nativeChecks": 223,
+          "nativeDisplay": "X11",
+          "nativeExitCode": 0,
+          "sourceAndAssemblyIdentityUnchanged": true,
+          "physicalAudioVerified": false,
+          "limits": "Controlled HP/status/inventory field fixtures; ordinary medicine only, not revival/PP/stat/flute categories or natural acquisition."
+        },
+        "animationEvidence": {
+          "mainBclResult": "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/main/result.json.gz",
+          "mainBclChecks": 42069,
+          "sourceComparisonFrames": 20706,
+          "frameBreakdown": {
+            "realScriptsSingles": 834,
+            "realScriptsFourSlotAllVisible": 5004,
+            "realScriptsFourSlotAbsentPartner": 5004,
+            "syntheticCallbackVectors": 9864
+          },
+          "commonScriptsRealFourSlotDispatches": 72,
+          "falseSwipePresentationOnlyDispatches": 0,
+          "newScriptsRealSinglesSuccesses": 4,
+          "newScriptsRealSinglesFailures": 2,
+          "newScriptsTypedOnlyFourSlotDispatches": 24,
+          "separateWorkerDelivery": "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/worker/delivery.json",
+          "separateWorkerNativeAnimationCases": 8,
+          "separateWorkerNativeRealSinglesCases": 6,
+          "separateWorkerNativeTypedOnlyFourSlotCases": 2,
+          "nativeSourceIdentityBoundary": "Worker source manifest before main actual-False-Swipe fixture change; not a native replay of this combined dirty checkpoint.",
+          "mainCombinedNativeHitAnimationRun": "not performed; no extra native acceptance claimed",
+          "originalRomPixelParityVerified": false,
+          "physicalAudioVerified": false
+        }
+      },
+      "details": "Static admission rises from 211 to 226 of 354, leaving 128 gated: three retaliation and 12 selected volatile-target moves. Retaliation passes 13 groups/922 checks; volatile targets pass 16 groups/616 checks/14 complete turns. Hustle passes 3 cases/196 checks across all four actor positions and one whole turn; ability ledger remains 36 bounded/40 interaction-unverified. Tail Whip/Flash raise dedicated script acceptance to 10/354, leaving 344. The current motion dispatch batch verifies 20 real four-slot Counter/Vital Throw cases plus four visual-only Counter fixtures. Integrated main headless stat-view checks pass 4,455 with three real singles/four real four-slot cases and exit 0; the independent worker native Flash sample passes 6,443 checks/exit 0.",
+      "evidence": [
+        "evidence/shared-target-families-20261011/retaliation-result.json",
+        "evidence/shared-target-families-20261011/volatile-result.json",
+        "evidence/shared-target-families-20261011/hustle-result.json",
+        "tests/Game.Retaliation.Tests/source-proof.json",
+        "tests/Game.FourVolatileTargets.Tests/source-vectors.json",
+        "evidence/recovery-20261011/four-hustle-02/source-proof.json",
+        "evidence/shared-target-families-20261011/motion-result.json",
+        "evidence/shared-target-families-20261011/stat-result.json",
+        "evidence/shared-target-families-20261011/reused-stat-source-inputs.json",
+        "docs/source-stat-animations.md",
+        "evidence/shared-target-families-20261011/stat-host-result.json",
+        "evidence/shared-target-families-20261011/stat-host-quit-result.json",
+        "evidence/shared-target-families-20261011/stat-host-source-manifest.json",
+        "evidence/shared-target-families-20261011/stat-host-assembly-identity.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/delivery.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/result.json.gz",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/source-manifest.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/assembly-identity.json",
+        "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-mask-diagnostic/result.json"
+      ],
+      "retainedCorrections": "60 unchanged full-turn retaliation singles hashes; 36 unchanged volatile-family singles actions plus 36 canonical adapter comparisons. Vital Throw source Bounce/Dig charge-lock correction is documented separately. The volatile adapter fixture-validation failure remains retained.",
+      "limits": "Static admission is not a complete battle percentage; ability ledger remains 36/40. Main stat comparisons reuse worker original-C output. Full native main animation acceptance and physical listening remain unverified; earlier source/native identities stay separate.",
+      "nativeBoundary": "Main headless host and separate X11 Flash worker retain different source/DLL identities. Main source/DLL checks stayed unchanged during its run. Later product edits do not retroactively gain headless/native coverage. The earlier transparent-healthbox mask assertion failure is retained with its corrected-test explanation."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "e911e565ce903691aeee7413c7f8275e540f3db8",
+      "scope": "Shared Color Change and Conversion overlay lifecycle",
+      "details": "Adds two admitted recipes: 228/354, 126 gated. Color Change already had a bounded ability record, so totals remain36/40. One main combined new mode7/1038; original C/entry/canonical broader tests retain worker provenance. Ten dedicated animation scripts unchanged.",
+      "evidence": "evidence/shared-type-changes-20261011/result.json"
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
-    "method": "Read-only static evaluation of actual SourceBattleKernel.SupportsRecipe target whitelist, all referenced shared family predicates and generic exclusions over the 354 authenticated move inventory entries. This is recipe admission, not execution or cross-state completeness; no product build/test was run by the inventory refresh.",
+    "method": "Read-only static evaluation of actual SourceBattleKernel.SupportsRecipe target whitelist and every referenced shared effect-family predicate over the 354 authenticated move inventory entries. Live capability guards remain separate. This is recipe admission, not execution or cross-state completeness; no product build/test was run by the inventory refresh.",
     "inventoryDateUtc": "2026-10-11",
-    "baseCommit": "3c78f0a71871c39143b04650e3bccd4564bb81bc",
+    "baseCommit": "e911e565ce903691aeee7413c7f8275e540f3db8",
     "workingTreeState": "dirty integrated tree based on baseCommit; hashes below identify inspected current predicate inputs, not a clean commit",
     "singleRecipesRegistered": 354,
-    "fourSlotRecipeAdmission": 211,
-    "fourSlotRecipeNotAdmitted": 143,
+    "fourSlotRecipeAdmission": 228,
+    "fourSlotRecipeNotAdmitted": 126,
     "newFamilyMoveCounts": {
-      "fixed-damage": 8,
-      "basic-stat": 18,
-      "additional-primary-status": 5
+      "retaliation": 3,
+      "selected-volatile-target": 12,
+      "type-change": 2
     },
-    "dedicatedSingleAnimationScriptsAccepted": 8,
-    "dedicatedScriptsRemaining": 346,
-    "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 6,
-    "dedicatedFourSlotPresentationOnlyScripts": [
-      "pret:MOVE_COUNTER",
-      "pret:MOVE_VITAL_THROW"
-    ],
-    "sourceKernelSha256": "700faec7e1f0b1db32c9440c5738e760e7e0ccba5872ca0424e3681e56364209",
+    "dedicatedSingleAnimationScriptsAccepted": 10,
+    "dedicatedScriptsRemaining": 344,
+    "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 10,
+    "dedicatedFourSlotPresentationOnlyScripts": [],
+    "sourceKernelSha256": "e52f45d7e6289e532e4e7e5322de1914ad82a7a405e26ab4a7c03368f464f468",
     "predicateInputs": [
       {
         "path": "src/Game.Domain/Battle/SourceBattleKernel.cs",
-        "sha256": "700faec7e1f0b1db32c9440c5738e760e7e0ccba5872ca0424e3681e56364209"
+        "sha256": "e52f45d7e6289e532e4e7e5322de1914ad82a7a405e26ab4a7c03368f464f468"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.AdditionalPrimaryStatus.cs",
@@ -12171,11 +12477,15 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Generic.cs",
-        "sha256": "1f3991f44965ad7cb56eb1bdbed7861449804e0c3955b0c00fefdf1550f0e8a4"
+        "sha256": "03affb19224c5a801da3252431cc331718c0516ed2d7df2699c7bf5f4e8240f8"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Protection.cs",
         "sha256": "fe3a9dd9b9f217ed28dba531dfb1d52068087cf8aad6a48b4bf63f12401ddb57"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Retaliation.cs",
+        "sha256": "2e2d14faa5c380c993210653c8640efdc166817eef7fcc150ae25f28e88550a0"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Switching.cs",
@@ -12188,6 +12498,10 @@
       {
         "path": "src/Game.Domain/WildBattle/MetronomeSourceMoveDefinition.cs",
         "sha256": "2bd9a8d78cfa9f20d00dbffe4f61e9ec06e8e3e581256a8d999e7fd9a65dcd26"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.TypeChanges.cs",
+        "sha256": "131c50a50aa5fb6b56da381cde699633aa2a998910ca49933d543c11116567b6"
       }
     ],
     "continuationVersion": "firered-four-action-lifetimes-v7",
@@ -12226,28 +12540,288 @@
       "limits": "Controlled HP/status/inventory field fixtures; ordinary medicine only, not revival/PP/stat/flute categories or natural acquisition."
     },
     "animationEvidence": {
-      "mainBclResult": "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/main/result.json.gz",
-      "mainBclChecks": 42069,
-      "sourceComparisonFrames": 20706,
-      "frameBreakdown": {
-        "realScriptsSingles": 834,
-        "realScriptsFourSlotAllVisible": 5004,
-        "realScriptsFourSlotAbsentPartner": 5004,
-        "syntheticCallbackVectors": 9864
+      "acceptedMoveScripts": [
+        "pret:MOVE_POUND",
+        "pret:MOVE_TACKLE",
+        "pret:MOVE_SCRATCH",
+        "pret:MOVE_CUT",
+        "pret:MOVE_SLASH",
+        "pret:MOVE_FALSE_SWIPE",
+        "pret:MOVE_COUNTER",
+        "pret:MOVE_VITAL_THROW",
+        "pret:MOVE_TAIL_WHIP",
+        "pret:MOVE_FLASH"
+      ],
+      "retainedMotionSourceComparison": {
+        "scope": "Historical eight-script BCL/source-frame batch; not rerun for the current stat increment. Typed-only counts below describe that retained earlier batch and are superseded for current Counter/Vital Throw dispatch by currentMotionDispatch.",
+        "evidence": {
+          "mainBclResult": "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/main/result.json.gz",
+          "mainBclChecks": 42069,
+          "sourceComparisonFrames": 20706,
+          "frameBreakdown": {
+            "realScriptsSingles": 834,
+            "realScriptsFourSlotAllVisible": 5004,
+            "realScriptsFourSlotAbsentPartner": 5004,
+            "syntheticCallbackVectors": 9864
+          },
+          "commonScriptsRealFourSlotDispatches": 72,
+          "falseSwipePresentationOnlyDispatches": 0,
+          "newScriptsRealSinglesSuccesses": 4,
+          "newScriptsRealSinglesFailures": 2,
+          "newScriptsTypedOnlyFourSlotDispatches": 24,
+          "separateWorkerDelivery": "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/worker/delivery.json",
+          "separateWorkerNativeAnimationCases": 8,
+          "separateWorkerNativeRealSinglesCases": 6,
+          "separateWorkerNativeTypedOnlyFourSlotCases": 2,
+          "nativeSourceIdentityBoundary": "Worker source manifest before main actual-False-Swipe fixture change; not a native replay of this combined dirty checkpoint.",
+          "mainCombinedNativeHitAnimationRun": "not performed; no extra native acceptance claimed",
+          "originalRomPixelParityVerified": false,
+          "physicalAudioVerified": false
+        }
       },
-      "commonScriptsRealFourSlotDispatches": 72,
-      "falseSwipePresentationOnlyDispatches": 0,
-      "newScriptsRealSinglesSuccesses": 4,
-      "newScriptsRealSinglesFailures": 2,
-      "newScriptsTypedOnlyFourSlotDispatches": 24,
-      "separateWorkerDelivery": "tests/SourceHitAnimation.Tests/evidence/shared-motion-20261011/worker/delivery.json",
-      "separateWorkerNativeAnimationCases": 8,
-      "separateWorkerNativeRealSinglesCases": 6,
-      "separateWorkerNativeTypedOnlyFourSlotCases": 2,
-      "nativeSourceIdentityBoundary": "Worker source manifest before main actual-False-Swipe fixture change; not a native replay of this combined dirty checkpoint.",
-      "mainCombinedNativeHitAnimationRun": "not performed; no extra native acceptance claimed",
+      "currentMotionDispatch": {
+        "result": "evidence/shared-target-families-20261011/motion-result.json",
+        "checks": 99,
+        "realSinglesSuccess": 4,
+        "realSinglesFailure": 2,
+        "realFourSlotRuleCases": 20,
+        "realFourSlotByMove": {
+          "pret:MOVE_COUNTER": 8,
+          "pret:MOVE_VITAL_THROW": 12
+        },
+        "typedOnlyFourSlotCases": 4,
+        "typedOnlyScope": "Same-side Counter motion geometry only; not successful rule execution.",
+        "scope": "Focused actual-kernel presentation admission and Scene On/Off suppression; earlier frame/native source identities stay separate.",
+        "originalRuntimeCompared": false
+      },
+      "currentStatFamily": {
+        "result": "evidence/shared-target-families-20261011/stat-result.json",
+        "passed": true,
+        "checks": 151,
+        "sourceComparisonFrames": 2730,
+        "frameBreakdown": {
+          "singles": 210,
+          "fourSlotAllVisible": 1260,
+          "fourSlotAbsentPartner": 1260
+        },
+        "exhaustivePaletteVectors": 1671168,
+        "realSinglesSuccess": 3,
+        "realSuppressedSingles": 1,
+        "realFourSlotInvocations": 8,
+        "typedOnlyRuleCases": 0,
+        "unchangedSixScriptPixelFrames": 444,
+        "reusedOriginalCInputs": "evidence/shared-target-families-20261011/reused-stat-source-inputs.json",
+        "sourceOracleRunBoundary": "Current main C# run compares fixed original-C output produced by the stat worker; it did not rerun the C oracle. SHA-256 identities of all reused inputs are retained.",
+        "scope": "Original Tail Whip loop sound at frames 0/24/49 and battle Flash RGB555 palette task; successful real stat results are required. BOTH-target Tail Whip retains one PP expenditure and animates a successful second target after a first-target cap. Caps, Keen Eye, missing results, malformed PP passes, Scene Off, cancellation and the source 90-frame audio bound are covered.",
+        "limits": "Authenticated combatants with selected test moves; no natural campaign acquisition claim. Flash battle animation is distinct from field lighting. General stat effects, independently transformed background subpalettes and other scripts remain outside this increment."
+      },
+      "mainStatHeadlessAcceptance": {
+        "result": "evidence/shared-target-families-20261011/stat-host-result.json",
+        "passed": true,
+        "checks": 4455,
+        "realSinglesAnimationCases": 3,
+        "realFourSlotAnimationCases": 4,
+        "typedOnlyCases": 0,
+        "display": "headless",
+        "audioDriver": "Dummy",
+        "exitCode": 0,
+        "quitResult": "evidence/shared-target-families-20261011/stat-host-quit-result.json",
+        "sourceManifest": "evidence/shared-target-families-20261011/stat-host-source-manifest.json",
+        "assemblyIdentity": "evidence/shared-target-families-20261011/stat-host-assembly-identity.json",
+        "runtimeLog": "evidence/shared-target-families-20261011/stat-host-runtime.log.gz",
+        "sourceAndAssemblyIdentityUnchangedDuringRun": true,
+        "scope": "Actual main Godot stat-view execution, Scene On/Off state/RNG/ACK parity, repeated input/synchronization, cancellation and quit checks. Evidence is bound to the retained pre-deferred-spread host source and assembly identity, not subsequent product edits."
+      },
+      "statNativeWorkerAcceptance": {
+        "result": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/result.json.gz",
+        "delivery": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/delivery.json",
+        "passed": true,
+        "checks": 6443,
+        "realSinglesAnimationCases": 1,
+        "realFourSlotAnimationCases": 0,
+        "typedOnlyCases": 0,
+        "representativeMove": "pret:MOVE_FLASH",
+        "display": "X11",
+        "audioDriver": "Dummy",
+        "exitCode": 0,
+        "quitResult": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/quit-result.json",
+        "sourceManifest": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/source-manifest.json",
+        "assemblyIdentity": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/assembly-identity.json",
+        "retainedFailedAttempt": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-mask-diagnostic/result.json",
+        "retainedFailureExplanation": "The initial assertion sampled transparent healthbox background pixels that Flash correctly changes. The corrected test verifies opaque healthbox pixels and the text panel; the failed attempt remains retained.",
+        "sourceIdentityBoundary": "Independent stat-animation worker executable and 718-file source manifest; not the integrated main 724-file host identity. One representative Flash native sample, not all ten scripts or a native four-slot sweep."
+      },
+      "mainCombinedNativeAnimationRun": "not performed; no combined current-main native acceptance claimed",
       "originalRomPixelParityVerified": false,
       "physicalAudioVerified": false
+    },
+    "previousFourSlotRecipeAdmission": 211,
+    "admissionIncrease": 15,
+    "newFamilyMoveIds": {
+      "retaliation": [
+        "pret:MOVE_COUNTER",
+        "pret:MOVE_VITAL_THROW",
+        "pret:MOVE_MIRROR_COAT"
+      ],
+      "selected-volatile-target": [
+        "pret:MOVE_BIND",
+        "pret:MOVE_WRAP",
+        "pret:MOVE_SUPERSONIC",
+        "pret:MOVE_FIRE_SPIN",
+        "pret:MOVE_CONFUSE_RAY",
+        "pret:MOVE_CLAMP",
+        "pret:MOVE_SPIDER_WEB",
+        "pret:MOVE_SWEET_KISS",
+        "pret:MOVE_MEAN_LOOK",
+        "pret:MOVE_WHIRLPOOL",
+        "pret:MOVE_SAND_TOMB",
+        "pret:MOVE_BLOCK"
+      ]
+    },
+    "retaliationEvidence": {
+      "result": "evidence/shared-target-families-20261011/retaliation-result.json",
+      "groups": 13,
+      "checks": 922,
+      "failures": 0,
+      "unchangedFullTurnSinglesHashes": 60,
+      "sourceProof": "tests/Game.Retaliation.Tests/source-proof.json",
+      "sourceCalculatorVectors": 144,
+      "sourceAccuracyVectors": 36,
+      "sourceScriptAssertions": 11,
+      "actualKernelCalculatorVectors": 128,
+      "actualKernelAccuracyVectors": 15,
+      "declaredVitalThrowCorrection": "tests/Game.Retaliation.Tests/vital-throw-correction.json",
+      "scope": "Independent last actual physical/special HP-loss receipts; current source position across real switching; ally invalidation, stale/fainted-source failure, Follow Me, Pressure suppression, Protect, immunity/Foresight, Endure, contact, exact PP/RNG, reward/deferred replacement and JSON continuation. Canonical Vital Throw corrects source Bounce/Dig charge-lock handling without rewriting immutable ordinary singles hashes.",
+      "limits": "Wonder Guard remains outside new four-slot admission; source-only dead-actor, absent-position and other guarded accuracy vectors are not actual-kernel acceptance. No campaign/AI/native animation/audio claim."
+    },
+    "volatileTargetEvidence": {
+      "result": "evidence/shared-target-families-20261011/volatile-result.json",
+      "groups": 16,
+      "checks": 616,
+      "failures": 0,
+      "completeFourActionTurns": 14,
+      "unchangedSinglesActions": 36,
+      "canonicalSinglesAdapterComparisons": 36,
+      "sourceProof": "tests/Game.FourVolatileTargets.Tests/source-vectors.json",
+      "sourceDurationRngVectors": 16,
+      "sourceResidualVectors": 6,
+      "retainedFailedAttempt": "tests/Game.FourVolatileTargets.Tests/evidence/fixture-import-failure.json",
+      "scope": "Selected confusion, six damaging binding moves and Mean Look family use actual slot identity, Follow Me, ally Pressure, Own Tempo/Soundproof, Safeguard/Protect, PP/RNG and failure boundaries. Separate same-species targets, binding expiry, source/target switch/Baton/Roar/faint lifetimes and Wrap KO/reward/deferred replacement serialize and resume without duplicate residuals.",
+      "limits": "Controlled authenticated combatants and selected move sets, not natural learnsets or campaign/AI/native acceptance. Teeter Dance and other volatile/caller/residual families remain separate."
+    },
+    "hustleEvidence": {
+      "result": "evidence/shared-target-families-20261011/hustle-result.json",
+      "cases": 3,
+      "checks": 196,
+      "passed": true,
+      "actorPositions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "completeFourActionTurns": 1,
+      "sourceProof": "evidence/recovery-20261011/four-hustle-02/source-proof.json",
+      "scope": "Authentic Corsola Tackle checks 76/77 accuracy boundary at all four positions; Bubble remains unaffected. Natural Togetic Charm checks 80/81 and controlled Poison Powder checks 60/61, preserving original physical-type 80% integer floor even for zero-power status. Complete turn retains both natural Hustle identities and rejects stale continuation atomically.",
+      "limits": "Expands the already-bounded Hustle record; does not increase 36/40 ability counts. Poison Powder ability/move pairing is a controlled legal-register fixture, not a natural learnset or Metronome claim."
+    },
+    "dedicatedFourSlotPresentationOnlyScriptsNote": "All ten accepted scripts have bounded actual kernel animation dispatch evidence. Four same-side Counter motion cases remain explicitly presentation-only cases, not valid Counter rule successes.",
+    "focusedRuleCodeIdentity": "evidence/shared-target-families-20261011/code-at-focused-tests.json",
+    "predicateInspectionUtc": "2026-10-11T12:37:00Z",
+    "predicateEvidenceBoundary": "Current predicate inputs are a static source snapshot. Focused rule evidence and stat-host/native evidence retain their own code identities; later deferred-spread or other edits are not retroactively tested by those runs.",
+    "currentEvidenceInputs": [
+      {
+        "path": "evidence/recovery-20261011/four-hustle-02/source-proof.json",
+        "sha256": "fdd1e7c63ea92e2d166cc98dfefdf8f9c2816f0dee6748d881920d502cdab0e3"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/code-at-focused-tests.json",
+        "sha256": "45b0ad32aad0bc35a8680374b6f87e3b7c3acace0066a8ff9b81857f9ae42be1"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/hustle-result.json",
+        "sha256": "4cf3917a3d1745c97235d75987dbe4fae0969cbdf1c3d365132686e0a631d27b"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/motion-result.json",
+        "sha256": "d70c58eb219ac7ad69f8670a7481674b38c46241febf5b67bcbb3321b4a04548"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/retaliation-result.json",
+        "sha256": "08c459c6cf2628eed61d7946c16158479d3ac2ff117c4bff600c6fdf28705aaa"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/reused-stat-source-inputs.json",
+        "sha256": "a7d7cf6ebb1e0678c7b491a70313487a7842f235eaec0d3bf2bc41e57018c79a"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/stat-host-assembly-identity.json",
+        "sha256": "b3ef83d3ecc69bcf190156fd169ecffdd05ee0d06480b876a45c22f3c03dec38"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/stat-host-quit-result.json",
+        "sha256": "f23566846b25c513c4994d5a7ff95374cc7e5e6c4c10d2d80310019e3292e720"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/stat-host-result.json",
+        "sha256": "83c4f8e205a1315a5631819e3901e92b61a3c51d616291a81dfa707efb5f9f5b"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/stat-host-source-manifest.json",
+        "sha256": "ed7e86fbb0b267dd3bb283d780ef1916b24b25c9475c6381acb234b68951817a"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/stat-result.json",
+        "sha256": "c8e0e63e0cea7a6ea21f9ce07be40f1fae654de399c7d11e3d7c493b401f8754"
+      },
+      {
+        "path": "evidence/shared-target-families-20261011/volatile-result.json",
+        "sha256": "c149c0b2299a49664cd8e9db59da908821269e95799797b45ccee200a85769ec"
+      },
+      {
+        "path": "tests/Game.FourVolatileTargets.Tests/evidence/fixture-import-failure.json",
+        "sha256": "452ca3119f1a574ba447bb3c96e094e9da9b2d836db5254bccb80659630dc89b"
+      },
+      {
+        "path": "tests/Game.FourVolatileTargets.Tests/source-vectors.json",
+        "sha256": "b578cb9b2d70edced088c43b8460ae594d5acfb35f3540c96d8dcc79af87ea32"
+      },
+      {
+        "path": "tests/Game.Retaliation.Tests/source-proof.json",
+        "sha256": "ac632c22e73f9cf4c45a9be2bcf2d6ccbc9599346da8455ca6f0e6932821c39f"
+      },
+      {
+        "path": "tests/Game.Retaliation.Tests/vital-throw-correction.json",
+        "sha256": "197d25b51b799c59d714153a78e1010b8eb437f069acb478e75baa23a243550d"
+      },
+      {
+        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/delivery.json",
+        "sha256": "624b67d75b9ba41776ece101c54a421eae44e863c338dd56e644a279fa613be4"
+      },
+      {
+        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/assembly-identity.json",
+        "sha256": "b2caf89bdfd6bd7e6beffb73bd9a3c53f6a0bad8c1c2a495d87df6b2a70c6261"
+      },
+      {
+        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/result.json.gz",
+        "sha256": "2b5e47d4581394108348991dbcacf6e8e593cccd4dd00d7f75cc4f04f5816ed3"
+      },
+      {
+        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/source-manifest.json",
+        "sha256": "9cb823f0512c53a2d6e65453d5a06ab067edbdb883cc7b39e81fc9f60be11c31"
+      },
+      {
+        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-mask-diagnostic/result.json",
+        "sha256": "01eff3e173179078da772f311f8f9cfd2ea9e77e7dcbc88b5abb64f7c1d554f9"
+      }
+    ],
+    "typeChangeEvidence": {
+      "result": "evidence/shared-type-changes-20261011/result.json",
+      "groups": 7,
+      "checks": 1038,
+      "completeFourActionTurns": 9,
+      "exactSinglesComparisons": 64,
+      "limits": "Bounded overlay/ColorChange and Conversion recipes; no broad caller/Transform or campaign admission."
     }
   }
 }

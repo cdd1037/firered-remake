@@ -7,7 +7,7 @@ using Game.Domain.Pokemon;
 using Game.Domain.Growth;
 using Game.Domain.WildBattle;
 
-if (args.Length != 1) return 2;
+if (args.Length is < 1 or > 2 || args.Length == 2 && args[1] != "deferred-spread") return 2;
 var proof = SourceMechanicsCatalogLoader.LoadAuthenticated(args[0]); var catalog = proof.Catalog;
 int groups = 0, checks = 0, failures = 0;
 void Check(bool value, string label) { checks++; if (!value) throw new InvalidDataException(label); }
@@ -40,6 +40,103 @@ SourceFourActionResult ToReward(SourceBattleFrame f) {var r=Begin(f);for(int i=0
 SourceFourActionResult Finish(SourceFourActionResult r) {for(int i=0;i<20&&r.State.FourTurn is not null&&r.State.Outcome==WildBattleOutcome.Ongoing;i++) {
  if(r.State.FourTurn.Phase==SourceFourActionPhase.ReplacementsPending) {var p=r.State.PendingSwitches[0];r=Ok(SourceFourActionTurns.ChooseReplacement(catalog,r.State,Token(r.State),p.Slot,new(p.Slot.Side,p.LegalPartyIndices[0])));} else r=Next(r);
  } return r;}
+if (args.Length == 2)
+{
+ var observations = new List<object>();
+ SourceFourActionResult Drain(SourceFourActionResult r, List<SourceBattleEvent> events)
+ {
+  for (int steps=0; steps<24 && r.State.FourTurn is not null && r.State.Outcome==WildBattleOutcome.Ongoing; steps++)
+  {
+   var before=r.State;
+   if (before.FourTurn!.Phase==SourceFourActionPhase.ReplacementsPending)
+   {
+    var pending=before.PendingSwitches[0];
+    r=Ok(SourceFourActionTurns.ChooseReplacement(catalog,before,Token(before),pending.Slot,new(pending.Slot.Side,pending.LegalPartyIndices[0])));
+   }
+   else r=Next(r);
+   events.AddRange(r.Events);
+  }
+  Check(r.CompletedCleanTurn,"complete original turn through rewards residuals and replacements");
+  return r;
+ }
+ void RewardOnce(SourceBattleFrame start, SourceBattleFrame end, List<SourceBattleEvent> events)
+ {
+  var completed=events.OfType<SourceOpponentRewardCompletedEvent>().ToArray();
+  var applied=events.OfType<SourceRewardAppliedEvent>().ToArray();
+  Check(completed.Select(e=>e.Defeated).Distinct().Count()==completed.Length,"opponent completion exactly once per occupant");
+  Check(applied.Select(e=>(e.Defeated,e.Recipient)).Distinct().Count()==applied.Length,"EXP exactly once per actual recipient and defeat");
+  foreach(var key in Enumerable.Range(0,start.Party(BattleSide.Player).Members.Length).Select(i=>new PartyMemberKey(BattleSide.Player,i)))
+   Check(end.Party(key.Side).Members[key.Index].Pokemon.Experience-start.Party(key.Side).Members[key.Index].Pokemon.Experience==applied.Where(e=>e.Recipient==key).Sum(e=>e.Reward.ExperienceCredited),"persistent EXP equals exactly reported credit");
+ }
+ Test("earlier KO then Explosion finishes remaining targets and reward continuations in both directions", () => {
+  foreach(int actor in new[]{2,3})
+  {
+   int killer=actor^2, victim=actor^1, remaining=victim^2;
+   var mons=new WildBattleCombatant[4];mons[killer]=Mon("GENGAR",50,"QUICK_ATTACK");mons[victim]=Mon("PIDGEY",5,"BARRIER",hp:1);
+   mons[actor]=Mon("GEODUDE",50,"EXPLOSION");mons[remaining]=Mon("DODUO",5,"BARRIER",hp:1);
+   var f=Frame(mons,playerReserve:2,opponentReserve:2);var events=new List<SourceBattleEvent>();
+   var r=Next(Begin(f,Enumerable.Range(0,4).Select(i=>i==killer?victim:i^1).ToArray()));events.AddRange(r.Events);
+   Check(r.State.IsDeferredKoVacant(new(victim))&&r.State.SourceAbsentMask==0,"earlier public action causes genuine separate KO vacancy");
+   while(r.State.FourTurn!.Phase==SourceFourActionPhase.RewardsPending){r=Settle(r);events.AddRange(r.Events);}
+   Check(r.State.Queue[r.State.NextAction].Slot.Value==actor,"later Explosion remains the next original actor");
+   var before=r.State;Check(SourceMoveTargeting.CountSourcePresentDefenders(before,new(victim))==2,"source defender count retains HP0 deferred body");
+   var unsupported=before with{DeferredKoVacancyMask=0};
+   Check(SourceBattleKernel.ValidateAction(catalog,unsupported,new(before.Get(new(actor)).Occupant!.Value,before.Revision,0,new(remaining),before.NextAction))=="source_kernel_spread_zero_hp_target_not_migrated","non-deferred HP0 is still a separate source boundary");
+   var restored=JsonSerializer.Deserialize<SourceBattleFrame>(Json(before))!;
+   var attempt=SourceFourActionTurns.Advance(catalog,before,Token(before));
+   observations.Add(new{caseName="prior-ko-explosion",actor,fault=attempt.Fault,before.DeferredKoVacancyMask,before.NextAction});
+   r=Ok(attempt);events.AddRange(r.Events);
+   Check(Json(r)==Json(SourceFourActionTurns.Advance(catalog,restored,Token(restored))),"serialized mid-turn Explosion continuation is exact");
+   Atomic(before,SourceFourActionTurns.Advance(catalog,before,Token(before) with{EventSequence=before.EventSequence-1}),"stale Explosion continuation");
+   Check(r.Events.OfType<SourceSelfDestructEvent>().Single().Actor.Value==actor,"later Explosion executes once");
+   Check(r.Events.OfType<SourceHpChangedEvent>().All(e=>e.Target.Value!=victim)&&r.Events.OfType<SourceFaintedEvent>().All(e=>e.Side.Value!=victim),"no hit or repeated faint on earlier KO");
+   Check(r.Trace.Count(t=>t.Purpose.EndsWith(".damage"))==2,"numeric traversal visits exactly the two remaining bodies");
+   Check(r.Events.OfType<SourceFaintedEvent>().Select(e=>e.Side.Value).Order().SequenceEqual(new[]{actor,remaining}.Order()),"Explosion registers its actual new KOs only");
+   Check(r.State.Slots.All(c=>c.EntrySerial==1)&&r.State.PendingSwitches.IsEmpty,"no reserve enters during Explosion");
+   var done=Drain(r,events);RewardOnce(f,done.State,events);
+   Check(events.OfType<SourceOpponentRewardCompletedEvent>().Count()==(actor==2?2:1),"all actual opponent defeats settle exactly once");
+   Check(done.State.DeferredKoVacancyMask==0&&done.State.SourceAbsentMask==0&&done.State.Slots.Count(c=>c.EntrySerial==2)==3,"three vacancies fill only at the end-turn boundary");
+   Check(done.State.Slots.Where(c=>c.EntrySerial==2).All(c=>c.Body!.Pokemon.CurrentHp==c.Body.Pokemon.Stats.MaxHp&&c.Body.Pokemon.Moves[0].CurrentPp==c.Body.Pokemon.Moves[0].MaximumPp),"reserves inherit neither hit nor action");
+  }
+ });
+ Test("both opponents deferred still allows Selfdestruct to hit the remaining ally", () => {
+  foreach(int actor in new[]{0,1})
+  {
+   int ally=actor^2;var mons=new WildBattleCombatant[4];mons[actor]=Mon("GEODUDE",50,"SELF_DESTRUCT");mons[ally]=Mon("RATTATA",70,"SURF");
+   mons[actor^1]=Mon("PIDGEY",5,"BARRIER",hp:1);mons[ally^1]=Mon("DODUO",5,"BARRIER",hp:1);
+   var f=Frame(mons,playerReserve:2,opponentReserve:2);var events=new List<SourceBattleEvent>();var r=Next(Begin(f));events.AddRange(r.Events);
+   while(r.State.FourTurn!.Phase==SourceFourActionPhase.RewardsPending){r=Settle(r);events.AddRange(r.Events);}
+   while(r.State.Queue[r.State.NextAction].Slot.Value!=actor){r=Next(r);events.AddRange(r.Events);}
+   var before=r.State;var targeting=SourceMoveTargeting.ResolveLearned(before,new(actor),new(actor^1),catalog.Moves[Id("SELF_DESTRUCT")]);
+   Check(targeting.Succeeded&&targeting.Target==new BattlerSlot(ally)&&targeting.Trace.IsEmpty,"remaining ally is an explicit valid target without new target RNG");
+   r=Next(r);events.AddRange(r.Events);
+   Check(r.Events.OfType<SourceSelfDestructEvent>().Single().Actor.Value==actor&&r.Events.OfType<SourceHpChangedEvent>().Single().Target.Value==ally,"exactly remaining ally receives Selfdestruct");
+   Check(r.Trace.Count(t=>t.Purpose.EndsWith(".damage"))==1&&!r.Events.OfType<SourceMoveFailedEvent>().Any(e=>e.Reason=="deferred-ko-no-target"),"one target pass instead of false no-target failure");
+   Check(r.State.Slots.All(c=>c.EntrySerial==1)&&r.State.PendingSwitches.IsEmpty,"opposing reserves remain out of the hit loop");
+   var done=Drain(r,events);RewardOnce(f,done.State,events);
+   observations.Add(new{caseName="remaining-ally-selfdestruct",actor,target=targeting.Target!.Value.Value,done.State.Turn,completed=done.State.Rewards!.CompletedOpponentMask});
+  }
+ });
+ Test("last living actor uses no-target failure after a real earlier three-body Explosion KO", () => {
+  foreach(int selected in new[]{3,2})
+  {
+  var f=Frame([Mon("GEODUDE",70,"EXPLOSION"),Mon("PIDGEY",5,"BARRIER",hp:1),Mon("GASTLY",5,"EXPLOSION"),Mon("DODUO",5,"BARRIER",hp:1)],playerReserve:1,opponentReserve:2);
+  var events=new List<SourceBattleEvent>();var r=Next(Begin(f,new[]{1,0,selected,2}));events.AddRange(r.Events);
+  Check(r.State.DeferredKoVacancyMask==11&&r.State.Get(new(2)).Body!.Pokemon.CurrentHp>0,"first Explosion leaves only immune Gastly plus bench reserves");
+  while(r.State.FourTurn!.Phase==SourceFourActionPhase.RewardsPending){r=Settle(r);events.AddRange(r.Events);}
+  while(r.State.Queue[r.State.NextAction].Slot.Value!=2){r=Next(r);events.AddRange(r.Events);}
+  var before=r.State;var restored=JsonSerializer.Deserialize<SourceBattleFrame>(Json(before))!;r=Next(r);events.AddRange(r.Events);
+  Check(Json(r)==Json(SourceFourActionTurns.Advance(catalog,restored,Token(restored))),"serialized no-target continuation is exact");
+  Check(r.Events.OfType<SourceMoveFailedEvent>().Single().Reason=="deferred-ko-no-target"&&!r.Events.OfType<SourceSelfDestructEvent>().Any()&&!r.Events.OfType<SourceHpChangedEvent>().Any()&&r.Trace.IsEmpty,"no fabricated hit self-faint or hit RNG when every other position is vacant");
+  Check(r.Events.OfType<SourcePpCommandEvent>().Single().CommandCost==1&&r.State.Get(new(2)).Body!.Pokemon.Moves[0].CurrentPp==before.Get(new(2)).Body!.Pokemon.Moves[0].CurrentPp-1,"no-target action spends PP once");
+  var done=Drain(r,events);RewardOnce(f,done.State,events);
+  Check(events.OfType<SourceOpponentRewardCompletedEvent>().Count()==2&&done.State.Rewards!.CompletedOpponentMask==3,"double opposing KO EXP remains exactly once across failure and replacements");
+  observations.Add(new{caseName="no-remaining-target",selected,before.DeferredKoVacancyMask,done.State.Turn,completed=done.State.Rewards!.CompletedOpponentMask});
+  }
+ });
+ Console.WriteLine(Json(new{groups,checks,failures,runtime=Environment.Version.ToString(),observations}));
+ return groups==3&&failures==0?0:1;
+}
 Test("replaced target composition retains intermediate Lightning Rod and source random-target draw order",()=>{
  var f=Frame([Mon(move:"MEDITATE"),Mon("RHYDON",50,"SCARY_FACE"),Mon("RATTATA",50,"TACKLE"),Mon("PIDGEY",50,"TACKLE")]);
  Check(f.Slots[1].Body!.Pokemon.AbilityId=="ABILITY_LIGHTNING_ROD","actual source Rod identity");f=f with{Rng=new(75120883)};

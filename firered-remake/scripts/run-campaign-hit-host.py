@@ -2,7 +2,7 @@
 """Build linked production CampaignView host. --native requires coordinator GUI slot."""
 import argparse,json,os,subprocess,hashlib
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('output',type=Path);p.add_argument('--native',action='store_true');p.add_argument('--skip-build',action='store_true');p.add_argument('--quit-only',action='store_true');p.add_argument('--no-audio',action='store_true');p.add_argument('--quit-repeats',type=int,default=1);p.add_argument('--substitute-back-only',action='store_true');p.add_argument('--slices',action='store_true');p.add_argument('--doubles',action='store_true');p.add_argument('--motion',action='store_true');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('output',type=Path);p.add_argument('--native',action='store_true');p.add_argument('--skip-build',action='store_true');p.add_argument('--quit-only',action='store_true');p.add_argument('--no-audio',action='store_true');p.add_argument('--quit-repeats',type=int,default=1);p.add_argument('--substitute-back-only',action='store_true');p.add_argument('--slices',action='store_true');p.add_argument('--doubles',action='store_true');p.add_argument('--motion',action='store_true');p.add_argument('--stats',action='store_true');a=p.parse_args()
 root=Path(__file__).resolve().parent.parent;out=a.output.resolve()
 if out.exists():raise SystemExit('Output must be new; keep failed evidence')
 out.mkdir(parents=True);host=root/'tests/CampaignHitHost'
@@ -12,6 +12,7 @@ if a.quit_only:env.update(HIT_QUIT_ONLY='1',HIT_QUIT_REPEATS=str(a.quit_repeats)
 if a.no_audio:env['FIRERED_AUDIO']='0'
 if a.substitute_back_only:env['HIT_SUBSTITUTE_BACK_ONLY']='1'
 if a.slices:env['HIT_SLICE_GROUP']='1'
+if a.stats:env.update(HIT_STAT_GROUP='1',FIRERED_PRESET_DOUBLES='1')
 if a.motion:env.update(HIT_MOTION_GROUP='1',FIRERED_PRESET_DOUBLES='1')
 if a.doubles:env.update(HIT_DOUBLE_GROUP='1',FIRERED_PRESET_DOUBLES='1')
 for key in ['FIRERED_CAMPAIGN_CHECKPOINT','FIRERED_SOURCE_HIT_ANIMATIONS']:env.pop(key,None)
@@ -50,7 +51,7 @@ assert source_manifest()==sources,'Source changed during build/host verification
 assert hashlib.sha256(assembly.read_bytes()).hexdigest()==assembly_sha,'Compiled host changed during verification'
 if a.quit_only:
  assert all(json.loads((out/'quit-result.json').read_text()).values());print('PASS minimal campaign quit');raise SystemExit(0)
-result=json.loads((out/'result.json').read_text());assert result['passed'] and result['runtime'].startswith('10.') and result['checks']>100 and len(result['frames'])==(8 if a.motion and a.native else 20 if a.motion else 20 if a.doubles else 2 if a.substitute_back_only else 14 if a.slices else 8)
+result=json.loads((out/'result.json').read_text());assert result['passed'] and result['runtime'].startswith('10.') and result['checks']>100 and (len(result['frames'])>=1 if a.stats else len(result['frames'])==(8 if a.motion and a.native else 20 if a.motion else 20 if a.doubles else 2 if a.substitute_back_only else 14 if a.slices else 8))
 if a.doubles and not a.motion:
  baseline=json.loads((host/'Fixtures/six-script-field-hashes.json').read_text())
  observed=[{k:r[k] for k in ['label','SourceMoveId','actor','target','Frame','fieldSha256']} for r in result['frames']]

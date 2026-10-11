@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Pokemon;
+using Game.Domain.Ids;
 using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
@@ -46,6 +47,28 @@ internal abstract class SourceEndTurnContext
     internal abstract bool Future(PokemonCatalog catalog, BattlerSlot slot);
     internal abstract bool Perish(BattlerSlot slot);
     internal abstract void Cleanup();
+    internal virtual bool BindingStoresMove => true;
+    internal virtual void ClearBindingSource(BattlerSlot slot) { }
+
+    internal void BindingResidual(BattlerSlot slot)
+    {
+        var mon = Get(slot);
+        if (mon.Pokemon.CurrentHp == 0 || mon.BindTurnsRemaining == 0) return;
+        int remaining = mon.BindTurnsRemaining - 1;
+        Set(slot, mon with { BindTurnsRemaining = remaining, BindingMove = remaining == 0 ? null : mon.BindingMove });
+        if (remaining == 0)
+        {
+            ClearBindingSource(slot);
+            Add(n => new SourceBindingChangedEvent(n, Turn, slot, 1, 0, "expired")
+                { Move = BindingStoresMove ? mon.BindingMove ?? new MoveId("pret:MOVE_BIND") : null });
+            return;
+        }
+        int before = mon.Pokemon.CurrentHp, damage = Math.Max(1, mon.Pokemon.Stats.MaxHp / 16);
+        int after = Math.Max(0, before - damage);
+        Set(slot, Get(slot) with { Pokemon = mon.Pokemon with { CurrentHp = after } });
+        Add(n => new SourceBindingDamageEvent(n, Turn, slot, mon.BindingMove ?? new MoveId("pret:MOVE_BIND"), before, after, damage, remaining));
+        if (after == 0) { Faint(slot); DamageOutcome(); }
+    }
 
     internal SourceEndTurnCursor Advance(PokemonCatalog catalog, ImmutableArray<BattlerSlot> order,
         SourceEndTurnCursor? cursor = null)
@@ -121,6 +144,7 @@ internal abstract class SourceEndTurnContext
                 case SourceBattlerEndTurnStep.Poison: StatusDamage(slot, WildBattleStatus.Poison); break;
                 case SourceBattlerEndTurnStep.Toxic: ToxicDamage(slot); break;
                 case SourceBattlerEndTurnStep.Burn: StatusDamage(slot, WildBattleStatus.Burn); break;
+                case SourceBattlerEndTurnStep.Wrap: BindingResidual(slot); break;
                 default: UnmigratedBattlerStep(step, slot); break;
             }
             CheckTeamsLost();

@@ -1,6 +1,7 @@
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Rules;
+using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
@@ -38,5 +39,14 @@ internal sealed partial class FrameRecipeContext
             SetHitItemReceipt(slot, new());
     }
     internal override void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
-        PokemonMoveDefinition move, string purpose, int damage) => ContactAbility(catalog, actor, target, move, purpose, damage);
+        PokemonMoveDefinition move, string purpose, int damage)
+    {
+        SourceColorChange(catalog, actor, target, move);
+        ContactAbility(catalog, actor, target, move, purpose, damage);
+    }
+    internal override string TypeChangeHitType(PokemonMoveDefinition move) => move.Type;
+    internal override string? TypeChangeLastHitType(BattlerSlot actor) => Frame.Get(actor).Registers.History?.LastHitByType;
+    internal override BattlerSlot? TypeChangeLastHitBy(BattlerSlot actor) => Frame.Get(actor).Registers.LastHitBy;
+    internal override bool TypeChangeMultipleTurns(BattlerSlot source) =>
+        Frame.Get(source).Registers.Turn?.Lock is { Kind: not WildBattleCalledLockKind.Recharge };
 }

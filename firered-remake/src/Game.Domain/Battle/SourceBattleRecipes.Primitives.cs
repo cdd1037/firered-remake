@@ -13,6 +13,11 @@ internal abstract partial class SourceRecipeContext
         int accuracy = WildBattleDamage.Accuracy(move.Accuracy, Get(actor).AccuracyStage, Get(target).Identified ? 6 : Get(target).EvasionStage);
         if (WildBattleEffective.Ability(Get(actor)) == "ABILITY_COMPOUND_EYES") accuracy = accuracy * 130 / 100;
         if (SandstormTurnsRemaining > 0 && !SourceCalledWeatherSuppressed && WildBattleEffective.Ability(Get(target)) == "ABILITY_SAND_VEIL") accuracy = accuracy * 80 / 100;
+        // Cmd_accuracycheck applies Hustle by original type category, including
+        // physical-type status moves. Always-hit/sure-hit commands bypass this path.
+        if (WildBattleEffective.Ability(Get(actor)) == "ABILITY_HUSTLE" &&
+            TypeRules.Category(Enum.Parse<ElementType>(move.Type[5..], true)) == DamageCategory.Physical)
+            accuracy = accuracy * 80 / 100;
         bool hit = Draw($"{purpose}.accuracy", 100) % 100 + 1 <= accuracy;
         if (!hit && reportMiss) SourceGenericMiss(actor, target, move);
         return hit;
