@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Randomness;
+using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
@@ -27,6 +28,10 @@ public static class SourceBattleIdentityRules
             (mechanicsVersion != BattleRulesProfile.CanonicalSourceSinglesVersion || frame.Layout != SourceBattleLayout.Singles) &&
             (mechanicsVersion != SourceBattleKernel.Version || frame.Layout != SourceBattleLayout.PresetDoubles))
             return "source_frame_mechanics_profile_layout";
+        if (frame.SourceCampaignRulesVersion is { } campaign &&
+            (campaign != SafariOwnedPokemonCatalog.Profile || frame.Layout != SourceBattleLayout.Singles ||
+             frame.SourceMechanicsRulesVersion != BattleRulesProfile.CanonicalSourceSinglesVersion))
+            return "source_frame_campaign_profile";
         if (frame.Turn < 0 || frame.Revision < 0 || frame.EventSequence < 0 || frame.RunAttempts < 0 ||
             frame.Rng.AlgorithmId != Gen3Rng.AlgorithmId) return "source_frame_counters";
         if (frame.Parties.IsDefault || frame.Parties.Length != 2 || frame.Sides.IsDefault || frame.Sides.Length != 2 ||
@@ -49,6 +54,9 @@ public static class SourceBattleIdentityRules
                 side.FollowMeTarget is { } target && (target.Value >= frame.BattlerCount || target.Side != side.Side))
                 return "source_frame_side_registers";
         }
+        if (frame.SourceCampaignRulesVersion is not null && frame.Parties.SelectMany(p => p.Members).Any(m =>
+            !CampaignAdmissionPolicy.CurrentFuchsia.Admits(m.Pokemon.Species) && !SafariOwnedPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species)))
+            return "source_frame_campaign_species";
         if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";
         if (SourceObedienceRules.Validate(frame.Obedience, frame.Parties[0].Members) is { } obedienceError) return obedienceError;
         var field = frame.Field;

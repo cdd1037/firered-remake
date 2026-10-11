@@ -40,17 +40,22 @@ public static class RareCandyRules
     /// once. Status and existing PP/PP Ups survive. Level 100 has no effect, even when fainted.
     /// Caller must establish field context, bag ownership and exclusive modal state.
     /// </summary>
-    public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion, bool snorlaxRules = false, bool fuchsiaRules = false)
+    public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion, bool snorlaxRules = false, bool fuchsiaRules = false, bool safariRules = false)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (fuchsiaRules)
+        if (safariRules)
+        {
+            if (!SafariOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || snorlaxRules || fuchsiaRules)
+                throw new NotSupportedException("Explicit authenticated Safari Rare Candy profile required.");
+        }
+        else if (fuchsiaRules)
         {
             PokemonFactory.ValidateCatalog(content.Catalog);
             if (content.Catalog.Species.Count != 107) throw new NotSupportedException("Explicit Fuchsia Rare Candy profile required.");
         }
         else if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) == 102) != snorlaxRules) throw new NotSupportedException("Explicit Snorlax Rare Candy profile required.");
         LevelEvolutionRules.Validate(content, owned);
-        if (!fuchsiaRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
+        if (!fuchsiaRules && !safariRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
             throw new NotSupportedException("Rare Candy requires the verified MtMoon or later Kanto catalog.");
         if (!ValidRegion(currentRegion))
             throw new ArgumentException("A source MAPSEC region is required.", nameof(currentRegion));

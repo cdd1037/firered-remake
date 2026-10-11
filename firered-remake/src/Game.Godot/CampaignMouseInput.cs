@@ -76,7 +76,7 @@ public partial class CampaignView
         {
             if (_session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
                 _session.State.ItemMenu is not null || _session.State.Pc is not null ||
-                DoubleBattleVisible || ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
+                _session.State.SafariBattle is not null || DoubleBattleVisible || ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
                 _session.State.Battle is not null || FieldDialogueVisible || NameRaterChoosing || DepartmentElevatorMenuActive || RocketElevatorMenuActive || BillPcMenuActive || BillPcPictureActive ||
                 _session.State.Repel?.Phase == CampaignRepelPhase.WoreOff)
             { MouseKey(Key.Backspace); QueueRedraw(); GetViewport().SetInputAsHandled(); }
@@ -91,6 +91,7 @@ public partial class CampaignView
             : _session.State.Shop is not null ? MouseShop(point)
             : _session.State.ItemMenu is not null ? MouseItems(point)
             : _session.State.Pc is not null ? MouseStorage(point)
+            : _session.State.SafariBattle is not null ? MouseSafari(point)
             : DoubleBattleVisible ? MouseDouble(point)
             : ForestTrainerCombatVisible || _session.State.WildBattle is not null ? MouseWild(point)
             : _session.State.Battle is not null ? MouseLabBattle(point)
@@ -169,6 +170,7 @@ public partial class CampaignView
             }
             return false;
         }
+        if (_session.State.SafariBattle is not null) return NavigateSafariPointer(point, direction);
         if (DoubleBattleVisible) return NavigateDoublePointer(point,direction);
         if (ForestTrainerCombatVisible || _session.State.WildBattle is not null) return NavigateWildPointer(point, direction);
         if (_session.State.Battle is { } battle)

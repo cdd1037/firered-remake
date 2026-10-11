@@ -14,7 +14,7 @@ public sealed partial class CampaignSession
     private static bool IsCityServiceItem(ItemId id)=>id==BikeVoucherId||id==BicycleId||id==OldRodId;
     private InventoryState WithoutCityServiceItems(InventoryState inventory)
     {
-        inventory=WithoutRegionalTea(inventory);
+        inventory=WithoutSafariKeyItems(WithoutRegionalTea(inventory));
         return !_content.CityServicesEnabled?inventory:inventory with{KeyItems=inventory.KeyItems is {} keys?keys.Where(s=>!IsCityServiceItem(s.Item)).ToImmutableArray():null};
     }
 

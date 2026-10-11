@@ -242,6 +242,7 @@ public sealed class PretRuntimeMapData : IFieldMap
             PretPokemonTowerRegion.FullSourceHash => PretPokemonTowerRegion.MapIdFromSourceSymbol,
             PretFuchsiaRouteRegion.FullSourceHash => PretFuchsiaRouteRegion.MapIdFromSourceSymbol,
             PretFuchsiaGymRegion.FullSourceHash => PretFuchsiaGymRegion.MapIdFromSourceSymbol,
+            PretSafariRegion.FullSourceHash => PretSafariRegion.MapIdFromSourceSymbol,
             _ => throw new InvalidDataException("Unknown runtime map source profile.")
         };
     }

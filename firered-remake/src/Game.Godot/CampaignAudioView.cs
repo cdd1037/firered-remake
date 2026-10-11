@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled,includeSafari:_catalog.SafariEnabled);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -39,6 +39,7 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
                     SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
                     sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.SafariEnabled)Write("safariAudioCatalog",new{SafariSynthManifestIdentity.Sha256,SafariSynthManifestIdentity.CueCount,priorRegionalCueCount=303,audibleOutputVerified=false});
                 if(_catalog.FuchsiaRouteEnabled)Write("fuchsiaRouteAudioCatalog",new{FuchsiaRouteSynthManifestIdentity.Sha256,FuchsiaRouteSynthManifestIdentity.CueCount,priorCueCount=299,audibleOutputVerified=false});
                 if(_catalog.SnorlaxEnabled)Write("snorlaxAudioCatalog",new{SnorlaxSynthManifestIdentity.Sha256,SnorlaxSynthManifestIdentity.CueCount,priorCueCount=297,encounterCryMode=2,audibleOutputVerified=false});
                 if(_catalog.PokemonTowerEnabled)Write("pokemonTowerAudioCatalog",new{PokemonTowerSynthManifestIdentity.Sha256,PokemonTowerSynthManifestIdentity.CueCount,priorCueCount=286,audibleOutputVerified=false});
@@ -203,12 +204,13 @@ public partial class CampaignView
     }
 
     private static string AudioContext(CampaignState s)=>s.OldManTutorial is not null?"old-man":
-        s.DoubleBattle is {Stage:not CampaignDoubleBattleStage.Intro} pair?pair.Id:s.Battle is {} lab?lab.Id:s.WildBattle is {} wild?wild.Id:
+        s.SafariBattle is {} safari?safari.Id:s.DoubleBattle is {Stage:not CampaignDoubleBattleStage.Intro} pair?pair.Id:s.Battle is {} lab?lab.Id:s.WildBattle is {} wild?wild.Id:
         s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer?trainer.Id:"field";
 
     private string DesiredSourceMusic(CampaignState s)
     {
         if(s.OldManTutorial is not null)return s.Music;
+        if(s.SafariBattle is {} safari)return safari.Capture is not null?"MUS_CAUGHT":"MUS_VS_WILD";
         if(s.DoubleBattle is {} pair)return pair.Stage==CampaignDoubleBattleStage.Intro?s.Music:pair.Stage==CampaignDoubleBattleStage.Finished&&pair.Frame.Outcome==WildBattleOutcome.Won?"MUS_VICTORY_TRAINER":"MUS_VS_TRAINER";
         if(s.ForestTrainerBattle is {Stage:CampaignForestTrainerStage.Intro} intro)
             return s.Dialogue is {} dialogue&&_audioTrainerOneShots.Contains($"{intro.Id}:intro-text:{dialogue.Page}")
@@ -297,6 +299,7 @@ public partial class CampaignView
     private void ProcessSourceBattleAudio()
     {
         if(_sourceAudio is null)return;
+        ProcessSafariBattleAudio();
         ProcessDoubleBattleAudio();
         ProcessFuchsiaTransformAudio();
         ProcessSourceLeaderIntroAudio();

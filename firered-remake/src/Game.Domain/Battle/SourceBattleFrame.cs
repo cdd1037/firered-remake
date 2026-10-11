@@ -144,6 +144,7 @@ public sealed record SourceBattleFrame
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceObedienceContext? Obedience { get; init; }
     public string RulesVersion { get; init; } = WildBattleRules.FuchsiaRulesVersion;
     public string? SourceMechanicsRulesVersion { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? SourceCampaignRulesVersion { get; init; }
     public SourceBattleLayout Layout { get; init; }
     public KoReplacementTiming KoReplacementTiming { get; init; }
     public ImmutableArray<SourceBattleParty> Parties { get; init; } = [];

@@ -265,14 +265,14 @@ public sealed partial class CampaignSession
         if (command.Kind == "battle_medicine") return DecideTrainerMedicine(state, command);
         bool reserves = HasForestTrainerReserves(state, b.ActivePartyIndex);
         ForestTrainerCombatResult turn; PotionUseResult? potion = null;
-        if (command.Kind == "battle_move") turn = ForestTrainerCombatRules.ResolveMove(BattlePokemon, trainer.Combat, command.MoveSlot, reserves);
+        if (command.Kind == "battle_move") turn = ForestTrainerCombatRules.ResolveMove(OrdinaryExecutionPokemon(trainer.Combat.Battle), trainer.Combat, command.MoveSlot, reserves);
         else if (command.Kind == "battle_potion")
         {
             if (_content.OpeningItems is null || state.Inventory is null || command.PartyIndex != b.ActivePartyIndex)
                 return new(CommandStatus.Rejected, state, "trainer_item_context_invalid");
             potion = UseCampaignPotion(state.Inventory, WildBattleTransformationRules.PersistentPokemon(trainer.Combat.Battle.Player), PotionUseContext.Battle);
             if (!potion.Succeeded) return new(CommandStatus.Rejected, state, potion.Error);
-            turn = ForestTrainerCombatRules.ResolvePotion(BattlePokemon, trainer.Combat, potion.Pokemon, reserves);
+            turn = ForestTrainerCombatRules.ResolvePotion(OrdinaryExecutionPokemon(trainer.Combat.Battle), trainer.Combat, potion.Pokemon, reserves);
         }
         else return new(CommandStatus.Rejected, state, "forest_trainer_battle_active");
         if (!turn.Succeeded) return new(CommandStatus.Rejected, state, turn.Fault);
@@ -286,7 +286,7 @@ public sealed partial class CampaignSession
         bool shift = trainer.Combat.Phase == ForestTrainerCombatPhase.AwaitingShiftChoice;
         if (shift && command.Kind == "trainer_shift" && command.Choice == 0)
         {
-            var declined = ForestTrainerCombatRules.ChooseShift(BattlePokemon, trainer.Combat, null, HasForestTrainerReserves(state, b.ActivePartyIndex));
+            var declined = ForestTrainerCombatRules.ChooseShift(OrdinaryExecutionPokemon(trainer.Combat.Battle), trainer.Combat, null, HasForestTrainerReserves(state, b.ActivePartyIndex));
             return declined.Succeeded ? new(CommandStatus.Accepted, CommitForestTrainerTurn(state, declined))
                 : new(CommandStatus.Rejected, state, declined.Fault);
         }
@@ -302,10 +302,10 @@ public sealed partial class CampaignSession
             ? trainer.Combat.SsAnnePlayerParty!.Value[index]??throw new InvalidDataException("source_trainer_reserve_missing")
             : OwnedBattleMember(state,b,incoming);
         bool reserves = HasForestTrainerReserves(state, index);
-        var turn = shift ? ForestTrainerCombatRules.ChooseShift(BattlePokemon, trainer.Combat, replacement, reserves, replacementPartyIndex:index)
+        var turn = shift ? ForestTrainerCombatRules.ChooseShift(OrdinaryExecutionPokemon(trainer.Combat.Battle), trainer.Combat, replacement, reserves, replacementPartyIndex:index)
             : trainer.Combat.Phase == ForestTrainerCombatPhase.AwaitingPlayerReplacement
-                ? ForestTrainerCombatRules.ReplaceFaintedPlayer(BattlePokemon, trainer.Combat, replacement, reserves, replacementPartyIndex:index)
-                : ForestTrainerCombatRules.SwitchPlayer(BattlePokemon, trainer.Combat, replacement, reserves, replacementPartyIndex:index);
+                ? ForestTrainerCombatRules.ReplaceFaintedPlayer(OrdinaryExecutionPokemon(trainer.Combat.Battle), trainer.Combat, replacement, reserves, replacementPartyIndex:index)
+                : ForestTrainerCombatRules.SwitchPlayer(OrdinaryExecutionPokemon(trainer.Combat.Battle), trainer.Combat, replacement, reserves, replacementPartyIndex:index);
         if (!turn.Succeeded) return new(CommandStatus.Rejected, state, turn.Fault);
         if(_content.CeruleanEnabled&&!_content.SsAnneEnabled&&turn.Events.OfType<WildBattlePlayerSwitchedEvent>().Any())
             turn=turn with{State=turn.State! with{CeruleanPlayerPartyIndex=index}};
@@ -449,7 +449,7 @@ public sealed partial class CampaignSession
         trainer=WithSsAnnePartyContext(state,trainer);
         var indices = Enumerable.Range(0, state.Party.Length).Where(i => b.ParticipatingMembers!.Contains(state.Party[i].InstanceId) &&
             !state.Party[i].IsEgg && state.Party[i].Pokemon.CurrentHp > 0).ToArray();
-        var receivers = indices.Select(i => new CampaignWildRewardReceiver(i, WildVictoryRewards.Apply(BattlePokemon, state.Party[i],
+        var receivers = indices.Select(i => new CampaignWildRewardReceiver(i, SafariOrdinaryOwnership is {} safari?WildVictoryRewards.ApplySafariOwned(safari,state.Party[i],trainer.Combat.Battle.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,indices.Length,trainerBattle:true,defeatedBattleView:trainer.Combat.Battle.Opponent):WildVictoryRewards.Apply(BattlePokemon, state.Party[i],
             trainer.Combat.Battle.Opponent.Pokemon, _content.MapDefinition(state.World.Player.MapId).RegionMapSection,
             indices.Length, forestRules: true, trainerBattle: true,pewterRules:_content.PewterEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled,defeatedBattleView:trainer.Combat.Battle.Opponent))).ToImmutableArray();
         return StartForestTrainerRewardReceiver(state with { ForestTrainerBattle = trainer with
@@ -479,7 +479,7 @@ public sealed partial class CampaignSession
             b = b with { RewardReceiverIndex = b.RewardReceiverIndex + 1 };
         }
         state = state with { ForestTrainerBattle = trainer with { Presentation = b } };
-        var complete = ForestTrainerCombatRules.CompleteOpponentExperience(BattlePokemon, trainer.Combat,
+        var complete = ForestTrainerCombatRules.CompleteOpponentExperience(OrdinaryExecutionPokemon(trainer.Combat.Battle), trainer.Combat,
             state.Party[b.ActivePartyIndex].Pokemon, HasForestTrainerReserves(state, b.ActivePartyIndex));
         if (!complete.Succeeded) throw new InvalidDataException(complete.Fault);
         return CommitForestTrainerTurn(state, complete);
@@ -551,7 +551,7 @@ public sealed partial class CampaignSession
         if (_content.VermilionEnabled && won)
         {
             var payday = SourceBattleMoneyRules.SettlePayDay(money, trainer.Combat.Battle.PayDayMoney, WildBattleOutcome.Won,trainer.Combat.Battle.SourceMoneyMultiplier);
-            var pickup = VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, WildBattleOutcome.Won,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
+            var pickup = SafariOrdinaryOwnership is {} pickupOwned?VermilionPickupRules.ApplySafariOwned(pickupOwned,state.Party,state.World.Rng,WildBattleOutcome.Won):VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, WildBattleOutcome.Won,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
             money = payday.Money;
             if (payday.Amount != 0) pages.Add(new($"{state.PlayerName} picked up\n¥{payday.DisplayAmount}!"));
             state = state with { Party = pickup.Party, World = state.World with { Rng = pickup.Rng } };

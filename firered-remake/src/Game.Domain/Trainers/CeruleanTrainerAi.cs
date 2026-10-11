@@ -26,7 +26,7 @@ public static class CeruleanTrainerAi
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
-        if (catalog is null || slots is null && ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules)) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (catalog is null || slots is null && source is null && ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules)) return Fault("celadon_gym_trainer_ai_catalog_scope");
         string? error = slots is not null ? slots.Validate(catalog, input, rng) : source is null ? Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) :
             !source.Matches(catalog, input.User, input.Target) || input.AiFlags != SourceTrainerAi.Flags(source.State.Trainer) ? "source_trainer_ai_context_mismatch" : null;
         if (error is not null) return Fault(error);

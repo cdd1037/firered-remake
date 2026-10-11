@@ -24,6 +24,7 @@ public sealed partial class PretCampaignCatalog
     public bool FuchsiaRouteEnabled=>FuchsiaRouteRegion is not null;
     public FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>FuchsiaRoutePokemon?.Trainers;
     public bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>
+        SafariRegion is {} safari && Maps[map].FieldWarps.Any(w=>w.Index==sourceWarpId&&safari.SourceMaps.ContainsKey(w.DestinationMapId))?true:
         map.Value=="map.fuchsia-city"&&sourceWarpId==4?FuchsiaGymEnabled:FuchsiaRouteRegion is not {} region ||
         !region.NewMaps.ContainsKey(map) || region.AllowsNewMapWarp(map,sourceWarpId);
     private static void AppendFuchsiaRouteSources(PretFuchsiaRouteRegion region,List<PretSourceScriptFile> sources,

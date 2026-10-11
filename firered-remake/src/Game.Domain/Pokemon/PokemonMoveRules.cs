@@ -10,7 +10,9 @@ public static class PokemonMoveRules
 
     /// <summary>The gift profile keeps every source move as metadata while deferring learning of unimplemented battle effects.</summary>
     public static bool IsLearningSupported(PokemonCatalog catalog, MoveId move) =>
-        catalog.Species.Count == 107 ? Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.FuchsiaRulesVersion) : catalog.Species.Count != 103 || Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.SnorlaxRulesVersion);
+        SafariOwnedPokemonCatalog.IsAuthenticated(catalog)
+            ? catalog.Moves.TryGetValue(move, out var sourceMove) && Game.Domain.WildBattle.WildBattleRules.IsCalledMoveEffectSupported(sourceMove)
+            : catalog.Species.Count == 107 ? Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.FuchsiaRulesVersion) : catalog.Species.Count != 103 || Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.SnorlaxRulesVersion);
 
     /// <summary>CreateBoxMon learns in source order. Only initial creation automatically forgets the oldest move.</summary>
     public static ImmutableArray<PokemonMoveSlot> InitialMoves(PokemonCatalog catalog, PokemonSpeciesDefinition species, int level)
@@ -80,7 +82,7 @@ public static class PokemonMoveRules
         if (moves.IsDefault || moves.Length > 4) throw new ArgumentException("Use a compact set of zero through four moves.");
         // Preserve the historical zero-bonus guard. Only authenticated source learning admits
         // existing PP bonuses; NewSlot still clears a newly learned/replaced move to zero.
-        bool canonical = SourceMechanicsCatalog.For(catalog) is not null;
+        bool canonical = SourceMechanicsCatalog.For(catalog) is not null || SafariOwnedPokemonCatalog.IsAuthenticated(catalog);
         var seen = new HashSet<MoveId>();
         foreach (var slot in moves)
         {

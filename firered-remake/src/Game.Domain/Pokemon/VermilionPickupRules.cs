@@ -30,6 +30,17 @@ public static class VermilionPickupRules
         route11Rules |= rockTunnelRules;
         if(catalog.SourceCommit!=WildBattleRules.SourceCommit || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog)!=(fuchsiaRules ? 107 : snorlaxRules ? 102 : pokemonTowerRules ? 101 : rocketHideoutRules ? 99 : celadonGymRules ? 98 : celadonApproachRules ? 94 : rockTunnelRules ? 93 : route11Rules ? 79 : ssAnneRules ? 73 : 70))
             throw new NotSupportedException("Pickup requires the complete explicitly selected catalog.");
+        return ApplyCore(catalog, party, rng, outcome);
+    }
+    public static VermilionPickupResult ApplySafariOwned(SafariOwnedPokemonCatalog owned,
+        ImmutableArray<PartyPokemon> party, RngState rng, WildBattleOutcome outcome)
+    {
+        ArgumentNullException.ThrowIfNull(owned);
+        return ApplyCore(owned.Catalog, party, rng, outcome);
+    }
+    private static VermilionPickupResult ApplyCore(PokemonCatalog catalog,
+        ImmutableArray<PartyPokemon> party, RngState rng, WildBattleOutcome outcome)
+    {
         if(party.IsDefault || party.Length is <1 or >6 || party.Any(p=>p is null) || party.Select(p=>p.InstanceId).Distinct().Count()!=party.Length)
             throw new ArgumentException("Invalid Pickup party.");
         if(!Enum.IsDefined(outcome) || outcome==WildBattleOutcome.Ongoing)throw new ArgumentException("Pickup requires a terminal outcome.");

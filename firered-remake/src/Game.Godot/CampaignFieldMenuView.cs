@@ -16,12 +16,15 @@ public partial class CampaignView
         _fade <= 0 && _fanfareRemaining <= 0 && !_nicknameEdit.Visible &&
         _tracks.All(t => t.Time >= t.Duration) && _session.State.HealingEffect is null &&
         _session.State.PlayerVisible && _session.State.HelpContext == "map" &&
-        _session.ValidatePlayerSave(_session.State) is null;
+        (_session.ValidatePlayerSave(_session.State) is null || CanOpenSafariFieldMenu);
 
     // Fixed pret 037335f: start_menu.c:213-224, 279-290; strings.c:18,159-165.
     // Player is the real saved name, not the literal text "PLAYER".
     private FieldMenuEntry[] FieldMenuEntries()
     {
+        if (_session.State.SafariVisit is { Active: true }) return
+            [new("safari-retire", "RETIRE"), new("pokedex", "POKéDEX"), new("pokemon", "POKéMON"),
+             new("bag", "BAG"), new("player", _session.State.PlayerName), new("option", "OPTION"), new("exit", "EXIT")];
         List<FieldMenuEntry> entries = [];
         if (_session.State.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET")) entries.Add(new("pokedex", "POKéDEX"));
         if (_session.State.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEMON_GET")) entries.Add(new("pokemon", "POKéMON"));
@@ -193,6 +196,7 @@ public partial class CampaignView
     {
         switch (id)
         {
+            case "safari-retire": ResetFieldMenu(); Apply(new("safari_retire")); break;
             case "pokemon":
                 if (_session.State.Party.IsEmpty) _fieldMenuNotice = "You have no POKéMON\nin your party.";
                 else { _fieldMenuMode = "party"; _fieldPartyCursor = 0; }
@@ -251,6 +255,7 @@ public partial class CampaignView
         if (_fieldMenuMode is "start" or "save-confirm" or "save-overwrite")
         {
             var entries = FieldMenuEntries();
+            DrawSafariFieldStats();
             // Source new_menu_helpers.c:666-672, plus the surrounding 8px frame.
             _battleSkin.DrawUserFrame(this, new(168, 0, 72, entries.Length * 16 + 8));
             for (int i = 0; i < entries.Length; i++) SourceText(_sourceNormal, new(184, 8 + i * 15), entries[i].Label);

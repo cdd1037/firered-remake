@@ -164,7 +164,9 @@ public static class LevelEvolutionRules
         if (error is not null) throw new ArgumentException(error, nameof(owned));
         // Only Everstone has a prevent-evolution hold effect in this bounded static item profile.
         // In particular, Enigma Berry can obtain that effect from save data not represented here.
-        bool staticHeldItem = content.Catalog.Species.Count switch
+        bool staticHeldItem = SafariOwnedPokemonCatalog.For(content.Catalog) is { } safari
+            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(safari.Mechanics.Catalog, owned.HeldItem)
+            : content.Catalog.Species.Count switch
         {
             107 => Game.Domain.WildBattle.FuchsiaBattleScope.SupportsHeldItem(owned.HeldItem),
             40 => owned.HeldItem == "ITEM_ORAN_BERRY",

@@ -103,13 +103,46 @@ public static class WildVictoryRewards
             result.HpDelta, result.Events, result.PendingMoves);
     }
 
+    /// <summary>Bounded Safari-owned participant settlement through the shared source growth recipe.
+    /// Campaign ownership, participation and settlement receipts remain the application's authority.</summary>
+    public static WildVictoryRewardResult ApplySafariOwned(SafariOwnedPokemonCatalog owned,
+        PartyPokemon participantAfterBattle, PokemonInstance defeatedPokemon, string currentRegion,
+        int aliveParticipants = 1, bool trainerBattle = false, WildBattleCombatant? defeatedBattleView = null)
+    {
+        ArgumentNullException.ThrowIfNull(owned);
+        var catalog = owned.Catalog;
+        ValidateOwned(catalog, participantAfterBattle, route22Rules: true, route11Rules: true, rockTunnelRules: true);
+        if (aliveParticipants is < 1 or > 6 || !ValidRegion(currentRegion)) throw new ArgumentException("safari_reward_context");
+        if (defeatedPokemon is null || !catalog.Species.ContainsKey(defeatedPokemon.Species) || defeatedPokemon.CurrentHp != 0)
+            throw new ArgumentException("safari_reward_defeated");
+        if (defeatedBattleView is not null && defeatedBattleView.Pokemon != defeatedPokemon)
+            throw new ArgumentException("safari_reward_view_mismatch");
+        if (defeatedBattleView is { } view)
+        {
+            if (WildBattleTransformationRules.Validate(owned.Mechanics.Catalog, view, enabled: true) is { } error) throw new ArgumentException(error);
+        }
+        else if (SourcePokemonValidator.ValidatePermanent(owned.Mechanics, defeatedPokemon) is { } error) throw new ArgumentException(error);
+        // This participant-only campaign adapter does not manufacture a full-party EXP Share context.
+        if (participantAfterBattle.HeldItem == "ITEM_EXP_SHARE") throw new NotSupportedException("safari_reward_full_party_required");
+        var result = PokemonRewardRecipe.Calculate(catalog, participantAfterBattle.Pokemon,
+            catalog.Species[defeatedPokemon.Species], defeatedPokemon.Level, aliveParticipants, 0,
+            new(true, false, participantAfterBattle.HeldItem == "ITEM_LUCKY_EGG", trainerBattle, false,
+                participantAfterBattle.HeldItem == "ITEM_MACHO_BRACE" ? 2 : 1,
+                participantAfterBattle.HeldItem == "ITEM_SOOTHE_BELL", participantAfterBattle.Ball == "ITEM_LUXURY_BALL",
+                participantAfterBattle.MetLocation == currentRegion), mechanics: owned.Mechanics);
+        var projected = participantAfterBattle with { Pokemon = result.Pokemon };
+        ValidateOwned(catalog, projected, route22Rules: true, route11Rules: true, rockTunnelRules: true);
+        return new(projected, result.ExperienceGained, result.EvsGained, result.LevelsGained,
+            result.FriendshipDelta, result.HpDelta, result.Events, result.PendingMoves);
+    }
+
     private static void ValidateOwned(PokemonCatalog catalog, PartyPokemon owned, bool route22Rules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
         route11Rules |= rockTunnelRules;
         var names = catalog.Species.Values.ToImmutableSortedDictionary(s => s.SourceSpeciesId,
             s => s.SourceSpeciesId switch { 29 => "NIDORAN♀", 32 => "NIDORAN♂", _ => s.Id.Value["pret:SPECIES_".Length..] });
         var error = PokemonStateValidator.ValidateParty(new(catalog, names, PokemonStateValidator.NicknameAlphabet) { AllowSleepStatus = route22Rules, AllowFreezeStatus = route11Rules,
-            AllowToxicStatus = catalog.Species.Count == 107 && catalog.Moves.Count == 354 }, owned);
+            AllowToxicStatus = SafariOwnedPokemonCatalog.IsAuthenticated(catalog) || catalog.Species.Count == 107 && catalog.Moves.Count == 354 }, owned);
         if (error is not null) throw new ArgumentException(error, nameof(owned));
         if (route22Rules && owned.Pokemon.AbilityId == "ABILITY_VITAL_SPIRIT" && WildBattleStatus.IsSleeping(owned.Status))
             throw new NotSupportedException("Vital Spirit cannot enter rewards asleep in the Route22 profile.");

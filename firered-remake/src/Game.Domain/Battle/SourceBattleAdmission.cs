@@ -41,6 +41,39 @@ public static class SourceBattleAdmission
         catalog.SourceCommit == PokemonFactory.SourceCommit && catalog.Species.Count == PokemonFactory.FuchsiaSupportedSpecies.Length &&
         catalog.Moves.Count == 354 && catalog.Species.Keys.All(CampaignAdmissionPolicy.CurrentFuchsia.Admits);
 
+    public static bool IsSafariOwnedCampaign(PokemonCatalog? catalog, WildBattleState state) =>
+        state.SourceCampaignRulesVersion == SafariOwnedPokemonCatalog.Profile &&
+        IsCanonicalSourceState(catalog, state) && SafariOwnedPokemonCatalog.ForMechanics(catalog) is not null;
+
+    internal static string? ValidateCampaignMembership(PokemonCatalog? catalog, WildBattleState state)
+    {
+        if (state.SourceCampaignRulesVersion is null) return null;
+        if (!IsSafariOwnedCampaign(catalog, state)) return "source_campaign_admission";
+        var owned = SafariOwnedPokemonCatalog.ForMechanics(catalog)!;
+        if (state.CalledParty is not { } party || party.Player.IsDefaultOrEmpty || party.Opponent.IsDefaultOrEmpty)
+            return "source_campaign_actual_parties";
+        if (party.Player.Concat(party.Opponent).Any(m => m?.Pokemon is null || !owned.Catalog.Species.ContainsKey(m.Pokemon.Species)))
+            return "source_campaign_species_unsupported";
+        return null;
+    }
+
+    internal static string? ValidateSafariOwnedEntry(SafariOwnedPokemonCatalog owned,
+        ImmutableArray<WildBattleCombatant> players, int activeIndex)
+    {
+        if (owned is null || !SafariOwnedPokemonCatalog.IsAuthenticated(owned.Catalog)) return "source_campaign_admission";
+        if (players.IsDefaultOrEmpty || players.Length > 6 || activeIndex < 0 || activeIndex >= players.Length)
+            return "source_campaign_party";
+        foreach (var member in players)
+        {
+            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species))
+                return "source_campaign_species_unsupported";
+            if (SourcePokemonValidator.ValidatePermanent(owned.Mechanics, member.Pokemon) is not null)
+                return "source_mechanics_pokemon";
+            if (ValidatePokemonCapabilities(owned.Mechanics.Catalog, member.Pokemon) is { } error) return error;
+        }
+        return null;
+    }
+
     internal static bool HasCapability(PokemonCatalog? catalog, SourceBattleCapability capability) =>
         SourceMechanicsCatalog.For(catalog) is not null && BattleRulesProfile.CanonicalSourceSingles.Supports(capability);
 
@@ -50,6 +83,7 @@ public static class SourceBattleAdmission
         HasCapability(catalog, SourceBattleCapability.CanonicalSpecies);
 
     internal static string? ValidateRulesProfile(PokemonCatalog? catalog, WildBattleState state) =>
+        ValidateCampaignMembership(catalog, state) ?? (
         (!SourceBattleMoneyRules.ValidMultiplier(state.SourceMoneyMultiplier) ||
             state.SourceMoneyMultiplier is not null && !IsCanonicalSourceState(catalog, state)) ? "source_money_multiplier" :
         (state.SourcePlayerHitReceipt is not null || state.SourceOpponentHitReceipt is not null) &&
@@ -58,7 +92,7 @@ public static class SourceBattleAdmission
         SourceObedienceRules.Validate(state) ??
         SourceTraceForecastRules.Validate(state.Player, state.SourceMechanicsRulesVersion) ??
         SourceTraceForecastRules.Validate(state.Opponent, state.SourceMechanicsRulesVersion) ?? SourceWeatherRules.Validate(state) ?? (SourceMechanicsCatalog.For(catalog) is not null || state.SourceMechanicsRulesVersion is not null
-            ? IsCanonicalSourceState(catalog, state) ? null : "source_mechanics_rules_profile" : null);
+            ? IsCanonicalSourceState(catalog, state) ? null : "source_mechanics_rules_profile" : null));
 
     internal static bool SupportsHeldItem(PokemonCatalog? catalog, string item) =>
         FuchsiaBattleScope.SupportsHeldItem(item) ||

@@ -41,7 +41,7 @@ public sealed partial class CampaignSession
     {
         var b=state.WildBattle!;
         if(command.Kind!="battle_switch")return new(CommandStatus.Rejected,state,"source_wild_party_choice_required");
-        var result=WildBattleRules.ChooseSourceWildParty(BattlePokemon,b.State,command.PartyIndex);
+        var result=WildBattleRules.ChooseSourceWildParty(OrdinaryExecutionPokemon(b.State),b.State,command.PartyIndex);
         if(!result.Succeeded)return new(CommandStatus.Rejected,state,result.Fault);
         return new(CommandStatus.Accepted,PrepareWildPresentation(ProjectSourceWildOwnedParty(state with
         {

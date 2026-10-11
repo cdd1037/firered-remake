@@ -55,20 +55,22 @@ public sealed partial class CampaignSession
         else if(_content.ForestEnabled)
         {
             var early=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");var table=_content.LandEncounters![state.World.Player.MapId];
-            var result=EarlyLandWildPokemonFactory.Generate(BattlePokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
+            var result=EarlyLandWildPokemonFactory.Generate(OrdinaryEncounterPokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
             generated=new(result.Pokemon,result.GlobalRng,result.RandomTrace);
         }
-        else generated=Route1WildPokemonFactory.Generate(BattlePokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
+        else generated=Route1WildPokemonFactory.Generate(OrdinaryEncounterPokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
         // Start owns source AI-init -> held-item -> order/turn-number RNG sequencing.
         var player=new WildBattleCombatant(owned.Pokemon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),DefenseBadgeBoost=_content.FuchsiaGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET")};
         bool towerBattle=_content.PokemonTowerEnabled&&TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
         var kind=PokemonTowerBattleContract.Classify(scriptedMarowak,HasSilphScope(state));
-        var started=_content.FuchsiaGymEnabled?WildBattleRules.StartSourceWild(BattlePokemon,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,
+        var started=SafariOrdinaryOwnership is {} safari?WildBattleRules.StartSafariOwnedWild(safari,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,
+            CampaignBattleTerrain(state),fishingPokemon is not null,towerBattle?kind:null,scriptedSnorlaxRoute!=0):_content.FuchsiaGymEnabled?WildBattleRules.StartSourceWild(BattlePokemon,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,
             CampaignBattleTerrain(state),fishingPokemon is not null,towerBattle?kind:null,scriptedSnorlaxRoute!=0):scriptedSnorlaxRoute!=0?WildBattleRules.StartSnorlax(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state),fuchsiaRules:_content.FuchsiaRouteEnabled):towerBattle?WildBattleRules.StartPokemonTower(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,kind,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled):
             WildBattleRules.Start(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignWildRulesVersion,terrain:CampaignBattleTerrain(state),oldRodFishing:fishingPokemon is not null);
 
         if(!started.Succeeded)throw new InvalidDataException(started.Fault);
         var battle=started.State!;
+        if(battle.SourceCampaignRulesVersion is not null)battle=battle with{Obedience=CampaignObedienceContext(state)};
         var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,battle,started.Events,0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,null,[],0,[..generated.RandomTrace,..started.Trace],[])
         {ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=_content.CaptureEnabled?new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]):null,FaintedMembers=_content.CaptureEnabled?ImmutableSortedSet<long>.Empty:null};
         if(_content.PartyTrainingEnabled)b=b with{ParticipatingMembers=ImmutableSortedSet<long>.Empty.Add(owned.InstanceId),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
@@ -119,14 +121,14 @@ public sealed partial class CampaignSession
         if(command.Kind=="battle_medicine")return DecideWildMedicine(state,command);
         if(command.Kind=="battle_menu"&&command.Text is "bag" or "party")return new(CommandStatus.Accepted,state);
         WildBattleResult turn;PotionUseResult? potion=null;InventoryState? capturedInventory=null;bool reserves=HasWildReserves(state,b);
-        if(command.Kind=="battle_move")turn=WildBattleRules.ResolveMove(BattlePokemon,b.State,command.MoveSlot,reserves);
-        else if(command.Kind=="battle_menu"&&command.Text=="run")turn=WildBattleRules.Run(BattlePokemon,b.State,reserves);
+        if(command.Kind=="battle_move")turn=WildBattleRules.ResolveMove(OrdinaryExecutionPokemon(b.State),b.State,command.MoveSlot,reserves);
+        else if(command.Kind=="battle_menu"&&command.Text=="run")turn=WildBattleRules.Run(OrdinaryExecutionPokemon(b.State),b.State,reserves);
         else if(command.Kind=="battle_potion")
         {
             if(_content.OpeningItems is null||state.Inventory is null||command.PartyIndex!=b.ActivePartyIndex)return new(CommandStatus.Rejected,state,"wild_item_context_invalid");
             potion=UseCampaignPotion(state.Inventory,WildBattleTransformationRules.PersistentPokemon(b.State.Player),PotionUseContext.Battle);
             if(!potion.Succeeded)return new(CommandStatus.Rejected,state,potion.Error);
-            turn=WildBattleRules.ResolvePotion(BattlePokemon,b.State,potion.Pokemon,reserves);
+            turn=WildBattleRules.ResolvePotion(OrdinaryExecutionPokemon(b.State),b.State,potion.Pokemon,reserves);
         }
         else if(command.Kind=="battle_ball")
         {
@@ -151,7 +153,7 @@ public sealed partial class CampaignSession
                 if(!spend.Succeeded)return new(CommandStatus.Rejected,state,"capture_no_poke_ball");
                 capturedInventory=spend.State;
             }
-            turn=WildBattleRules.ResolveBall(BattlePokemon,b.State,great?CaptureBall.Great:CaptureBall.Poke,reserves);
+            turn=WildBattleRules.ResolveBall(OrdinaryExecutionPokemon(b.State),b.State,great?CaptureBall.Great:CaptureBall.Poke,reserves);
         }
         else return new(CommandStatus.Rejected,state,"wild_battle_active");
         if(!turn.Succeeded)return new(CommandStatus.Rejected,state,turn.Fault);
@@ -216,7 +218,7 @@ public sealed partial class CampaignSession
         }
         if(b.State.Outcome==WildBattleOutcome.Won)
         {
-            reward=WildVictoryRewards.Apply(BattlePokemon,party[b.ActivePartyIndex],b.State.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection);
+            reward=SafariOrdinaryOwnership is {} rewardOwned?WildVictoryRewards.ApplySafariOwned(rewardOwned,party[b.ActivePartyIndex],b.State.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,defeatedBattleView:b.State.Opponent):WildVictoryRewards.Apply(BattlePokemon,party[b.ActivePartyIndex],b.State.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection);
             party=party.SetItem(b.ActivePartyIndex,reward.Pokemon);
             foreach(var e in reward.Events)
             {
@@ -273,7 +275,7 @@ public sealed partial class CampaignSession
         foreach(var stage in new[]{"FIRST","REMATCH"})foreach(var species in new[]{"SQUIRTLE","BULBASAUR","CHARMANDER"})trainers=trainers.Remove("pret:TRAINER_CHAMPION_"+stage+"_"+species);
         int lost=WhiteOutLoss(state);
         int x=center?7:8,y=center?4:5;var map=_content.MapFromSourceSymbol(center?(state.LastHealingLocation=="HEAL_LOCATION_FUCHSIA_CITY"?"MAP_FUCHSIA_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_LAVENDER_TOWN"?"MAP_LAVENDER_TOWN_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CELADON_CITY"?"MAP_CELADON_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE10"?"MAP_ROUTE10_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_VERMILION_CITY"?"MAP_VERMILION_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_CERULEAN_CITY"?"MAP_CERULEAN_CITY_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_ROUTE4"?"MAP_ROUTE4_POKEMON_CENTER_1F":state.LastHealingLocation=="HEAL_LOCATION_PEWTER_CITY"?"MAP_PEWTER_CITY_POKEMON_CENTER_1F":"MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F"):"MAP_PALLET_TOWN_PLAYERS_HOUSE_1F");var tile=_content.Maps[map].GetTile(x,y)??throw new InvalidDataException("whiteout_spawn_missing");
-        var next=state with{WildBattle=null,Money=state.Money-lost,Party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(BattlePokemon,p)).ToImmutableArray(),BattledTrainers=trainers,
+        var next=state with{WildBattle=null,SafariVisit=null,SafariBattle=null,SafariExitPending=false,Money=state.Money-lost,Party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(BattlePokemon,p)).ToImmutableArray(),BattledTrainers=trainers,
             World=state.World with{Player=new(map,x,y,tile.Elevation,Direction.North)},Script=state.Script with{Flags=flags,Variables=vars},Exploration=ResetEncounterModifiers(state.Exploration!)};
         next=Pump(EnterMap(next,Direction.North));
         next=next with{LastTalked=center?HealingNurse(map).LocalId:"LOCALID_MOM",Script=next.Script with{Variables=next.Script.Variables.SetItem("VAR_LAST_TALKED",center?HealingNurse(map).SourceLocalId:1)}};

@@ -9,7 +9,8 @@ namespace Game.Application;
 
 public sealed record CampaignWildHistory(string Id,int SourceSpeciesId,int Level,Game.Domain.WildBattle.WildBattleOutcome Outcome,int ExperienceGained)
 {[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public bool ScriptedMarowak{get;init;}
- [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ScriptedSnorlaxRoute{get;init;}};
+ [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int ScriptedSnorlaxRoute{get;init;}
+ [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public bool Safari{get;init;}};
 public sealed record CampaignExploration([property:System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Route1EncounterState? Encounter,long NextWildBattleId,ImmutableArray<CampaignWildHistory> Battles)
 {
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
@@ -24,7 +25,7 @@ public sealed partial class CampaignSession
     {
         if(_content.ForestEnabled)
         {
-            var early=EarlyLandEncounterRules.SeedFromGlobal(state.World.Rng,rulesVersion:_content.FuchsiaRouteEnabled?EarlyLandEncounterRules.FuchsiaRulesVersion:_content.SnorlaxEnabled?EarlyLandEncounterRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?EarlyLandEncounterRules.PokemonTowerRulesVersion:_content.RocketHideoutEnabled?EarlyLandEncounterRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?EarlyLandEncounterRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?EarlyLandEncounterRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?EarlyLandEncounterRules.RockTunnelRulesVersion:_content.Route11Enabled?EarlyLandEncounterRules.Route11RulesVersion:_content.SsAnneEnabled?EarlyLandEncounterRules.SsAnneRulesVersion:_content.VermilionEnabled?EarlyLandEncounterRules.VermilionRulesVersion:_content.BillEnabled?EarlyLandEncounterRules.BillRulesVersion:_content.MtMoonEnabled?EarlyLandEncounterRules.MtMoonRulesVersion:_content.Route3Enabled?EarlyLandEncounterRules.Route3RulesVersion:_content.Route22Enabled?EarlyLandEncounterRules.Route22RulesVersion:EarlyLandEncounterRules.RulesVersion);
+            var early=EarlyLandEncounterRules.SeedFromGlobal(state.World.Rng,rulesVersion:_content.SafariEnabled?EarlyLandEncounterRules.SafariRulesVersion:_content.FuchsiaRouteEnabled?EarlyLandEncounterRules.FuchsiaRulesVersion:_content.SnorlaxEnabled?EarlyLandEncounterRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?EarlyLandEncounterRules.PokemonTowerRulesVersion:_content.RocketHideoutEnabled?EarlyLandEncounterRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?EarlyLandEncounterRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?EarlyLandEncounterRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?EarlyLandEncounterRules.RockTunnelRulesVersion:_content.Route11Enabled?EarlyLandEncounterRules.Route11RulesVersion:_content.SsAnneEnabled?EarlyLandEncounterRules.SsAnneRulesVersion:_content.VermilionEnabled?EarlyLandEncounterRules.VermilionRulesVersion:_content.BillEnabled?EarlyLandEncounterRules.BillRulesVersion:_content.MtMoonEnabled?EarlyLandEncounterRules.MtMoonRulesVersion:_content.Route3Enabled?EarlyLandEncounterRules.Route3RulesVersion:_content.Route22Enabled?EarlyLandEncounterRules.Route22RulesVersion:EarlyLandEncounterRules.RulesVersion);
             return state with{Exploration=new(null,1,[]){EarlyEncounter=early.State,Captured=[]},World=state.World with{Rng=early.GlobalRng}};
         }
         var seeded=Route1EncounterRules.SeedFromGlobal(state.World.Rng);
@@ -40,7 +41,7 @@ public sealed partial class CampaignSession
         {
             if(exploration.Encounter is not null||exploration.EarlyEncounter is null)return "save_encounter_profile_invalid";
             try{EarlyLandEncounterRules.ValidateState(exploration.EarlyEncounter);}catch(Exception ex) when(ex is ArgumentException or NotSupportedException){return "save_encounter_invalid";}
-            if(exploration.EarlyEncounter.RulesVersion!=(_content.FuchsiaRouteEnabled?EarlyLandEncounterRules.FuchsiaRulesVersion:_content.SnorlaxEnabled?EarlyLandEncounterRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?EarlyLandEncounterRules.PokemonTowerRulesVersion:_content.RocketHideoutEnabled?EarlyLandEncounterRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?EarlyLandEncounterRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?EarlyLandEncounterRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?EarlyLandEncounterRules.RockTunnelRulesVersion:_content.Route11Enabled?EarlyLandEncounterRules.Route11RulesVersion:_content.SsAnneEnabled?EarlyLandEncounterRules.SsAnneRulesVersion:_content.VermilionEnabled?EarlyLandEncounterRules.VermilionRulesVersion:_content.BillEnabled?EarlyLandEncounterRules.BillRulesVersion:_content.MtMoonEnabled?EarlyLandEncounterRules.MtMoonRulesVersion:_content.Route3Enabled?EarlyLandEncounterRules.Route3RulesVersion:_content.Route22Enabled?EarlyLandEncounterRules.Route22RulesVersion:EarlyLandEncounterRules.RulesVersion))return "save_encounter_profile_invalid";
+            if(exploration.EarlyEncounter.RulesVersion!=(_content.SafariEnabled?EarlyLandEncounterRules.SafariRulesVersion:_content.FuchsiaRouteEnabled?EarlyLandEncounterRules.FuchsiaRulesVersion:_content.SnorlaxEnabled?EarlyLandEncounterRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?EarlyLandEncounterRules.PokemonTowerRulesVersion:_content.RocketHideoutEnabled?EarlyLandEncounterRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?EarlyLandEncounterRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?EarlyLandEncounterRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?EarlyLandEncounterRules.RockTunnelRulesVersion:_content.Route11Enabled?EarlyLandEncounterRules.Route11RulesVersion:_content.SsAnneEnabled?EarlyLandEncounterRules.SsAnneRulesVersion:_content.VermilionEnabled?EarlyLandEncounterRules.VermilionRulesVersion:_content.BillEnabled?EarlyLandEncounterRules.BillRulesVersion:_content.MtMoonEnabled?EarlyLandEncounterRules.MtMoonRulesVersion:_content.Route3Enabled?EarlyLandEncounterRules.Route3RulesVersion:_content.Route22Enabled?EarlyLandEncounterRules.Route22RulesVersion:EarlyLandEncounterRules.RulesVersion))return "save_encounter_profile_invalid";
             if(exploration.EarlyEncounter.Pending is not null)return "save_encounter_pending";
         }
         else
@@ -49,11 +50,11 @@ public sealed partial class CampaignSession
             try{Route1EncounterRules.ValidateState(exploration.Encounter);}catch(Exception ex) when(ex is ArgumentException or NotSupportedException){return "save_encounter_invalid";}
             if(exploration.Encounter.Pending is not null)return "save_encounter_pending";
         }
-        if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||!(b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
+        if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||!(b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
         if(here is >=0x60 and <=0x71)return (_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map))?.Code;
-        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),EditedFieldMaps(state),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled);
+        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SafariConnectedMaps(EditedFieldMaps(state)),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled);
         return check.Status==TransitionStatus.Accepted?null:check.Diagnostic?.Code??"save_connected_invalid";
     }
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> OccupiedFieldMaps(CampaignState state)
@@ -72,12 +73,12 @@ public sealed partial class CampaignSession
             }
             maps[pair.Key]=pair.Value with{Cells=cells.ToImmutable()};
         }
-        return maps;
+        return SafariConnectedMaps(maps);
     }
     private Decision<CampaignState> DecideConnectedField(CampaignState state,CampaignCommand command)
     {
         if(!Enum.IsDefined(command.Direction))return new(CommandStatus.Rejected,state,"invalid_direction");
-        var before=state.World.Player;var movementMaps=RocketMovementMaps(state);var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
+        var before=state.World.Player;var movementMaps=SafariMovementMaps(RocketMovementMaps(state));var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
         bool turn=command.Kind=="turn";
         if(!turn&&_content.FuchsiaRouteEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsFuchsiaRouteWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"fuchsia_route_warp_not_open");
         if(!turn&&_content.SnorlaxEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
@@ -152,11 +153,12 @@ public sealed partial class CampaignSession
             if(moved.World.StepCount>state.World.StepCount)
             {
                 moved=ApplyFieldPoisonWalkingStep(ApplyWalkingFriendship(moved));
-                if(moved.FieldPoison is null)moved=ApplyRepelWalkingStep(moved);
+                if(moved.FieldPoison is null)moved=ApplySafariWalkingStep(moved);
+                if(moved.FieldPoison is null&&moved.Script.Completed)moved=ApplyRepelWalkingStep(moved);
             }
             // The expiration message owns this input. Dismissing it never replays the
             // encounter check, cooldown increment, or either encounter RNG stream.
-            if(checkEncounter&&moved.FieldPoison is null&&moved.Repel is null)
+            if(checkEncounter&&moved.FieldPoison is null&&moved.Repel is null&&moved.Script.Completed&&moved.Script.Wait is null)
             {
                 if(_content.RepelEnabled)
                 {

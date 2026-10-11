@@ -40,7 +40,7 @@ public sealed partial class CampaignSession
             RequireSnorlaxCaller(s,e,route);
             if(a.Length is <2 or >3||Value(a[0])!=143||Value(a[1])!=30||a.Length==3&&Value(a[2])!=0||s.SnorlaxPreparation is not null||s.SnorlaxReturn is not null||s.Script.Flags.GetValueOrDefault(SnorlaxHideFlag(route))||s.Script.Flags.GetValueOrDefault(SpecialWildFlag))
                 throw new InvalidDataException("snorlax_preparation_invalid");
-            var made=SnorlaxBattleContract.Create(BattlePokemon,s.TrainerId,s.World.Rng,fuchsiaRules:_content.FuchsiaRouteEnabled);
+            var made=SnorlaxBattleContract.Create(OrdinaryEncounterPokemon,s.TrainerId,s.World.Rng,fuchsiaRules:_content.FuchsiaRouteEnabled);
             next=s with{SnorlaxPreparation=new(route,new(made.Pokemon,made.Rng,made.Trace)),World=s.World with{Rng=made.Rng}};return true;
         }
         if(e.Opcode=="playmoncry"&&caller)

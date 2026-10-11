@@ -24,7 +24,7 @@ public sealed partial class CampaignSession
         if (!_content.VermilionEnabled || battle.PostBattleItemsSettled)
             return BeginWildEvolution(state);
         var money = SourceBattleMoneyRules.SettlePayDay(state.Money, battle.State.PayDayMoney, battle.State.Outcome,battle.State.SourceMoneyMultiplier);
-        var pickup = VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, battle.State.Outcome,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
+        var pickup = SafariOrdinaryOwnership is {} safari?VermilionPickupRules.ApplySafariOwned(safari,state.Party,state.World.Rng,battle.State.Outcome):VermilionPickupRules.Apply(BattlePokemon, state.Party, state.World.Rng, battle.State.Outcome,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
         state = state with
         {
             Money = money.Money, Party = pickup.Party, World = state.World with { Rng = pickup.Rng },

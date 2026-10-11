@@ -241,7 +241,8 @@ public static partial class WildBattleRules
             else if (state.Player.Pokemon.CurrentHp == 0) outcome = WildBattleOutcome.Lost;
             else if (state.Opponent.Pokemon.CurrentHp == 0) outcome = WildBattleOutcome.Won;
         }
-        return state with { CalledParty = null, Obedience = null, Outcome = outcome, AwaitingReplacement = false };
+        // Whole-party campaign membership was authenticated before this mechanics-only projection.
+        return state with { CalledParty = null, SourceCampaignRulesVersion = null, Obedience = null, Outcome = outcome, AwaitingReplacement = false };
     }
 
     /// <summary>One genuine switch boundary. It does not schedule the opposing action or residual turn.</summary>
