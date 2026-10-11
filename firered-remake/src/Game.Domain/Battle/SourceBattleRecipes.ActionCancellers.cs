@@ -35,7 +35,8 @@ internal abstract partial class SourceRecipeContext
         TruantPreventsMove(actor, move) || RechargePreventsMove(actor, move) ||
         CancellerEarlyPartyEnabled && FlinchLocksConfusionPreventMove(catalog, actor, move, purpose) ||
         ParalysisPreventsMove(actor, move, purpose) ||
-        CancellerInfatuationEnabled && InfatuationPreventsMove(actor, move, purpose);
+        CancellerInfatuationEnabled && InfatuationPreventsMove(actor, move, purpose) ||
+        BideInCanceller && ContinueBide(catalog, actor, catalog.Moves[move], purpose);
         if (!blocked && CancellerLateMoveThawEnabled) ThawByMove(actor, move);
         return blocked;
     }

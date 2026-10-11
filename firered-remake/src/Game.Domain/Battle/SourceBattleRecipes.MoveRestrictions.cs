@@ -6,13 +6,15 @@ namespace Game.Domain.Battle;
 
 internal abstract partial class SourceRecipeContext
 {
-    internal static bool HasMoveRestrictionRecipe(string effect) => effect is "EFFECT_ENCORE" or "EFFECT_IMPRISON";
+    internal static bool HasMoveRestrictionRecipe(string effect) => effect is "EFFECT_ENCORE" or "EFFECT_IMPRISON" || HasSelectedVolatileRecipe(effect);
     internal abstract ulong MoveRestrictionRngCursor { get; }
     internal virtual bool EncoreAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose) =>
         SourceGenericAccuracy(actor, target, move, purpose);
 
     internal void ExecuteMoveRestriction(BattlerSlot actor, BattlerSlot target, int slot, PokemonMoveDefinition move, string purpose)
     {
+        if (HasSelectedVolatileRecipe(move.Effect))
+        { ExecuteSelectedVolatile(actor, target, slot, move, purpose); return; }
         // Encore's accuracycheck precedes attackstring/ppreduce, including failure.
         bool hit = move.Effect != "EFFECT_ENCORE" || EncoreAccuracy(actor, target, move, purpose);
         SpendEarlyPartyPp(actor, target, slot, move);

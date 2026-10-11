@@ -365,6 +365,12 @@ public static partial class WildBattleRules
         private void ExecuteCalledPartyEffect(PokemonCatalog catalog, WildBattleSide side, int slot,
             PokemonMoveDefinition move, string purpose, ref bool handled)
         {
+            if (SourceBattleAdmission.IsCanonicalSourceState(catalog, State) && SourceRecipeContext.HasItemTransferRecipe(move.Effect))
+            {
+                SourceCalledRequireParty(move);
+                Recipes.ExecuteItemTransfer(catalog, S(side), S(activeInvocation!.Target), slot, move, purpose);
+                handled = true; return;
+            }
             if (!HasCalledPartyRecipe(move.Effect)) return;
             SourceCalledRequireParty(move); handled = true;
             var target = activeInvocation!.Target;

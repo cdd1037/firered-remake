@@ -8,7 +8,7 @@ internal sealed partial class FrameRecipeContext
     internal override bool RampageLocked(BattlerSlot actor) => Frame.Get(actor).Registers.Turn?.Lock?.Kind == WildBattleCalledLockKind.Rampage;
     internal override void StartRechargeRampageLock(BattlerSlot actor, PokemonMoveDefinition move, WildBattleCalledLockKind kind, int remaining)
     {
-        var retained = Frame.Queue.FirstOrDefault(a => a.Token?.Owner == action.Actor)?.Target ?? action.Target;
+        var retained = RetainedMoveTarget;
         ChangeRechargeRampageLock(actor, new(kind, move.Id, invocation.PpSlot,
             Get(actor).Pokemon.Moves[invocation.PpSlot].Move, retained, remaining, 0, null, false), "move");
     }

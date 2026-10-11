@@ -161,11 +161,8 @@ public static partial class WildBattleRules
             var other = Other(side); var turn = Get(other).CalledTurnState;
             if (turn?.SureHitSource == side) SetCalledTurnState(other, turn with { SureHitTurnsRemaining = 0, SureHitSource = null });
         }
-        private void CalledTrackDamage(WildBattleSide source, WildBattleSide target, int damage)
-        {
-            if (damage <= 0 || Get(target).CalledTurnState?.Lock is not { Kind: WildBattleCalledLockKind.Bide } locked) return;
-            ChangeCalledLock(target, locked with { StoredDamage = checked(locked.StoredDamage + damage), StoredDamageSource = source }, "stored-damage");
-        }
+        private void CalledTrackDamage(WildBattleSide source, WildBattleSide target, int damage) =>
+            Recipes.StoreBideDamage(S(source), S(target), damage);
         private bool CalledRechargePreventsMove(WildBattleSide side, MoveId move) =>
             new SinglesRecipeBridge(this).RechargePreventsMove(SinglesBattleAdapter.Slot(side), move);
 
@@ -249,7 +246,7 @@ public static partial class WildBattleRules
             if (move.Effect == "EFFECT_BIDE")
             {
                 SpendInvocationPp(side, target, move);
-                StartCalledLock(side, move, WildBattleCalledLockKind.Bide, 2); return;
+                Recipes.StartBide(S(side), move); return;
             }
             if (move.Effect == "EFFECT_LOCK_ON")
             { Recipes.ExecuteTargetMark(S(side), S(target), slot, move, purpose); return; }
@@ -310,29 +307,8 @@ public static partial class WildBattleRules
             PokemonMoveDefinition move, string purpose)
             => Recipes.SourceRollout(catalog, S(side), S(target), move, purpose);
         // Source CANCELLER_BIDE is after infatuation and before ability/no-PP/Protect checks.
-        private bool CalledBideContinuation(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move, string purpose)
-        {
-            if (Get(side).CalledTurnState?.Lock is not { Kind: WildBattleCalledLockKind.Bide } locked) return false;
-            if (locked.TurnsRemaining > 1)
-            {
-                ChangeCalledLock(side, locked with { TurnsRemaining = locked.TurnsRemaining - 1 }, "storing-energy");
-                return true;
-            }
-            ChangeCalledLock(side, null, "released");
-            activeInvocation = activeInvocation! with { CancellerPhase = WildBattleAttackCancellerPhase.ConditionsPassed, Flags = activeInvocation.Flags | WildBattleInvocationFlags.Obeys };
-            if (locked.StoredDamage == 0)
-            { Add(n => new WildBattleMoveFailedEvent(n, State.Turn, side, activeInvocation.Target, move.Id, "bide-no-energy")); return true; }
-            var target = locked.StoredDamageSource!.Value;
-            if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) CancelRoute3Rollout(side, "protected");
-            activeInvocation = activeInvocation with { Target = target, Flags = activeInvocation.Flags | WildBattleInvocationFlags.Obeys };
-            if (!ScalarAccuracy(side, target, move, purpose, ScalarType(move.Type))) { SourceGenericMiss(side, target, move); return true; }
-            bool immune = ScalarTypeResult(catalog, target, ScalarType(move.Type)).Immune;
-            int adjusted = ScalarAdjust(target, move, checked(locked.StoredDamage * 2), purpose);
-            int damage = immune ? 0 : adjusted;
-            int lost = SourceGenericApplyDamage(side, target, move, damage, false, 100);
-            ScalarReportType(catalog, side, target, move, ScalarType(move.Type), fixedDamage: true);
-            ScalarFinish(catalog, side, target, move, purpose, lost, ScalarType(move.Type));
-            return true;
-        }
+        private bool CalledBideContinuation(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move, string purpose) =>
+            Recipes.ContinueBide(catalog, S(side), move, purpose);
+
     }
 }

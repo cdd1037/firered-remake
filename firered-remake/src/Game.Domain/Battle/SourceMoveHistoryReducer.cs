@@ -11,16 +11,16 @@ namespace Game.Domain.Battle;
 internal static class SourceMoveHistoryReducer
 {
     internal static SourceBattleFrame Apply(PokemonCatalog catalog, SourceBattleFrame frame, SourceMoveInvocation invocation,
-        ImmutableArray<SourceBattleEvent> emitted, bool commandNoEffect, string? effectiveType = null, bool recordDamage = true)
+        ImmutableArray<SourceBattleEvent> emitted, bool commandNoEffect, string? effectiveType = null, bool recordDamage = true, bool wasCalled = false)
     {
         Apply(catalog, frame.Turn, invocation, emitted, commandNoEffect, s => frame.Get(s),
-            (slot, cell) => frame = frame with { Slots = frame.Slots.SetItem(slot.Value, cell) }, effectiveType, recordDamage);
+            (slot, cell) => frame = frame with { Slots = frame.Slots.SetItem(slot.Value, cell) }, effectiveType, recordDamage, wasCalled);
         return frame;
     }
     internal static void Apply(PokemonCatalog catalog, int turn, SourceMoveInvocation invocation,
         ImmutableArray<SourceBattleEvent> emitted, bool commandNoEffect,
         Func<BattlerSlot, SourceBattleSlot> get, Action<BattlerSlot, SourceBattleSlot> set,
-        string? effectiveType = null, bool recordDamage = true)
+        string? effectiveType = null, bool recordDamage = true, bool wasCalled = false)
     {
         var actorCell = get(invocation.Actor); var actor = actorCell.Body!;
         var targetSlot = emitted.OfType<SourceConfusionSelfHitEvent>().Any() ? invocation.Actor : invocation.Target;
@@ -33,7 +33,7 @@ internal static class SourceMoveHistoryReducer
         MoveId unavailable = new("pret:MOVE_UNAVAILABLE");
         var history = actorCell.Registers.History ?? new();
         actor = actor with { LastUsedMove = obeys ? invocation.ChosenMove : unavailable,
-            LastCalledMove = obeys && emitted.OfType<SourceCalledMoveTransitionEvent>().Any() && invocation.ChosenMove != unavailable ? invocation.CurrentMove : null };
+            LastCalledMove = obeys && (wasCalled || emitted.OfType<SourceCalledMoveTransitionEvent>().Any()) && invocation.ChosenMove != unavailable ? invocation.CurrentMove : null };
         set(invocation.Actor, actorCell with { Body = actor,
             Registers = actorCell.Registers with { History = history with {
                 LastPrintedMove = invocation.Flags.HasFlag(WildBattleInvocationFlags.AttackStringPrinted) ? invocation.ChosenMove : history.LastPrintedMove,

@@ -65,7 +65,7 @@ public static partial class WildBattleRules
         private void TowerResolveDestinyBond(WildBattleSide fainted)
         {
             if (!towerDestinyKnockouts.Remove(fainted, out var attacker) || Get(attacker).Pokemon.CurrentHp == 0) return;
-            TowerHp(attacker, "destiny-bond", Get(attacker).Pokemon.CurrentHp);
+            Recipes.TakeDestinyBond(S(attacker));
         }
         private bool TowerScript(PokemonCatalog catalog, WildBattleSide side, int slot, PokemonMoveDefinition move, string purpose)
         {
@@ -105,7 +105,7 @@ public static partial class WildBattleRules
                     if (after == 0) CancelRoute3Rollout(targetSide, "spite-empty-pp");
                     break;
                 case "EFFECT_DESTINY_BOND":
-                    SetTowerFlag(side, "destiny-bond", true, "move");
+                    Recipes.SetDestinyBond(S(side), true, "move");
                     break;
             }
             return true;

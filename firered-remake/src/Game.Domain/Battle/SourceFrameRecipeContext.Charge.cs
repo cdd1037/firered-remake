@@ -10,7 +10,7 @@ internal sealed partial class FrameRecipeContext
     {
         var cell=Frame.Get(actor);var turn=cell.Registers.Turn??new(WildBattleRules.CalledMoveKernelRulesVersion,null,0,null);
         var previous=turn.Lock;
-        var retained=Frame.Queue.FirstOrDefault(a=>a.Token?.Owner==action.Actor)?.Target??action.Target;
+        var retained=RetainedMoveTarget;
         var next=locked?new SourceTurnLock(WildBattleCalledLockKind.Charge,move.Id,invocation.PpSlot,
             Get(actor).Pokemon.Moves[invocation.PpSlot].Move,retained,1,0,null,false):null;
         if(previous==next)return;
@@ -22,6 +22,7 @@ internal sealed partial class FrameRecipeContext
     internal override void ChargeNoPpDeduct()=>invocation=invocation with{Flags=invocation.Flags|WildBattleInvocationFlags.NoPpDeduct};
     internal override void CancellerParalysisBlocked(BattlerSlot actor)
     {
+        if(BideLock(actor) is not null)ChangeBideLock(actor,null,"paralysis");
         if(RampageLocked(actor))ChangeRechargeRampageLock(actor,null,"paralysis");
         if(ChargeLocked(actor))ChangeCharge(actor,move,false,"paralysis");
     }

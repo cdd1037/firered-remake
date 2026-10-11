@@ -42,6 +42,7 @@ public static partial class SourceFourActionTurns
         if (frame.Layout != SourceBattleLayout.PresetDoubles || frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version ||
             frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion || SourceMechanicsCatalog.For(catalog) is null)
             return "source_four_action_capability";
+        if (SourceItemTransferRules.Validate(catalog, frame) is { } itemError) return itemError;
         if (frame.BattleKind != WildBattleCalledBattleKind.Trainer) return "source_four_action_battle_kind";
         if (new[] { frame.Field.RainTurnsRemaining, frame.Field.SandstormTurnsRemaining, frame.Field.SunTurnsRemaining, frame.Field.HailTurnsRemaining }.Count(t => t > 0) > 1)
             return "source_four_action_weather_conflict";
@@ -68,8 +69,7 @@ public static partial class SourceFourActionTurns
             if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
             if (body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter != 0 ||
                 (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || !SourceSubstituteRules.Supported(body) ||
-                body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) ||
-                body.DestinyBond ||
+                !SourceFourEntryAbilities.OverlaySupported(body) ||
                 body.ChargeTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.Rage || body.WaterSport || body.MudSport ||
@@ -137,6 +137,10 @@ public static partial class SourceFourActionTurns
                 if (body.EncoreTurnsRemaining > 0 && body.EncoreMoveSlot != action.MoveSlot) return Fail(frame, "source_four_action_selection_encore");
                 if (SourceMoveRestrictionRules.Imprisoned(learned.Move, SourceMoveRestrictionRules.Opponents(next, action.Slot))) return Fail(frame, "source_four_action_selection_imprisoned");
                 if (body.DisableTurnsRemaining > 0 && learned.Move == body.DisabledMove) return Fail(frame, "source_four_action_selection_disabled");
+                if (body.CalledVolatile is { Tormented: true } && body.LastUsedMove == learned.Move && learned.Move != WildBattleRules.StruggleMove)
+                    return Fail(frame, "source_four_action_selection_tormented");
+                if (body.CalledVolatile is { TauntTurnsRemaining: > 0 } && catalog.Moves[learned.Move].Power == 0)
+                    return Fail(frame, "source_four_action_selection_taunted");
                 if (learned.CurrentPp == 0) return Fail(frame, "source_four_action_selection_no_pp");
             }
             if (recharge is not null && (action.MoveSlot != recharge.PpSlot || action.Target != recharge.Target))

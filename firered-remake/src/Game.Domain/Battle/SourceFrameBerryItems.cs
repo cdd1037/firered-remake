@@ -7,7 +7,7 @@ namespace Game.Domain.Battle;
 /// Move-end scans numeric positions; normal item callbacks name one actual position.</summary>
 internal static class SourceFrameBerryItems
 {
-    internal static bool SupportsHeldItem(string item) => item is "ITEM_FOCUS_BAND" or "ITEM_KINGS_ROCK" or "ITEM_SHELL_BELL" ||
+    internal static bool SupportsHeldItem(string item) => item is "ITEM_CHOICE_BAND" or "ITEM_FOCUS_BAND" or "ITEM_KINGS_ROCK" or "ITEM_SHELL_BELL" ||
         SourceFourRewards.SupportsRewardHeldItem(item) || SourceHeldBerryRules.Supports(item);
 
     internal static SourceFourActionResult Apply(SourceBattleFrame frame, SourceBerryPhase phase, BattlerSlot? only = null)

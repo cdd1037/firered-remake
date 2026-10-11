@@ -169,7 +169,7 @@ public static class SourceBattleIdentityRules
                 residual.MinimumRevision > frame.Revision || residual.MinimumEventSequence < 0 || residual.MinimumEventSequence > frame.EventSequence ||
                 frame.NextAction != 4 || four.Phase is not (SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.RewardsPending or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.BattleEnded) ||
                 residual.Stage == WildBattleSourceEndTurnStage.Complete && (residual.NextBattler != 4 || four.Phase != SourceFourActionPhase.BattleEnded) ||
-                residual.Stage is not (WildBattleSourceEndTurnStage.FutureAttacks or WildBattleSourceEndTurnStage.Complete) ||
+                residual.Stage is not (WildBattleSourceEndTurnStage.FutureAttacks or WildBattleSourceEndTurnStage.PerishSong or WildBattleSourceEndTurnStage.Complete) ||
                 four.Phase == SourceFourActionPhase.BattleEnded && frame.Outcome == WildBattleOutcome.Ongoing) ||
             four.OutcomeAfterRewards is { } pendingOutcome && (pendingOutcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) ||
                 !four.Defeats.Any(d => d.RequiresExperience)) ||

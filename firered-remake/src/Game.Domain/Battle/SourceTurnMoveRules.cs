@@ -18,6 +18,7 @@ internal static class SourceTurnMoveRules
 
     internal static string? Validate(WildBattleCombatant body, PokemonCatalog catalog)
     {
+        if (body.DestinyBond && body.Pokemon.CurrentHp == 0) return "source_kernel_fainted_destiny_bond";
         // A just-overwritten disabled move remains until ENDTURN_DISABLE removes it.
         if (body.DisableTurnsRemaining is < 0 or > 5 ||
             (body.DisableTurnsRemaining == 0) != (body.DisabledMove is null) ||

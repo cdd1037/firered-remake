@@ -12,7 +12,9 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     private readonly PokemonCatalog catalog;
     private readonly SourceResolvedMoveAction action;
     private readonly SourceBattleFrame initial;
-    private readonly PokemonMoveDefinition move;
+    private PokemonMoveDefinition move;
+    private bool currentLightningRodRedirected;
+    private bool calledMoveExecuted;
     private SourceMoveInvocation invocation;
     private bool commandNoEffect;
     private bool skipsMoveEnd;
@@ -24,6 +26,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     internal FrameRecipeContext(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action, PokemonMoveDefinition? delayedMove = null)
     {
         this.catalog = catalog; this.action = action; Frame = initial = frame;
+        currentLightningRodRedirected = action.LightningRodRedirected;
         move = delayedMove ?? SourceBattleKernel.ActionMove(catalog, frame.Get(action.Actor.Slot), action.ChosenSlot);
         bool struggle = action.ChosenSlot == WildBattleRules.StruggleSlot;
         invocation = new(action.Actor.Slot, struggle ? frame.Get(action.Actor.Slot).Registers.LastMoveSlot : action.ChosenSlot,
@@ -56,6 +59,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     {
         string purpose = Frame.Layout == SourceBattleLayout.Singles
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
+        BeginLateTurnAction();
         PrepareCharge(invocation.Actor,move);
         PrepareDynamicPower(invocation.Actor, move);
         PrepareDynamicType(move);
@@ -77,13 +81,20 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     }
     internal void Run()
     {
+        RunCurrentMove(false);
+        FinishAction();
+    }
+    private void RunCurrentMove(bool resumed)
+    {
+        var scriptMove = move;
         string purpose = Frame.Layout == SourceBattleLayout.Singles
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
         var firstTarget = invocation.Target;
+        if (!resumed) BeginLateTurnAction();
         PrepareCharge(invocation.Actor,move);
         PrepareDynamicPower(invocation.Actor, move);
         PrepareDynamicType(move);
-        bool blocked = ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose);
+        bool blocked = !resumed && ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose);
         if (blocked) CompleteScriptTarget();
         else
         {
@@ -92,7 +103,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         }
         // MOVEEND_NEXT_TARGET uses HP only. It does not test source absence or restart action
         // ownership, so PP exhaustion and the attacker's zero HP cannot cancel the second pass.
-        if (!blocked && !ChargeFirstTurn(move) && Frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_BOTH" &&
+        if (!blocked && !ChargeFirstTurn(scriptMove) && Frame.Layout == SourceBattleLayout.PresetDoubles && scriptMove.Target == "MOVE_TARGET_BOTH" &&
             Frame.Get(firstTarget.Partner).Body?.Pokemon.CurrentHp > 0)
         {
             invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.NoAttackString };
@@ -110,17 +121,16 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 Add(n => new SourceAbilityPreventedEvent(n, Turn, invocation.Actor, target, move.Id, "ABILITY_SOUNDPROOF"));
             }
             else if (invocation.PpSlot >= 0 && Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0 &&
-                (invocation.Flags & WildBattleInvocationFlags.NoAttackString) == 0 &&
+                (invocation.Flags & (WildBattleInvocationFlags.AllowNoPp | WildBattleInvocationFlags.NoAttackString)) == 0 &&
                 Frame.Get(invocation.Actor).Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage })
             {
-                invocation = invocation with { Flags = WildBattleInvocationFlags.AttackStringPrinted };
-                Add(n => new SourceAttackStringEvent(n, Turn, invocation.Actor, move.Id, move.Id));
+                PrintFrameAttackString();
                 Add(n => new SourceMoveFailedEvent(n, Turn, invocation.Actor, target, move.Id, "no-pp"));
             }
             else
             {
-                invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.Obeys };
-                if (action.LightningRodRedirected)
+                invocation = invocation with { Flags = (invocation.Flags | WildBattleInvocationFlags.Obeys) & ~WildBattleInvocationFlags.AllowNoPp };
+                if (currentLightningRodRedirected)
                     Add(n => new SourceAbilityActivatedEvent(n, Turn, target, "ABILITY_LIGHTNING_ROD"));
                 if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") && !ChargeFirstTurn(move))
                 {
@@ -129,7 +139,9 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                     MarkProtectionMiss(target);
                     CancellerCancelMultiTurn(invocation.Actor, "protected");
                 }
-                bool handled = !HasSleepAttackRecipe(move.Effect) && !HasSleepResidualRecipe(move.Effect) &&
+                bool handled = false;
+                if (HasCallerRecipe(move.Effect)) { ExecuteFrameCaller(purpose); handled = true; }
+                handled = handled || !HasSleepAttackRecipe(move.Effect) && !HasSleepResidualRecipe(move.Effect) &&
                     !HasUtilityHpRecipe(move.Effect) && SubstituteScriptBlocks(catalog, invocation.Actor, invocation.ChosenSlot, move);
                 if (!handled && move.Effect == "EFFECT_SUBSTITUTE") { ExecuteFrameSubstitute(); handled = true; }
                 if (!handled && HasProtectionRecipe(move.Effect))
@@ -163,6 +175,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled && HasRechargeRampageRecipe(move.Effect))
                 { ExecuteRechargeRampage(catalog, invocation.Actor, move, purpose); handled = true; }
                 if (!handled) ExecuteCharge(catalog,invocation.Actor,move,purpose,ref handled);
+                if (!handled && HasLateTurnRecipe(move.Effect)) { ExecuteLateTurn(invocation.Actor, target, invocation.PpSlot, move); handled = true; }
                 if (!handled) ExecuteTurnMove(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteBasicStat(invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteAdditionalPrimaryStatus(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
@@ -172,6 +185,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled && HasGroundSpreadRecipe(move.Effect)) { ExecuteGroundSpread(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasDynamicTypeRecipe(move.Effect)) { ExecuteDynamicType(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasDynamicPowerRecipe(move.Effect)) { ExecuteDynamicPower(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
+                if (!handled && HasItemTransferRecipe(move.Effect)) { ExecuteItemTransfer(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasRecoilRecipe(move.Effect)) { ExecuteRecoil(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasFixedDamageRecipe(move.Effect)) { ExecuteFixedDamage(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
@@ -179,7 +193,6 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             }
             if (completed == completedTargetPasses) CompleteScriptTarget();
         }
-        FinishAction();
     }
     private void FinishAction()
     {
@@ -245,12 +258,13 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             FireHitThaw(invocation.Actor, invocation.Target, move);
             var immunity = SourceFrameImmunityRules.Apply(Frame);
             Frame = immunity.State; Events.AddRange(immunity.Events);
+            FinishChangedItems();
             var berries = SourceFrameBerryItems.Apply(Frame, SourceBerryPhase.MoveEnd);
             Frame = berries.State; Events.AddRange(berries.Events);
             ApplyFrameHitItems();
             EndSubstitutePass();
             Frame = SourceMoveHistoryReducer.Apply(catalog, Frame, invocation,
-                Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect, DynamicHitType(move));
+                Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect, DynamicHitType(move), wasCalled: calledMoveExecuted);
         }
         completedTargetPasses++;
     }
@@ -285,6 +299,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         // Canonical event first: bookkeeping never recovers an actor from a side/species.
         if (published.Event is SourceHpChangedEvent hp && hp.Actor != hp.Target && hp.HpAfter < hp.HpBefore)
             Set(hp.Target, Get(hp.Target) with { DamagedByOpponentThisTurn = true });
+        if (published.Event is SourceHpChangedEvent lateHit) RecordLateTurnDamage(lateHit);
         if (published.Event is SourceMoveUsedEvent used) Set(used.Actor, Get(used.Actor) with { LastUsedMove = used.Move });
     }
     internal override void RecordAbility(BattlerSlot slot, string ability) { } // Explicit events are retained for the future AI owner.
@@ -421,6 +436,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         if (Frame.Layout == SourceBattleLayout.Singles) throw new SourceRecipeUnsupported("source_kernel_singles_faint_compatibility");
         if (Get(slot).Pokemon.CurrentHp != 0) throw new SourceRecipeUnsupported("source_kernel_faint_requires_zero_hp");
         if (Frame.IsSourceAbsent(slot)) return; // Cmd_tryfaintmon tests absence, independently of HP.
+        ResolveLateTurnFaint(slot);
         Frame = SourceBattleIdentityRules.ClearDepartureReferences(Frame, slot, SourceDepartureKind.Faint);
         Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         ChangeStatus(slot, WildBattleStatus.None, "faint");

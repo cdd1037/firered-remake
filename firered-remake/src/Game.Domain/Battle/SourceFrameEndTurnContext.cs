@@ -148,6 +148,13 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
                     Turn = turn.SureHitTurnsRemaining == 0 ? null : turn with { Lock = null } } }) };
                 Add(n => new SourceMtMoonVolatileEvent(n, Turn, cell.Slot, "called-charge", charge.TurnsRemaining, 0, "sleep"));
             }
+            if (WildBattleStatus.IsSleeping(cell.Body!.Status) && Frame.Get(cell.Slot).Registers.Turn?.Lock is { Kind: WildBattleCalledLockKind.Bide } bide)
+            {
+                var current = Frame.Get(cell.Slot); var turn = current.Registers.Turn!;
+                Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, current with { Registers = current.Registers with {
+                    Turn = turn.SureHitTurnsRemaining == 0 ? null : turn with { Lock = null } } }) };
+                Add(n => new SourceMtMoonVolatileEvent(n, Turn, cell.Slot, "called-bide", bide.TurnsRemaining, 0, "sleep"));
+            }
             if (WildBattleStatus.IsSleeping(Get(cell.Slot).Status) && RampageRemaining(cell.Slot) != 0)
                 SetRampageRemaining(cell.Slot, 0, "sleep");
             Set(cell.Slot, SourceTurnBoundaryRules.PrepareBody(Get(cell.Slot)));
@@ -168,6 +175,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
     internal override void UnmigratedBattlerStep(SourceBattlerEndTurnStep step, BattlerSlot slot)
     {
         if (step == SourceBattlerEndTurnStep.Thrash) { RampageResidual(slot); return; }
+        if (step == SourceBattlerEndTurnStep.Taunt) { TauntResidual(slot); return; }
         if (step == SourceBattlerEndTurnStep.Encore) { EncoreResidual(slot); return; }
         if (step == SourceBattlerEndTurnStep.Disable) { Disable(slot); return; }
         if (step is SourceBattlerEndTurnStep.Items1 or SourceBattlerEndTurnStep.Items2)
@@ -178,7 +186,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
         }
         var m = Get(slot); var r = Frame.Get(slot).Registers;
         bool nonempty = step switch {
-            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage) } || m.RampageTurnsRemaining != 0,
+            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage or WildBattleCalledLockKind.Bide) } || m.RampageTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Disable => m.DisabledMove is not null,
             SourceBattlerEndTurnStep.Encore => m.EncoreMoveSlot is not null,
             SourceBattlerEndTurnStep.Charge => m.ChargeTurnsRemaining != 0,
@@ -209,8 +217,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
     }
     internal override bool Perish(BattlerSlot slot)
     {
-        if (Get(slot).CalledVolatile?.PerishSongTimer is not null) throw new SourceRecipeUnsupported("source_four_action_perish_not_migrated");
-        return false;
+        return Ongoing && !IsAbsent(slot) && PerishResidual(slot);
     }
     internal override void Cleanup()
     {

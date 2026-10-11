@@ -56,7 +56,7 @@ Test("32 frozen canonical singles complete result fingerprints",()=>{
  Check(Environment.Version.Major==10,"runtime10");Check(source.RootElement.GetProperty("sourceCommit").GetString()==PokemonFactory.SourceCommit,"source pin");
  Check(LegacyParity.Run(args[0])==File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"../../..","singles-baseline-1a3f6ae.json")).Trim(),"state/events/RNG exact compatibility");
  Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("SUBSTITUTE")]),"Substitute admitted");
- foreach(var name in new[]{"METRONOME","TRANSFORM","PERISH_SONG","TAUNT","TORMENT"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(name)]),name+" remains gated");
+ Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("SUBSTITUTE")] with { Pp = 11 }),"altered substitute definition is rejected");
 });
 Test("extracted source creation and interception command vectors",()=>{
  var flags=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;
@@ -170,9 +170,9 @@ Test("actual Protect precedes Substitute status scripts; passive contact bypasse
  f=Doll(Frame([Mon("PIDGEY","TACKLE")with{AccuracyStage=12},Mon("CARVANHA"),Mon("SPEAROW"),Mon("SNORLAX")]),0,20);var a=Act(f,0,1);
  Check(Sub(a.State,0)==20&&a.Events.OfType<SourceAbilityDamageEvent>().Single().Target.Value==0&&a.State.Slots[0].Body!.Pokemon.CurrentHp<f.Slots[0].Body!.Pokemon.CurrentHp,"Rough Skin ignores attacker doll");
 });
-Test("unsupported overlays, malformed substitutes, items and callers remain atomic",()=>{
- var f=Frame();foreach(var v in new[]{new WildBattleCalledVolatileState(),new(){SubstituteHp=-1},new(){SubstituteHp=256},new(){SubstituteHp=1,TauntTurnsRemaining=1},new(){SubstituteHp=1,RulesVersion="forged"}}){var bad=Put(f,0,f.Slots[0].Body!with{CalledVolatile=v});Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"volatile scope");}
- foreach(string item in new[]{"ITEM_KINGS_ROCK","ITEM_SHELL_BELL"}){var bad=Put(f,0,f.Slots[0].Body!with{HeldItem=item});Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"item scope");}
- foreach(string move in new[]{"METRONOME","TRANSFORM"}){var bad=Put(f,0,Mon("PIDGEY",move));Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"caller/overlay scope");}
+Test("malformed substitutes, unsupported items and invalid selections remain atomic",()=>{
+ var f=Frame();foreach(var v in new[]{new WildBattleCalledVolatileState(),new(){SubstituteHp=-1},new(){SubstituteHp=256},new(){SubstituteHp=1,TauntTurnsRemaining=3},new(){SubstituteHp=1,RulesVersion="forged"}}){var bad=Put(f,0,f.Slots[0].Body!with{CalledVolatile=v});Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"volatile scope");}
+ foreach(string item in new[]{"ITEM_MASTER_BALL","ITEM_ENIGMA_BERRY"}){var bad=Put(f,0,f.Slots[0].Body!with{HeldItem=item});Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"item scope");}
+ var badSlot=Choices(f).SetItem(0,Choices(f)[0] with{MoveSlot=4});Atomic(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision,badSlot),"invalid move slot");
 });
 Check(groups>0&&checks>0&&oracleCases>0,"nonempty suite");var result=new{groups,checks,failures,completedTurns=turns,oracleCases,runtime=Environment.Version.ToString(),results};File.WriteAllText(args[2],JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true})+"\n");Console.WriteLine(Json(result));return failures==0?0:1;

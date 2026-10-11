@@ -178,21 +178,7 @@ public static partial class WildBattleRules
                     SourceCalledVolatileEvent(side, "stockpile", v.StockpileCount, 0, "swallow");
                     SourceStatRecoveryHeal(side, move, Math.Max(1, Get(side).Pokemon.Stats.MaxHp / (1 << (3 - v.StockpileCount)))); return;
                 case "EFFECT_PERISH_SONG":
-                    bool changed = false;
-                    foreach (var recipient in new[] { WildBattleSide.Player, WildBattleSide.Opponent })
-                    {
-                        var rv = Get(recipient).CalledVolatile ?? new();
-                        if (WildBattleEffective.Ability(Get(recipient)) == "ABILITY_SOUNDPROOF") continue;
-                        if (rv.PerishSongTimer is not null) continue;
-                        SetCalledVolatile(recipient, rv with { PerishSongTimer = 3 });
-                        SourceCalledVolatileEvent(recipient, "perish-song", -1, 3); changed = true;
-                    }
-                    if (!changed) { SourceCalledVolatileFail(side, target, move.Id, "perish-song-already-active"); return; }
-                    // The source's Soundproof reporting loop runs only after trysetperishsong succeeds.
-                    foreach (var recipient in new[] { WildBattleSide.Player, WildBattleSide.Opponent })
-                        if (WildBattleEffective.Ability(Get(recipient)) == "ABILITY_SOUNDPROOF")
-                        { RecordAbility?.Invoke(recipient, "ABILITY_SOUNDPROOF"); Add(n => new WildBattleAbilityActivatedEvent(n, State.Turn, recipient, "ABILITY_SOUNDPROOF")); }
-                    return;
+                    Recipes.ApplyPerishSong(S(side), S(target), move); return;
                 case "EFFECT_FUTURE_SIGHT":
                     if (SourceCalledFuture(target) is not null) { SourceCalledVolatileFail(side, target, move.Id, "future-slot-occupied"); return; }
                     int damage = SourceCalledBaseDamage(catalog, side, target, move);
@@ -215,8 +201,7 @@ public static partial class WildBattleRules
                     if (calledActionContext.ActionOrderIndex == 1) { SourceCalledVolatileFail(side, side, move.Id, "magic-coat-last-action"); return; }
                     return;
                 case "EFFECT_GRUDGE":
-                    if (v.Grudge) { SourceCalledVolatileFail(side, side, move.Id, "already-grudge"); return; }
-                    SetCalledVolatile(side, v with { Grudge = true }); SourceCalledVolatileEvent(side, "grudge", 0, 1); return;
+                    Recipes.ApplyGrudge(S(side), move); return;
             }
         }
 
@@ -308,26 +293,17 @@ public static partial class WildBattleRules
         private void SourceCalledBeginAction(WildBattleSide side)
         {
             Recipes.BeginSubstituteAction();
-            if (Get(side).CalledVolatile is { Grudge: true } v)
-            { SetCalledVolatile(side, v with { Grudge = false }); SourceCalledVolatileEvent(side, "grudge", 1, 0, "action-attempt"); }
+            Recipes.ClearGrudge(S(side), "action-attempt");
         }
         private void SourceCalledMoveEndSubstitute() => Recipes.EndSubstitutePass();
         private bool SourceCalledTauntPreventsMove(PokemonCatalog catalog, WildBattleSide side, MoveId move)
         {
+            if (SourceBattleAdmission.IsCanonicalSourceState(catalog, State)) return Recipes.TauntPreventsMove(catalog, S(side), move);
             if (Get(side).CalledVolatile is not { TauntTurnsRemaining: > 0 } || !catalog.Moves.TryGetValue(move, out var definition) || definition.Power != 0) return false;
             CancelRoute3Rollout(side, "taunt");
             SourceCalledVolatileFail(side, Other(side), move, "taunted"); return true;
         }
-        private void SourceCalledApplyGrudge(WildBattleSide fainted)
-        {
-            if (calledPassiveDelayed || Get(fainted).CalledVolatile is not { Grudge: true } || activeInvocation is not { } invocation ||
-                invocation.Actor == fainted || Get(invocation.Actor).Pokemon.CurrentHp == 0 || invocation.CurrentMove == StruggleMove) return;
-            var actor = Get(invocation.Actor); int slot = invocation.ChosenSlot;
-            if (slot < 0 || slot >= actor.Pokemon.Moves.Length) throw new UnsupportedAction("called_grudge_chosen_slot");
-            int pp = actor.Pokemon.Moves[slot].CurrentPp;
-            Set(invocation.Actor, actor with { Pokemon = actor.Pokemon with { Moves = actor.Pokemon.Moves.SetItem(slot, actor.Pokemon.Moves[slot] with { CurrentPp = 0 }) } });
-            Add(n => new WildBattleGrudgePpEvent(n, State.Turn, fainted, invocation.Actor, actor.Pokemon.Moves[slot].Move, slot, pp));
-        }
+        private void SourceCalledApplyGrudge(WildBattleSide fainted) => Recipes.ApplyGrudgePp(S(fainted), calledPassiveDelayed);
         private void SourceCalledClearVolatiles(WildBattleSide side)
         { Set(side, Get(side) with { CalledVolatile = null }); substituteLifecycle.Faded.Remove(S(side)); substituteLifecycle.Hit.Remove(S(side)); }
 
@@ -370,6 +346,8 @@ public static partial class WildBattleRules
         }
         internal void SourceCalledTauntResidual(WildBattleSide side)
         {
+            if (State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion)
+            { new SinglesEndTurnBridge(this).TauntResidual(S(side)); return; }
             if (Get(side).Pokemon.CurrentHp == 0 || Get(side).CalledVolatile is not { TauntTurnsRemaining: > 0 } v) return;
             SetCalledVolatile(side, v with { TauntTurnsRemaining = v.TauntTurnsRemaining - 1 });
             SourceCalledVolatileEvent(side, "taunt", v.TauntTurnsRemaining, v.TauntTurnsRemaining - 1, "countdown");
@@ -405,17 +383,9 @@ public static partial class WildBattleRules
         }
         internal void SourceCalledPerishResidual(WildBattleSide side)
         {
-            if (Get(side).CalledVolatile is not { PerishSongTimer: { } timer } v) return;
-            SetCalledVolatile(side, v with { PerishSongTimer = timer == 0 ? null : timer - 1 });
-            SourceCalledVolatileEvent(side, "perish-song", timer, timer == 0 ? -1 : timer - 1, timer == 0 ? "perished" : "countdown");
-            if (timer != 0 || Get(side).Pokemon.CurrentHp == 0) return;
-            int hp = Get(side).Pokemon.CurrentHp;
             calledPassiveDelayed = true;
-            try {
-                Set(side, Get(side) with { Pokemon = Get(side).Pokemon with { CurrentHp = 0 } });
-                Add(n => new WildBattleHpChangedEvent(n, State.Turn, side, side, new("pret:MOVE_PERISH_SONG"), hp, 0, hp, false, 100));
-                ForestFaint(side);
-            } finally { calledPassiveDelayed = false; }
+            try { new SinglesEndTurnBridge(this).PerishResidual(S(side)); }
+            finally { calledPassiveDelayed = false; }
         }
         internal void SourceCalledClearMagicCoat(WildBattleSide side)
         {
