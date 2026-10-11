@@ -56,13 +56,19 @@ internal static class SourceMoveHistoryReducer
         foreach (var hit in emitted.OfType<SourceHpChangedEvent>())
         {
             if (hit.Actor == hit.Target || hit.Move != current.Id) continue;
-            var cell = get(hit.Target); var prior = cell.Registers.Damage;
-            var memory = prior is not null && prior.Turn == turn ? prior : new SourceDamageRegisters(WildBattleRules.CalledMoveKernelRulesVersion, turn, 0, null, 0, null);
-            int hp = Math.Max(0, hit.HpBefore - hit.HpAfter);
-            memory = TypeRules.Category(Enum.Parse<ElementType>(type[5..], true)) == DamageCategory.Physical
-                ? memory with { PhysicalDamage = hp, PhysicalSource = hit.Actor } : memory with { SpecialDamage = hp, SpecialSource = hit.Actor };
+            var cell = get(hit.Target);
+            var memory = RecordDamage(cell.Registers.Damage, turn, hit.Actor, Math.Max(0, hit.HpBefore - hit.HpAfter), type);
             set(hit.Target, cell with { Registers = cell.Registers with { Damage = memory } });
         }
         return;
     }
+    internal static SourceDamageRegisters RecordDamage(SourceDamageRegisters? prior, int turn, BattlerSlot source, int hp, string type)
+    {
+        var memory = prior is not null && prior.Turn == turn ? prior :
+            new SourceDamageRegisters(WildBattleRules.CalledMoveKernelRulesVersion, turn, 0, null, 0, null);
+        return TypeRules.Category(Enum.Parse<ElementType>(type[5..], true)) == DamageCategory.Physical
+            ? memory with { PhysicalDamage = hp, PhysicalSource = source }
+            : memory with { SpecialDamage = hp, SpecialSource = source };
+    }
+
 }

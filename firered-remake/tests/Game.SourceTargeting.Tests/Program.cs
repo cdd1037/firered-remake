@@ -207,7 +207,11 @@ Test("spread action finishes all target passes before opponent EXP boundary",()=
  var r=Begin(f);r=Next(r);Check(r.Events.OfType<SourceHpChangedEvent>().Count()==3,"all hits before owner returns");
  Check(r.State.FourTurn!.Phase==SourceFourActionPhase.RewardsPending&&r.State.FourTurn.Defeats.Length==4&&r.State.FourTurn.Defeats.Count(d=>d.RequiresExperience)==2,"all occupants once and both enemy EXP records");
  Check(r.State.FourTurn.OutcomeAfterRewards==WildBattleOutcome.Draw&&r.State.Outcome==WildBattleOutcome.Ongoing,"draw waits behind EXP");
- var pending=SourceFourActionTurns.Advance(catalog,r.State,r.Continuation!.Value);Check(pending.Fault=="source_four_action_experience_continuation_not_migrated"&&ReferenceEquals(pending.State,r.State)&&pending.Trace.IsEmpty&&pending.Events.IsEmpty,"no skipped EXP");
+ Check(r.State.Rewards?.Context is null,"this fixture has no authoritative reward context");
+ for(int attempt=0;attempt<2;attempt++) {
+  var pending=SourceFourActionTurns.Advance(catalog,r.State,r.Continuation!.Value);
+  Check(pending.Fault=="source_four_reward_context_required"&&ReferenceEquals(pending.State,r.State)&&pending.Trace.IsEmpty&&pending.Events.IsEmpty,"missing reward facts cannot skip or acknowledge EXP, including repeated request");
+ }
 });
 Test("second-pass RNG failure rolls back entire action including first hit and PP",()=>{
  var f=Frame([Mon("RATTATA","SURF"),Mon("RATTATA"),Mon("RATTATA"),Mon("RATTATA")]) with{Rng=new(31,ulong.MaxValue-4)};

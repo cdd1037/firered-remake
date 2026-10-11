@@ -197,6 +197,7 @@ public partial class CampaignView
 
     private void ResetSourceAudio()
     {
+        ResetSourceMoveAnimation("audio-reset");
         _sourceAudio?.ResetPlayback();_audioMusic=null;_audioContext=null;_audioPresentedEvent=null;_audioMap=null;_audioFieldMusic=null;_audioSavedMusic="MUS_DUMMY";
         _audioSequence=_session.State.Script.EffectSequence;_audioTrainerOneShots.Clear();
     }

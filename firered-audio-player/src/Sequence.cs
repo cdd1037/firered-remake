@@ -8,7 +8,7 @@ public sealed class Track
     public int Volume = 127, Pan, Bend, BendRange = 2, KeyShift, Tune;
     public int LfoSpeed = 22, LfoDelay, Mod, ModType, LfoPhase, LfoWait;
     public int Priority;
-    public int ExternalVolume = 64, ReleaseOverride = -1, ExtendedWaitTimer;
+    public int ExternalVolume = 64, ExternalPan, ReleaseOverride = -1, ExtendedWaitTimer;
     public int PseudoEchoVolume, PseudoEchoLength;
     public bool Ended;
     public readonly uint[] Returns = new uint[3];

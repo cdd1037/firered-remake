@@ -76,7 +76,7 @@ Test("real early KO leaves vacancy; next selected enemy and ally targets use ori
  Check(later.OfType<SourceMoveUsedEvent>().Any(e=>e.Actor.Value==2),"living teammate still acts");Check(later.OfType<SourceMoveUsedEvent>().Where(e=>e.Actor.Value==3).All(e=>e.Target.Value==2),"source fallback actually used by kernel");
  r=Next(r);Check(r.State.FourTurn!.Phase==SourceFourActionPhase.ReplacementsPending&&r.State.PendingSwitches.Single().Slot.Value==0,"replacement exposed only after endturn");
  Check(r.State.Turn==0&&!r.CompletedCleanTurn,"KO turn not silently Ready");
- Rejected(r.State,SourceFourActionTurns.Advance(catalog,r.State,r.Continuation!.Value),"entry seam explicit unsupported");
+ Rejected(r.State,SourceFourActionTurns.Advance(catalog,r.State,r.Continuation!.Value),"explicit replacement choice required");
 });
 Test("two genuine same-turn KOs preserve reserves and expose only available choices",()=>{
  foreach(int reserveCount in new[]{1,2}){
@@ -102,14 +102,15 @@ Test("last enemy defeat cannot publish final outcome before pending experience",
  var r=Begin(f);r=Next(r);Check(r.State.Outcome==WildBattleOutcome.Ongoing&&r.State.FourTurn!.OutcomeAfterRewards==WildBattleOutcome.Won,"outcome retained behind EXP boundary");
  Check(r.State.FourTurn!.Phase==SourceFourActionPhase.RewardsPending&&!r.Events.OfType<SourceEndedEvent>().Any(),"no premature BattleEnded or Ready");
 });
-Test("no eligible target after two real KOs is an explicit atomic unsupported continuation",()=>{
+Test("no eligible target after two real KOs uses original failure PP commands",()=>{
  var actor=Mon("RATTATA",100,"QUICK_ATTACK");actor=actor with{SpeedStage=7,Pokemon=actor.Pokemon with{CurrentHp=1}};
  var f=Frame([actor,Mon("RATTATA",100,"QUICK_ATTACK"),Mon("PIDGEY",1,"TACKLE"),Mon("DODUO",100,"PECK")],1);
  var r=Begin(f,[2,0,1,0]);r=Next(r);Check(r.Events.OfType<SourceFaintedEvent>().Single().Side.Value==2,"actual ally KO");
  r=Next(r);Check(r.Events.OfType<SourceFaintedEvent>().Single().Side.Value==0,"actual second KO");
  Check(r.State.Outcome==WildBattleOutcome.Ongoing&&r.State.Queue[r.State.NextAction].Slot.Value==3,"later opponent has no target but reserves exist");
- var noTarget=SourceFourActionTurns.Advance(catalog,r.State,r.Continuation!.Value);Rejected(r.State,noTarget,"no eligible target");
- Check(noTarget.Fault=="source_four_action_no_target_continuation_not_migrated","no invented PP/failure or target fallback");
+ var noTarget=Success(SourceFourActionTurns.Advance(catalog,r.State,r.Continuation!.Value));
+ Check(noTarget.Events.OfType<SourceMoveFailedEvent>().Single().Reason=="deferred-ko-no-target"&&noTarget.Trace.IsEmpty,"failure without hit RNG");
+ Check(noTarget.Events.OfType<SourcePpCommandEvent>().Single().CommandCost==1&&noTarget.State.Slots[3].Body!.Pokemon.Moves[0].CurrentPp==r.State.Slots[3].Body!.Pokemon.Moves[0].CurrentPp-1,"shared original PP command actually applied");
 });
 Test("2048 independently compiled original C ordering vectors",()=>{
  foreach(var line in File.ReadLines(Path.Combine(args[1],"source-order-vectors.csv"))){
@@ -143,5 +144,5 @@ Test("source CHECK_ON_FIELD includes source-absent Cloud Nine with remaining HP"
  Check(actual.Fault is null,"ordering accepted "+actual.Fault);
  Check(actual.Order.Select(s=>(ulong)s.Value).SequenceEqual(source.Take(4))&&actual.Rng.Seed==source[4]&&actual.Rng.Cursor==source[5],"source-absent living Cloud Nine suppresses Swift Swim; expected "+string.Join(',',source.Take(4))+" actual "+string.Join(',',actual.Order.Select(s=>s.Value)));
 });
-Directory.CreateDirectory(args[1]);File.WriteAllText(Path.Combine(args[1],"result.json"),Json(new{passed=failures==0,checks,groups,failures,oracle,cleanTurns,runtime=Environment.Version.ToString(),results=summary,limitations=new[]{"No encounter/AI/campaign admission","KO EXP/learning and entry continuation explicitly blocked","No simultaneous multi-target or recoil double-KO claim","No-target cost/failure continuation explicitly unsupported","Only clean field/battler/delayed endturn; unported states preflight rejected"}}));
+Directory.CreateDirectory(args[1]);File.WriteAllText(Path.Combine(args[1],"result.json"),Json(new{passed=failures==0,checks,groups,failures,oracle,cleanTurns,runtime=Environment.Version.ToString(),results=summary,limitations=new[]{"No encounter/AI/campaign admission","Reward continuation requires explicit provenance; tested by Game.FourRewards.Tests","No simultaneous multi-target or recoil double-KO claim","Deferred-KO no-target boundary reuses source failure/PP commands","Only clean field/battler/delayed endturn; unported states preflight rejected"}}));
 Console.WriteLine($"{checks} checks; {groups} groups; {failures} failures; {oracle} source vectors; {cleanTurns} complete clean turns");return failures==0?0:1;

@@ -163,7 +163,7 @@
       "title": "Residual and delayed callback scheduling",
       "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "Shared phase cursor preserves normal field/battler residuals, EXP/replacement suspension, Future Sight/Doom Desire, Perish Song and final damage-register cleanup for two active battlers. One shared scheduler now serves singles and a four-slot temporary-weather/status/end-turn-ability subset; genuine reward/replacement pauses remain, with unported residuals gated.",
+      "scope": "One shared phase cursor serves singles and four-slot weather, screen, status and end-turn-ability commands. Four-slot Future Sight/Doom Desire, bounded reward/learning pauses and end-turn KO entry now resume without replaying ordinary residuals. Wish, Perish and other unported four-slot residuals remain gated.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledVolatileEffects.cs",
@@ -175,7 +175,8 @@
         "tests/Game.SourceTrainerTurns.Tests/evidence/run2.log",
         "tests/Game.SourceWildTurns.Tests/evidence/run-3.log",
         "tests/Game.FourEndTurn.Tests/README.md",
-        "tests/Game.FourEndTurnParity.Tests/baseline-3a0344d.json"
+        "tests/Game.FourEndTurnParity.Tests/baseline-3a0344d.json",
+        "tests/Game.FourRewards.Tests/README.md"
       ],
       "sourceEvidence": [
         "src/battle_main.c:HandleEndTurn_ContinueBattle",
@@ -347,7 +348,7 @@
       "title": "Genuine four-slot doubles owner",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "M01 identities, M02 shared actions, M03 four-action turns, M04 targeting/spread and M05 shared residual subsets are integrated. Actual KO records pause for EXP/replacement; settlement, entry continuation, full cancellers/recipes/residuals, AI and campaign admission remain unfinished.",
+      "scope": "M01 identities through M06 bounded reward/learning and clean end-turn KO replacement are integrated. Actual parties remain authoritative; six opponent completion bits and one recipient cursor avoid an unbounded ledger. Full entry abilities, cancellers/recipes/residuals, AI, preset encounter and campaign presentation remain unfinished.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleContracts.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
@@ -366,7 +367,8 @@
         "tests/Game.SourceSharedKernel.Tests/README.md",
         "tests/Game.FourActionTurns.Tests/README.md",
         "tests/Game.SourceTargeting.Tests/README.md",
-        "tests/Game.FourEndTurn.Tests/README.md"
+        "tests/Game.FourEndTurn.Tests/README.md",
+        "tests/Game.FourRewards.Tests/README.md"
       ],
       "sourceEvidence": [
         "include/constants/battle.h",
@@ -389,16 +391,20 @@
     {
       "id": "C11",
       "title": "Doubles targets and multi-target effects",
-      "status": "missing",
+      "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "Singles target resolver maps multi-target metadata to the other single combatant; no real ally/opponent slot selection or spread-damage loop exists.",
+      "scope": "Real selected/random/side/user/both-opponent targeting, Lightning Rod and Plus/Minus queries, generic spread/Explosion and original doubles screen damage are implemented in the bounded four-slot owner. Deferred-KO no-target failure uses original attack-string/PP/failure/history commands. Follow Me, Helping Hand, callers and additional multi-target effect families remain open.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleGenericEffects.cs",
         "src/Game.Domain/WildBattle/ForestBattleDamage.cs"
       ],
-      "testEvidence": [],
+      "testEvidence": [
+        "tests/Game.SourceTargeting.Tests/README.md",
+        "tests/Game.FourWeatherScreens.Tests/README.md",
+        "tests/Game.FourRewards.Tests/README.md"
+      ],
       "sourceEvidence": [
         "src/battle_util.c:GetMoveTarget",
         "src/battle_script_commands.c:Cmd_attackcanceler",
@@ -545,20 +551,22 @@
       "title": "Held-item effects and ownership",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "Oran/status berries, selected type/species modifiers, Leftovers and Knock Off/Trick/Thief/Recycle ownership have implementations. Focus Band appears in narrow damage helpers but remains unadmitted; full held-item dispatch is absent. Quick Claw/Macho Brace ordering now executes in canonical singles; Macho Brace EV rewards and general four-slot held items remain separate.",
+      "scope": "Canonical singles Choice Band now executes physical Attack scaling, chosen-move locking, called/copied moves, item transfer and departure cleanup. Quick Claw/Macho Brace order and reward modifiers are shared. Focus Band and general four-slot held-item execution remain unfinished.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleScalarDamageEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
         "src/Game.Domain/WildBattle/ForestBattleDamage.cs",
-        "src/Game.Domain/WildBattle/FuchsiaBattleScope.cs"
+        "src/Game.Domain/WildBattle/FuchsiaBattleScope.cs",
+        "src/Game.Domain/Battle/SourceBattleHeldItems.cs"
       ],
       "testEvidence": [
         "tests/Game.SourceTrainerItems.Tests/README.md",
         "tests/Game.CalledPartyEffects.Tests/README.md",
         "tests/Game.RockTunnelHeldItemRecovery.Tests/README.md",
         "tests/Game.CalledTurnLocks.Tests/README.md",
-        "tests/Game.SourceOrderHeldItems.Tests/README.md"
+        "tests/Game.SourceOrderHeldItems.Tests/README.md",
+        "tests/Game.SourceChoiceBand.Tests/README.md"
       ],
       "sourceEvidence": [
         "src/battle_util.c:ItemBattleEffects",
@@ -566,7 +574,7 @@
         "src/pokemon.c:CalculateBaseDamage"
       ],
       "nextAcceptance": [
-        "Enumerate authenticated hold effects, then implement missing Choice Band, Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.",
+        "Implement remaining Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.",
         "Prove threshold/RNG timing, Choice lock after copied moves, consumed-item history, permanent versus battle-only Knock Off and wild/trainer restoration.",
         "An item constant, a helper branch or a species held-item slot is not full execution admission."
       ],
@@ -582,19 +590,24 @@
       "title": "EXP, EV, levels, move learning and settlement",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "Shared participant EXP/EV/level/learn callbacks and trainer money/defeat settlement are established in bounded campaigns. Current EXP formula lacks Exp Share/Lucky Egg/traded boosts; EV loop lacks Macho Brace/Pokerus modifiers.",
+      "scope": "The authenticated source reward calculator and M06 four-slot owner now apply per-opponent participation, ordered EXP/EV and real learning pauses to the authoritative permanent party, including both active slots full stat refresh. Empty level100/all-fainted plans, shared reward items and exact-once continuation are covered. Canonical Application, evolution/callback integration and ownership admission remain separate.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildVictoryRewards.cs",
         "src/Game.Domain/Growth/GrowthRules.cs",
         "src/Game.Domain/Pokemon/LevelEvolutionRules.cs",
         "src/Game.Domain/Trainers/ForestTrainerCombatExecution.cs",
-        "src/Game.Application/CampaignPartyTraining.cs"
+        "src/Game.Application/CampaignPartyTraining.cs",
+        "src/Game.Domain/Pokemon/PokemonRewardRecipe.cs",
+        "src/Game.Domain/Battle/SourceVictoryRewards.cs"
       ],
       "testEvidence": [
         "tests/Game.WildRewards.Tests/Program.cs",
         "tests/Game.ForestGrowthAudit.Tests/README.md",
         "tests/Game.FuchsiaRewards.Tests/README.md",
-        "tests/Game.SourceTrainerTurns.Tests/README.md"
+        "tests/Game.SourceTrainerTurns.Tests/README.md",
+        "tests/Game.SourceRewards.Tests/README.md",
+        "evidence/recovery-20261011/reward-recipe/result.json",
+        "tests/Game.FourRewards.Tests/README.md"
       ],
       "sourceEvidence": [
         "src/battle_script_commands.c:Cmd_getexp",
@@ -602,7 +615,7 @@
         "src/pokemon.c:IsTradedMon"
       ],
       "nextAcceptance": [
-        "Implement modifier and recipient order using original English FireRed source, not whole-party EXP changes.",
+        "Connect the bounded four-slot reward owner to actual Application/UI and authoritative owner/Pokerus facts; do not manufacture absent metadata.",
         "Prove fainted/level100 exclusions, participant identity after replacement, multi-level learning/decline and evolution/callback resume exactly once.",
         "Separate rule support for traded ownership from actual communications; test obedience once such ownership is admitted."
       ],
@@ -716,7 +729,7 @@
       "title": "Battle event text, controls and presentation routing",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "Versioned source trainer/wild event adapter and move selection exist; retained BCL adapter tests cover 14 event types. Current fifth-badge Application pass does not establish native completion.",
+      "scope": "Versioned source trainer/wild event adapter and move selection exist; retained BCL adapter tests cover 14 event types. Current fifth-badge Application pass does not establish native completion. Original Pound/Tackle scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these two moves; sound uses Dummy. The later external-pan increment verifies signed source control and four actual stereo captures; physical listening remains unverified.",
       "implementationEvidence": [
         "src/Game.Godot/SourceTrainerPresentationModel.cs",
         "src/Game.Godot/CampaignSourceTrainerPresentationView.cs",
@@ -725,7 +738,9 @@
       ],
       "testEvidence": [
         "tests/Game.FuchsiaGymPresentation.Tests/README.md",
-        "tests/Game.FuchsiaGymUi.Tests/README.md"
+        "tests/Game.FuchsiaGymUi.Tests/README.md",
+        "docs/source-hit-animation-slice.md",
+        "evidence/recovery-20261011/hit-combined-proof/RESULT.json"
       ],
       "sourceEvidence": [
         "src/battle_message.c",
@@ -749,7 +764,7 @@
       "title": "Move/ability animation and audio inventory",
       "status": "interaction-unverified",
       "priority": "P2",
-      "scope": "All 354 source animation roots have an authenticated conservative script/call/graphic/sound inventory. Dedicated animation execution, native timing and audible playback are separately incomplete; C callback dependencies exceed the script-only graph.",
+      "scope": "All 354 source animation roots have an authenticated conservative script/call/graphic/sound inventory. Dedicated animation execution, native timing and audible playback are separately incomplete; C callback dependencies exceed the script-only graph. Original Pound/Tackle scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these two moves; sound uses Dummy. The later external-pan increment verifies signed source control and four actual stereo captures; physical listening remains unverified.",
       "implementationEvidence": [
         "src/Game.Godot/CampaignAudioView.cs",
         "src/Game.Godot/SynthSourceAudioPlayer.cs",
@@ -762,7 +777,9 @@
         "tests/Game.FuchsiaGymPresentation.Tests/README.md",
         "docs/source-ui-integration.md",
         "tests/Game.BattleAnimationInventory.Tests/verify.py",
-        "docs/battle-animation-catalog.md"
+        "docs/battle-animation-catalog.md",
+        "docs/source-hit-animation-slice.md",
+        "evidence/recovery-20261011/hit-combined-proof/RESULT.json"
       ],
       "sourceEvidence": [
         "data/battle_anim_scripts.s",
@@ -11354,6 +11371,13 @@
       "scope": "M04 targeting/spread, shared M05 residual subset and canonical singles Color Change integrated after recovery",
       "evidence": "evidence/recovery-20261011/combined-four/result.json",
       "acceptanceLimits": "Genuine four-slot actions/residuals with explicit reward/entry and unsupported effect boundaries. No full doubles/campaign/AI or native presentation claim."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "0e9438728d17f2e03262dfc4ad4abbb53e9e3e51",
+      "scope": "M06 four-slot rewards/learning/clean replacement with shared weather and side protections",
+      "evidence": "evidence/recovery-20261011/m06-weather-combined/result.json",
+      "acceptanceLimits": "Bounded Domain continuations, original singles hash control and actual combined end-turn KO case. General entry abilities, campaign/AI/presentation and other recipes remain separate."
     }
   ]
 }

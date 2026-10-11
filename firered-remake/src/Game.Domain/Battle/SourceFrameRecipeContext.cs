@@ -21,12 +21,36 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
     internal SourceBattleFrame Frame { get; private set; }
     internal readonly ImmutableArray<SourceBattleEvent>.Builder Events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
     internal readonly ImmutableArray<RandomTrace>.Builder Trace = ImmutableArray.CreateBuilder<RandomTrace>();
-    internal FrameRecipeContext(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action)
+    internal FrameRecipeContext(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action, PokemonMoveDefinition? delayedMove = null)
     {
         this.catalog = catalog; this.action = action; Frame = initial = frame;
-        move = catalog.Moves[Get(action.Actor.Slot).Pokemon.Moves[action.ChosenSlot].Move];
+        move = delayedMove ?? catalog.Moves[Get(action.Actor.Slot).Pokemon.Moves[action.ChosenSlot].Move];
         invocation = new(action.Actor.Slot, action.ChosenSlot, action.ChosenSlot, move.Id, move.Id, move.Id, null,
             action.Target, WildBattleAttackCancellerPhase.ConditionsPassed, WildBattleInvocationFlags.Obeys);
+    }
+    // BattleScript_MonTookFutureAttack reuses accuracycheck and the ordinary damage update.
+    // Admission excludes Focus Band, Substitute, Endure and move-end item side effects.
+    internal void RunFutureHit(SourceFutureAttack future, BattlerSlot target)
+    {
+        string purpose = $"source-battle.slot-{future.Attacker.Value}.future-attack";
+        var hit = PrepareFutureHit(future.Attacker, target, move, future.Damage, purpose);
+        if (!hit.Hit) return;
+        int lost = SourceGenericApplyDamage(future.Attacker, target, move, hit.Damage, false, hit.Percent);
+        var cell = Frame.Get(target); var prior = cell.Registers.Damage;
+        Frame = Frame with { Slots = Frame.Slots.SetItem(target.Value, cell with { Registers = cell.Registers with {
+            Damage = SourceMoveHistoryReducer.RecordDamage(prior, Turn, future.Attacker, lost, "TYPE_NORMAL") } }) };
+    }
+    // The approved deferred-KO policy can leave all target positions unavailable. Run the
+    // original ButItFailedAtkStringPpReduce commands against the attempted retained slot;
+    // there is no hit/accuracy/secondary-effect recipe and no newly selected recipient.
+    internal void RunNoTarget()
+    {
+        BeginScriptTarget(action.Target);
+        SpendEarlyPartyPp(action.Actor.Slot, action.Target, action.ChosenSlot, move);
+        Add(n => new SourceMoveFailedEvent(n, Turn, action.Actor.Slot, action.Target, move.Id, "deferred-ko-no-target"));
+        commandNoEffect = true;
+        CompleteScriptTarget();
+        FinishAction();
     }
     internal void Run()
     {
@@ -66,12 +90,17 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
                 if (action.LightningRodRedirected)
                     Add(n => new SourceAbilityActivatedEvent(n, Turn, target, "ABILITY_LIGHTNING_ROD"));
                 bool handled = false;
-                ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                ExecuteFieldSetting(invocation.Actor, invocation.ChosenSlot, move, ref handled);
+                if (!handled) ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) throw new SourceRecipeUnsupported("source_kernel_recipe_not_migrated");
             }
             if (completed == completedTargetPasses) CompleteScriptTarget();
         }
+        FinishAction();
+    }
+    private void FinishAction()
+    {
         // Party storage stayed synchronized during each mutation; report the same action-end delta
         // once per actual member. Equal species never serve as the identity key.
         if (Frame.Layout == SourceBattleLayout.PresetDoubles || Frame.SinglesEncoding?.HasPartyExtension == true)
@@ -135,6 +164,13 @@ internal sealed class FrameRecipeContext : SourceRecipeContext
         if (published.Event is SourceMoveUsedEvent used) Set(used.Actor, Get(used.Actor) with { LastUsedMove = used.Move });
     }
     internal override void RecordAbility(BattlerSlot slot, string ability) { } // Explicit events are retained for the future AI owner.
+    internal override int FieldSettingTimer(BattleSide side, string effect) => new FrameEndTurnContext(Frame).GetTimer(side, effect);
+    internal override void SetFieldSettingTimer(BattleSide side, string effect, int value)
+    {
+        var storage = new FrameEndTurnContext(Frame); storage.SetTimer(side, effect, value); Frame = storage.Frame;
+    }
+    internal override SourceFieldRegisters SettingWeather => Frame.Field;
+    internal override void ReplaceSettingWeather(SourceFieldRegisters weather) => Frame = Frame with { Field = weather };
     internal override int SandstormTurnsRemaining => Frame.Field.SandstormTurnsRemaining;
     internal override bool Safeguard(BattlerSlot slot) => Frame.Sides[(int)slot.Side].SafeguardTurnsRemaining > 0;
     internal override int RainTurnsRemaining => Frame.Field.RainTurnsRemaining;

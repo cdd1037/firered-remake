@@ -9,6 +9,9 @@ namespace Game.Domain.Battle;
 
 /// <summary>Typed canonical events. Shared hooks consume positions; singles conversion occurs only at a boundary.</summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(SourceRewardAppliedEvent), "SourceRewardAppliedEvent")]
+[JsonDerivedType(typeof(SourceRewardLearningEvent), "SourceRewardLearningEvent")]
+[JsonDerivedType(typeof(SourceOpponentRewardCompletedEvent), "SourceOpponentRewardCompletedEvent")]
 [JsonDerivedType(typeof(SourcePermanentWeatherChangedEvent), "SourcePermanentWeatherChangedEvent")]
 [JsonDerivedType(typeof(SourceAbilityRecoveredEvent), "SourceAbilityRecoveredEvent")]
 [JsonDerivedType(typeof(SourceAbilityActivatedEvent), "SourceAbilityActivatedEvent")]
@@ -417,7 +420,17 @@ public static class SourceBattleEventHooks
             value is SourceCalledPartyChangedEvent party && (!Enum.IsDefined(party.Side) || party.PartyIndex < 0 || party.PartyIndex >= frame.Party(party.Side).Members.Length) ||
             value is SourceCalledBeatUpMemberEvent contributor && (!Enum.IsDefined(contributor.Side) || contributor.PartyIndex < 0 || contributor.PartyIndex >= frame.Party(contributor.Side).Members.Length))
             return "source_event_party_identity";
+        static bool PlayerKey(SourceBattleFrame f, PartyMemberKey key) => key.Side == BattleSide.Player && key.Index < f.Party(BattleSide.Player).Members.Length;
+        static bool DefeatKey(SourceBattleFrame f, OccupantToken token) => token.Member.Side == BattleSide.Opponent &&
+            token.Slot.Side == BattleSide.Opponent && f.IsCurrent(token) && f.Get(token.Slot).Body!.Pokemon.CurrentHp == 0;
+        if (value is SourceRewardAppliedEvent reward && (!PlayerKey(frame, reward.Recipient) || !DefeatKey(frame, reward.Defeated)) ||
+            value is SourceRewardLearningEvent learning && (!PlayerKey(frame, learning.Recipient) || !Enum.IsDefined(learning.Outcome)) ||
+            value is SourceOpponentRewardCompletedEvent completed && !DefeatKey(frame, completed.Defeated))
+            return "source_event_reward_identity";
         IEnumerable<BattlerSlot?> Slots() => value switch {
+            SourceRewardAppliedEvent x => [x.Defeated.Slot],
+            SourceRewardLearningEvent x => [],
+            SourceOpponentRewardCompletedEvent x => [x.Defeated.Slot],
             SourcePermanentWeatherChangedEvent x => [x.Side],
             SourceAbilityRecoveredEvent x => [x.Side],
             SourceAbilityActivatedEvent x => [x.Side],
@@ -518,3 +531,7 @@ public sealed record SourcePermanentWeatherChangedEvent(long Sequence, int Turn,
     SourcePermanentWeatherKind? Before, SourcePermanentWeatherKind After) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceAbilityRecoveredEvent(long Sequence, int Turn, BattlerSlot Side, string Ability,
     int HpBefore, int HpAfter, int Recovered) : SourceBattleEvent(Sequence, Turn);
+
+public sealed record SourceRewardAppliedEvent(long Sequence, int Turn, OccupantToken Defeated, PartyMemberKey Recipient, PokemonRewardResult Reward) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceRewardLearningEvent(long Sequence, int Turn, PartyMemberKey Recipient, WildPendingMove Candidate, SourceRewardLearningOutcome Outcome, int? MoveSlot) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceOpponentRewardCompletedEvent(long Sequence, int Turn, OccupantToken Defeated) : SourceBattleEvent(Sequence, Turn);

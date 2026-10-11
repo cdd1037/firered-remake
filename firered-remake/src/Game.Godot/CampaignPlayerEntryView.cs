@@ -321,6 +321,7 @@ public partial class CampaignView
     }
     public override void _ExitTree()
     {
+        DisposeSourceMoveAnimation();
         DisposeMapResources();
         _entryHeadingFont?.Dispose();foreach(var font in _entryGenderFonts.Values)font.Dispose();_entryGenderFonts.Clear();
         _femalePlayer?.Texture.Dispose();DisposeTownMapPresentation();DisposeCityServicesPresentation();

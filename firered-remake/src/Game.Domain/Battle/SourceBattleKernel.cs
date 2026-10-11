@@ -86,7 +86,7 @@ public static class SourceBattleKernel
                 body.Flinched || body.ConfusionTurnsRemaining != 0 || body.BindTurnsRemaining != 0 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.EncoreMoveSlot is not null || body.DisabledMove is not null ||
-                cell.Registers.InfatuationSource is not null || cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null || cell.Registers.WrappedBy is not null || body.HeldItem != "ITEM_NONE" || body.WaterSport || body.MudSport)
+                cell.Registers.InfatuationSource is not null || cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null || cell.Registers.WrappedBy is not null || (body.HeldItem != "ITEM_NONE" && !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFourRewards.SupportsRewardHeldItem(body.HeldItem))) || body.WaterSport || body.MudSport)
                 return "source_kernel_volatile_not_migrated";
             string ability = WildBattleEffective.Ability(body);
             if (!FuchsiaBattleScope.SupportsAbility(ability) && ability is not ("ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or "ABILITY_VOLT_ABSORB" or "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK" or "ABILITY_LIGHTNING_ROD" or "ABILITY_PLUS" or "ABILITY_MINUS" or "ABILITY_SPEED_BOOST" or "ABILITY_RAIN_DISH"))
@@ -108,7 +108,7 @@ public static class SourceBattleKernel
         move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" &&
         (SourceRecipeContext.HasGenericRecipe(move.Effect) && move.Effect is not
             ("EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT" or "EFFECT_CONFUSE" or "EFFECT_MEAN_LOOK" or "EFFECT_TRAP" or "EFFECT_MULTI_HIT") ||
-         SourceRecipeContext.HasStatRecoveryRecipe(move.Effect));
+         SourceRecipeContext.HasStatRecoveryRecipe(move.Effect) || SourceRecipeContext.HasFieldSettingRecipe(move.Effect));
 
     public static SourceKernelResult ResolveAction(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action)
     {

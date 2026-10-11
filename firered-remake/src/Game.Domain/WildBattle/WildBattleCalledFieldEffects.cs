@@ -123,46 +123,7 @@ public static partial class WildBattleRules
             if (move.Power > 0) { SourceCalledFieldHit(catalog, side, target, slot, move, purpose); return; }
             SpendEarlyPartyPp(side, target, slot, move);
             if (move.Effect == "EFFECT_TOXIC") { SourceCalledToxic(catalog, side, target, move, purpose); return; }
-            var field = State.CalledField ?? new();
-            int before;
-            switch (move.Effect)
-            {
-                case "EFFECT_MIST":
-                    before = side == WildBattleSide.Player ? field.PlayerMistTurnsRemaining : field.OpponentMistTurnsRemaining;
-                    if (before == 0) State = State with { CalledField = side == WildBattleSide.Player
-                        ? field with { PlayerMistTurnsRemaining = 5 } : field with { OpponentMistTurnsRemaining = 5 } };
-                    SourceCalledFieldSetEvent(side, target, move, "mist", before); return;
-                case "EFFECT_LIGHT_SCREEN":
-                    before = side == WildBattleSide.Player ? field.PlayerLightScreenTurnsRemaining : field.OpponentLightScreenTurnsRemaining;
-                    if (before == 0) State = State with { CalledField = side == WildBattleSide.Player
-                        ? field with { PlayerLightScreenTurnsRemaining = 5 } : field with { OpponentLightScreenTurnsRemaining = 5 } };
-                    SourceCalledFieldSetEvent(side, target, move, "light-screen", before); return;
-                case "EFFECT_SAFEGUARD":
-                    before = side == WildBattleSide.Player ? field.PlayerSafeguardTurnsRemaining : field.OpponentSafeguardTurnsRemaining;
-                    if (before == 0) State = State with { CalledField = side == WildBattleSide.Player
-                        ? field with { PlayerSafeguardTurnsRemaining = 5 } : field with { OpponentSafeguardTurnsRemaining = 5 } };
-                    SourceCalledFieldSetEvent(side, target, move, "safeguard", before); return;
-            }
-            string weather = move.Effect switch { "EFFECT_SUNNY_DAY" => "sun", "EFFECT_HAIL" => "hail",
-                "EFFECT_RAIN_DANCE" => "rain", _ => "sandstorm" };
-            before = weather switch { "sun" => field.SunTurnsRemaining, "hail" => field.HailTurnsRemaining,
-                "rain" => State.RainTurnsRemaining, _ => State.SandstormTurnsRemaining };
-            if (State.PermanentWeather is { } permanent && weather == (permanent.Kind switch {
-                SourcePermanentWeatherKind.Rain => "rain", SourcePermanentWeatherKind.Sun => "sun", _ => "sandstorm" })) before = 1;
-            if (before == 0)
-            {
-                State = State with { PermanentWeather = null, RainTurnsRemaining = weather == "rain" ? 5 : 0,
-                    SandstormTurnsRemaining = weather == "sandstorm" ? 5 : 0,
-                    CalledField = field with { SunTurnsRemaining = weather == "sun" ? 5 : 0, HailTurnsRemaining = weather == "hail" ? 5 : 0 } };
-            }
-            SourceCalledFieldSetEvent(side, target, move, weather, before);
-            if (before == 0) SourceForecastApplyAll();
-        }
-
-        private void SourceCalledFieldSetEvent(WildBattleSide side, WildBattleSide target, PokemonMoveDefinition move, string field, int before)
-        {
-            if (before > 0) { SourceCalledProtectionFailure(side, target, move.Id, "already-" + field); return; }
-            Add(n => new WildBattleMtMoonVolatileEvent(n, State.Turn, side, field, 0, 5, "move"));
+            new SinglesRecipeBridge(this).ApplyFieldSetting(new((int)side), new((int)target), move);
         }
 
         private void SourceCalledToxic(PokemonCatalog catalog, WildBattleSide side, WildBattleSide target,

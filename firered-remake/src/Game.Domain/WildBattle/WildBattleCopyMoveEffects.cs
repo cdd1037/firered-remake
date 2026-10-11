@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
+using Game.Domain.Battle;
 using Game.Domain.Pokemon;
 
 namespace Game.Domain.WildBattle;
@@ -24,7 +25,7 @@ public static class WildBattleCopyMoveRules
 
     internal static WildBattleCombatant ApplyPersistentPokemon(WildBattleCombatant mon, PokemonInstance pokemon)
     {
-        if (mon.CopyMoves is not { } copies) return mon with { Pokemon = pokemon };
+        if (mon.CopyMoves is not { } copies) return SourceBattleHeldItems.ReconcileChoice(mon with { Pokemon = pokemon });
         var moves = pokemon.Moves;
         var slots = copies.Slots.Select(copy => {
             // Cmd_yesnoboxlearnmove: a learned party slot changes, but a mimicked live slot does not.
@@ -32,7 +33,7 @@ public static class WildBattleCopyMoveRules
             moves = moves.SetItem(copy.Slot, mon.Pokemon.Moves[copy.Slot]);
             return updated;
         }).ToImmutableArray();
-        return mon with { Pokemon = pokemon with { Moves = moves }, CopyMoves = copies with { Slots = slots } };
+        return SourceBattleHeldItems.ReconcileChoice(mon with { Pokemon = pokemon with { Moves = moves }, CopyMoves = copies with { Slots = slots } });
     }
 }
 

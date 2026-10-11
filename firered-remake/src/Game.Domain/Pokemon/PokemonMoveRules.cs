@@ -78,12 +78,18 @@ public static class PokemonMoveRules
     {
         ArgumentNullException.ThrowIfNull(catalog);
         if (moves.IsDefault || moves.Length > 4) throw new ArgumentException("Use a compact set of zero through four moves.");
+        // Preserve the historical zero-bonus guard. Only authenticated source learning admits
+        // existing PP bonuses; NewSlot still clears a newly learned/replaced move to zero.
+        bool canonical = SourceMechanicsCatalog.For(catalog) is not null;
         var seen = new HashSet<MoveId>();
         foreach (var slot in moves)
         {
             if (slot is null || !seen.Add(slot.Move) || !catalog.Moves.TryGetValue(slot.Move, out var definition) ||
-                slot.PpUps != 0 || slot.MaximumPp != definition.Pp || slot.CurrentPp < 0 || slot.CurrentPp > slot.MaximumPp)
-                throw new ArgumentException("Invalid move slots; PP Ups are not supported by this creation/learning profile.");
+                slot.PpUps is < 0 or > 3 || (!canonical && slot.PpUps != 0) ||
+                slot.MaximumPp != definition.Pp + definition.Pp * 20 * slot.PpUps / 100 ||
+                slot.CurrentPp < 0 || slot.CurrentPp > slot.MaximumPp)
+                throw new ArgumentException(canonical ? "Invalid canonical move slots or PP bonuses." :
+                    "Invalid move slots; PP Ups are not supported by this creation/learning profile.");
         }
     }
 }

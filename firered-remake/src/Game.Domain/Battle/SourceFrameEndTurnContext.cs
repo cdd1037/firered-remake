@@ -124,7 +124,7 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     internal override void ExposeFaintedActions() => CheckTeamsLost();
     internal override void FaintedActionItems()
     {
-        if (Frame.Slots.Any(c => c.Body!.HeldItem != "ITEM_NONE" || WildBattleEffective.Ability(c.Body) is "ABILITY_TRACE" or "ABILITY_FORECAST"))
+        if (Frame.Slots.Any(c => !SourceFourRewards.SupportsRewardHeldItem(c.Body!.HeldItem) || WildBattleEffective.Ability(c.Body) is "ABILITY_TRACE" or "ABILITY_FORECAST"))
             throw new SourceRecipeUnsupported("source_four_action_fainted_ability_or_item_phase_not_migrated");
     }
     internal override void Wish(PokemonCatalog catalog, BattlerSlot slot)
@@ -136,7 +136,7 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         var m = Get(slot); var r = Frame.Get(slot).Registers;
         bool nonempty = step switch {
             SourceBattlerEndTurnStep.Ingrain => m.Rooted,
-            SourceBattlerEndTurnStep.Items1 or SourceBattlerEndTurnStep.Items2 => m.HeldItem != "ITEM_NONE",
+            SourceBattlerEndTurnStep.Items1 or SourceBattlerEndTurnStep.Items2 => !SourceFourRewards.SupportsRewardHeldItem(m.HeldItem),
             SourceBattlerEndTurnStep.LeechSeed => r.LeechSeedSource is not null,
             SourceBattlerEndTurnStep.Nightmare => m.Nightmare,
             SourceBattlerEndTurnStep.Curse => m.Cursed,
@@ -153,8 +153,21 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     }
     internal override bool Future(PokemonCatalog catalog, BattlerSlot slot)
     {
-        if (Frame.Get(slot).Position.FutureAttack is not null) throw new SourceRecipeUnsupported("source_four_action_future_not_migrated");
-        return false;
+        // HandleWishPerishSongOnTurnEnd skips source-absent positions before decrementing.
+        if (!Ongoing || IsAbsent(slot) || Frame.Get(slot).Position.FutureAttack is not { } future) return false;
+        int after = future.TurnsRemaining - 1;
+        var cell = Frame.Get(slot);
+        Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Position = cell.Position with {
+            FutureAttack = after == 0 ? null : future with { TurnsRemaining = after } } }) };
+        Add(n => new SourceCalledDelayedEvent(n, Turn, slot, future.Move, future.TurnsRemaining, after,
+            after == 0 ? "resolved" : "countdown"));
+        if (after != 0 || Get(slot).Pokemon.CurrentHp == 0) return false;
+        var hit = new FrameRecipeContext(catalog, Frame,
+            new(Frame.Get(future.Attacker).Occupant!.Value, Frame.Revision, 0, slot), catalog.Moves[future.Move]);
+        hit.RunFutureHit(future, slot);
+        Frame = hit.Frame; Events.AddRange(hit.Events); Trace.AddRange(hit.Trace);
+        if (Get(slot).Pokemon.CurrentHp == 0) Faint(slot);
+        return true;
     }
     internal override bool Perish(BattlerSlot slot)
     {

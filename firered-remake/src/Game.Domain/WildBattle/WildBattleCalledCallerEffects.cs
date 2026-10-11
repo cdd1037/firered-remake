@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Game.Domain.Ids;
+using Game.Domain.Battle;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.Rules;
@@ -99,6 +100,7 @@ public static partial class WildBattleRules
         if (slot < 0 || slot >= actor.Pokemon.Moves.Length) return "called_move_chosen_slot";
         var move = catalog.Moves[actor.Pokemon.Moves[slot].Move];
         if (!MetronomeSourceMoveDefinition.Matches(move) || !IsCalledMoveEffectSupported(move)) return "called_move_effect_not_registered";
+        if (!SourceBattleHeldItems.ChoiceAllows(actor, move.Id)) return "called_move_choice_locked";
         if (actor.Pokemon.Moves[slot].CurrentPp == 0) return "called_move_no_pp";
         if (actor.DisableTurnsRemaining > 0 && actor.DisabledMove == move.Id) return "called_move_disabled";
         if (actor.EncoreTurnsRemaining > 0 && actor.EncoreMoveSlot != slot) return "called_move_encore";

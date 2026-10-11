@@ -111,6 +111,26 @@ public sealed partial class Synth
         return players[player] != null;
     }
 
+    // Original m4aMPlayPanpotControl: panX is signed, independent of sequence PAN,
+    // and only selected existing tracks change. Start constructs initialized tracks
+    // (the original PlaySE12WithPanning calls m4aMPlayImmInit before this control).
+    // FINE tracks and absent players are not revived; a new Start resets panX to 0.
+    public int SetPlayerPan(int player, int pan, ushort trackBits = ushort.MaxValue)
+    {
+        ValidatePlayer(player);
+        if (pan is < -128 or > 127)
+            throw new ArgumentOutOfRangeException(nameof(pan));
+        if (players[player] is not { } current) return 0;
+        int changed = 0;
+        foreach (var track in current.Tracks)
+            if (!track.Ended && track.Index < 16 && (trackBits & (1 << track.Index)) != 0)
+            {
+                track.ExternalPan = pan;
+                changed++;
+            }
+        return changed;
+    }
+
     static bool HasSequence(Player player)
     {
         foreach (var track in player.Tracks)
@@ -491,7 +511,7 @@ public sealed partial class Synth
     }
     internal static (int Left, int Right) ChannelVolume(Track t, int velocity, int rhythmPan = 0)
     {
-        int x = t.Volume * t.ExternalVolume >> 5, y = Math.Clamp(t.Pan * 2, -128, 127);
+        int x = t.Volume * t.ExternalVolume >> 5, y = Math.Clamp(t.Pan * 2 + t.ExternalPan, -128, 127);
         int right = (y + 128) * x >> 8, left = (127 - y) * x >> 8;
         return (Math.Min(255, (127 - rhythmPan) * velocity * left >> 14), Math.Min(255, (128 + rhythmPan) * velocity * right >> 14));
     }
@@ -893,8 +913,12 @@ public sealed partial class Synth
                 if (Profile == AudioProfile.ModernDryV1)
                 {
                     double gain = (i.Type & 7) == 0 ? v.Velocity / 127.0 * t.Volume / 127.0 * 0.22 * (t.ExternalVolume / 64.0) : 0.22;
-                    left += value * gain * (64 - Math.Clamp(t.Pan, -64, 63)) / 64.0 * ((127 - v.RhythmPan) / 127.0);
-                    right += value * gain * (64 + Math.Clamp(t.Pan, -64, 63)) / 64.0 * ((128 + v.RhythmPan) / 128.0);
+                    // Preserve the legacy modern-profile mix exactly at panX=0.
+                    // Nonzero panX uses the same signed additive coordinate as m4a.
+                    double pan = t.ExternalPan == 0 ? Math.Clamp(t.Pan, -64, 63)
+                        : Math.Clamp(t.Pan * 2 + t.ExternalPan, -128, 127) / 2.0;
+                    left += value * gain * (64 - pan) / 64.0 * ((127 - v.RhythmPan) / 127.0);
+                    right += value * gain * (64 + pan) / 64.0 * ((128 + v.RhythmPan) / 128.0);
                 }
                 else if ((i.Type & 7) == 0)
                 {

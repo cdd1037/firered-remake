@@ -56,7 +56,7 @@ public static class SourceBattleAdmission
 
     internal static bool SupportsHeldItem(PokemonCatalog? catalog, string item) =>
         FuchsiaBattleScope.SupportsHeldItem(item) ||
-        HasCapability(catalog, SourceBattleCapability.SourceHeldItems) && SourceBattleHeldItems.OrderEffect(item) is not null;
+        HasCapability(catalog, SourceBattleCapability.SourceHeldItems) && (SourceBattleHeldItems.OrderEffect(item) is not null || item == "ITEM_CHOICE_BAND");
 
     internal static bool SupportsAbility(PokemonCatalog catalog, string ability) =>
         SourceMechanicsCatalog.For(catalog) is { } proof && proof.Abilities.ContainsKey(ability) &&

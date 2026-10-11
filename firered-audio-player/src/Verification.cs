@@ -137,6 +137,7 @@ public static class Verification
         passes += MusicGapVerification.Run(real);
         passes += PsgVerification.Run(real);
         passes += HostControlVerification.Run(real);
+        passes += PanVerification.Run(real, Environment.GetEnvironmentVariable("PAN_ORACLE"));
         return passes;
     }
 }

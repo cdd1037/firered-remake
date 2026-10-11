@@ -90,83 +90,17 @@ public static class WildVictoryRewards
         if (participantAfterBattle.Pokemon.Moves.Any(m => m.PpUps != 0))
             throw new NotSupportedException("PP Ups are outside the shared move-learning profile.");
 
-        var before = participantAfterBattle.Pokemon;
-        // Cmd_getexp rejects level 100 before MonGainEVs, and checks living HP for both EXP/EVs.
-        // In particular, a simultaneous faint is not a victory reward even if its outcome has bit 1.
-        if (before.CurrentHp == 0 || before.Level == 100)
-            return new(participantAfterBattle, 0, SixStats.Zero, 0, 0, 0, [], []);
-
-        var defeated = catalog.Species[defeatedPokemon.Species];
-        var species = catalog.Species[before.Species];
-        // Cmd_getexp divides the already truncated base EXP by living participants. EVs are
-        // credited in full to each eligible participant; the caller owns membership and order.
-        int experienceGained = Math.Max(1, defeated.ExperienceYield * defeatedPokemon.Level / 7 / aliveParticipants);
-        if(trainerBattle)experienceGained=experienceGained*150/100;
-        uint experience = Math.Min(checked(before.Experience + (uint)experienceGained),
-            GrowthRules.ExperienceAtLevel(species.GrowthRate, 100));
-        int finalLevel = GrowthRules.LevelFromExperience(species.GrowthRate, experience);
-        if (!forestRules && finalLevel > before.Level && species.Evolutions.Any(e => e.Method==PokemonEvolutionMethod.Level&&e.Level <= finalLevel))
-            throw new NotSupportedException("A level evolution is now eligible; the evolution flow is not implemented.");
-
-        var values=before.Evs.Values.ToArray();var gains=new int[6];int total=values.Sum();
-        for(int i=0;i<6;i++){gains[i]=Math.Min(defeated.EvYield.Values[i],Math.Min(255-values[i],510-total));values[i]+=gains[i];total+=gains[i];}
-        var evsGained = new SixStats(gains[0],gains[1],gains[2],gains[3],gains[4],gains[5]);
-        var evs = new SixStats(values[0],values[1],values[2],values[3],values[4],values[5]);
-        var events = ImmutableArray.CreateBuilder<WildRewardEvent>();
-        var pending = ImmutableArray.CreateBuilder<WildPendingMove>();
-        events.Add(new WildRewardExperienceEvent(before.Experience, experience, experienceGained));
-        events.Add(new WildRewardEvEvent(before.Evs, evs, evsGained));
-        // The EXP event is the announcement. EV mutation precedes the first level/stat mutation.
-        var pokemon = before with
-        {
-            Evs = evs,
-            StatCalculationEvs = evs == before.Evs ? before.StatCalculationEvs : before.StatCalculationEvs ?? before.Evs
-        };
-        for (int level = before.Level + 1; level <= finalLevel; level++)
-        {
-            var stats = CalculateStats(species, pokemon, evs, level);
-            int hp = pokemon.CurrentHp + stats.MaxHp - pokemon.Stats.MaxHp;
-            events.Add(new WildRewardLevelEvent(pokemon.Level, level, pokemon.Stats, stats, pokemon.CurrentHp, hp));
-            int increment = pokemon.Friendship < 100 ? 5 : pokemon.Friendship < 200 ? 3 : 2;
-            // AdjustFriendship applies the 150% base delta before the met-location bonus.
-            if (pokemonTowerRules && participantAfterBattle.HeldItem == "ITEM_SOOTHE_BELL") increment = increment * 150 / 100;
-            if (participantAfterBattle.MetLocation == currentRegion) increment++;
-            int friendship = Math.Min(255, pokemon.Friendship + increment);
-            events.Add(new WildRewardFriendshipEvent(pokemon.Friendship, friendship));
-            pokemon = pokemon with
-            {
-                Level = level, Experience = GrowthRules.ExperienceAtLevel(species.GrowthRate, level),
-                Stats = stats, StatCalculationEvs = null, CurrentHp = hp, Friendship = friendship
-            };
-            foreach (var move in PokemonMoveRules.AtLevel(species, level))
-            {
-                // Once a replacement is pending, future knowledge depends on that decision.
-                // Keep every subsequent candidate, including one that is currently known.
-                if (pending.Count > 0)
-                {
-                    pending.Add(new(level, move));
-                    events.Add(new WildRewardMovePendingEvent(level, move));
-                    continue;
-                }
-                var learned = PokemonMoveRules.TryLearn(catalog, pokemon.Moves, move);
-                if (learned.Outcome == MoveLearningOutcome.NeedsReplacement)
-                {
-                    pending.Add(new(level, move));
-                    events.Add(new WildRewardMovePendingEvent(level, move));
-                }
-                else if (learned.Outcome == MoveLearningOutcome.Added)
-                {
-                    pokemon = pokemon with { Moves = learned.Moves };
-                    events.Add(new WildRewardMoveLearnedEvent(level, move, pokemon.Moves.Length - 1));
-                }
-            }
-        }
-        pokemon = pokemon with { Experience = experience };
-        var owned = participantAfterBattle with { Pokemon = pokemon };
-        ValidateOwned(catalog, owned, route22Rules, route11Rules);
-        return new(owned, experienceGained, evsGained, pokemon.Level - before.Level,
-            pokemon.Friendship - before.Friendship, pokemon.CurrentHp - before.CurrentHp,
-            events.ToImmutable(), pending.ToImmutable());
+        var result = PokemonRewardRecipe.Calculate(catalog, participantAfterBattle.Pokemon,
+            catalog.Species[defeatedPokemon.Species], defeatedPokemon.Level, aliveParticipants, 0,
+            new(true, false, false, trainerBattle, false, 1,
+                pokemonTowerRules && participantAfterBattle.HeldItem == "ITEM_SOOTHE_BELL", false,
+                participantAfterBattle.MetLocation == currentRegion), rejectLevelEvolution: !forestRules);
+        var owned = ReferenceEquals(result.Pokemon, participantAfterBattle.Pokemon) ? participantAfterBattle :
+            participantAfterBattle with { Pokemon = result.Pokemon };
+        if (participantAfterBattle.Pokemon.CurrentHp != 0 && participantAfterBattle.Pokemon.Level != 100)
+            ValidateOwned(catalog, owned, route22Rules, route11Rules);
+        return new(owned, result.ExperienceGained, result.EvsGained, result.LevelsGained, result.FriendshipDelta,
+            result.HpDelta, result.Events, result.PendingMoves);
     }
 
     private static void ValidateOwned(PokemonCatalog catalog, PartyPokemon owned, bool route22Rules = false, bool route11Rules = false, bool rockTunnelRules = false)
@@ -333,17 +267,6 @@ public static class WildVictoryRewards
             foreach(var (name,id,experience,ev) in new[]{("CATERPIE",10,53,new SixStats(1,0,0,0,0,0)),("METAPOD",11,72,new SixStats(0,0,2,0,0,0)),("WEEDLE",13,52,new SixStats(0,0,0,1,0,0)),("KAKUNA",14,71,new SixStats(0,0,2,0,0,0)),("PIKACHU",25,82,new SixStats(0,0,0,2,0,0))})
                 if(!catalog.Species.TryGetValue(new("pret:SPECIES_"+name),out var species)||species.SourceSpeciesId!=id||species.ExperienceYield!=experience||species.EvYield!=ev)throw new NotSupportedException("The pinned forest EXP/EV fields are required.");
         }
-    }
-
-    private static BattleStats CalculateStats(PokemonSpeciesDefinition species, PokemonInstance p, SixStats ev, int level)
-    {
-        var b = species.BaseStats;
-        int Other(int value, int iv, int effort, Stat stat) => StatRules.CalculateOther(value, iv, effort, level, p.Nature, stat);
-        return new(StatRules.CalculateHp(b.Hp, p.Ivs.Hp, ev.Hp, level),
-            Other(b.Attack, p.Ivs.Attack, ev.Attack, Stat.Attack), Other(b.Defense, p.Ivs.Defense, ev.Defense, Stat.Defense),
-            Other(b.SpecialAttack, p.Ivs.SpecialAttack, ev.SpecialAttack, Stat.SpecialAttack),
-            Other(b.SpecialDefense, p.Ivs.SpecialDefense, ev.SpecialDefense, Stat.SpecialDefense),
-            Other(b.Speed, p.Ivs.Speed, ev.Speed, Stat.Speed));
     }
 
     private static bool ValidRegion(string? value) => value is not null && value.Length is > 7 and <= 128 &&

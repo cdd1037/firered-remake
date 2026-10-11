@@ -25,6 +25,8 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FocusEnergy = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Flinched = false)
 {
+    // gBattleStruct->choicedMove belongs to the live battler, never the owned party member.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? SourceChoiceMove { get; init; }
     // Opt-in called-action history. Historical battle profiles reject this extension;
     // use the versioned called-action contract to validate and resume its result.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSourceMoveHistory? SourceMoveHistory { get; init; }

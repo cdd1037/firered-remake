@@ -23,8 +23,21 @@ public static class SourceMoveTargeting
     public static SourceTargetResult ResolveCalled(SourceBattleFrame frame, BattlerSlot actor,
         PokemonMoveDefinition move, string? targetOverride = null) => Resolve(frame, actor, actor.Opposite, move, true, targetOverride);
 
+    /// <summary>HandleAction_UseMove: learning changed the selected move, so GetMoveTarget
+    /// first rewrites its target, then the ordinary action-time target branches run.</summary>
+    public static SourceTargetResult ResolveReplaced(SourceBattleFrame frame, BattlerSlot actor, PokemonMoveDefinition move)
+    {
+        var replacement = Resolve(frame, actor, actor.Opposite, move, true, preserveIntermediateTarget: true);
+        if (!replacement.Succeeded || replacement.Target is not { } target) return replacement;
+        var selected = ResolveLearned(frame with { Rng = replacement.Rng }, actor, target, move);
+        if (!selected.Succeeded) return new(null, frame.Rng, [], false, selected.Fault);
+        return selected with { Trace = replacement.Trace.AddRange(selected.Trace),
+            LightningRodRedirected = selected.LightningRodRedirected ||
+                replacement.LightningRodRedirected && replacement.Target == selected.Target };
+    }
+
     private static SourceTargetResult Resolve(SourceBattleFrame frame, BattlerSlot actor,
-        BattlerSlot selected, PokemonMoveDefinition move, bool called, string? targetOverride = null)
+        BattlerSlot selected, PokemonMoveDefinition move, bool called, string? targetOverride = null, bool preserveIntermediateTarget = false)
     {
         SourceTargetResult Fail(string code) => new(null, frame.Rng, [], false, code);
         if (SourceBattleIdentityRules.Validate(frame) is { } invalid) return Fail(invalid);
@@ -126,7 +139,7 @@ public static class SourceMoveTargeting
             }
             // Preserve original source-absent/zero-HP Lightning Rod result for its owner to gate;
             // only a deferred vacancy is the explicit new no-target boundary.
-            if (target is { } resolved && (resolved.Value >= frame.BattlerCount || !HasBody(resolved) || frame.IsDeferredKoVacant(resolved))) target = null;
+            if (target is { } resolved && (resolved.Value >= frame.BattlerCount || !HasBody(resolved) || !preserveIntermediateTarget && frame.IsDeferredKoVacant(resolved))) target = null;
             return new(target, rng, trace.ToImmutable(), redirected, null);
         }
         catch (OverflowException) { return Fail("source_target_counter_exhausted"); }

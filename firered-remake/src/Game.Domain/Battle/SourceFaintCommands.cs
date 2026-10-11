@@ -7,7 +7,7 @@ namespace Game.Domain.Battle;
 public static class SourceFaintCommands
 {
     public static WildBattleCombatant ClearPewterFlags(WildBattleCombatant mon) => mon with {
-        FirstTurnCounter = 0, TruantLoafing = false, Identified = false, DamagedByOpponentThisTurn = false,
+        SourceChoiceMove = null, FirstTurnCounter = 0, TruantLoafing = false, Identified = false, DamagedByOpponentThisTurn = false,
         Protected = false, Enduring = false, ProtectConsecutiveUses = 0, Imprison = false, FlashFireBoost = false,
         DefenseCurled = false, BindTurnsRemaining = 0, BindingMove = null };
 

@@ -50,11 +50,13 @@ public static partial class WildBattleRules
 
     internal sealed partial class Execution
     {
+        private bool choiceBatonPassFailed;
         private bool preparedSwapAttackerTarget;
         private MoveId? preparedPpOwnerPreviousMove;
 
         private void BeginPreparedMoveInvocation(MoveId? previousMove)
         {
+            choiceBatonPassFailed = false;
             preparedSwapAttackerTarget = false;
             preparedPpOwnerPreviousMove = previousMove;
         }

@@ -172,6 +172,7 @@ public partial class CampaignView:Node2D
     }
     private void Synchronize(CampaignState? before,CampaignState after)
     {
+        SynchronizeSourceMovePresentation();
         bool changed=before is not null&&before.World.Player.MapId!=after.World.Player.MapId;
         if(changed)LoadMap(after.World.Player.MapId);
         ApplyMapEdits(after);
@@ -241,6 +242,7 @@ public partial class CampaignView:Node2D
     {
         if(_quitRequested||_session is null)return;
         if(PlayerEntryActive){QueueRedraw();return;}
+        if(ProcessCommittedMoveAnimation(delta))return;
         ProcessPokemonTowerPresentation(delta);ProcessSourceBattleAudio();ProcessBillPresentation(delta);ProcessSsAnnePresentation(delta);
         if(ProcessTownMapPresentation(delta)){QueueRedraw();return;}
         if(FieldMenuOpen){QueueRedraw();return;}
@@ -283,6 +285,7 @@ public partial class CampaignView:Node2D
     private async void RequestQuit()
     {
         if(_quitRequested)return;
+        ResetSourceMoveAnimation("quit");
         _quitRequested=true;_held=null;_repeat=0;
         SetProcess(false);SetProcessUnhandledInput(false);
         var tree=GetTree();

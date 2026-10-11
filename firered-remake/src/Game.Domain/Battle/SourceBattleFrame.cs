@@ -79,7 +79,11 @@ public sealed record SourceActionSelection(OccupantToken Actor, SourceActionKind
     int? MoveSlot = null, BattlerSlot? Target = null, PartyMemberKey? Incoming = null, ItemId? Item = null);
 public sealed record SourceQueuedAction(BattlerSlot Slot, SourceActionToken? Token, SourceActionKind Kind,
     int? MoveSlot = null, BattlerSlot? Target = null, PartyMemberKey? Incoming = null, ItemId? Item = null,
-    string? CancellationReason = null);
+    string? CancellationReason = null)
+{
+    // gChosenMoveByBattler survives learning that overwrites the selected move position.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? OriginalChosenMove { get; init; }
+}
 public sealed record SourceSwitchReservation(OccupantToken Outgoing, PartyMemberKey Incoming,
     WildBattleCalledSwitchKind Kind);
 public sealed record SourceMoveInvocation(BattlerSlot Actor, int ChosenSlot, int PpSlot,
@@ -141,6 +145,7 @@ public sealed record SourceBattleFrame
     public ImmutableArray<SourcePendingSwitch> PendingSwitches { get; init; } = [];
     public SourceWildTurnCursor? WildTurn { get; init; }
     public SourceFourActionCursor? FourTurn { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceFourRewardState? Rewards { get; init; }
     public SinglesBoundaryEncoding? SinglesEncoding { get; init; }
     [JsonIgnore] public int BattlerCount => Layout == SourceBattleLayout.Singles ? 2 : 4;
     public SourceBattleSlot Get(BattlerSlot slot) => Slots[slot.Value];

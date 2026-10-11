@@ -151,27 +151,30 @@ public static class SourceBattleIdentityRules
         if (frame.FourTurn is { } four && (frame.Layout != SourceBattleLayout.PresetDoubles ||
             frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version || four.Version != SourceFourActionTurns.Version ||
             four.Turn != frame.Turn || !Enum.IsDefined(four.Phase) || frame.Queue.Length != 4 || four.Defeats.IsDefault ||
+            frame.Queue.Any(a => a.Kind == SourceActionKind.Move && (a.OriginalChosenMove is null || string.IsNullOrWhiteSpace(a.OriginalChosenMove.Value.Value))) ||
             four.Defeats.Any(d => d is null || !frame.IsCurrent(d.Occupant) || frame.Get(d.Occupant.Slot).Body!.Pokemon.CurrentHp != 0 ||
                 d.FaintEventSequence < 0 || d.FaintEventSequence > frame.EventSequence ||
                 d.RequiresExperience != (d.Occupant.Member.Side == BattleSide.Opponent)) ||
             four.Defeats.Select(d => d.Occupant).Distinct().Count() != four.Defeats.Length ||
             four.EndTurnOrder.IsDefault || four.EndTurnOrder.Length != 0 && !ValidOrder(four.EndTurnOrder, 4) ||
             (four.EndTurn is null) != four.EndTurnOrder.IsEmpty ||
-            four.Phase == SourceFourActionPhase.ReplacementsPending && four.EndTurn is null ||
+            four.Phase == SourceFourActionPhase.EndTurn && four.EndTurn is not null ||
+            four.Phase is SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.ReplacementsPending && four.EndTurn is null ||
             four.EndTurn is { } residual && (!ValidOrder(residual.Order, 4) || !residual.Order.SequenceEqual(four.EndTurnOrder) ||
                 residual.Turn != frame.Turn || residual.NextBattler is < 0 or > 4 || !Enum.IsDefined(residual.Stage) ||
                 residual.RulesVersion != WildBattleRules.SourceEndTurnRulesVersion || residual.MinimumRevision < 0 ||
                 residual.MinimumRevision > frame.Revision || residual.MinimumEventSequence < 0 || residual.MinimumEventSequence > frame.EventSequence ||
-                frame.NextAction != 4 || four.Phase is not (SourceFourActionPhase.RewardsPending or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.BattleEnded) ||
-                (four.Phase == SourceFourActionPhase.BattleEnded
-                    ? residual.Stage != WildBattleSourceEndTurnStage.Complete || residual.NextBattler != 4 || frame.Outcome == WildBattleOutcome.Ongoing
-                    : residual.Stage != WildBattleSourceEndTurnStage.FutureAttacks || residual.NextBattler != 0)) ||
+                frame.NextAction != 4 || four.Phase is not (SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.RewardsPending or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.BattleEnded) ||
+                residual.Stage == WildBattleSourceEndTurnStage.Complete && (residual.NextBattler != 4 || four.Phase != SourceFourActionPhase.BattleEnded) ||
+                residual.Stage is not (WildBattleSourceEndTurnStage.FutureAttacks or WildBattleSourceEndTurnStage.Complete) ||
+                four.Phase == SourceFourActionPhase.BattleEnded && frame.Outcome == WildBattleOutcome.Ongoing) ||
             four.OutcomeAfterRewards is { } pendingOutcome && (pendingOutcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) ||
                 !four.Defeats.Any(d => d.RequiresExperience)) ||
             four.Phase == SourceFourActionPhase.Actions && frame.NextAction >= 4 ||
-            four.Phase is SourceFourActionPhase.EndTurn or SourceFourActionPhase.ReplacementsPending && frame.NextAction != 4 ||
+            four.Phase is SourceFourActionPhase.EndTurn or SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.ReplacementsPending && frame.NextAction != 4 ||
             four.Phase == SourceFourActionPhase.RewardsPending && !four.Defeats.Any(d => d.RequiresExperience)))
             return "source_frame_four_action_continuation";
+        if (SourceFourRewards.Validate(frame) is { } rewardError) return rewardError;
         return null;
     }
 
@@ -315,6 +318,7 @@ public static class SourceBattleIdentityRules
             Queue = next.Queue.Select(a => a.Slot == slot ? a with { Kind = SourceActionKind.Cancelled, CancellationReason = "occupant-departed" } : a).ToImmutableArray(),
             Reservations = next.Reservations.Remove(reservation), PendingSwitches = next.PendingSwitches.Where(p => p.Slot != slot).ToImmutableArray(),
             Revision = checked(frame.Revision + 1) };
+        next = SourceFourRewards.ObserveParticipation(next);
         return Validate(next) is { } nextError ? new(frame, nextError) : new(next, null);
     }
 

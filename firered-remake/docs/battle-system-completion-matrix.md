@@ -41,11 +41,11 @@ P0 means enabling contract work, P1 means a dependency needed before wider admis
 | [C04](#c04) | Singles order, priority, speed and ties | `implemented-with-bounded-tests` | P1 / bounded |
 | [C05](#c05) | Residual and delayed callback scheduling | `implemented-with-bounded-tests` | P1 / bounded |
 | [C06](#c06) | Move effect groups and cross-state interactions | `interaction-unverified` | P2 / bounded |
-| [C07](#c07) | Ability entry, weather and forms | `missing` | P1 / independent-block |
+| [C07](#c07) | Ability entry, weather and forms | `interaction-unverified` | P1 / independent-block |
 | [C08](#c08) | Ability damage, absorption, contact and residual gaps | `interaction-unverified` | P1 / bounded |
-| [C09](#c09) | Ability blocking and topology gaps | `missing` | P1 / bounded |
+| [C09](#c09) | Ability blocking and topology gaps | `interaction-unverified` | P1 / bounded |
 | [C10](#c10) | Genuine four-slot doubles owner | `interaction-unverified` | P1 / independent-block |
-| [C11](#c11) | Doubles targets and multi-target effects | `missing` | P1 / independent-block |
+| [C11](#c11) | Doubles targets and multi-target effects | `implemented-with-bounded-tests` | P1 / independent-block |
 | [C12](#c12) | Switch, Baton Pass, phasing and faint ownership | `implemented-with-bounded-tests` | P2 / bounded |
 | [C13](#c13) | Run and ordinary capture transaction | `implemented-with-bounded-tests` | P2 / bounded |
 | [C14](#c14) | Remaining balls and special battle modes | `missing` | P2 / independent-block |
@@ -119,13 +119,13 @@ Pinned source: `src/battle_main.c:GetWhoStrikesFirst`, `src/battle_main.c:SetAct
 Next acceptance:
 
 - Retain the slot-three Baton Pass/Transform regression: absent compact-array slot means source MOVE_NONE, not the old chosen move ID.
-- Quick Claw/Macho Brace now share canonical singles entry/action/end-turn speed calculation; four-slot held-item execution and Macho Brace EV rewards remain separate. See `docs/source-order-held-items.md`.
+- Quick Claw/Macho Brace now share canonical singles entry/action/end-turn speed calculation; Macho Brace now also changes four-slot order and canonical reward EVs; other four-slot action items remain separate. See `docs/source-order-held-items.md`.
 - For four battlers, preserve source comparator invocation order and every tie draw; do not substitute a generic stable-sort policy.
 
 <a id="c05"></a>
 ### C05 — Residual and delayed callback scheduling
 
-Shared phase cursor preserves normal field/battler residuals, EXP/replacement suspension, Future Sight/Doom Desire, Perish Song and final damage-register cleanup for two active battlers. One shared scheduler now serves singles and a four-slot temporary-weather/status/end-turn-ability subset; genuine reward/replacement pauses remain, with unported residuals gated.
+One shared phase cursor serves singles and four-slot weather, screen, status and end-turn-ability commands. Four-slot Future Sight/Doom Desire, bounded reward/learning pauses and end-turn KO entry now resume without replaying ordinary residuals. Wish, Perish and other unported four-slot residuals remain gated.
 
 Dependencies: C04.
 
@@ -209,7 +209,7 @@ Next acceptance:
 <a id="c10"></a>
 ### C10 — Genuine four-slot doubles owner
 
-M01 identities, M02 shared actions, M03 four-action turns, M04 targeting/spread and M05 shared residual subsets are integrated. Actual KO records pause for EXP/replacement; settlement, entry continuation, full cancellers/recipes/residuals, AI and campaign admission remain unfinished.
+M01 identities through M06 bounded reward/learning and clean end-turn KO replacement are integrated. Actual parties remain authoritative; six opponent completion bits and one recipient cursor avoid an unbounded ledger. Full entry abilities, cancellers/recipes/residuals, AI, preset encounter and campaign presentation remain unfinished.
 
 M01 provides four fixed battler slots, party/occupant identities, reservations and distinct absence/KO masks. M02 executes shared slot-typed hit/stat/status/recovery actions; the same recipes serve existing singles. M03 executes real four-action clean turns and pauses at explicit KO EXP/replacement boundaries. Full residuals, entry/rewards, target redirection/spread, AI and campaign admission remain unfinished. See `docs/source-shared-battle-kernel.md` and `tests/Game.FourActionTurns.Tests/README.md`.
 
@@ -229,7 +229,7 @@ Next acceptance:
 <a id="c11"></a>
 ### C11 — Doubles targets and multi-target effects
 
-Singles target resolver maps multi-target metadata to the other single combatant; no real ally/opponent slot selection or spread-damage loop exists.
+Real selected/random/side/user/both-opponent targeting, Lightning Rod and Plus/Minus queries, generic spread/Explosion and original doubles screen damage are implemented in the bounded four-slot owner. Deferred-KO no-target failure uses original attack-string/PP/failure/history commands. Follow Me, Helping Hand, callers and additional multi-target effect families remain open.
 
 Dependencies: C10.
 
@@ -309,7 +309,7 @@ Next acceptance:
 <a id="c16"></a>
 ### C16 — Held-item effects and ownership
 
-Oran/status berries, selected type/species modifiers, Leftovers and Knock Off/Trick/Thief/Recycle ownership have implementations. Focus Band appears in narrow damage helpers but remains unadmitted; full held-item dispatch is absent.
+Canonical singles Choice Band now executes physical Attack scaling, chosen-move locking, called/copied moves, item transfer and departure cleanup. Quick Claw/Macho Brace order and reward modifiers are shared. Focus Band and general four-slot held-item execution remain unfinished. See `docs/source-choice-band.md`.
 
 Dependencies: C04, C05, C18.
 
@@ -319,14 +319,14 @@ Pinned source: `src/battle_util.c:ItemBattleEffects`, `src/battle_main.c:GetWhoS
 
 Next acceptance:
 
-- Enumerate authenticated hold effects, then implement missing Choice Band, Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.
+- Implement remaining Focus Band, King's Rock/Shell Bell, herbs and applicable berries/species modifiers by effect group.
 - Prove threshold/RNG timing, Choice lock after copied moves, consumed-item history, permanent versus battle-only Knock Off and wild/trainer restoration.
 - An item constant, a helper branch or a species held-item slot is not full execution admission.
 
 <a id="c17"></a>
 ### C17 — EXP, EV, levels, move learning and settlement
 
-Shared participant EXP/EV/level/learn callbacks and trainer money/defeat settlement are established in bounded campaigns. Current EXP formula lacks Exp Share/Lucky Egg/traded boosts; EV loop lacks Macho Brace/Pokerus modifiers.
+The authenticated source reward calculator and M06 four-slot owner now apply per-opponent participation, ordered EXP/EV and real learning pauses to the authoritative permanent party, including both active slots full stat refresh. Empty level100/all-fainted plans, shared reward items and exact-once continuation are covered. Canonical Application, evolution/callback integration and ownership admission remain separate. See `docs/source-victory-rewards.md` and `tests/Game.SourceRewards.Tests/README.md`.
 
 Dependencies: C05, C16, C18.
 
@@ -336,7 +336,7 @@ Pinned source: `src/battle_script_commands.c:Cmd_getexp`, `src/pokemon.c:MonGain
 
 Next acceptance:
 
-- Implement modifier and recipient order using original English FireRed source, not whole-party EXP changes.
+- Connect the bounded four-slot reward owner to actual Application/UI and authoritative owner/Pokerus facts; do not manufacture absent metadata.
 - Prove fainted/level100 exclusions, participant identity after replacement, multi-level learning/decline and evolution/callback resume exactly once.
 - Separate rule support for traded ownership from actual communications; test obedience once such ownership is admitted.
 
@@ -448,78 +448,78 @@ Each of the 76 entries below has source and current execution locations in the J
 | 1 | `ABILITY_STENCH` | `implemented-with-bounded-tests` | C20 | Field encounter modifier exists and has bounded fixed-point/RNG tests. FireRed Stench does not gain a later-generation flinch effect. |
 | 2 | `ABILITY_DRIZZLE` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-rain entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending. |
 | 3 | `ABILITY_SPEED_BOOST` | `implemented-with-bounded-tests` | C08 | Authentic Ninjask complete-turn tests cover lead versus switched-in timing, stage cap, faint/status order, copied/acquired ability and frame/JSON continuation. Four-slot ordering remains unverified. |
-| 4 | `ABILITY_BATTLE_ARMOR` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 5 | `ABILITY_STURDY` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 6 | `ABILITY_DAMP` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 7 | `ABILITY_LIMBER` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 8 | `ABILITY_SAND_VEIL` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 9 | `ABILITY_STATIC` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 4 | `ABILITY_BATTLE_ARMOR` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 5 | `ABILITY_STURDY` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 6 | `ABILITY_DAMP` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 7 | `ABILITY_LIMBER` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 8 | `ABILITY_SAND_VEIL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 9 | `ABILITY_STATIC` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 10 | `ABILITY_VOLT_ABSORB` | `implemented-with-bounded-tests` | C08 | Both real holder sides, dynamic Electric type, full-HP absorption and shared PP/history verified in canonical singles; no doubles or audible claim. |
-| 11 | `ABILITY_WATER_ABSORB` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 12 | `ABILITY_OBLIVIOUS` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 11 | `ABILITY_WATER_ABSORB` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 12 | `ABILITY_OBLIVIOUS` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 13 | `ABILITY_CLOUD_NINE` | `implemented-with-bounded-tests` | C07 | Authentic canonical donor and all-body versus living-body suppression queries tested; shared recipes consume the same queries. Full doubles weather phases remain pending. |
-| 14 | `ABILITY_COMPOUND_EYES` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 15 | `ABILITY_INSOMNIA` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 16 | `ABILITY_COLOR_CHANGE` | `missing` | C07 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
-| 17 | `ABILITY_IMMUNITY` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 18 | `ABILITY_FLASH_FIRE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 19 | `ABILITY_SHIELD_DUST` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 20 | `ABILITY_OWN_TEMPO` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 14 | `ABILITY_COMPOUND_EYES` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 15 | `ABILITY_INSOMNIA` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 16 | `ABILITY_COLOR_CHANGE` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles exact HP-loss receipt, dynamic type, Explosion/recoil/BeatUp/Pursuit, copied abilities and presentation pairing verified. Full four-slot move-end remains gated. |
+| 17 | `ABILITY_IMMUNITY` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 18 | `ABILITY_FLASH_FIRE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 19 | `ABILITY_SHIELD_DUST` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 20 | `ABILITY_OWN_TEMPO` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 21 | `ABILITY_SUCTION_CUPS` | `implemented-with-bounded-tests` | C09 | Authentic Octillery/Lileep/Cradily cover Roar/Whirlwind after PP and before Rooted/accuracy, effective ability changes and full source turn continuation; canonical trainer admission remains separate. |
-| 22 | `ABILITY_INTIMIDATE` | `interaction-unverified` | C07 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 22 | `ABILITY_INTIMIDATE` | `interaction-unverified` | C07 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 23 | `ABILITY_SHADOW_TAG` | `implemented-with-bounded-tests` | C09 | Authenticated Wobbuffet/Wynaut and real ability-changing moves cover Run, Teleport, voluntary switch, Baton, forced and faint replacement distinctions; no Gen IV Ghost/self exemption. Four-slot field scan remains separate. |
 | 24 | `ABILITY_ROUGH_SKIN` | `implemented-with-bounded-tests` | C08 | Both real holder sides, per-hit actual HP loss, source 1/16 passive damage and faint order verified; no doubles or native effect claim. |
 | 25 | `ABILITY_WONDER_GUARD` | `interaction-unverified` | C06 | Damage/type and copy-restriction branches exist; authentic actor admission and every affected source script are not proven. |
-| 26 | `ABILITY_LEVITATE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 27 | `ABILITY_EFFECT_SPORE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 28 | `ABILITY_SYNCHRONIZE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 26 | `ABILITY_LEVITATE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 27 | `ABILITY_EFFECT_SPORE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 28 | `ABILITY_SYNCHRONIZE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 29 | `ABILITY_CLEAR_BODY` | `interaction-unverified` | C06 | Stat-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
-| 30 | `ABILITY_NATURAL_CURE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 31 | `ABILITY_LIGHTNING_ROD` | `missing` | C09 | Present in authenticated species/scope data; no four-slot redirect executor. Preserve Gen III behavior, without Electric immunity/stat gain. |
+| 30 | `ABILITY_NATURAL_CURE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 31 | `ABILITY_LIGHTNING_ROD` | `implemented-with-bounded-tests` | C09 | M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure. |
 | 32 | `ABILITY_SERENE_GRACE` | `interaction-unverified` | C06 | Secondary chance branches exist; current species admission and affected primary/certain/multihit scripts need proof. |
-| 33 | `ABILITY_SWIFT_SWIM` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 34 | `ABILITY_CHLOROPHYLL` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 33 | `ABILITY_SWIFT_SWIM` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 34 | `ABILITY_CHLOROPHYLL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 35 | `ABILITY_ILLUMINATE` | `implemented-with-bounded-tests` | C20 | Field encounter modifier exists with source fixed-point/RNG checks; no battle effect is required by this source. |
-| 36 | `ABILITY_TRACE` | `missing` | C07 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
+| 36 | `ABILITY_TRACE` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles entry, full turns, copied abilities/forms, source position queries, identity and failure atomicity verified after recovery. Full four-slot execution and native form graphics remain unimplemented. |
 | 37 | `ABILITY_HUGE_POWER` | `implemented-with-bounded-tests` | C08 | Real Azumarill source full turn and damage match independently extracted C; four-slot interactions unverified. |
-| 38 | `ABILITY_POISON_POINT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 39 | `ABILITY_INNER_FOCUS` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 38 | `ABILITY_POISON_POINT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 39 | `ABILITY_INNER_FOCUS` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 40 | `ABILITY_MAGMA_ARMOR` | `interaction-unverified` | C06 | Freeze-prevention/overlay cleanup branch exists; this is not a FireRed egg-hatching speed bonus. |
-| 41 | `ABILITY_WATER_VEIL` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 42 | `ABILITY_MAGNET_PULL` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 43 | `ABILITY_SOUNDPROOF` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 41 | `ABILITY_WATER_VEIL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 42 | `ABILITY_MAGNET_PULL` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 43 | `ABILITY_SOUNDPROOF` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 44 | `ABILITY_RAIN_DISH` | `implemented-with-bounded-tests` | C08 | Authentic canonical donor heals in the sole source ability phase, with suppression, poison order and JSON tests; four-turn residual dispatch remains pending. |
 | 45 | `ABILITY_SAND_STREAM` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-sand entry, source order, suppression and residual tests pass; four-turn entry remains pending. |
 | 46 | `ABILITY_PRESSURE` | `interaction-unverified` | C09 | PP command helper exists; current authentic roster admission and four-slot counts/targets require validation. |
-| 47 | `ABILITY_THICK_FAT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 48 | `ABILITY_EARLY_BIRD` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 47 | `ABILITY_THICK_FAT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 48 | `ABILITY_EARLY_BIRD` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 49 | `ABILITY_FLAME_BODY` | `implemented-with-bounded-tests` | C08 | Both real holder sides, raw contact RNG before status/type guards and shared burn projection verified; no doubles or native effect claim. |
-| 50 | `ABILITY_RUN_AWAY` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 51 | `ABILITY_KEEN_EYE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 50 | `ABILITY_RUN_AWAY` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 51 | `ABILITY_KEEN_EYE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 52 | `ABILITY_HYPER_CUTTER` | `interaction-unverified` | C06 | Attack-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
 | 53 | `ABILITY_PICKUP` | `implemented-with-bounded-tests` | C20 | Original victory-only ordered party checks and item buckets exist; test ownership after newly admitted modes/items. |
 | 54 | `ABILITY_TRUANT` | `implemented-with-bounded-tests` | C08 | Authentic Slakoth/Slaking complete-turn tests cover raw loafing register, cancellation precedence, ability changes, switches, prepared actions, recharge expiry and serialized continuation. Four-slot and campaign admission remain separate. |
 | 55 | `ABILITY_HUSTLE` | `implemented-with-bounded-tests` | C08 | Real Togetic damage and physical-accuracy miss full turns verified; four-slot interactions unverified. |
-| 56 | `ABILITY_CUTE_CHARM` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 57 | `ABILITY_PLUS` | `missing` | C09 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
-| 58 | `ABILITY_MINUS` | `missing` | C09 | No runtime symbol/handler found in the inspected Domain execution paths; source hook must be added before admission. |
-| 59 | `ABILITY_FORECAST` | `missing` | C07 | Weather recipe explicitly throws called_field_forecast_overlay_required; a token match is a rejection boundary. |
-| 60 | `ABILITY_STICKY_HOLD` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 61 | `ABILITY_SHED_SKIN` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 62 | `ABILITY_GUTS` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 56 | `ABILITY_CUTE_CHARM` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 57 | `ABILITY_PLUS` | `implemented-with-bounded-tests` | C09 | M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure. |
+| 58 | `ABILITY_MINUS` | `implemented-with-bounded-tests` | C09 | M04 original field-query predicates, targeting or shared generic damage verified with real canonical donors. Unmigrated scalar recipes remain atomically rejected; this is not whole-battle/campaign ability closure. |
+| 59 | `ABILITY_FORECAST` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles entry, full turns, copied abilities/forms, source position queries, identity and failure atomicity verified after recovery. Full four-slot execution and native form graphics remain unimplemented. |
+| 60 | `ABILITY_STICKY_HOLD` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 61 | `ABILITY_SHED_SKIN` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 62 | `ABILITY_GUTS` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 63 | `ABILITY_MARVEL_SCALE` | `implemented-with-bounded-tests` | C08 | Real burned Milotic source defense arithmetic and complete turn verified; four-slot interactions unverified. |
-| 64 | `ABILITY_LIQUID_OOZE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 65 | `ABILITY_OVERGROW` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 66 | `ABILITY_BLAZE` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 67 | `ABILITY_TORRENT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 68 | `ABILITY_SWARM` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 69 | `ABILITY_ROCK_HEAD` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 64 | `ABILITY_LIQUID_OOZE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 65 | `ABILITY_OVERGROW` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 66 | `ABILITY_BLAZE` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 67 | `ABILITY_TORRENT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 68 | `ABILITY_SWARM` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 69 | `ABILITY_ROCK_HEAD` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 70 | `ABILITY_DROUGHT` | `implemented-with-bounded-tests` | C07 | Authenticated canonical singles permanent-sun entry, source order, switch/residual/JSON tests pass; four-turn entry remains pending. |
-| 71 | `ABILITY_ARENA_TRAP` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
-| 72 | `ABILITY_VITAL_SPIRIT` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 71 | `ABILITY_ARENA_TRAP` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
+| 72 | `ABILITY_VITAL_SPIRIT` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 73 | `ABILITY_WHITE_SMOKE` | `interaction-unverified` | C06 | Stat-drop protection helper exists; source admission and Intimidate/secondary/Mist/ability-change combinations need proof. |
 | 74 | `ABILITY_PURE_POWER` | `implemented-with-bounded-tests` | C08 | Real Medicham source full turn and damage match independently extracted C; four-slot interactions unverified. |
-| 75 | `ABILITY_SHELL_ARMOR` | `interaction-unverified` | C06 | Runtime branch exists; source branches, actor admission and interactions need closure. |
+| 75 | `ABILITY_SHELL_ARMOR` | `interaction-unverified` | C06 | One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation. |
 | 77 | `ABILITY_AIR_LOCK` | `implemented-with-bounded-tests` | C07 | Authentic canonical donor and all-body versus living-body suppression queries tested; shared recipes consume the same queries. Full doubles weather phases remain pending. |
 
 ## Guardrails and exit evidence
@@ -550,3 +550,7 @@ Shared kernel/weather integration: `evidence/battle-kernel-weather-integration/r
 Recovery integration (2026-10-11): Quick Claw/Macho Brace and Trace/Forecast were reconstructed after the workspace reset and freshly tested. See `evidence/recovery-20261011/held-trace/result.json`; old unuploaded candidate hashes are not recovered Git identities.
 
 M04/M05 combined recovery increment: actual four-slot learned/called targeting, Lightning Rod, Plus/Minus, generic spread/Explosion and a shared temporary-weather/status/end-turn-ability scheduler now pass together with canonical singles Color Change, Trace/Forecast and held-item order. See `tests/Game.SourceTargeting.Tests/SOURCE_CONTRACT.md`, `docs/source-four-slot-end-turn.md`, `docs/source-color-change-ability.md` and `evidence/recovery-20261011/combined-four/result.json`. EXP/entry continuation, no-target costs, the remaining recipes/residuals/cancellers, AI and campaign doubles remain distinct open work.
+
+Combined presentation increment: Original Pound/Tackle scripts now run through the actual campaign view with original C callback/frame comparison, current terrain/Transform/substitute art, owned sound cancellation and a single committed ACK. Native X11 viewport coverage is limited to these two moves; sound uses Dummy and actual pan/listening remain unverified. See `docs/source-hit-animation-slice.md` and `evidence/recovery-20261011/hit-combined-proof/RESULT.json`.
+
+M06 integration shares actual EXP/EV/learning and delayed callbacks with the permanent party authority, and combines weather/screens with KO reward and replacement resume. The authoritative continuation version is now `firered-four-action-reward-continuation-v3`; old diagnostic cursors reject. This remains a Domain boundary, not campaign doubles or player in-battle save support. See `tests/Game.FourRewards.Tests/README.md`.

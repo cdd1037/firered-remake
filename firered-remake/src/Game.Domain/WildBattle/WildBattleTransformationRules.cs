@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Game.Domain.Ids;
+using Game.Domain.Battle;
 using Game.Domain.Pokemon;
 using Game.Domain.Rules;
 
@@ -44,7 +45,7 @@ public static class WildBattleTransformationRules
             CurrentHp = pokemon.CurrentHp,
             Stats = levelUp ? pokemon.Stats : mon.Pokemon.Stats with { MaxHp = pokemon.Stats.MaxHp }
         };
-        return mon with { Pokemon = view, Transform = updated };
+        return SourceBattleHeldItems.ReconcileChoice(mon with { Pokemon = view, Transform = updated });
     }
 
     // BattleScript_EffectTransform has no accuracy, Protect, Safeguard or Substitute command.
@@ -132,6 +133,8 @@ public static partial class WildBattleRules
             var targetSide = Other(side);
             SpendEarlyPartyPp(side, targetSide, slot, move);
             // Source gChosenMove is MOVE_UNAVAILABLE on success and failure alike.
+            if (activeInvocation is not null && State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion)
+                activeInvocation = activeInvocation with { ChosenMove = new("pret:MOVE_UNAVAILABLE") };
             Set(side, Get(side) with { LastUsedMove = new("pret:MOVE_UNAVAILABLE") });
             if (WildBattleTransformationRules.FailureReason(Get(targetSide)) is { } failure)
             { Add(n => new WildBattleMoveFailedEvent(n, State.Turn, side, targetSide, move.Id, failure)); return true; }

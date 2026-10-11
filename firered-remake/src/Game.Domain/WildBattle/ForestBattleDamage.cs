@@ -123,6 +123,8 @@ internal static class ForestBattleDamage
         if (rockTunnelRules && user.HeldItem == "ITEM_HARD_STONE" && type == ElementType.Rock) { attack = attack * 110 / 100; steps.Add(new("hard-stone", attack)); }
         if (rockTunnelRules && (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 99 or 101 or 102 or 107) && user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) { attack = attack * 110 / 100; steps.Add(new("black-glasses", attack)); }
         if (rockTunnelRules && (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107) && user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) { attack = attack * 110 / 100; steps.Add(new("spell-tag", attack)); }
+        if (canonicalSource && physical && user.HeldItem == "ITEM_CHOICE_BAND")
+        { attack = SourceBattleHeldItems.PhysicalAttack(attack, user.HeldItem); steps.Add(new("choice-band", attack)); }
         if (rockTunnelRules && (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102 or 107) && physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) { attack *= 2; steps.Add(new("thick-club", attack)); }
         if (rockTunnelRules && (canonicalSource || Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 102 or 107) && WildBattleEffective.Ability(target) == "ABILITY_THICK_FAT" && type is ElementType.Fire or ElementType.Ice)
         { attack /= 2; steps.Add(new("thick-fat",attack)); }

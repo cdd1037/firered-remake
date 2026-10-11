@@ -35,17 +35,17 @@ public static class SourceBattleTurnOrder
         if (SourceBattleIdentityRules.Validate(frame) is { } invalid) return Fail(invalid);
         if (frame.Queue.Length != frame.BattlerCount || !Enum.IsDefined(phase)) return Fail("source_order_phase");
         if (frame.Slots.Take(frame.BattlerCount).Any(c => c.Body is null)) return Fail("source_order_body_required");
-        if (frame.Slots.Take(frame.BattlerCount).Any(c => c.Body!.HeldItem is not ("ITEM_NONE" or "ITEM_MACHO_BRACE" or "ITEM_QUICK_CLAW")))
+        if (frame.Slots.Take(frame.BattlerCount).Any(c => c.Body!.HeldItem is not ("ITEM_NONE" or "ITEM_MACHO_BRACE" or "ITEM_QUICK_CLAW") &&
+            !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFourRewards.SupportsRewardHeldItem(c.Body.HeldItem))))
             return Fail("source_order_held_effect_unsupported");
         var trace = ImmutableArray.CreateBuilder<RandomTrace>(); var rng = frame.Rng;
         // WEATHER_HAS_EFFECT uses source CHECK_ON_FIELD: hp != 0, with no absent-mask filter.
-        bool suppressWeather = frame.Slots.Take(frame.BattlerCount).Any(c =>
-            c.Body!.Pokemon.CurrentHp > 0 && WildBattleEffective.Ability(c.Body) is "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK");
+        bool suppressWeather = SourceWeatherRules.IsSuppressed(frame);
         uint Speed(BattlerSlot slot)
         {
             var mon = frame.Get(slot).Body!;
-            bool boosted = !suppressWeather && (WildBattleEffective.Ability(mon) == "ABILITY_SWIFT_SWIM" && frame.Field.RainTurnsRemaining > 0 ||
-                WildBattleEffective.Ability(mon) == "ABILITY_CHLOROPHYLL" && frame.Field.SunTurnsRemaining > 0);
+            bool boosted = !suppressWeather && (WildBattleEffective.Ability(mon) == "ABILITY_SWIFT_SWIM" && SourceWeatherRules.HasRain(frame.Field) ||
+                WildBattleEffective.Ability(mon) == "ABILITY_CHLOROPHYLL" && SourceWeatherRules.HasSun(frame.Field));
             return EffectiveSpeed(mon, boosted, slot.Side == BattleSide.Player, frame.RandomTurnNumber);
         }
         int Priority(SourceQueuedAction action) => (action.Kind != SourceActionKind.Move && !(phase == WildBattleOrderPhase.EndTurn && action.Kind == SourceActionKind.Cancelled && action.Token is not null)) || action.MoveSlot is null

@@ -14,6 +14,9 @@ BASE = 'content/generated/fuchsia-gym-presentation/'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 LOCK_SHA = '3811310c38b131d5ece0631cb9269e6dcc7575e3b635f86a0100bade35f01a88'
+# Initial-build witnesses are retained in the immutable lock, not used to generate portraits.
+BUILD_WITNESSES = frozenset('src/Game.Godot/OriginalAudioCore_' + name + '.cs'
+    for name in ('Cry', 'CryCatalog', 'Profiles', 'PsgSynth', 'Resources', 'Sequence', 'Synth'))
 PORTRAITS = [('juggler-front', 'juggler', 'Juggler', 'JUGGLER'),
              ('tamer-front', 'tamer', 'Tamer', 'TAMER'),
              ('koga-front', 'leader_koga', 'LeaderKoga', 'LEADER_KOGA')]
@@ -59,6 +62,8 @@ def authenticated(root=ROOT):
             raise ValueError('Fuchsia Gym presentation source differs: ' + row['path'])
         source[row['path']] = data
     for row in locked['inputs']:
+        if row['path'] in BUILD_WITNESSES:
+            continue
         data = safe(root, row['path']).read_bytes()
         if (len(data), sha(data)) != (row['byteLength'], row['sha256']):
             raise ValueError('Fuchsia Gym presentation dependency differs: ' + row['path'])
@@ -180,7 +185,7 @@ def run(root=ROOT, check=False):
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-    return dict(passed=True, sourceFiles=len(source), reusedInputs=len(inputs), portraits=3, trainers=7,
+    return dict(passed=True, sourceFiles=len(source), reusedInputs=len(inputs), historicalBuildWitnesses=len(BUILD_WITNESSES), portraits=3, trainers=7,
                 inheritedCues=303, newCues=0, recordingsWritten=False,
                 manifestBytes=len(output['manifest.json']), manifestSha256=sha(output['manifest.json']))
 

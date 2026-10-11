@@ -299,6 +299,9 @@ public static partial class WildBattleRules
         private readonly Dictionary<WildBattleSide, string> calledChangedItems = [];
         private void SourceCalledApplyChangedItems()
         {
+            if (State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion && activeInvocation is { } invocation)
+                Set(invocation.Actor, SourceBattleHeldItems.FinishChoice(Get(invocation.Actor), invocation.ChosenMove,
+                    invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys), choiceBatonPassFailed));
             foreach (var side in new[] { WildBattleSide.Player, WildBattleSide.Opponent })
                 if (calledChangedItems.Remove(side, out var item)) Set(side, Get(side) with { HeldItem = item });
         }
@@ -461,7 +464,7 @@ public static partial class WildBattleRules
         {
             SpendInvocationPp(side, side, move); SourceCalledSynchronizeParties();
             var legal = WildBattleSourcePartyEffects.LegalReserveIndices(State.CalledParty!, side);
-            if (legal.IsEmpty) { CalledPartyFailure(side, side, move, "no-eligible-reserve"); return; }
+            if (legal.IsEmpty) { choiceBatonPassFailed = true; CalledPartyFailure(side, side, move, "no-eligible-reserve"); return; }
             var pending = new WildBattleCalledPendingSwitch(side, WildBattleCalledSwitchKind.BatonPass, legal, activeInvocation);
             State = State with { CalledParty = State.CalledParty! with { PendingSwitch = pending } };
             Add(n => new WildBattleCalledPartySwitchRequiredEvent(n, State.Turn, pending));
@@ -534,7 +537,7 @@ public static partial class WildBattleRules
             { CalledPartyFailure(side, target, move, "item-swap-not-allowed"); return; }
             if (WildBattleEffective.Ability(foe) == "ABILITY_STICKY_HOLD")
             { RecordAbility?.Invoke(target, "ABILITY_STICKY_HOLD"); Add(n => new WildBattleAbilityPreventedEvent(n, State.Turn, side, target, move.Id, "ABILITY_STICKY_HOLD")); return; }
-            Set(side, actor with { HeldItem = "ITEM_NONE" }); Set(target, foe with { HeldItem = actor.HeldItem });
+            Set(side, actor with { HeldItem = "ITEM_NONE", SourceChoiceMove = null }); Set(target, foe with { HeldItem = actor.HeldItem, SourceChoiceMove = null });
             if (foe.HeldItem != "ITEM_NONE") calledChangedItems[side] = foe.HeldItem;
             SourceCalledWritePartyItem(side, foe.HeldItem, "trick-party-write");
             SourceCalledWritePartyItem(target, actor.HeldItem, "trick-party-write");
@@ -672,7 +675,7 @@ public static partial class WildBattleRules
             if (foe.HeldItem != "ITEM_NONE" && WildBattleEffective.Ability(foe) == "ABILITY_STICKY_HOLD")
             { RecordAbility?.Invoke(target, "ABILITY_STICKY_HOLD"); Add(n => new WildBattleAbilityPreventedEvent(n, State.Turn, side, target, move.Id, "ABILITY_STICKY_HOLD")); return; }
             if (actor.HeldItem != "ITEM_NONE" || foe.HeldItem is "ITEM_NONE" or "ITEM_ENIGMA_BERRY" || PokemonStorageRules.IsMailItem(foe.HeldItem)) return;
-            Set(target, foe with { HeldItem = "ITEM_NONE" }); calledChangedItems[side] = foe.HeldItem;
+            Set(target, foe with { HeldItem = "ITEM_NONE", SourceChoiceMove = null }); calledChangedItems[side] = foe.HeldItem;
             SourceCalledWritePartyItem(side, foe.HeldItem, "steal-party-write");
             SourceCalledWritePartyItem(target, "ITEM_NONE", "steal-party-write");
             Add(n => new WildBattleHeldItemStolenEvent(n, State.Turn, side, target, move.Id, foe.HeldItem));

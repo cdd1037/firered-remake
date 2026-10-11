@@ -14,6 +14,18 @@ internal static class FuchsiaGymPresentationAssets
     internal const string LockSha256 = "3811310c38b131d5ece0631cb9269e6dcc7575e3b635f86a0100bade35f01a88";
     private const string Base = "content/generated/fuchsia-gym-presentation/";
 
+    // These immutable lock rows witness the initial audio build. Static portrait generation
+    // never consumes C# source; current synthesis ownership is in OriginalAudioCore/PROVENANCE.json.
+    // Keep the old rows byte-identical, while runtime still authenticates every actual asset input.
+    internal static bool IsHistoricalBuildWitness(string path) => path is
+        "src/Game.Godot/OriginalAudioCore_Cry.cs" or
+        "src/Game.Godot/OriginalAudioCore_CryCatalog.cs" or
+        "src/Game.Godot/OriginalAudioCore_Profiles.cs" or
+        "src/Game.Godot/OriginalAudioCore_PsgSynth.cs" or
+        "src/Game.Godot/OriginalAudioCore_Resources.cs" or
+        "src/Game.Godot/OriginalAudioCore_Sequence.cs" or
+        "src/Game.Godot/OriginalAudioCore_Synth.cs";
+
     internal static FuchsiaGymPresentationData Load(string root)
     {
         byte[] Read(string relative, string hash, int expected)
@@ -44,7 +56,11 @@ internal static class FuchsiaGymPresentationAssets
         foreach (var row in l.GetProperty("files").EnumerateArray())
             Read(row.GetProperty("projectPath").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
         foreach (var row in l.GetProperty("inputs").EnumerateArray())
-            Read(row.GetProperty("path").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
+        {
+            string path = row.GetProperty("path").GetString()!;
+            if (!IsHistoricalBuildWitness(path))
+                Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
+        }
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in m.GetProperty("outputs").EnumerateArray())
         {

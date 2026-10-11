@@ -50,7 +50,7 @@ public static class SourceWeatherRules
         int rain, int sandstorm, int sun, int hail)
     {
         if (weather is null) return null;
-        if (profile != BattleRulesProfile.CanonicalSourceSinglesVersion) return "source_weather_profile";
+        if (profile is not (BattleRulesProfile.CanonicalSourceSinglesVersion or SourceBattleKernel.Version)) return "source_weather_profile";
         if (weather.RulesVersion != SourcePermanentWeather.Version || !Enum.IsDefined(weather.Kind)) return "source_weather_version";
         if (rain != 0 || sandstorm != 0 || sun != 0 || hail != 0) return "source_weather_competing_duration";
         return null;

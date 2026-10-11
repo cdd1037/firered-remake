@@ -418,10 +418,10 @@ public static partial class WildBattleRules
             Add(n => new WildBattleCalledDelayedEvent(n, State.Turn, target, future.Move, future.TurnsRemaining, after, after == 0 ? "resolved" : "countdown"));
             if (after != 0 || Get(target).Pokemon.CurrentHp == 0) return;
             var move = catalog.Moves[future.Move]; string purpose = $"wild-battle.{future.Attacker.ToString().ToLowerInvariant()}.future-attack";
-            if (!SourceGenericAccuracy(future.Attacker, target, move, purpose))
-            { SourceCalledVolatileFail(future.Attacker, target, move.Id, "future-accuracy"); return; }
-            int percent = 100 - Draw(purpose + ".damage", 16) % 16;
-            int damage = ScalarAdjust(target, move, Math.Max(1, checked(future.Damage * percent) / 100), purpose);
+            var hit = Recipes.PrepareFutureHit(S(future.Attacker), S(target), move, future.Damage, purpose);
+            if (!hit.Hit) return;
+            int percent = hit.Percent;
+            int damage = ScalarAdjust(target, move, hit.Damage, purpose);
             calledPassiveDelayed = true;
             try
             {
