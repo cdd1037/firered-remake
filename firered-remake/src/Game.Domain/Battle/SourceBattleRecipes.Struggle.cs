@@ -23,6 +23,7 @@ internal abstract partial class SourceRecipeContext
         int lost = SourceGenericApplyDamage(actor, target, move, damage, critical, percent);
         if (critical && lost == 0 && !(SourceHeldDamageEnabled && HeldDamageEffectiveZero(target)))
             Add(n => new SourceCriticalHitEvent(n, Turn, actor, target));
+        SourceDamageResultMessage(actor, target, move);
         if (rawDamage > 0)
         {
             // Source gHpDealt is capped by actual lost HP. Struggle bypasses Rock Head.

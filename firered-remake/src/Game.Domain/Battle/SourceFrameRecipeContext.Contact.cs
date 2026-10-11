@@ -38,5 +38,5 @@ internal sealed partial class FrameRecipeContext
             SetHitItemReceipt(slot, new());
     }
     internal override void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
-        PokemonMoveDefinition move, string purpose, int damage) => ContactCuteCharm(actor, target, move, purpose, damage);
+        PokemonMoveDefinition move, string purpose, int damage) => ContactAbility(catalog, actor, target, move, purpose, damage);
 }

@@ -12,7 +12,7 @@ using Godot;
 
 /// <summary>Four canonical positions, original doubles healthboxes and source event pages.
 /// This view never resolves a turn or substitutes a pair of singles for the actual battle.
-/// Dedicated move animation scripts currently admit singles only; doubles use event pages.</summary>
+/// Six dedicated source move scripts share the singles animation owner and four-slot coordinates.</summary>
 public partial class CampaignView
 {
     private readonly Dictionary<string, Texture2D> _doubleTextures = new(StringComparer.Ordinal);
@@ -134,6 +134,7 @@ public partial class CampaignView
                     Source("sText_AttackerUsedX",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(attack.Actor)),("B_BUFF2",MoveName(attack.CurrentMove)+"!"));break;
             case SourceMoveUsedEvent used:Source("sText_AttackerUsedX",("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(used.Actor)),("B_BUFF2",MoveName(used.Move)+"!"));break;
             case SourceMoveMissedEvent missed:Atk("sText_AttackMissed",missed.Actor);break;
+            case SourceMoveFailedEvent {Reason:"protected"} x:Def("sText_PkmnProtectedItself",x.Target);break;
             case SourceMoveFailedEvent:Source("sText_ButItFailed");break;
             case SourceCriticalHitEvent:Source("sText_CriticalHit");break;
             case SourceEffectivenessEvent x when x.Effectiveness==WildBattleEffectiveness.SuperEffective:Source("sText_SuperEffective");break;
@@ -154,6 +155,11 @@ public partial class CampaignView
             case SourceConfusionChangedEvent x when x.Reason=="countdown":Atk("sText_PkmnIsConfused",x.Side);break;
             case SourceConfusionChangedEvent x when x.After>0:Source("sText_PkmnWasConfused",("B_EFF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));break;
             case SourceStatusChangedEvent x when x.Reason=="woke-up":Atk("sText_PkmnWokeUp",x.Side);break;
+            case SourceStatusChangedEvent x when x.Before==0&&x.After!=0&&DoubleContactHolder(b,x) is {} holder:
+                Source(WildBattleStatus.IsSleeping(x.After)?"sText_PkmnMadeSleep":x.After switch {
+                    WildBattleStatus.Poison=>"sText_PkmnPoisonedBy",WildBattleStatus.Burn=>"sText_PkmnBurnedBy",
+                    WildBattleStatus.Paralysis=>"sText_PkmnWasParalyzedBy",_=>throw new InvalidDataException("Contact status differs.")},
+                    ("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(holder.Side)),("B_SCR_ACTIVE_ABILITY",holder.Ability.Replace("ABILITY_","",StringComparison.Ordinal).Replace('_',' ')),("B_EFF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));break;
             case SourceStatusChangedEvent x when x.Before==0&&x.After!=0:
                 Source(WildBattleStatus.IsSleeping(x.After)?"sText_PkmnFellAsleep":ForestPresentationStatus(x.After) switch {
                     WildBattleStatus.Poison=>WildBattleSourceFieldEffects.IsValidToxic(x.After)?"sText_PkmnBadlyPoisoned":"sText_PkmnWasPoisoned",
@@ -165,7 +171,9 @@ public partial class CampaignView
                 if(x.Reason=="cute-charm")Source("sText_PkmnsXInfatuatedY",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(lover)),("B_DEF_ABILITY","CUTE CHARM"),("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));
                 else Def("sText_PkmnFellInLove",x.Side);break;
             case SourceInfatuationBlockedEvent x:Atk("sText_PkmnImmobilizedByLove",x.Side);break;
-            case SourceAbilityActivatedEvent {Ability:"ABILITY_CUTE_CHARM" or "ABILITY_INTIMIDATE"}:break;
+            case SourceAbilityActivatedEvent {Ability:"ABILITY_CUTE_CHARM" or "ABILITY_INTIMIDATE" or "ABILITY_STATIC" or "ABILITY_POISON_POINT" or "ABILITY_FLAME_BODY" or "ABILITY_EFFECT_SPORE" or "ABILITY_ROUGH_SKIN"}:break;
+            case SourceAbilityDamageEvent {Ability:"ABILITY_ROUGH_SKIN"} x:
+                Source("sText_PkmnHurtsWith",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Holder)),("B_DEF_ABILITY","ROUGH SKIN"),("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Target)));break;
             case SourceAbilityPreventedEvent x when x.Move.Value=="pret:MOVE_NONE"&&DoubleIntimidateActive(b,x.Actor,x.Sequence):
                 Source("sText_PreventedFromWorking",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_DEF_ABILITY",x.Ability.Replace("ABILITY_","",StringComparison.Ordinal).Replace('_',' ')),("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_BUFF1","INTIMIDATE"));break;
             case SourceHeldItemConsumedEvent item:
@@ -187,7 +195,12 @@ public partial class CampaignView
             case SourceRecoveredEvent x:Def("sText_PkmnRegainedHealth",x.Side);break;
             case SourcePotionRecoveredEvent x:Source("gText_PkmnHPRestoredByVar2",("STR_VAR_1",DoubleName(x.Side.Value)),("STR_VAR_2",x.HpRestored.ToString()));break;
             case SourceDrainEvent x:Def("sText_PkmnEnergyDrained",x.Target);break;
-            case SourceProtectAttemptEvent {Succeeded:false}:Source("sText_ButItFailed");break;
+            case SourceCalledSpikesChangedEvent:break; // Mutation precedes the source attack/PP commands.
+            case SourceMtMoonVolatileEvent {Volatile:"spikes",Reason:"move"}:Source("sText_SpikesScattered");break;
+            case SourceMtMoonVolatileEvent {Volatile:"spikes",Reason:"entry"} x:Source("sText_PkmnHurtBySpikes",("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));break;
+            case SourceMtMoonVolatileEvent {Volatile:"protect",Reason:"move"} x:Atk("sText_PkmnProtectedItself2",x.Side);break;
+            case SourceMtMoonVolatileEvent {Volatile:"endure",Reason:"move"} x:Atk("sText_PkmnBracedItself",x.Side);break;
+            case SourceMtMoonVolatileEvent {Volatile:"endure",Reason:"endured"} x:Def("sText_PkmnEnduredHit",x.Side);break;
             case SourceCalledPartySwitchedEvent x:
                 if(x.Kind==WildBattleCalledSwitchKind.Forced){Source("sText_PkmnWasDraggedOut",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)));break;}
                 if(x.Side.Side==BattleSide.Player)
@@ -224,7 +237,7 @@ public partial class CampaignView
                 SourceHpChangedEvent or SourceEndedEvent or SourceReplacementRequiredEvent or SourceCalledPartySwitchRequiredEvent or
                 SourceOpponentRewardCompletedEvent or SourceRewardLearningEvent or SourceDefenseCurledEvent or SourceRolloutChangedEvent or
                 SourceStatusChangedEvent or SourceConfusionChangedEvent or SourceFlinchEvent or SourceDisableChangedEvent or SourceEncoreChangedEvent or
-                SourceProtectAttemptEvent or SourceEffectivenessEvent or SourceCalledPartyChangedEvent:
+                SourceProtectAttemptEvent or SourceDamageAdjustedEvent or SourceEffectivenessEvent or SourceCalledPartyChangedEvent:
                 break;
             default:
                 // Unsupported presentation stays visible and requires an explicit ACK; never silently erase an event.
@@ -232,6 +245,12 @@ public partial class CampaignView
                 Write("unsupportedDoublePresentation",new{type=e.GetType().Name,e.Sequence});break;
         }
         return pages.ToImmutable();
+    }
+    private static SourceAbilityActivatedEvent? DoubleContactHolder(CampaignDoubleBattle battle,SourceStatusChangedEvent status)
+    {
+        string? expected=status.Reason switch {"static"=>"ABILITY_STATIC","poison-point"=>"ABILITY_POISON_POINT","flame-body"=>"ABILITY_FLAME_BODY","effect-spore"=>"ABILITY_EFFECT_SPORE",_=>null};
+        if(expected is null)return null;
+        return battle.Events.LastOrDefault(e=>e.Sequence<status.Sequence&&e is SourceAbilityActivatedEvent or SourceMoveUsedEvent) is SourceAbilityActivatedEvent a&&a.Ability==expected?a:null;
     }
     private static bool DoubleIntimidateActive(CampaignDoubleBattle battle,BattlerSlot actor,long sequence)
     {
@@ -253,14 +272,15 @@ public partial class CampaignView
     }
     private void DoubleAcknowledge()
     {
-        if(_doubleElapsed<.12)return;
+        if(_sourceMoveAnimationGate.IsBlocking)return;
+        if(_doubleElapsed<(_session.State.DoubleBattle?.CurrentEvent is SourceAbilityDamageEvent ? .4 : .12))return;
         if(_doubleOpening&&_doublePage>0&&
             (_doubleElapsed<1||_doubleSecondCry is not null||_sourceAudio?.Snapshot().Cry?.Playing==true))return;
         if(_doublePage+1<_doublePages.Length){_doublePage++;_doubleElapsed=0;return;}
         if(_doubleMenu=="learn-intro"){_doubleMenu="learn-choice";_doubleCursor=0;return;}
         if(_doubleMenu=="struggle"&&_session.State.DoubleBattle!.SelectingSlot is {} actor)
         {DoubleSubmit(new("double_move",PartyIndex:actor,MoveSlot:WildBattleRules.StruggleSlot,Choice:actor^1));return;}
-        DoubleSubmit(new("ack"));
+        AcknowledgeDoubleAttackText();
     }
     private int[] DoubleTargets(int actor,int moveSlot)
     {
@@ -348,6 +368,7 @@ public partial class CampaignView
     {
         var b=_session.State.DoubleBattle!;
         _battleSkin.DrawBackground(this);DrawTexture(CurrentWildBattleTerrain,Vector2.Zero);
+        if(_sourceMoveContinuation is not null)DrawTexture(_sourceMoveField!,Vector2.Zero);
         bool entry=_doubleOpening||b.CurrentEvent is SourceStartedEvent;
         bool portrait=entry&&_doublePage==0||b.Stage==CampaignDoubleBattleStage.Finished&&b.Frame.Outcome==WildBattleOutcome.Won&&b.FinishPageIndex>0;
         if(portrait)DrawTexture(_doubleTextures["twins-front"],new(144,8));
@@ -358,7 +379,7 @@ public partial class CampaignView
             if(entry&&(_doublePage==0||_doublePage==1&&(i&1)==0)||portrait&&(i&1)!=0)continue;
             if(mon.CurrentHp==0&&!(b.CurrentEvent is SourceHpChangedEvent {HpBefore:>0} hit&&hit.Target.Value==i))continue;
             var asset=_battleArt[(mon.SourceSpeciesId,(i&1)==0?"back":"front",mon.IsShiny)];
-            DrawTexture(asset.Texture,asset.Position+DoubleSpriteOffsets[i]);
+            if(_sourceMoveContinuation is null)DrawTexture(asset.Texture,asset.Position+DoubleSpriteOffsets[i]);
             DrawDoubleHealth(i,body);
         }
         bool choosing=b.SelectingSlot is not null&&_doubleNotice is null&&_doublePages.IsEmpty;
@@ -403,6 +424,7 @@ public partial class CampaignView
         DrawTexture(_doubleTextures[player?"healthbox-player":"healthbox-opponent"],center+new Vector2(-32,-16));
         int hp=mon.CurrentHp;
         if(_session.State.DoubleBattle!.CurrentEvent is SourceHpChangedEvent x&&x.Target.Value==slot)hp=(int)Math.Round(Mathf.Lerp(x.HpBefore,x.HpAfter,(float)Math.Clamp(_doubleElapsed/.4,0,1)));
+        if(_session.State.DoubleBattle!.CurrentEvent is SourceAbilityDamageEvent abilityHit&&abilityHit.Target.Value==slot)hp=(int)Math.Round(Mathf.Lerp(abilityHit.HpBefore,abilityHit.HpAfter,(float)Math.Clamp(_doubleElapsed/.4,0,1)));
         var barOrigin=center+new Vector2(player?0:-8,0);
         uint status=ForestPresentationStatus(body.Status);
         if(status==0)DrawTexture(_doubleTextures["hp-label"],barOrigin);

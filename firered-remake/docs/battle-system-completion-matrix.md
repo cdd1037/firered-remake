@@ -44,7 +44,7 @@ P0 means enabling contract work, P1 means a dependency needed before wider admis
 | [C07](#c07) | Ability entry, weather and forms | `interaction-unverified` | P1 / independent-block |
 | [C08](#c08) | Ability damage, absorption, contact and residual gaps | `interaction-unverified` | P1 / bounded |
 | [C09](#c09) | Ability blocking and topology gaps | `interaction-unverified` | P1 / bounded |
-| [C10](#c10) | Genuine four-slot doubles owner | `interaction-unverified` | P1 / independent-block |
+| [C10](#c10) | Genuine four-slot doubles owner | `implemented-with-bounded-tests` | P1 / independent-block |
 | [C11](#c11) | Doubles targets and multi-target effects | `implemented-with-bounded-tests` | P1 / independent-block |
 | [C12](#c12) | Switch, Baton Pass, phasing and faint ownership | `implemented-with-bounded-tests` | P2 / bounded |
 | [C13](#c13) | Run and ordinary capture transaction | `implemented-with-bounded-tests` | P2 / bounded |
@@ -62,7 +62,7 @@ P0 means enabling contract work, P1 means a dependency needed before wider admis
 <a id="c01"></a>
 ### C01 — Authenticated move definitions and recipe admission
 
-354 authenticated definitions; 350 registered singles recipes; 336 direct Metronome choices plus six distinct indirect Mirror Move results. Admission is not effect/interaction/campaign completeness.
+354 authenticated definitions; 354 registered singles recipes; 336 direct Metronome choices plus six distinct indirect Mirror Move results. Admission is not effect/interaction/campaign completeness.
 
 Evidence: `src/Game.Content/PretMetronomeMoveCatalog.cs`, `src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs`, `src/Game.Domain/WildBattle/MetronomeSourceMoveDefinition.cs`.
 Bounded tests/evidence: `tests/Game.MetronomeMetadata.Tests/Program.cs`, `tests/Game.NestedMoveCallers.Tests/Program.cs`.
@@ -566,3 +566,21 @@ Scratch, Cut, Slash and False Swipe now share the original script/callback rende
 ## Shared support and move-end immunity (2026-10-11)
 
 Follow Me and Helping Hand now execute through shared single/four-slot recipes, including exact PP/target ordering, pre-type damage and distinct cleanup timing. The main integrated support suite passes 16 groups/5,834 checks and eight complete turns; shared numeric immunity adds four groups/193 checks. Original singles support-action hashes remain exact. Source-only infatuation/Nightmare vectors do not establish complete four-slot lifecycles. The next playable target is the original Route8 Twins encounter, with its actual party and AI; complete battle/UI coverage is still open. See the two test READMEs.
+
+## Current remaining-work inventory (2026-10-11, source f7e26f6)
+
+The current four-slot recipe whitelist statically admits176 of354 moves;178 are not admitted. This is a definition/target/effect gate count, not176 completely verified moves: live status, ability, item and phase guards still apply. The JSON records each move's admission and the snapshot commit. All354 single-battle recipes are registered, but complete cross-state/caller/party interaction acceptance remains open.
+
+The ability ledger now has28 entries with identified bounded implementation tests and48 marked interaction-unverified. Two stale labels, Intimidate and Pressure, were corrected using existing entry/native and source-target/PP/Struggle evidence. These numbers do not mean28 fully complete and48 absent. A fuller ability-by-context audit remains necessary.
+
+Six dedicated original single-battle move animation scripts are accepted (Pound, Tackle, Scratch, Cut, Slash, False Swipe);348 lack that layer of acceptance. Four-slot reuse of those six is in development. General event pages, source sound availability and a working synthesis stream do not count as dedicated original animation/audio sequence completion.
+
+Main remaining groups are further doubles move/volatile/caller families, hazards and held items, battle bag and expanded AI/special modes, full ability-context combinations, and dedicated presentation. The current parallel small modules are Spikes entry, Protect/Detect/Endure, remaining contact abilities and six-script doubles rendering. The inventory carries no completion percentage or short finish estimate.
+
+## Current shared lifecycle and batch presentation checkpoint
+
+Four-slot move recipe admission is now **180 / 354**, with **174** still gated. This adds Protect, Detect, Endure and Spikes; it does not count all possible interactions as finished. Poison Point, Flame Body, Effect Spore and Rough Skin now share the same contact recipe with the singles adapters and have actual four-action/reward/replacement cases. The ability ledger now has **30 bounded-test records / 46 interaction-unverified records**; the latter is not a count of missing implementations.
+
+The six dedicated hit scripts are batch-checked across four actor positions, targets and absent partners in one existing host. Five have real four-slot kernel dispatch; False Swipe is explicitly presentation-only until its rule family is migrated. Thus dedicated script coverage remains **6 / 354**, not 354. The same batch verifies source frame state, resource/termination/position safety, scene toggling and repeated input; native inspection samples callback families and special layouts. Automated C frame equality and native screenshot inspection remain separate from original-ROM pixel parity and audible output.
+
+The current source hash and per-move admission are in the JSON matrix. Shared Spikes/Protection/contact regressions use the existing bounded suites and immutable singles goldens. Routine validation does not rebuild historical trees or replay already accepted regions.

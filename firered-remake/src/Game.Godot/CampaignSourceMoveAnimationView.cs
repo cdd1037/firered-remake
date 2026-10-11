@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Application;
 using Game.Domain.Pokemon;
+using Game.Domain.Battle;
 using Game.Domain.WildBattle;
 using Game.Presentation.BattleAnimations;
 using Godot;
@@ -22,6 +23,7 @@ public partial class CampaignView
     private CampaignSession? _sourceMoveSession;
     private long _sourceMoveRevision;
     private double _sourceMoveRemainder;
+    private bool _sourceMoveDoubles;
     private string? _sourceVisualBattle;
     private long _sourceVisualSequence;
     private sealed class SilentMoveAudio:ISourceAnimationAudio
@@ -71,6 +73,13 @@ public partial class CampaignView
     }
     private void SynchronizeSourceMovePresentation()
     {
+        if(DoubleBattleVisible)
+        {
+            var current=_session.State.DoubleBattle!;
+            if(_sourceVisualBattle!=current.Id){ResetSourceMoveAnimation("battle-replaced");_sourceVisualBattle=current.Id;}
+            if(_sourceMoveContinuation is not null&&!SourceMoveContextMatches())CancelSourceMoveAnimation("context-changed");
+            return;
+        }
         var b=PresentedWildBattle;
         if(b is null||!SourceTrainerPresentationActive(b))
         { if(_sourceVisualBattle is not null)ResetSourceMoveAnimation("battle-exit");return; }
@@ -124,12 +133,46 @@ public partial class CampaignView
             if(substitute)geometry=geometry with{DisplayCenter=new(side==WildBattleSide.Player?72:176,side==WildBattleSide.Player?97:56)};
             battlers.Add(geometry);
         }
+        StartSourceMoveAnimation(dispatch,assets,battlers,false);
+    }
+    private void AcknowledgeDoubleAttackText()
+    {
+        var b=_session.State.DoubleBattle!;
+        var decision=CampaignMoveAnimationPresentation.AtAttackText(b,_session.EffectiveOptions.BattleScene);
+        if(decision.Dispatch is not {} dispatch){DoubleSubmit(new("ack"));return;}
+        if(_sourceMoveAnimationGate.IsBlocking)return;
+        EnsureSourceMoveAssets();
+        var assets=new Dictionary<string,SourcePixelAsset>(_sourceMoveAssets){{"background",SourcePixels(CurrentWildBattleTerrain,240,112)}};
+        var battlers=new List<AnimationBattler>();
+        for(int slot=0;slot<4;slot++)
+        {
+            // DisplayedSlots is the event-time snapshot, before this hit/KO is acknowledged.
+            // The committed frame may already contain damage and later action results.
+            var body=DoubleDisplayedBody(slot);var mon=body.Pokemon;string face=(slot&1)==0?"back":"front";
+            var displayed=_battleArt[(mon.SourceSpeciesId,face,mon.IsShiny)];
+            var geometry=_sourceBattlerGeometry[(mon.SourceSpeciesId,face)] with{Slot=new(slot),Asset="battler-"+slot,Visible=mon.CurrentHp>0};
+            var center=geometry.Center(true);
+            if(displayed.Position+DoubleSpriteOffsets[slot]!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated doubles/source battler geometry differs.");
+            assets.Add(geometry.Asset,SourcePixels(displayed.Texture,64,64));
+            battlers.Add(geometry);
+        }
+        StartSourceMoveAnimation(dispatch,assets,battlers,true);
+    }
+    private void StartSourceMoveAnimation(CampaignMoveAnimationDispatch dispatch,Dictionary<string,SourcePixelAsset> assets,List<AnimationBattler> battlers,bool doubles)
+    {
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value));
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
-        if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId),cue,battlers,false,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){Apply(new("ack"));return;}
-        _sourceMoveComposer=new(assets,battlers.ToArray());_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;
+        if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId),cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){Apply(new("ack"));return;}
+        _sourceMoveComposer=new(assets,battlers.ToArray());_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
-        Write("sourceMoveAnimationStarted",new{dispatch,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();
+        Write("sourceMoveAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter,x.Visible}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();
+    }
+    private bool SourceMoveContextMatches()
+    {
+        if(_sourceMoveContinuation is not {} pending||_sourceMoveSession!=_session||_sourceMoveRevision!=_session.Revision)return false;
+        return _sourceMoveDoubles
+            ?_session.State.DoubleBattle is {Stage:CampaignDoubleBattleStage.Combat} d&&d.Id==pending.BattleId&&d.CurrentEvent?.Sequence==pending.Sequence
+            :PresentedWildBattle is {} b&&b.Id==pending.BattleId&&WildCurrentEvent(b)?.Sequence==pending.Sequence;
     }
     private void PresentSourceMoveFrame(SourceAnimationFrame frame)
     {
@@ -140,7 +183,7 @@ public partial class CampaignView
     private bool ProcessCommittedMoveAnimation(double delta)
     {
         if(_sourceMoveContinuation is not {} pending)return false;
-        if(_sourceMoveSession!=_session||_sourceMoveRevision!=_session.Revision||PresentedWildBattle is not {} b||b.Id!=pending.BattleId||WildCurrentEvent(b)?.Sequence!=pending.Sequence)
+        if(!SourceMoveContextMatches())
         {CancelSourceMoveAnimation("context-changed");return false;}
         _sourceMoveRemainder+=delta;
         while(_sourceMoveRemainder>=SourceBattleAnimation.SourceFrameSeconds&&_sourceMoveAnimationGate.IsBlocking)

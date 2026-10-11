@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Randomness;
+using Game.Domain.Pokemon;
 using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
@@ -38,6 +39,24 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame) : SourceEntryAb
     {
         var entry = Frame.EntryAbilities ?? throw new SourceRecipeUnsupported("source_entry_lifecycle_required");
         Frame = Frame with { EntryAbilities = entry with { PendingIntimidateMask = (byte)(entry.PendingIntimidateMask | slot.Mask) } };
+    }
+    internal void Spikes(PokemonCatalog catalog, BattlerSlot slot)
+    {
+        if (Frame.Sides[(int)slot.Side].Spikes == 0) return;
+        // Reuse the residual owner's permanent synchronization and actual-occupant faint command.
+        var hazard = new FrameEndTurnContext(Frame);
+        SourceSpikesRules.Enter(catalog, slot, Frame.Sides[(int)slot.Side].Spikes, Turn,
+            hazard.Get, hazard.Set, hazard.Add, hazard.Faint,
+            () => hazard.Add(n => new SourceMtMoonVolatileEvent(n, Turn, slot, "spikes", 0, 1, "entry")));
+        hazard.CheckTeamsLost();
+        Frame = hazard.Frame; Events.AddRange(hazard.Events);
+    }
+    internal void ReplacementAbilities(BattlerSlot slot)
+    {
+        var mon = Get(slot);
+        if (mon.Pokemon.CurrentHp == 0) return;
+        if (WildBattleEffective.Ability(mon) == "ABILITY_TRUANT") Set(slot, mon with { TruantLoafing = true });
+        SwitchIn(slot);
     }
     internal void Settle(bool forecast = true, bool items = true)
     {

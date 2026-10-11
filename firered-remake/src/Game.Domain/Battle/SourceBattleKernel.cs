@@ -46,7 +46,7 @@ public static class SourceBattleKernel
                     return "source_kernel_party_pokemon";
         if (frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion) return "source_kernel_profile";
         if (action.Revision != frame.Revision || !frame.IsCurrent(action.Actor)) return "source_kernel_stale_action";
-        if (!frame.CanAct(action.Actor.Slot) || !frame.CanAct(action.Target) || frame.Outcome != WildBattleOutcome.Ongoing ||
+        if (!frame.CanAct(action.Actor.Slot) || action.Target.Value >= frame.BattlerCount || frame.Get(action.Target).Body is null || frame.Outcome != WildBattleOutcome.Ongoing ||
             !frame.PendingSwitches.IsEmpty || action.ActionOrderIndex < 0 || action.ActionOrderIndex >= frame.BattlerCount)
             return "source_kernel_action_phase";
         var actor = frame.Get(action.Actor.Slot).Body!;
@@ -68,6 +68,12 @@ public static class SourceBattleKernel
             move = catalog.Moves[recharge.Move];
         }
         else if (!SupportsRecipe(move)) return "source_kernel_recipe_not_migrated";
+        if (!frame.CanAct(action.Target) && move.Effect != "EFFECT_SPIKES") return "source_kernel_action_phase";
+        if (move.Effect == "EFFECT_SPIKES" && frame.Layout == SourceBattleLayout.PresetDoubles && frame.EntryAbilities is null)
+            return "source_kernel_spikes_entry_owner_required";
+        if (SourceRecipeContext.HasProtectionRecipe(move.Effect) &&
+            (frame.Layout != SourceBattleLayout.PresetDoubles || frame.Queue.Length != frame.BattlerCount))
+            return "source_kernel_protection_order_required";
         if (move.Effect == "EFFECT_HELPING_HAND" && frame.Layout == SourceBattleLayout.PresetDoubles &&
             frame.Get(action.Actor.Slot.Partner).Body is null) return "source_kernel_helping_hand_empty_partner_not_migrated";
         if (frame.Layout == SourceBattleLayout.Singles && frame.Slots.Any(c => c.Registers.HelpingHand))
@@ -75,7 +81,8 @@ public static class SourceBattleKernel
         if (SourceRecipeContext.HasSwitchRecipe(move.Effect) && frame.Layout == SourceBattleLayout.PresetDoubles && frame.FourTurn is null && frame.Queue.IsEmpty)
             return "source_kernel_switch_owner_required";
         if (move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" && action.Target != action.Actor.Slot ||
-            move.Target == "MOVE_TARGET_SELECTED" && action.Target == action.Actor.Slot)
+            move.Target == "MOVE_TARGET_SELECTED" && action.Target == action.Actor.Slot ||
+            move.Target == "MOVE_TARGET_OPPONENTS_FIELD" && action.Target.Side == action.Actor.Slot.Side)
             return "source_kernel_target_mode";
         if (action.LightningRodRedirected && WildBattleEffective.Ability(frame.Get(action.Target).Body!) != "ABILITY_LIGHTNING_ROD")
             return "source_kernel_redirection_metadata";
@@ -102,7 +109,7 @@ public static class SourceBattleKernel
                 6 + body.SpecialAttackStageDelta, 6 + body.SpecialDefenseStageDelta }.Any(stage => stage is < 0 or > 12))
                 return "source_kernel_stat_stage";
             if (cell.Position.FocusBanded || body.Transform is not null || body.CopyMoves is not null || body.CalledVolatile is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.DestinyBond || body.Nightmare || body.Cursed || body.Rooted || body.YawnTurnsRemaining != 0 || body.ChargeTurnsRemaining != 0 || body.Imprison || body.SourcePartyStatusOverride is not null ||
-                cell.Registers.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout) } || body.Protected || body.Enduring || body.Rage ||
+                cell.Registers.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout) } || body.Rage ||
                 body.BindTurnsRemaining != 0 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.EncoreMoveSlot is not null ||
@@ -111,16 +118,18 @@ public static class SourceBattleKernel
             if (body.ConfusionTurnsRemaining is < 0 or > 5 || body.TruantLoafing && body.Pokemon.CurrentHp == 0 ||
                 cell.Registers.Turn?.Lock is { } retainedLock && (!SupportsTurnLock(catalog, retainedLock) || body.Pokemon.CurrentHp == 0))
                 return "source_kernel_canceller_state";
+            if (SourceProtectionRules.Validate(body) is { } protectionError) return protectionError;
+            if (frame.Layout == SourceBattleLayout.Singles && (body.Protected || body.Enduring))
+                return "source_kernel_volatile_not_migrated";
             if (SourceTurnMoveRules.Validate(body, catalog) is { } turnMoveError) return turnMoveError;
             string ability = WildBattleEffective.Ability(body);
             if (frame.Layout == SourceBattleLayout.PresetDoubles &&
                 (frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(body.Pokemon.AbilityId) ||
                  frame.EntryAbilities is { } entry && entry.AppliedEntries[cell.Slot.Value] != cell.Occupant))
                 return "source_kernel_ability_not_migrated";
-            if (!FuchsiaBattleScope.SupportsAbility(ability) && ability is not ("ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or "ABILITY_VOLT_ABSORB" or "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK" or "ABILITY_LIGHTNING_ROD" or "ABILITY_PLUS" or "ABILITY_MINUS" or "ABILITY_SPEED_BOOST" or "ABILITY_RAIN_DISH" or "ABILITY_TRUANT" or "ABILITY_DRIZZLE" or "ABILITY_DROUGHT" or "ABILITY_SAND_STREAM" or "ABILITY_TRACE" or "ABILITY_FORECAST" or "ABILITY_HYPER_CUTTER" or "ABILITY_WHITE_SMOKE" or "ABILITY_MAGMA_ARMOR" or "ABILITY_SUCTION_CUPS" or "ABILITY_SHADOW_TAG" or "ABILITY_ARENA_TRAP" or "ABILITY_MAGNET_PULL" or "ABILITY_NATURAL_CURE" or "ABILITY_OWN_TEMPO" or "ABILITY_OBLIVIOUS"))
+            if (!FuchsiaBattleScope.SupportsAbility(ability) && ability is not ("ABILITY_HUGE_POWER" or "ABILITY_PURE_POWER" or "ABILITY_HUSTLE" or "ABILITY_MARVEL_SCALE" or "ABILITY_PRESSURE" or "ABILITY_VOLT_ABSORB" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_CLOUD_NINE" or "ABILITY_AIR_LOCK" or "ABILITY_LIGHTNING_ROD" or "ABILITY_PLUS" or "ABILITY_MINUS" or "ABILITY_SPEED_BOOST" or "ABILITY_RAIN_DISH" or "ABILITY_TRUANT" or "ABILITY_DRIZZLE" or "ABILITY_DROUGHT" or "ABILITY_SAND_STREAM" or "ABILITY_TRACE" or "ABILITY_FORECAST" or "ABILITY_HYPER_CUTTER" or "ABILITY_WHITE_SMOKE" or "ABILITY_MAGMA_ARMOR" or "ABILITY_SUCTION_CUPS" or "ABILITY_SHADOW_TAG" or "ABILITY_ARENA_TRAP" or "ABILITY_MAGNET_PULL" or "ABILITY_NATURAL_CURE" or "ABILITY_OWN_TEMPO" or "ABILITY_OBLIVIOUS"))
                 return "source_kernel_ability_not_migrated";
-            if (ability is "ABILITY_COLOR_CHANGE" or
-                "ABILITY_HUSTLE" or "ABILITY_POISON_POINT" or "ABILITY_ROUGH_SKIN" or "ABILITY_FLAME_BODY" or "ABILITY_EFFECT_SPORE")
+            if (ability is "ABILITY_COLOR_CHANGE" or "ABILITY_HUSTLE")
                 return "source_kernel_ability_not_migrated";
         }
         if (move.Power > 0 && move.Type == "TYPE_FIRE" && frame.Slots.Any(c => c.Body?.Status == WildBattleStatus.Freeze))
@@ -146,15 +155,22 @@ public static class SourceBattleKernel
         MetronomeSourceMoveDefinition.Matches(sourceMove);
 
     public static bool SupportsRecipe(PokemonMoveDefinition move) => MetronomeSourceMoveDefinition.Matches(move) &&
-        move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" &&
-        (move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) && move.Effect is not
+        move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_OPPONENTS_FIELD" &&
+        (move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) && move.Effect is not
             ("EFFECT_CONFUSE" or "EFFECT_MEAN_LOOK" or "EFFECT_TRAP") ||
          SourceRecipeContext.HasStatRecoveryRecipe(move.Effect) || SourceRecipeContext.HasFieldSettingRecipe(move.Effect) ||
-         SourceRecipeContext.HasAllySupportRecipe(move.Effect) || SourceRecipeContext.HasTurnMoveRecipe(move.Effect) || SourceRecipeContext.HasSwitchRecipe(move.Effect));
+         SourceRecipeContext.HasProtectionRecipe(move.Effect) || SourceRecipeContext.HasAllySupportRecipe(move.Effect) || SourceRecipeContext.HasTurnMoveRecipe(move.Effect) || SourceRecipeContext.HasSwitchRecipe(move.Effect));
 
     public static SourceKernelResult ResolveAction(PokemonCatalog catalog, SourceBattleFrame frame, SourceResolvedMoveAction action)
     {
         if (ValidateAction(catalog, frame, action) is { } error) return new(frame, [], [], null, error);
+        // Preflight validates unsorted selections; execution must use the real retained owner.
+        // Otherwise a standalone caller could invent a favorable non-last action index.
+        if (SourceRecipeContext.HasProtectionRecipe(ActionMove(catalog, frame.Get(action.Actor.Slot), action.ChosenSlot).Effect) &&
+            (frame.FourTurn?.Phase != SourceFourActionPhase.Actions || frame.NextAction != action.ActionOrderIndex ||
+             frame.Queue[action.ActionOrderIndex].Token?.Owner != action.Actor ||
+             frame.Queue[action.ActionOrderIndex].Kind != SourceActionKind.Move))
+            return new(frame, [], [], null, "source_kernel_protection_order_required");
         try
         {
             var execution = new FrameRecipeContext(catalog, frame, action);

@@ -57,7 +57,7 @@ public static class SourceFourEntryAbilities
         if (SourceBattleIdentityRules.Validate(frame) is { } invalid) return Fail(frame, invalid);
         if (frame.Revision != expectedRevision || frame.EntryAbilities is not null || frame.Turn != 0 || frame.FourTurn is not null ||
             !frame.Queue.IsEmpty || frame.NextAction != 0 || !frame.PendingSwitches.IsEmpty || !frame.Reservations.IsEmpty ||
-            frame.DeferredKoVacancyMask != 0 || frame.Outcome != WildBattleOutcome.Ongoing || frame.Slots.Any(c => c.EntrySerial != 1))
+            frame.Sides.Any(s => s.Spikes != 0) || frame.DeferredKoVacancyMask != 0 || frame.Outcome != WildBattleOutcome.Ongoing || frame.Slots.Any(c => c.EntrySerial != 1))
             return Fail(frame, "source_entry_initial_phase");
         if (frame.Layout != SourceBattleLayout.PresetDoubles || frame.Slots.Any(c => c.Body is null)) return Fail(frame, "source_entry_initial_layout");
         if (frame.Slots.Any(c => c.Body!.CalledOverlay is not null || c.Body.SourceTracePending)) return Fail(frame, "source_entry_initial_overlay");
@@ -86,18 +86,15 @@ public static class SourceFourEntryAbilities
 
     // M06 is the sole replacement owner. It calls this after binding the actual reserve,
     // before committing any callbacks, events or RNG from the replacement transaction.
-    internal static SourceFourActionResult OnReplacement(SourceBattleFrame frame, BattlerSlot slot, bool settle)
+    internal static SourceFourActionResult OnReplacement(PokemonCatalog catalog, SourceBattleFrame frame, BattlerSlot slot)
     {
         var prior = frame.EntryAbilities ?? new(frame.Slots.Select(c => c.Slot == slot ? (OccupantToken?)null : c.Occupant).ToImmutableArray());
         if (prior.AppliedEntries[slot.Value] == frame.Get(slot).Occupant) return Fail(frame, "source_entry_already_applied");
         var next = frame with { EntryAbilities = prior with { AppliedEntries = prior.AppliedEntries.SetItem(slot.Value, frame.Get(slot).Occupant),
             PendingIntimidateMask = (byte)(prior.PendingIntimidateMask & ~slot.Mask) } };
-        var cell = next.Get(slot);
-        if (cell.Body!.Pokemon.CurrentHp > 0 && WildBattleEffective.Ability(cell.Body) == "ABILITY_TRUANT")
-            next = next with { Slots = next.Slots.SetItem(slot.Value, cell with { Body = cell.Body with { TruantLoafing = true } }) };
         var execution = new FrameEntryContext(next);
-        execution.SwitchIn(slot);
-        if (settle) execution.Settle();
+        execution.Spikes(catalog, slot);
+        execution.ReplacementAbilities(slot);
         return new(execution.Frame, execution.Events.ToImmutable(), execution.Trace.ToImmutable(), null);
     }
 

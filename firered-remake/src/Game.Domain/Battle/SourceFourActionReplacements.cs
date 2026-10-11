@@ -58,10 +58,31 @@ public static partial class SourceFourActionTurns
             if (next.PendingSwitches.IsEmpty) next = next with { FourTurn = next.FourTurn! with { Phase = SourceFourActionPhase.EndTurnResume } };
             var switched = SourceBattleEventHooks.Publish(next, (n, t) => new SourceCalledPartySwitchedEvent(n, t, slot,
                 previous.Member!.Value.Index, incoming.Index, WildBattleCalledSwitchKind.FaintedReplacement));
-            var entry = SourceFourEntryAbilities.OnReplacement(switched.State, slot, next.PendingSwitches.IsEmpty);
+            var entry = SourceFourEntryAbilities.OnReplacement(catalog, switched.State, slot);
             if (!entry.Succeeded) return Fail(frame, entry.Fault!);
-            if (ValidateCapability(catalog, entry.State) is { } nextError) return Fail(frame, nextError);
-            return new(entry.State, [switched.Event, .. entry.Events], entry.Trace, null);
+            var events = ImmutableArray.CreateBuilder<SourceBattleEvent>(); events.Add(switched.Event); events.AddRange(entry.Events);
+            next = entry.State;
+            if (HasPendingRewards(next) || next.Outcome != WildBattleOutcome.Ongoing)
+                next = next with { PendingSwitches = [], FourTurn = next.FourTurn! with { Phase = HasPendingRewards(next)
+                    ? SourceFourActionPhase.RewardsPending : SourceFourActionPhase.BattleEnded } };
+            else
+            {
+                next = PrepareReplacements(next);
+                next = next with { FourTurn = next.FourTurn! with { Phase = next.PendingSwitches.IsEmpty
+                    ? SourceFourActionPhase.EndTurnResume : SourceFourActionPhase.ReplacementsPending } };
+                // A newly entered occupant may faint to the hazard. Its next choice belongs to
+                // the same saved residual cursor, without replaying weather/status/timer work.
+                if (next.IsDeferredKoVacant(slot))
+                    foreach (var choice in next.PendingSwitches.Where(p => p.Slot == slot))
+                    {
+                        var required = SourceBattleEventHooks.Publish(next, (n,t) => new SourceCalledPartySwitchRequiredEvent(n,t,choice));
+                        next = required.State; events.Add(required.Event);
+                    }
+            }
+            var settled = next.PendingSwitches.IsEmpty && next.Outcome == WildBattleOutcome.Ongoing && !HasPendingRewards(next)
+                ? SourceFourEntryAbilities.Settle(next) : new SourceFourActionResult(next, [], [], null);
+            if (ValidateCapability(catalog, settled.State) is { } nextError) return Fail(frame, nextError);
+            return new(settled.State, [.. events, .. settled.Events], [.. entry.Trace, .. settled.Trace], null);
         }
         catch (SourceRecipeUnsupported e) { return Fail(frame, e.Message); }
         catch (OverflowException) { return Fail(frame, "source_four_replacement_counter_exhausted"); }

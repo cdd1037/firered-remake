@@ -33,7 +33,7 @@ public sealed record SourceFourActionResult(SourceBattleFrame State, ImmutableAr
 /// This capability is not encounter, AI, all residual effects or campaign admission.</summary>
 public static partial class SourceFourActionTurns
 {
-    public const string Version = "firered-four-action-struggle-v6";
+    public const string Version = "firered-four-action-lifetimes-v7";
 
     public static string? ValidateCapability(PokemonCatalog catalog, SourceBattleFrame frame)
     {
@@ -47,14 +47,16 @@ public static partial class SourceFourActionTurns
             return "source_four_action_weather_conflict";
         if (frame.Slots.Any(c => c.Body is null)) return "source_four_action_body_required";
         // Shared weather, side protections and ally support own their admitted lifetimes.
-        // Spikes still requires its own lifecycle owner.
+        // Existing hazards require the actual entry lifecycle; initial battles have no hazards.
+        if (frame.Sides.Any(s => s.Spikes != 0) && frame.EntryAbilities is null)
+            return "source_four_spikes_entry_owner_required";
         if (frame.Field != new SourceFieldRegisters { Terrain = frame.Field.Terrain, PayDayMoney = frame.Field.PayDayMoney,
                 RainTurnsRemaining = frame.Field.RainTurnsRemaining, SandstormTurnsRemaining = frame.Field.SandstormTurnsRemaining,
                 SunTurnsRemaining = frame.Field.SunTurnsRemaining, HailTurnsRemaining = frame.Field.HailTurnsRemaining,
                 PermanentWeather = frame.Field.PermanentWeather } ||
             frame.Sides.Any(s => s != new SourceSideRegisters(s.Side) { ReflectTurnsRemaining = s.ReflectTurnsRemaining,
                 LightScreenTurnsRemaining = s.LightScreenTurnsRemaining, MistTurnsRemaining = s.MistTurnsRemaining,
-                SafeguardTurnsRemaining = s.SafeguardTurnsRemaining, FollowMeTimer = s.FollowMeTimer, FollowMeTarget = s.FollowMeTarget }))
+                SafeguardTurnsRemaining = s.SafeguardTurnsRemaining, Spikes = s.Spikes, FollowMeTimer = s.FollowMeTimer, FollowMeTarget = s.FollowMeTarget }))
             return "source_four_action_field_phase_not_migrated";
         foreach (var cell in frame.Slots)
         {
@@ -63,18 +65,19 @@ public static partial class SourceFourActionTurns
                 frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(body.Pokemon.AbilityId))
                 return "source_four_action_initial_entry_required";
             if (SourcePokemonValidator.ValidateForBattle(catalog, body.Pokemon) is not null) return "source_four_action_pokemon";
-            if (body.FirstTurnCounter is < 0 or > 2 || body.ProtectConsecutiveUses != 0 || body.FuryCutterCounter != 0 ||
+            if (body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter != 0 ||
                 (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || body.CalledVolatile is not null ||
                 body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null || body.Cursed || body.Rooted ||
                 body.Nightmare || body.DestinyBond || body.Imprison || body.YawnTurnsRemaining != 0 ||
                 body.ChargeTurnsRemaining != 0 || body.BindTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
-                body.EncoreMoveSlot is not null || body.Protected || body.Enduring ||
+                body.EncoreMoveSlot is not null ||
                 body.Rage || body.WaterSport || body.MudSport ||
                 cell.Registers.Turn is { } turn && (turn.SureHitTurnsRemaining != 0 || turn.Lock is not { } locked || !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
                 cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null ||
                 cell.Position.FocusBanded || cell.Position.Wish is not null)
                 return "source_four_action_residual_or_canceller_not_migrated";
+            if (SourceProtectionRules.Validate(body) is { } protectionError) return protectionError;
             if (SourceTurnMoveRules.Validate(body, catalog) is { } turnMoveError) return turnMoveError;
             if (cell.Position.FutureAttack is { } future && (future.Move.Value is not ("pret:MOVE_FUTURE_SIGHT" or "pret:MOVE_DOOM_DESIRE") ||
                 future.Damage > 65535 || !catalog.Moves.ContainsKey(future.Move))) return "source_four_action_future_contract";
@@ -134,7 +137,7 @@ public static partial class SourceFourActionTurns
             var selection = struggle ? SourceMoveTargeting.ResolveCalled(next, action.Slot, move)
                 : SourceMoveTargeting.ResolveLearned(next, action.Slot, action.Target.Value, move);
             if (selection.Fault is { } targetError) return Fail(frame, targetError);
-            var target = selection.Target;
+            var target = selection.Target ?? (move.Effect == "EFFECT_SPIKES" ? action.Slot.Opposite : (BattlerSlot?)null);
             if (target is null) return Fail(frame, "source_four_action_selection_no_target");
             if (SourceBattleKernel.ValidateAction(catalog, next,
                 new(action.Token!.Value.Owner, next.Revision, action.MoveSlot.Value, target.Value)) is { } error)
@@ -213,7 +216,7 @@ public static partial class SourceFourActionTurns
                     : replaced ? SourceMoveTargeting.ResolveReplaced(frame, action.Slot, move)
                     : SourceMoveTargeting.ResolveLearned(frame, action.Slot, action.Target!.Value, move);
                 if (selection.Fault is { } targetError) return Fail(frame, targetError);
-                var target = selection.Target;
+                var target = selection.Target ?? (move.Effect == "EFFECT_SPIKES" ? action.Slot.Opposite : (BattlerSlot?)null);
                 SourceKernelResult result;
                 if (target is null)
                 {
@@ -234,7 +237,9 @@ public static partial class SourceFourActionTurns
                     next.Queue[frame.NextAction] with { MoveSlot = frame.Get(action.Slot).Registers.LastMoveSlot }) };
                 foreach (var faint in result.Events.OfType<SourceFaintedEvent>())
                 {
-                    var defeated = frame.Get(faint.Side).Occupant!.Value;
+                    var defeated = next.Get(faint.Side).Occupant!.Value;
+                    // Entry hazards already register the newly bound occupant, never the departing one.
+                    if (next.FourTurn!.Defeats.Any(d => d.Occupant == defeated)) continue;
                     if (next.Get(faint.Side).Body!.Pokemon.CurrentHp != 0) return Fail(frame, "source_four_action_faint_contract");
                     next = next with { DeferredKoVacancyMask = (byte)(next.DeferredKoVacancyMask | faint.Side.Mask),
                         Queue = next.Queue.Select(a => a.Token?.Owner == defeated ? a with {

@@ -13,11 +13,13 @@ public readonly record struct PixelPoint(int X, int Y);
 public sealed record AnimationBattler(AnimationSlot Slot, string Asset, int YOffset, int Elevation, int SourceWidth, int SourceHeight)
 {
     public PixelPoint? DisplayCenter {get;init;}
+    public bool Visible {get;init;} = true;
+    public int Subpriority => Slot.Value switch {0=>30,1=>40,2=>20,_=>50};
+    public int BackgroundRank => Slot.Value is 0 or 3 ? 2 : 1;
+    public PixelPoint Base(bool doubles) => (doubles ? new PixelPoint[]{new(32,80),new(200,40),new(90,88),new(152,32)} : [new(72,80),new(176,40),new(48,40),new(112,80)])[Slot.Value];
     public PixelPoint Center(bool doubles, bool animationTarget = false)
     {
-        PixelPoint[] singles = [new(72,80),new(176,40),new(48,40),new(112,80)];
-        PixelPoint[] pairs = [new(32,80),new(200,40),new(90,88),new(152,32)];
-        var p = (doubles ? pairs : singles)[Slot.Value];
+        var p = Base(doubles);
         int y = (p.Y + YOffset - (Slot.IsPlayer ? 0 : Elevation)) & 255;
         if (animationTarget) y = Math.Min(104, y + (Slot.IsPlayer ? 8 : 0));
         return new(p.X,y);
@@ -53,6 +55,8 @@ public sealed record SourceAnimationFrame(int Frame, bool Active, PixelPoint[] O
 {
     public SourceVisualSpriteFrame[] Sprites {get;init;} = [];
     public bool BlendEnabled {get;init;}
+    public bool Doubles {get;init;}
+    public int[] BattlerOamRanks {get;init;} = [];
     public PixelPoint[] ObjectOffsets {get;init;} = new PixelPoint[4];
 }
 
@@ -62,6 +66,8 @@ public sealed class SourceBattleAnimation
     public const double SourceFrameSeconds=280896d/16777216;
     public static readonly ReadOnlyCollection<string> SupportedCommands=Array.AsReadOnly(new[]{"loadspritegfx","monbg","setalpha","playsewithpan","createsprite","createvisualtask","delay","waitforvisualfinish","clearmonbg","blendoff","end"});
     private readonly SourceAnimationScript _script;
+    private readonly bool _doubles;
+    private readonly int _battlerCount;
     private readonly CommittedMoveAnimation _cue;
     private readonly Dictionary<int,AnimationBattler> _battlers;
     private readonly ISourceAnimationAudio _audio;
@@ -80,8 +86,8 @@ public sealed class SourceBattleAnimation
     public CommittedMoveAnimation Cue=>_cue;
     public SourceBattleAnimation(SourceAnimationScript script,CommittedMoveAnimation cue,IEnumerable<AnimationBattler> battlers,bool doubles,ISourceAnimationAudio audio)
     {
-        _script=script;_cue=cue;_audio=audio;_battlers=battlers.ToDictionary(x=>x.Slot.Value);
-        if(doubles||cue.Actor.Value>1||cue.Target.Value>1)throw new NotSupportedException("This rendered slice admits source singles only.");
+        _script=script;_cue=cue;_audio=audio;_doubles=doubles;_battlerCount=doubles?4:2;_battlers=battlers.ToDictionary(x=>x.Slot.Value);
+        if(_battlers.Count!=_battlerCount||Enumerable.Range(0,_battlerCount).Any(i=>!_battlers.ContainsKey(i)))throw new InvalidDataException("Animation needs every canonical battle position.");
         if(script.MoveId!=cue.MoveId||!_battlers.ContainsKey(cue.Actor.Value)||!_battlers.ContainsKey(cue.Target.Value))throw new ArgumentException("Animation participants/script differ.");
         if(script.Commands.Length is <1 or >32||script.Commands[^1].Op!="end")throw new InvalidDataException("Unbounded or unterminated script.");
         foreach(var command in script.Commands)Validate(command);
@@ -104,7 +110,7 @@ public sealed class SourceBattleAnimation
     }
     private static int Number(string s)=>s switch{"ANIM_ATTACKER"=>0,"ANIM_TARGET"=>1,_=>int.Parse(s,System.Globalization.CultureInfo.InvariantCulture)};
     private AnimationSlot Resolve(string s)=>Number(s) switch{0=>_cue.Actor,1=>_cue.Target,_=>throw new InvalidDataException("Unknown animation participant.")};
-    public SourceAnimationFrame Snapshot()=>new(_frame,Active,(PixelPoint[])_offsets.Clone(),[.._backgrounds.Order()],_alphaA,_alphaB,[.._sprites.OfType<HitSplat>().Select(x=>new HitSplatFrame(x.Center,x.Scale))],[.._trace]){BlendEnabled=_blendEnabled,ObjectOffsets=(PixelPoint[])_objectOffsets.Clone(),Sprites=[.._sprites.OrderBy(x=>x.Slot).Select(x=>x.Frame with{OamRank=Array.IndexOf(_oamOrder,x.Slot)})]};
+    public SourceAnimationFrame Snapshot()=>new(_frame,Active,(PixelPoint[])_offsets.Clone(),[.._backgrounds.Order()],_alphaA,_alphaB,[.._sprites.OfType<HitSplat>().Select(x=>new HitSplatFrame(x.Center,x.Scale))],[.._trace]){BlendEnabled=_blendEnabled,Doubles=_doubles,BattlerOamRanks=Enumerable.Range(0,_battlerCount).Select(i=>Array.IndexOf(_oamOrder,i)).ToArray(),ObjectOffsets=(PixelPoint[])_objectOffsets.Clone(),Sprites=[.._sprites.OrderBy(x=>x.Slot).Select(x=>x.Frame with{OamRank=Array.IndexOf(_oamOrder,x.Slot)})]};
     public SourceAnimationFrame Tick()
     {
         if(!Active)throw new InvalidOperationException("Animation already ended.");
@@ -124,13 +130,15 @@ public sealed class SourceBattleAnimation
         // Source UpdateOamCoords/BuildSpritePriorities/SortSprites run after sprite
         // callbacks and before tasks. Stable ties retain the preceding frame's OAM order.
         int[] priorities=Enumerable.Repeat(1023,64).ToArray();
-        for(int i=0;i<2;i++)
+        for(int i=0;i<64;i++)
         {
-            var b=_battlers[i];var center=b.DisplayCenter??b.Center(false);var offset=_offsets[i];
-            priorities[i]=512+(i==0?30:40);_oamY[i]=(center.Y+offset.Y-32)&255;
-        }
-        for(int i=2;i<64;i++)
-        {
+            if(_battlers.TryGetValue(i,out var b)&&b.Visible)
+            {
+                var center=b.DisplayCenter??b.Center(_doubles);var offset=_offsets[i];
+                priorities[i]=512+b.Subpriority;
+                if(!_doubles||!_backgrounds.Contains(i)||_clearTicks>=0)_oamY[i]=(center.Y+offset.Y-32)&255;
+                continue;
+            }
             var sprite=_sprites.FirstOrDefault(s=>s.Slot==i);
             if(sprite is null){_oamY[i]=160;continue;}
             var f=sprite.Frame;priorities[i]=(f.Asset is null?768:512)+f.Subpriority;
@@ -149,20 +157,23 @@ public sealed class SourceBattleAnimation
             switch(c.Op)
             {
                 case "loadspritegfx":_loaded.Add(a[0]);_pc++;Wait(1);return;
-                case "monbg":_backgrounds.Add(_cue.Target.Value);break;
+                case "monbg":
+                    if(_battlers[_cue.Target.Value].Visible)_backgrounds.Add(_cue.Target.Value);
+                    if(_doubles&&_battlers[_cue.Target.Partner.Value].Visible)_backgrounds.Add(_cue.Target.Partner.Value);
+                    break;
                 case "setalpha":_blendEnabled=true;_alphaA=Math.Clamp(Number(a[0]),0,16);_alphaB=Math.Clamp(Number(a[1]),0,16);break;
                 case "createsprite":
-                    int slot=Enumerable.Range(2,62).First(i=>_sprites.All(s=>s.Slot!=i));
+                    int slot=Enumerable.Range(0,64).First(i=>(!_battlers.TryGetValue(i,out var reserved)||!reserved.Visible)&&_sprites.All(s=>s.Slot!=i));
                     _oamY[slot]=a[0]=="gHorizontalLungeSpriteTemplate"?160:0;
-                    int priority=Math.Max(3,(Resolve(a[1]).IsPlayer?30:40)-Number(a[2]));
+                    int priority=Math.Max(3,_battlers[Resolve(a[1]).Value].Subpriority-Number(a[2]));
                     if(a[0]=="gBasicHitSplatSpriteTemplate")
                     {
-                        var target=Resolve(a[5]);var center=_battlers[target.Value].Center(false,true);
+                        var target=Resolve(a[5]);var center=_battlers[target.Value].Center(_doubles,true);
                         int x=Number(a[3]);if(!_cue.Actor.IsPlayer)x=-x;
                         if(!_loaded.Contains("ANIM_TAG_IMPACT"))Fail(c,"Impact graphics have not been loaded.");
                         _sprites.Add(new HitSplat(slot,priority,new(center.X+x,center.Y+Number(a[4])),Number(a[6])));
                     }
-                    else if(a[0]=="gHorizontalLungeSpriteTemplate")_sprites.Add(new Lunge(slot,priority,_battlers[_cue.Target.Value].Center(false,true),_cue.Actor,Number(a[3]),Number(a[4])));
+                    else if(a[0]=="gHorizontalLungeSpriteTemplate")_sprites.Add(new Lunge(slot,priority,_battlers[_cue.Target.Value].Center(_doubles,true),_cue.Actor,Number(a[3]),Number(a[4])));
                     else
                     {
                         var recipe=_script.SpriteRecipes[a[0]];
@@ -249,18 +260,18 @@ public sealed class SourceBattleAnimation
             _recipe=recipe;int anim=recipe.Callback=="AnimFalseSwipePositionedSlice"?1:0;
             if(recipe.Animations.Length<=anim||recipe.Animations[anim].Length==0)throw new InvalidDataException("Source sprite frame recipe missing.");
             _animation=recipe.Animations[anim];
-            var target=owner._battlers[owner._cue.Target.Value];var center=target.Center(false,true);
+            var target=owner._battlers[owner._cue.Target.Value];var center=target.Center(owner._doubles,true);
             switch(recipe.Callback)
             {
                 case "AnimSpriteOnMonPos":
                     var mon=owner._battlers[(args[2]==0?owner._cue.Actor:owner._cue.Target).Value];
-                    var p=args[3]==0?mon.Center(false,true):new PixelPoint(mon.Center(false).X,mon.Slot.IsPlayer?80:40);
+                    var p=args[3]==0?mon.Center(owner._doubles,true):mon.Base(owner._doubles);
                     _position=new(p.X+(owner._cue.Actor.IsPlayer?args[0]:-args[0]),p.Y+args[1]);break;
                 case "AnimCuttingSlice":
-                    _direction=args[2];_position=new(center.X+(_direction==0?args[0]:-args[0]),(target.Slot.IsPlayer?88:40)+args[1]);
+                    _direction=args[2];_position=new(center.X+(_direction==0?args[0]:-args[0]),target.Base(owner._doubles).Y+(target.Slot.IsPlayer?8:0)+args[1]);
                     _vx=_direction==0?-1024:1024;_vy=1024;_hFlip=_direction!=0;break;
                 case "AnimSlashSlice":
-                    var slashMon=owner._battlers[(args[0]==0?owner._cue.Actor:owner._cue.Target).Value];var slashCenter=slashMon.Center(false,true);
+                    var slashMon=owner._battlers[(args[0]==0?owner._cue.Actor:owner._cue.Target).Value];var slashCenter=slashMon.Center(owner._doubles,true);
                     _position=new(slashCenter.X+args[1],slashCenter.Y+args[2]);break;
                 case "AnimFalseSwipeSlice":_position=new(center.X-48,center.Y);break;
                 case "AnimFalseSwipePositionedSlice":_position=new(center.X-48+args[0],center.Y);_state=4;break;

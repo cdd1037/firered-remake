@@ -23,16 +23,34 @@ public sealed class SourceBattleFrameComposer
     public byte[] ComposeField(SourceAnimationFrame frame)
     {
         var pixels=new ushort[Width*112];Blit(pixels,_assets["background"],0,0);
-        foreach(var b in _battlers.OrderBy(b=>frame.BackgroundSlots.Contains(b.Slot.Value)?0:1).ThenBy(b=>b.Slot.IsPlayer?1:0))
+        void Battler(AnimationBattler b)
         {
-            var center=b.DisplayCenter??b.Center(false);var offset=(frame.BackgroundSlots.Contains(b.Slot.Value)?frame.Offsets:frame.ObjectOffsets)[b.Slot.Value];Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y);
+            if(!b.Visible)return;
+            var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=(frame.BackgroundSlots.Contains(b.Slot.Value)?frame.Offsets:frame.ObjectOffsets)[b.Slot.Value];
+            Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y);
         }
-        // The VM carries source persistent OAM order, including ties and reused slots.
-        foreach(var sprite in frame.Sprites.OrderByDescending(s=>s.OamRank))
+        void Sprite(SourceVisualSpriteFrame sprite)
         {
-            if(!sprite.Visible||sprite.Asset is null)continue;
+            if(!sprite.Visible||sprite.Asset is null)return;
             if(sprite.Template=="gBasicHitSplatSpriteTemplate")AffineImpact(pixels,_assets[sprite.Asset],new(sprite.Position,sprite.Scale,sprite.Asset),frame.AlphaA,frame.AlphaB,frame.BlendEnabled);
             else BlitSprite(pixels,_assets[sprite.Asset],sprite,frame.AlphaA,frame.AlphaB,frame.BlendEnabled);
+        }
+        // monbg transfers the target and its visible partner to BG1/BG2 at priority 2.
+        // At equal hardware priority, OBJ is in front; BG1 is in front of BG2.
+        // Object battlers and effect sprites share the same persistent source OAM order.
+        if(frame.Doubles)
+        {
+            foreach(var b in _battlers.Where(b=>frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))Battler(b);
+            var objects=_battlers.Where(b=>!frame.BackgroundSlots.Contains(b.Slot.Value)).Select(b=>(Rank:frame.BattlerOamRanks[b.Slot.Value],Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
+                .Concat(frame.Sprites.Select(s=>(s.OamRank,(AnimationBattler?)null,(SourceVisualSpriteFrame?)s)));
+            foreach(var item in objects.OrderByDescending(x=>x.Item1))
+                if(item.Item2 is {} b)Battler(b);else Sprite(item.Item3!);
+        }
+        else
+        {
+            // Preserve the accepted singles composition and every existing pixel hash.
+            foreach(var b in _battlers.OrderBy(b=>frame.BackgroundSlots.Contains(b.Slot.Value)?0:1).ThenBy(b=>b.Slot.IsPlayer?1:0))Battler(b);
+            foreach(var sprite in frame.Sprites.OrderByDescending(s=>s.OamRank))Sprite(sprite);
         }
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=255;}return rgba;

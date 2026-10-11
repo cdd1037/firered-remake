@@ -2,7 +2,7 @@
 """Build linked production CampaignView host. --native requires coordinator GUI slot."""
 import argparse,json,os,subprocess,hashlib
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('output',type=Path);p.add_argument('--native',action='store_true');p.add_argument('--skip-build',action='store_true');p.add_argument('--quit-only',action='store_true');p.add_argument('--no-audio',action='store_true');p.add_argument('--quit-repeats',type=int,default=1);p.add_argument('--substitute-back-only',action='store_true');p.add_argument('--slices',action='store_true');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('output',type=Path);p.add_argument('--native',action='store_true');p.add_argument('--skip-build',action='store_true');p.add_argument('--quit-only',action='store_true');p.add_argument('--no-audio',action='store_true');p.add_argument('--quit-repeats',type=int,default=1);p.add_argument('--substitute-back-only',action='store_true');p.add_argument('--slices',action='store_true');p.add_argument('--doubles',action='store_true');a=p.parse_args()
 root=Path(__file__).resolve().parent.parent;out=a.output.resolve()
 if out.exists():raise SystemExit('Output must be new; keep failed evidence')
 out.mkdir(parents=True);host=root/'tests/CampaignHitHost'
@@ -12,6 +12,7 @@ if a.quit_only:env.update(HIT_QUIT_ONLY='1',HIT_QUIT_REPEATS=str(a.quit_repeats)
 if a.no_audio:env['FIRERED_AUDIO']='0'
 if a.substitute_back_only:env['HIT_SUBSTITUTE_BACK_ONLY']='1'
 if a.slices:env['HIT_SLICE_GROUP']='1'
+if a.doubles:env.update(HIT_DOUBLE_GROUP='1',FIRERED_PRESET_DOUBLES='1')
 for key in ['FIRERED_CAMPAIGN_CHECKPOINT','FIRERED_SOURCE_HIT_ANIMATIONS']:env.pop(key,None)
 for key,name in [('XDG_DATA_HOME','data'),('XDG_CONFIG_HOME','config'),('XDG_CACHE_HOME','cache')]:env[key]=str(out/name)
 (out/'campaign').mkdir();(host/'Assets').mkdir(exist_ok=True)
@@ -29,7 +30,7 @@ def source_manifest():
  files=[]
  for assembly in ['Game.Domain','Game.Application','Game.Content','Game.Godot']:
   files.extend(p for p in (root/'src'/assembly).glob('**/*.cs') if not any(x in p.parts for x in ['bin','obj','.godot']))
- files.extend(host.glob('*.cs'));files.append(root/'tests/Shared/SourceHitCampaignFixture.cs')
+ files.extend(host.glob('*.cs'));files.extend([root/'tests/Shared/SourceHitCampaignFixture.cs',root/'tests/Shared/SourceDoubleHitFixture.cs'])
  return {str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(files)}
 sources=source_manifest();(out/'source-manifest.json').write_text(json.dumps(sources,indent=2)+'\n')
 built=host/'.build-source-manifest.json'
@@ -48,6 +49,6 @@ assert source_manifest()==sources,'Source changed during build/host verification
 assert hashlib.sha256(assembly.read_bytes()).hexdigest()==assembly_sha,'Compiled host changed during verification'
 if a.quit_only:
  assert all(json.loads((out/'quit-result.json').read_text()).values());print('PASS minimal campaign quit');raise SystemExit(0)
-result=json.loads((out/'result.json').read_text());assert result['passed'] and result['runtime'].startswith('10.') and result['checks']>100 and len(result['frames'])==(2 if a.substitute_back_only else 14 if a.slices else 8)
+result=json.loads((out/'result.json').read_text());assert result['passed'] and result['runtime'].startswith('10.') and result['checks']>100 and len(result['frames'])==(20 if a.doubles else 2 if a.substitute_back_only else 14 if a.slices else 8)
 quit_result=json.loads((out/'quit-result.json').read_text());assert all(v for k,v in quit_result.items() if not (a.substitute_back_only and k=='pendingBeforeQuit'))
 print(json.dumps(dict(passed=True,checks=result['checks'],native=a.native)))

@@ -163,7 +163,7 @@ Test("switch overflow and forged Baton owner retain input state events and RNG",
  Atomic(forged,SourceFourActionTurns.ChooseActionSwitch(catalog,forged,pending.Continuation!.Value,new(0),new(BattleSide.Player,2)),"forged suspended PP owner");
  var max=pending.State with{EventSequence=long.MaxValue};Atomic(max,SourceFourActionTurns.ChooseActionSwitch(catalog,max,new(max.Revision,max.EventSequence,max.NextAction,max.FourTurn!.Phase),new(0),new(BattleSide.Player,2)),"event counter exhausted");
 });
-Test("Spikes remains explicit atomic entry boundary",()=>{
- var f=Entry(Plain([Mon("GYARADOS","DRAGON_DANCE")]));f=f with{Sides=f.Sides.SetItem(0,f.Sides[0]with{Spikes=1})};Atomic(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f).SetItem(0,Switch(f,0,2))),"Spikes capability");
+Test("invalid Spikes layer remains an atomic boundary",()=>{
+ var f=Entry(Plain([Mon("GYARADOS","DRAGON_DANCE")]));f=f with{Sides=f.Sides.SetItem(0,f.Sides[0]with{Spikes=4})};Atomic(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f).SetItem(0,Switch(f,0,2))),"Spikes capability");
 });
 Check(groups>0&&turns>0&&switches>0,"nonempty complete-turn evidence");Console.WriteLine(Json(new{passed=failures==0,groups,checks,failures,turns,switches,sourceVectors,runtime=Environment.Version.ToString()}));return failures==0?0:1;

@@ -74,7 +74,7 @@ internal abstract partial class SourceRecipeContext
             return EarlyPartyAccuracy(side, target, move, purpose, false);
         }
 
-        internal void SourceGenericMiss(BattlerSlot side, BattlerSlot target, PokemonMoveDefinition move) =>
+        internal virtual void SourceGenericMiss(BattlerSlot side, BattlerSlot target, PokemonMoveDefinition move) =>
             Add(n => new SourceMoveMissedEvent(n, Turn, side, target, move.Id));
 
         internal bool SourceGenericCritical(WildBattleCombatant actor, WildBattleCombatant target, PokemonMoveDefinition move, string purpose)
@@ -99,9 +99,14 @@ internal abstract partial class SourceRecipeContext
                 sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor),
                 sourceHelpingHand: Invocation is { } invocation && HelpingHand(invocation.Actor)).Damage;
 
+        // The canonical owner emits result text here, after actual HP/critical commands.
+        // Legacy singles retain their existing event timing through the empty default.
+        internal virtual void SourceDamageResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) { }
+
         internal void SourceGenericEffectiveness(PokemonCatalog catalog, BattlerSlot side, BattlerSlot targetSide,
             PokemonMoveDefinition move)
         {
+            SourceDamageResultMessage(side, targetSide, move);
             var target = Get(targetSide);
             if (!target.Identified || move.Type is not ("TYPE_NORMAL" or "TYPE_FIGHTING"))
             {

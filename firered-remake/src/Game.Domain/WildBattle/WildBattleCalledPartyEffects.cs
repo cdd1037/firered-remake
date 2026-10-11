@@ -93,8 +93,7 @@ public static class WildBattleSourcePartyEffects
     // has different arrays even when the permanent party data is unchanged.
     internal static bool SameMember(WildBattleCalledPartyMember a, WildBattleCalledPartyMember b) =>
         a with { Pokemon = b.Pokemon } == b && SamePokemon(a.Pokemon, b.Pokemon);
-    public static int SpikesDamage(int maxHp, int layers) => layers is >= 1 and <= 3 && maxHp > 0
-        ? Math.Max(1, maxHp / ((5 - layers) * 2)) : throw new ArgumentOutOfRangeException(nameof(layers));
+    public static int SpikesDamage(int maxHp, int layers) => SourceSpikesRules.Damage(maxHp, layers);
     public static int BeatUpBaseDamage(PokemonCatalog catalog, WildBattleCalledPartyMember contributor,
         WildBattleCombatant target, int power) =>
         catalog.Species[contributor.Pokemon.Species].BaseStats.Attack * power * (contributor.Pokemon.Level * 2 / 5 + 2) /
@@ -431,16 +430,8 @@ public static partial class WildBattleRules
             SetCalledOverlay(side, move, (Get(side).CalledOverlay ?? new()) with { Ability = theirs });
             if (swap) SetCalledOverlay(target, move, (Get(target).CalledOverlay ?? new()) with { Ability = own });
         }
-        private void CalledSpikes(WildBattleSide side, PokemonMoveDefinition move)
-        {
-            var target = Other(side); var party = State.CalledParty!;
-            int before = target == WildBattleSide.Player ? party.PlayerSpikes : party.OpponentSpikes;
-            if (before == 3) activeInvocation = activeInvocation! with { Flags = activeInvocation!.Flags | WildBattleInvocationFlags.PpNotAffectedByPressure };
-            else { State = State with { CalledParty = target == WildBattleSide.Player ? party with { PlayerSpikes = before + 1 } : party with { OpponentSpikes = before + 1 } };
-                Add(n => new WildBattleCalledSpikesChangedEvent(n, State.Turn, target, before, before + 1)); }
-            SpendInvocationPp(side, target, move);
-            if (before == 3) CalledPartyFailure(side, target, move, "spikes-at-maximum");
-        }
+        private void CalledSpikes(WildBattleSide side, PokemonMoveDefinition move) =>
+            new SinglesRecipeBridge(this).ExecuteSpikes(SinglesBattleAdapter.Slot(side), activeInvocation!.PpSlot, move);
         private void CalledPartyHeal(WildBattleSide side, PokemonMoveDefinition move)
         {
             SpendInvocationPp(side, side, move); SourceCalledSynchronizeParties();
@@ -620,13 +611,9 @@ public static partial class WildBattleRules
             Add(n => new WildBattleCalledPartySwitchedEvent(n, State.Turn, side, outgoingIndex, index, kind));
             CalledPartySwitchCommitted?.Invoke(side, kind);
             int spikes = side == WildBattleSide.Player ? State.CalledParty.PlayerSpikes : State.CalledParty.OpponentSpikes;
-            if (spikes > 0 && !WildBattleEffective.HasType(catalog, next, "TYPE_FLYING") && WildBattleEffective.Ability(next) != "ABILITY_LEVITATE")
-            {
-                int before = next.Pokemon.CurrentHp, damage = WildBattleSourcePartyEffects.SpikesDamage(next.Pokemon.Stats.MaxHp, spikes), after = Math.Max(0, before - damage);
-                Set(side, Get(side) with { Pokemon = next.Pokemon with { CurrentHp = after } });
-                Add(n => new WildBattleHpChangedEvent(n, State.Turn, otherSide, side, new("pret:MOVE_SPIKES"), before, after, damage, false, 100));
-                if (after == 0) ForestFaint(side);
-            }
+            SourceSpikesRules.Enter(catalog, SinglesBattleAdapter.Slot(side), spikes, State.Turn,
+                s => Get(SinglesBattleAdapter.Side(s)), (s, body) => Set(SinglesBattleAdapter.Side(s), body),
+                create => Add(n => SourceBattleEventAdapter.Export(create(n))), s => ForestFaint(SinglesBattleAdapter.Side(s)));
             if (Get(side).Pokemon.CurrentHp > 0)
             {
                 SourceTurnCycleSwitchIn(side);

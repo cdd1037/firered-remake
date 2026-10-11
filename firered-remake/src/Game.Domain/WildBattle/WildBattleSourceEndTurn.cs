@@ -101,7 +101,7 @@ public static partial class WildBattleRules
         {
             // HandleEndTurn_ContinueBattle precedes every field/battler callback, including Uproar.
             foreach (var side in new[] { WildBattleSide.Player, WildBattleSide.Opponent })
-                Set(side, Get(side) with { Flinched = false, Protected = false, Enduring = false });
+                Set(side, SourceTurnBoundaryRules.PrepareBody(Get(side)));
             SnorlaxCancelSleepingLocks();
             CalledCancelSleepingLocks();
         }

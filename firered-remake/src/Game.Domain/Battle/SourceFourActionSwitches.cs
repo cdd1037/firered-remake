@@ -15,8 +15,8 @@ public static partial class SourceFourActionTurns
             ? "source_four_switch_trapped_" + ability : null;
     }
 
-    // No Spikes/entry-item script is silently skipped: capability validation rejects these
-    // states before reaching this transaction. All voluntary and move-triggered entries happen
+    // Shared Spikes precedes actual entry abilities; unsupported entry item/volatile states
+    // still fail capability validation. All voluntary and move-triggered entries happen
     // inside the current action, independently of the approved end-turn KO-entry policy.
     internal static SourceFourActionResult BindActionSwitch(PokemonCatalog catalog, SourceBattleFrame frame,
         BattlerSlot slot, PartyMemberKey incoming, WildBattleCalledSwitchKind kind)
@@ -58,7 +58,7 @@ public static partial class SourceFourActionTurns
         var switched = SourceBattleEventHooks.Publish(bound.State, (n,t) => new SourceCalledPartySwitchedEvent(n,t,slot,
             previous.Member!.Value.Index,incoming.Index,kind));
         events.Add(switched.Event);
-        var entry = SourceFourEntryAbilities.OnReplacement(switched.State, slot, false);
+        var entry = SourceFourEntryAbilities.OnReplacement(catalog, switched.State, slot);
         if (!entry.Succeeded) return Fail(frame, entry.Fault!);
         if (ValidateCapability(catalog, entry.State) is { } invalid) return Fail(frame, invalid);
         return new(entry.State, [.. events, .. entry.Events], entry.Trace, null);
@@ -85,9 +85,11 @@ public static partial class SourceFourActionTurns
             var actionEvents = switched.Events.AddRange(immunity.Events).AddRange(berries.Events);
             var next = SourceMoveHistoryReducer.Apply(catalog, berries.State,
                 invocation with { CurrentMove = new("pret:MOVE_NONE") }, actionEvents, false);
-            next = next with { FourTurn = next.FourTurn! with { Phase = next.NextAction == next.Queue.Length
-                ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.Actions } };
-            var settled = SourceFourEntryAbilities.Settle(next);
+            next = next with { FourTurn = next.FourTurn! with { Phase = HasPendingRewards(next) ? SourceFourActionPhase.RewardsPending
+                : next.Outcome != WildBattleOutcome.Ongoing ? SourceFourActionPhase.BattleEnded
+                : next.NextAction == next.Queue.Length ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.Actions } };
+            var settled = next.Outcome == WildBattleOutcome.Ongoing && !HasPendingRewards(next)
+                ? SourceFourEntryAbilities.Settle(next) : new SourceFourActionResult(next, [], [], null);
             if (ValidateCapability(catalog, settled.State) is { } error) return Fail(frame,error);
             return new(settled.State, [.. actionEvents, .. settled.Events], [.. switched.Trace, .. settled.Trace], null);
         }

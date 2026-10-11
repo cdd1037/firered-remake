@@ -350,9 +350,9 @@
     {
       "id": "C10",
       "title": "Genuine four-slot doubles owner",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "M01–M06 shared four-slot actions, rewards/learning and approved end-turn KO replacement are integrated with initial/KO/voluntary/Baton/Roar entry. Authentic Route8 Twins uses its original roster/default moves and CHECK_BAD_MOVE AI. Full earned party with Pecha Berry, real public victory, controlled exhausted-PP defeat, strict save/reload and retry pass138commands/284checks. Dedicated presentation and wider effects/AI/bag support remain open.",
+      "scope": "M01\u2013M06 shared four-slot actions, rewards/learning and approved end-turn KO replacement are integrated with initial/KO/voluntary/Baton/Roar entry. Authentic Route8 Twins uses its original roster/default moves and CHECK_BAD_MOVE AI. Full earned party with Pecha Berry, real public victory, controlled exhausted-PP defeat, strict save/reload and retry pass138commands/284checks. Dedicated presentation and wider effects/AI/bag support remain open.",
       "implementationEvidence": [
         "src/Game.Domain/Battle/SourceFourActionTurns.cs",
         "src/Game.Domain/Battle/SourceFourRewards.cs",
@@ -1785,9 +1785,9 @@
     {
       "id": 22,
       "symbol": "ABILITY_INTIMIDATE",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C07",
-      "assessment": "Shared canonical singles and actual four-slot initial/KO-entry callbacks verified with source ordering, exact occupancy, weather/form suppression and explicit copied-ability lifecycle. General voluntary/Baton/Roar/Spikes and full Application admission remain pending.",
+      "assessment": "Shared canonical and actual four-slot entry callbacks have bounded order/occupant tests. Original earned Gyarados forced replacement additionally reached actual native Intimidate text/stat event in the Twins view. This does not certify all entry/hazard/ability-change combinations.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
@@ -1835,7 +1835,9 @@
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "implementationEvidence": [
-        "docs/source-four-slot-entry-abilities.md"
+        "docs/source-four-slot-entry-abilities.md",
+        "tests/Game.FourEntryAbilities.Tests/README.md",
+        "tests/CampaignDoubleHost/evidence/native-e14578e/result.json"
       ]
     },
     {
@@ -1868,8 +1870,13 @@
       "symbol": "ABILITY_ROUGH_SKIN",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "Both real holder sides, per-hit actual HP loss, source 1/16 passive damage and faint order verified; no doubles or native effect claim.",
-      "implementationBranchLocations": [],
+      "assessment": "One shared recipe now covers authenticated singles and actual four-slot contact, retained receipt guards, per-hit status/KO, reward pauses and delayed replacements. Controlled canonical receipt/Substitute and future Bide boundaries remain documented; this is not complete ability/campaign/animation acceptance.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/Battle/SourceBattleRecipes.Contact.cs",
+          "line": 38
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "src/battle_util.c",
@@ -1880,6 +1887,10 @@
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "currentEvidence": [
         "docs/source-contact-absorb-abilities.md"
+      ],
+      "implementationEvidence": [
+        "docs/source-four-contact-lifecycle.md",
+        "tests/Game.ContactLifecycle.Tests/README.md"
       ]
     },
     {
@@ -2071,29 +2082,13 @@
     {
       "id": 27,
       "symbol": "ABILITY_EFFECT_SPORE",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation.",
+      "assessment": "One shared recipe now covers authenticated singles and actual four-slot contact, retained receipt guards, per-hit status/KO, reward pauses and delayed replacements. Controlled canonical receipt/Substitute and future Bide boundaries remain documented; this is not complete ability/campaign/animation acceptance.",
       "implementationBranchLocations": [
         {
-          "path": "src/Game.Domain/WildBattle/WildBattleMtMoonExecution.cs",
-          "line": 131
-        },
-        {
-          "path": "src/Game.Domain/WildBattle/WildBattleMtMoonExecution.cs",
-          "line": 134
-        },
-        {
-          "path": "src/Game.Domain/WildBattle/WildBattleMtMoonExecution.cs",
-          "line": 139
-        },
-        {
-          "path": "src/Game.Domain/WildBattle/WildBattleMtMoonExecution.cs",
-          "line": 146
-        },
-        {
-          "path": "src/Game.Domain/Encounters/EarlyLandEncounterRules.cs",
-          "line": 280
+          "path": "src/Game.Domain/Battle/SourceBattleRecipes.Contact.cs",
+          "line": 38
         }
       ],
       "sourceOccurrenceLocations": [
@@ -2103,7 +2098,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-four-contact-lifecycle.md",
+        "tests/Game.ContactLifecycle.Tests/README.md"
+      ]
     },
     {
       "id": 28,
@@ -2425,25 +2424,13 @@
     {
       "id": 38,
       "symbol": "ABILITY_POISON_POINT",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C06",
-      "assessment": "One or more runtime conditional branches exist. They do not establish complete source semantics, legal actor admission, all interactions or presentation.",
+      "assessment": "One shared recipe now covers authenticated singles and actual four-slot contact, retained receipt guards, per-hit status/KO, reward pauses and delayed replacements. Controlled canonical receipt/Substitute and future Bide boundaries remain documented; this is not complete ability/campaign/animation acceptance.",
       "implementationBranchLocations": [
         {
-          "path": "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
-          "line": 130
-        },
-        {
-          "path": "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
-          "line": 134
-        },
-        {
-          "path": "src/Game.Domain/WildBattle/WildBattleRoute3Execution.cs",
-          "line": 139
-        },
-        {
-          "path": "src/Game.Domain/Encounters/EarlyLandEncounterRules.cs",
-          "line": 276
+          "path": "src/Game.Domain/Battle/SourceBattleRecipes.Contact.cs",
+          "line": 38
         }
       ],
       "sourceOccurrenceLocations": [
@@ -2453,7 +2440,11 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "docs/source-four-contact-lifecycle.md",
+        "tests/Game.ContactLifecycle.Tests/README.md"
+      ]
     },
     {
       "id": 39,
@@ -2796,9 +2787,9 @@
     {
       "id": 46,
       "symbol": "ABILITY_PRESSURE",
-      "status": "interaction-unverified",
+      "status": "implemented-with-bounded-tests",
       "workPackage": "C09",
-      "assessment": "PP command helper exists; current authentic roster admission and four-slot counts/targets require validation.",
+      "assessment": "Authentic donor single-turn, ally slot equality, spread/all-target stored-ability counts and retained-fainted no-target costs have bounded tests. Forced Struggle calculates the Pressure command but spends no learned PP. All callers and remaining shared recipes still need their own coverage.",
       "implementationBranchLocations": [
         {
           "path": "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
@@ -2836,7 +2827,14 @@
         }
       ],
       "locationIndexMeaning": "Locations identify candidate branches/source symbols, not proof that every branch is reachable or correct.",
-      "confidence": "high for stated implementation boundary; complete interaction coverage unverified"
+      "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
+      "implementationEvidence": [
+        "tests/Game.SourceMechanicsAdmission.Tests/Program.cs",
+        "tests/Game.SourceSharedKernel.Tests/Program.cs",
+        "tests/Game.SourceTargeting.Tests/Program.cs",
+        "tests/Game.FourRewards.Tests/Program.cs",
+        "tests/Game.FourStruggle.Tests/Program.cs"
+      ]
     },
     {
       "id": 47,
@@ -2893,8 +2891,13 @@
       "symbol": "ABILITY_FLAME_BODY",
       "status": "implemented-with-bounded-tests",
       "workPackage": "C08",
-      "assessment": "Both real holder sides, raw contact RNG before status/type guards and shared burn projection verified; no doubles or native effect claim.",
-      "implementationBranchLocations": [],
+      "assessment": "One shared recipe now covers authenticated singles and actual four-slot contact, retained receipt guards, per-hit status/KO, reward pauses and delayed replacements. Controlled canonical receipt/Substitute and future Bide boundaries remain documented; this is not complete ability/campaign/animation acceptance.",
+      "implementationBranchLocations": [
+        {
+          "path": "src/Game.Domain/Battle/SourceBattleRecipes.Contact.cs",
+          "line": 38
+        }
+      ],
       "sourceOccurrenceLocations": [
         {
           "path": "src/battle_util.c",
@@ -2905,6 +2908,10 @@
       "confidence": "high for stated implementation boundary; complete interaction coverage unverified",
       "currentEvidence": [
         "docs/source-contact-absorb-abilities.md"
+      ],
+      "implementationEvidence": [
+        "docs/source-four-contact-lifecycle.md",
+        "tests/Game.ContactLifecycle.Tests/README.md"
       ]
     },
     {
@@ -3870,7 +3877,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 16,
         "symbol": "MOVE_POUND"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_KARATE_CHOP",
@@ -3890,7 +3898,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 29,
         "symbol": "MOVE_KARATE_CHOP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DOUBLE_SLAP",
@@ -3910,7 +3919,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 42,
         "symbol": "MOVE_DOUBLE_SLAP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_COMET_PUNCH",
@@ -3930,7 +3940,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 55,
         "symbol": "MOVE_COMET_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MEGA_PUNCH",
@@ -3950,7 +3961,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 68,
         "symbol": "MOVE_MEGA_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_PAY_DAY",
@@ -3970,7 +3982,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 81,
         "symbol": "MOVE_PAY_DAY"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FIRE_PUNCH",
@@ -3990,7 +4003,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 94,
         "symbol": "MOVE_FIRE_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ICE_PUNCH",
@@ -4010,7 +4024,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 107,
         "symbol": "MOVE_ICE_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_THUNDER_PUNCH",
@@ -4030,7 +4045,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 120,
         "symbol": "MOVE_THUNDER_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SCRATCH",
@@ -4050,7 +4066,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 133,
         "symbol": "MOVE_SCRATCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_VICE_GRIP",
@@ -4070,7 +4087,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 146,
         "symbol": "MOVE_VICE_GRIP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_GUILLOTINE",
@@ -4090,7 +4108,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 159,
         "symbol": "MOVE_GUILLOTINE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_RAZOR_WIND",
@@ -4110,7 +4129,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 172,
         "symbol": "MOVE_RAZOR_WIND"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SWORDS_DANCE",
@@ -4130,7 +4150,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 185,
         "symbol": "MOVE_SWORDS_DANCE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CUT",
@@ -4150,7 +4171,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 198,
         "symbol": "MOVE_CUT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_GUST",
@@ -4170,7 +4192,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 211,
         "symbol": "MOVE_GUST"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_WING_ATTACK",
@@ -4190,7 +4213,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 224,
         "symbol": "MOVE_WING_ATTACK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WHIRLWIND",
@@ -4210,7 +4234,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 237,
         "symbol": "MOVE_WHIRLWIND"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FLY",
@@ -4230,7 +4255,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 250,
         "symbol": "MOVE_FLY"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BIND",
@@ -4250,7 +4276,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 263,
         "symbol": "MOVE_BIND"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SLAM",
@@ -4270,7 +4297,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 276,
         "symbol": "MOVE_SLAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_VINE_WHIP",
@@ -4290,7 +4318,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 289,
         "symbol": "MOVE_VINE_WHIP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_STOMP",
@@ -4310,7 +4339,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 302,
         "symbol": "MOVE_STOMP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DOUBLE_KICK",
@@ -4330,7 +4360,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 315,
         "symbol": "MOVE_DOUBLE_KICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MEGA_KICK",
@@ -4350,7 +4381,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 328,
         "symbol": "MOVE_MEGA_KICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_JUMP_KICK",
@@ -4370,7 +4402,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 341,
         "symbol": "MOVE_JUMP_KICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ROLLING_KICK",
@@ -4390,7 +4423,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 354,
         "symbol": "MOVE_ROLLING_KICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SAND_ATTACK",
@@ -4410,7 +4444,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 367,
         "symbol": "MOVE_SAND_ATTACK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_HEADBUTT",
@@ -4430,7 +4465,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 380,
         "symbol": "MOVE_HEADBUTT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HORN_ATTACK",
@@ -4450,7 +4486,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 393,
         "symbol": "MOVE_HORN_ATTACK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FURY_ATTACK",
@@ -4470,7 +4507,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 406,
         "symbol": "MOVE_FURY_ATTACK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HORN_DRILL",
@@ -4490,7 +4528,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 419,
         "symbol": "MOVE_HORN_DRILL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TACKLE",
@@ -4510,7 +4549,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 432,
         "symbol": "MOVE_TACKLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BODY_SLAM",
@@ -4530,7 +4570,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 445,
         "symbol": "MOVE_BODY_SLAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WRAP",
@@ -4550,7 +4591,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 458,
         "symbol": "MOVE_WRAP"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TAKE_DOWN",
@@ -4570,7 +4612,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 471,
         "symbol": "MOVE_TAKE_DOWN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_THRASH",
@@ -4590,7 +4633,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 484,
         "symbol": "MOVE_THRASH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DOUBLE_EDGE",
@@ -4610,7 +4654,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 497,
         "symbol": "MOVE_DOUBLE_EDGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TAIL_WHIP",
@@ -4630,7 +4675,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 510,
         "symbol": "MOVE_TAIL_WHIP"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_POISON_STING",
@@ -4650,7 +4696,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 523,
         "symbol": "MOVE_POISON_STING"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TWINEEDLE",
@@ -4670,7 +4717,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 536,
         "symbol": "MOVE_TWINEEDLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PIN_MISSILE",
@@ -4690,7 +4738,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 549,
         "symbol": "MOVE_PIN_MISSILE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LEER",
@@ -4710,7 +4759,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 562,
         "symbol": "MOVE_LEER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BITE",
@@ -4730,7 +4780,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 575,
         "symbol": "MOVE_BITE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_GROWL",
@@ -4750,7 +4801,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 588,
         "symbol": "MOVE_GROWL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ROAR",
@@ -4770,7 +4822,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 601,
         "symbol": "MOVE_ROAR"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SING",
@@ -4790,7 +4843,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 614,
         "symbol": "MOVE_SING"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SUPERSONIC",
@@ -4810,7 +4864,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 627,
         "symbol": "MOVE_SUPERSONIC"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SONIC_BOOM",
@@ -4830,7 +4885,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 640,
         "symbol": "MOVE_SONIC_BOOM"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DISABLE",
@@ -4850,7 +4906,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 653,
         "symbol": "MOVE_DISABLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ACID",
@@ -4870,7 +4927,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 666,
         "symbol": "MOVE_ACID"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_EMBER",
@@ -4890,7 +4948,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 679,
         "symbol": "MOVE_EMBER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FLAMETHROWER",
@@ -4910,7 +4969,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 692,
         "symbol": "MOVE_FLAMETHROWER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MIST",
@@ -4930,7 +4990,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 705,
         "symbol": "MOVE_MIST"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WATER_GUN",
@@ -4950,7 +5011,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 718,
         "symbol": "MOVE_WATER_GUN"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HYDRO_PUMP",
@@ -4970,7 +5032,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 731,
         "symbol": "MOVE_HYDRO_PUMP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SURF",
@@ -4990,7 +5053,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 744,
         "symbol": "MOVE_SURF"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ICE_BEAM",
@@ -5010,7 +5074,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 757,
         "symbol": "MOVE_ICE_BEAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BLIZZARD",
@@ -5030,7 +5095,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 770,
         "symbol": "MOVE_BLIZZARD"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PSYBEAM",
@@ -5050,7 +5116,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 783,
         "symbol": "MOVE_PSYBEAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BUBBLE_BEAM",
@@ -5070,7 +5137,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 796,
         "symbol": "MOVE_BUBBLE_BEAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_AURORA_BEAM",
@@ -5090,7 +5158,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 809,
         "symbol": "MOVE_AURORA_BEAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HYPER_BEAM",
@@ -5110,7 +5179,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 822,
         "symbol": "MOVE_HYPER_BEAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PECK",
@@ -5130,7 +5200,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 835,
         "symbol": "MOVE_PECK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DRILL_PECK",
@@ -5150,7 +5221,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 848,
         "symbol": "MOVE_DRILL_PECK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SUBMISSION",
@@ -5170,7 +5242,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 861,
         "symbol": "MOVE_SUBMISSION"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_LOW_KICK",
@@ -5190,7 +5263,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 874,
         "symbol": "MOVE_LOW_KICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_COUNTER",
@@ -5210,7 +5284,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 887,
         "symbol": "MOVE_COUNTER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SEISMIC_TOSS",
@@ -5230,7 +5305,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 900,
         "symbol": "MOVE_SEISMIC_TOSS"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_STRENGTH",
@@ -5250,7 +5326,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 913,
         "symbol": "MOVE_STRENGTH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ABSORB",
@@ -5270,7 +5347,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 926,
         "symbol": "MOVE_ABSORB"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MEGA_DRAIN",
@@ -5290,7 +5368,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 939,
         "symbol": "MOVE_MEGA_DRAIN"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LEECH_SEED",
@@ -5310,7 +5389,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 952,
         "symbol": "MOVE_LEECH_SEED"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_GROWTH",
@@ -5330,7 +5410,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 965,
         "symbol": "MOVE_GROWTH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_RAZOR_LEAF",
@@ -5350,7 +5431,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 978,
         "symbol": "MOVE_RAZOR_LEAF"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SOLAR_BEAM",
@@ -5370,7 +5452,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 991,
         "symbol": "MOVE_SOLAR_BEAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_POISON_POWDER",
@@ -5390,7 +5473,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1004,
         "symbol": "MOVE_POISON_POWDER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_STUN_SPORE",
@@ -5410,7 +5494,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1017,
         "symbol": "MOVE_STUN_SPORE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SLEEP_POWDER",
@@ -5430,7 +5515,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1030,
         "symbol": "MOVE_SLEEP_POWDER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_PETAL_DANCE",
@@ -5450,7 +5536,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1043,
         "symbol": "MOVE_PETAL_DANCE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_STRING_SHOT",
@@ -5470,7 +5557,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1056,
         "symbol": "MOVE_STRING_SHOT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DRAGON_RAGE",
@@ -5490,7 +5578,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1069,
         "symbol": "MOVE_DRAGON_RAGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FIRE_SPIN",
@@ -5510,7 +5599,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1082,
         "symbol": "MOVE_FIRE_SPIN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_THUNDER_SHOCK",
@@ -5530,7 +5620,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1095,
         "symbol": "MOVE_THUNDER_SHOCK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_THUNDERBOLT",
@@ -5550,7 +5641,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1108,
         "symbol": "MOVE_THUNDERBOLT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_THUNDER_WAVE",
@@ -5570,7 +5662,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1121,
         "symbol": "MOVE_THUNDER_WAVE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_THUNDER",
@@ -5590,7 +5683,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1134,
         "symbol": "MOVE_THUNDER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ROCK_THROW",
@@ -5610,7 +5704,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1147,
         "symbol": "MOVE_ROCK_THROW"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_EARTHQUAKE",
@@ -5630,7 +5725,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1160,
         "symbol": "MOVE_EARTHQUAKE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FISSURE",
@@ -5650,7 +5746,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1173,
         "symbol": "MOVE_FISSURE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DIG",
@@ -5670,7 +5767,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1186,
         "symbol": "MOVE_DIG"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TOXIC",
@@ -5690,7 +5788,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1199,
         "symbol": "MOVE_TOXIC"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CONFUSION",
@@ -5710,7 +5809,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1212,
         "symbol": "MOVE_CONFUSION"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_PSYCHIC",
@@ -5730,7 +5830,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1225,
         "symbol": "MOVE_PSYCHIC"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HYPNOSIS",
@@ -5750,7 +5851,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1238,
         "symbol": "MOVE_HYPNOSIS"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MEDITATE",
@@ -5770,7 +5872,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1251,
         "symbol": "MOVE_MEDITATE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_AGILITY",
@@ -5790,7 +5893,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1264,
         "symbol": "MOVE_AGILITY"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_QUICK_ATTACK",
@@ -5810,7 +5914,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1277,
         "symbol": "MOVE_QUICK_ATTACK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_RAGE",
@@ -5830,7 +5935,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1290,
         "symbol": "MOVE_RAGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TELEPORT",
@@ -5850,7 +5956,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1303,
         "symbol": "MOVE_TELEPORT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_NIGHT_SHADE",
@@ -5870,7 +5977,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1316,
         "symbol": "MOVE_NIGHT_SHADE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MIMIC",
@@ -5890,7 +5998,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1329,
         "symbol": "MOVE_MIMIC"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SCREECH",
@@ -5910,7 +6019,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1342,
         "symbol": "MOVE_SCREECH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DOUBLE_TEAM",
@@ -5930,7 +6040,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1355,
         "symbol": "MOVE_DOUBLE_TEAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_RECOVER",
@@ -5950,7 +6061,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1368,
         "symbol": "MOVE_RECOVER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HARDEN",
@@ -5970,7 +6082,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1381,
         "symbol": "MOVE_HARDEN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MINIMIZE",
@@ -5990,7 +6103,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1394,
         "symbol": "MOVE_MINIMIZE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SMOKESCREEN",
@@ -6010,7 +6124,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1407,
         "symbol": "MOVE_SMOKESCREEN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CONFUSE_RAY",
@@ -6030,7 +6145,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1420,
         "symbol": "MOVE_CONFUSE_RAY"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_WITHDRAW",
@@ -6050,7 +6166,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1433,
         "symbol": "MOVE_WITHDRAW"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DEFENSE_CURL",
@@ -6070,7 +6187,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1446,
         "symbol": "MOVE_DEFENSE_CURL"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BARRIER",
@@ -6090,7 +6208,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1459,
         "symbol": "MOVE_BARRIER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LIGHT_SCREEN",
@@ -6110,7 +6229,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1472,
         "symbol": "MOVE_LIGHT_SCREEN"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HAZE",
@@ -6130,7 +6250,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1485,
         "symbol": "MOVE_HAZE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_REFLECT",
@@ -6150,7 +6271,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1498,
         "symbol": "MOVE_REFLECT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FOCUS_ENERGY",
@@ -6170,7 +6292,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1511,
         "symbol": "MOVE_FOCUS_ENERGY"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BIDE",
@@ -6190,7 +6313,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1524,
         "symbol": "MOVE_BIDE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_METRONOME",
@@ -6210,7 +6334,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1537,
         "symbol": "MOVE_METRONOME"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MIRROR_MOVE",
@@ -6230,7 +6355,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1550,
         "symbol": "MOVE_MIRROR_MOVE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SELF_DESTRUCT",
@@ -6250,7 +6376,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1563,
         "symbol": "MOVE_SELF_DESTRUCT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_EGG_BOMB",
@@ -6270,7 +6397,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1576,
         "symbol": "MOVE_EGG_BOMB"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LICK",
@@ -6290,7 +6418,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1589,
         "symbol": "MOVE_LICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SMOG",
@@ -6310,7 +6439,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1602,
         "symbol": "MOVE_SMOG"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SLUDGE",
@@ -6330,7 +6460,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1615,
         "symbol": "MOVE_SLUDGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BONE_CLUB",
@@ -6350,7 +6481,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1628,
         "symbol": "MOVE_BONE_CLUB"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FIRE_BLAST",
@@ -6370,7 +6502,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1641,
         "symbol": "MOVE_FIRE_BLAST"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WATERFALL",
@@ -6390,7 +6523,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1654,
         "symbol": "MOVE_WATERFALL"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CLAMP",
@@ -6410,7 +6544,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1667,
         "symbol": "MOVE_CLAMP"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SWIFT",
@@ -6430,7 +6565,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1680,
         "symbol": "MOVE_SWIFT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SKULL_BASH",
@@ -6450,7 +6586,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1693,
         "symbol": "MOVE_SKULL_BASH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SPIKE_CANNON",
@@ -6470,7 +6607,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1706,
         "symbol": "MOVE_SPIKE_CANNON"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CONSTRICT",
@@ -6490,7 +6628,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1719,
         "symbol": "MOVE_CONSTRICT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_AMNESIA",
@@ -6510,7 +6649,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1732,
         "symbol": "MOVE_AMNESIA"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_KINESIS",
@@ -6530,7 +6670,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1745,
         "symbol": "MOVE_KINESIS"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SOFT_BOILED",
@@ -6550,7 +6691,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1758,
         "symbol": "MOVE_SOFT_BOILED"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HI_JUMP_KICK",
@@ -6570,7 +6712,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1771,
         "symbol": "MOVE_HI_JUMP_KICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_GLARE",
@@ -6590,7 +6733,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1784,
         "symbol": "MOVE_GLARE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DREAM_EATER",
@@ -6610,7 +6754,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1797,
         "symbol": "MOVE_DREAM_EATER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_POISON_GAS",
@@ -6630,7 +6775,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1810,
         "symbol": "MOVE_POISON_GAS"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BARRAGE",
@@ -6650,7 +6796,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1823,
         "symbol": "MOVE_BARRAGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LEECH_LIFE",
@@ -6670,7 +6817,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1836,
         "symbol": "MOVE_LEECH_LIFE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LOVELY_KISS",
@@ -6690,7 +6838,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1849,
         "symbol": "MOVE_LOVELY_KISS"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SKY_ATTACK",
@@ -6710,7 +6859,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1862,
         "symbol": "MOVE_SKY_ATTACK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TRANSFORM",
@@ -6730,7 +6880,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1875,
         "symbol": "MOVE_TRANSFORM"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BUBBLE",
@@ -6750,7 +6901,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1888,
         "symbol": "MOVE_BUBBLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DIZZY_PUNCH",
@@ -6770,7 +6922,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1901,
         "symbol": "MOVE_DIZZY_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SPORE",
@@ -6790,7 +6943,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1914,
         "symbol": "MOVE_SPORE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FLASH",
@@ -6810,7 +6964,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1927,
         "symbol": "MOVE_FLASH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PSYWAVE",
@@ -6830,7 +6985,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1940,
         "symbol": "MOVE_PSYWAVE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SPLASH",
@@ -6850,7 +7006,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1953,
         "symbol": "MOVE_SPLASH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ACID_ARMOR",
@@ -6870,7 +7027,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1966,
         "symbol": "MOVE_ACID_ARMOR"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CRABHAMMER",
@@ -6890,7 +7048,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1979,
         "symbol": "MOVE_CRABHAMMER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_EXPLOSION",
@@ -6910,7 +7069,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 1992,
         "symbol": "MOVE_EXPLOSION"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FURY_SWIPES",
@@ -6930,7 +7090,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2005,
         "symbol": "MOVE_FURY_SWIPES"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BONEMERANG",
@@ -6950,7 +7111,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2018,
         "symbol": "MOVE_BONEMERANG"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_REST",
@@ -6970,7 +7132,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2031,
         "symbol": "MOVE_REST"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ROCK_SLIDE",
@@ -6990,7 +7153,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2044,
         "symbol": "MOVE_ROCK_SLIDE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HYPER_FANG",
@@ -7010,7 +7174,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2057,
         "symbol": "MOVE_HYPER_FANG"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SHARPEN",
@@ -7030,7 +7195,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2070,
         "symbol": "MOVE_SHARPEN"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CONVERSION",
@@ -7050,7 +7216,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2083,
         "symbol": "MOVE_CONVERSION"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TRI_ATTACK",
@@ -7070,7 +7237,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2096,
         "symbol": "MOVE_TRI_ATTACK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SUPER_FANG",
@@ -7090,7 +7258,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2109,
         "symbol": "MOVE_SUPER_FANG"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SLASH",
@@ -7110,7 +7279,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2122,
         "symbol": "MOVE_SLASH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SUBSTITUTE",
@@ -7130,7 +7300,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2135,
         "symbol": "MOVE_SUBSTITUTE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_STRUGGLE",
@@ -7150,7 +7321,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2148,
         "symbol": "MOVE_STRUGGLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SKETCH",
@@ -7170,7 +7342,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2161,
         "symbol": "MOVE_SKETCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TRIPLE_KICK",
@@ -7190,7 +7363,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2174,
         "symbol": "MOVE_TRIPLE_KICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_THIEF",
@@ -7210,7 +7384,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2187,
         "symbol": "MOVE_THIEF"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SPIDER_WEB",
@@ -7230,7 +7405,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2200,
         "symbol": "MOVE_SPIDER_WEB"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MIND_READER",
@@ -7250,7 +7426,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2213,
         "symbol": "MOVE_MIND_READER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_NIGHTMARE",
@@ -7270,7 +7447,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2226,
         "symbol": "MOVE_NIGHTMARE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FLAME_WHEEL",
@@ -7290,7 +7468,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2239,
         "symbol": "MOVE_FLAME_WHEEL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SNORE",
@@ -7310,7 +7489,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2252,
         "symbol": "MOVE_SNORE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CURSE",
@@ -7330,7 +7510,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2265,
         "symbol": "MOVE_CURSE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FLAIL",
@@ -7350,7 +7531,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2278,
         "symbol": "MOVE_FLAIL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CONVERSION_2",
@@ -7370,7 +7552,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2291,
         "symbol": "MOVE_CONVERSION_2"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_AEROBLAST",
@@ -7390,7 +7573,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2304,
         "symbol": "MOVE_AEROBLAST"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_COTTON_SPORE",
@@ -7410,7 +7594,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2317,
         "symbol": "MOVE_COTTON_SPORE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_REVERSAL",
@@ -7430,7 +7615,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2330,
         "symbol": "MOVE_REVERSAL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SPITE",
@@ -7450,7 +7636,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2343,
         "symbol": "MOVE_SPITE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_POWDER_SNOW",
@@ -7470,7 +7657,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2356,
         "symbol": "MOVE_POWDER_SNOW"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PROTECT",
@@ -7490,7 +7678,11 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2369,
         "symbol": "MOVE_PROTECT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "fourSlotBoundedEvidence": [
+        "tests/Game.FourProtection.Tests/README.md"
+      ]
     },
     {
       "id": "pret:MOVE_MACH_PUNCH",
@@ -7510,7 +7702,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2382,
         "symbol": "MOVE_MACH_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SCARY_FACE",
@@ -7530,7 +7723,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2395,
         "symbol": "MOVE_SCARY_FACE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FAINT_ATTACK",
@@ -7550,7 +7744,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2408,
         "symbol": "MOVE_FAINT_ATTACK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SWEET_KISS",
@@ -7570,7 +7765,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2421,
         "symbol": "MOVE_SWEET_KISS"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BELLY_DRUM",
@@ -7590,7 +7786,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2434,
         "symbol": "MOVE_BELLY_DRUM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SLUDGE_BOMB",
@@ -7610,7 +7807,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2447,
         "symbol": "MOVE_SLUDGE_BOMB"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MUD_SLAP",
@@ -7630,7 +7828,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2460,
         "symbol": "MOVE_MUD_SLAP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_OCTAZOOKA",
@@ -7650,7 +7849,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2473,
         "symbol": "MOVE_OCTAZOOKA"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SPIKES",
@@ -7670,7 +7870,11 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2486,
         "symbol": "MOVE_SPIKES"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "fourSlotBoundedEvidence": [
+        "tests/Game.SharedSpikes.Tests/README.md"
+      ]
     },
     {
       "id": "pret:MOVE_ZAP_CANNON",
@@ -7690,7 +7894,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2499,
         "symbol": "MOVE_ZAP_CANNON"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FORESIGHT",
@@ -7710,7 +7915,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2512,
         "symbol": "MOVE_FORESIGHT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DESTINY_BOND",
@@ -7730,7 +7936,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2525,
         "symbol": "MOVE_DESTINY_BOND"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PERISH_SONG",
@@ -7750,7 +7957,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2538,
         "symbol": "MOVE_PERISH_SONG"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ICY_WIND",
@@ -7770,7 +7978,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2551,
         "symbol": "MOVE_ICY_WIND"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DETECT",
@@ -7790,7 +7999,11 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2564,
         "symbol": "MOVE_DETECT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "fourSlotBoundedEvidence": [
+        "tests/Game.FourProtection.Tests/README.md"
+      ]
     },
     {
       "id": "pret:MOVE_BONE_RUSH",
@@ -7810,7 +8023,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2577,
         "symbol": "MOVE_BONE_RUSH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LOCK_ON",
@@ -7830,7 +8044,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2590,
         "symbol": "MOVE_LOCK_ON"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_OUTRAGE",
@@ -7850,7 +8065,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2603,
         "symbol": "MOVE_OUTRAGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SANDSTORM",
@@ -7870,7 +8086,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2616,
         "symbol": "MOVE_SANDSTORM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_GIGA_DRAIN",
@@ -7890,7 +8107,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2629,
         "symbol": "MOVE_GIGA_DRAIN"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ENDURE",
@@ -7910,7 +8128,11 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2642,
         "symbol": "MOVE_ENDURE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards",
+      "fourSlotBoundedEvidence": [
+        "tests/Game.FourProtection.Tests/README.md"
+      ]
     },
     {
       "id": "pret:MOVE_CHARM",
@@ -7930,7 +8152,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2655,
         "symbol": "MOVE_CHARM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ROLLOUT",
@@ -7950,7 +8173,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2668,
         "symbol": "MOVE_ROLLOUT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FALSE_SWIPE",
@@ -7970,7 +8194,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2681,
         "symbol": "MOVE_FALSE_SWIPE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SWAGGER",
@@ -7990,7 +8215,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2694,
         "symbol": "MOVE_SWAGGER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MILK_DRINK",
@@ -8010,7 +8236,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2707,
         "symbol": "MOVE_MILK_DRINK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SPARK",
@@ -8030,7 +8257,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2720,
         "symbol": "MOVE_SPARK"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FURY_CUTTER",
@@ -8050,7 +8278,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2733,
         "symbol": "MOVE_FURY_CUTTER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_STEEL_WING",
@@ -8070,7 +8299,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2746,
         "symbol": "MOVE_STEEL_WING"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MEAN_LOOK",
@@ -8090,7 +8320,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2759,
         "symbol": "MOVE_MEAN_LOOK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ATTRACT",
@@ -8110,7 +8341,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2772,
         "symbol": "MOVE_ATTRACT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SLEEP_TALK",
@@ -8130,7 +8362,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2785,
         "symbol": "MOVE_SLEEP_TALK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_HEAL_BELL",
@@ -8150,7 +8383,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2798,
         "symbol": "MOVE_HEAL_BELL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_RETURN",
@@ -8170,7 +8404,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2811,
         "symbol": "MOVE_RETURN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PRESENT",
@@ -8190,7 +8425,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2824,
         "symbol": "MOVE_PRESENT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FRUSTRATION",
@@ -8210,7 +8446,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2837,
         "symbol": "MOVE_FRUSTRATION"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SAFEGUARD",
@@ -8230,7 +8467,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2850,
         "symbol": "MOVE_SAFEGUARD"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_PAIN_SPLIT",
@@ -8250,7 +8488,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2863,
         "symbol": "MOVE_PAIN_SPLIT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SACRED_FIRE",
@@ -8270,7 +8509,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2876,
         "symbol": "MOVE_SACRED_FIRE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MAGNITUDE",
@@ -8290,7 +8530,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2889,
         "symbol": "MOVE_MAGNITUDE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DYNAMIC_PUNCH",
@@ -8310,7 +8551,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2902,
         "symbol": "MOVE_DYNAMIC_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MEGAHORN",
@@ -8330,7 +8572,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2915,
         "symbol": "MOVE_MEGAHORN"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DRAGON_BREATH",
@@ -8350,7 +8593,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2928,
         "symbol": "MOVE_DRAGON_BREATH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BATON_PASS",
@@ -8370,7 +8614,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2941,
         "symbol": "MOVE_BATON_PASS"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ENCORE",
@@ -8390,7 +8635,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2954,
         "symbol": "MOVE_ENCORE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PURSUIT",
@@ -8410,7 +8656,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2967,
         "symbol": "MOVE_PURSUIT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_RAPID_SPIN",
@@ -8430,7 +8677,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2980,
         "symbol": "MOVE_RAPID_SPIN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SWEET_SCENT",
@@ -8450,7 +8698,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 2993,
         "symbol": "MOVE_SWEET_SCENT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_IRON_TAIL",
@@ -8470,7 +8719,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3006,
         "symbol": "MOVE_IRON_TAIL"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_METAL_CLAW",
@@ -8490,7 +8740,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3019,
         "symbol": "MOVE_METAL_CLAW"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_VITAL_THROW",
@@ -8510,7 +8761,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3032,
         "symbol": "MOVE_VITAL_THROW"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MORNING_SUN",
@@ -8530,7 +8782,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3045,
         "symbol": "MOVE_MORNING_SUN"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SYNTHESIS",
@@ -8550,7 +8803,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3058,
         "symbol": "MOVE_SYNTHESIS"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MOONLIGHT",
@@ -8570,7 +8824,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3071,
         "symbol": "MOVE_MOONLIGHT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HIDDEN_POWER",
@@ -8590,7 +8845,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3084,
         "symbol": "MOVE_HIDDEN_POWER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CROSS_CHOP",
@@ -8610,7 +8866,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3097,
         "symbol": "MOVE_CROSS_CHOP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TWISTER",
@@ -8630,7 +8887,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3110,
         "symbol": "MOVE_TWISTER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_RAIN_DANCE",
@@ -8650,7 +8908,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3123,
         "symbol": "MOVE_RAIN_DANCE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SUNNY_DAY",
@@ -8670,7 +8929,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3136,
         "symbol": "MOVE_SUNNY_DAY"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CRUNCH",
@@ -8690,7 +8950,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3149,
         "symbol": "MOVE_CRUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MIRROR_COAT",
@@ -8710,7 +8971,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3162,
         "symbol": "MOVE_MIRROR_COAT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PSYCH_UP",
@@ -8730,7 +8992,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3175,
         "symbol": "MOVE_PSYCH_UP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_EXTREME_SPEED",
@@ -8750,7 +9013,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3188,
         "symbol": "MOVE_EXTREME_SPEED"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ANCIENT_POWER",
@@ -8770,7 +9034,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3201,
         "symbol": "MOVE_ANCIENT_POWER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SHADOW_BALL",
@@ -8790,7 +9055,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3214,
         "symbol": "MOVE_SHADOW_BALL"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FUTURE_SIGHT",
@@ -8810,7 +9076,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3227,
         "symbol": "MOVE_FUTURE_SIGHT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ROCK_SMASH",
@@ -8830,7 +9097,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3240,
         "symbol": "MOVE_ROCK_SMASH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WHIRLPOOL",
@@ -8850,7 +9118,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3253,
         "symbol": "MOVE_WHIRLPOOL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BEAT_UP",
@@ -8870,7 +9139,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3266,
         "symbol": "MOVE_BEAT_UP"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FAKE_OUT",
@@ -8890,7 +9160,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3279,
         "symbol": "MOVE_FAKE_OUT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_UPROAR",
@@ -8910,7 +9181,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3292,
         "symbol": "MOVE_UPROAR"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_STOCKPILE",
@@ -8930,7 +9202,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3305,
         "symbol": "MOVE_STOCKPILE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SPIT_UP",
@@ -8950,7 +9223,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3318,
         "symbol": "MOVE_SPIT_UP"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SWALLOW",
@@ -8970,7 +9244,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3331,
         "symbol": "MOVE_SWALLOW"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_HEAT_WAVE",
@@ -8990,7 +9265,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3344,
         "symbol": "MOVE_HEAT_WAVE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HAIL",
@@ -9010,7 +9286,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3357,
         "symbol": "MOVE_HAIL"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TORMENT",
@@ -9030,7 +9307,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3370,
         "symbol": "MOVE_TORMENT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FLATTER",
@@ -9050,7 +9328,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3383,
         "symbol": "MOVE_FLATTER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WILL_O_WISP",
@@ -9070,7 +9349,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3396,
         "symbol": "MOVE_WILL_O_WISP"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MEMENTO",
@@ -9090,7 +9370,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3409,
         "symbol": "MOVE_MEMENTO"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FACADE",
@@ -9110,7 +9391,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3422,
         "symbol": "MOVE_FACADE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FOCUS_PUNCH",
@@ -9130,7 +9412,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3435,
         "symbol": "MOVE_FOCUS_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SMELLING_SALT",
@@ -9150,7 +9433,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3448,
         "symbol": "MOVE_SMELLING_SALT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FOLLOW_ME",
@@ -9170,7 +9454,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3461,
         "symbol": "MOVE_FOLLOW_ME"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_NATURE_POWER",
@@ -9190,7 +9475,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3474,
         "symbol": "MOVE_NATURE_POWER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CHARGE",
@@ -9210,7 +9496,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3487,
         "symbol": "MOVE_CHARGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TAUNT",
@@ -9230,7 +9517,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3500,
         "symbol": "MOVE_TAUNT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_HELPING_HAND",
@@ -9250,7 +9538,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3513,
         "symbol": "MOVE_HELPING_HAND"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TRICK",
@@ -9270,7 +9559,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3526,
         "symbol": "MOVE_TRICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ROLE_PLAY",
@@ -9290,7 +9580,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3539,
         "symbol": "MOVE_ROLE_PLAY"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_WISH",
@@ -9310,7 +9601,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3552,
         "symbol": "MOVE_WISH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ASSIST",
@@ -9330,7 +9622,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3565,
         "symbol": "MOVE_ASSIST"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_INGRAIN",
@@ -9350,7 +9643,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3578,
         "symbol": "MOVE_INGRAIN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SUPERPOWER",
@@ -9370,7 +9664,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3591,
         "symbol": "MOVE_SUPERPOWER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MAGIC_COAT",
@@ -9390,7 +9685,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3604,
         "symbol": "MOVE_MAGIC_COAT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_RECYCLE",
@@ -9410,7 +9706,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3617,
         "symbol": "MOVE_RECYCLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_REVENGE",
@@ -9430,7 +9727,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3630,
         "symbol": "MOVE_REVENGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BRICK_BREAK",
@@ -9450,7 +9748,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3643,
         "symbol": "MOVE_BRICK_BREAK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_YAWN",
@@ -9470,7 +9769,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3656,
         "symbol": "MOVE_YAWN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_KNOCK_OFF",
@@ -9490,7 +9790,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3669,
         "symbol": "MOVE_KNOCK_OFF"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ENDEAVOR",
@@ -9510,7 +9811,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3682,
         "symbol": "MOVE_ENDEAVOR"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ERUPTION",
@@ -9530,7 +9832,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3695,
         "symbol": "MOVE_ERUPTION"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SKILL_SWAP",
@@ -9550,7 +9853,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3708,
         "symbol": "MOVE_SKILL_SWAP"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_IMPRISON",
@@ -9570,7 +9874,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3721,
         "symbol": "MOVE_IMPRISON"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_REFRESH",
@@ -9590,7 +9895,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3734,
         "symbol": "MOVE_REFRESH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_GRUDGE",
@@ -9610,7 +9916,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3747,
         "symbol": "MOVE_GRUDGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SNATCH",
@@ -9630,7 +9937,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3760,
         "symbol": "MOVE_SNATCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SECRET_POWER",
@@ -9650,7 +9958,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3773,
         "symbol": "MOVE_SECRET_POWER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_DIVE",
@@ -9670,7 +9979,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3786,
         "symbol": "MOVE_DIVE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ARM_THRUST",
@@ -9690,7 +10000,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3799,
         "symbol": "MOVE_ARM_THRUST"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CAMOUFLAGE",
@@ -9710,7 +10021,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3812,
         "symbol": "MOVE_CAMOUFLAGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_TAIL_GLOW",
@@ -9730,7 +10042,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3825,
         "symbol": "MOVE_TAIL_GLOW"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LUSTER_PURGE",
@@ -9750,7 +10063,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3838,
         "symbol": "MOVE_LUSTER_PURGE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MIST_BALL",
@@ -9770,7 +10084,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3851,
         "symbol": "MOVE_MIST_BALL"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FEATHER_DANCE",
@@ -9790,7 +10105,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3864,
         "symbol": "MOVE_FEATHER_DANCE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TEETER_DANCE",
@@ -9810,7 +10126,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3877,
         "symbol": "MOVE_TEETER_DANCE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BLAZE_KICK",
@@ -9830,7 +10147,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3890,
         "symbol": "MOVE_BLAZE_KICK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MUD_SPORT",
@@ -9850,7 +10168,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3903,
         "symbol": "MOVE_MUD_SPORT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ICE_BALL",
@@ -9870,7 +10189,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3916,
         "symbol": "MOVE_ICE_BALL"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_NEEDLE_ARM",
@@ -9890,7 +10210,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3929,
         "symbol": "MOVE_NEEDLE_ARM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SLACK_OFF",
@@ -9910,7 +10231,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3942,
         "symbol": "MOVE_SLACK_OFF"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HYPER_VOICE",
@@ -9930,7 +10252,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3955,
         "symbol": "MOVE_HYPER_VOICE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_POISON_FANG",
@@ -9950,7 +10273,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3968,
         "symbol": "MOVE_POISON_FANG"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CRUSH_CLAW",
@@ -9970,7 +10294,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3981,
         "symbol": "MOVE_CRUSH_CLAW"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BLAST_BURN",
@@ -9990,7 +10315,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 3994,
         "symbol": "MOVE_BLAST_BURN"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_HYDRO_CANNON",
@@ -10010,7 +10336,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4007,
         "symbol": "MOVE_HYDRO_CANNON"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_METEOR_MASH",
@@ -10030,7 +10357,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4020,
         "symbol": "MOVE_METEOR_MASH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ASTONISH",
@@ -10050,7 +10378,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4033,
         "symbol": "MOVE_ASTONISH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WEATHER_BALL",
@@ -10070,7 +10399,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4046,
         "symbol": "MOVE_WEATHER_BALL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_AROMATHERAPY",
@@ -10090,7 +10420,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4059,
         "symbol": "MOVE_AROMATHERAPY"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_FAKE_TEARS",
@@ -10110,7 +10441,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4072,
         "symbol": "MOVE_FAKE_TEARS"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_AIR_CUTTER",
@@ -10130,7 +10462,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4085,
         "symbol": "MOVE_AIR_CUTTER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_OVERHEAT",
@@ -10150,7 +10483,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4098,
         "symbol": "MOVE_OVERHEAT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ODOR_SLEUTH",
@@ -10170,7 +10504,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4111,
         "symbol": "MOVE_ODOR_SLEUTH"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_ROCK_TOMB",
@@ -10190,7 +10525,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4124,
         "symbol": "MOVE_ROCK_TOMB"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SILVER_WIND",
@@ -10210,7 +10546,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4137,
         "symbol": "MOVE_SILVER_WIND"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_METAL_SOUND",
@@ -10230,7 +10567,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4150,
         "symbol": "MOVE_METAL_SOUND"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_GRASS_WHISTLE",
@@ -10250,7 +10588,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4163,
         "symbol": "MOVE_GRASS_WHISTLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TICKLE",
@@ -10270,7 +10609,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4176,
         "symbol": "MOVE_TICKLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_COSMIC_POWER",
@@ -10290,7 +10630,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4189,
         "symbol": "MOVE_COSMIC_POWER"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_WATER_SPOUT",
@@ -10310,7 +10651,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4202,
         "symbol": "MOVE_WATER_SPOUT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SIGNAL_BEAM",
@@ -10330,7 +10672,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4215,
         "symbol": "MOVE_SIGNAL_BEAM"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SHADOW_PUNCH",
@@ -10350,7 +10693,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4228,
         "symbol": "MOVE_SHADOW_PUNCH"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_EXTRASENSORY",
@@ -10370,7 +10714,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4241,
         "symbol": "MOVE_EXTRASENSORY"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SKY_UPPERCUT",
@@ -10390,7 +10735,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4254,
         "symbol": "MOVE_SKY_UPPERCUT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SAND_TOMB",
@@ -10410,7 +10756,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4267,
         "symbol": "MOVE_SAND_TOMB"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_SHEER_COLD",
@@ -10430,7 +10777,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4280,
         "symbol": "MOVE_SHEER_COLD"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MUDDY_WATER",
@@ -10450,7 +10798,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4293,
         "symbol": "MOVE_MUDDY_WATER"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BULLET_SEED",
@@ -10470,7 +10819,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4306,
         "symbol": "MOVE_BULLET_SEED"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_AERIAL_ACE",
@@ -10490,7 +10840,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4319,
         "symbol": "MOVE_AERIAL_ACE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ICICLE_SPEAR",
@@ -10510,7 +10861,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4332,
         "symbol": "MOVE_ICICLE_SPEAR"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_IRON_DEFENSE",
@@ -10530,7 +10882,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4345,
         "symbol": "MOVE_IRON_DEFENSE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BLOCK",
@@ -10550,7 +10903,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4358,
         "symbol": "MOVE_BLOCK"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_HOWL",
@@ -10570,7 +10924,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4371,
         "symbol": "MOVE_HOWL"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DRAGON_CLAW",
@@ -10590,7 +10945,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4384,
         "symbol": "MOVE_DRAGON_CLAW"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FRENZY_PLANT",
@@ -10610,7 +10966,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4397,
         "symbol": "MOVE_FRENZY_PLANT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_BULK_UP",
@@ -10630,7 +10987,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4410,
         "symbol": "MOVE_BULK_UP"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BOUNCE",
@@ -10650,7 +11008,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4423,
         "symbol": "MOVE_BOUNCE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MUD_SHOT",
@@ -10670,7 +11029,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4436,
         "symbol": "MOVE_MUD_SHOT"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_POISON_TAIL",
@@ -10690,7 +11050,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4449,
         "symbol": "MOVE_POISON_TAIL"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_COVET",
@@ -10710,7 +11071,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4462,
         "symbol": "MOVE_COVET"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_VOLT_TACKLE",
@@ -10730,7 +11092,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4475,
         "symbol": "MOVE_VOLT_TACKLE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_MAGICAL_LEAF",
@@ -10750,7 +11113,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4488,
         "symbol": "MOVE_MAGICAL_LEAF"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WATER_SPORT",
@@ -10770,7 +11134,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4501,
         "symbol": "MOVE_WATER_SPORT"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_CALM_MIND",
@@ -10790,7 +11155,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4514,
         "symbol": "MOVE_CALM_MIND"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_LEAF_BLADE",
@@ -10810,7 +11176,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4527,
         "symbol": "MOVE_LEAF_BLADE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DRAGON_DANCE",
@@ -10830,7 +11197,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4540,
         "symbol": "MOVE_DRAGON_DANCE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ROCK_BLAST",
@@ -10850,7 +11218,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4553,
         "symbol": "MOVE_ROCK_BLAST"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SHOCK_WAVE",
@@ -10870,7 +11239,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4566,
         "symbol": "MOVE_SHOCK_WAVE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_WATER_PULSE",
@@ -10890,7 +11260,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4579,
         "symbol": "MOVE_WATER_PULSE"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DOOM_DESIRE",
@@ -10910,7 +11281,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4592,
         "symbol": "MOVE_DOOM_DESIRE"
-      }
+      },
+      "fourSlotRecipeAdmission": "not-admitted"
     },
     {
       "id": "pret:MOVE_PSYCHO_BOOST",
@@ -10930,7 +11302,8 @@
         "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
         "startLine": 4605,
         "symbol": "MOVE_PSYCHO_BOOST"
-      }
+      },
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     }
   ],
   "retainedEvidenceReviewed": [
@@ -11453,6 +11826,34 @@
       "details": "17 source-art checks; 115 current main draw/input checks; native46 accepted commands through first full turn, automatic Sand-Attack learning, poison faint, forced replacement/Intimidate and next-turn input, exit0.",
       "limits": "Functional target/party adapters and settled source pixels; no complete original intro/faint/party/target motion or dedicated doubles move scripts. Seven berries/Struggle/full-learning are headless only. Dummy audio stream/identities are not physical hearing. Native source/executable identities and one equivalent profile-predicate delta are explicitly retained.",
       "evidence": "tests/CampaignDoubleHost/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "scope": "Refresh numeric inventory after authentic Twins closure",
+      "details": "Static recipe admission176/354 in four slots,178not admitted atf7e26f6; this is not execution completeness. Six dedicated single animation scripts accepted,348without that acceptance. Correct two stale ability labels (Intimidate/Pressure) from retained actual tests;28bounded/48interaction-unverified now, not28finished/48missing. C10 now has an actual bounded Application/native owner rather than only module probes.",
+      "limits": "No new tests are implied by this inventory update. Per-ability and per-move full-completion statuses remain conservative; inspectedFiles remain the historical baseline."
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "scope": "Shared protection, hazards, contact and six-script four-slot presentation",
+      "details": "Four-slot recipe whitelist now180/354 after Protect/Detect/Endure/Spikes. Contact variants share the existing recipe and preserve frozen ordinary singles state/event/RNG hashes. Formal ability labels updated from retained and new bounded evidence: 30 bounded; 46 interaction-unverified. Five current rules feed genuine four-slot animations; False Swipe uses an explicitly presentation-only fixture. Six total dedicated scripts still means348 lack dedicated acceptance.",
+      "validationPolicy": "Validate affected combinations and frozen parity, batch common animation callbacks in the existing host, inspect representative native frames. No per-move test projects or repeated full-solution/whole-game replay. Native animation proof is tied to its isolated source manifest; integrated main uses the actual CampaignView headless gate.",
+      "limits": "Registration and recipe admission do not certify complete interactions. Source-C frame comparison is not emulator pixel equality; Dummy audio does not certify audible alignment."
     }
-  ]
+  ],
+  "currentFourSlotAdmissionSnapshot": {
+    "method": "Static evaluation of current SupportsRecipe target/effect whitelist over authenticated354 definitions; not execution or cross-state completeness.",
+    "singleRecipesRegistered": 354,
+    "fourSlotRecipeAdmission": 180,
+    "fourSlotRecipeNotAdmitted": 174,
+    "dedicatedSingleAnimationScriptsAccepted": 6,
+    "dedicatedScriptsRemaining": 348,
+    "baseCommit": "f7e26f6ada2e8c7f4e99a39a0cb41677d376b9ce",
+    "sourceKernelSha256": "acb3e9c10f34e811809d1446f25de8edd40e163855c15a0dd93e818173f8468e",
+    "continuationVersion": "firered-four-action-lifetimes-v7",
+    "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 5,
+    "dedicatedFourSlotPresentationOnlyScripts": [
+      "pret:MOVE_FALSE_SWIPE"
+    ]
+  }
 }

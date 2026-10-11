@@ -31,7 +31,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             struggle ? WildBattleInvocationFlags.NoPpDeduct : WildBattleInvocationFlags.None);
     }
     // BattleScript_MonTookFutureAttack reuses accuracycheck and the ordinary damage update.
-    // Admission excludes Focus Band, Substitute, Endure and move-end item side effects.
+    // Protection has already expired before delayed work; Focus Band and Substitute remain gated.
     internal void RunFutureHit(SourceFutureAttack future, BattlerSlot target)
     {
         string purpose = $"source-battle.slot-{future.Attacker.Value}.future-attack";
@@ -111,9 +111,26 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.Obeys };
                 if (action.LightningRodRedirected)
                     Add(n => new SourceAbilityActivatedEvent(n, Turn, target, "ABILITY_LIGHTNING_ROD"));
+                if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"))
+                {
+                    // attackcanceler sets the miss before the script's own PP/accuracy commands.
+                    // Keep those commands in their original per-target positions (not an early return).
+                    MarkProtectionMiss(target);
+                    CancellerCancelMultiTurn(invocation.Actor, "protected");
+                }
                 bool handled = false;
-                ExecuteAllySupport(invocation.Actor, invocation.ChosenSlot, move, ref handled);
+                if (HasProtectionRecipe(move.Effect))
+                {
+                    SpendEarlyPartyPp(invocation.Actor, target, invocation.PpSlot, move);
+                    var previous = initial.Get(invocation.Actor);
+                    ApplyProtection(invocation.Actor, target, move, purpose,
+                        previous.Registers.History?.LastResultingMove ?? previous.Body!.LastCalledMove ?? previous.Body.LastUsedMove,
+                        action.ActionOrderIndex != Frame.BattlerCount - 1);
+                    handled = true;
+                }
+                if (!handled) ExecuteAllySupport(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled && HasSwitchRecipe(move.Effect)) { ExecuteSwitch(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose); handled = true; }
+                if (!handled && move.Effect == "EFFECT_SPIKES") { ExecuteSpikes(invocation.Actor, invocation.ChosenSlot, move); handled = true; }
                 if (!handled) ExecuteFieldSetting(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled) ExecuteTurnMove(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
@@ -133,7 +150,12 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             foreach (var slot in ActiveSlots)
             {
                 var key = Frame.Get(slot).Member!.Value;
-                var before = initial.Party(key.Side).Members[key.Index]; var after = Frame.Party(key.Side).Members[key.Index];
+                // A forced switch can already report its entrant's hazard delta. Continue from
+                // that last reported member, so later move-end item changes remain distinct.
+                var before = Events.OfType<SourceCalledPartyChangedEvent>()
+                    .LastOrDefault(e => e.Side == key.Side && e.PartyIndex == key.Index)?.After
+                    ?? initial.Party(key.Side).Members[key.Index];
+                var after = Frame.Party(key.Side).Members[key.Index];
                 if (!WildBattleSourcePartyEffects.SameMember(before, after))
                     Add(n => new SourceCalledPartyChangedEvent(n, Turn, key.Side, key.Index, "active-sync", before, after));
             }
@@ -222,6 +244,13 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         if (published.Event is SourceMoveUsedEvent used) Set(used.Actor, Get(used.Actor) with { LastUsedMove = used.Move });
     }
     internal override void RecordAbility(BattlerSlot slot, string ability) { } // Explicit events are retained for the future AI owner.
+    internal override void SpikesResultMessage(BattlerSlot actor) =>
+        Add(n => new SourceMtMoonVolatileEvent(n, Turn, actor, "spikes", 0, 1, "move"));
+    internal override int SpikesLayers(BattleSide side) => Frame.Sides[(int)side].Spikes;
+    internal override void SetSpikesLayers(BattleSide side, int layers) => Frame = Frame with {
+        Sides = Frame.Sides.SetItem((int)side, Frame.Sides[(int)side] with { Spikes = layers }) };
+    internal override void SpikesSuppressPressure() => invocation = invocation with {
+        Flags = invocation.Flags | WildBattleInvocationFlags.PpNotAffectedByPressure };
     internal override int FieldSettingTimer(BattleSide side, string effect) => new FrameEndTurnContext(Frame).GetTimer(side, effect);
     internal override void SetFieldSettingTimer(BattleSide side, string effect, int value)
     {
@@ -346,7 +375,34 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     internal override void ForestOutcome(bool allowReplacement) { }
     internal override void MtMoonRageOnDamage(BattlerSlot actor, BattlerSlot target, MoveId move) { }
     internal override void SourceCalledMoveEndSubstitute() { }
-    internal override bool Endured(BattlerSlot slot) => false;
+    internal override bool SourceHeldDamageEnabled => Frame.Layout == SourceBattleLayout.PresetDoubles;
+    internal override bool Endured(BattlerSlot slot) => HeldDamageEndured(slot);
+    internal override void SourceDamageResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    {
+        if (commandNoEffect || !HeldDamageEndured(target)) return;
+        // Cmd_resultmessage: pure Endure prints once; with type flags it prints EnduredMsg
+        // then returns to resultmessage for the normal effectiveness text below this hook.
+        // Explosion's accuracy miss never reaches this successful-hit result boundary.
+        Add(n => new SourceMtMoonVolatileEvent(n, Turn, target, "endure", 1, 1, "endured"));
+    }
+    internal override void SourceGenericMiss(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
+    {
+        if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"))
+        {
+            MarkProtectionMiss(target);
+            Add(n => new SourceMoveFailedEvent(n, Turn, actor, target, move.Id, "protected"));
+        }
+        else base.SourceGenericMiss(actor, target, move);
+    }
+    private void MarkProtectionMiss(BattlerSlot target)
+    {
+        commandNoEffect = true;
+        var cell = Frame.Get(target);
+        // attackcanceler/JumpIfMoveFailed clear the source last-hit type to numeric 0.
+        // MOVEEND later writes MOVE_UNAVAILABLE as the failed last-landed move.
+        Frame = Frame with { Slots = Frame.Slots.SetItem(target.Value, cell with { Registers = cell.Registers with {
+            History = (cell.Registers.History ?? new()) with { LastHitByType = "TYPE_NORMAL" } } }) };
+    }
     internal override bool Route11Damp(BattlerSlot actor, PokemonMoveDefinition move)
     {
         // Cmd_tryexplosion scans stored abilities before selecting the numeric first target.

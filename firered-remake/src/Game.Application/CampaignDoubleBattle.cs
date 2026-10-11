@@ -177,7 +177,7 @@ public sealed partial class CampaignSession
                     selection=new(cell.Occupant!.Value,SourceActionKind.Move,command.MoveSlot,new(command.Choice.Value));
                 }
                 if(SourceBattleKernel.ValidateAction(DoubleBattlePokemon,frame,new(cell.Occupant.Value,frame.Revision,command.MoveSlot,selection.Target!.Value)) is {} invalid&&
-                    invalid is not ("source_kernel_switch_owner_required" or "source_kernel_flinch_order_not_migrated"))return No(invalid);
+                    invalid is not ("source_kernel_switch_owner_required" or "source_kernel_flinch_order_not_migrated" or "source_kernel_protection_order_required"))return No(invalid);
             }
             selections=selections.Add(selection);
             if(unselected.Length>1)return new(CommandStatus.Accepted,state with{DoubleBattle=b with{PlayerSelections=selections}});

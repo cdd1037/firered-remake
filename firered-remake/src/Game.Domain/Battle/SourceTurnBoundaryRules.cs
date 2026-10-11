@@ -6,6 +6,11 @@ namespace Game.Domain.Battle;
 /// the bounded slot owner. Residual effects and recharge timers must run before this boundary.</summary>
 public static class SourceTurnBoundaryRules
 {
+    // TurnValuesCleanUp(TRUE), before ordinary residuals and delayed attacks.
+    // The consecutive-use byte belongs to DisableStruct and survives this boundary.
+    public static WildBattleCombatant PrepareBody(WildBattleCombatant body) =>
+        body with { Flinched = false, Protected = false, Enduring = false };
+
     public static int RechargeAfterReady(int turnsRemaining) => Math.Max(0, turnsRemaining - 1);
 
     public static WildBattleCombatant ReadyBody(WildBattleCombatant body, bool firstTurn, bool damageFlags, bool flinch)

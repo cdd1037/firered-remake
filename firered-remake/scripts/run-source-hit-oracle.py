@@ -14,8 +14,11 @@ imp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(imp)
 p = argparse.ArgumentParser()
 p.add_argument('output', type=Path)
+p.add_argument('--doubles', action='store_true')
+p.add_argument('--vacant-partner', action='store_true')
 p.add_argument('--reference', type=Path, default=Path((root / '.tools/reference-root').read_text().strip()))
 a = p.parse_args()
+if a.vacant_partner and not a.doubles: p.error("--vacant-partner requires --doubles")
 out = a.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
 raw = imp.authenticated(a.reference)
@@ -31,6 +34,9 @@ functions = {
     'src/battle_anim_effects_1.c': ['AnimCuttingSlice', 'AnimSlice_Step', 'AnimSlashSlice', 'AnimFalseSwipeSlice', 'AnimFalseSwipePositionedSlice', 'AnimFalseSwipeSlice_Step1', 'AnimFalseSwipeSlice_Step2', 'AnimFalseSwipeSlice_Step3'],
     'src/sprite.c': ['CreateSpriteAndAnimate', 'AnimateSprites', 'UpdateOamCoords', 'BuildSpritePriorities', 'SortSprites', 'AnimateSprite', 'BeginAnim', 'ContinueAnim', 'AnimCmd_frame', 'AnimCmd_end', 'AnimCmd_jump', 'AnimCmd_loop', 'BeginAnimLoop', 'ContinueAnimLoop', 'JumpToTopOfAnimLoop', 'DecrementAnimDelayCounter', 'SetSpriteOamFlipBits', 'StartSpriteAnim', 'BeginAffineAnim', 'ContinueAffineAnim', 'AffineAnimDelay', 'AffineAnimCmd_end', 'AffineAnimCmd_frame', 'AffineAnimStateRestartAnim', 'AffineAnimStateStartAnim', 'ApplyAffineAnimFrameAbsolute', 'DecrementAffineAnimDelayCounter', 'ApplyAffineAnimFrameRelativeAndUpdateMatrix', 'ConvertScaleParam', 'GetAffineAnimFrame', 'ApplyAffineAnimFrame', 'StartSpriteAffineAnim'],
 }
+if a.doubles:
+    functions['src/battle_anim.c'] += ['Cmd_monbg']
+    functions['src/battle_anim_mons.c'] += ['GetBattlerSpriteFinal_Y']
 bodies, identities = [], []
 
 def identify(path, name, source, start, body, kind):
@@ -72,6 +78,11 @@ constant_names = {
     'src/battle_anim_effects_3.c': ['sScratchAnimCmds', 'sScratchAnimTable', 'gScratchSpriteTemplate'],
 }
 constants = []
+if a.doubles:
+    source=raw['src/battle_anim_mons.c'].decode()
+    match=re.search(r'^static const struct UCoords8 sBattlerCoords.*?^};',source,re.M|re.S)
+    constants.append(match[0])
+    identify('src/battle_anim_mons.c','sBattlerCoords',source,match.start(),match[0],'constant')
 for path, names in constant_names.items():
     source = raw[path].decode()
     for name in names:
@@ -125,7 +136,7 @@ for move, label in [(1, 'POUND'), (10, 'SCRATCH'), (15, 'CUT'), (33, 'TACKLE'), 
             bytecode.extend(payload)
             args.extend([[]] * len(payload))
         args.append(av)
-        if op in ['delay', 'clearmonbg']:
+        if op in ['delay', 'clearmonbg'] or a.doubles and op == 'monbg':
             bytecode.append(integer(values[0])); args.append([])
         if op == 'end': break
     else: raise ValueError('Unterminated source script ' + name)
@@ -139,11 +150,11 @@ arrays += ['static const u8 *scripts[]={' + ','.join(names) + '};',
            'static const char *templateNames[]={' + ','.join(json.dumps(x) for x in template_names) + '};']
 # The tags are resource lookup identifiers only; actual tiles are reported relative to each sheet.
 tags = sorted(set(re.findall(r'\bANIM_TAG_\w+', '\n'.join(constants))))
-source = '\n'.join(['\n'.join('#define ' + tag + ' ' + str(i + 1) for i, tag in enumerate(tags)),
+source = '\n'.join([('#define DOUBLE_FIXTURE 1\n' if a.doubles else '')+('#define VACANT_FIXTURE 1\n' if a.vacant_partner else '')+'\n'.join('#define ' + tag + ' ' + str(i + 1) for i, tag in enumerate(tags)),
                    (root / 'tests/SourceHitAnimation.Oracle/host.h').read_text(),
                    '\n'.join(sig + ';' for sig, body in bodies), '\n'.join(constants),
                    '\n'.join(body for sig, body in bodies), '\n'.join(arrays),
-                   (root / 'tests/SourceHitAnimation.Oracle/driver.c').read_text()])
+                   (root / ('tests/SourceHitAnimation.Oracle/double-driver.c' if a.doubles else 'tests/SourceHitAnimation.Oracle/driver.c')).read_text()])
 (out / 'oracle.c').write_text(source)
 # The pinned PositionedSlice callback contains a redundant chained assignment; preserve it verbatim.
 result = subprocess.run(['cc', '-std=c99', '-O0', '-Wall', '-Wextra', '-Werror', '-Wno-error=sequence-point', str(out / 'oracle.c'), '-o', str(out / 'oracle')], capture_output=True, text=True)
@@ -160,10 +171,10 @@ if rows <= 0: raise SystemExit('Empty source trace')
     soundIds={str(i + 1): name for i, name in enumerate(sound_names)},
     schedulingReferences=[x for x in identities if x['kind'] == 'schedulingReference'],
     schedulerSource=dict(path=scheduler_path, bytes=len(scheduler_bytes), sha256=scheduler_sha),
-    displayOffsets='Non-monbg battlers use the pre-task OAM position; the monbg target follows post-task offsets via priority-10 Task_InitUpdateMonBg.',
+    doubles=a.doubles,vacantPartner=a.vacant_partner, displayOffsets='Non-monbg battlers use the pre-task OAM position (nine-bit X wrap normalized for screen rendering); each visible monbg target/partner follows post-task offsets via priority-10 background updates.',
     spriteFields=['slot', 'template', 'x', 'y', 'x2', 'y2', 'tile', 'visible', 'hFlip', 'blend', 'scale', 'subpriority', 'oamRank'],
-    spriteIds='Lowest available source sprite slot; fixture battlers reserve slots 0 and 1.',
+    spriteIds='Lowest available source sprite slot; fixture battlers reserve slots 0 through 3.' if a.doubles else 'Lowest available source sprite slot; fixture battlers reserve slots 0 and 1.',
     oamOrder='Original persistent 64-slot SortSprites; one extra leading host sentinel safely covers the original documented unused gSpriteOrder[-1] read.',
-    coordinates={'player': {'x': 72, 'rawY': 80, 'pictureY': 92}, 'enemy': {'x': 176, 'rawY': 40, 'pictureY': 53}},
+    coordinates=({'slot0': {'x':32,'rawY':80,'pictureY':92},'slot1': {'x':200,'rawY':40,'pictureY':53},'slot2': {'x':90,'rawY':88,'pictureY':100},'slot3': {'x':152,'rawY':32,'pictureY':45}} if a.doubles else {'player': {'x': 72, 'rawY': 80, 'pictureY': 92}, 'enemy': {'x': 176, 'rawY': 40, 'pictureY': 53}}),
     hostSha256=hashlib.sha256(source.encode()).hexdigest(), rows=rows, originalRuntimeCompared=False), indent=2) + '\n')
 print('PASS independently compiled source C callbacks:', len(bodies), 'functions +', len(constants), 'constants,', rows, 'frames')

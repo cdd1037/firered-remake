@@ -46,3 +46,6 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 
 # Reconstructed font link and Godot import metadata for the doubles test host.
 /tests/CampaignDoubleHost/Assets/
+
+# Derived Godot import sidecars beside immutable test screenshot evidence.
+/tests/**/evidence/**/*.png.import

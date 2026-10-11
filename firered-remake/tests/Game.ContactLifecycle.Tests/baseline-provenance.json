@@ -1,0 +1,12 @@
+{
+  "productCommit": "2c3e33e6d6b29a84c0b890d066d52d3899016b43",
+  "capturedBeforeProductEdits": true,
+  "test": "Game.ContactLifecycle.Tests --baseline",
+  "canonicalSinglesHashes": 24,
+  "algorithm": "SHA-256 of System.Text.Json serialized WildBattleResult (state/events/RNG)",
+  "file": "singles-baseline-2c3e33e6.json",
+  "sha256": "cd14d03daf2e130863e997f473743961a555dfe9e873983e843e87a58d35b079",
+  "sdk": "10.0.401",
+  "runtime": "10.0.12",
+  "regenerationPolicy": "Immutable baseline from pinned unmodified product; never regenerate using candidate implementation."
+}

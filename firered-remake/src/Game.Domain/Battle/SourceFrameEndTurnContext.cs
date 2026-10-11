@@ -121,7 +121,7 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         // TurnValuesCleanUp(TRUE) resets Follow Me before residuals, retaining Helping Hand.
         Frame = Frame with { Sides = Frame.Sides.Select(s => s with { FollowMeTimer = 0, FollowMeTarget = null }).ToImmutableArray() };
         foreach (var cell in Frame.Slots.Take(BattlerCount))
-            Set(cell.Slot, cell.Body! with { Flinched = false, Protected = false, Enduring = false });
+            Set(cell.Slot, SourceTurnBoundaryRules.PrepareBody(cell.Body!));
     }
     internal override void ExposeFaintedActions() => CheckTeamsLost();
     internal override void FaintedActionItems()
