@@ -14,19 +14,21 @@ internal static class SourceMoveHistoryReducer
         ImmutableArray<SourceBattleEvent> emitted, bool commandNoEffect, string? effectiveType = null, bool recordDamage = true, bool wasCalled = false)
     {
         Apply(catalog, frame.Turn, invocation, emitted, commandNoEffect, s => frame.Get(s),
-            (slot, cell) => frame = frame with { Slots = frame.Slots.SetItem(slot.Value, cell) }, effectiveType, recordDamage, wasCalled);
+            (slot, cell) => frame = frame with { Slots = frame.Slots.SetItem(slot.Value, cell) }, effectiveType, recordDamage, wasCalled, canonicalTeeterDance: true);
         return frame;
     }
     internal static void Apply(PokemonCatalog catalog, int turn, SourceMoveInvocation invocation,
         ImmutableArray<SourceBattleEvent> emitted, bool commandNoEffect,
         Func<BattlerSlot, SourceBattleSlot> get, Action<BattlerSlot, SourceBattleSlot> set,
-        string? effectiveType = null, bool recordDamage = true, bool wasCalled = false)
+        string? effectiveType = null, bool recordDamage = true, bool wasCalled = false, bool canonicalTeeterDance = false)
     {
+        // These Teeter labels print a string, then moveendto; they never set FAILED.
+        bool teeterLabels = canonicalTeeterDance && invocation.CurrentMove.Value == "pret:MOVE_TEETER_DANCE";
         var actorCell = get(invocation.Actor); var actor = actorCell.Body!;
         var targetSlot = emitted.OfType<SourceConfusionSelfHitEvent>().Any() ? invocation.Actor : invocation.Target;
         bool obeys = invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys);
         bool noEffect = commandNoEffect || !obeys || emitted.Any(e => e is SourceMoveMissedEvent || e is SourceActionBlockedEvent ||
-            e is SourceMoveFailedEvent { Reason: not ("already-full-hp" or "already-asleep" or "already-poisoned" or "already-paralyzed" or "already-confused" or "nothing-happened" or "mist" or "already-substitute" or "substitute-insufficient-hp" or "stockpile-empty") } ||
+            e is SourceMoveFailedEvent { Reason: not ("already-full-hp" or "already-asleep" or "already-poisoned" or "already-paralyzed" or "already-confused" or "nothing-happened" or "mist" or "already-substitute" or "substitute-insufficient-hp" or "stockpile-empty") } failed && !(teeterLabels && failed.Reason is "substitute" or "safeguard") ||
             e is SourceStatAtMinimumEvent or SourceStatAtMaximumEvent ||
             e is SourceAbilityPreventedEvent { Ability: "ABILITY_SOUNDPROOF" or "ABILITY_LEVITATE" or "ABILITY_WONDER_GUARD" } ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect });

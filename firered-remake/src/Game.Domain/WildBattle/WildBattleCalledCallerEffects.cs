@@ -152,9 +152,7 @@ public static partial class WildBattleRules
             RecordCalledTurnInability(eventStart, side);
             if (State.CalledParty?.PendingSwitch?.Kind == WildBattleCalledSwitchKind.BatonPass)
             { Set(side, Get(side) with { LastUsedMove = originalActorLastUsedMove }); return; }
-            if (Route11) Route11DefrostOnFireHit(catalog, side, eventStart);
-            if (Vermilion) { VermilionImmunityAbilities(); SourceCalledApplyChangedItems(); VermilionMoveEndBerries(); }
-            FinishCalledMoveHistory(catalog, eventStart);
+            CompleteCalledInvocationMoveEnd(catalog, eventStart, side);
             SourceCalledSynchronizeParties();
         }
 
@@ -184,9 +182,7 @@ public static partial class WildBattleRules
             if (invocationSkipsMoveEnd)
             { Set(side, Get(side) with { LastUsedMove = originalActorLastUsedMove }); return; }
             RecordCalledTurnInability(eventStart, side);
-            if (Route11) Route11DefrostOnFireHit(catalog, side, eventStart);
-            if (Vermilion) { VermilionImmunityAbilities(); SourceCalledApplyChangedItems(); VermilionMoveEndBerries(); }
-            FinishCalledMoveHistory(catalog, eventStart);
+            CompleteCalledInvocationMoveEnd(catalog, eventStart, side);
             SourceCalledSynchronizeParties();
         }
 

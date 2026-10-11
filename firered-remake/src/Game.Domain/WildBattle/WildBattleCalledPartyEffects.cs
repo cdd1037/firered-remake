@@ -365,6 +365,12 @@ public static partial class WildBattleRules
         private void ExecuteCalledPartyEffect(PokemonCatalog catalog, WildBattleSide side, int slot,
             PokemonMoveDefinition move, string purpose, ref bool handled)
         {
+            if (SourceBattleAdmission.IsCanonicalSourceState(catalog, State) && move.Effect == "EFFECT_HEAL_BELL")
+            {
+                SourceCalledRequireParty(move);
+                Recipes.ExecutePartyHealing(S(side), slot, move);
+                handled = true; return;
+            }
             if (SourceBattleAdmission.IsCanonicalSourceState(catalog, State) && SourceRecipeContext.HasItemTransferRecipe(move.Effect))
             {
                 SourceCalledRequireParty(move);
@@ -444,6 +450,11 @@ public static partial class WildBattleRules
             Recipes.ExecuteSwitch(catalog, S(side), activeInvocation!.PpSlot, move, "");
         private void CalledBeatUp(PokemonCatalog catalog, WildBattleSide side, WildBattleSide target, PokemonMoveDefinition move, string purpose)
         {
+            if (State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion)
+            {
+                Recipes.ExecutePursuitBeatUp(catalog, S(side), S(target), activeInvocation!.PpSlot, move, purpose);
+                return;
+            }
             bool hit = SourceGenericAccuracy(side, target, move, purpose); SpendInvocationPp(side, target, move);
             if (!hit) { SourceGenericMiss(side, target, move); return; }
             SourceCalledSynchronizeParties(); var context = State.CalledParty!; var party = WildBattleSourcePartyEffects.Party(context, side);

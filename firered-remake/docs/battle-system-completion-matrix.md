@@ -729,3 +729,27 @@ Shared admission is **326/354,28 gated** after Role Play/Skill Swap and Facade/S
 ### Prepared actions and terrain — 2026-10-11
 
 Shared recipe admission is **332/354,22 gated** after Focus Punch/Snatch/Magic Coat and Mud Sport/Water Sport/Camouflage. [Main evidence](../evidence/shared-prepared-terrain-20261011/README.md) includes called spread reflection across a fourth learned slot and a one-move reflector, true Pressure ownership, source retained-body sports and merged Castform form/type independence. Prepared and final terrain runs retain separate exact source manifests. Wider AI/item/flow acceptance and dedicated presentation remain open.
+
+### Party healing and delayed moves — 2026-10-11
+
+Shared admission is **337/354,17 gated** after Heal Bell/Aromatherapy and Wish/Future Sight/Doom Desire. [Combined main evidence](../evidence/shared-party-delayed-20261011/README.md) covers real party identities, source-absent status projection, replacement-position healing, delayed impact and Perish/EXP/win ordering. Captured complete singles outputs remain stable except the declared canonical Plus/Minus Future Sight correction. This is Domain progress; wider AI, items, Application integration and dedicated presentation remain open.
+
+### Hit sequences and stockpile/charge — 2026-10-11
+
+The actual recipe predicate reports **345/354,9 gated** after Rage/Fury Cutter/Triple Kick/Fake Out and Stockpile/Spit Up/Swallow/Charge. [Combined main evidence](../evidence/shared-hit-stockpile-20261011/README.md) covers per-hit contact/items, initial and replacement first-turn state, real complete turns and existing residual ownership. Gen III Stockpile grants no later-generation stat boosts. Historical result corpora remain stable; bounded canonical source corrections are explicit. Core AI/item/Application closure remains separate.
+
+### Generic trainer move selection — 2026-10-11
+
+The fixed original Twins wrapper now delegates to a metadata-driven four-position move controller. [Main focused evidence](../evidence/four-trainer-moves-20261011/README.md) covers forced slots, restrictions and target modes. This does not close C19: the source uses flags1/7, but the previous bounded viability scorer handled only21 of121 effect dispatches. The other100 are now explicitly rejected until migrated; real switch/item/action composition remains open. Admission stays345/354.
+
+### Pursuit interception and real-party Beat Up — 2026-10-11
+
+Shared admission reaches **347/354,7 gated**. [Main evidence](../evidence/shared-pursuit-beatup-20261011/README.md) covers actual voluntary switch interception, queue consumption, KO/EXP/learning resume and the reserved entrant, plus real-party Beat Up. The canonical freeze guard matches source and old historical profiles remain unchanged. This does not yet close generic trainer actions, items or Application/UI integration.
+
+## Final recipe admission, 2026-10-11
+
+The actual catalog/predicate run now reports **354/354 admitted, zero gated**. [Combined main evidence](../evidence/shared-final-recipes-20261011/README.md) covers the last seven recipes and their actual target/field/turn lifecycles. This closes the incremental recipe list, while generic trainer AI/actions, wider items/capture contexts, Application integration and functional double presentation remain open. Dedicated animations remain17/354 and proceed separately.
+
+## Public turn sweep and stage exit, 2026-10-11
+
+The existing four-action host now drives all354 moves at all four actual actor positions through one public turn and required continuation boundaries: [1,416 controlled cases](../evidence/shared-recipe-turn-sweep-20261011/README.md). This guards against registration-only claims while retaining bounded scope. Before the next campaign stage, consolidate identified duplicate canonical rule/adapter code and obsolete incremental test gates, clarify shared singles/four-position owners, and run affected regressions. Preserve necessary historical profile compatibility. Dedicated audiovisual restoration remains parallel after core acceptance.

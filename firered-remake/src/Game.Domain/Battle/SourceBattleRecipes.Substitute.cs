@@ -19,11 +19,11 @@ internal static class SourceSubstituteRules
     internal static bool Supported(WildBattleCombatant body) => body.CalledVolatile is not { } value ||
         value != new WildBattleCalledVolatileState() &&
         value.SubstituteHp is >= 0 and <= 255 && value.TauntTurnsRemaining is >= 0 and <= 2 &&
-        value.PerishSongTimer is null or >= 0 and <= 3 &&
-        (body.Pokemon.CurrentHp > 0 || value.SubstituteHp == 0 && !value.Grudge && !value.Tormented && value.TauntTurnsRemaining == 0) &&
+        value.PerishSongTimer is null or >= 0 and <= 3 && value.StockpileCount is >= 0 and <= 3 &&
+        (body.Pokemon.CurrentHp > 0 || value.SubstituteHp == 0 && !value.Grudge && !value.Tormented && value.TauntTurnsRemaining == 0 && value.StockpileCount == 0) &&
         value == new WildBattleCalledVolatileState { SubstituteHp = value.SubstituteHp,
             Tormented = value.Tormented, TauntTurnsRemaining = value.TauntTurnsRemaining,
-            PerishSongTimer = value.PerishSongTimer, Grudge = value.Grudge };
+            PerishSongTimer = value.PerishSongTimer, Grudge = value.Grudge, StockpileCount = value.StockpileCount };
     internal static (int After, int Lost) Damage(int hp, int damage)
     {
         int after = Math.Max(0, hp - damage);

@@ -149,20 +149,20 @@ public static class SourceTrainerAi
 
     // Additional CHECK_BAD_MOVE dispatches reachable after Metronome/Transform, plus source
     // corrections where the old bounded profiles never admitted the relevant registers.
-    internal static bool AdditionalBadMove(SourceTrainerAiContext source, PokemonMoveDefinition move,
+    internal static bool AdditionalBadMove(SourceTrainerAiFacts source, PokemonMoveDefinition move,
         Func<string,string> ability, Action<int> score, Func<int> effectiveness)
     {
-        var b = source.Battle; var u = b.Opponent; var t = b.Player;
+        var u = source.User; var t = source.Target;
         int Hp(WildBattleCombatant m) => 100 * m.Pokemon.CurrentHp / m.Pokemon.Stats.MaxHp;
         bool HasType(string type) => WildBattleEffective.HasType(source.Catalog, t, type);
-        bool HasReserves() => source.Party.Where((_,i) => i != source.State.OpponentIndex).Any(m => m.Pokemon.CurrentHp > 0);
+        bool HasReserves() => source.UserHasReserves;
         void MaxStage(int stage) { if (stage == 12) score(-10); }
         void Down(int stage, string? blocked = null)
         { if (stage == 0 || blocked is not null && ability("stat-specific") == blocked || ability("stat-change") is "ABILITY_CLEAR_BODY" or "ABILITY_WHITE_SMOKE") score(-10); }
         switch(move.Effect)
         {
             case "EFFECT_TOXIC": if (HasType("TYPE_POISON") || HasType("TYPE_STEEL") || ability("poison-immunity") == "ABILITY_IMMUNITY" || t.Status != 0) score(-10); break;
-            case "EFFECT_FUTURE_SIGHT": if (b.CalledDelayed?.PlayerFutureAttack is not null) score(-10); break;
+            case "EFFECT_FUTURE_SIGHT": if (source.FutureAttack) score(-10); break;
             case "EFFECT_DEFENSE_UP_2": MaxStage(u.DefenseStage); break;
             case "EFFECT_SPEED_UP": MaxStage(u.SpeedStage); break;
             case "EFFECT_SPECIAL_ATTACK_UP_2": MaxStage(u.SpecialAttackStageDelta + 6); break;
@@ -179,7 +179,7 @@ public static class SourceTrainerAi
             case "EFFECT_HAZE" or "EFFECT_PSYCH_UP":
                 if(!Stages(u).Any(s=>s<6) && !Stages(t).Any(s=>s>6)) score(-10); break;
             case "EFFECT_ROAR":
-                if (WildBattleSourcePartyEffects.LegalReserveIndices(b.CalledParty!, WildBattleSide.Player).IsEmpty || ability("roar-immunity")=="ABILITY_SUCTION_CUPS") score(-10); break;
+                if (!source.TargetHasReserves || ability("roar-immunity")=="ABILITY_SUCTION_CUPS") score(-10); break;
             case "EFFECT_MAGNITUDE":
                 if (ability("magnitude-immunity") == "ABILITY_LEVITATE") {score(-10);break;}
                 goto case "EFFECT_BIDE";
@@ -189,27 +189,27 @@ public static class SourceTrainerAi
                 "EFFECT_RETURN" or "EFFECT_PRESENT" or "EFFECT_FRUSTRATION":
                 if(effectiveness()==0 || ability("high-risk-damage")=="ABILITY_WONDER_GUARD" && effectiveness()!=20) score(-10);break;
             case "EFFECT_OHKO": if(effectiveness()==0 || ability("ohko-immunity")=="ABILITY_STURDY" || u.Pokemon.Level<t.Pokemon.Level) score(-10);break;
-            case "EFFECT_LIGHT_SCREEN": if(b.CalledField?.OpponentLightScreenTurnsRemaining>0) score(-8);break;
-            case "EFFECT_MIST": if(b.CalledField?.OpponentMistTurnsRemaining>0) score(-8);break;
-            case "EFFECT_SAFEGUARD": if(b.CalledField?.OpponentSafeguardTurnsRemaining>0) score(-8);break;
+            case "EFFECT_LIGHT_SCREEN": if(source.LightScreen) score(-8);break;
+            case "EFFECT_MIST": if(source.Mist) score(-8);break;
+            case "EFFECT_SAFEGUARD": if(source.Safeguard) score(-8);break;
             case "EFFECT_SUBSTITUTE": if(u.CalledVolatile?.SubstituteHp>0) score(-8); else if(Hp(u)<26) score(-10);break;
             case "EFFECT_SNORE" or "EFFECT_SLEEP_TALK": if(!WildBattleStatus.IsSleeping(u.Status)) score(-8);break;
-            case "EFFECT_MEAN_LOOK": if(t.MeanLookSource is not null) score(-10);break;
-            case "EFFECT_SPIKES": if(b.CalledParty?.PlayerSpikes>0) score(-10);break;
+            case "EFFECT_MEAN_LOOK": if(source.TargetTrapped) score(-10);break;
+            case "EFFECT_SPIKES": if(source.Spikes) score(-10);break;
             case "EFFECT_PERISH_SONG": if(t.CalledVolatile?.PerishSongTimer is not null) score(-10);break;
-            case "EFFECT_SANDSTORM": if(b.SandstormTurnsRemaining>0) score(-8);break;
-            case "EFFECT_SUNNY_DAY": if(b.CalledField?.SunTurnsRemaining>0) score(-8);break;
-            case "EFFECT_HAIL": if(b.CalledField?.HailTurnsRemaining>0) score(-8);break;
+            case "EFFECT_SANDSTORM": if(source.Sandstorm) score(-8);break;
+            case "EFFECT_SUNNY_DAY": if(source.Sun) score(-8);break;
+            case "EFFECT_HAIL": if(source.Hail) score(-8);break;
             case "EFFECT_SWAGGER" or "EFFECT_FLATTER": if(t.ConfusionTurnsRemaining>0) score(-5); else if(ability("confusion-immunity")=="ABILITY_OWN_TEMPO") score(-10);break;
             case "EFFECT_ATTRACT":
-                if(t.InfatuationSource is not null || ability("attract-immunity")=="ABILITY_OBLIVIOUS" || u.Pokemon.Gender==PokemonGender.Genderless || t.Pokemon.Gender==PokemonGender.Genderless || u.Pokemon.Gender==t.Pokemon.Gender) score(-10);break;
+                if(source.TargetAttracted || ability("attract-immunity")=="ABILITY_OBLIVIOUS" || u.Pokemon.Gender==PokemonGender.Genderless || t.Pokemon.Gender==PokemonGender.Genderless || u.Pokemon.Gender==t.Pokemon.Gender) score(-10);break;
             case "EFFECT_MEMENTO": if(t.AttackStage==0) score(-10); else if(t.SpecialAttackStageDelta == -6) score(-8); else if(!HasReserves()) score(-10);break;
             case "EFFECT_BATON_PASS": if(!HasReserves()) score(-10);break;
             case "EFFECT_STOCKPILE": if(u.CalledVolatile?.StockpileCount==3) score(-10);break;
             case "EFFECT_SPIT_UP" or "EFFECT_SWALLOW": if(effectiveness()==0 || (u.CalledVolatile?.StockpileCount??0)==0) score(-10);break;
             case "EFFECT_TORMENT": if(t.CalledVolatile?.Tormented==true) score(-10);break;
             case "EFFECT_TRICK": if(ability("sticky-hold")=="ABILITY_STICKY_HOLD") score(-10);break;
-            case "EFFECT_RECYCLE": if(b.CalledParty?.OpponentUsedHeldItem is null) score(-10);break;
+            case "EFFECT_RECYCLE": if(!source.UsedHeldItem) score(-10);break;
             case "EFFECT_IMPRISON": if(u.Imprison) score(-10);break;
             case "EFFECT_REFRESH": if((u.Status & (WildBattleStatus.Poison|WildBattleStatus.Burn|WildBattleStatus.Paralysis|WildBattleSourceFieldEffects.ToxicPoison))==0) score(-10);break;
             case "EFFECT_TICKLE": if(t.AttackStage==0) score(-10); else if(t.DefenseStage==0) score(-8);break;

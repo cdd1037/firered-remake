@@ -77,6 +77,7 @@ internal abstract partial class SourceRecipeContext
         internal bool SourceGenericAccuracy(BattlerSlot side, BattlerSlot target, PokemonMoveDefinition move, string purpose)
         {
             if (HasWeatherHitRecipe(move.Effect)) return FixedDamageAccuracy(side, target, move, purpose, thunderWeather: true);
+            if (move.Effect == "EFFECT_SECRET_POWER") return FixedDamageAccuracy(side, target, move, purpose);
             if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) return false;
             if (CalledSureHit(side, target)) return true;
             if (move.Effect is "EFFECT_ALWAYS_HIT" or "EFFECT_VITAL_THROW") return !BillUnderground(side, target, move);
@@ -103,9 +104,9 @@ internal abstract partial class SourceRecipeContext
         }
 
         internal int SourceGenericDamage(PokemonCatalog catalog, WildBattleCombatant actor, WildBattleCombatant target,
-            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null, ElementType? effectiveType = null, int? damageMultiplier = null, bool suppressTypeMiss = true, SourceTypeCommand typeCommand = SourceTypeCommand.TypeCalc) =>
+            BattlerSlot targetSide, PokemonMoveDefinition move, bool critical, int percent, int? dynamicPower = null, ElementType? effectiveType = null, int? damageMultiplier = null, bool suppressTypeMiss = true, SourceTypeCommand typeCommand = SourceTypeCommand.TypeCalc, bool pursuitSwitch = false) =>
             SourceTypeDamage(catalog, targetSide, move, ForestBattleDamage.Calculate(catalog, actor, target, move.Id, critical, percent,
-                true, true, true, true, route3Rules: true, dynamicPower: dynamicPower, mtMoonRules: true, ceruleanRules: true, billRules: true,
+                true, true, true, true, pursuitSwitch: pursuitSwitch, route3Rules: true, dynamicPower: dynamicPower, mtMoonRules: true, ceruleanRules: true, billRules: true,
                 vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
                 rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(targetSide),
                 sourceDefinition: move, sourceEffectiveType: effectiveType, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
@@ -176,6 +177,7 @@ internal abstract partial class SourceRecipeContext
             if (!secondary.Apply) return;
             switch (move.Effect)
             {
+                case "EFFECT_SECRET_POWER": ApplySecretPowerSecondary(catalog, side, targetSide, move, purpose, secondary.Certain); break;
                 case "EFFECT_BLAZE_KICK":
                 case "EFFECT_BURN_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Burn, false, certain: secondary.Certain); break;
                 case "EFFECT_THUNDER":
@@ -209,9 +211,9 @@ internal abstract partial class SourceRecipeContext
             int effectiveDamage = damage;
             damage = AdjustHeldDamage(targetSide, move.Id, damage, purpose);
             int lost = SourceGenericApplyDamage(side, targetSide, move, damage, critical, percent);
-            // The migrated weather-hit prefixes reach critmessage even when Endure
+            // The migrated weather/Secret Power paths reach critmessage even when Endure
             // or Focus Band leaves zero loss. Singles may already print that command.
-            if (HasWeatherHitRecipe(move.Effect) && critical && lost == 0 && effectiveDamage > 0 && !FixedDamageZeroCriticalPrinted(targetSide))
+            if ((HasWeatherHitRecipe(move.Effect) || move.Effect == "EFFECT_SECRET_POWER") && critical && lost == 0 && effectiveDamage > 0 && !FixedDamageZeroCriticalPrinted(targetSide))
                 Add(n => new SourceCriticalHitEvent(n, Turn, side, targetSide));
             SourceGenericEffectiveness(catalog, side, targetSide, move);
             if (move.Effect == "EFFECT_ABSORB")

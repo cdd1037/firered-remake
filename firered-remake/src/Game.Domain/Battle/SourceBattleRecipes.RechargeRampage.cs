@@ -15,7 +15,7 @@ internal abstract partial class SourceRecipeContext
     internal void ExecuteRechargeRampage(PokemonCatalog catalog, BattlerSlot actor, PokemonMoveDefinition move, string purpose)
     {
         var target = Invocation!.Target;
-        bool repeated = RampageLocked(actor);
+        bool repeated = RampageLocked(actor) || UproarLocked(actor);
         bool hit = ChargeAccuracy(actor, target, move, purpose);
         if (!repeated || !hit) ChargePp(actor, target, move, true);
         else RolloutAttackString(actor);
@@ -32,6 +32,11 @@ internal abstract partial class SourceRecipeContext
         {
             if (move.Effect == "EFFECT_RECHARGE")
                 StartRechargeRampageLock(actor, move, WildBattleCalledLockKind.Recharge, RechargeDuration);
+            else if (move.Effect == "EFFECT_UPROAR")
+            {
+                if (!UproarLocked(actor) && Get(actor).Pokemon.CurrentHp > 0)
+                    StartRechargeRampageLock(actor, move, WildBattleCalledLockKind.Uproar, (Draw($"{purpose}.uproar-duration", 4) & 3) + 2);
+            }
             else if (!RampageLocked(actor))
                 StartRechargeRampageLock(actor, move, WildBattleCalledLockKind.Rampage, (Draw($"{purpose}.rampage-duration", 2) & 1) + 2);
         }

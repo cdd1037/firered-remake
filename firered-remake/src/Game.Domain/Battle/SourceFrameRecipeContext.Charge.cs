@@ -22,8 +22,9 @@ internal sealed partial class FrameRecipeContext
     internal override void ChargeNoPpDeduct()=>invocation=invocation with{Flags=invocation.Flags|WildBattleInvocationFlags.NoPpDeduct};
     internal override void CancellerParalysisBlocked(BattlerSlot actor)
     {
+        ChangeFuryCutterCounter(actor, 0, "paralysis");
         if(BideLock(actor) is not null)ChangeBideLock(actor,null,"paralysis");
-        if(RampageLocked(actor))ChangeRechargeRampageLock(actor,null,"paralysis");
+        if(RampageLocked(actor) || UproarLocked(actor))ChangeRechargeRampageLock(actor,null,"paralysis");
         if(ChargeLocked(actor))ChangeCharge(actor,move,false,"paralysis");
     }
 }

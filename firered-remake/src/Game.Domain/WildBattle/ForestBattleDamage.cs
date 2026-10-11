@@ -33,7 +33,7 @@ internal static class ForestBattleDamage
             _ => false };
         if (sourceEffectiveType is not null && (!sourceMove || !validEffectiveType))
             throw new NotSupportedException("called_damage_effective_type");
-        if (sourceDamageMultiplier != 1 && (!sourceMove || move!.Effect is not ("EFFECT_FACADE" or "EFFECT_SMELLINGSALT" or "EFFECT_WEATHER_BALL" or "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE" or "EFFECT_GUST" or "EFFECT_TWISTER") && move.Id.Value is not ("pret:MOVE_SURF" or "pret:MOVE_WHIRLPOOL") || sourceDamageMultiplier != 2))
+        if (sourceDamageMultiplier != 1 && !(sourceMove && move!.Effect == "EFFECT_SPIT_UP" && sourceDamageMultiplier is 2 or 3) && (!sourceMove || move!.Effect is not ("EFFECT_FACADE" or "EFFECT_SMELLINGSALT" or "EFFECT_WEATHER_BALL" or "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE" or "EFFECT_GUST" or "EFFECT_TWISTER") && move.Id.Value is not ("pret:MOVE_SURF" or "pret:MOVE_WHIRLPOOL") || sourceDamageMultiplier != 2))
             throw new NotSupportedException("called_damage_multiplier");
         if (sourceMove && (move!.Effect is "EFFECT_RETURN" or "EFFECT_FRUSTRATION" or "EFFECT_HIDDEN_POWER" or "EFFECT_ERUPTION" or "EFFECT_PRESENT" or "EFFECT_TRIPLE_KICK") && dynamicPower is null)
             throw new NotSupportedException("called_damage_dynamic_power_required");

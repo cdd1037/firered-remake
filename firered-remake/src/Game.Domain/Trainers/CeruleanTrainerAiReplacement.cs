@@ -5,11 +5,11 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Trainers;
 
-/// <summary>Pinned singles faint replacement, including defensive-type ranking, stale-current-move,
+/// <summary>Shared pinned replacement, including defensive-type ranking, stale-current-move,
 /// active-stat and byte best-damage source bugs. Voluntary switching uses CeruleanTrainerActionAi.</summary>
 public static class CeruleanTrainerAiReplacement
 {
-    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false, SourceTrainerAiContext? source = null)
+    public static ForestTrainerReplacementDecision Choose(PokemonCatalog catalog, ForestTrainerReplacementInput input, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false, SourceTrainerAiContext? source = null, SourceTrainerAiSlotContext? slots = null)
     {
         towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
@@ -19,14 +19,16 @@ public static class CeruleanTrainerAiReplacement
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         ForestTrainerReplacementDecision Fault(string code) => new(TransitionStatus.Fault, null, [],
             new(code, "Input is outside the bounded MtMoon trainer replacement profile."));
-        if (catalog is null || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules) return Fault("celadon_gym_trainer_ai_catalog_scope");
-        string? error = source is null ? Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) :
+        if (catalog is null || slots is null && ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules)) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        string? error = slots is not null ? !slots.Matches(catalog, input.FaintedActive, input.Target) || !slots.ActualParty.SequenceEqual(input.Party)
+            ? "source_four_trainer_replacement_context" : null : source is null ? Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) :
             !source.Matches(catalog,input.FaintedActive,input.Target) || !source.Party.SequenceEqual(input.Party) || input.FaintedPartyIndex!=source.State.OpponentIndex ? "source_trainer_replacement_context_mismatch" : null;
         if (error is not null) return Fault(error);
         var active = input.FaintedActive.Pokemon;
         var a = WildBattleEffective.Types(catalog,input.FaintedActive); var d = WildBattleEffective.Types(catalog,input.Target);
         ElementType Type(string value) => Enum.Parse<ElementType>(value[5..], true);
-        bool Living(int index) => index != input.FaintedPartyIndex && input.Party[index].Pokemon.CurrentHp > 0;
+        bool sourceRules = source is not null || slots is not null;
+        bool Living(int index) => slots?.SwitchEligible(index) ?? (index != input.FaintedPartyIndex && input.Party[index].Pokemon.CurrentHp > 0);
         var scores = new int[input.Party.Length]; Array.Fill(scores, -1);
         var invalid = new bool[input.Party.Length];
         // Both target type slots run even when identical. The source ranks damage those target
@@ -50,7 +52,7 @@ public static class CeruleanTrainerAiReplacement
                 if (move.Power == 0 || WildBattleEffective.Ability(input.Target) == "ABILITY_LEVITATE" && move.Type == "TYPE_GROUND") continue;
                 int value = 10;
                 foreach (var effect in TypeRules.OrderedEffects(Type(move.Type), Type(d.Type1), Type(d.Type2)))
-                    if (!(source is not null && input.Target.Identified && effect.MultiplierTenths == 0 && move.Type is "TYPE_NORMAL" or "TYPE_FIGHTING"))
+                    if (!(sourceRules && input.Target.Identified && effect.MultiplierTenths == 0 && move.Type is "TYPE_NORMAL" or "TYPE_FIGHTING"))
                         value = value * effect.MultiplierTenths / 10;
                 if (value > 10) return new(TransitionStatus.Accepted, best, [.. scores], null);
             }
@@ -63,7 +65,7 @@ public static class CeruleanTrainerAiReplacement
         var staleType = none || struggle ? ElementType.Normal : Type(stale!.Type);
         // Source AI_CalcDmg reads active stats, stale gCurrentMove and cleared faint ability.
         int baseDamage = CeruleanTrainerAi.BasePrediction(input.FaintedActive, input.Target,
-            power, staleType, stale?.Effect, clearUserAbility: source is null || input.FaintedActive.Pokemon.CurrentHp == 0, rain: route11Rules && rain, reflect: rockTunnelRules && reflect, source: source);
+            power, staleType, stale?.Effect, clearUserAbility: !sourceRules || input.FaintedActive.Pokemon.CurrentHp == 0, rain: route11Rules && rain, reflect: rockTunnelRules && reflect, source: source, slots: slots, moveTarget: stale?.Target);
         int chosen = -1; byte bestDamage = 0;
         for (int i = 0; i < input.Party.Length; i++)
         {
@@ -81,7 +83,7 @@ public static class CeruleanTrainerAiReplacement
                     if (!(WildBattleEffective.Ability(input.Target) == "ABILITY_LEVITATE" && type == ElementType.Ground))
                         foreach (var effect in TypeRules.OrderedEffects(type, Type(d.Type1), Type(d.Type2)))
                         {
-                            if (source is not null && input.Target.Identified && effect.MultiplierTenths == 0 && move.Type is "TYPE_NORMAL" or "TYPE_FIGHTING") continue;
+                            if (sourceRules && input.Target.Identified && effect.MultiplierTenths == 0 && move.Type is "TYPE_NORMAL" or "TYPE_FIGHTING") continue;
                             damage = damage * effect.MultiplierTenths / 10;
                             if (damage == 0 && effect.MultiplierTenths != 0) damage = 1;
                         }
@@ -90,8 +92,8 @@ public static class CeruleanTrainerAiReplacement
                 if (bestDamage < damage) { bestDamage = unchecked((byte)damage); chosen = i; }
             }
         }
-        if (chosen < 0) chosen = Enumerable.Range(0, input.Party.Length).First(Living);
-        return new(TransitionStatus.Accepted, chosen, [.. scores], null);
+        if (chosen < 0 && slots is null) chosen = Enumerable.Range(0, input.Party.Length).First(Living);
+        return new(TransitionStatus.Accepted, chosen < 0 ? null : chosen, [.. scores], null);
     }
     private static string? Validate(PokemonCatalog? catalog, ForestTrainerReplacementInput? input, bool billRules, bool vermilionRules, bool ssAnneRules, bool vermilionGymRules, bool route11Rules, bool rockTunnelRules = false)
     {

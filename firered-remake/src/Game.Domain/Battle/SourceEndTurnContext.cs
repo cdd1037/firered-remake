@@ -151,6 +151,7 @@ internal abstract partial class SourceEndTurnContext
                 case SourceBattlerEndTurnStep.Yawn: YawnResidual(slot); break;
                 case SourceBattlerEndTurnStep.Wrap: BindingResidual(slot); break;
                 case SourceBattlerEndTurnStep.LockOn: LockOnResidual(slot); break;
+                case SourceBattlerEndTurnStep.Charge: ElectricChargeResidual(slot); break;
                 default: UnmigratedBattlerStep(step, slot); break;
             }
             CheckTeamsLost();

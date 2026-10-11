@@ -43,6 +43,7 @@ public static class CeruleanTrainerAi
         }
         var targetSpecies = catalog.Species[input.Target.Pokemon.Species];
         bool sourceTypes = source is not null || slots is not null;
+        var facts = sourceTypes ? new SourceTrainerAiFacts(source, slots) : null;
         var targetTypes = !sourceTypes ? (targetSpecies.Type1, targetSpecies.Type2) : WildBattleEffective.Types(catalog, input.Target);
         string Ability(int slot, string reason)
         {
@@ -68,7 +69,7 @@ public static class CeruleanTrainerAi
             for (int slot = 0; slot < input.User.Pokemon.Moves.Length; slot++)
             {
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain, reflect: rockTunnelRules && reflect, source: source);
+                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain, reflect: rockTunnelRules && reflect, source: source, slots: slots);
             }
             void Score(int slot, int change) => scores[slot] = Math.Max(0, scores[slot] + change);
             for (int slot = 0; slot < 4; slot++)
@@ -77,7 +78,7 @@ public static class CeruleanTrainerAi
                 // CheckMoveLimitations initialized their score to zero. Those ability reads consume RNG.
                 if (slots is not null ? !slots.ShouldProcess(slot) : !Usable(slot)) continue;
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1 && !(source is not null ? SourceTrainerAi.DiscouragedPower(move.Effect) : rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107 && move.Effect == "EFFECT_EXPLOSION"))
+                if (move.Power > 1 && !(sourceTypes ? SourceTrainerAi.DiscouragedPower(move.Effect) : rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107 && move.Effect == "EFFECT_EXPLOSION"))
                 {
                     int effectiveness = TypeEffectiveness(move.Type, targetTypes, sourceTypes && input.Target.Identified);
                     if (effectiveness == 0) { Score(slot, -10); continue; }
@@ -93,7 +94,7 @@ public static class CeruleanTrainerAi
                 string soundAbility = Ability(slot, "soundproof");
                 if (soundAbility == "ABILITY_SOUNDPROOF" && IsSoundMove(move.Id))
                 { Score(slot, -10); continue; }
-                if (source is not null && SourceTrainerAi.AdditionalBadMove(source, move, reason => Ability(slot, reason),
+                if (facts is not null && SourceTrainerAi.AdditionalBadMove(facts, move, reason => Ability(slot, reason),
                     change => Score(slot, change), () => TypeEffectiveness(move.Type, targetTypes, input.Target.Identified))) continue;
                 switch (move.Effect)
                 {
@@ -122,11 +123,11 @@ public static class CeruleanTrainerAi
                     case "EFFECT_FAKE_OUT" when rocketHideoutRules:
                         if (input.User.FirstTurnCounter == 0) Score(slot, -10);
                         break;
-                    case "EFFECT_HELPING_HAND" when rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107:
+                    case "EFFECT_HELPING_HAND" when sourceTypes || rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107:
                         // Source AI_CBM_HelpingHand penalizes Helping Hand in any singles battle.
-                        Score(slot, -10);
+                        if (slots is null) Score(slot, -10);
                         break;
-                    case "EFFECT_EXPLOSION" when rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107:
+                    case "EFFECT_EXPLOSION" when sourceTypes || rockTunnelRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 94 or 98 or 99 or 101 or 102 or 107:
                         // Source counts living reserves, excluding the active Pokémon on each side.
                         if (TypeEffectiveness(move.Type,targetTypes, sourceTypes && input.Target.Identified) == 0 || Ability(slot,"explosion-immunity") == "ABILITY_DAMP") { Score(slot,-10); break; }
                         if (!input.UserHasReserves) Score(slot,input.TargetHasReserves ? -10 : -1);
@@ -212,7 +213,7 @@ public static class CeruleanTrainerAi
                         Score(slot, -10);
                         break;
                     case "EFFECT_LEECH_SEED":
-                        if (input.Target.LeechSeedSource is not null || targetTypes.Type1 == "TYPE_GRASS" || targetTypes.Type2 == "TYPE_GRASS") Score(slot, -10);
+                        if ((facts?.TargetSeeded ?? input.Target.LeechSeedSource is not null) || targetTypes.Type1 == "TYPE_GRASS" || targetTypes.Type2 == "TYPE_GRASS") Score(slot, -10);
                         break;
                     case "EFFECT_ROAR" when ssAnneRules:
                         if (!input.TargetHasReserves) { Score(slot, -10); break; }
@@ -254,7 +255,7 @@ public static class CeruleanTrainerAi
                         if (input.User.EvasionStage == 12) Score(slot, -10);
                         break;
                     default:
-                        if (source is not null && !SourceTrainerAi.HasBadMoveDispatch(move.Effect)) break;
+                        if (sourceTypes && !SourceTrainerAi.HasBadMoveDispatch(move.Effect)) break;
                         return Fault("cerulean_trainer_ai_effect_outside_source_parties");
                 }
             }
@@ -264,11 +265,11 @@ public static class CeruleanTrainerAi
                 int targetHp = 100 * input.Target.Pokemon.CurrentHp / input.Target.Pokemon.Stats.MaxHp;
                 for (int slot = 0; slot < 4; slot++)
                 {
-                    if (!Usable(slot)) continue;
+                    if (slots is not null ? !slots.ShouldProcess(slot) : !Usable(slot)) continue;
                     int Roll(string reason) => Draw($"cerulean-trainer.ai.viability.slot.{slot}.{reason}", 256);
                     bool TargetFaster()
                     {
-                        bool sun = source?.Battle.CalledField?.SunTurnsRemaining > 0;
+                        bool sun = facts?.Sun == true;
                         int u = Speed(input.User, route11Rules && rain, sun), t = Speed(input.Target, route11Rules && rain, sun);
                         // GetWhoStrikesFirst returns 0/2 on ties; ==1 is false for either.
                         if (u == t) _ = Draw($"cerulean-trainer.ai.viability.slot.{slot}.speed-tie", 2);
@@ -306,7 +307,7 @@ public static class CeruleanTrainerAi
                             if (Roll("recover-phantom-snatch") < 100) break;
                             if (Roll("recover-encourage") >= 20) Score(slot, 2);
                             break;
-                        case "EFFECT_DEFENSE_UP_2" when source is not null:
+                        case "EFFECT_DEFENSE_UP_2" when sourceTypes:
                         case "EFFECT_DEFENSE_UP":
                             if (input.User.DefenseStage >= 9)
                             { if (Roll("defense-high-stage") >= 100) Score(slot, -1); }
@@ -321,15 +322,15 @@ public static class CeruleanTrainerAi
                             }
                             if (Roll("defense-last-move") >= 60) Score(slot, -2);
                             break;
-                        case "EFFECT_MINIMIZE" when source is not null:
+                        case "EFFECT_MINIMIZE" when sourceTypes:
                         case "EFFECT_EVASION_UP" when vermilionGymRules:
                             if (userHp >= 90 && Roll("evasion-healthy") >= 100) Score(slot, 3);
                             if (input.User.EvasionStage >= 9 && Roll("evasion-high-stage") >= 128) Score(slot, -1);
-                            if (source is not null && WildBattleSourceFieldEffects.IsToxic(input.Target.Status) &&
+                            if (sourceTypes && WildBattleSourceFieldEffects.IsToxic(input.Target.Status) &&
                                 (userHp > 50 || Roll("evasion-toxic-low-hp") >= 80) && Roll("evasion-toxic") >= 50) Score(slot, 3);
-                            if (input.Target.LeechSeedSource is not null && Roll("evasion-leech-seed") >= 70) Score(slot, 3);
-                            if (source is not null && input.User.Rooted && Roll("evasion-rooted") >= 128) Score(slot, 2);
-                            if (source is not null && input.Target.Cursed && Roll("evasion-curse") >= 70) Score(slot, 3);
+                            if ((facts?.TargetSeeded ?? input.Target.LeechSeedSource is not null) && Roll("evasion-leech-seed") >= 70) Score(slot, 3);
+                            if (sourceTypes && input.User.Rooted && Roll("evasion-rooted") >= 128) Score(slot, 2);
+                            if (sourceTypes && input.Target.Cursed && Roll("evasion-curse") >= 70) Score(slot, 3);
                             if (userHp <= 70 && input.User.EvasionStage != 6 &&
                                 (userHp < 40 || targetHp < 40 || Roll("evasion-repeated-low-hp") >= 70)) Score(slot, -2);
                             break;
@@ -361,26 +362,26 @@ public static class CeruleanTrainerAi
                         case "EFFECT_ACCURACY_DOWN":
                             if ((userHp < 70 || targetHp <= 70) && Roll("accuracy-down-low-hp") >= 100) Score(slot, -1);
                             if (input.User.AccuracyStage <= 4 && Roll("accuracy-down-user-accuracy") >= 80) Score(slot, -2);
-                            if (source is not null && WildBattleSourceFieldEffects.IsToxic(input.Target.Status) && Roll("accuracy-down-toxic") >= 70) Score(slot, 2);
-                            if (input.Target.LeechSeedSource is not null && Roll("accuracy-down-leech-seed") >= 70) Score(slot, 2);
-                            if (source is not null && input.User.Rooted && Roll("accuracy-down-rooted") >= 128) Score(slot, 1);
-                            if (source is not null && input.Target.Cursed && Roll("accuracy-down-curse") >= 70) Score(slot, 2);
+                            if (sourceTypes && WildBattleSourceFieldEffects.IsToxic(input.Target.Status) && Roll("accuracy-down-toxic") >= 70) Score(slot, 2);
+                            if ((facts?.TargetSeeded ?? input.Target.LeechSeedSource is not null) && Roll("accuracy-down-leech-seed") >= 70) Score(slot, 2);
+                            if (sourceTypes && input.User.Rooted && Roll("accuracy-down-rooted") >= 128) Score(slot, 1);
+                            if (sourceTypes && input.Target.Cursed && Roll("accuracy-down-curse") >= 70) Score(slot, 2);
                             if (userHp <= 70 && input.Target.AccuracyStage != 6 &&
                                 (userHp < 40 || targetHp < 40 || Roll("accuracy-down-repeated-low-hp") >= 70)) Score(slot, -2);
                             break;
                         case "EFFECT_POISON":
                             if (userHp < 50 || targetHp <= 50) Score(slot, -1);
                             break;
-                        case "EFFECT_TOXIC" when source is not null:
+                        case "EFFECT_TOXIC" when sourceTypes:
                         case "EFFECT_LEECH_SEED":
                             if (input.User.Pokemon.Moves.Any(m => catalog.Moves[m.Move].Power > 0))
                             {
                                 if (userHp <= 50 && Roll("seed-user-low-hp") >= 50) Score(slot, -3);
                                 if (targetHp <= 50 && Roll("seed-target-low-hp") >= 50) Score(slot, -3);
                             }
-                            if (source is not null && input.User.Pokemon.Moves.Any(m => catalog.Moves[m.Move].Effect is "EFFECT_SPECIAL_DEFENSE_UP" or "EFFECT_PROTECT") && Roll("toxic-protect") >= 60) Score(slot, 2);
+                            if (sourceTypes && input.User.Pokemon.Moves.Any(m => catalog.Moves[m.Move].Effect is "EFFECT_SPECIAL_DEFENSE_UP" or "EFFECT_PROTECT") && Roll("toxic-protect") >= 60) Score(slot, 2);
                             break;
-                        case "EFFECT_EXPLOSION" when source is not null:
+                        case "EFFECT_EXPLOSION" when sourceTypes:
                             if (input.Target.EvasionStage >= 7) {
                                 Score(slot, -1);
                                 if (input.Target.EvasionStage >= 10 && Roll("self-ko-evasion") >= 128) Score(slot, -1);
@@ -396,12 +397,12 @@ public static class CeruleanTrainerAi
                 }
                 for (int slot = 0; slot < 4; slot++)
                 {
-                    if (!Usable(slot)) continue;
+                    if (slots is not null ? !slots.ShouldProcess(slot) : !Usable(slot)) continue;
                     var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
                     if (move.Power < 2) continue;
                     if (input.Target.Pokemon.CurrentHp <= prediction[slot]) {
-                        if (source is null || move.Effect != "EFFECT_EXPLOSION") Score(slot, move.Effect == "EFFECT_QUICK_ATTACK" ? 6 : 4);
-                    } else if (source is null ? prediction.Any(damage => damage > prediction[slot]) :
+                        if (!sourceTypes || move.Effect != "EFFECT_EXPLOSION") Score(slot, move.Effect == "EFFECT_QUICK_ATTACK" ? 6 : 4);
+                    } else if (!sourceTypes ? prediction.Any(damage => damage > prediction[slot]) :
                         !SourceTrainerAi.DiscouragedPower(move.Effect) && input.User.Pokemon.Moves.Select((m,i) => (m,i)).Any(x =>
                             !SourceTrainerAi.DiscouragedPower(catalog.Moves[x.m.Move].Effect) && prediction[x.i] > prediction[slot])) Score(slot, -1);
                 }
@@ -497,22 +498,23 @@ public static class CeruleanTrainerAi
     // AI_CalcDmg uses base power, without execution's variable-power preprocessing. TypeCalc
     // applies STAB but Levitate only sets a discarded local flag, leaving damage nonzero.
     internal static int Predict(PokemonCatalog catalog, WildBattleCombatant user, WildBattleCombatant target,
-        PokemonMoveDefinition move, int percent, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiContext? source = null)
+        PokemonMoveDefinition move, int percent, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiContext? source = null, SourceTrainerAiSlotContext? slots = null)
     {
-        int value = BasePrediction(user, target, move.Power, ParseType(move.Type), move.Effect, clearUserAbility, rain, reflect, source);
-        value = TypePrediction(catalog, user, target, move, value, source is not null);
+        int value = BasePrediction(user, target, move.Power, ParseType(move.Type), move.Effect, clearUserAbility, rain, reflect, source, slots, move.Target);
+        value = TypePrediction(catalog, user, target, move, value, source is not null || slots is not null);
         return Math.Max(1, value * percent / 100);
     }
     internal static int BasePrediction(WildBattleCombatant user, WildBattleCombatant target, int power, ElementType type,
-        string? effect, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiContext? source = null)
+        string? effect, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiContext? source = null, SourceTrainerAiSlotContext? slots = null, string? moveTarget = null)
     {
+        var facts = source is not null || slots is not null ? new SourceTrainerAiFacts(source, slots) : null;
         bool physical = TypeRules.Category(type) == DamageCategory.Physical;
         int attack = physical ? user.Pokemon.Stats.Attack : user.Pokemon.Stats.SpecialAttack;
         int defense = physical ? target.Pokemon.Stats.Defense : target.Pokemon.Stats.SpecialDefense;
         string ability = clearUserAbility ? "ABILITY_NONE" : WildBattleEffective.Ability(user);
         if (physical && user.AttackBadgeBoost) attack = attack * 110 / 100;
         if (user.HeldItem == "ITEM_BLACK_GLASSES" && type == ElementType.Dark) attack = attack * 110 / 100;
-        if (source is not null) {
+        if (facts is not null) {
             if (user.HeldItem == "ITEM_SPELL_TAG" && type == ElementType.Ghost) attack = attack * 110 / 100;
             if (physical && user.HeldItem == "ITEM_THICK_CLUB" && user.Pokemon.SourceSpeciesId is 104 or 105) attack *= 2;
             if (physical && target.HeldItem == "ITEM_METAL_POWDER" && target.Pokemon.SourceSpeciesId == 132) defense *= 2;
@@ -529,17 +531,19 @@ public static class CeruleanTrainerAi
         defense = Math.Max(1, WildBattleDamage.Stat(defense, physical ? target.DefenseStage : target.SpecialDefenseStageDelta + 6));
         int value = checked(attack * power * (2 * user.Pokemon.Level / 5 + 2)) / defense / 50;
         if (physical && user.Status == WildBattleStatus.Burn && ability != "ABILITY_GUTS") value /= 2;
-        if (physical && reflect) value /= 2;
-        if (!physical && source?.Battle.CalledField?.PlayerLightScreenTurnsRemaining > 0) value /= 2;
+        if (physical && reflect) value = facts?.TwoTargets == true ? 2 * (value / 3) : value / 2;
+        if (!physical && facts?.TargetLightScreen == true) value = facts.TwoTargets ? 2 * (value / 3) : value / 2;
+        if (facts?.TwoTargets == true && moveTarget == "MOVE_TARGET_BOTH") value /= 2;
         if (physical) value = Math.Max(1, value);
-        if (source?.Battle.CalledField?.SunTurnsRemaining > 0 && type == ElementType.Fire) value = value * 15 / 10;
-        if (source?.Battle.CalledField?.SunTurnsRemaining > 0 && type == ElementType.Water) value /= 2;
+        if (facts?.Sun == true && type == ElementType.Fire) value = value * 15 / 10;
+        if (facts?.Sun == true && type == ElementType.Water) value /= 2;
         if (rain && type == ElementType.Fire) value /= 2;
         if (rain && type == ElementType.Water) value = value * 15 / 10;
-        if (source is not null && effect == "EFFECT_SOLAR_BEAM" && (rain || source.Battle.SandstormTurnsRemaining > 0 || source.Battle.CalledField?.HailTurnsRemaining > 0)) value /= 2;
+        if (facts is not null && effect == "EFFECT_SOLAR_BEAM" && (rain || facts.Sandstorm || facts.Hail)) value /= 2;
         if (user.FlashFireBoost && type == ElementType.Fire) value = value * 15 / 10;
         value += 2;
         if (user.ChargeTurnsRemaining > 0 && type == ElementType.Electric) value *= 2;
+        if (facts?.HelpingHand == true) value = value * 15 / 10;
         return value;
     }
     internal static int TypePrediction(PokemonCatalog catalog, WildBattleCombatant user, WildBattleCombatant target,

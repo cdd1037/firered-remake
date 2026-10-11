@@ -337,15 +337,13 @@ public static partial class WildBattleRules
                 return;
             }
             RecordCalledTurnInability(eventStart, side);
-            if (Route11) Route11DefrostOnFireHit(catalog, side, eventStart);
-            if (Vermilion && State.CalledParty?.PendingSwitch is not { Kind: WildBattleCalledSwitchKind.BatonPass }) { VermilionImmunityAbilities(); SourceCalledApplyChangedItems(); VermilionMoveEndBerries(); }
             if (State.CalledParty?.PendingSwitch is { Kind: WildBattleCalledSwitchKind.BatonPass })
                 Set(side, Get(side) with { LastUsedMove = originalActorLastUsedMove });
-            else FinishCalledMoveHistory(catalog, eventStart);
+            else CompleteCalledInvocationMoveEnd(catalog, eventStart, side);
             SourceCalledSynchronizeParties();
         }
 
-        private void FinishCalledMoveHistory(PokemonCatalog catalog, int eventStart)
+        private void FinishCalledMoveHistory(PokemonCatalog catalog, int eventStart, bool scriptTarget = false)
         {
             SourceHitItemsFinalEnd(catalog);
             RecordCalledDamageHistory(catalog, eventStart);
@@ -366,8 +364,8 @@ public static partial class WildBattleRules
                     return SinglesBattleAdapter.ImportSlot(slot, new(slot.Side, index), 1, Get(side));
                 },
                 (slot, cell) => Set(SinglesBattleAdapter.Side(slot), SinglesBattleAdapter.ExportBody(cell.Body!, cell.Registers)),
-                invocationEffectiveType, recordDamage: false);
-            SourceTraceForecastFaintedActions();
+                invocationEffectiveType, recordDamage: false, wasCalled: scriptTarget && invocation.OriginalChosenMove != invocation.CurrentMove, canonicalTeeterDance: State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion);
+            if (!scriptTarget) SourceTraceForecastFaintedActions();
 
         }
     }

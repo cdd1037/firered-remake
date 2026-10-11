@@ -157,6 +157,8 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
             }
             if (WildBattleStatus.IsSleeping(Get(cell.Slot).Status) && RampageRemaining(cell.Slot) != 0)
                 SetRampageRemaining(cell.Slot, 0, "sleep");
+            if (WildBattleStatus.IsSleeping(Get(cell.Slot).Status) && UproarRemaining(cell.Slot) != 0)
+                SetUproarRemaining(cell.Slot, 0, "sleep");
             Set(cell.Slot, SourceTurnBoundaryRules.PrepareBody(Get(cell.Slot)));
         }
     }
@@ -170,10 +172,11 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
     }
     internal override void Wish(PokemonCatalog catalog, BattlerSlot slot)
     {
-        if (Frame.Get(slot).Position.Wish is not null) throw new SourceRecipeUnsupported("source_four_action_wish_not_migrated");
+        WishResidual(catalog, slot);
     }
     internal override void UnmigratedBattlerStep(SourceBattlerEndTurnStep step, BattlerSlot slot)
     {
+        if (step == SourceBattlerEndTurnStep.Uproar) { UproarResidual(slot); return; }
         if (step == SourceBattlerEndTurnStep.Thrash) { RampageResidual(slot); return; }
         if (step == SourceBattlerEndTurnStep.Taunt) { TauntResidual(slot); return; }
         if (step == SourceBattlerEndTurnStep.Encore) { EncoreResidual(slot); return; }
@@ -189,7 +192,6 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
             SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage or WildBattleCalledLockKind.Bide) } || m.RampageTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Disable => m.DisabledMove is not null,
             SourceBattlerEndTurnStep.Encore => m.EncoreMoveSlot is not null,
-            SourceBattlerEndTurnStep.Charge => m.ChargeTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Taunt => m.CalledVolatile?.TauntTurnsRemaining > 0,
             _ => throw new SourceRecipeUnsupported("source_end_turn_phase") };
         if (nonempty) throw new SourceRecipeUnsupported("source_four_action_residual_phase_not_migrated");

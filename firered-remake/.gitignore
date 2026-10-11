@@ -49,3 +49,6 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 
 # Derived Godot import sidecars beside immutable test screenshot evidence.
 /tests/**/evidence/**/*.png.import
+
+# Regenerated original C command body, not an authored oracle adapter.
+/tests/Game.SharedFieldRecipes.Tests/source-commands.h

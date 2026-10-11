@@ -143,6 +143,8 @@ public static partial class WildBattleRules
                 throw new UnsupportedAction("called_volatile_source_definition");
             handled = true;
             var target = activeInvocation.Target;
+            if (State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion && SourceRecipeContext.HasDelayedRecipe(move.Effect))
+            { Recipes.ExecuteDelayed(catalog, S(side), S(target), slot, move); return; }
             if (move.Effect == "EFFECT_MAGIC_COAT")
             {
                 Recipes.ExecutePreparedMove(catalog, S(side), slot, move, purpose, ref handled); return;
@@ -321,6 +323,8 @@ public static partial class WildBattleRules
         }
         internal void SourceCalledWishResidual(PokemonCatalog catalog, WildBattleSide side)
         {
+            if (State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion)
+            { new SinglesEndTurnBridge(this).WishResidual(catalog, S(side)); return; }
             if (SourceCalledWish(side) is not { } wish) return;
             int after = wish.TurnsRemaining - 1;
             SetCalledWish(side, after == 0 ? null : wish with { TurnsRemaining = after });

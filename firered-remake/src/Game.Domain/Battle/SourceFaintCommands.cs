@@ -21,5 +21,5 @@ public static class SourceFaintCommands
         EncoreTurnsRemaining = 0, EncoreMoveSlot = null, EncoredMove = null,
         DisableTurnsRemaining = 0, DisabledMove = null, DigMoveSlot = null,
         YawnTurnsRemaining = 0, Cursed = false, Nightmare = false, DestinyBond = false,
-        Rooted = false, WaterSport = false, MudSport = false, Minimized = false };
+        Rage = false, Rooted = false, WaterSport = false, MudSport = false, Minimized = false };
 }

@@ -82,7 +82,11 @@ public static class SourceFourEntryAbilities
             var execution = new FrameEntryContext(ordered.State);
             foreach (var slot in order.Order) execution.SwitchIn(slot);
             execution.Settle(forecast: false, items: false); // Initial source pass has no final Forecast query after Trace.
-            next = execution.Frame with { Revision = checked(frame.Revision + 1) };
+            // Source initial entry finishes with TurnValuesCleanUp(FALSE), before
+            // the first selection. Switch-in during a turn remains at 2 until Ready.
+            next = execution.Frame with { Revision = checked(frame.Revision + 1),
+                Slots = execution.Frame.Slots.Select(c => c with {
+                    Body = SourceTurnBoundaryRules.ReadyBody(c.Body!, true, false, false) }).ToImmutableArray() };
             if (SourceFourActionTurns.ValidateCapability(catalog, next) is { } error) return Fail(frame, error);
             return new(next, [ordered.Event, .. execution.Events], [.. order.Trace, .. execution.Trace], null);
         }

@@ -12531,26 +12531,42 @@
       "scope": "Shared item ownership and selected volatiles",
       "details": "Nine recipes give311 static admission; genuine turn/party/item ownership proof and maintained old suite boundaries.",
       "evidence": "evidence/shared-items-volatiles-20261011/README.md"
+    },
+    {
+      "date": "2026-10-11",
+      "id": "shared-final-recipes",
+      "details": "Actual admission354/354 after Present/SecretPower/TeeterDance/PayDay/Teleport/Uproar/RapidSpin. Combined main12/2127 and10/914 pass; worker C vectors reused. Core AI/item/capture/Application and functional double presentation remain open. No complete battle acceptance claim.",
+      "evidence": "evidence/shared-final-recipes-20261011/README.md"
+    },
+    {
+      "date": "2026-10-11",
+      "id": "all-recipe-public-turn-sweep",
+      "details": "Existing four-action host now has one controlled public-turn sweep:354moves in all4actor slots,1416turns/31302checks, zero failures. One seed and normal inapplicable outcomes, not full interactions.",
+      "evidence": "evidence/shared-recipe-turn-sweep-20261011/README.md"
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
-    "method": "Previous static326 plus six source-authenticated shared recipes exercised in focused main tests. Core/AI/items and complete interactions remain distinct.",
+    "method": "Actual SourceBattleKernel.SupportsRecipe evaluated over all354 authenticated definitions by combined FieldRecipes run; admission only, not complete interaction/core acceptance.",
     "inventoryDateUtc": "2026-10-11",
-    "baseCommit": "aaec1508447dd1116b6107deaa3adee2edd454c0",
-    "workingTreeState": "evidence/shared-prepared-terrain-20261011/main-source-files.json",
+    "baseCommit": "e5184350b67f56aa8e7a528e70d29fdaf55ca4e8",
+    "workingTreeState": "evidence/shared-final-recipes-20261011/main-source-files.json",
     "singleRecipesRegistered": 354,
-    "fourSlotRecipeAdmission": 332,
-    "fourSlotRecipeNotAdmitted": 22,
+    "fourSlotRecipeAdmission": 354,
+    "fourSlotRecipeNotAdmitted": 0,
     "newFamilyMoveCounts": {
-      "prepared": 3,
-      "terrainSports": 3
+      "miscTargets": 3,
+      "fieldUtility": 4
     },
     "dedicatedSingleAnimationScriptsAccepted": 17,
     "dedicatedScriptsRemaining": 337,
     "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 17,
     "dedicatedFourSlotPresentationOnlyScripts": [],
-    "sourceKernelSha256": "9a6c11237df64516ab8387c6045e0bdab6ace6a336f19a8ead70f619575de6f2",
+    "sourceKernelSha256": "adb5c3bba4049b9afee58b493c956dcf478f8764e0874868018fe162a4008e64",
     "predicateInputs": [
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.AbilityExchange.cs",
+        "sha256": "b220da36d2a3f9b25b1693a17c96df0d93ed97226950cd83a7e2008f61f49e2c"
+      },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.ActionCancellers.cs",
         "sha256": "505c5375d68770ad03c0169b5dc842e37efe8bb9db6762effb47cf503e50fcf0"
@@ -12572,6 +12588,10 @@
         "sha256": "808cbbd3c7699ea5cc4a0073c76009909565f2259f71b5b5829ef3f2bbfd7313"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.ConditionalHit.cs",
+        "sha256": "8207f6374ece4dcba25bf32dba9f52c501e074b06bc7fc2348aa87b141624c6c"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Contact.cs",
         "sha256": "f6c55ef27971483581a0cf5c0d4dc88839a5e6fbe82ffe6e4c5f1d48cb3dcd8c"
       },
@@ -12585,7 +12605,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Delayed.cs",
-        "sha256": "ca004c190f50024da80065fb5622d8131edbf8a5d59a33453229a4d789812d23"
+        "sha256": "de99b100fd993401373d966b4b2a3b3e96d89b46c0086aed283bdd1669fda2db"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.DynamicPower.cs",
@@ -12598,6 +12618,10 @@
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FieldSetting.cs",
         "sha256": "d512c5c190ae9d017ae4470052aabb42e3ed46d197aa766b1eb58ced16f0b77f"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.FieldUtility.cs",
+        "sha256": "067a16b1e6be4045361566031003e25f8178f55827412669917be3826cdab5ad"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FireThawTriAttack.cs",
@@ -12613,7 +12637,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Generic.cs",
-        "sha256": "a76b1e7e69a8e3c0e3dae3e772a7af6bb9ab0bc27d1fa710d3f773b27bae62fa"
+        "sha256": "44fb27200042b89f93ecd880537ee2c2edf1975e37ae4cc09fc03f09dea5a606"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.GroundSpread.cs",
@@ -12628,8 +12652,20 @@
         "sha256": "2175ec4fad9d0bd49e609e3e0945d81cae2c505bf63d4c90ef3eed52b3ef6eab"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.HitSequence.cs",
+        "sha256": "5104b88b44e6b25f9414b4e01cab905e4fbd99b16f4f3a98848a1eda1fbca99a"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.ItemTransfer.cs",
         "sha256": "bf27c2a1c4034548efdd86297dd1678b5f5a9519b931b008e97ec41c9259bfc1"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.LateTurn.cs",
+        "sha256": "fce9fe11414699d30ca6a2a0155f1e52142d18e7c6a4f04e2a673a4ef4bcd08a"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.MiscTargets.cs",
+        "sha256": "944eac4c520dbafe909445c04a845c2f12f0f0d074320b9955b56874de4d9fc7"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.MoveRestrictions.cs",
@@ -12638,6 +12674,14 @@
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.OneHitKo.cs",
         "sha256": "33d8684c8a1211e50074d2c7f0108ed75333ead30215235977cc427eb5ff5bc4"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.PartyHealing.cs",
+        "sha256": "5ef18e71363488febcb58896bf63912acd8db46dd88568825f73d3de8eb74670"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.PreparedMoves.cs",
+        "sha256": "e41ed89e662a549b438b06a17442b85cbe6d59009966b97bcec6d05054e3d7dc"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.PrimaryStatus.cs",
@@ -12652,8 +12696,12 @@
         "sha256": "fe3a9dd9b9f217ed28dba531dfb1d52068087cf8aad6a48b4bf63f12401ddb57"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.PursuitBeatUp.cs",
+        "sha256": "7c4e01c07ab44a6d50f5975279640d373139a5d1de8719c6f64015adcd2ba7cb"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.RechargeRampage.cs",
-        "sha256": "53e1eee14174d855367413660f7560c7b4efc53f0d1a3259fecd7d767128f9bc"
+        "sha256": "9ede79eecd72f6450a991ccf5e46cab799265c87012120f71f31170a9c35e74b"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Recoil.cs",
@@ -12692,12 +12740,16 @@
         "sha256": "aed00ffb008c70e6a0ed9d3d9b79d3bc58b28732987eeb3baa5ccd822def2218"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.StockpileCharge.cs",
+        "sha256": "c6f742412addc41a3300d8de958df8ce8d1b6c45852868c5270df75a619a9281"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Struggle.cs",
         "sha256": "4dc3a40ef8445d7ccd90741af1d0a3c2a412d7a36c89f551b6faf07013cc4507"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Substitute.cs",
-        "sha256": "dccbfffc250b4f8740c05cfed530fdede19a0735786c31e7d88a1a22c8f570cc"
+        "sha256": "b7ddd1cd39d11877fb0c67ecb2c5e2985410930a067d25d18c24d7694c605488"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Switching.cs",
@@ -13069,7 +13121,8 @@
     "mainlinePrerequisite": "Complete354/76 core rules and key interaction regressions within explicitly stated battle modes. Recipe admission is not completion.",
     "dedicatedPresentationPrerequisite": false,
     "presentationPolicy": "Dedicated animation/audio continue in parallel; prioritize mainline needs, label generic effects, preserve complete real settlement.",
-    "independentModes": "Report Safari/roamers/other field-dependent special modes separately; no implicit acceptance."
+    "independentModes": "Report Safari/roamers/other field-dependent special modes separately; no implicit acceptance.",
+    "boundedRefactoringBeforeCampaign": "Before next campaign stage, consolidate identified duplicated canonical rule/adapter logic and temporary admission test gates, clarify shared single/four owners, and run affected regression. Preserve explicit historical compatibility; no architecture rewrite or dedicated-animation prerequisite."
   },
   "abilityImplementationSnapshot": {
     "sourceInventory": "docs/battle-ability-gap-map.json",

@@ -54,7 +54,7 @@ public static class SourceBattleIdentityRules
         if (SourceWeatherRules.Validate(field.PermanentWeather, frame.SourceMechanicsRulesVersion, field.RainTurnsRemaining,
             field.SandstormTurnsRemaining, field.SunTurnsRemaining, field.HailTurnsRemaining) is { } weatherError) return weatherError;
         if (field.SandstormTurnsRemaining is < 0 or > 5 || field.RainTurnsRemaining is < 0 or > 5 ||
-            field.SunTurnsRemaining is < 0 or > 5 || field.HailTurnsRemaining is < 0 or > 5 || field.PayDayMoney < 0 ||
+            field.SunTurnsRemaining is < 0 or > 5 || field.HailTurnsRemaining is < 0 or > 5 || field.PayDayMoney is < 0 or > 65535 ||
             field.Terrain is { } terrain && !Enum.IsDefined(terrain)) return "source_frame_field";
         var active = new HashSet<PartyMemberKey>();
         for (int i = 0; i < 4; i++)
@@ -99,7 +99,8 @@ public static class SourceBattleIdentityRules
                 reservation.Incoming.Index >= frame.Party(reservation.Incoming.Side).Members.Length)
                 return "source_frame_reservation_identity";
             if ((reservation.Kind == WildBattleCalledSwitchKind.FaintedReplacement) !=
-                (frame.Get(reservation.Outgoing.Slot).Body!.Pokemon.CurrentHp == 0)) return "source_frame_reservation_hp";
+                (frame.Get(reservation.Outgoing.Slot).Body!.Pokemon.CurrentHp == 0) &&
+                !SourceFourActionTurns.IsPursuitSwitchReservation(frame, reservation)) return "source_frame_reservation_hp";
             if (!reserves.Add(reservation.Incoming) || !outgoing.Add(reservation.Outgoing.Slot) || active.Contains(reservation.Incoming))
                 return "source_frame_duplicate_reservation";
             var incoming = frame.Party(reservation.Incoming.Side).Members[reservation.Incoming.Index];
@@ -190,6 +191,7 @@ public static class SourceBattleIdentityRules
                 invocation.PpSlot != action.MoveSlot || !invocation.Flags.HasFlag(WildBattleInvocationFlags.Obeys))
                 return "source_frame_action_switch_owner";
         }
+        if (SourceFourActionTurns.ValidatePursuitSwitch(frame) is { } pursuitError) return pursuitError;
         if (SourceFourRewards.Validate(frame) is { } rewardError) return rewardError;
         return null;
     }
@@ -332,6 +334,7 @@ public static class SourceBattleIdentityRules
         var cell = old with { Member = reservation.Incoming, EntrySerial = checked(old.EntrySerial + 1), Body = preparedBody, Registers = preparedRegisters };
         next = next with { Slots = next.Slots.SetItem(slot.Value, cell),
             SourceAbsentMask = (byte)(next.SourceAbsentMask & ~slot.Mask), DeferredKoVacancyMask = (byte)(next.DeferredKoVacancyMask & ~slot.Mask),
+            FourTurn = next.FourTurn?.PursuitSwitch?.Outgoing == reservation.Outgoing ? next.FourTurn with { PursuitSwitch = null } : next.FourTurn,
             Queue = next.Queue.Select(a => a.Slot == slot ? a with { Kind = SourceActionKind.Cancelled, CancellationReason = "occupant-departed" } : a).ToImmutableArray(),
             Reservations = next.Reservations.Remove(reservation), PendingSwitches = next.PendingSwitches.Where(p => p.Slot != slot).ToImmutableArray(),
             Revision = checked(frame.Revision + 1) };

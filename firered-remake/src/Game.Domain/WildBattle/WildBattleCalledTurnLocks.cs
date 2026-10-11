@@ -143,14 +143,8 @@ public static partial class WildBattleRules
         }
         private int CalledSemiDamageMultiplier(WildBattleSide target, PokemonMoveDefinition move) =>
             SourceChargeRules.DamageMultiplier(CalledSemiInvulnerable(Get(target)),move);
-        private bool CalledUproarPreventsSleep(WildBattleSide side) => WildBattleEffective.Ability(Get(side)) != "ABILITY_SOUNDPROOF" &&
-            new[] { State.Player, State.Opponent }.Any(m => m.CalledTurnState?.Lock is { Kind: WildBattleCalledLockKind.Uproar });
-        private void CalledUproarWake(WildBattleSide side)
-        {
-            if (!WildBattleStatus.IsSleeping(Get(side).Status) || !CalledUproarPreventsSleep(side)) return;
-            ChangeStatus(side, WildBattleStatus.None, "uproar-wake");
-            if (Get(side).Nightmare) Set(side, Get(side) with { Nightmare = false });
-        }
+        private bool CalledUproarPreventsSleep(WildBattleSide side) => Recipes.SharedUproarPreventsSleep(S(side));
+        private void CalledUproarWake(WildBattleSide side) => Recipes.SharedUproarWake(S(side));
         private void CancelCalledTurnLock(WildBattleSide side, string reason)
         {
             if (Get(side).CalledTurnState?.Lock is { Kind: not WildBattleCalledLockKind.Recharge }) ChangeCalledLock(side, null, reason);
@@ -200,22 +194,14 @@ public static partial class WildBattleRules
                 Set(side, Get(side) with { LastUsedMove = originalActorLastUsedMove });
                 return;
             }
-            if (Route11) Route11DefrostOnFireHit(catalog, side, eventStart);
-            if (Vermilion) { VermilionImmunityAbilities(); SourceCalledApplyChangedItems(); VermilionMoveEndBerries(); }
-            FinishCalledMoveHistory(catalog, eventStart);
+            CompleteCalledInvocationMoveEnd(catalog, eventStart, side);
             SourceCalledSynchronizeParties();
         }
         internal void CalledTurnLockResidual(WildBattleSide side)
         {
             CalledUproarResidual(side); CalledRampageResidual(side); CalledSureHitResidual(side);
         }
-        internal void CalledUproarResidual(WildBattleSide side)
-        {
-            if (Get(side).Pokemon.CurrentHp == 0 || Get(side).CalledTurnState?.Lock is not { Kind: WildBattleCalledLockKind.Uproar } locked) return;
-            CalledUproarWake(WildBattleSide.Player); CalledUproarWake(WildBattleSide.Opponent);
-            if (locked.UnableToUseMove || locked.TurnsRemaining == 1) CancelCalledTurnLock(side, "uproar-ended");
-            else ChangeCalledLock(side, locked with { TurnsRemaining = locked.TurnsRemaining - 1 }, "countdown");
-        }
+        internal void CalledUproarResidual(WildBattleSide side) => new SinglesEndTurnBridge(this).UproarResidual(S(side));
         internal void CalledRampageResidual(WildBattleSide side) => new SinglesEndTurnBridge(this).RampageResidual(S(side));
         internal void CalledSureHitResidual(WildBattleSide side) => new SinglesEndTurnBridge(this).LockOnResidual(S(side));
         internal void CalledCancelSleepingLocks()

@@ -14,6 +14,8 @@ public sealed record SourceFourActionCursor(int Turn, SourceFourActionPhase Phas
     public ImmutableArray<BattlerSlot> EndTurnOrder { get; init; } = [];
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public SourceEndTurnCursor? EndTurn { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public SourcePursuitSwitchCursor? PursuitSwitch { get; init; }
     // Terminal party state cannot bypass the outstanding source experience boundary.
     public WildBattleOutcome? OutcomeAfterRewards { get; init; }
 }
@@ -67,15 +69,14 @@ public static partial class SourceFourActionTurns
                 return "source_four_action_initial_entry_required";
             if (SourceMoveRestrictionRules.Validate(catalog, body) is { } restrictionError) return restrictionError;
             if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
-            if (body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter != 0 ||
+            if ((body.Rage || body.FuryCutterCounter > 0) && body.Pokemon.CurrentHp == 0 || body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter is < 0 or > 5 ||
                 (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || !SourceSubstituteRules.Supported(SourcePreparedMoveRules.WithoutPrepared(body)) ||
                 !SourceFourEntryAbilities.OverlaySupported(catalog, body) ||
-                body.ChargeTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
+                body.ChargeTurnsRemaining is < 0 or > 2 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
-                body.Rage ||
-                cell.Registers.Turn is { } turn && (turn.Lock is { } locked && !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
-                cell.Position.Wish is not null)
+                cell.Registers.Turn is { } turn && (turn.Lock is { } locked && !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0))
                 return "source_four_action_residual_or_canceller_not_migrated";
+            if (SourceDelayedRules.Validate(frame, cell) is { } delayedError) return delayedError;
             if (SourceSleepResidualRules.Validate(frame, cell) is { } sleepResidualError) return sleepResidualError;
             if (SourceResidualStatusRules.Validate(frame, cell) is { } residualError) return residualError;
             if (SourceVolatileTargetRules.Validate(catalog, frame, cell) is { } volatileError) return volatileError;
@@ -180,9 +181,19 @@ public static partial class SourceFourActionTurns
         next = next with { Queue = sorted.Order.Select(s => next.Queue.Single(a => a.Slot == s)).ToImmutableArray(),
             Rng = sorted.Rng, NextAction = 0, TurnStartAbsentMask = next.SourceAbsentMask,
             FourTurn = new(next.Turn, SourceFourActionPhase.Actions, []) };
+        var rageEvents = ImmutableArray.CreateBuilder<SourceBattleEvent>();
+        // TryClearRageStatuses runs for all chosen actions before the first attack.
+        foreach (var chosen in next.Queue.OrderBy(a => a.Slot.Value))
+        {
+            var cell = next.Get(chosen.Slot);
+            if (!cell.Body!.Rage || chosen.OriginalChosenMove?.Value == "pret:MOVE_RAGE") continue;
+            next = next with { Slots = next.Slots.SetItem(chosen.Slot.Value, cell with { Body = cell.Body with { Rage = false } }) };
+            var cleared = SourceBattleEventHooks.Publish(next, (n, t) => new SourceMtMoonVolatileEvent(n, t, chosen.Slot, "rage", 1, 0, "selected-other-move"));
+            next = cleared.State; rageEvents.Add(cleared.Event);
+        }
         var published = SourceBattleEventHooks.Publish(next, (n, t) => new SourceOrderEvent(n, t, WildBattleOrderPhase.Actions, sorted.Order));
         next = published.State;
-        var preparedEvents = ImmutableArray.CreateBuilder<SourceBattleEvent>(); preparedEvents.Add(published.Event);
+        var preparedEvents = ImmutableArray.CreateBuilder<SourceBattleEvent>(); preparedEvents.AddRange(rageEvents); preparedEvents.Add(published.Event);
         foreach (var chosen in next.Queue.OrderBy(a => a.Slot.Value))
         {
             if (chosen.Kind != SourceActionKind.Move || chosen.MoveSlot is not >= 0 || chosen.OriginalChosenMove is not { } selected) continue;
@@ -232,15 +243,19 @@ public static partial class SourceFourActionTurns
             var events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
             ImmutableArray<RandomTrace> trace = [];
             var next = frame;
-            if (action.Kind == SourceActionKind.Cancelled || action.Token is not { } token || !frame.IsCurrent(token.Owner) || !frame.CanAct(action.Slot))
+            if (action.Kind == SourceActionKind.Cancelled || action.Token is not { } token || !frame.IsCurrent(token.Owner) || !frame.CanAct(action.Slot) && frame.FourTurn!.PursuitSwitch?.Outgoing != token.Owner)
                 next = next with { Revision = checked(next.Revision + 1), Queue = next.Queue.SetItem(next.NextAction,
                     action with { Kind = SourceActionKind.Cancelled, CancellationReason = action.CancellationReason ?? "original-occupant-unavailable" }) };
             else if (action.Kind == SourceActionKind.Switch)
             {
-                var switched = BindActionSwitch(catalog, frame, action.Slot, action.Incoming!.Value, WildBattleCalledSwitchKind.Voluntary);
+                var interrupted = InterceptVoluntarySwitch(catalog, frame);
+                if (!interrupted.Succeeded) return Fail(frame, interrupted.Fault!);
+                if (interrupted.State.FourTurn!.Phase == SourceFourActionPhase.RewardsPending) return interrupted;
+                var switched = BindActionSwitch(catalog, interrupted.State, action.Slot, action.Incoming!.Value, WildBattleCalledSwitchKind.Voluntary);
                 if (!switched.Succeeded) return Fail(frame, switched.Fault!);
                 var immunity = SourceFrameImmunityRules.Apply(switched.State);
-                next = immunity.State; events.AddRange(switched.Events); events.AddRange(immunity.Events); trace = switched.Trace;
+                next = immunity.State; events.AddRange(interrupted.Events); events.AddRange(switched.Events); events.AddRange(immunity.Events);
+                trace = interrupted.Trace.AddRange(switched.Trace);
             }
             else if (action.Kind == SourceActionKind.Item)
                 next = SourceFourMedicineRules.Execute(frame, action);

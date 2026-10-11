@@ -7,6 +7,7 @@ using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.WildBattle;
 
+if(args.Length==3 && args[2]=="--all-recipes") return SharedRecipeSmoke.Run(args[0],args[1]);
 if(args.Length!=2) return 2;
 var proof=SourceMechanicsCatalogLoader.LoadAuthenticated(args[0]); var catalog=proof.Catalog;
 int checks=0,groups=0,failures=0,oracle=0,cleanTurns=0; var summary=new List<object>();

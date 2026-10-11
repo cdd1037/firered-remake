@@ -128,68 +128,12 @@ public static class SourceTwinsTrainerEncounter
     public static SourceTwinsAiResult ChooseEnemyActions(PokemonCatalog catalog, SourceBattleFrame frame,
         long expectedRevision, string? knownPlayerAbility = null)
     {
-        SourceTwinsAiResult Fail(string code) => new(frame, [], [], code);
-        if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } capability) return Fail(capability);
-        if (frame.Revision != expectedRevision || frame.Outcome != WildBattleOutcome.Ongoing || frame.FourTurn is not null ||
-            !frame.Queue.IsEmpty || !frame.PendingSwitches.IsEmpty || !frame.Reservations.IsEmpty || frame.DeferredKoVacancyMask != 0)
-            return Fail("source_twins_ai_phase");
-        if (!OriginalEnemyParty(frame)) return Fail("source_twins_ai_original_roster");
-        if (knownPlayerAbility is not null && !SourceMechanicsCatalog.For(catalog)!.Abilities.ContainsKey(knownPlayerAbility))
-            return Fail("source_twins_ai_ability_history");
-        try
-        {
-            var rng = frame.Rng; var trace = ImmutableArray.CreateBuilder<RandomTrace>();
-            var choices = ImmutableArray.CreateBuilder<SourceTwinsEnemyChoice>();
-            foreach (var actor in new[] { new BattlerSlot(1), new BattlerSlot(3) })
-            {
-                if (!frame.CanAct(actor)) continue;
-                var cell = frame.Get(actor); var user = cell.Body!;
-                if (cell.Registers.Turn?.Lock is { } forced)
-                {
-                    choices.Add(new(actor, forced.Target, new(cell.Occupant!.Value, SourceActionKind.Move, forced.PpSlot, forced.Target), [], [], []));
-                    continue;
-                }
-                // Source avoids the controller entirely during MULTIPLETURNS/RECHARGE.
-                // Rollout is represented by its actual four-position lock once its recipe is admitted.
-                if (user.RolloutTurnsRemaining > 0 || user.EncoreMoveSlot is not null)
-                    return Fail("source_twins_ai_forced_move_owner_required");
-                if (SourceFourActionTurns.RequiresStruggle(catalog, frame, actor))
-                {
-                    // AreAllMovesUnusable runs before CHOOSEMOVE, so it skips AI setup/scoring.
-                    // HandleAction_UseMove later discards this target and calls GetMoveTarget.
-                    var draw = Gen3Rng.Next(rng, $"source-battle.slot-{actor.Value}.struggle-selection-target");
-                    rng = draw.State; trace.Add(draw.Trace);
-                    var initialTarget = new BattlerSlot((actor.Value ^ 1) | (draw.Value & 2));
-                    choices.Add(new(actor, initialTarget, SourceActionSelection.Struggle(cell.Occupant!.Value, initialTarget) with {
-                        StruggleSelectionPrepared = true }, [], [], []));
-                    continue;
-                }
-                var simulated = ImmutableArray.CreateBuilder<int>(4);
-                for (int i = 0; i < 4; i++) {
-                    var draw = Gen3Rng.Next(rng, $"twins.ai.battler.{actor.Value}.setup.slot.{i}.damage-percent", 16);
-                    rng = draw.State; trace.Add(draw.Trace); simulated.Add(100 - draw.Trace.Result);
-                }
-                var targetDraw = Gen3Rng.Next(rng, $"twins.ai.battler.{actor.Value}.setup.target-flank");
-                rng = targetDraw.State; trace.Add(targetDraw.Trace);
-                var target = new BattlerSlot(targetDraw.Value & 2);
-                if (frame.IsSourceAbsent(target)) target = new(target.Value ^ 2);
-                if (!frame.CanAct(target)) return Fail("source_twins_ai_no_living_target");
-                var context = new SourceTrainerAiSlotContext(catalog, frame, actor, target, simulated.MoveToImmutable(), rng);
-                var result = CeruleanTrainerAi.Choose(catalog, new(user, frame.Get(target).Body!, knownPlayerAbility, 1), rng,
-                    fuchsiaRules: true, rain: frame.Field.RainTurnsRemaining > 0,
-                    reflect: frame.Sides[0].ReflectTurnsRemaining > 0, userReflect: frame.Sides[1].ReflectTurnsRemaining > 0,
-                    slots: context);
-                if (!result.Succeeded || result.MoveSlot is not { } chosen) return Fail(result.Diagnostic?.Code ?? "source_twins_ai_choice");
-                rng = result.Rng; trace.AddRange(result.Trace);
-                var move = catalog.Moves[user.Pokemon.Moves[chosen].Move];
-                var selectedTarget = move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" ? actor : target;
-                choices.Add(new(actor, target, new(cell.Occupant!.Value, SourceActionKind.Move, chosen, selectedTarget),
-                    result.Scores, context.Simulated, result.AbilityReads));
-            }
-            if (choices.Count == 0) return Fail("source_twins_ai_no_actor");
-            return new(frame with { Rng = rng, Revision = checked(frame.Revision + 1) }, choices.ToImmutable(), trace.ToImmutable(), null);
-        }
-        catch (OverflowException) { return Fail("source_twins_ai_counter_exhausted"); }
+        if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } capability)
+            return new(frame, [], [], capability);
+        if (!OriginalEnemyParty(frame)) return new(frame, [], [], "source_twins_ai_original_roster");
+        var result = SourceFourTrainerAi.ChooseCore(catalog, frame, expectedRevision, 1, knownPlayerAbility, "twins");
+        return new(result.State, result.Choices.Select(c => new SourceTwinsEnemyChoice(c.Actor, c.ScoredTarget,
+            c.Selection, c.Scores, c.SimulatedDamagePercent, c.AbilityReads)).ToImmutableArray(), result.Trace, result.Fault);
     }
 
     private static bool NaturalMovesMatch(PokemonCatalog catalog) => Enumerable.Range(0, 2).All(i =>
@@ -210,25 +154,4 @@ public static class SourceTwinsTrainerEncounter
         return true;
     }
     private static IEnumerable<int> Encode(string value) => value.Select(c => c switch { ' ' => 0, '&' => 0x2d, _ => 0xbb + c - 'A' });
-}
-
-/// <summary>Opaque validated explicit source positions for the shared scorer. It never creates a singles battle.</summary>
-public sealed class SourceTrainerAiSlotContext
-{
-    private readonly PokemonCatalog catalog;
-    private readonly SourceBattleFrame frame;
-    private readonly BattlerSlot actor, target;
-    private readonly RngState rng;
-    internal ImmutableArray<int> Simulated { get; }
-    internal SourceTrainerAiSlotContext(PokemonCatalog catalog, SourceBattleFrame frame, BattlerSlot actor,
-        BattlerSlot target, ImmutableArray<int> simulated, RngState rng)
-    { this.catalog = catalog; this.frame = frame; this.actor = actor; this.target = target; Simulated = simulated; this.rng = rng; }
-    internal string? Validate(PokemonCatalog candidate, CeruleanTrainerAiInput input, RngState candidateRng) =>
-        !ReferenceEquals(candidate, catalog) || input.User != frame.Get(actor).Body || input.Target != frame.Get(target).Body ||
-        input.AiFlags != 1 || candidateRng != rng ? "source_twins_ai_slot_context" : null;
-    internal bool ShouldProcess(int slot) => slot < frame.Get(actor).Body!.Pokemon.Moves.Length &&
-        frame.Get(actor).Body!.Pokemon.Moves[slot].CurrentPp > 0;
-    internal bool IsUsable(int slot) => WildBattleRules.IsCalledMoveSelectable(catalog, frame.Get(actor).Body!, slot) &&
-        !frame.Slots.Where(c => c.Slot.Side != actor.Side && frame.CanAct(c.Slot)).Any(c => c.Body!.Imprison &&
-            slot < frame.Get(actor).Body!.Pokemon.Moves.Length && c.Body.Pokemon.Moves.Any(m => m.Move == frame.Get(actor).Body!.Pokemon.Moves[slot].Move));
 }
