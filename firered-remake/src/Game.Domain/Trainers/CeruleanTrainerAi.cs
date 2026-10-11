@@ -61,6 +61,7 @@ public static class CeruleanTrainerAi
         try
         {
             var scores = new int[4]; var simulated = new int[4]; var prediction = new int[4];
+            MoveId? sourceCurrentMove = null;
             for (int slot = 0; slot < 4; slot++)
             {
                 scores[slot] = Usable(slot) ? 100 : 0;
@@ -72,6 +73,13 @@ public static class CeruleanTrainerAi
                 if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain, reflect: rockTunnelRules && reflect, source: source, slots: slots);
             }
             void Score(int slot, int change) => scores[slot] = Math.Max(0, scores[slot] + change);
+            if (facts is not null)
+            {
+                sourceCurrentMove = SourceTrainerAiScript.Score(facts, input.AiFlags, scores, prediction,
+                    slot => slot < input.User.Pokemon.Moves.Length && input.User.Pokemon.Moves[slot].CurrentPp > 0,
+                    Draw, Ability);
+                goto SelectBest;
+            }
             for (int slot = 0; slot < 4; slot++)
             {
                 // Source still runs scripts for disabled/taunted moves with PP, even when
@@ -407,6 +415,7 @@ public static class CeruleanTrainerAi
                             !SourceTrainerAi.DiscouragedPower(catalog.Moves[x.m.Move].Effect) && prediction[x.i] > prediction[slot])) Score(slot, -1);
                 }
             }
+        SelectBest:
             var best = new List<int> { 0 }; int maximum = scores[0];
             for (int slot = 1; slot < 4; slot++)
             {
@@ -415,8 +424,12 @@ public static class CeruleanTrainerAi
             }
             int chosen = best[Draw("cerulean-trainer.ai.choose-best", best.Count)];
             return new(TransitionStatus.Accepted, chosen, [.. scores], [.. simulated], current, trace.ToImmutable(), null)
-                { AbilityReads = reads.ToImmutable(), PredictedDamage = [.. prediction] };
+                { AbilityReads = reads.ToImmutable(), PredictedDamage = [.. prediction], SourceCurrentMove = sourceCurrentMove };
         }
+        catch (SourceTrainerAiScriptFault ex) { return Fault(ex.Message); }
+        catch (TypeInitializationException ex) when (ex.InnerException is InvalidOperationException invalid &&
+            invalid.Message.StartsWith("source_trainer_ai_program_", StringComparison.Ordinal))
+        { return Fault(ex.InnerException!.Message); }
         catch (OverflowException) { return Fault("cerulean_trainer_ai_rng_exhausted"); }
     }
 
@@ -549,6 +562,7 @@ public static class CeruleanTrainerAi
     internal static int TypePrediction(PokemonCatalog catalog, WildBattleCombatant user, WildBattleCombatant target,
         PokemonMoveDefinition move, int value, bool sourceRules = false)
     {
+        if (sourceRules && move.Id == WildBattleRules.StruggleMove) return value;
         var a = WildBattleEffective.Types(catalog, user); var d = WildBattleEffective.Types(catalog, target);
         if (move.Type == a.Type1 || move.Type == a.Type2) value = value * 15 / 10;
         if (WildBattleEffective.Ability(target) == "ABILITY_LEVITATE" && move.Type == "TYPE_GROUND") return value;

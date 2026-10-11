@@ -85,7 +85,7 @@ internal abstract class SourceEntryAbilityContext : SourceStatRecipeContext
             Set(slot, mon with { SourceTracePending = false, CalledOverlay = after });
             RecordAbility(slot, ability);
             Add(n => new SourceAbilityActivatedEvent(n, Turn, slot, "ABILITY_TRACE"));
-            Add(n => new SourceCalledOverlayChangedEvent(n, Turn, slot, new("pret:MOVE_NONE"), before, after));
+            Add(n => new SourceCalledOverlayChangedEvent(n, Turn, slot, new("pret:MOVE_NONE"), before, after) { Source = new(target.Value) });
         }
     }
 

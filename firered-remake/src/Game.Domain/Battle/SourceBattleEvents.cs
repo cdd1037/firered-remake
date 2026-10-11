@@ -123,10 +123,16 @@ public sealed record SourceBindingDamageEvent(long Sequence, int Turn, BattlerSl
 public sealed record SourceCalledBeatUpMemberEvent(long Sequence, int Turn, BattleSide Side, int PartyIndex, SpeciesId Species) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCalledDelayedEvent(long Sequence, int Turn, BattlerSlot Target, MoveId Move, int Before, int After, string Reason, int? SourcePartyIndex = null) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCalledMoveTransitionEvent(long Sequence, int Turn, SourceMoveInvocation Invocation) : SourceBattleEvent(Sequence, Turn);
-public sealed record SourceCalledOverlayChangedEvent(long Sequence, int Turn, BattlerSlot Side, MoveId Move, WildBattleCalledOverlay? Before, WildBattleCalledOverlay? After) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceCalledOverlayChangedEvent(long Sequence, int Turn, BattlerSlot Side, MoveId Move, WildBattleCalledOverlay? Before, WildBattleCalledOverlay? After) : SourceBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public BattlerSlot? Source { get; init; }
+}
 public sealed record SourceCalledPartyChangedEvent(long Sequence, int Turn, BattleSide Side, int PartyIndex, string Reason, WildBattleCalledPartyMember Before, WildBattleCalledPartyMember After) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCalledPartySwitchRequiredEvent(long Sequence, int Turn, SourcePendingSwitch Pending) : SourceBattleEvent(Sequence, Turn);
-public sealed record SourceCalledPartySwitchedEvent(long Sequence, int Turn, BattlerSlot Side, int OutgoingIndex, int IncomingIndex, WildBattleCalledSwitchKind Kind) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceCalledPartySwitchedEvent(long Sequence, int Turn, BattlerSlot Side, int OutgoingIndex, int IncomingIndex, WildBattleCalledSwitchKind Kind) : SourceBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceCombatantSnapshot? Replacement { get; init; }
+}
 public sealed record SourceCalledSpikesChangedEvent(long Sequence, int Turn, BattleSide Side, int Before, int After) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCallerSelectionEvent(long Sequence, int Turn, BattlerSlot Actor, MoveId Caller, MoveId? Result, ImmutableArray<int> CandidateSourceMoveIds, ulong RngCursor) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCaptureResultEvent(long Sequence, int Turn, CaptureBall Ball, CaptureOutcome Outcome, CaptureDecisionBranch Branch, CaptureCalculation Calculation, int ChecksPassed, int AnimationCode) : SourceBattleEvent(Sequence, Turn);
@@ -147,7 +153,13 @@ public sealed record SourceFocusPunchPreparedEvent(long Sequence, int Turn, Batt
 public sealed record SourceForcedOutEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, bool TrainerBattle) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceGrudgePpEvent(long Sequence, int Turn, BattlerSlot Fainted, BattlerSlot Attacker, MoveId Move, int ChosenSlot, int Before) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceHeldItemHealEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string Item, int DamageReceipt, int HpBefore, int HpAfter, int HpRestored) : SourceBattleEvent(Sequence, Turn);
-public sealed record SourceHeldItemConsumedEvent(long Sequence, int Turn, BattlerSlot Side, string Item, int HpBefore, int HpAfter, int HpRestored) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceHeldItemConsumedEvent(long Sequence, int Turn, BattlerSlot Side, string Item, int HpBefore, int HpAfter, int HpRestored) : SourceBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.Items.SourceItemPpRecovery? PpRecovery { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<SourceItemStatChange>? StatChanges { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? FocusEnergyRaised { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Flavor { get; init; }
+}
 /// <summary>Reached the source successful-hit resultmessage, after HP update.</summary>
 public sealed record SourceHeldItemSurvivalEvent(long Sequence, int Turn, BattlerSlot Target, MoveId Move, string Item) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceDamageAdjustedEvent(long Sequence, int Turn, BattlerSlot Target, MoveId Move, string Item, int DamageBefore, int DamageAfter, bool Endured, bool HungOn) : SourceBattleEvent(Sequence, Turn);
@@ -162,7 +174,14 @@ public sealed record SourceLeechSeedDrainEvent(long Sequence, int Turn, BattlerS
 public sealed record SourceMagicCoatPressurePpEvent(long Sequence, int Turn, BattlerSlot PressuringActor, BattlerSlot Reflector, int Slot, int Before, int After) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceMagicCoatEvent(long Sequence, int Turn, BattlerSlot OriginalActor, BattlerSlot Reflector, MoveId Move) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceMagnitudeEvent(long Sequence, int Turn, BattlerSlot Actor, int Magnitude, int Power) : SourceBattleEvent(Sequence, Turn);
-public sealed record SourceMedicineAppliedEvent(long Sequence, int Turn, ItemId Item, long TargetInstanceId, int PartyIndex, bool ActiveTarget, int HpBefore, int HpAfter, uint StatusBefore, uint StatusAfter) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceMedicineAppliedEvent(long Sequence, int Turn, ItemId Item, long TargetInstanceId, int PartyIndex, bool ActiveTarget, int HpBefore, int HpAfter, uint StatusBefore, uint StatusAfter) : SourceBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public BattlerSlot? Actor { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public BattleSide? TargetSide { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<Game.Domain.Items.SourceItemPpRecovery>? PpRecovery { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? FriendshipBefore { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? FriendshipAfter { get; init; }
+}
 public sealed record SourceMoveCopiedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, MoveId CopiedMove, int MoveSlot, bool Permanent, PokemonMoveSlot Replacement) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceMoveFailedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceMoveMissedEvent(long Sequence, int Turn, BattlerSlot Actor, BattlerSlot Target, MoveId Move) : SourceBattleEvent(Sequence, Turn);
@@ -247,7 +266,7 @@ public static class SourceBattleEventAdapter
         WildBattleForcedOutEvent x => new SourceForcedOutEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.TrainerBattle),
         WildBattleGrudgePpEvent x => new SourceGrudgePpEvent(x.Sequence, x.Turn, Slot(x.Fainted), Slot(x.Attacker), x.Move, x.ChosenSlot, x.Before),
         WildBattleHeldItemHealEvent x => new SourceHeldItemHealEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.Item, x.DamageReceipt, x.HpBefore, x.HpAfter, x.HpRestored),
-        WildBattleHeldItemConsumedEvent x => new SourceHeldItemConsumedEvent(x.Sequence, x.Turn, Slot(x.Side), x.Item, x.HpBefore, x.HpAfter, x.HpRestored),
+        WildBattleHeldItemConsumedEvent x => new SourceHeldItemConsumedEvent(x.Sequence, x.Turn, Slot(x.Side), x.Item, x.HpBefore, x.HpAfter, x.HpRestored) { PpRecovery = x.PpRecovery, StatChanges = x.StatChanges, FocusEnergyRaised = x.FocusEnergyRaised, Flavor = x.Flavor },
         WildBattleHeldItemSurvivalEvent x => new SourceHeldItemSurvivalEvent(x.Sequence, x.Turn, Slot(x.Target), x.Move, x.Item),
         WildBattleDamageAdjustedEvent x => new SourceDamageAdjustedEvent(x.Sequence, x.Turn, Slot(x.Target), x.Move, x.Item, x.DamageBefore, x.DamageAfter, x.Endured, x.HungOn),
         WildBattleHeldItemKnockedOffEvent x => new SourceHeldItemKnockedOffEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.Item),
@@ -261,7 +280,7 @@ public static class SourceBattleEventAdapter
         WildBattleMagicCoatPressurePpEvent x => new SourceMagicCoatPressurePpEvent(x.Sequence, x.Turn, Slot(x.PressuringActor), Slot(x.Reflector), x.Slot, x.Before, x.After),
         WildBattleMagicCoatEvent x => new SourceMagicCoatEvent(x.Sequence, x.Turn, Slot(x.OriginalActor), Slot(x.Reflector), x.Move),
         WildBattleMagnitudeEvent x => new SourceMagnitudeEvent(x.Sequence, x.Turn, Slot(x.Actor), x.Magnitude, x.Power),
-        WildBattleMedicineAppliedEvent x => new SourceMedicineAppliedEvent(x.Sequence, x.Turn, x.Item, x.TargetInstanceId, x.PartyIndex, x.ActiveTarget, x.HpBefore, x.HpAfter, x.StatusBefore, x.StatusAfter),
+        WildBattleMedicineAppliedEvent x => new SourceMedicineAppliedEvent(x.Sequence, x.Turn, x.Item, x.TargetInstanceId, x.PartyIndex, x.ActiveTarget, x.HpBefore, x.HpAfter, x.StatusBefore, x.StatusAfter) { Actor = Slot(x.Actor), TargetSide = x.TargetSide is { } target ? (BattleSide)target : null, PpRecovery = x.PpRecovery, FriendshipBefore = x.FriendshipBefore, FriendshipAfter = x.FriendshipAfter },
         WildBattleMoveCopiedEvent x => new SourceMoveCopiedEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.CopiedMove, x.MoveSlot, x.Permanent, x.Replacement),
         WildBattleMoveFailedEvent x => new SourceMoveFailedEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move, x.Reason),
         WildBattleMoveMissedEvent x => new SourceMoveMissedEvent(x.Sequence, x.Turn, Slot(x.Actor), Slot(x.Target), x.Move),
@@ -344,7 +363,7 @@ public static class SourceBattleEventAdapter
         SourceForcedOutEvent x => new WildBattleForcedOutEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.TrainerBattle),
         SourceGrudgePpEvent x => new WildBattleGrudgePpEvent(x.Sequence, x.Turn, Side(x.Fainted), Side(x.Attacker), x.Move, x.ChosenSlot, x.Before),
         SourceHeldItemHealEvent x => new WildBattleHeldItemHealEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item, x.DamageReceipt, x.HpBefore, x.HpAfter, x.HpRestored),
-        SourceHeldItemConsumedEvent x => new WildBattleHeldItemConsumedEvent(x.Sequence, x.Turn, Side(x.Side), x.Item, x.HpBefore, x.HpAfter, x.HpRestored),
+        SourceHeldItemConsumedEvent x => new WildBattleHeldItemConsumedEvent(x.Sequence, x.Turn, Side(x.Side), x.Item, x.HpBefore, x.HpAfter, x.HpRestored) { PpRecovery = x.PpRecovery, StatChanges = x.StatChanges, FocusEnergyRaised = x.FocusEnergyRaised, Flavor = x.Flavor },
         SourceHeldItemSurvivalEvent x => new WildBattleHeldItemSurvivalEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Item),
         SourceDamageAdjustedEvent x => new WildBattleDamageAdjustedEvent(x.Sequence, x.Turn, Side(x.Target), x.Move, x.Item, x.DamageBefore, x.DamageAfter, x.Endured, x.HungOn),
         SourceHeldItemKnockedOffEvent x => new WildBattleHeldItemKnockedOffEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Item),
@@ -358,7 +377,7 @@ public static class SourceBattleEventAdapter
         SourceMagicCoatPressurePpEvent x => new WildBattleMagicCoatPressurePpEvent(x.Sequence, x.Turn, Side(x.PressuringActor), Side(x.Reflector), x.Slot, x.Before, x.After),
         SourceMagicCoatEvent x => new WildBattleMagicCoatEvent(x.Sequence, x.Turn, Side(x.OriginalActor), Side(x.Reflector), x.Move),
         SourceMagnitudeEvent x => new WildBattleMagnitudeEvent(x.Sequence, x.Turn, Side(x.Actor), x.Magnitude, x.Power),
-        SourceMedicineAppliedEvent x => new WildBattleMedicineAppliedEvent(x.Sequence, x.Turn, x.Item, x.TargetInstanceId, x.PartyIndex, x.ActiveTarget, x.HpBefore, x.HpAfter, x.StatusBefore, x.StatusAfter),
+        SourceMedicineAppliedEvent x => new WildBattleMedicineAppliedEvent(x.Sequence, x.Turn, x.Item, x.TargetInstanceId, x.PartyIndex, x.ActiveTarget, x.HpBefore, x.HpAfter, x.StatusBefore, x.StatusAfter) { Actor = Side(x.Actor), TargetSide = x.TargetSide is { } target ? (WildBattleSide)target : null, PpRecovery = x.PpRecovery, FriendshipBefore = x.FriendshipBefore, FriendshipAfter = x.FriendshipAfter },
         SourceMoveCopiedEvent x => new WildBattleMoveCopiedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.CopiedMove, x.MoveSlot, x.Permanent, x.Replacement),
         SourceMoveFailedEvent x => new WildBattleMoveFailedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move, x.Reason),
         SourceMoveMissedEvent x => new WildBattleMoveMissedEvent(x.Sequence, x.Turn, Side(x.Actor), Side(x.Target), x.Move),
@@ -437,6 +456,21 @@ public static class SourceBattleEventHooks
             value is SourceCalledPartyChangedEvent party && (!Enum.IsDefined(party.Side) || party.PartyIndex < 0 || party.PartyIndex >= frame.Party(party.Side).Members.Length) ||
             value is SourceCalledBeatUpMemberEvent contributor && (!Enum.IsDefined(contributor.Side) || contributor.PartyIndex < 0 || contributor.PartyIndex >= frame.Party(contributor.Side).Members.Length))
             return "source_event_party_identity";
+        if (value is SourceMedicineAppliedEvent medicine && ((medicine.Actor is null) != (medicine.TargetSide is null) || medicine.Actor is { } actor &&
+            (actor.Value >= frame.BattlerCount || frame.Get(actor).Body is null || medicine.TargetSide != actor.Side) ||
+            medicine.TargetSide is { } targetSide && (!Enum.IsDefined(targetSide) || medicine.PartyIndex < 0 || medicine.PartyIndex >= frame.Party(targetSide).Members.Length) ||
+            medicine.PpRecovery is { } pp && (pp.IsDefaultOrEmpty || pp.Any(p => p is null || p.Slot is < 0 or > 3 || p.Before < 0 || p.After <= p.Before) || pp.Select(p => p.Slot).Distinct().Count() != pp.Length) ||
+            (medicine.FriendshipBefore is null) != (medicine.FriendshipAfter is null))) return "source_item_event_metadata";
+        if (value is SourceMedicineAppliedEvent { TargetSide: { } itemSide } applied)
+        {
+            var member=frame.Party(itemSide).Members[applied.PartyIndex];
+            if(member.Pokemon.CurrentHp!=applied.HpAfter || member.Status!=applied.StatusAfter ||
+                applied.ActiveTarget!=frame.Slots.Any(c=>c.Member==new PartyMemberKey(itemSide,applied.PartyIndex)) ||
+                applied.PpRecovery is { } recoveries && recoveries.Any(p=>p.Slot>=member.Pokemon.Moves.Length ||
+                    member.Pokemon.Moves[p.Slot].Move!=p.Move || member.Pokemon.Moves[p.Slot].CurrentPp!=p.After) ||
+                applied.FriendshipBefore is < 0 or > 255 || applied.FriendshipAfter is { } friendship && member.Pokemon.Friendship!=friendship)
+                return "source_item_event_projection";
+        }
         static bool PlayerKey(SourceBattleFrame f, PartyMemberKey key) => key.Side == BattleSide.Player && key.Index < f.Party(BattleSide.Player).Members.Length;
         static bool DefeatKey(SourceBattleFrame f, OccupantToken token) => token.Member.Side == BattleSide.Opponent &&
             token.Slot.Side == BattleSide.Opponent && f.IsCurrent(token) && f.Get(token.Slot).Body!.Pokemon.CurrentHp == 0;
@@ -461,7 +495,7 @@ public static class SourceBattleEventHooks
             SourceCalledBeatUpMemberEvent x => [],
             SourceCalledDelayedEvent x => [x.Target],
             SourceCalledMoveTransitionEvent x => [x.Invocation.Actor, x.Invocation.Target, x.Invocation.PpOwner],
-            SourceCalledOverlayChangedEvent x => [x.Side],
+            SourceCalledOverlayChangedEvent x => [x.Side, x.Source],
             SourceCalledPartyChangedEvent x => [],
             SourceCalledPartySwitchRequiredEvent x => [x.Pending.Slot, x.Pending.Invocation?.Actor, x.Pending.Invocation?.Target, x.Pending.Invocation?.PpOwner],
             SourceCalledPartySwitchedEvent x => [x.Side],

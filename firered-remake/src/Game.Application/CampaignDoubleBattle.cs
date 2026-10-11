@@ -23,7 +23,7 @@ public sealed record CampaignDoubleBattle(string Id, TrainerId Trainer, string A
 {
     [JsonIgnore] public SourceBattleEvent? CurrentEvent => EventIndex < Events.Length ? Events[EventIndex] : null;
     [JsonIgnore] public int? SelectingSlot => Stage != CampaignDoubleBattleStage.Combat || CurrentEvent is not null ||
-        Frame.FourTurn is not null ? null : new[] { 0, 2 }.Where(i => Frame.CanAct(new(i)) && Frame.Get(new(i)).Registers.Turn?.Lock is null &&
+        Frame.FourTurn is not null ? null : new[] { 0, 2 }.Where(i => SourceFourMedicineRules.CanSelect(Frame,new(i)) && Frame.Get(new(i)).Registers.Turn?.Lock is null &&
         !PlayerSelections.Any(s => s.Actor.Slot.Value == i)).Select(i => (int?)i).FirstOrDefault();
     [JsonIgnore] public bool LearningPending => CurrentEvent is null && Frame.Rewards?.Pending is not null;
     [JsonIgnore] public int? ReplacementSlot => CurrentEvent is not null ? null :
@@ -153,9 +153,9 @@ public sealed partial class CampaignSession
         // Forced turn locks are source controller choices, not fresh player input.
         var selections=b.PlayerSelections;
         foreach(int i in new[]{0,2})
-            if(frame.CanAct(new(i))&&!selections.Any(a=>a.Actor.Slot.Value==i)&&frame.Get(new(i)).Registers.Turn?.Lock is {} forced)
+            if(SourceFourMedicineRules.CanSelect(frame,new(i))&&!selections.Any(a=>a.Actor.Slot.Value==i)&&frame.Get(new(i)).Registers.Turn?.Lock is {} forced)
                 selections=selections.Add(new(frame.Get(new(i)).Occupant!.Value,SourceActionKind.Move,forced.PpSlot,forced.Target));
-        var unselected=new[]{0,2}.Where(i=>frame.CanAct(new(i))&&!selections.Any(a=>a.Actor.Slot.Value==i)).ToArray();
+        var unselected=new[]{0,2}.Where(i=>SourceFourMedicineRules.CanSelect(frame,new(i))&&!selections.Any(a=>a.Actor.Slot.Value==i)).ToArray();
         if(unselected.Length>0)
         {
             if(command.PartyIndex!=unselected[0]||command.Kind is not ("double_move" or "double_switch" or "double_medicine"))return No("preset_double_action_required");
@@ -165,13 +165,15 @@ public sealed partial class CampaignSession
                 if(command.Choice is not {} target)return No("battle_medicine_target_identity");
                 var invalid=ValidateBattleMedicineCommand(state,command with{PartyIndex=target});
                 if(invalid is not null)return No(invalid);
-                var medicine=SourceFourMedicineRules.Select(ShopCatalog,Items,_content.PokemonContent!,DoubleBattlePokemon,
-                    frame,frame.Revision,cell.Occupant!.Value,ShopInventoryView(state.Inventory!),state.Party,
-                    new(new ItemId(command.Text!),command.TargetInstanceId!.Value));
+                if(command.MoveSlot is < -1 or >3)return No("source_item_pp_slot");
+                var medicine=SourceFourMedicineRules.Select(_content.PresetDoubleItems!,_content.PresetDoubleMechanics!,
+                    frame,frame.Revision,cell.Occupant!.Value,state.Inventory!,state.Party,
+                    new(new ItemId(command.Text!),command.TargetInstanceId!.Value,command.MoveSlot<0?null:command.MoveSlot),
+                    _content.MapDefinition(state.World.Player.MapId).RegionMapSection);
                 if(!medicine.Succeeded)return No(medicine.Fault!);
                 // FR applies and spends ordinary medicine in the party menu, before the
                 // partner chooses. Publish this result first; a later queue marker cannot heal again.
-                return CommitDoubleResult(state with{Inventory=MergeShopInventory(state.Inventory!,medicine.Inventory),
+                return CommitDoubleResult(state with{Inventory=medicine.Inventory,
                     DoubleBattle=b with{PlayerSelections=selections.Add(medicine.Selection!)}},medicine.Battle);
             }
             else if(command.Kind=="double_switch")
@@ -227,28 +229,106 @@ public sealed partial class CampaignSession
     private static CampaignDoubleBattle ProjectDoubleDisplayEvent(CampaignDoubleBattle battle,SourceBattleEvent e)
     {
         var bodies=battle.DisplayedSlots;var members=battle.DisplayedMembers;
-        void Hp(BattlerSlot slot,int hp){var m=bodies[slot.Value];bodies=bodies.SetItem(slot.Value,m with{Pokemon=m.Pokemon with{CurrentHp=hp}});}
+        void Change(BattlerSlot slot,Func<WildBattleCombatant,WildBattleCombatant> update)=>bodies=bodies.SetItem(slot.Value,update(bodies[slot.Value]));
+        void Hp(BattlerSlot slot,int hp)=>Change(slot,m=>m with{Pokemon=m.Pokemon with{CurrentHp=hp}});
+        void Pp(BattlerSlot slot,int position,int pp)
+        {
+            Change(slot,m=>position<0||position>=m.Pokemon.Moves.Length?m:m with{Pokemon=m.Pokemon with{
+                Moves=m.Pokemon.Moves.SetItem(position,m.Pokemon.Moves[position] with{CurrentPp=pp})}});
+        }
+        void PersistentPp(BattlerSlot slot,Game.Domain.Items.SourceItemPpRecovery recovery)=>Change(slot,m=>{
+            var permanent=WildBattleTransformationRules.PersistentPokemon(m);
+            if(recovery.Slot<0||recovery.Slot>=permanent.Moves.Length||permanent.Moves[recovery.Slot].Move!=recovery.Move)
+                throw new InvalidDataException("preset_double_item_pp_receipt");
+            return WildBattleTransformationRules.ApplyPersistentPokemon(m,permanent with{Moves=permanent.Moves.SetItem(recovery.Slot,
+                permanent.Moves[recovery.Slot] with{CurrentPp=recovery.After})});
+        });
         switch(e)
         {
             case SourceHpChangedEvent x:Hp(x.Target,x.HpAfter);break;
             case SourceRecoilEvent x:Hp(x.Actor,x.HpAfter);break;
             case SourceConfusionSelfHitEvent x:Hp(x.Side,x.HpAfter);break;
-            case SourceStatusDamageEvent x:Hp(x.Side,x.HpAfter);break;
+            case SourceStatusDamageEvent x:Hp(x.Side,x.HpAfter);Change(x.Side,m=>m with{Status=x.Status});break;
             case SourceWeatherDamageEvent x:Hp(x.Side,x.HpAfter);break;
             case SourceAbilityDamageEvent x:Hp(x.Target,x.HpAfter);break;
             case SourceRecoveredEvent x:Hp(x.Side,x.HpAfter);break;
             case SourceDrainEvent x:Hp(x.Actor,x.HpAfter);break;
+            case SourcePotionRecoveredEvent x:Hp(x.Side,x.HpAfter);break;
+            case SourceHeldItemHealEvent x:Hp(x.Actor,x.HpAfter);break;
+            case SourceAbilityRecoveredEvent x:Hp(x.Side,x.HpAfter);break;
+            case SourceBindingDamageEvent x:Hp(x.Side,x.HpAfter);break;
+            case SourceIngrainHealEvent x:Hp(x.Side,x.HpAfter);break;
+            case SourceTowerHpEvent x:Hp(x.Side,x.HpAfter);break;
+            case SourceLeechSeedDrainEvent x:Hp(x.DrainedSide,x.HpAfter);Hp(x.ReceivingSide,x.ReceiverHpAfter);break;
+            case SourceSelfDestructEvent x:Hp(x.Actor,0);break;
             case SourceMedicineAppliedEvent x:
                 for(int i=0;i<members.Length;i++)
-                    if(members[i]==new PartyMemberKey(BattleSide.Player,x.PartyIndex))
-                    {Hp(new(i),x.HpAfter);bodies=bodies.SetItem(i,bodies[i] with{Status=x.StatusAfter});}
+                    if(members[i]==new PartyMemberKey(x.TargetSide??BattleSide.Player,x.PartyIndex))
+                    {
+                        Hp(new(i),x.HpAfter);
+                        if(x.StatusBefore!=x.StatusAfter)Change(new(i),m=>m with{Status=x.StatusAfter});
+                        if(x.PpRecovery is {} recoveries)foreach(var itemRecovery in recoveries)PersistentPp(new(i),itemRecovery);
+                        if(x.FriendshipAfter is {} friendship)Change(new(i),m=>WildBattleTransformationRules.ApplyPersistentPokemon(m,
+                            WildBattleTransformationRules.PersistentPokemon(m) with{Friendship=friendship}));
+                    }
                 break;
             case SourceFaintedEvent x:Hp(x.Side,0);break;
-            case SourceHeldItemConsumedEvent x:Hp(x.Side,x.HpAfter);bodies=bodies.SetItem(x.Side.Value,bodies[x.Side.Value] with{HeldItem="ITEM_NONE"});break;
-            case SourceStatusChangedEvent x:bodies=bodies.SetItem(x.Side.Value,bodies[x.Side.Value] with{Status=x.After});break;
-            case SourceCalledPartySwitchedEvent x:bodies=bodies.SetItem(x.Side.Value,battle.Frame.Get(x.Side).Body!);members=members.SetItem(x.Side.Value,new(x.Side.Side,x.IncomingIndex));break;
+            case SourceHeldItemConsumedEvent x:
+                Hp(x.Side,x.HpAfter);Change(x.Side,m=>m with{HeldItem="ITEM_NONE"});
+                if(x.PpRecovery is {} heldRecovery)PersistentPp(x.Side,heldRecovery);break;
+            case SourceHeldItemKnockedOffEvent x:Change(x.Target,m=>m with{HeldItem="ITEM_NONE",KnockedOffItem=x.Item});break;
+            case SourceHeldItemStolenEvent x:Change(x.Target,m=>m with{HeldItem="ITEM_NONE"});Change(x.Actor,m=>m with{HeldItem=x.Item});break;
+            case SourceStatusChangedEvent x:Change(x.Side,m=>m with{Status=x.After});break;
+            case SourceConfusionChangedEvent x:Change(x.Side,m=>m with{ConfusionTurnsRemaining=x.After});break;
+            case SourceFocusEnergyEvent x:Change(x.Side,m=>m with{FocusEnergy=true});break;
+            case SourceCalledOverlayChangedEvent x:Change(x.Side,m=>m with{CalledOverlay=x.After});break;
+            case SourceTransformedEvent x:
+                var actor=bodies[x.Actor.Value];var target=bodies[x.Target.Value];
+                var donor=target.Pokemon with{Species=x.AppearanceSpecies,SourceSpeciesId=x.BattleView.SourceSpeciesId,
+                    Personality=x.AppearancePersonality,OriginalTrainerId=x.AppearanceOriginalTrainerId};
+                var form=new WildBattleTransformation(WildBattleTransformationRules.PersistentPokemon(actor),donor,
+                    Enumerable.Range(0,4).Select(i=>i<actor.Pokemon.Moves.Length?actor.Pokemon.Moves[i].PpUps:0).ToImmutableArray());
+                Change(x.Actor,m=>m with{Pokemon=x.BattleView,Transform=form,CopyMoves=null,CalledOverlay=target.CalledOverlay,
+                    AttackStage=target.AttackStage,DefenseStage=target.DefenseStage,SpeedStage=target.SpeedStage,
+                    AccuracyStage=target.AccuracyStage,EvasionStage=target.EvasionStage,SpecialAttackStageDelta=target.SpecialAttackStageDelta,
+                    SpecialDefenseStageDelta=target.SpecialDefenseStageDelta,DisabledMove=null,DisableTurnsRemaining=0});break;
+            case SourceMoveCopiedEvent x:
+                Change(x.Actor,m=>{
+                    var copies=m.CopyMoves?.Slots??[];
+                    if(!x.Permanent&&!copies.Any(copy=>copy.Slot==x.MoveSlot))copies=copies.Add(new(x.MoveSlot,m.Pokemon.Moves[x.MoveSlot]));
+                    var moves=m.Pokemon.Moves.SetItem(x.MoveSlot,x.Replacement);
+                    if(x.Permanent)copies=copies.Select(copy=>copy with{PersistentSlot=moves[copy.Slot]}).ToImmutableArray();
+                    return m with{Pokemon=m.Pokemon with{Moves=moves},CopyMoves=copies.IsEmpty?null:new(copies)};
+                });break;
+            case SourcePpCommandEvent x:Pp(x.PpOwner,x.PpSlot,x.After);break;
+            case SourceMoveUsedEvent x:Pp(x.Actor,x.Slot,x.PpAfter);break;
+            case SourceSpiteEvent x:Pp(x.Target,x.Slot,x.PpAfter);break;
+            case SourceGrudgePpEvent x:Pp(x.Attacker,x.ChosenSlot,0);break;
+            case SourceMagicCoatPressurePpEvent x:Pp(x.Reflector,x.Slot,x.After);break;
+            case SourceSnatchPressurePpEvent x:Pp(x.Snatcher,x.Slot,x.After);break;
+            case SourceRewardAppliedEvent x:
+                for(int i=0;i<members.Length;i++)if(members[i]==x.Recipient)
+                    Change(new(i),m=>WildBattleTransformationRules.ApplyPersistentPokemon(m,x.Reward.Pokemon));
+                break;
+            case SourceCalledPartyChangedEvent x:
+                for(int i=0;i<members.Length;i++)if(members[i]==new PartyMemberKey(x.Side,x.PartyIndex))
+                    Change(new(i),m=>WildBattleTransformationRules.ApplyPersistentPokemon(m,x.After.Pokemon) with{
+                        Status=x.After.Status,HeldItem=x.After.HeldItem,KnockedOffItem=x.After.KnockedOffItem});
+                break;
+            case SourceCalledPartySwitchedEvent x:
+                bodies=bodies.SetItem(x.Side.Value,(x.Replacement??throw new InvalidDataException("preset_double_switch_snapshot_missing")).Body);
+                members=members.SetItem(x.Side.Value,new(x.Side.Side,x.IncomingIndex));break;
             case SourcePlayerReplacedEvent x:bodies=bodies.SetItem(x.Slot.Value,x.Replacement.Body);break;
             case SourcePlayerSwitchedEvent x:bodies=bodies.SetItem(x.Slot.Value,x.Replacement.Body);break;
+            case SourceSubstituteDamagedEvent x:Change(x.Target,m=>m with{CalledVolatile=(m.CalledVolatile??new()) with{SubstituteHp=x.HpAfter}});break;
+            case SourceMtMoonVolatileEvent {Volatile:"substitute"} x:Change(x.Side,m=>m with{CalledVolatile=(m.CalledVolatile??new()) with{SubstituteHp=x.After}});break;
+            case SourceMtMoonVolatileEvent {Volatile:"stockpile"} x:Change(x.Side,m=>m with{CalledVolatile=(m.CalledVolatile??new()) with{StockpileCount=x.After}});break;
+            case SourceStatChangedEvent x:
+                Change(x.Target,m=>x.Stat switch {
+                    WildBattleStat.Attack=>m with{AttackStage=x.After},WildBattleStat.Defense=>m with{DefenseStage=x.After},
+                    WildBattleStat.Speed=>m with{SpeedStage=x.After},WildBattleStat.Accuracy=>m with{AccuracyStage=x.After},
+                    WildBattleStat.Evasion=>m with{EvasionStage=x.After},WildBattleStat.SpecialAttack=>m with{SpecialAttackStageDelta=x.After-6},
+                    WildBattleStat.SpecialDefense=>m with{SpecialDefenseStageDelta=x.After-6},_=>m});break;
         }
         return battle with{DisplayedSlots=bodies,DisplayedMembers=members};
     }

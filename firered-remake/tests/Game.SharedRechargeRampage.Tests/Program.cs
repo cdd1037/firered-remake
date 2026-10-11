@@ -158,11 +158,11 @@ Test("all four recharge actions retain once-only PP through full blocked turn",(
  Check(!second.Events.OfType<SourcePpCommandEvent>().Any()&&!second.Trace.Any(t=>t.Purpose.EndsWith(".accuracy")),"no recharge PP or hit RNG");
  var normal=Turn(second.State,[1,1,1,1]);Check(normal.Events.OfType<SourceMoveUsedEvent>().Count(e=>e.Move==Id("DEFENSE_CURL"))==4,"four normal next actions");
 });
-Test("locked slot selection gates and unsupported families remain atomic",()=>{
+Test("locked slot selection remains atomic while authenticated families are admitted",()=>{
  var f=WithLock(Basis("THRASH"),0,"THRASH",2);
  Rejected(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f).Select(c=>c.Actor.Slot.Value==0?c with{MoveSlot=1}:c).ToImmutableArray()),"cannot choose another PP owner");
  var bad=WithLock(f,0,"THRASH",4);Rejected(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"out-of-source duration");
- foreach(string name in new[]{"UPROAR","BIDE","METRONOME","TRANSFORM"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(name)]),"still gated "+name);
+ foreach(string name in new[]{"UPROAR","BIDE","METRONOME","TRANSFORM"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(name)]),"authenticated recipe admitted "+name);
 });
 Test("actual original C command vectors match frame PP locks and complete RNG",()=>{
  using var source=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"source-vectors.json")));

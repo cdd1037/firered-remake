@@ -251,11 +251,11 @@ Test("frozen canonical accuracy cases document inherited shared-command correcti
  }
  Check(changed>50&&hustleMisses==6,"explicitly frozen source changes include both Hustle sides");
 });
-Test("invalid action inputs fail atomically and unrelated recipes remain gated",()=>{
+Test("invalid action inputs fail atomically while authenticated recipes are admitted",()=>{
  var f=Frame(Mon("MANKEY",80,"LOW_KICK"),Mon("JIGGLYPUFF",100,"DEFENSE_CURL"));var valid=new SourceResolvedMoveAction(f.Slots[2].Occupant!.Value,f.Revision,0,new(3));
  void Atomic(SourceBattleFrame state,SourceResolvedMoveAction a){var r=SourceBattleKernel.ResolveAction(catalog,state,a);Check(!r.Succeeded&&ReferenceEquals(r.State,state)&&r.Events.IsEmpty&&r.Trace.IsEmpty,"atomic "+r.Fault);}
  Atomic(f,valid with{Revision=-1});Atomic(f,valid with{ChosenSlot=4});Atomic(f,valid with{Actor=valid.Actor with{EntrySerial=9}});Atomic(f with{Rng=new(31,ulong.MaxValue)},valid);
- Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("LOW_KICK")] with{Power=20}),"forged metadata rejected");Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("PRESENT")]),"unrelated scalar family remains gated");
+ Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("LOW_KICK")] with{Power=20}),"forged metadata rejected");Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("PRESENT")]),"authenticated Present recipe admitted");
 });
 File.WriteAllText(args[1],Json(new{baseCommit="88543cb9ee09fd1a56a5567bc1aaa7bc0aeea900",groups,checks,failures,differences,results}));
 Console.WriteLine($"{groups} groups, {checks} checks, {failures} failures; {differences.Count} explicit singles changes");return failures==0?0:1;

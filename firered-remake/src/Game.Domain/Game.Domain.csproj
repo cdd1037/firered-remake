@@ -1,3 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><AssemblyName>Game.Domain</AssemblyName></PropertyGroup>
+  <ItemGroup Condition="Exists('../../content/generated/source-trainer-ai/program.json')">
+    <EmbeddedResource Include="../../content/generated/source-trainer-ai/program.json" LogicalName="Game.Domain.SourceTrainerAiProgram.json" />
+  </ItemGroup>
 </Project>

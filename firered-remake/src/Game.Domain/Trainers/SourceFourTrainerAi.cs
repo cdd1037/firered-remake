@@ -14,29 +14,30 @@ public sealed record SourceTrainerMoveResult(SourceBattleFrame State, ImmutableA
     ImmutableArray<RandomTrace> Trace, string? Fault)
 {
     public bool Succeeded => Fault is null;
+    public MoveId? SourceCurrentMove { get; init; }
     public ImmutableArray<SourceActionSelection> Selections => Choices.Select(c => c.Selection).ToImmutableArray();
 }
 
-/// <summary>FireRed CHOOSEMOVE over actual four-slot state. Content owns source trainer metadata;
-/// switch/item action selection and replacement remain separate controller boundaries.</summary>
+/// <summary>FireRed enemy controller decisions over actual four-slot state. Content owns source
+/// trainer metadata; the shared action owner executes the returned selections.</summary>
 public static partial class SourceFourTrainerAi
 {
     public static SourceTrainerMoveResult ChooseMoves(PokemonCatalog catalog, TrainerDefinition trainer,
-        SourceBattleFrame frame, long expectedRevision, string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null)
+        SourceBattleFrame frame, long expectedRevision, string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null, MoveId? staleCurrentMove = null)
     {
         if (ValidateMetadata(trainer) is { } error) return new(frame, [], [], error);
-        return ChooseCore(catalog, frame, expectedRevision, trainer.AiFlags, knownPlayerAbility, "source-trainer", knownPlayerHoldEffect);
+        return ChooseCore(catalog, frame, expectedRevision, trainer.AiFlags, knownPlayerAbility, "source-trainer", knownPlayerHoldEffect, staleCurrentMove: staleCurrentMove);
     }
 
     /// <summary>One CHOOSEMOVE response, for a caller that has already resolved this actor's
     /// switch/item decision. The caller retains the original per-actor controller order.</summary>
     public static SourceTrainerMoveResult ChooseMove(PokemonCatalog catalog, TrainerDefinition trainer,
         SourceBattleFrame frame, long expectedRevision, BattlerSlot actor,
-        string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null)
+        string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null, MoveId? staleCurrentMove = null)
     {
         if (ValidateMetadata(trainer) is { } error) return new(frame, [], [], error);
         if (actor.Value is not (1 or 3)) return new(frame, [], [], "source_four_trainer_ai_actor");
-        return ChooseCore(catalog, frame, expectedRevision, trainer.AiFlags, knownPlayerAbility, "source-trainer", knownPlayerHoldEffect, actor);
+        return ChooseCore(catalog, frame, expectedRevision, trainer.AiFlags, knownPlayerAbility, "source-trainer", knownPlayerHoldEffect, actor, staleCurrentMove);
     }
 
     private static string? ValidateMetadata(TrainerDefinition trainer)
@@ -50,116 +51,13 @@ public static partial class SourceFourTrainerAi
         return null;
     }
 
-    // Source VIABILITY dispatches absent from the shared bounded scorer stay explicit.
-    // CHECK_BAD_MOVE-only trainers may still choose these when their actual recipe is supported.
-    private static bool UnmigratedViability(string effect) => effect is
-        "EFFECT_ACCURACY_DOWN_2" or
-        "EFFECT_ACCURACY_UP" or
-        "EFFECT_ACCURACY_UP_2" or
-        "EFFECT_ATTACK_UP" or
-        "EFFECT_ATTACK_UP_2" or
-        "EFFECT_BATON_PASS" or
-        "EFFECT_BELLY_DRUM" or
-        "EFFECT_BIDE" or
-        "EFFECT_BLAZE_KICK" or
-        "EFFECT_BRICK_BREAK" or
-        "EFFECT_BULK_UP" or
-        "EFFECT_CALM_MIND" or
-        "EFFECT_CONFUSE" or
-        "EFFECT_CONVERSION" or
-        "EFFECT_COSMIC_POWER" or
-        "EFFECT_COUNTER" or
-        "EFFECT_CURSE" or
-        "EFFECT_DESTINY_BOND" or
-        "EFFECT_DRAGON_DANCE" or
-        "EFFECT_DREAM_EATER" or
-        "EFFECT_ENCORE" or
-        "EFFECT_ENDEAVOR" or
-        "EFFECT_ENDURE" or
-        "EFFECT_ERUPTION" or
-        "EFFECT_EVASION_DOWN" or
-        "EFFECT_EVASION_DOWN_2" or
-        "EFFECT_EVASION_UP_2" or
-        "EFFECT_FACADE" or
-        "EFFECT_FAKE_OUT" or
-        "EFFECT_FLAIL" or
-        "EFFECT_FLATTER" or
-        "EFFECT_FOCUS_PUNCH" or
-        "EFFECT_FORESIGHT" or
-        "EFFECT_HAIL" or
-        "EFFECT_HAZE" or
-        "EFFECT_HEAL_BELL" or
-        "EFFECT_HIGH_CRITICAL" or
-        "EFFECT_IMPRISON" or
-        "EFFECT_KNOCK_OFF" or
-        "EFFECT_LIGHT_SCREEN" or
-        "EFFECT_LOCK_ON" or
-        "EFFECT_MAGIC_COAT" or
-        "EFFECT_MEAN_LOOK" or
-        "EFFECT_MEMENTO" or
-        "EFFECT_MIRROR_COAT" or
-        "EFFECT_MIRROR_MOVE" or
-        "EFFECT_MOONLIGHT" or
-        "EFFECT_MORNING_SUN" or
-        "EFFECT_MUD_SPORT" or
-        "EFFECT_OHKO" or
-        "EFFECT_OVERHEAT" or
-        "EFFECT_PAIN_SPLIT" or
-        "EFFECT_POISON_TAIL" or
-        "EFFECT_PROTECT" or
-        "EFFECT_PSYCH_UP" or
-        "EFFECT_PURSUIT" or
-        "EFFECT_RAIN_DANCE" or
-        "EFFECT_RAZOR_WIND" or
-        "EFFECT_RECHARGE" or
-        "EFFECT_RECYCLE" or
-        "EFFECT_REFRESH" or
-        "EFFECT_REST" or
-        "EFFECT_REVENGE" or
-        "EFFECT_ROLE_PLAY" or
-        "EFFECT_SEMI_INVULNERABLE" or
-        "EFFECT_SKILL_SWAP" or
-        "EFFECT_SKULL_BASH" or
-        "EFFECT_SKY_ATTACK" or
-        "EFFECT_SLEEP_TALK" or
-        "EFFECT_SMELLINGSALT" or
-        "EFFECT_SNATCH" or
-        "EFFECT_SNORE" or
-        "EFFECT_SOFTBOILED" or
-        "EFFECT_SOLAR_BEAM" or
-        "EFFECT_SPECIAL_ATTACK_DOWN" or
-        "EFFECT_SPECIAL_ATTACK_DOWN_2" or
-        "EFFECT_SPECIAL_ATTACK_UP" or
-        "EFFECT_SPECIAL_ATTACK_UP_2" or
-        "EFFECT_SPECIAL_DEFENSE_DOWN" or
-        "EFFECT_SPECIAL_DEFENSE_DOWN_2" or
-        "EFFECT_SPECIAL_DEFENSE_UP" or
-        "EFFECT_SPECIAL_DEFENSE_UP_2" or
-        "EFFECT_SPEED_DOWN" or
-        "EFFECT_SPEED_DOWN_2" or
-        "EFFECT_SPEED_DOWN_HIT" or
-        "EFFECT_SPEED_UP" or
-        "EFFECT_SPEED_UP_2" or
-        "EFFECT_SPIT_UP" or
-        "EFFECT_SUBSTITUTE" or
-        "EFFECT_SUNNY_DAY" or
-        "EFFECT_SUPERPOWER" or
-        "EFFECT_SUPER_FANG" or
-        "EFFECT_SWALLOW" or
-        "EFFECT_SYNTHESIS" or
-        "EFFECT_THIEF" or
-        "EFFECT_TICKLE" or
-        "EFFECT_TRAP" or
-        "EFFECT_TRICK" or
-        "EFFECT_VITAL_THROW" or
-        "EFFECT_WATER_SPORT";
-
     private static BattlerSlot FirstOpponent(SourceBattleFrame frame) => frame.IsSourceAbsent(new(0)) ? new(2) : new(0);
 
     internal static SourceTrainerMoveResult ChooseCore(PokemonCatalog catalog, SourceBattleFrame frame,
-        long expectedRevision, uint aiFlags, string? knownPlayerAbility, string tracePrefix, string? knownPlayerHoldEffect = null, BattlerSlot? onlyActor = null)
+        long expectedRevision, uint aiFlags, string? knownPlayerAbility, string tracePrefix, string? knownPlayerHoldEffect = null, BattlerSlot? onlyActor = null, MoveId? staleCurrentMove = null)
     {
-        SourceTrainerMoveResult Fail(string code) => new(frame, [], [], code);
+        var currentMove = staleCurrentMove ?? ForestTrainerCombatRules.NoMove;
+        SourceTrainerMoveResult Fail(string code) => new(frame, [], [], code) { SourceCurrentMove = staleCurrentMove };
         if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } capability) return Fail(capability);
         if (frame.Revision != expectedRevision || frame.Outcome != WildBattleOutcome.Ongoing || frame.FourTurn is not null ||
             !frame.Queue.IsEmpty || !frame.PendingSwitches.IsEmpty || !frame.Reservations.IsEmpty || frame.DeferredKoVacancyMask != 0)
@@ -172,7 +70,7 @@ public static partial class SourceFourTrainerAi
             var choices = ImmutableArray.CreateBuilder<SourceTrainerEnemyChoice>();
             foreach (var actor in new[] { new BattlerSlot(1), new BattlerSlot(3) })
             {
-                if (onlyActor is { } selectedActor && actor != selectedActor || !frame.CanAct(actor)) continue;
+                if (onlyActor is { } selectedActor && actor != selectedActor || !SourceFourMedicineRules.CanSelect(frame, actor)) continue;
                 var cell = frame.Get(actor); var user = cell.Body!;
                 if (cell.Registers.Turn?.Lock is { } forced)
                 {
@@ -202,9 +100,6 @@ public static partial class SourceFourTrainerAi
                     choices.Add(new(actor, forcedTarget, new(cell.Occupant!.Value, SourceActionKind.Move, encored, forcedTarget), [], [], []));
                     continue;
                 }
-                if (aiFlags == 7 && user.Pokemon.Moves.Any(m => m.CurrentPp > 0 &&
-                    UnmigratedViability(catalog.Moves[m.Move].Effect)))
-                    return Fail("source_four_trainer_ai_viability_effect_not_migrated");
                 var simulated = ImmutableArray.CreateBuilder<int>(4);
                 for (int i = 0; i < 4; i++) {
                     var draw = Gen3Rng.Next(rng, $"{tracePrefix}.ai.battler.{actor.Value}.setup.slot.{i}.damage-percent", 16);
@@ -215,7 +110,7 @@ public static partial class SourceFourTrainerAi
                 var target = new BattlerSlot(targetDraw.Value & 2);
                 if (frame.IsSourceAbsent(target)) target = new(target.Value ^ 2);
                 if (!frame.CanAct(target)) return Fail("source_four_trainer_ai_no_living_target");
-                var context = new SourceTrainerAiSlotContext(catalog, frame, actor, target, simulated.MoveToImmutable(), rng, aiFlags, knownTargetHoldEffect: knownPlayerHoldEffect);
+                var context = new SourceTrainerAiSlotContext(catalog, frame, actor, target, simulated.MoveToImmutable(), rng, aiFlags, staleCurrentMove: currentMove, knownTargetHoldEffect: knownPlayerHoldEffect);
                 var result = CeruleanTrainerAi.Choose(catalog, new(user, frame.Get(target).Body!, knownPlayerAbility, aiFlags) {
                     UserHasReserves = context.HasReserves(actor.Side), TargetHasReserves = context.HasReserves(target.Side) }, rng,
                     fuchsiaRules: true, rain: frame.Field.RainTurnsRemaining > 0,
@@ -223,6 +118,7 @@ public static partial class SourceFourTrainerAi
                     slots: context);
                 if (!result.Succeeded || result.MoveSlot is not { } chosen) return Fail(result.Diagnostic?.Code ?? "source_four_trainer_ai_choice");
                 rng = result.Rng; trace.AddRange(result.Trace);
+                currentMove = result.SourceCurrentMove ?? currentMove;
                 var move = catalog.Moves[user.Pokemon.Moves[chosen].Move];
                 if (!SourceBattleKernel.SupportsRecipe(move)) return Fail("source_four_trainer_ai_selected_recipe_not_supported");
                 // OpponentHandleChooseMove rewrites BOTH to the first present player slot,
@@ -233,7 +129,7 @@ public static partial class SourceFourTrainerAi
                     result.Scores, context.Simulated, result.AbilityReads));
             }
             if (choices.Count == 0) return Fail("source_four_trainer_ai_no_actor");
-            return new(frame with { Rng = rng, Revision = checked(frame.Revision + 1) }, choices.ToImmutable(), trace.ToImmutable(), null);
+            return new(frame with { Rng = rng, Revision = checked(frame.Revision + 1) }, choices.ToImmutable(), trace.ToImmutable(), null) { SourceCurrentMove = currentMove };
         }
         catch (OverflowException) { return Fail("source_four_trainer_ai_counter_exhausted"); }
     }

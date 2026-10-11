@@ -194,7 +194,7 @@ public sealed partial class CampaignSession
     public CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options=null)
     {
         _content=content;options??=new();
-        if(content.PresetDoublesEnabled&&(!content.FuchsiaGymEnabled||content.PresetDoublePokemon is null||
+        if(content.PresetDoublesEnabled&&(!content.FuchsiaGymEnabled||content.PresetDoublePokemon is null||content.PresetDoubleItems is null||content.PresetDoubleMechanics is null||
             SourceTwinsTrainerEncounter.ValidateDefinition(content.Route8Twins) is not null))throw new InvalidDataException("preset_double_requires_authenticated_successor");
         if(content.FuchsiaGymEnabled)
         {

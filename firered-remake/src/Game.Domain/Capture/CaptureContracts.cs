@@ -12,7 +12,7 @@ public enum CaptureBall
 
 /// <summary>Exactly one legal major status. Sleep duration and toxic counter do not alter this calculation.</summary>
 public enum CaptureStatus { None, Sleep, Freeze, Poison, Burn, Paralysis, BadPoison }
-public enum CaptureEncounterKind { OrdinaryWild, Trainer, Ghost, Tutorial, Safari, Link, Double }
+public enum CaptureEncounterKind { OrdinaryWild, Trainer, Ghost, Tutorial, Safari, Link, Double, Roamer, Story }
 public enum CaptureOutcome { Caught, Escaped, InvalidInput, Unsupported }
 public enum CaptureDecisionBranch { GuaranteedCatchValue, ShakeChecks, MasterBallOverride }
 
@@ -23,6 +23,15 @@ public readonly record struct CaptureInput(
     CaptureBall Ball,
     CaptureStatus Status = CaptureStatus.None,
     CaptureEncounterKind Encounter = CaptureEncounterKind.OrdinaryWild);
+
+/// <summary>
+/// Live battle inputs for conditional balls. TargetIsWaterOrBug reads the effective battle types;
+/// TargetSpeciesCaught refers to the effective battle species, including Transform. IsUnderwater
+/// means MAP_TYPE_UNDERWATER, never a cave, fishing encounter, Water terrain or the move Dive.
+/// BattleTurnCounter is the source's saturating byte counter of completed turns (first turn: 0).
+/// </summary>
+public sealed record CaptureBallContext(int TargetLevel, bool TargetIsWaterOrBug,
+    bool IsUnderwater, bool TargetSpeciesCaught, int BattleTurnCounter);
 
 /// <summary>Intermediate integer values, so rounding and the guaranteed-capture branch are inspectable.</summary>
 public sealed record CaptureCalculation(

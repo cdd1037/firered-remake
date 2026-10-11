@@ -18,6 +18,7 @@ public static class CampaignStatAnimationPresentation
             pp.Kind!="pp"||pp.Actor!=stat.Actor||pp.Target!=stat.Target||pp.Owner!=stat.Actor||pp.Move!=pp.Chosen||pp.Turn!=stat.Turn||pp.Sequence>=stat.Sequence)return null;
         var spec=pp.Move switch
         {
+            "pret:MOVE_AGILITY"=>(Move:97,Stat:WildBattleStat.Speed,Delta:2,Arg:41),
             "pret:MOVE_GROWTH"=>(Move:74,Stat:WildBattleStat.SpecialAttack,Delta:1,Arg:18),
             "pret:MOVE_MINIMIZE"=>(Move:107,Stat:WildBattleStat.Evasion,Delta:1,Arg:21),
             "pret:MOVE_WITHDRAW"=>(Move:110,Stat:WildBattleStat.Defense,Delta:1,Arg:16),

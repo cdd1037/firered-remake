@@ -2,7 +2,7 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
-Current integrated checkpoint: **integrated working tree based on `b01522c721121548c43c841371be2702b4b86833`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **295 / 354**, with **59 gated**; dedicated script coverage is **17 / 354**, with **337 remaining**. Neither is a complete battle-system percentage.
+Current integrated checkpoint: **working tree based on `948d9810a709c48b46f1950159b4db5afcba27fd`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **354 / 354**, with **0 gated by recipe identity**; the public full-turn inventory completed 1,416 controlled turns at `f95f065`. This does not establish all interactions or special battle modes. Dedicated script coverage is **20 / 354**, with **334 remaining**, including the new three-root trace batch's isolated source/host proof; current combined host verification is recorded separately. Neither figure is a complete battle-system percentage.
 
 The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles now has a bounded authentic Route8 Twins public victory/save branch; full held-item/recipe and presentation completion remains open. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
@@ -26,6 +26,14 @@ The initial per-move JSON marked the 350 registered recipes `interaction-unverif
 ## Stage exit: rules first, presentation continues in parallel
 
 User decision on 2026-10-11 (`Sentinel_23a5c65a12ac819190dd9441bae2d3fa`): resume the main campaign once the 354-move/76-ability core rules and affected key regressions are complete. Dedicated animation/audio completion is no longer a prerequisite for the next mainline region. Prioritize presentation needed by that region and clearly record any generic substitute; actual outcomes and settlement still require complete rules. Safari, roamers and other independent field/special-mode dependencies retain their explicit matrix boundaries and must not be silently counted as core acceptance.
+
+## Current closure work
+
+- C14: all eleven ordinary ball formulas and conditional context now use one canonical capture transaction. Special Safari, roamer, scripted/ghost, trainer, tutorial, link and double capture modes remain explicit separate contracts.
+- C15: the authenticated 307-item table supplies fixed battle effects, PP selection, revival, side/stat items and reusable flutes; ordinary escape items retain battle-mode restrictions. Application now routes the real owned party identity and full inventory through this common owner. Dynamic Enigma Berry data and field-only item uses are separate capabilities.
+- C19: original FireRed AI flags 1/7 execute the pinned script program. The four-position controller composes switch, item, then move decisions in source order with shared trainer inventory and current-move register. Generic future-trainer Application state is not inferred from the current two-member, no-item Twins encounter.
+- C21: event-time snapshots, original typed item messages and permanent/live PP projection are integrated; source-page and actual-host checks remain separately identified.
+- Still active: remaining held-item lifecycle and money settlement, explicit obedience facts, shared Static contact alignment, and removal of obsolete migration-only test expectations. These close rule/owner gaps before the next campaign region; dedicated animations continue in parallel.
 
 ## Priority and dependency order
 
@@ -54,7 +62,7 @@ P0 means enabling contract work, P1 means a dependency needed before wider admis
 | [C11](#c11) | Doubles targets and multi-target effects | `implemented-with-bounded-tests` | P1 / independent-block |
 | [C12](#c12) | Switch, Baton Pass, phasing and faint ownership | `implemented-with-bounded-tests` | P2 / bounded |
 | [C13](#c13) | Run and ordinary capture transaction | `implemented-with-bounded-tests` | P2 / bounded |
-| [C14](#c14) | Remaining balls and special battle modes | `missing` | P2 / independent-block |
+| [C14](#c14) | Remaining balls and special battle modes | `interaction-unverified` | P2 / independent-block |
 | [C15](#c15) | Bag medicine, flute and remaining battle items | `interaction-unverified` | P2 / bounded |
 | [C16](#c16) | Held-item effects and ownership | `interaction-unverified` | P2 / bounded |
 | [C17](#c17) | EXP, EV, levels, move learning and settlement | `interaction-unverified` | P2 / bounded |
@@ -278,7 +286,7 @@ Next acceptance:
 <a id="c14"></a>
 ### C14 — Remaining balls and special battle modes
 
-Capture enum includes later balls and Safari but CaptureRules rejects every ball >= Safari and all non-ordinary encounter kinds; encounter profiles reject active roamers.
+All eleven ordinary balls now have the source numerical modifier and an authenticated canonical wild-action overload. Live Transform/Color Change, caught-species context, completed-turn byte and persistent captured identity are covered; historical regional admission stays unchanged. Safari, roamers and other special encounter loops remain separate dependencies. See [ordinary ball scope and evidence](source-capture-balls.md).
 
 Dependencies: C13.
 
@@ -288,7 +296,7 @@ Pinned source: `src/battle_script_commands.c:Cmd_handleballthrow`, `src/battle_m
 
 Next acceptance:
 
-- Complete applicable Gen III ball modifiers with actual encounter context and source capture RNG; keep unavailable acquisition distinct from rule support.
+- Integrate the explicit ordinary-ball API with real campaign inventory/receipts/availability when those items are acquired; numerical support does not grant new items or encounters.
 - Treat Safari action loop and roaming encounters as independently bounded blocks with their story/field dependencies; report those dependencies before claiming the battle stage complete.
 - Do not turn unsupported trainer/double/link capture into ordinary capture.
 
@@ -360,7 +368,7 @@ Next acceptance:
 <a id="c19"></a>
 ### C19 — Trainer AI and legal actions
 
-Source adapter reuses bounded original scoring/switch/item/replacement logic, live overlays, known/unknown abilities and source RNG quirks; not all trainer AI flags or doubles AI.
+The authenticated original flags 1/7 interpreter now covers all 121 viability dispatches and 57 reachable commands, with live overlays and observed histories. A source-derived bytecode pack is rebuilt from the pinned source before use. Generic four-position move and switch/replacement owners are present; final item/action composition and campaign routing remain the next integration boundary. FireRed’s AI_DoubleBattle script is empty; no later-generation partner strategy is invented. See [source AI program](source-trainer-ai-program.md).
 
 Dependencies: C02, C03, C09, C10, C16.
 
@@ -753,3 +761,7 @@ The actual catalog/predicate run now reports **354/354 admitted, zero gated**. [
 ## Public turn sweep and stage exit, 2026-10-11
 
 The existing four-action host now drives all354 moves at all four actual actor positions through one public turn and required continuation boundaries: [1,416 controlled cases](../evidence/shared-recipe-turn-sweep-20261011/README.md). This guards against registration-only claims while retaining bounded scope. Before the next campaign stage, consolidate identified duplicate canonical rule/adapter code and obsolete incremental test gates, clarify shared singles/four-position owners, and run affected regressions. Preserve necessary historical profile compatibility. Dedicated audiovisual restoration remains parallel after core acceptance.
+
+## 2026-10-11 ordinary capture and full source AI script integration
+
+The main composition passed capture 12 groups / 48,447 checks and AI 283 source-command vectors + 7 actual controller cases / 1,214 checks. The worker’s 3,011 capture C vectors, frozen 872 complete prior results and bounded historical AI suites are reused with source hashes; they were not repeated on the main tree. These are Domain rules checks, not new campaign-ball or complete trainer-item/native acceptance. Required generated AI data remain outside source-only GitHub exports and have an authenticated importer. Timer Ball’s extreme `u8` multiplier wrap is retained and recorded as an unapproved candidate.

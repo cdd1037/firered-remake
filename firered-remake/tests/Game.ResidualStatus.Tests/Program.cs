@@ -54,7 +54,7 @@ Test("31 frozen singles fingerprints and bounded admission",()=>{
  Check(Environment.Version.Major==10,"runtime10");Check(source.RootElement.GetProperty("sourceCommit").GetString()==PokemonFactory.SourceCommit,"source pin");
  Check(LegacyParity.Run(args[0],true)==File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"../../..","legacy-baseline.json")).Trim(),"full singles state/events/RNG fingerprints unchanged");
  foreach(var m in new[]{"LEECH_SEED","INGRAIN"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" admitted");
- foreach(var m in new[]{"UPROAR","METRONOME","TRANSFORM"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" stays gated");
+ foreach(var m in new[]{"UPROAR","METRONOME","TRANSFORM"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" authenticated recipe admitted");
 });
 Test("verbatim C seed/root application vectors match actual selected slot commands",()=>{
  foreach(var v in source.RootElement.GetProperty("groups").GetProperty("seedApplication").GetProperty("rows").EnumerateArray()){

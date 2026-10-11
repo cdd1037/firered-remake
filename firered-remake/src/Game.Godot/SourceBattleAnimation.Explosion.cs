@@ -56,7 +56,7 @@ public sealed partial class SourceBattleAnimation
         return false;
     }
     private static int PaletteNumber(string value)=>value switch
-    {"F_PAL_BG"=>1,"F_PAL_ATTACKER"=>2,"RGB_RED"=>31,"RGB_WHITE"=>32767,"RGB_WHITEALPHA"=>65535,"RGB_BLACK"=>0,"RGB(26, 8, 8)"=>26|(8<<5)|(8<<10),_=>Number(value)};
+    {"F_PAL_BG | F_PAL_BATTLERS"=>31,"F_PAL_BG"=>1,"F_PAL_ATTACKER"=>2,"RGB_RED"=>31,"RGB_WHITE"=>32767,"RGB_WHITEALPHA"=>65535,"RGB_BLACK"=>0,"RGB(26, 8, 8)"=>26|(8<<5)|(8<<10),_=>Number(value)};
     // Original UnpackSelectedBattlePalettes and visible position extensions. The
     // selectors name source palette banks, independent of equal RGB colors.
     private uint SelectPalettes(int selector)

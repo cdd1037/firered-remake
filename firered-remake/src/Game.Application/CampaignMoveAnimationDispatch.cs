@@ -23,7 +23,7 @@ public static class CampaignMoveAnimationPresentation
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
         if (battle.Events[battle.EventIndex] is not WildBattleMoveUsedEvent used) return new(null, "not-attack-text");
-        int move = used.Move.Value switch { "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, "pret:MOVE_SELF_DESTRUCT" => 120, "pret:MOVE_EXPLOSION" => 153, _ => 0 };
+        int move = used.Move.Value switch { "pret:MOVE_AGILITY" => 97, "pret:MOVE_QUICK_ATTACK" => 98, "pret:MOVE_AERIAL_ACE" => 332, "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, "pret:MOVE_SELF_DESTRUCT" => 120, "pret:MOVE_EXPLOSION" => 153, _ => 0 };
         if (move == 0) return new(null, "script-outside-slice");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not WildBattleAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
@@ -52,7 +52,7 @@ public static class CampaignMoveAnimationPresentation
             e is WildBattleAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is WildBattleEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
-        if(move is 74 or 106 or 334 or 110 or 107)
+        if(move is 74 or 106 or 334 or 110 or 107 or 97)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is WildBattleStatChangedEvent).ToArray();
             if(resultIndices.Length!=1||CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=resultIndices[0]},true) is not {} result||result.SourceMoveId!=move)
@@ -84,7 +84,7 @@ public static class CampaignMoveAnimationPresentation
         // Accepted basic hit/slice moves print through SpendInvocationPp. The paired AttackString is silent;
         // MoveUsed is the actual visible page. Callers such as Metronome have a different current move.
         if (battle.Events[battle.EventIndex] is not SourceMoveUsedEvent used) return new(null, "not-attack-text");
-        int move = used.Move.Value switch { "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, "pret:MOVE_SELF_DESTRUCT" => 120, "pret:MOVE_EXPLOSION" => 153, _ => 0 };
+        int move = used.Move.Value switch { "pret:MOVE_AGILITY" => 97, "pret:MOVE_QUICK_ATTACK" => 98, "pret:MOVE_AERIAL_ACE" => 332, "pret:MOVE_POUND" => 1, "pret:MOVE_TACKLE" => 33, "pret:MOVE_SCRATCH" => 10, "pret:MOVE_CUT" => 15, "pret:MOVE_SLASH" => 163, "pret:MOVE_FALSE_SWIPE" => 206, "pret:MOVE_COUNTER" => 68, "pret:MOVE_VITAL_THROW" => 233, "pret:MOVE_TAIL_WHIP" => 39, "pret:MOVE_FLASH" => 148, "pret:MOVE_GROWTH" => 74, "pret:MOVE_HARDEN" => 106, "pret:MOVE_IRON_DEFENSE" => 334, "pret:MOVE_WITHDRAW" => 110, "pret:MOVE_MINIMIZE" => 107, "pret:MOVE_SELF_DESTRUCT" => 120, "pret:MOVE_EXPLOSION" => 153, _ => 0 };
         if (move == 0) return new(null, "script-outside-slice");
         if (battle.EventIndex == 0 || battle.Events[battle.EventIndex - 1] is not SourceAttackStringEvent attack ||
             attack.Actor != used.Actor || attack.CurrentMove != used.Move || attack.Turn != used.Turn)
@@ -133,7 +133,7 @@ public static class CampaignMoveAnimationPresentation
             e is SourceAbilityPreventedEvent a && a.Actor == used.Actor && a.Move == used.Move ||
             e is SourceEffectivenessEvent { Effectiveness: WildBattleEffectiveness.NoEffect } t && t.Actor == used.Actor && t.Move == used.Move))
             return new(null, "source-no-animation-result");
-        if(move is 74 or 106 or 334 or 110 or 107)
+        if(move is 74 or 106 or 334 or 110 or 107 or 97)
         {
             var resultIndices=Enumerable.Range(battle.EventIndex+1,end-battle.EventIndex-1).Where(i=>battle.Events[i] is SourceStatChangedEvent).ToArray();
             if(resultIndices.Length!=1||CampaignStatAnimationPresentation.AtResult(battle with{EventIndex=resultIndices[0]}) is not {} result||result.SourceMoveId!=move)

@@ -155,7 +155,7 @@ Test("release retargets vacant selected position and current occupant, while dep
  Check(departed.Slots[0].Registers.Turn is null,"departure drops charge and derived semi bit");
  var refused=SourceFourActionTurns.BeginActions(catalog,charged,charged.Revision,Choices(charged).Select(c=>c.Actor.Slot.Value==0?c with{MoveSlot=1}:c).ToImmutableArray());
  Rejected(charged,refused,"cannot select another move while locked");
- foreach(var name in new[]{"METRONOME","TRANSFORM"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(name)]),"unrelated broad gate closed "+name);
+ foreach(var name in new[]{"METRONOME","TRANSFORM"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(name)]),"authenticated caller and copy recipe admitted "+name);
 });
 
 Test("immutable original C charge vectors and exact command metadata",()=>{

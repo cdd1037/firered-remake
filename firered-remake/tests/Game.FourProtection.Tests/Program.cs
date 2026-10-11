@@ -116,12 +116,12 @@ Test("approved fifth-plus clamp and byte saturation; interruption resets on the 
     x=Finish(Begin(x,[3,0,0,0])).State;Check(x.Slots[0].Body!.ProtectConsecutiveUses==5,"source counter byte retained until next setprotectlike");
     var reset=Next(Begin(x));Check(reset.Events.OfType<SourceProtectAttemptEvent>().Single().Before==0&&reset.State.Slots[0].Body!.ProtectConsecutiveUses==1,"intervening resulting move resets probability");
 });
-Test("no PP, stale revision, stale continuation, unsupported callers and malformed flags reject atomically",()=>{
+Test("no PP, stale revision, stale continuation and malformed flags reject atomically with callers admitted",()=>{
     var f=Frame();var b=f.Slots[0].Body!;var empty=Put(f,0,b with{Pokemon=b.Pokemon with{Moves=[b.Pokemon.Moves[0] with{CurrentPp=0}]}});
     Atomic(empty,SourceFourActionTurns.BeginActions(catalog,empty,empty.Revision,Choices(empty)),"selection no PP");
     Atomic(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision+1,Choices(f)),"stale revision");
     foreach(var bad in new[]{b with{ProtectConsecutiveUses=-1},b with{ProtectConsecutiveUses=256},b with{Protected=true,Enduring=true}}){var q=Put(f,0,bad);Atomic(q,SourceFourActionTurns.BeginActions(catalog,q,q.Revision,Choices(q)),"malformed protection");}
-    foreach(string move in new[]{"METRONOME","SLEEP_TALK","ASSIST","MIRROR_MOVE"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(move)]),"caller remains closed "+move);
+    foreach(string move in new[]{"METRONOME","SLEEP_TALK","ASSIST","MIRROR_MOVE"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(move)]),"authenticated caller admitted "+move);
     var r=Begin(f);var token=r.Continuation!.Value;r=Next(r);Atomic(r.State,SourceFourActionTurns.Advance(catalog,r.State,token),"stale action continuation");
     var standalone=SourceBattleKernel.ResolveAction(catalog,f,new(f.Slots[0].Occupant!.Value,f.Revision,0,new(0)));Check(!standalone.Succeeded&&ReferenceEquals(standalone.State,f)&&standalone.Events.IsEmpty&&standalone.Trace.IsEmpty,"Protect needs real order");
     var noPp=Begin(f);var owner=noPp.State.Slots[0].Body!;noPp=new(Put(noPp.State,0,owner with{Pokemon=owner.Pokemon with{Moves=[owner.Pokemon.Moves[0] with{CurrentPp=0}]}}),[],[],null);noPp=Next(noPp);

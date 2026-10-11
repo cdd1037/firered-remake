@@ -179,7 +179,7 @@ public static partial class SourceFourActionTurns
         var sorted = SourceBattleTurnOrder.Resolve(catalog, next, WildBattleOrderPhase.Actions);
         if (sorted.Fault is { } fault) return Fail(frame, fault);
         next = next with { Queue = sorted.Order.Select(s => next.Queue.Single(a => a.Slot == s)).ToImmutableArray(),
-            Rng = sorted.Rng, NextAction = 0, TurnStartAbsentMask = next.SourceAbsentMask,
+            Rng = sorted.Rng, NextAction = 0, TurnStartAbsentMask = SourceFourMedicineRules.SelectionAbsentMask(next),
             FourTurn = new(next.Turn, SourceFourActionPhase.Actions, []) };
         var rageEvents = ImmutableArray.CreateBuilder<SourceBattleEvent>();
         // TryClearRageStatuses runs for all chosen actions before the first attack.
@@ -258,7 +258,11 @@ public static partial class SourceFourActionTurns
                 trace = interrupted.Trace.AddRange(switched.Trace);
             }
             else if (action.Kind == SourceActionKind.Item)
-                next = SourceFourMedicineRules.Execute(frame, action);
+            {
+                var item = SourceFourMedicineRules.Execute(frame, action);
+                if (!item.Succeeded) return Fail(frame, item.Fault!);
+                next = item.State; events.AddRange(item.Events); trace = item.Trace;
+            }
             else
             {
                 var actionFrame = frame;
@@ -381,6 +385,9 @@ public static partial class SourceFourActionTurns
             var normal = new FrameEndTurnContext(next);
             cursor = normal.Advance(catalog, order.Order);
             next = normal.Frame; events.AddRange(normal.Events); trace.AddRange(normal.Trace);
+            // PokemonUseItemEffects can re-enable an absent position while reviving a reserve.
+            // HandleFaintedMonActions then offers the normal end-turn replacement, without a new faint/EXP.
+            next = SourceFourMedicineRules.ReconcileRevivedReserves(next);
         }
         // HandleFaintedMonActions is after every ordinary field/battler residual and before
         // delayed scripts. The cursor prevents replay while the actual owner supplies EXP/entry.

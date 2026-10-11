@@ -39,7 +39,7 @@ Test("exact affected-family singles baseline, runtime and source pin",()=>{
  Check(Environment.Version.Major==10,"runtime10");Check(source.RootElement.GetProperty("sourceCommit").GetString()==PokemonFactory.SourceCommit,"source pin");
  Check(LegacyParity.Run(args[0],true)==File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"../../..","legacy-baseline.json")).Trim(),"36 full singles state/events/RNG fingerprints unchanged");
  foreach(var name in new[]{"CONFUSE_RAY","SUPERSONIC","SWEET_KISS","MEAN_LOOK","SPIDER_WEB","BLOCK","WRAP","BIND","FIRE_SPIN","WHIRLPOOL","CLAMP","SAND_TOMB"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(name)]),name+" admitted");
- Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("TEETER_DANCE")]),"separate Teeter Dance script remains gated");
+ Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("TEETER_DANCE")]),"authenticated Teeter Dance recipe admitted");
 });
 Test("verbatim source confusion and Wrap command vectors retain RNG order and actual source position",()=>{
  foreach(var v in source.RootElement.GetProperty("vectors").EnumerateArray()){

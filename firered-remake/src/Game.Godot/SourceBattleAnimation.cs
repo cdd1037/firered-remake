@@ -52,6 +52,7 @@ public sealed record HitSplatFrame(PixelPoint Center, int Scale, string Asset = 
 public sealed record SourceVisualSpriteFrame(int Slot,string Template,PixelPoint Position,PixelPoint Offset,int Tile,bool Visible,bool HFlip,bool Blend,int Scale,string? Asset,int Subpriority)
 {
     public int OamRank{get;init;}
+    public int BattlerCopySlot {get;init;} = -1;
 }
 public sealed record SourcePaletteBlend(int Palette,int Coefficient,ushort Color);
 public sealed record SourceAnimationFrame(int Frame, bool Active, PixelPoint[] Offsets, int[] BackgroundSlots,
@@ -110,7 +111,7 @@ public sealed partial class SourceBattleAnimation
     private void Validate(SourceAnimationCommand c)
     {
         if(!SupportedCommands.Contains(c.Op))Fail(c,"No accepted source adapter.");
-        if(ValidateExplosionOperand(c)||ValidateStatMoveOperand(c))return;
+        if(ValidateTraceOperand(c)||ValidateExplosionOperand(c)||ValidateStatMoveOperand(c))return;
         int count=c.Op switch{"loadspritegfx" or "monbg" or "clearmonbg" or "delay"=>1,"setalpha" or "playsewithpan"=>2,"createsprite"=>c.Args.FirstOrDefault() switch
         {"gBasicHitSplatSpriteTemplate" or "gScratchSpriteTemplate"=>7,"gHorizontalLungeSpriteTemplate"=>5,"gCuttingSliceSpriteTemplate" or "gSlashSliceSpriteTemplate"=>6,"gFalseSwipeSliceSpriteTemplate"=>3,"gFalseSwipePositionedSliceSpriteTemplate"=>4,"gSlideMonToOffsetSpriteTemplate" or "gFistFootSpriteTemplate"=>8,"gSlideMonToOriginalPosSpriteTemplate"=>6,_=>-1},"createvisualtask"=>c.Args.FirstOrDefault() is "AnimTask_Flash" or "AnimTask_StatsChange"?2:7,"loopsewithpan"=>4,_=>0};
         if(c.Args.Length!=count)Fail(c,"Command argument shape differs.");
@@ -173,7 +174,7 @@ public sealed partial class SourceBattleAnimation
             var sprite=_sprites.FirstOrDefault(s=>s.Slot==i);
             if(sprite is null){_oamY[i]=160;continue;}
             var f=sprite.Frame;priorities[i]=(f.Asset is null?768:512)+f.Subpriority;
-            if(f.Visible)_oamY[i]=(f.Position.Y+f.Offset.Y-(sprite is MinimizeClone?32:16))&255;
+            if(f.Visible)_oamY[i]=(f.Position.Y+f.Offset.Y-(sprite is MinimizeClone or TraceMonClone?32:16))&255;
         }
         _oamOrder=_oamOrder.OrderBy(i=>priorities[i]).ThenByDescending(i=>_oamY[i]>=160?_oamY[i]-256:_oamY[i]).ToArray();
     }
@@ -193,8 +194,9 @@ public sealed partial class SourceBattleAnimation
                 case "return":if(_subroutine is null)Fail(c,"Return outside subroutine.");_subroutine=null;_pc=_returnPc;continue;
                 case "loadspritegfx":_loaded.Add(a[0]);_pc++;Wait(1);return;
                 case "monbg":
-                    if(_battlers[_cue.Target.Value].Visible)_backgrounds.Add(_cue.Target.Value);
-                    if(_doubles&&_battlers[_cue.Target.Partner.Value].Visible)_backgrounds.Add(_cue.Target.Partner.Value);
+                    var backgroundSlot=a[0]=="ANIM_ATK_PARTNER"?_cue.Actor:_cue.Target;
+                    if(_battlers[backgroundSlot.Value].Visible)_backgrounds.Add(backgroundSlot.Value);
+                    if(_doubles&&_battlers[backgroundSlot.Partner.Value].Visible)_backgrounds.Add(backgroundSlot.Partner.Value);
                     break;
                 case "setalpha":_blendEnabled=true;_alphaA=Math.Clamp(Number(a[0]),0,16);_alphaB=Math.Clamp(Number(a[1]),0,16);break;
                 case "createsprite":
@@ -219,6 +221,7 @@ public sealed partial class SourceBattleAnimation
                     }
                     break;
                 case "createvisualtask":
+                    if(a[0]=="AnimTask_TraceMonBlended"){_tasks.Add(new TraceMonTask(Number(a[2]),Number(a[3]),Number(a[4]),Number(a[5])));break;}
                     if(a[0]=="AnimTask_BlendBattleAnimPal"){var blend=new BlendPaletteTask(a.Skip(2).Select(PaletteNumber).ToArray(),this);blend.Step(this);if(!blend.Finished)_tasks.Add(blend);break;}
                     if(a[0]=="AnimTask_Minimize"){_tasks.Add(new MinimizeTask(this));break;}
                     if(a[0]=="AnimTask_Withdraw"){_tasks.Add(new WithdrawTask(this));break;}

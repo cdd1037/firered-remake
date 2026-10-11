@@ -227,7 +227,14 @@ public sealed record WildBattlePotionRecoveredEvent(long Sequence, int Turn, Wil
 /// <summary>Exact owned target and medicine-only delta, before the enemy response and residuals.</summary>
 public sealed record WildBattleMedicineAppliedEvent(long Sequence, int Turn, ItemId Item,
     long TargetInstanceId, int PartyIndex, bool ActiveTarget, int HpBefore, int HpAfter,
-    uint StatusBefore, uint StatusAfter) : WildBattleEvent(Sequence, Turn);
+    uint StatusBefore, uint StatusAfter) : WildBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? Actor { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSide? TargetSide { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<Game.Domain.Items.SourceItemPpRecovery>? PpRecovery { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? FriendshipBefore { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? FriendshipAfter { get; init; }
+}
 public sealed record WildBattleRecoilEvent(long Sequence, int Turn, WildBattleSide Actor,
     MoveId Move, int HpBefore, int HpAfter, int Damage) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleCriticalHitEvent(long Sequence, int Turn, WildBattleSide Actor,
@@ -341,7 +348,13 @@ public sealed record WildBattleAbilityDamageEvent(long Sequence, int Turn, WildB
 /// <summary>Source Oran Berry end-turn healing and one-time consumption; no RNG is consumed.</summary>
 public sealed record WildBattleHeldItemHealEvent(long Sequence, int Turn, WildBattleSide Actor, WildBattleSide Target, MoveId Move, string Item, int DamageReceipt, int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn);
 public sealed record WildBattleHeldItemConsumedEvent(long Sequence, int Turn, WildBattleSide Side,
-    string Item, int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn);
+    string Item, int HpBefore, int HpAfter, int HpRestored) : WildBattleEvent(Sequence, Turn)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.Items.SourceItemPpRecovery? PpRecovery { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<Game.Domain.Battle.SourceItemStatChange>? StatChanges { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? FocusEnergyRaised { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Flavor { get; init; }
+}
 
 public sealed record WildBattleMtMoonVolatileEvent(long Sequence, int Turn, WildBattleSide Side,
     string Volatile, int Before, int After, string Reason) : WildBattleEvent(Sequence, Turn);

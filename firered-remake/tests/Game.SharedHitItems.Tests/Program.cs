@@ -215,11 +215,11 @@ Test("delayed MOVE_NONE draws retain FFFF body receipt through Ready",()=>{
   var next=First(r.State,2);Check(next.State.Slots.All(c=>c.Position.HitItemReceipt is null),"next action clears previous delayed receipts");
  }
 });
-Test("unsupported dependent callers abilities and invalid order stay atomic",()=>{
+Test("dependent recipes and Serene Grace are admitted while invalid order stays atomic",()=>{
  foreach(string move in new[]{"TRIPLE_KICK","BEAT_UP","THIEF","METRONOME","SLEEP_TALK","MIRROR_MOVE","PAIN_SPLIT"}){
-  var f=Frame(2,"SMEARGLE",move,Rock);Atomic(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f,2)),"caller or unmigrated recipe "+move);
+  var f=Frame(2,"SMEARGLE",move,Rock);var admitted=Ok(SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f,2)));Check(admitted.State.Queue.Single(a=>a.Slot.Value==2).OriginalChosenMove==Id(move)&&admitted.State.Slots[2].Body!.Pokemon.Moves[0].CurrentPp==f.Slots[2].Body!.Pokemon.Moves[0].CurrentPp,"recipe admission retains chosen move and unspent PP "+move);
  }
- foreach(string species in new[]{"TOGEPI","DUNSPARCE"}){var f=Frame(2,species,"TACKLE",Rock); var m=f.Slots[2].Body!;var p=SourcePokemonFactory.Create(proof,new(new("pret:SPECIES_"+species),50,42,IvPolicy.Fixed(31),PersonalityPolicy.Fixed(species=="TOGEPI"?1u:0u)),new(0)).Pokemon;f=Put(f,2,m with{Pokemon=p with{Moves=m.Pokemon.Moves}});Check(WildBattleEffective.Ability(f.Slots[2].Body!)=="ABILITY_SERENE_GRACE","actual Serene Grace fixture");Atomic(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f,2)),"Serene Grace still gated");}
+ foreach(string species in new[]{"TOGEPI","DUNSPARCE"}){var f=Frame(2,species,"TACKLE",Rock); var m=f.Slots[2].Body!;var p=SourcePokemonFactory.Create(proof,new(new("pret:SPECIES_"+species),50,42,IvPolicy.Fixed(31),PersonalityPolicy.Fixed(species=="TOGEPI"?1u:0u)),new(0)).Pokemon;f=Put(f,2,m with{Pokemon=p with{Moves=m.Pokemon.Moves}});Check(WildBattleEffective.Ability(f.Slots[2].Body!)=="ABILITY_SERENE_GRACE","actual Serene Grace fixture");var admitted=Ok(SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f,2)));Check(WildBattleEffective.Ability(admitted.State.Slots[2].Body!)=="ABILITY_SERENE_GRACE","admission retains authentic Serene Grace");}
  var alone=Frame(2,"PIDGEY","TACKLE",Rock);var single=SourceBattleKernel.ResolveAction(catalog,alone,new(alone.Slots[2].Occupant!.Value,alone.Revision,0,new(3)));
  Check(!single.Succeeded&&ReferenceEquals(alone,single.State)&&single.Trace.IsEmpty&&single.Events.IsEmpty,"standalone King requires actual action owner before any RNG");
  var malformed=Receipt(alone,3,new(-1,2));Atomic(malformed,SourceFourActionTurns.BeginActions(catalog,malformed,malformed.Revision,Choices(malformed,2)),"negative receipt");

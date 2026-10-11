@@ -75,7 +75,7 @@ public partial class CampaignView
     private WildBattleCombatant DoubleDisplayedBody(int slot)
     {
         var b=_session.State.DoubleBattle!;
-        if(b.CurrentEvent is SourceCalledPartySwitchedEvent change&&change.Side.Value==slot&&DoubleSwitchSending(change))return b.Frame.Get(new(slot)).Body!;
+        if(b.CurrentEvent is SourceCalledPartySwitchedEvent change&&change.Side.Value==slot&&DoubleSwitchSending(change))return change.Replacement?.Body??throw new InvalidDataException("Doubles switch event is missing its entry snapshot.");
         if(b.CurrentEvent is SourcePlayerSwitchedEvent x&&x.Slot.Value==slot)return _doublePage==0?x.Previous.Body:x.Replacement.Body;
         if(b.CurrentEvent is SourcePlayerReplacedEvent y&&y.Slot.Value==slot)return y.Replacement.Body;
         return b.DisplayedSlots[slot];
@@ -125,6 +125,17 @@ public partial class CampaignView
         void Source(string symbol,params (string Key,string Value)[] values)=>pages.AddRange(DoubleSource(symbol,values));
         void Atk(string symbol,BattlerSlot actor)=>Source(symbol,("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(actor)));
         void Def(string symbol,BattlerSlot target)=>Source(symbol,("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(target)));
+        if (DoubleExtendedEventDisplay(b,e) is {} display)
+        {
+            if (!display.Unsupported)
+            {
+                foreach (var line in display.Texts) Source(line.Symbol,line.Values);
+                return pages.ToImmutable();
+            }
+            pages.Add(SourceTrainerPresentationModel.UnsupportedNotice);
+            Write("unsupportedDoublePresentation",new{type=e.GetType().Name,e.Sequence});
+            return pages.ToImmutable();
+        }
         switch(e)
         {
             case SourceStartedEvent:
@@ -179,13 +190,6 @@ public partial class CampaignView
             case SourceHeldItemSurvivalEvent item:
                 Source("sText_PkmnHungOnWithX",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(item.Target)),
                     ("B_LAST_ITEM",item.Item.Replace("ITEM_","",StringComparison.Ordinal).Replace('_',' ')));break;
-            case SourceHeldItemConsumedEvent item:
-                Source(item.Item switch {
-                    "ITEM_ORAN_BERRY"=>"sText_PkmnsItemRestoredHealth","ITEM_CHERI_BERRY"=>"sText_PkmnsItemCuredParalysis",
-                    "ITEM_CHESTO_BERRY"=>"sText_PkmnsItemWokeIt","ITEM_PECHA_BERRY"=>"sText_PkmnsItemCuredPoison",
-                    "ITEM_RAWST_BERRY"=>"sText_PkmnsItemHealedBurn","ITEM_ASPEAR_BERRY"=>"sText_PkmnsItemDefrostedIt",
-                    "ITEM_PERSIM_BERRY"=>"sText_PkmnsItemSnappedOut",_=>throw new InvalidDataException("Unsupported consumed doubles item: "+item.Item)},
-                    ("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(item.Side)),("B_LAST_ITEM",item.Item.Replace("ITEM_","",StringComparison.Ordinal).Replace('_',' ')));break;
             case SourceFocusEnergyEvent x:Atk("gBattleText_GetPumped",x.Side);break;
             case SourceDisableChangedEvent x when x.Reason=="move"&&x.Move is {} move:Source("sText_PkmnMoveWasDisabled",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Side)),("B_BUFF1",MoveName(move)));break;
             case SourceDisableChangedEvent x when x.After==0:Atk("sText_PkmnMoveDisabledNoMore",x.Side);break;
@@ -267,7 +271,7 @@ public partial class CampaignView
         _doubleElapsed+=delta;
         var b=_session.State.DoubleBattle!;
         if(_busy||_doubleNotice is not null||_doublePages.Length!=0||b.LearningPending||b.ReplacementSlot is not null||b.SelectingSlot is not null)return;
-        if(b.Stage==CampaignDoubleBattleStage.Combat&&_doubleElapsed>=(b.CurrentEvent is SourceHpChangedEvent ? .4 : .06))Apply(new("ack"));
+        if(b.Stage==CampaignDoubleBattleStage.Combat&&_doubleElapsed>=(DoubleEventChangesHp(b.CurrentEvent) ? .4 : .06))Apply(new("ack"));
     }
     private void DoubleSubmit(CampaignCommand command)
     {
@@ -277,7 +281,7 @@ public partial class CampaignView
     private void DoubleAcknowledge()
     {
         if(SourceAnimationBlocking)return;
-        if(_doubleElapsed<(_session.State.DoubleBattle?.CurrentEvent is SourceAbilityDamageEvent or SourceMedicineAppliedEvent ? .4 : .12))return;
+        if(_doubleElapsed<(DoubleEventChangesHp(_session.State.DoubleBattle?.CurrentEvent) ? .4 : .12))return;
         if(_doubleOpening&&_doublePage>0&&
             (_doubleElapsed<1||_doubleSecondCry is not null||_sourceAudio?.Snapshot().Cry?.Playing==true))return;
         if(_doublePage+1<_doublePages.Length){_doublePage++;_doubleElapsed=0;return;}
@@ -384,8 +388,13 @@ public partial class CampaignView
             var body=DoubleDisplayedBody(i);var mon=body.Pokemon;
             if(entry&&(_doublePage==0||_doublePage==1&&(i&1)==0)||portrait&&(i&1)!=0)continue;
             if(mon.CurrentHp==0&&!(b.CurrentEvent is SourceHpChangedEvent {HpBefore:>0} hit&&hit.Target.Value==i))continue;
-            var asset=_battleArt[(mon.SourceSpeciesId,(i&1)==0?"back":"front",mon.IsShiny)];
-            if(!SourceAnimationPresented)DrawTexture(asset.Texture,asset.Position+DoubleSpriteOffsets[i]);
+            var appearance=body.Transform?.CopiedPokemon??mon;
+            var asset=_battleArt[(appearance.SourceSpeciesId,(i&1)==0?"back":"front",appearance.IsShiny)];
+            if(!SourceAnimationPresented)
+            {
+                if(body.CalledVolatile?.SubstituteHp>0)DrawDoubleSubstitute(i);
+                else DrawTexture(asset.Texture,asset.Position+DoubleSpriteOffsets[i]);
+            }
             DrawDoubleHealth(i,body);
         }
         bool choosing=b.SelectingSlot is not null&&_doubleNotice is null&&_doublePages.IsEmpty;
@@ -429,14 +438,11 @@ public partial class CampaignView
     {
         var center=DoubleHealthCenters[slot];bool player=(slot&1)==0;var mon=body.Pokemon;
         DrawTexture(_doubleTextures[player?"healthbox-player":"healthbox-opponent"],center+new Vector2(-32,-16));
-        int hp=mon.CurrentHp;
-        if(_session.State.DoubleBattle!.CurrentEvent is SourceHpChangedEvent x&&x.Target.Value==slot)hp=(int)Math.Round(Mathf.Lerp(x.HpBefore,x.HpAfter,(float)Math.Clamp(_doubleElapsed/.4,0,1)));
-        if(_session.State.DoubleBattle!.CurrentEvent is SourceAbilityDamageEvent abilityHit&&abilityHit.Target.Value==slot)hp=(int)Math.Round(Mathf.Lerp(abilityHit.HpBefore,abilityHit.HpAfter,(float)Math.Clamp(_doubleElapsed/.4,0,1)));
-        var medicine=_session.State.DoubleBattle.CurrentEvent as SourceMedicineAppliedEvent;
-        bool medicineTarget=medicine is not null&&_session.State.DoubleBattle.DisplayedMembers[slot]==new PartyMemberKey(BattleSide.Player,medicine.PartyIndex);
-        if(medicineTarget)hp=DoubleMedicineHp(medicine!);
+        int hp=DoubleEventHp(slot,body);
+        var medicine=_session.State.DoubleBattle!.CurrentEvent as SourceMedicineAppliedEvent;
+        bool medicineTarget=medicine is not null&&_session.State.DoubleBattle.DisplayedMembers[slot]==new PartyMemberKey(medicine.TargetSide??BattleSide.Player,medicine.PartyIndex);
         var barOrigin=center+new Vector2(player?0:-8,0);
-        uint status=ForestPresentationStatus(medicineTarget?DoubleMedicineStatus(medicine!):body.Status);
+        uint status=ForestPresentationStatus(medicineTarget?DoubleMedicineStatus(medicine!):DoubleEventStatus(slot,body));
         if(status==0)DrawTexture(_doubleTextures["hp-label"],barOrigin);
         else
         {
@@ -492,6 +498,7 @@ public partial class CampaignView
         var b=_session.State.DoubleBattle!;if(_doubleNotice is not null)return false;
         if(_doubleMenu=="bag")return PointerList(point,direction,ref _doubleCursor,DoubleBagStacks.Length);
         if(_doubleMenu=="medicine-target")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
+        if(_doubleMenu=="medicine-move")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves.Length+1,8,10,224,16);
         if(_doubleMenu=="party")return PointerRows(point,direction,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
         if(_doubleMenu=="learn-moves")return PointerRows(point,direction,ref _doubleCursor,b.Frame.Party(BattleSide.Player).Members[b.Frame.Rewards!.Pending!.Recipient.Index].Pokemon.Moves.Length+1,8,10,224);
         if(_doubleMenu=="learn-choice")return PointerYesNo(point,direction,ref _doubleCursor);
@@ -510,6 +517,7 @@ public partial class CampaignView
         if(_doubleNotice is not null)return MouseMessage.HasPoint(point)&&MouseKey();
         if(_doubleMenu=="bag")return (!_doubleBerries&&MouseBagArrows(point,_doubleBagPocket))||MouseList(point,ref _doubleCursor,DoubleBagStacks.Length);
         if(_doubleMenu=="medicine-target")return MouseSelect(point,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
+        if(_doubleMenu=="medicine-move")return MouseSelect(point,ref _doubleCursor,_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves.Length+1,8,10,224,16);
         if(_doubleMenu=="party")return MouseSelect(point,ref _doubleCursor,_session.State.Party.Length+1,8,5,224,14);
         if(_doubleMenu=="learn-moves")return MouseSelect(point,ref _doubleCursor,b.Frame.Party(BattleSide.Player).Members[b.Frame.Rewards!.Pending!.Recipient.Index].Pokemon.Moves.Length+1,8,10,224);
         if(_doubleMenu=="learn-choice")return MouseSelect(point,ref _doubleCursor,2,184,72,56);
@@ -531,7 +539,7 @@ public partial class CampaignView
             if(_doublePage==1){SourceCry(b.DisplayedSlots[1].Pokemon);_doubleSecondCry=3;}
             if(_doublePage==2){SourceCry(b.DisplayedSlots[0].Pokemon);_doubleSecondCry=2;}
         }
-        if(b.CurrentEvent is SourceCalledPartySwitchedEvent sw&&DoubleSwitchSending(sw))SourceCry(b.Frame.Get(sw.Side).Body!.Pokemon);
+        if(b.CurrentEvent is SourceCalledPartySwitchedEvent sw&&DoubleSwitchSending(sw))SourceCry((sw.Replacement?.Body??throw new InvalidDataException("Doubles switch snapshot missing.")).Pokemon);
         if(b.CurrentEvent is SourcePlayerSwitchedEvent x&&_doublePage==1)SourceCry(x.Replacement.Body.Pokemon);
         if(b.CurrentEvent is SourcePlayerReplacedEvent y&&_doublePage==0)SourceCry(y.Replacement.Body.Pokemon);
         // First source cue of General_HeldItemEffect; its motion and remaining cues are not yet ported.

@@ -57,7 +57,7 @@ public static partial class SourceFourActionTurns
             var next = PrepareReplacements(bound.State);
             if (next.PendingSwitches.IsEmpty) next = next with { FourTurn = next.FourTurn! with { Phase = SourceFourActionPhase.EndTurnResume } };
             var switched = SourceBattleEventHooks.Publish(next, (n, t) => new SourceCalledPartySwitchedEvent(n, t, slot,
-                previous.Member!.Value.Index, incoming.Index, WildBattleCalledSwitchKind.FaintedReplacement));
+                previous.Member!.Value.Index, incoming.Index, WildBattleCalledSwitchKind.FaintedReplacement) { Replacement = new(body, bound.State.Get(slot).Registers) });
             var entry = SourceFourEntryAbilities.OnReplacement(catalog, switched.State, slot);
             if (!entry.Succeeded) return Fail(frame, entry.Fault!);
             var events = ImmutableArray.CreateBuilder<SourceBattleEvent>(); events.Add(switched.Event); events.AddRange(entry.Events);

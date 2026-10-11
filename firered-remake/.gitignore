@@ -52,3 +52,6 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 
 # Regenerated original C command body, not an authored oracle adapter.
 /tests/Game.SharedFieldRecipes.Tests/source-commands.h
+
+# Rebuilt original C oracle, not authored source.
+/tests/Game.SourceCaptureBalls.Tests/evidence/source-c-final/oracle.c

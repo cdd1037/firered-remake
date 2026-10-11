@@ -75,6 +75,8 @@ public interface ICampaignCatalog:IStoryCatalog
     FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>null;
     bool PresetDoublesEnabled=>false;
     PokemonCatalog? PresetDoublePokemon=>null;
+    SourceMechanicsCatalog? PresetDoubleMechanics=>null;
+    SourceBattleItemCatalog? PresetDoubleItems=>null;
     SourceTwinsTrainerDefinition? Route8Twins=>null;
     bool FuchsiaGymEnabled=>false;
     FuchsiaGymTrainerCatalog? FuchsiaGymTrainerParties=>null;

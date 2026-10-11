@@ -266,7 +266,7 @@ public static class SourceBattleIdentityRules
         {
             if (selection is null || !frame.IsCurrent(selection.Actor)) return new(frame, "source_selection_stale_occupant");
             if (!bySlot.TryAdd(selection.Actor.Slot, selection)) return new(frame, "source_selection_duplicate_actor");
-            if (!frame.CanAct(selection.Actor.Slot) || selection.Kind is SourceActionKind.Cancelled || !Enum.IsDefined(selection.Kind))
+            if (!SourceFourMedicineRules.CanSelect(frame,selection.Actor.Slot) || selection.Kind is SourceActionKind.Cancelled || !Enum.IsDefined(selection.Kind))
                 return new(frame, "source_selection_ineligible_actor");
             if (selection.Target is { } target && target.Value >= frame.BattlerCount ||
                 selection.Kind == SourceActionKind.Move && selection.MoveSlot is not (>= -1 and <= 3) ||
@@ -283,7 +283,7 @@ public static class SourceBattleIdentityRules
                     return new(frame, "source_selection_reserve");
             }
         }
-        if (Enumerable.Range(0, frame.BattlerCount).Select(i => new BattlerSlot(i)).Any(s => frame.CanAct(s) != bySlot.ContainsKey(s)))
+        if (Enumerable.Range(0, frame.BattlerCount).Select(i => new BattlerSlot(i)).Any(s => SourceFourMedicineRules.CanSelect(frame,s) != bySlot.ContainsKey(s)))
             return new(frame, "source_selection_missing_actor");
         var queue = ImmutableArray.CreateBuilder<SourceQueuedAction>();
         var reservations = ImmutableArray.CreateBuilder<SourceSwitchReservation>();

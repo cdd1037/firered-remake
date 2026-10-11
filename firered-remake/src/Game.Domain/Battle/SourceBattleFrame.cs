@@ -99,7 +99,13 @@ public sealed record SourceSwitchReservation(OccupantToken Outgoing, PartyMember
     WildBattleCalledSwitchKind Kind);
 /// <summary>Player medicine is paid/applied in the party selection menu, before the turn queue.
 /// This bounded, current-turn receipt prevents the later item action from applying it again.</summary>
-public sealed record SourcePreparedMedicine(OccupantToken Actor, ItemId Item, PartyMemberKey Target);
+public sealed record SourcePreparedMedicine(OccupantToken Actor, ItemId Item, PartyMemberKey Target)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Game.Domain.Items.SourceBattleItemDefinition? DeferredEffect { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public byte SourceAbsentMaskBeforeSelection { get; init; }
+}
 public sealed record SourceMoveInvocation(BattlerSlot Actor, int ChosenSlot, int PpSlot,
     MoveId OriginalChosenMove, MoveId ChosenMove, MoveId CurrentMove, MoveId? CalledMove,
     BattlerSlot Target, WildBattleAttackCancellerPhase CancellerPhase, WildBattleInvocationFlags Flags)

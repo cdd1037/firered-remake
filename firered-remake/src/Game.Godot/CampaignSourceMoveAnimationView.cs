@@ -16,7 +16,7 @@ public partial class CampaignView
     private readonly Dictionary<WildBattleSide,int> _sourceSubstituteHp=[];
     private readonly Dictionary<string,ImageTexture> _sourceSubstituteTextures=[];
     private JsonDocument? _sourceMoveManifest;
-    private IReadOnlyDictionary<int,SourceAnimationScript>? _sourceStatMoveScripts,_sourceExplosionScripts;
+    private IReadOnlyDictionary<int,SourceAnimationScript>? _sourceStatMoveScripts,_sourceExplosionScripts,_sourceTraceScripts;
     private SourceMetallicMaterial? _sourceMetallicMaterial;
     private SourceBattleFrameComposer? _sourceMoveComposer;
     private ImageTexture? _sourceMoveField;
@@ -162,12 +162,18 @@ public partial class CampaignView
         {
             // DisplayedSlots is the event-time snapshot, before this hit/KO is acknowledged.
             // The committed frame may already contain damage and later action results.
-            var body=DoubleDisplayedBody(slot);var mon=body.Pokemon;string face=(slot&1)==0?"back":"front";
-            var displayed=_battleArt[(mon.SourceSpeciesId,face,mon.IsShiny)];
-            var geometry=_sourceBattlerGeometry[(mon.SourceSpeciesId,face)] with{Slot=new(slot),Asset="battler-"+slot,Visible=mon.CurrentHp>0};
+            var body=DoubleDisplayedBody(slot);var mon=body.Pokemon;var appearance=body.Transform?.CopiedPokemon??mon;string face=(slot&1)==0?"back":"front";
+            var displayed=_battleArt[(appearance.SourceSpeciesId,face,appearance.IsShiny)];
+            var geometry=_sourceBattlerGeometry[(appearance.SourceSpeciesId,face)] with{Slot=new(slot),Asset="battler-"+slot,Visible=mon.CurrentHp>0};
             var center=geometry.Center(true);
             if(displayed.Position+DoubleSpriteOffsets[slot]!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated doubles/source battler geometry differs.");
-            assets.Add(geometry.Asset,SourcePixels(displayed.Texture,64,64));
+            bool substitute=body.CalledVolatile?.SubstituteHp>0;
+            assets.Add(geometry.Asset,substitute?_sourceMoveAssets["substitute-"+face]:SourcePixels(displayed.Texture,64,64));
+            if(substitute)
+            {
+                var offset=DoubleSpriteOffsets[slot];
+                geometry=geometry with{DisplayCenter=new((slot&1)==0?72+(int)offset.X:176+(int)offset.X,(slot&1)==0?97+(int)offset.Y:56+(int)offset.Y)};
+            }
             battlers.Add(geometry);
         }
             return (assets,battlers);
@@ -182,7 +188,8 @@ public partial class CampaignView
         }
         if(SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId))assets["explosion"]=_sourceMoveAssets["explosion"];
         if(SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)&&_sourceStatMoveScripts is null)(_sourceStatMoveScripts,_sourceMetallicMaterial)=SourceStatMoveCatalog.Read(System.IO.Path.Combine(_root,"content/generated/source-stat-moves"));
-        var script=SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceExplosionScripts![dispatch.SourceMoveId]:SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)?_sourceStatMoveScripts![dispatch.SourceMoveId]:SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId);
+        if(SourceTraceAnimationCatalog.Supports(dispatch.SourceMoveId)&&_sourceTraceScripts is null)_sourceTraceScripts=SourceTraceAnimationCatalog.Read(System.IO.Path.Combine(_root,"content/generated/source-trace-animations"),_sourceMoveManifest!);
+        var script=SourceTraceAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceTraceScripts![dispatch.SourceMoveId]:SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceExplosionScripts![dispatch.SourceMoveId]:SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)?_sourceStatMoveScripts![dispatch.SourceMoveId]:SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId);
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value));
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
         if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){Apply(new("ack"));return;}

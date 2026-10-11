@@ -13133,5 +13133,38 @@
     "officialDenominator": 76,
     "evidence": "evidence/shared-weather-abilities-20261011/wonder-result.json",
     "warning": "All official identities admitted; move/ability lifecycle closure remains incomplete. Bounded evidence records are not completion percentages."
+  },
+  "currentClosureSnapshot": {
+    "dateUtc": "2026-10-11",
+    "baseCommit": "948d9810a709c48b46f1950159b4db5afcba27fd",
+    "state": "combined working tree, current focused proof reported separately",
+    "fullTurnInventory": {
+      "baseCommit": "f95f06522c2a6320f12ff8032e02b7ef2a1c5fca",
+      "moveIdentities": 354,
+      "controlledPublicTurns": 1416
+    },
+    "animation": {
+      "dedicatedRoots": 20,
+      "remaining": 334,
+      "newRoots": [
+        97,
+        98,
+        332
+      ],
+      "evidence": "docs/source-trace-choreography.md",
+      "currentCombinedHostNotInferredFromWorker": true
+    },
+    "activeRuleClosure": [
+      "held-item lifecycle and money multiplier settlement",
+      "explicit source obedience facts and action cancellation",
+      "shared Static retained-contact receipt alignment",
+      "migration-only regression gate cleanup"
+    ],
+    "notImplied": [
+      "all special capture modes",
+      "generic campaign trainer inventory/AI owner integration",
+      "354 dedicated animations",
+      "exhaustive move-by-ability combinations"
+    ]
   }
 }

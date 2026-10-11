@@ -170,7 +170,7 @@ def main():
             if not run([godot, '--headless', '--version'], 'godot-version.log', 30).startswith('4.7.2.stable.mono.'):
                 raise RuntimeError('The pinned official Godot 4.7.2 .NET editor is required')
             run([dotnet, 'build', host / 'CampaignDoubleHost.csproj', '--configuration', 'Debug',
-                 '--configfile', config, '--no-incremental', '--disable-build-servers', '-m:1', '-nr:false',
+                 '--configfile', config, '--disable-build-servers', '-m:1', '-nr:false',
                  '-p:UseSharedCompilation=false', '-p:NuGetAudit=false', '-p:RestoreLockedMode=true',
                  '-p:DoubleTestReferenceRoot=', '-p:BuildProjectReferences=true'], 'build.log')
             run([godot, '--headless', '--editor', '--import', '--path', host, '--quit'], 'import.log')

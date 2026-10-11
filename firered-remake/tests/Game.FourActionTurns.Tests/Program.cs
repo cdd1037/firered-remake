@@ -32,7 +32,7 @@ SourceFourActionResult Begin(SourceBattleFrame f,int[]? targets=null)=>Success(S
 SourceFourActionResult Next(SourceFourActionResult r)=>Success(SourceFourActionTurns.Advance(catalog,r.State,r.Continuation!.Value));
 void Rejected(SourceBattleFrame f,SourceFourActionResult r,string label){Check(!r.Succeeded&&ReferenceEquals(f,r.State)&&r.Events.IsEmpty&&r.Trace.IsEmpty,label+" atomic fault: "+r.Fault);}
 SourceBattleFrame RebindBody(SourceBattleFrame f,int slot,WildBattleCombatant body){var c=f.Slots[slot];var key=c.Member!.Value;var party=f.Parties[(int)key.Side];return f with{Slots=f.Slots.SetItem(slot,c with{Body=body}),Parties=f.Parties.SetItem((int)key.Side,party with{Members=party.Members.SetItem(key.Index,Member(body))})};}
-Test("actual runtime and authenticated 386 species 354 move catalog",()=>{Check(Environment.Version.Major==10,"actual .NET10");Check(catalog.Species.Count==386&&catalog.Moves.Count==354,"authenticated source catalog");});
+Test("actual runtime and authenticated 386 species 354 move catalog",()=>{Check(Environment.Version.Major==10,"actual .NET10");Check(catalog.Species.Count==386&&catalog.Moves.Count==354,"authenticated source catalog");foreach(var move in catalog.Moves.Values)Check(SourceBattleKernel.SupportsRecipe(move),"complete authenticated recipe admission "+move.Id.Value);});
 Test("four real actors complete clean turn with costs targets shared effects and permanent synchronization",()=>{
  var f=Frame();var r=Begin(f);var ev=r.Events.ToBuilder();var tr=r.Trace.ToBuilder();
  for(int i=0;i<4;i++){r=Next(r);ev.AddRange(r.Events);tr.AddRange(r.Trace);}
@@ -53,8 +53,9 @@ Test("every action and endturn pause survives JSON with exact state events and R
   Rejected(r.State,SourceFourActionTurns.Advance(catalog,r.State,token),"replayed continuation "+i);
  }Check(r.CompletedCleanTurn,"resumed full turn");cleanTurns++;
 });
-Test("unported phases and marker bypasses fail before selection costs ordering and RNG",()=>{
- var f=Frame();foreach(var bad in new[]{f with{SourceMechanicsRulesVersion=null},f with{SourceMechanicsRulesVersion=BattleRulesProfile.CanonicalSourceSinglesVersion},RebindBody(f,0,Mon("PIDGEY",50,"EARTHQUAKE")),RebindBody(f,0,Mon("VENONAT",50,"DISABLE"))})Rejected(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"unsupported capability");
+Test("invalid profiles and marker bypasses reject atomically while current recipes are admitted",()=>{
+ var f=Frame();foreach(var bad in new[]{f with{SourceMechanicsRulesVersion=null},f with{SourceMechanicsRulesVersion=BattleRulesProfile.CanonicalSourceSinglesVersion}})Rejected(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"unsupported capability");
+ foreach(var current in new[]{RebindBody(f,0,Mon("PIDGEY",50,"EARTHQUAKE")),RebindBody(f,0,Mon("VENONAT",50,"DISABLE"))}){var admitted=Begin(current);Check(admitted.State.Queue.Single(a=>a.Slot.Value==0).OriginalChosenMove==current.Slots[0].Body!.Pokemon.Moves[0].Move&&admitted.State.Slots[0].Body!.Pokemon.Moves[0].CurrentPp==current.Slots[0].Body!.Pokemon.Moves[0].CurrentPp,"current recipe admission retains chosen move and unspent PP");}
  Rejected(f,SourceFourActionTurns.BeginActions(catalog with{},f,f.Revision,Choices(f)),"catalog clone carries no authority");
  Rejected(f,SourceFourActionTurns.BeginActions(catalog,f,f.Revision,Choices(f).RemoveAt(2)),"missing actor");
 });

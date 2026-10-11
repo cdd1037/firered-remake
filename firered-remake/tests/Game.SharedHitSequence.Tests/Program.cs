@@ -159,8 +159,8 @@ Test("real voluntary switch clears chain and grants one Fake Out turn",()=>{
 Test("canonical full singles turns use shared recipes",()=>{
  foreach(string move in names){var a=Mon("CLEFAIRY",60,move);var b=Mon("MAGIKARP",100,"SPLASH");var started=WildBattleRules.StartSourceWild(proof,BattleRulesProfile.CanonicalSourceSingles,[a],0,b,new(31),WildBattleTerrain.Plain);Check(started.Succeeded,"source entry "+started.Fault);var turn=WildBattleRules.ResolveMove(catalog,started.State!,0);Check(turn.Succeeded,"full singles turn "+move+" "+turn.Fault);Check(turn.State!.Turn==1,"singles Ready reached");}
 });
-Test("unsupported and stale actions remain atomic",()=>{
+Test("invalid and stale actions remain atomic with complete recipe admission",()=>{
  var f=Frame(2,"CLEFAIRY","FURY_CUTTER");foreach(var bad in new[]{f with{Revision=1},Put(f,2,f.Slots[2].Body! with{FuryCutterCounter=6})}){var r=SourceBattleKernel.ResolveAction(catalog,bad,new(f.Slots[2].Occupant!.Value,0,0,new(3)));Check(!r.Succeeded&&ReferenceEquals(r.State,bad)&&r.Events.IsEmpty&&r.Trace.IsEmpty,"invalid source action atomic");}
- Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("PRESENT")]),"unrelated Present remains unadmitted");
+ Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id("PRESENT")]),"authenticated Present recipe admitted");
 });
 File.WriteAllText(args[1]+".turns.json",Json(turnEvidence));File.WriteAllText(args[1],Json(new{runtime=Environment.Version.ToString(),groups,checks,failures,actualTurns,baselineResults=snapshots.Count,recipeAdmission=catalog.Moves.Values.Count(SourceBattleKernel.SupportsRecipe),results}));Console.WriteLine($"RESULT groups={groups} checks={checks} failures={failures} turns={actualTurns}");return failures==0?0:1;

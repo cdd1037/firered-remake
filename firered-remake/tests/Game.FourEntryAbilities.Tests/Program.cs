@@ -319,7 +319,7 @@ if (typeChangesOnly)
             Check(Json(shared.Trace)==Json(legacy.Trace),"whole singles RNG parity "+name);
         }
     });
-    Test("malformed type overlays and unmigrated callers remain atomically closed", () => {
+    Test("malformed type overlays remain atomic while copy and caller recipes are admitted", () => {
         var f = Entry(Plain()).State;
         foreach (var overlay in new WildBattleCalledOverlay[]{new(){Type1="TYPE_FIRE"},new(){Type1="TYPE_MYSTERY",Type2="TYPE_MYSTERY"},new(){Type1="TYPE_FIRE",Type2="TYPE_WATER"},new(){Type1="TYPE_FIRE",Type2="TYPE_FIRE",Ability="ABILITY_COLOR_CHANGE"},new(){Type1="TYPE_FIRE",Type2="TYPE_FIRE",CastformForm=SourceCastformForm.Sunny}}) {
             var bad = f with {Slots=f.Slots.SetItem(0,f.Slots[0] with {Body=f.Slots[0].Body! with {CalledOverlay=overlay}})};
@@ -331,7 +331,7 @@ if (typeChangesOnly)
             var rejected=SourceBattleKernel.ResolveAction(catalog,bad,new(bad.Slots[0].Occupant!.Value,bad.Revision,0,new(1)));
             Check(rejected.Fault=="source_kernel_type_change_history" && ReferenceEquals(rejected.State,bad) && rejected.Events.IsEmpty && rejected.Trace.IsEmpty,"invalid type history atomic");
         }
-        Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("TRANSFORM")]) && !SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("METRONOME")]) && !SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("ROLE_PLAY")]), "caller and transform admission unchanged");
+        Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("TRANSFORM")]) && SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("METRONOME")]) && SourceBattleKernel.SupportsRecipe(catalog.Moves[Move("ROLE_PLAY")]), "authenticated copy and caller recipes admitted");
     });
 }
 

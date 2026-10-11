@@ -56,7 +56,7 @@ public static partial class SourceFourActionTurns
         var bound = SourceBattleIdentityRules.BindReservedEntry(next, next.Revision, reservation, SourceEntryBoundary.Action, body, registers);
         if (!bound.Succeeded) return Fail(frame, bound.Fault!);
         var switched = SourceBattleEventHooks.Publish(bound.State, (n,t) => new SourceCalledPartySwitchedEvent(n,t,slot,
-            previous.Member!.Value.Index,incoming.Index,kind));
+            previous.Member!.Value.Index,incoming.Index,kind) { Replacement = new(body, registers) });
         events.Add(switched.Event);
         var entry = SourceFourEntryAbilities.OnReplacement(catalog, switched.State, slot);
         if (!entry.Succeeded) return Fail(frame, entry.Fault!);

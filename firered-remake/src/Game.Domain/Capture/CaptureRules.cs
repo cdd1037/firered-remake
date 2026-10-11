@@ -10,10 +10,17 @@ namespace Game.Domain.Capture;
 public static class CaptureRules
 {
     public const string RulesVersion = "firered-ordinary-wild-capture-v1";
+    public const string ConditionalBallsRulesVersion = "firered-ordinary-wild-capture-balls-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const int SuccessAnimationCode = 4;
 
     public static CaptureResult Resolve(CaptureInput input, RngState rng)
+        => ResolveCore(input, rng, null, conditionalBalls: false);
+
+    public static CaptureResult Resolve(CaptureInput input, RngState rng, CaptureBallContext? context)
+        => ResolveCore(input, rng, context, conditionalBalls: true);
+
+    private static CaptureResult ResolveCore(CaptureInput input, RngState rng, CaptureBallContext? context, bool conditionalBalls)
     {
         CaptureResult Failure(CaptureOutcome outcome, string code) => new(outcome, code, null, null, 0, null, rng, []);
         // Validate the full request before drawing; unsupported contexts cannot fall through to wild rules.
@@ -25,18 +32,34 @@ public static class CaptureRules
             return Failure(CaptureOutcome.InvalidInput, "invalid-major-status");
         if (input.Ball is < CaptureBall.Master or > CaptureBall.Premier)
             return Failure(CaptureOutcome.InvalidInput, "invalid-ball");
-        if (input.Encounter is < CaptureEncounterKind.OrdinaryWild or > CaptureEncounterKind.Double)
+        if (input.Encounter is < CaptureEncounterKind.OrdinaryWild or > CaptureEncounterKind.Story)
             return Failure(CaptureOutcome.InvalidInput, "invalid-encounter-kind");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId)
             return Failure(CaptureOutcome.InvalidInput, "invalid-rng-algorithm");
         if (input.Encounter != CaptureEncounterKind.OrdinaryWild)
             return Failure(CaptureOutcome.Unsupported, "unsupported-encounter-kind");
-        if (input.Ball is >= CaptureBall.Safari)
+        if (input.Ball == CaptureBall.Safari || !conditionalBalls && input.Ball >= CaptureBall.Safari)
             return Failure(CaptureOutcome.Unsupported, "unsupported-ball");
+        if (context is not null && (context.TargetLevel is < 1 or > 100 || context.BattleTurnCounter is < 0 or > 255))
+            return Failure(CaptureOutcome.InvalidInput, "invalid-ball-context");
+        if (input.Ball is >= CaptureBall.Net and <= CaptureBall.Timer && context is null)
+            return Failure(CaptureOutcome.Unsupported, "ball-context-required");
         // Original agbcc reads terrain[9] (TYPE_NORMAL == 0) at the byte preceding the ball table
         // for Master Ball. Use the pinned original-layout behavior, not a C# out-of-range read.
         // The original __udivsi3 returns 0 on division by 0. See the source chain in docs.
-        int multiplier = input.Ball switch { CaptureBall.Master => 0, CaptureBall.Ultra => 20, CaptureBall.Great => 15, _ => 10 };
+        int multiplier = input.Ball switch
+        {
+            CaptureBall.Master => 0,
+            CaptureBall.Ultra => 20,
+            CaptureBall.Great => 15,
+            CaptureBall.Net => context!.TargetIsWaterOrBug ? 30 : 10,
+            CaptureBall.Dive => context!.IsUnderwater ? 35 : 10,
+            CaptureBall.Nest => Math.Max(10, 40 - context!.TargetLevel),
+            CaptureBall.Repeat => context!.TargetSpeciesCaught ? 30 : 10,
+            // The source assigns counter + 10 to u8 BEFORE clamping. 246..255 wrap to 0..9.
+            CaptureBall.Timer => Math.Min(40, (int)unchecked((byte)(context!.BattleTurnCounter + 10))),
+            _ => 10
+        };
         uint ballAdjusted = (uint)(input.CatchRate * multiplier / 10);
         uint hpAdjusted = ballAdjusted * (uint)(input.MaximumHp * 3 - input.CurrentHp * 2) / (uint)(3 * input.MaximumHp);
         uint catchValue = input.Status switch

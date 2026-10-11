@@ -30,6 +30,8 @@ public sealed record CeruleanTrainerAiDecision(TransitionStatus Status, int? Mov
     public bool Succeeded => Status == TransitionStatus.Accepted;
     public ImmutableArray<ForestTrainerAbilityRead> AbilityReads { get; init; } = [];
     public ImmutableArray<int> PredictedDamage { get; init; } = [];
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public MoveId? SourceCurrentMove { get; init; }
 }
 /// <summary>LastLandedMove/LastHitBy are source target-side history, not the last attempted move.
 /// Null represents MOVE_NONE/0xFFFF and 0xFF respectively in this bounded singles profile.</summary>

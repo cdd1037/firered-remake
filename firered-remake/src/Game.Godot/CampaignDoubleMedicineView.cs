@@ -14,6 +14,7 @@ public partial class CampaignView
     private int _doubleBagPocket, _doubleBagCursor, _doublePouchCursor;
     private bool _doubleBerries;
     private ItemId? _doubleMedicineItem;
+    private int _doubleMedicinePartyIndex;
     private ImmutableArray<InventoryStack> DoubleBagStacks => _session.State.Inventory is not {} inventory?[]:
         _doubleBerries?inventory.Berries??[]:_doubleBagPocket switch
         {0=>inventory.BagItems,1=>inventory.KeyItems??[],_=>inventory.Balls??[]};
@@ -23,14 +24,29 @@ public partial class CampaignView
         _doubleMenu="bag";_doubleCursor=0;_doubleBagPocket=0;_doubleBagCursor=0;
         _doubleBerries=false;_doubleMedicineItem=null;
     }
-    private bool DoubleMedicineAvailable(ItemId item) => EarlyItem(item) is {} definition&&
-        (definition.UseSupport is EarlyShopUseSupport.Potion or EarlyShopUseSupport.StatusCure||
-         definition.UseSupport==EarlyShopUseSupport.DeferredSleep&&_catalog.PokemonContent!.AllowSleepStatus);
+    private bool DoubleMedicineAvailable(ItemId item) => _catalog.PresetDoubleItems?.Find(item) is {} definition&&
+        (definition.IsFixedEffect||definition.IsPokeFlute);
+    private void SubmitDoubleMedicine(int actor,int partyIndex,int moveSlot=-1)
+    {
+        var target=_session.State.Party[partyIndex];long revision=_session.Revision;
+        Apply(new("double_medicine",PartyIndex:actor,Choice:partyIndex,Text:_doubleMedicineItem!.Value.Value,MoveSlot:moveSlot){TargetInstanceId=target.InstanceId});
+        if(_session.Revision==revision)_doubleNotice=DoubleMedicineNotice(_status);
+    }
     private bool DoubleMedicineInput(InputEventKey key,int actor)
     {
-        if(_doubleMenu is not ("bag" or "medicine-target"))return false;
+        if(_doubleMenu is not ("bag" or "medicine-target" or "medicine-move"))return false;
         bool back=key.Keycode is Key.Backspace or Key.B;
         bool confirm=key.Keycode is Key.Enter or Key.Space;
+        if(_doubleMenu=="medicine-move")
+        {
+            int count=_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves.Length;
+            if(key.Keycode is Key.Up or Key.Left)_doubleCursor=Math.Max(0,_doubleCursor-1);
+            if(key.Keycode is Key.Down or Key.Right)_doubleCursor=Math.Min(count,_doubleCursor+1);
+            if(back||confirm&&_doubleCursor==count)
+            {_doubleMenu="medicine-target";_doubleCursor=_doubleMedicinePartyIndex;return true;}
+            if(confirm)SubmitDoubleMedicine(actor,_doubleMedicinePartyIndex,_doubleCursor);
+            return true;
+        }
         if(_doubleMenu=="medicine-target")
         {
             int count=_session.State.Party.Length;
@@ -40,9 +56,10 @@ public partial class CampaignView
             {_doubleMenu="bag";_doubleCursor=Math.Min(_doubleBagCursor,DoubleBagStacks.Length);_doubleMedicineItem=null;return true;}
             if(confirm&&_doubleMedicineItem is {} item)
             {
-                var target=_session.State.Party[_doubleCursor];long revision=_session.Revision;
-                Apply(new("double_medicine",PartyIndex:actor,Choice:_doubleCursor,Text:item.Value){TargetInstanceId=target.InstanceId});
-                if(_session.Revision==revision)_doubleNotice=DoubleMedicineNotice(_status);
+                var definition=_catalog.PresetDoubleItems!.Find(item)!;
+                if(definition.EffectBytes.Length>4&&(definition.EffectBytes[4]&0x10)!=0)
+                {_doubleMedicinePartyIndex=_doubleCursor;_doubleMenu="medicine-move";_doubleCursor=0;}
+                else SubmitDoubleMedicine(actor,_doubleCursor);
             }
             return true;
         }
@@ -64,15 +81,17 @@ public partial class CampaignView
             {_doublePouchCursor=_doubleCursor;_doubleBerries=true;_doubleCursor=0;return true;}
             if(!DoubleMedicineAvailable(item))
             {_doubleNotice="This item's double-battle\nuse is not available yet.";return true;}
-            _doubleMedicineItem=item;_doubleBagCursor=_doubleCursor;_doubleMenu="medicine-target";
-            _doubleCursor=_session.State.DoubleBattle!.Frame.Get(new(actor)).Member!.Value.Index;
+            _doubleMedicineItem=item;_doubleBagCursor=_doubleCursor;
+            int member=_session.State.DoubleBattle!.Frame.Get(new(actor)).Member!.Value.Index;
+            if(_catalog.PresetDoubleItems!.Find(item)!.BattleUsage==2)SubmitDoubleMedicine(actor,member);
+            else {_doubleMenu="medicine-target";_doubleCursor=member;}
         }
         return true;
     }
     private string DoubleMedicineNotice(string error) => error switch
     {
-        "medicine_no_effect" or "potion_no_effect"=>ItemText("gText_WontHaveEffect"),
-        "medicine_not_in_bag" or "potion_not_in_bag"=>"There are none left\nin the BAG.",
+        "source_item_no_effect" or "medicine_no_effect" or "potion_no_effect"=>ItemText("gText_WontHaveEffect"),
+        "source_item_not_in_bag" or "medicine_not_in_bag" or "potion_not_in_bag"=>"There are none left\nin the BAG.",
         _ when error.Contains("target",StringComparison.Ordinal)=>"Choose the target again.",
         _ when error.Contains("unsupported",StringComparison.Ordinal)=>"This item's double-battle\nuse is not available yet.",
         _=>"That item can't be used\nright now."
@@ -93,8 +112,20 @@ public partial class CampaignView
     private bool DrawDoubleMedicineOverlay(CampaignDoubleBattle battle)
     {
         if(_doubleMenu=="bag"){DrawDoubleBag();return true;}
+        if(_doubleMenu=="medicine-move")
+        {
+            _battleSkin.DrawBackground(this);_battleSkin.DrawBattleMessage(this);
+            _battleSkin.DrawStandardFrame(this,new(0,0,240,112));
+            var moves=_session.State.Party[_doubleMedicinePartyIndex].Pokemon.Moves;
+            for(int i=0;i<moves.Length;i++)
+            {SourceText(_battleMoveFont,new(24,10+16*i),MoveName(moves[i].Move));SourceText(_sourceSmall,new(167,11+16*i),$"{moves[i].CurrentPp}/{moves[i].MaximumPp}");}
+            SourceText(_battleMoveFont,new(24,10+16*moves.Length),"CANCEL");SourceText(_battleMenuFont,new(10,10+16*_doubleCursor),">");
+            DoubleLines(_doubleNotice??"Restore which move's PP?");return true;
+        }
         var medicine=battle.CurrentEvent as SourceMedicineAppliedEvent;
-        if(_doubleMenu!="medicine-target"&&medicine is null)return false;
+        bool playerTarget=medicine is not null&&(medicine.TargetSide??BattleSide.Player)==BattleSide.Player;
+        bool partyMedicine=playerTarget&&_catalog.PresetDoubleItems?.Find(medicine!.Item)?.BattleUsage!=2;
+        if(_doubleMenu!="medicine-target"&&!partyMedicine)return false;
         _battleSkin.DrawBackground(this);_battleSkin.DrawBattleMessage(this);
         _battleSkin.DrawStandardFrame(this,new(0,0,240,112));
         for(int i=0;i<_session.State.Party.Length;i++)

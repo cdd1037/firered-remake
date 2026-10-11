@@ -54,7 +54,7 @@ Test("42 frozen singles fingerprints, 36 exact adapter actions and bounded gates
  Check(Environment.Version.Major==10,"runtime10");
  Check(LegacyParity.Run(args[0],true)==File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"../../..","legacy-baseline.json")).Trim(),"frozen singles result/event/RNG hashes");
  foreach(var m in new[]{"NIGHTMARE","CURSE","YAWN"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" admitted");
- foreach(var m in new[]{"UPROAR","METRONOME","TRANSFORM"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" gated");
+ foreach(var m in new[]{"UPROAR","METRONOME","TRANSFORM"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" authenticated recipe admitted");
 });
 Test("Nightmare and Yawn blocking script order, zero draws and ally Pressure",()=>{
  var f=Frame([Mon("GASTLY","NIGHTMARE,YAWN,CURSE"),Mon("SNORLAX"),Mon("DUSCLOPS")with{Status=3},Mon("SNORLAX")]);
@@ -188,8 +188,9 @@ Test("Curse self KO and residual KO bypass Focus Band; actual reward and deferre
  while(r.State.FourTurn!.Phase==SourceFourActionPhase.Actions)r=Next(r);r=Next(r);Check(r.State.FourTurn!.Phase==SourceFourActionPhase.RewardsPending&&r.State.DeferredKoVacancyMask==9,"residual KO reaches real EXP boundary before replacements");
  var done=Finish(r);Check(done.State.Slots[0].EntrySerial==2&&done.State.Slots[3].EntrySerial==2&&done.State.Turn==1,"both reserve occupants, single Ready");Check(done.Events.OfType<SourceOpponentRewardCompletedEvent>().Count()==1&&done.Events.OfType<SourceTowerHpEvent>().Count(e=>e.Effect=="curse")==1,"one reward and no residual replay");Check(done.Events.OfType<SourceRewardAppliedEvent>().Any(),"actual EXP recipient");
 });
-Test("malformed status and retained Uproar/caller/Transform state reject atomically",()=>{
- var f=Frame();foreach(var name in new[]{"UPROAR","METRONOME","TRANSFORM"}){var unsupported=Put(f,0,Mon("PIDGEY",name));Atomic(unsupported,SourceFourActionTurns.BeginActions(catalog,unsupported,unsupported.Revision,Choices(unsupported)),name+" explicit gate");}
- foreach(var bad in new[]{Put(f,0,f.Slots[0].Body!with{Nightmare=true}),Put(f,0,f.Slots[0].Body!with{YawnTurnsRemaining=3}),Put(f,0,f.Slots[0].Body!with{CalledVolatile=new(){PerishSongTimer=2}}),Put(f,0,f.Slots[0].Body!with{RampageTurnsRemaining=2})})Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"invalid or deferred state");
+Test("current recipes and valid Perish Song are admitted while malformed state rejects atomically",()=>{
+ var f=Frame();foreach(var name in new[]{"UPROAR","METRONOME","TRANSFORM"}){var current=Put(f,0,Mon("PIDGEY",name));var admitted=Begin(current);Check(admitted.State.Queue.Single(a=>a.Slot.Value==0).OriginalChosenMove==Id(name)&&admitted.State.Slots[0].Body!.Pokemon.Moves[0].CurrentPp==current.Slots[0].Body!.Pokemon.Moves[0].CurrentPp,name+" admission retains chosen move and unspent PP");}
+ var perish=Put(f,0,f.Slots[0].Body!with{CalledVolatile=new(){PerishSongTimer=2}});var accepted=Begin(perish);Check(accepted.State.Slots[0].Body!.CalledVolatile?.PerishSongTimer==2,"valid Perish Song retained through admission");
+ foreach(var bad in new[]{Put(f,0,f.Slots[0].Body!with{Nightmare=true}),Put(f,0,f.Slots[0].Body!with{YawnTurnsRemaining=3}),Put(f,0,f.Slots[0].Body!with{CalledVolatile=new(){PerishSongTimer=4}}),Put(f,0,f.Slots[0].Body!with{RampageTurnsRemaining=2})})Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"invalid or deferred state");
 });
 Check(groups>0&&checks>0&&oracleCases>0,"nonempty suite");var result=new{groups,checks,failures,completedTurns=turns,oracleCases,substituteIntegration,runtime=Environment.Version.ToString(),results};File.WriteAllText(args[2],JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true})+"\n");using var parsed=JsonDocument.Parse(File.ReadAllText(args[2]));Console.WriteLine(Json(result));return failures==0?0:1;

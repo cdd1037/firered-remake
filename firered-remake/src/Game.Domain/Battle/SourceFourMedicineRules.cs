@@ -14,7 +14,7 @@ public sealed record SourceFourMedicineResult(SourceFourActionResult Battle, Inv
 
 /// <summary>FR party-menu medicine timing: apply and pay during selection, then execute a
 /// no-effect item marker ahead of moves. No battle-only duplicate healing/inventory engine.</summary>
-public static class SourceFourMedicineRules
+public static partial class SourceFourMedicineRules
 {
     public static SourceFourMedicineResult Select(EarlyShopCatalog shop, OpeningItemsCatalog opening,
         CampaignPokemonContent content, PokemonCatalog battleCatalog, SourceBattleFrame frame,
@@ -27,7 +27,7 @@ public static class SourceFourMedicineRules
         if (frame.FourTurn is not null || !frame.Queue.IsEmpty || !frame.PendingSwitches.IsEmpty ||
             frame.Outcome != WildBattleOutcome.Ongoing || frame.DeferredKoVacancyMask != 0)
             return Fail("source_medicine_selection_phase");
-        if (!frame.IsCurrent(actor) || actor.Slot.Side != BattleSide.Player || !frame.CanAct(actor.Slot) ||
+        if (!frame.IsCurrent(actor) || actor.Slot.Side != BattleSide.Player || !CanSelect(frame,actor.Slot) ||
             frame.Get(actor.Slot).Registers.Turn?.Lock is not null) return Fail("source_medicine_actor");
         if ((frame.PreparedMedicines ?? []).Any(p => p.Actor.Slot == actor.Slot)) return Fail("source_medicine_already_selected");
         if (selection is null) return Fail("battle_medicine_cancelled");
@@ -82,14 +82,19 @@ public static class SourceFourMedicineRules
     internal static string? Validate(SourceBattleFrame frame)
     {
         if (frame.PreparedMedicines is not { } prepared) return null;
-        if (frame.Layout != SourceBattleLayout.PresetDoubles || prepared.IsDefaultOrEmpty || prepared.Length > 2 ||
+        if (frame.Layout != SourceBattleLayout.PresetDoubles || prepared.IsDefaultOrEmpty || prepared.Length > 4 ||
             prepared.Any(p => p is null) ||
             prepared.Select(p => p.Actor.Slot).Distinct().Count() != prepared.Length) return "source_medicine_receipt_shape";
         foreach (var p in prepared)
         {
-            if (p is null || p.Actor.Slot.Side != BattleSide.Player || !frame.IsCurrent(p.Actor) ||
-                p.Target.Side != BattleSide.Player || p.Target.Index >= frame.Party(BattleSide.Player).Members.Length ||
+            if (p is null || !frame.IsCurrent(p.Actor) ||
+                p.Target.Side != p.Actor.Slot.Side || p.Target.Index >= frame.Party(p.Target.Side).Members.Length ||
                 string.IsNullOrWhiteSpace(p.Item.Value)) return "source_medicine_receipt_identity";
+            if ((p.SourceAbsentMaskBeforeSelection & ~15) != 0 || (p.SourceAbsentMaskBeforeSelection & p.Actor.Slot.Mask) != 0)
+                return "source_medicine_selection_absent_mask";
+            if (p.DeferredEffect is { } deferred && (p.Actor.Slot.Side != BattleSide.Opponent || p.Target != p.Actor.Member ||
+                p.Item != deferred.Id || !SourceBattleItemDefinitionProof.IsAuthentic(deferred))) return "source_medicine_deferred_definition";
+            if (p.Actor.Slot.Side == BattleSide.Opponent && p.DeferredEffect is null) return "source_medicine_deferred_required";
             if (!frame.Queue.IsEmpty && !frame.Queue.Skip(frame.NextAction).Any(a =>
                 a.Kind == SourceActionKind.Item && a.Token?.Owner == p.Actor && a.Item == p.Item))
                 return "source_medicine_receipt_queue";
@@ -100,9 +105,26 @@ public static class SourceFourMedicineRules
     internal static bool IsPrepared(SourceBattleFrame frame, SourceQueuedAction action) =>
         action.Token is { } token && (frame.PreparedMedicines ?? []).Any(p => p.Actor == token.Owner && p.Item == action.Item);
 
-    internal static SourceBattleFrame Execute(SourceBattleFrame frame, SourceQueuedAction action)
+    internal static SourceFourActionResult Execute(SourceBattleFrame frame, SourceQueuedAction action)
     {
         if (!IsPrepared(frame, action)) throw new ArgumentException("source_medicine_not_prepared");
+        var receipt = frame.PreparedMedicines!.Value.Single(p => p.Actor == action.Token!.Value.Owner && p.Item == action.Item);
+        var original = frame;
+        var appliedEvents = ImmutableArray<SourceBattleEvent>.Empty;
+        if (receipt.DeferredEffect is { } deferred)
+        {
+            var applied = SourceBattleItemEffects.ApplyDefinition(frame, receipt.Actor, receipt.Target, deferred);
+            if (!applied.Succeeded && applied.Fault != "source_item_no_effect") return new(frame, [], [], applied.Fault);
+            if (applied.Succeeded)
+            {
+                var published = SourceBattleItemEffects.PublishChanges(frame, applied.State, receipt.Actor, receipt.Target, receipt.Item, 0);
+                frame = published.State; appliedEvents = published.Events;
+            }
+        }
+        else if (receipt.Item.Value == "pret:ITEM_POKE_FLUTE")
+        {
+            var flute = SourceBattleItemEffects.ApplyPokeFlute(frame); frame = flute.State; appliedEvents = flute.Events;
+        }
         var cell = frame.Get(action.Slot);
         var body = cell.Body!;
         var volatileState = body.CalledVolatile is { } old ? old with { Grudge = false } : null;
@@ -111,8 +133,8 @@ public static class SourceFourMedicineRules
         var remaining = frame.PreparedMedicines!.Value.Where(p => p.Actor != action.Token!.Value.Owner).ToImmutableArray();
         // BattleScript_PlayerUseItem only runs moveendcase 15 (Mirror Move) and end;
         // no new attack string/PP/history/RNG and no second healing or inventory mutation.
-        return frame with { Revision = checked(frame.Revision + 1),
+        return new(frame with { Revision = checked(original.Revision + 1),
             Slots = frame.Slots.SetItem(action.Slot.Value, cell with { Body = body }),
-            PreparedMedicines = remaining.IsEmpty ? null : remaining };
+            PreparedMedicines = remaining.IsEmpty ? null : remaining }, appliedEvents, [], null);
     }
 }

@@ -225,8 +225,8 @@ Test("real simultaneous actor/target KO settles rewards then deferred replacemen
  f=f with{Rewards=new(){Context=new(SourceRewardBattleKind.OrdinaryTrainer,42,"RED","MAPSEC_ROUTE_8"),Metadata=Enumerable.Range(0,3).Select(i=>new SourceRewardMetadata(new(BattleSide.Player,i),"RED","MAPSEC_PALLET_TOWN","ITEM_POKE_BALL",SourceRewardPokerusHistory.NeverInfected)).ToImmutableArray()},Parties=f.Parties.Select(p=>p with{Members=p.Members.Add(Member(Mon("SNORLAX",100,"DEFENSE_CURL")))}).ToImmutableArray()};
  var first=First(f,2);Check(first.Events.OfType<SourceFaintedEvent>().Select(e=>e.Side.Value).SequenceEqual(new[]{2,3}),"attacker recoil faint precedes target faint");Check(first.State.FourTurn?.Phase==SourceFourActionPhase.RewardsPending,"source rewards pause after real KO");var completed=Finish(first);Check(completed.State.Slots[2].Member?.Index==2&&completed.State.Slots[3].Member?.Index==2,"both real reserves enter only at end of turn");Check(completed.State.Rewards!.CompletedOpponentMask==2,"one opponent pays once");
 });
-Test("unsupported neighbors and stale requests stay atomically gated",()=>{
- foreach(string name in new[]{"PRESENT","TRIPLE_KICK","METRONOME","UPROAR"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(name)]),"neighbor stays gated "+name);
+Test("authenticated neighbors are admitted and stale requests stay atomic",()=>{
+ foreach(string name in new[]{"PRESENT","TRIPLE_KICK","METRONOME","UPROAR"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(name)]),"authenticated recipe admitted "+name);
  var f=Frame(2,"SNORLAX","DOUBLE_EDGE");var bad=SourceBattleKernel.ResolveAction(catalog,f,new(f.Slots[2].Occupant!.Value,f.Revision+1,0,new(3)));Check(!bad.Succeeded&&ReferenceEquals(f,bad.State)&&bad.Events.IsEmpty&&bad.Trace.IsEmpty,"stale request atomic");
 });
 File.WriteAllText(args[1]+".turns.json",Json(turnEvidence));
