@@ -81,7 +81,7 @@ public static class SourceTwinsTrainerEncounter
         foreach (var member in playerParty)
             if (member is null || SourcePokemonValidator.ValidatePermanent(proof, member.Pokemon) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
-                !SourceFourRewards.SupportsRewardHeldItem(member.HeldItem) ||
+                !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
                 !WildBattleStatus.IsSleeping(member.Status) && !WildBattleSourceFieldEffects.IsValidToxic(member.Status))
                 return Fail("source_twins_player_member");
@@ -153,6 +153,17 @@ public static class SourceTwinsTrainerEncounter
                 // Rollout is represented by its actual four-position lock once its recipe is admitted.
                 if (user.RolloutTurnsRemaining > 0 || user.EncoreMoveSlot is not null)
                     return Fail("source_twins_ai_forced_move_owner_required");
+                if (SourceFourActionTurns.RequiresStruggle(catalog, frame, actor))
+                {
+                    // AreAllMovesUnusable runs before CHOOSEMOVE, so it skips AI setup/scoring.
+                    // HandleAction_UseMove later discards this target and calls GetMoveTarget.
+                    var draw = Gen3Rng.Next(rng, $"source-battle.slot-{actor.Value}.struggle-selection-target");
+                    rng = draw.State; trace.Add(draw.Trace);
+                    var initialTarget = new BattlerSlot((actor.Value ^ 1) | (draw.Value & 2));
+                    choices.Add(new(actor, initialTarget, SourceActionSelection.Struggle(cell.Occupant!.Value, initialTarget) with {
+                        StruggleSelectionPrepared = true }, [], [], []));
+                    continue;
+                }
                 var simulated = ImmutableArray.CreateBuilder<int>(4);
                 for (int i = 0; i < 4; i++) {
                     var draw = Gen3Rng.Next(rng, $"twins.ai.battler.{actor.Value}.setup.slot.{i}.damage-percent", 16);

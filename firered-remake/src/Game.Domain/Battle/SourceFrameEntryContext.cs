@@ -39,7 +39,7 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame) : SourceEntryAb
         var entry = Frame.EntryAbilities ?? throw new SourceRecipeUnsupported("source_entry_lifecycle_required");
         Frame = Frame with { EntryAbilities = entry with { PendingIntimidateMask = (byte)(entry.PendingIntimidateMask | slot.Mask) } };
     }
-    internal void Settle(bool forecast = true)
+    internal void Settle(bool forecast = true, bool items = true)
     {
         // Original ABILITYEFFECT_INTIMIDATE1 precedes TRACE, each scans numeric battler IDs.
         for (int i = 0; i < BattlerCount; i++)
@@ -50,6 +50,12 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame) : SourceEntryAb
             Intimidate(slot);
         }
         ResolveTrace();
+        // HandleFaintedMonActions case 6 runs normal(moveTurn=TRUE) for battler 0 only.
+        if (items)
+        {
+            var berries = SourceFrameBerryItems.Apply(Frame, SourceBerryPhase.NormalMoveTurn, new(0));
+            Frame = berries.State; Events.AddRange(berries.Events);
+        }
         if (forecast) ForecastAll();
     }
 }

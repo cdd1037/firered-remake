@@ -49,15 +49,11 @@ public static partial class WildBattleRules
         }
         private void VermilionHeldBerry(WildBattleSide side)
         {
-            var mon=Get(side);if(mon.Pokemon.CurrentHp==0)return;
-            bool confusion=mon.HeldItem=="ITEM_PERSIM_BERRY" && mon.ConfusionTurnsRemaining>0;
-            bool status=mon.HeldItem switch {
-                "ITEM_CHERI_BERRY"=>mon.Status==WildBattleStatus.Paralysis,
-                "ITEM_CHESTO_BERRY"=>WildBattleStatus.IsSleeping(mon.Status),
-                "ITEM_PECHA_BERRY"=>mon.Status==WildBattleStatus.Poison || SourceCalledFieldActive && WildBattleSourceFieldEffects.IsToxic(mon.Status),
-                "ITEM_RAWST_BERRY"=>mon.Status==WildBattleStatus.Burn,
-                "ITEM_ASPEAR_BERRY"=>Route11 && mon.Status==WildBattleStatus.Freeze,
-                _=>false};
+            var mon=Get(side);
+            // Preserve historical profile boundaries while sharing the actual berry recipe.
+            var effect=SourceHeldBerryRules.Resolve(mon,SourceBerryPhase.NormalMoveTurn,
+                freeze:Route11,toxic:SourceCalledFieldActive);
+            bool confusion=effect.CureConfusion,status=effect.CureStatus;
             if(!confusion&&!status)return;
             if(confusion)ChangeConfusion(side,0,"persim-berry");
             if(status)ChangeStatus(side,WildBattleStatus.None,"held-berry");

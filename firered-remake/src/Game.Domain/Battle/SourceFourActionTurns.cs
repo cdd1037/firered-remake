@@ -33,7 +33,7 @@ public sealed record SourceFourActionResult(SourceBattleFrame State, ImmutableAr
 /// This capability is not encounter, AI, all residual effects or campaign admission.</summary>
 public static partial class SourceFourActionTurns
 {
-    public const string Version = "firered-four-action-switch-continuation-v5";
+    public const string Version = "firered-four-action-struggle-v6";
 
     public static string? ValidateCapability(PokemonCatalog catalog, SourceBattleFrame frame)
     {
@@ -64,7 +64,7 @@ public static partial class SourceFourActionTurns
                 return "source_four_action_initial_entry_required";
             if (SourcePokemonValidator.ValidateForBattle(catalog, body.Pokemon) is not null) return "source_four_action_pokemon";
             if (body.FirstTurnCounter is < 0 or > 2 || body.ProtectConsecutiveUses != 0 || body.FuryCutterCounter != 0 ||
-                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFourRewards.SupportsRewardHeldItem(body.HeldItem) || body.CalledVolatile is not null ||
+                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || body.CalledVolatile is not null ||
                 body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null || body.Cursed || body.Rooted ||
                 body.Nightmare || body.DestinyBond || body.Imprison || body.YawnTurnsRemaining != 0 ||
                 body.ChargeTurnsRemaining != 0 || body.BindTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
@@ -82,6 +82,12 @@ public static partial class SourceFourActionTurns
         return null;
     }
 
+    /// <summary>For an admitted frame: recipe support is deliberately not a move limitation.
+    /// Unsupported positive-PP moves must never earn a fallback Struggle.</summary>
+    public static bool RequiresStruggle(PokemonCatalog catalog, SourceBattleFrame frame, BattlerSlot actor) =>
+        actor.Value < frame.BattlerCount && frame.CanAct(actor) && frame.Get(actor).Registers.Turn?.Lock is null &&
+        WildBattleRules.IsCalledMoveSelectable(catalog, frame.Get(actor).Body!, WildBattleRules.StruggleSlot);
+
     private static bool CleanRecipe(PokemonMoveDefinition move) => SourceBattleKernel.SupportsRecipe(move);
 
     public static SourceFourActionResult BeginActions(PokemonCatalog catalog, SourceBattleFrame frame,
@@ -93,8 +99,9 @@ public static partial class SourceFourActionTurns
         var committed = SourceBattleIdentityRules.CommitSelections(frame, expectedRevision, selections);
         if (!committed.Succeeded) return Fail(frame, committed.Fault!);
         var next = SourceFourRewards.ObserveParticipation(committed.State with { Rewards = committed.State.Rewards ?? new() });
-        next = next with { Queue = next.Queue.Select(a => a with { OriginalChosenMove = a.Kind == SourceActionKind.Move && a.MoveSlot is >= 0
-            ? next.Get(a.Slot).Body!.Pokemon.Moves[a.MoveSlot.Value].Move : null }).ToImmutableArray() };
+        next = next with { Queue = next.Queue.Select(a => a with { OriginalChosenMove = a.Kind != SourceActionKind.Move ? null
+            : a.MoveSlot == WildBattleRules.StruggleSlot ? WildBattleRules.StruggleMove
+            : next.Get(a.Slot).Body!.Pokemon.Moves[a.MoveSlot!.Value].Move }).ToImmutableArray() };
         foreach (var action in next.Queue)
         {
             if (action.Kind == SourceActionKind.Cancelled) continue;
@@ -103,18 +110,29 @@ public static partial class SourceFourActionTurns
                 if (ValidateVoluntarySwitch(catalog, next, action.Slot) is { } switchError) return Fail(frame, switchError);
                 continue;
             }
-            if (action.Kind != SourceActionKind.Move || action.MoveSlot is null or < 0 || action.Target is null)
+            if (action.Kind != SourceActionKind.Move || action.MoveSlot is null or < -1 || action.Target is null)
                 return Fail(frame, "source_four_action_selection_not_migrated");
-            var learned = next.Get(action.Slot).Body!.Pokemon.Moves[action.MoveSlot.Value];
+            bool struggle = action.MoveSlot == WildBattleRules.StruggleSlot;
+            var body = next.Get(action.Slot).Body!;
             var recharge = next.Get(action.Slot).Registers.Turn?.Lock;
-            if (recharge is null && learned.Move == next.Get(action.Slot).Body!.DisabledMove) return Fail(frame, "source_four_action_selection_disabled");
-            if (recharge is null && learned.CurrentPp == 0) return Fail(frame, "source_four_action_selection_no_pp");
+            if (struggle)
+            {
+                if (!RequiresStruggle(catalog, next, action.Slot)) return Fail(frame, "source_four_action_struggle_not_required");
+                if (action.Target.Value.Side == action.Slot.Side) return Fail(frame, "source_four_action_struggle_target");
+            }
+            else if (recharge is null)
+            {
+                var learned = body.Pokemon.Moves[action.MoveSlot.Value];
+                if (body.DisableTurnsRemaining > 0 && learned.Move == body.DisabledMove) return Fail(frame, "source_four_action_selection_disabled");
+                if (learned.CurrentPp == 0) return Fail(frame, "source_four_action_selection_no_pp");
+            }
             if (recharge is not null && (action.MoveSlot != recharge.PpSlot || action.Target != recharge.Target))
                 return Fail(frame, "source_four_action_recharge_selection");
             var move = SourceBattleKernel.ActionMove(catalog, next.Get(action.Slot), action.MoveSlot.Value);
             if (recharge is null && !CleanRecipe(move)) return Fail(frame, "source_four_action_effect_phase_not_migrated");
             // Preflight never publishes target-selection RNG; execution resolves against retained order.
-            var selection = SourceMoveTargeting.ResolveLearned(next, action.Slot, action.Target.Value, move);
+            var selection = struggle ? SourceMoveTargeting.ResolveCalled(next, action.Slot, move)
+                : SourceMoveTargeting.ResolveLearned(next, action.Slot, action.Target.Value, move);
             if (selection.Fault is { } targetError) return Fail(frame, targetError);
             var target = selection.Target;
             if (target is null) return Fail(frame, "source_four_action_selection_no_target");
@@ -122,6 +140,19 @@ public static partial class SourceFourActionTurns
                 new(action.Token!.Value.Owner, next.Revision, action.MoveSlot.Value, target.Value)) is { } error)
                 return Fail(frame, error);
         }
+        var selectionTrace = ImmutableArray.CreateBuilder<RandomTrace>();
+        try
+        {
+            foreach (var chosen in selections.OrderBy(s => s.Actor.Slot.Value))
+                if (chosen.IsStruggle && !chosen.StruggleSelectionPrepared)
+                {
+                    var draw = Gen3Rng.Next(next.Rng, $"source-battle.slot-{chosen.Actor.Slot.Value}.struggle-selection-target");
+                    selectionTrace.Add(draw.Trace); next = next with { Rng = draw.State };
+                    var target = new BattlerSlot((chosen.Actor.Slot.Value ^ 1) | (draw.Value & 2));
+                    next = next with { Queue = next.Queue.Select(a => a.Slot == chosen.Actor.Slot ? a with { Target = target } : a).ToImmutableArray() };
+                }
+        }
+        catch (OverflowException) { return Fail(frame, "source_four_action_counter_exhausted"); }
         next = next with { Slots = next.Slots.Select(c => {
             var choice = next.Queue.Single(a => a.Slot == c.Slot);
             return c with { Registers = c.Registers with { ChosenMoveSlot = choice.MoveSlot,
@@ -133,7 +164,7 @@ public static partial class SourceFourActionTurns
             Rng = sorted.Rng, NextAction = 0, TurnStartAbsentMask = next.SourceAbsentMask,
             FourTurn = new(next.Turn, SourceFourActionPhase.Actions, []) };
         var published = SourceBattleEventHooks.Publish(next, (n, t) => new SourceOrderEvent(n, t, WildBattleOrderPhase.Actions, sorted.Order));
-        return new(published.State, [published.Event], sorted.Trace, null);
+        return new(published.State, [published.Event], selectionTrace.ToImmutable().AddRange(sorted.Trace), null);
     }
 
     /// <summary>Source absent-position fallback, with deferred KO vacancies applied only at this
@@ -176,8 +207,10 @@ public static partial class SourceFourActionTurns
             {
                 var move = SourceBattleKernel.ActionMove(catalog, frame.Get(action.Slot), action.MoveSlot!.Value);
                 // Source forced/recharge selection precedes the overwritten-selected-move branch.
-                var replaced = frame.Get(action.Slot).Registers.Turn?.Lock is null && action.OriginalChosenMove != move.Id;
-                var selection = replaced ? SourceMoveTargeting.ResolveReplaced(frame, action.Slot, move)
+                bool struggle = action.MoveSlot == WildBattleRules.StruggleSlot;
+                var replaced = !struggle && frame.Get(action.Slot).Registers.Turn?.Lock is null && action.OriginalChosenMove != move.Id;
+                var selection = struggle ? SourceMoveTargeting.ResolveCalled(frame, action.Slot, move)
+                    : replaced ? SourceMoveTargeting.ResolveReplaced(frame, action.Slot, move)
                     : SourceMoveTargeting.ResolveLearned(frame, action.Slot, action.Target!.Value, move);
                 if (selection.Fault is { } targetError) return Fail(frame, targetError);
                 var target = selection.Target;
@@ -195,13 +228,19 @@ public static partial class SourceFourActionTurns
                         LightningRodRedirected = selection.LightningRodRedirected });
                 if (!result.Succeeded) return Fail(frame, result.Fault!);
                 next = result.State; trace = selection.Trace.AddRange(result.Trace); events.AddRange(result.Events);
+                // noValidMoves is cleared before cancellation. End-turn sorting returns to the
+                // retained real chosen position, including when sleep prevents Struggle.
+                if (struggle) next = next with { Queue = next.Queue.SetItem(frame.NextAction,
+                    next.Queue[frame.NextAction] with { MoveSlot = frame.Get(action.Slot).Registers.LastMoveSlot }) };
                 foreach (var faint in result.Events.OfType<SourceFaintedEvent>())
                 {
                     var defeated = frame.Get(faint.Side).Occupant!.Value;
                     if (next.Get(faint.Side).Body!.Pokemon.CurrentHp != 0) return Fail(frame, "source_four_action_faint_contract");
                     next = next with { DeferredKoVacancyMask = (byte)(next.DeferredKoVacancyMask | faint.Side.Mask),
                         Queue = next.Queue.Select(a => a.Token?.Owner == defeated ? a with {
-                            Kind = SourceActionKind.Cancelled, CancellationReason = "original-occupant-fainted" } : a).ToImmutableArray(),
+                            Kind = SourceActionKind.Cancelled, MoveSlot = a.MoveSlot == WildBattleRules.StruggleSlot
+                                ? frame.Get(faint.Side).Registers.LastMoveSlot : a.MoveSlot,
+                            CancellationReason = "original-occupant-fainted" } : a).ToImmutableArray(),
                         FourTurn = next.FourTurn! with { Defeats = next.FourTurn.Defeats.Add(new(defeated, faint.Sequence, faint.Side.Side == BattleSide.Opponent)) } };
                 }
             }

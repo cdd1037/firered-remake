@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": {
+    "src/battle_interface.c": "8d614d35cfd8b040f78d1c3fec69b38fc88c4efe24222a5ead2647cf4e5c8496",
+    "src/battle_anim.c": "5883d9ee0483120ef67461952f5880499f322fb1c706cc213ca13c0c2b0e88c5",
+    "src/battle_message.c": "257be289b56dbfe63da9cf956a87d91219d45eb72a47d2dff681caa684f2b6de",
+    "graphics/battle_interface/healthbox.pal": "52c65093ad94dbc82a6a12b275d0971a1cde43bb544bea856bd5c3e92636bae5",
+    "graphics/battle_interface/healthbox_doubles_player.png": "a849f1f25df3b82e756dd3e69d14284cd8e33e46a6f9e85aaf5628bf3668f17f",
+    "graphics/battle_interface/healthbox_doubles_opponent.png": "326ddfaccf4b6007f0a236c1daa516fec2f27777da30f738eb7227b7616215bf",
+    "graphics/trainers/front_pics/twins_front_pic.png": "cd9912d68ab432430e1a11db56c1a059ce9bd329faeb122205c723fa3c8a5a84",
+    "graphics/trainers/palettes/twins.pal": "c09849be666575639971da1183486b0b0cb6c1188206f503908b3b5910f25478",
+    "graphics/battle_interface/healthbox_elements.png": "e241f49b8a8f89f68a49f7d2dd73845693f981fee798117e67d93aa6d19bbfff",
+    "graphics/battle_interface/healthbar.pal": "a69eec074d8d0e96953c5f776acf01b6f640645503db223a0755cbbc72c78689"
+  }
+}

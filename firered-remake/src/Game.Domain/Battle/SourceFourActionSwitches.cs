@@ -81,8 +81,9 @@ public static partial class SourceFourActionTurns
             var switched = BindActionSwitch(catalog, frame, slot, incoming, pending.Kind);
             if (!switched.Succeeded) return Fail(frame, switched.Fault!);
             var immunity = SourceFrameImmunityRules.Apply(switched.State);
-            var actionEvents = switched.Events.AddRange(immunity.Events);
-            var next = SourceMoveHistoryReducer.Apply(catalog, immunity.State,
+            var berries = SourceFrameBerryItems.Apply(immunity.State, SourceBerryPhase.MoveEnd);
+            var actionEvents = switched.Events.AddRange(immunity.Events).AddRange(berries.Events);
+            var next = SourceMoveHistoryReducer.Apply(catalog, berries.State,
                 invocation with { CurrentMove = new("pret:MOVE_NONE") }, actionEvents, false);
             next = next with { FourTurn = next.FourTurn! with { Phase = next.NextAction == next.Queue.Length
                 ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.Actions } };

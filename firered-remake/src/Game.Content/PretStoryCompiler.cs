@@ -25,7 +25,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -105,6 +105,13 @@ public static partial class PretStoryCompiler
                     {
                         bool snorlaxSource=includeSnorlaxOpcodes&&IsSnorlaxEventSource(file,label);
                         var (kind,min,max)=Shape(opcode,includeGiftOpcodes,includeRoute3Opcodes,includeMtMoonOpcodes,includeBillOpcodes,includeSsAnneOpcodes,includeVermilionGymOpcodes,includeRockTunnelOpcodes,includeRocketHideoutOpcodes,includePokemonTowerOpcodes,snorlaxSource);
+                        if(includePresetDoubleOpcodes&&opcode is "trainerbattle_double" or "trainerbattle_rematch_double"&&file.Path=="data/scripts/trainers.inc"&&
+                            label is "Route8_EventScript_Eli" or "Route8_EventScript_Anne" or "Route8_EventScript_EliRematch" or "Route8_EventScript_AnneRematch")
+                        {
+                            if(operands.Length!=4||operands[0]!="TRAINER_TWINS_ELI_ANNE")
+                                throw ContentJson.Error("preset_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
+                            (kind,min,max)=(StoryOp.TrainerBattle,4,4);
+                        }
                         // The successor only admits the two pinned static Snorlax call sites
                         // and the already-supported Tower preparation. Earlier profiles keep
                         // their original IR and diagnostics byte-for-byte.

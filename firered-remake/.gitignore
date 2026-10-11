@@ -43,3 +43,6 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 
 # Bounded temporary test hosts and NuGet scratch, never source.
 /.runtime-tmp/
+
+# Reconstructed font link and Godot import metadata for the doubles test host.
+/tests/CampaignDoubleHost/Assets/

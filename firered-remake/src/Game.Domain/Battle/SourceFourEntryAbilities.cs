@@ -74,7 +74,7 @@ public static class SourceFourEntryAbilities
             var ordered = SourceBattleEventHooks.Publish(next, (n, t) => new SourceOrderEvent(n, t, WildBattleOrderPhase.Entry, order.Order));
             var execution = new FrameEntryContext(ordered.State);
             foreach (var slot in order.Order) execution.SwitchIn(slot);
-            execution.Settle(forecast: false); // Initial source pass has no final Forecast query after Trace.
+            execution.Settle(forecast: false, items: false); // Initial source pass has no final Forecast query after Trace.
             next = execution.Frame with { Revision = checked(frame.Revision + 1) };
             if (SourceFourActionTurns.ValidateCapability(catalog, next) is { } error) return Fail(frame, error);
             return new(next, [ordered.Event, .. execution.Events], [.. order.Trace, .. execution.Trace], null);

@@ -13,7 +13,7 @@ public sealed partial class PretCampaignCatalog
     public const string FuchsiaGymContentProfile = "firered-fuchsia-gym-source-content-v1";
     public const string FuchsiaGymMachineContentProfile = FuchsiaGymMachineRules.Profile;
     public const string FuchsiaGymShopContentProfile = FuchsiaGymItemRules.Profile;
-    public static PretCampaignCatalog LoadFuchsiaGymProfile(string root, bool useCompactMapData = true) => Load(root,
+    public static PretCampaignCatalog LoadFuchsiaGymProfile(string root, bool useCompactMapData = true, bool includePresetDoubles = false) => Load(root,
         includeStarterEvents:true, includeFirstBattle:true, includeOpeningItems:true,
         includeViridianRegion:true, includeParcelQuest:true, includeCapture:true, includeViridianCenter:true,
         includeOldManTutorial:true, includePartyTraining:true, includeForest:true, includeForestTrainers:true,
@@ -25,7 +25,7 @@ public sealed partial class PretCampaignCatalog
         includeRockTunnel:true, includeCeladonApproach:true, includeCeladonGym:true,
         includeRocketHideout:true, includePokemonTower:true, includeSnorlax:true,
         includeRegionalFlavor:true, includeRegionalServices:true, includeRegionalInteriorServices:true,
-        includeFuchsiaRoute:true, includeFuchsiaGym:true);
+        includeFuchsiaRoute:true, includeFuchsiaGym:true, includePresetDoubles:includePresetDoubles);
 
     public PretFuchsiaGymRegion? FuchsiaGymRegion { get; }
     public FuchsiaGymTrainerDocument? FuchsiaGymTrainerDocument { get; }

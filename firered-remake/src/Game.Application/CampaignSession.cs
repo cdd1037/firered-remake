@@ -120,6 +120,10 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public CampaignForestTrainerBattle? ForestTrainerBattle{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
+    public CampaignDoubleBattle? DoubleBattle{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
+    public ImmutableArray<CampaignDoubleBattleHistory>? DoubleBattleHistory{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public ImmutableArray<CampaignForestTrainerHistory>? ForestTrainerHistory{get;init;}
 }
 public sealed record CampaignCommand(string Kind,Direction Direction=Direction.South,int? Choice=null,string? Text=null,int MoveSlot=-1,int Quantity=1,int PartyIndex=0)
@@ -169,7 +173,8 @@ public sealed partial class CampaignSession
     public const string FuchsiaRouteRulesVersion="fr-fuchsia-route-campaign-v1";
     public const string FuchsiaGymRulesVersion="fr-fuchsia-gym-campaign-v1";
     public const string SnorlaxRulesVersion="fr-snorlax-campaign-v1";
-    public string RulesVersion=>_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
+    public const string PresetDoublesRulesVersion="fr-preset-doubles-campaign-v1";
+    public string RulesVersion=>_content.PresetDoublesEnabled?PresetDoublesRulesVersion:_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
     public CampaignState State=>_commands.State;
@@ -189,6 +194,8 @@ public sealed partial class CampaignSession
     public CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options=null)
     {
         _content=content;options??=new();
+        if(content.PresetDoublesEnabled&&(!content.FuchsiaGymEnabled||content.PresetDoublePokemon is null||
+            SourceTwinsTrainerEncounter.ValidateDefinition(content.Route8Twins) is not null))throw new InvalidDataException("preset_double_requires_authenticated_successor");
         if(content.FuchsiaGymEnabled)
         {
             if(!content.FuchsiaRouteEnabled||content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
@@ -245,7 +252,7 @@ public sealed partial class CampaignSession
         if(s.Script.QuestLogState!=0)return "save_quest_log_state_not_supported";
         if(s.Script.Variables is null||s.Script.Flags is null||s.Script.Fame is null||s.Script.Stack.IsDefault)return "save_script_invalid";
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
-        if(s.NameRater is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
+        if(s.NameRater is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
         var escapeError=ValidateEscapeRopeState(s);if(escapeError is not null)return escapeError;
         var repelError=ValidateRepelState(s);if(repelError is not null)return repelError;
@@ -288,7 +295,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -305,12 +312,12 @@ public sealed partial class CampaignSession
         else if(scene is 3 or 4 or 5 or 6)
         {
             if(!state.Script.Variables.TryGetValue("VAR_STARTER_MON",out var index)||index is <0 or >2||(_content.CaptureEnabled?state.Party.Length is <1 or >6:state.Party.Length!=1)||!Obtained||!state.Script.Flags.GetValueOrDefault("FLAG_PALLET_LADY_NOT_BLOCKING_SIGN"))return "save_starter_given_inconsistent";
-            if(scene>=4&&(_content.BattleContent is null||!state.Script.Flags.GetValueOrDefault("FLAG_BEAT_RIVAL_IN_OAKS_LAB")||state.NextBattleId<2||state.SettledBattles.Count!=1||state.BattledTrainers.Count!=1+(_content.ForestTrainersEnabled?OrdinaryWonFlagCount(state):0)||state.BattleHistory.Length!=1))return "save_first_battle_progress_inconsistent";
+            if(scene>=4&&(_content.BattleContent is null||!state.Script.Flags.GetValueOrDefault("FLAG_BEAT_RIVAL_IN_OAKS_LAB")||state.NextBattleId<2||state.SettledBattles.Count!=1||state.BattledTrainers.Count!=1+(_content.ForestTrainersEnabled?OrdinaryWonFlagCount(state)+TwinsWonFlagCount(state):0)||state.BattleHistory.Length!=1))return "save_first_battle_progress_inconsistent";
             if(scene==3&&(state.SettledBattles.Count!=0||state.BattledTrainers.Count!=0||state.NextBattleId!=1||state.BattleHistory.Length!=0))return "save_first_battle_not_completed_inconsistent";
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
+            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
             var starter=_content.EarlyStarterEnabled?OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
@@ -374,6 +381,7 @@ public sealed partial class CampaignSession
             if(state.FieldPoison is not null)return DecideFieldPoison(state,command);
             if(state.Evolution is not null)return DecideEvolution(state,command);
             if(state.OldManTutorial is not null)return DecideOldManTutorial(state,command);
+            if(state.DoubleBattle is not null)return DecideDoubleBattle(state,command);
             if(state.ForestTrainerBattle is not null)return DecideForestTrainerBattle(state,command);
             if(state.WildBattle is not null)return DecideWildBattle(state,command);
             if(state.Battle is not null)return DecideBattle(state,command);
@@ -458,7 +466,7 @@ public sealed partial class CampaignSession
                 {
                     if(_content.DeferredRegionalServiceReason(p.MapId,actor.ScriptId) is {} unavailable)return new(CommandStatus.Rejected,state,unavailable);
                     if(actor.ScriptId is "0" or "0x0")return new(CommandStatus.Rejected,state,"actor_no_script");
-                    if(_content.CeladonApproachEnabled&&actor.ScriptId is "Route8_EventScript_Eli" or "Route8_EventScript_Anne")return new(CommandStatus.Rejected,state,"celadon_approach_double_battle_not_implemented");
+                    if(_content.CeladonApproachEnabled&&!_content.PresetDoublesEnabled&&actor.ScriptId is "Route8_EventScript_Eli" or "Route8_EventScript_Anne")return new(CommandStatus.Rejected,state,"celadon_approach_double_battle_not_implemented");
                     if(_content.RocketHideoutEnabled&&actor.ScriptId is "RocketHideout_B4F_EventScript_LiftKey" or "RocketHideout_B4F_EventScript_SilphScope"&&
                         (state.Inventory?.KeyItems??[]).Length>=ShopCatalog.QuestLimits.KeyItemSlots)
                         return new(CommandStatus.Rejected,state,"inventory_destination_full");
@@ -644,6 +652,7 @@ public sealed partial class CampaignSession
                 case "fadescreen":
                     if(a[0] is not ("FADE_TO_BLACK" or "FADE_FROM_BLACK"))throw new InvalidDataException("screen_fade_mode_unsupported");
                     state=state with{ScreenIsBlack=a[0]=="FADE_TO_BLACK",PresentationTicks=16};break;
+                case "trainerbattle_double":case "trainerbattle_rematch_double":state=BeginDoubleBattle(state,effect);break;
                 case "trainerbattle_no_intro":case "trainerbattle_single":state=BeginForestTrainerBattle(state,effect);break;
                 case "trainerbattle_earlyrival":state=effect.Source.Path=="data/maps/Route22/scripts.inc"?BeginRoute22RivalBattle(state,effect):BeginLabBattle(state,effect);break;
                 case "special":

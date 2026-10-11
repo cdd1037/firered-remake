@@ -73,6 +73,9 @@ public interface ICampaignCatalog:IStoryCatalog
     bool RegionalInteriorServicesEnabled=>false;
     bool FuchsiaRouteEnabled=>false;
     FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>null;
+    bool PresetDoublesEnabled=>false;
+    PokemonCatalog? PresetDoublePokemon=>null;
+    SourceTwinsTrainerDefinition? Route8Twins=>null;
     bool FuchsiaGymEnabled=>false;
     FuchsiaGymTrainerCatalog? FuchsiaGymTrainerParties=>null;
     bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;

@@ -30,6 +30,13 @@ public sealed partial class CampaignSession
         var a=effect.Args;
         if(effect.Opcode=="specialvar"&&a.Length==2&&a[1]=="ShouldTryRematchBattle")
         {
+            if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&state.World.Player.MapId.Value=="map.route-8"&&
+                state.LastTalked is {} twinsActor&&state.Actors.TryGetValue(twinsActor,out var twins)&&IsTwinsScript(twins.ScriptId))
+            {
+                next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",
+                    state.BattledTrainers.Contains(Game.Domain.Trainers.SourceTwinsTrainerEncounter.TrainerId.Value)?1:0)}};
+                return true;
+            }
             if(a[0]!="VAR_RESULT"||(state.World.Player.MapId.Value!="map.route-3"&&!(_content.VermilionEnabled&&state.World.Player.MapId.Value=="map.route-6"))||state.LastTalked is not {} actor||!state.Actors.TryGetValue(actor,out var physical))
                 throw new InvalidDataException("route3_rematch_context_invalid");
             var definition=OrdinaryTrainerScripts.SingleOrDefault(b=>b.ScriptEntry==physical.ScriptId)??throw new InvalidDataException("route3_rematch_trainer_unknown");

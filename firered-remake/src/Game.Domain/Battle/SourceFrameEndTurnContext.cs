@@ -126,7 +126,7 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     internal override void ExposeFaintedActions() => CheckTeamsLost();
     internal override void FaintedActionItems()
     {
-        if (Frame.Slots.Any(c => !SourceFourRewards.SupportsRewardHeldItem(c.Body!.HeldItem)))
+        if (Frame.Slots.Any(c => !SourceFrameBerryItems.SupportsHeldItem(c.Body!.HeldItem)))
             throw new SourceRecipeUnsupported("source_four_action_fainted_item_phase_not_migrated");
         var settled = SourceFourEntryAbilities.Settle(Frame);
         Frame = settled.State; Events.AddRange(settled.Events); Trace.AddRange(settled.Trace);
@@ -138,10 +138,15 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     internal override void UnmigratedBattlerStep(SourceBattlerEndTurnStep step, BattlerSlot slot)
     {
         if (step == SourceBattlerEndTurnStep.Disable) { Disable(slot); return; }
+        if (step is SourceBattlerEndTurnStep.Items1 or SourceBattlerEndTurnStep.Items2)
+        {
+            var berries = SourceFrameBerryItems.Apply(Frame, step == SourceBattlerEndTurnStep.Items1
+                ? SourceBerryPhase.Normal : SourceBerryPhase.NormalMoveTurn, slot);
+            Frame = berries.State; Events.AddRange(berries.Events); return;
+        }
         var m = Get(slot); var r = Frame.Get(slot).Registers;
         bool nonempty = step switch {
             SourceBattlerEndTurnStep.Ingrain => m.Rooted,
-            SourceBattlerEndTurnStep.Items1 or SourceBattlerEndTurnStep.Items2 => !SourceFourRewards.SupportsRewardHeldItem(m.HeldItem),
             SourceBattlerEndTurnStep.LeechSeed => r.LeechSeedSource is not null,
             SourceBattlerEndTurnStep.Nightmare => m.Nightmare,
             SourceBattlerEndTurnStep.Curse => m.Cursed,

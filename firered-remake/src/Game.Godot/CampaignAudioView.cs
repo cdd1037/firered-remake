@@ -203,12 +203,13 @@ public partial class CampaignView
     }
 
     private static string AudioContext(CampaignState s)=>s.OldManTutorial is not null?"old-man":
-        s.Battle is {} lab?lab.Id:s.WildBattle is {} wild?wild.Id:
+        s.DoubleBattle is {Stage:not CampaignDoubleBattleStage.Intro} pair?pair.Id:s.Battle is {} lab?lab.Id:s.WildBattle is {} wild?wild.Id:
         s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer?trainer.Id:"field";
 
     private string DesiredSourceMusic(CampaignState s)
     {
         if(s.OldManTutorial is not null)return s.Music;
+        if(s.DoubleBattle is {} pair)return pair.Stage==CampaignDoubleBattleStage.Intro?s.Music:pair.Stage==CampaignDoubleBattleStage.Finished&&pair.Frame.Outcome==WildBattleOutcome.Won?"MUS_VICTORY_TRAINER":"MUS_VS_TRAINER";
         if(s.ForestTrainerBattle is {Stage:CampaignForestTrainerStage.Intro} intro)
             return s.Dialogue is {} dialogue&&_audioTrainerOneShots.Contains($"{intro.Id}:intro-text:{dialogue.Page}")
                 ? "MUS_ENCOUNTER_GYM_LEADER"
@@ -296,6 +297,7 @@ public partial class CampaignView
     private void ProcessSourceBattleAudio()
     {
         if(_sourceAudio is null)return;
+        ProcessDoubleBattleAudio();
         ProcessFuchsiaTransformAudio();
         ProcessSourceLeaderIntroAudio();
         ProcessSourceLeaderBadgeAudio();

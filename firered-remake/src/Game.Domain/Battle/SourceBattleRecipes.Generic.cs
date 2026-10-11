@@ -29,6 +29,10 @@ internal abstract partial class SourceRecipeContext
         internal void ExecuteGeneric(PokemonCatalog catalog, BattlerSlot side, int slot,
             PokemonMoveDefinition move, string purpose, ref bool handled)
         {
+            if (move.Id == WildBattleRules.StruggleMove)
+            {
+                ExecuteStruggle(catalog, side, Invocation!.Target, slot, move, purpose); handled = true; return;
+            }
             if (!HasGenericRecipe(move.Effect)) return;
             if (Invocation is null || !MetronomeSourceMoveDefinition.Matches(move))
                 throw new SourceRecipeUnsupported("called_generic_source_definition");

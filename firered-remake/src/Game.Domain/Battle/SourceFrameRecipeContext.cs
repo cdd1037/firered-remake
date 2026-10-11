@@ -25,8 +25,10 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     {
         this.catalog = catalog; this.action = action; Frame = initial = frame;
         move = delayedMove ?? SourceBattleKernel.ActionMove(catalog, frame.Get(action.Actor.Slot), action.ChosenSlot);
-        invocation = new(action.Actor.Slot, action.ChosenSlot, action.ChosenSlot, move.Id, move.Id, move.Id, null,
-            action.Target, WildBattleAttackCancellerPhase.Start, WildBattleInvocationFlags.None);
+        bool struggle = action.ChosenSlot == WildBattleRules.StruggleSlot;
+        invocation = new(action.Actor.Slot, struggle ? frame.Get(action.Actor.Slot).Registers.LastMoveSlot : action.ChosenSlot,
+            action.ChosenSlot, move.Id, move.Id, move.Id, null, action.Target, WildBattleAttackCancellerPhase.Start,
+            struggle ? WildBattleInvocationFlags.NoPpDeduct : WildBattleInvocationFlags.None);
     }
     // BattleScript_MonTookFutureAttack reuses accuracycheck and the ordinary damage update.
     // Admission excludes Focus Band, Substitute, Endure and move-end item side effects.
@@ -96,7 +98,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 SpendEarlyPartyPp(invocation.Actor, target, invocation.PpSlot, move);
                 Add(n => new SourceAbilityPreventedEvent(n, Turn, invocation.Actor, target, move.Id, "ABILITY_SOUNDPROOF"));
             }
-            else if (Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0 &&
+            else if (invocation.PpSlot >= 0 && Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0 &&
                 (invocation.Flags & WildBattleInvocationFlags.NoAttackString) == 0 &&
                 Frame.Get(invocation.Actor).Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Rollout })
             {
@@ -179,6 +181,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         {
             var immunity = SourceFrameImmunityRules.Apply(Frame);
             Frame = immunity.State; Events.AddRange(immunity.Events);
+            var berries = SourceFrameBerryItems.Apply(Frame, SourceBerryPhase.MoveEnd);
+            Frame = berries.State; Events.AddRange(berries.Events);
             Frame = SourceMoveHistoryReducer.Apply(catalog, Frame, invocation,
                 Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect);
         }
@@ -231,6 +235,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         Frame = entry.Frame; Events.AddRange(entry.Events); Trace.AddRange(entry.Trace);
     }
     internal override int SandstormTurnsRemaining => Frame.Field.SandstormTurnsRemaining;
+    internal override bool StruggleSandstorm => SourceWeatherRules.HasSandstorm(Frame.Field);
     internal override bool Safeguard(BattlerSlot slot) => Frame.Sides[(int)slot.Side].SafeguardTurnsRemaining > 0;
     internal override int RainTurnsRemaining => Frame.Field.RainTurnsRemaining;
     internal override bool SourceCalledRain => SourceWeatherRules.HasRain(Frame.Field);
@@ -264,14 +269,15 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             Add(n => new SourceAttackStringEvent(n, Turn, actor, invocation.ChosenMove, move.Id));
             invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.AttackStringPrinted };
         }
-        var owner = Get(invocation.PpOwner); int before = owner.Pokemon.Moves[invocation.PpSlot].CurrentPp;
+        var owner = Get(invocation.PpOwner); bool realSlot = invocation.PpSlot >= 0;
+        int before = realSlot ? owner.Pokemon.Moves[invocation.PpSlot].CurrentPp : 0;
         int opponents = ActiveSlots.Count(s => s.Side != actor.Side && WildBattleEffective.Ability(Get(s)) == "ABILITY_PRESSURE");
         int others = ActiveSlots.Count(s => s != actor && WildBattleEffective.Ability(Get(s)) == "ABILITY_PRESSURE");
         var reduced = WildBattleSourceCommands.ReducePp(before, move.Target, actor, target, WildBattleEffective.Ability(Get(target)), opponents, others, invocation.Flags);
-        Set(invocation.PpOwner, owner with { Pokemon = owner.Pokemon with { Moves = owner.Pokemon.Moves.SetItem(invocation.PpSlot,
+        if (realSlot) Set(invocation.PpOwner, owner with { Pokemon = owner.Pokemon with { Moves = owner.Pokemon.Moves.SetItem(invocation.PpSlot,
             owner.Pokemon.Moves[invocation.PpSlot] with { CurrentPp = reduced.After }) } });
         invocation = invocation with { Flags = reduced.FlagsAfter };
-        if (printed) Add(n => new SourceMoveUsedEvent(n, Turn, actor, target, slot, move.Id, before, reduced.After));
+        if (printed) Add(n => new SourceMoveUsedEvent(n, Turn, actor, target, invocation.PpSlot, move.Id, before, reduced.After));
         Add(n => new SourcePpCommandEvent(n, Turn, actor, target, invocation.PpSlot, invocation.ChosenMove, move.Id, before, reduced.After, reduced.CommandCost, Frame.Rng.Cursor) { PpOwner = invocation.PpOwner });
     }
 

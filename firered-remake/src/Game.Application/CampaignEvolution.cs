@@ -110,7 +110,7 @@ public sealed partial class CampaignSession
             : itemScene
             ? !_content.MtMoonEnabled || scene.BattleId is not null || state.WildBattle is not null ||
                 state.ForestTrainerBattle is not null || scene.Stage == CampaignEvolutionStage.Proposal
-            : scene.BattleId is null || (state.WildBattle?.Id != scene.BattleId && state.ForestTrainerBattle?.Id != scene.BattleId)))
+            : scene.BattleId is null || (state.WildBattle?.Id != scene.BattleId && state.ForestTrainerBattle?.Id != scene.BattleId && state.DoubleBattle?.Id != scene.BattleId)))
             return new(CommandStatus.Fault, state, "evolution_context_invalid");
         int index = EvolutionPartyIndex(state, scene);
         var owned = state.Party[index];
@@ -198,7 +198,8 @@ public sealed partial class CampaignSession
         if (scene.ProposalIndex + 1 < scene.Proposals.Length)
             return state with { Evolution = scene with { ProposalIndex = scene.ProposalIndex + 1, Stage = CampaignEvolutionStage.Proposal, Pages = [], PageIndex = 0, PendingMoves = [] } };
         // Never rebuild the proposal list here: one member gets one attempt per won battle.
-        return state.ForestTrainerBattle is not null ? ReturnFromForestTrainerBattle(state with { Evolution = null })
+        return state.DoubleBattle is not null ? ReturnFromDoubleBattle(state with { Evolution = null })
+            : state.ForestTrainerBattle is not null ? ReturnFromForestTrainerBattle(state with { Evolution = null })
             : ReturnFromWildBattle(state with { Evolution = null });
     }
 
@@ -262,7 +263,7 @@ public sealed partial class CampaignSession
         var used = new HashSet<(string?, long)>();
         var latestLevel = new Dictionary<long, int>();
         var byNumber = _content.PokemonContent!.Catalog.Species.Values.ToDictionary(s => s.SourceSpeciesId);
-        int lastWildBattle = -1, lastTrainerBattle = -1, lastParty = -1;
+        int lastWildBattle = -1, lastTrainerBattle = -1, lastDoubleBattle = -1, lastParty = -1;
         string? lastBattleId = null;
         var closedBattles = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in history)
@@ -308,9 +309,19 @@ public sealed partial class CampaignSession
                     var trainers = state.ForestTrainerHistory ?? [];
                     for (int i = 0; i < trainers.Length; i++)
                         if (trainers[i].Id == entry.BattleId && trainers[i].Outcome == WildBattleOutcome.Won && trainers[i].ExperienceGained > 0) battleIndex = i;
-                    if (!_content.ForestTrainersEnabled || battleIndex < 0 || battleIndex < lastTrainerBattle)
-                        return "save_evolution_battle_invalid";
-                    lastTrainerBattle = battleIndex;
+                    if(battleIndex>=0)
+                    {
+                        if (!_content.ForestTrainersEnabled || battleIndex < lastTrainerBattle) return "save_evolution_battle_invalid";
+                        lastTrainerBattle = battleIndex;
+                    }
+                    else
+                    {
+                        var doubles=state.DoubleBattleHistory??[];
+                        for(int i=0;i<doubles.Length;i++)
+                            if(doubles[i].Id==entry.BattleId&&doubles[i].Outcome==WildBattleOutcome.Won&&doubles[i].ExperienceGained>0)battleIndex=i;
+                        if(!_content.PresetDoublesEnabled||battleIndex<0||battleIndex<lastDoubleBattle)return "save_evolution_battle_invalid";
+                        lastDoubleBattle=battleIndex;
+                    }
                 }
                 // Wild/trainer serials are independent. Storage can later change party order.
                 if (!_content.PokemonStorageEnabled && lastBattleId == entry.BattleId && partyIndex <= lastParty || closedBattles.Contains(entry.BattleId))

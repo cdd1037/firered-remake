@@ -2,7 +2,7 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
-The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles remains an implementation gap. The JSON retains initial inspected-file hashes and records later implementation updates separately.
+The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles now has a bounded authentic Route8 Twins public victory/save branch; full held-item/recipe and presentation completion remains open. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
 Read with [source turn integration](source-turn-integration.md), [move implementation plan](called-move-implementation.md) and [implementation roadmap](implementation-roadmap.md). The [machine-readable companion](battle-system-completion-matrix.json) contains every one of the 354 move IDs, all 76 official abilities, source/implementation locations, dependency lists and evidence hashes. The initial inventory itself did not execute tests. Later bounded implementation results are identified below and in their test directories.
 
@@ -209,44 +209,40 @@ Next acceptance:
 <a id="c10"></a>
 ### C10 — Genuine four-slot doubles owner
 
-M01 identities through M06 bounded reward/learning and clean end-turn KO replacement are integrated. Actual parties remain authoritative; six opponent completion bits and one recipient cursor avoid an unbounded ledger. Shared ordered sleep/freeze/Truant/recharge/flinch/confusion/paralysis cancellers now run on actual slots, including no-target M06 actions. Initial and actual KO-entry callbacks now share source weather/Trace/Intimidate/Forecast recipes. Voluntary/Baton/Roar/Spikes, remaining recipes/residuals, AI, preset encounter and campaign presentation remain unfinished.
+M01 identities through M06 reward/learning and end-of-turn KO replacement are integrated. Initial, KO and voluntary/Baton/Roar entry share weather/Trace/Intimidate/Forecast recipes. Four choices, numeric immunity, Follow Me/Helping Hand, Rollout/Disable/Defense Curl/Minimize, multihit and Cute Charm are integrated. Authentic Route8 Twins roster/default moves/CHECK_BAD_MOVE AI now has a full-original-party public victory/save branch, source insufficient-team and sight admission, and controlled exhausted-PP Struggle defeat through nurse restoration, save/reload and retry (138 commands/284 checks).
 
-M01 provides four fixed battler slots, party/occupant identities, reservations and distinct absence/KO masks. M02 executes shared slot-typed hit/stat/status/recovery actions; the same recipes serve existing singles. M03 executes real four-action clean turns and pauses at explicit KO EXP/replacement boundaries. Full residuals, entry/rewards, target redirection/spread, AI and campaign admission remain unfinished. See `docs/source-shared-battle-kernel.md` and `tests/Game.FourActionTurns.Tests/README.md`.
-
+The first branch used public PC preparation; the current branch retains all six earned creatures and its Pecha Berry. Seven active and five source-inert berries and forced Struggle are integrated. Source-map positioning and controlled defeat HP/PP are explicit fixtures, not a newly walked route. General battle bag use, remaining recipes/residuals/callers, expanded AI and dedicated doubles animations remain open. See `docs/preset-doubles-route8.md` for current presentation evidence and boundaries.
 Dependencies: C04, C05, C18.
 
-Evidence: `src/Game.Domain/WildBattle/WildBattleContracts.cs`, `src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs`, `src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs`, `src/Game.Domain/Trainers/SourceTrainerExecution.cs`, `src/Game.Domain/Trainers/FuchsiaRouteTrainerCombatValidation.cs`.
-No positive execution acceptance is credited for this missing/enabling scope.
+Evidence: `src/Game.Domain/Battle/SourceFourActionTurns.cs`, `src/Game.Domain/Battle/SourceFourRewards.cs`, `src/Game.Application/CampaignDoubleBattle.cs`, `tests/Game.Route8TwinsCampaign.Tests/README.md`, `tests/Game.FourStruggle.Tests/README.md`.
 Pinned source: `include/constants/battle.h`, `src/battle_main.c:SetActionsAndBattlersTurnOrder`, `src/battle_util.c:HandleFaintedMonActions`.
 
 Next acceptance:
 
-- Use the canonical slot/party/occupant substrate in the shared execution kernel; own two legal player selections and two actual opposing actions.
-- Implement authentic preset roster entry, duplicate-party-selection rejection, per-slot locks and whole-team outcomes.
-- Apply the user-approved KO replacement at end of turn as one explicit policy; retain original voluntary switching and Roar/Whirlwind timing.
-- Carry EXP, simultaneous faint, delayed attacks and pending replacements through four-slot Application/presentation states.
+- Complete remaining reusable effect/entry families and explicit held-item boundaries.
+- Integrate broader trainer AI and battle bag commands without changing existing single-battle outcomes.
+- Verify original dedicated doubles animations independently of functional UI input and settled geometry.
 
 <a id="c11"></a>
 ### C11 — Doubles targets and multi-target effects
 
-Real selected/random/side/user/both-opponent targeting, Lightning Rod and Plus/Minus queries, generic spread/Explosion and original doubles screen damage are implemented in the bounded four-slot owner. Deferred-KO no-target failure uses original attack-string/PP/failure/history commands. Follow Me, Helping Hand, callers and additional multi-target effect families remain open.
-
+Real selected/random/side/user/both-opponent targeting, Lightning Rod and Plus/Minus queries, generic spread/Explosion and original doubles screen damage are implemented. Follow Me and Helping Hand now share original lifetime, target precedence and damage rules. Deferred-KO no-target actions retain source cancellation/PP/history behavior. Callers and additional multi-target effect families remain open.
 Dependencies: C10.
 
 Evidence: `src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs`, `src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs`, `src/Game.Domain/WildBattle/WildBattleGenericEffects.cs`, `src/Game.Domain/WildBattle/ForestBattleDamage.cs`.
-No positive execution acceptance is credited for this missing/enabling scope.
+Positive bounded execution is covered by the targeting/spread, ally-support and real Twins suites; additional families below remain open.
 Pinned source: `src/battle_util.c:GetMoveTarget`, `src/battle_script_commands.c:Cmd_attackcanceler`, `src/battle_script_commands.c:Cmd_trysethelpinghand`, `src/pokemon.c:CalculateBaseDamage`.
 
 Next acceptance:
 
-- Add selected, random, both-opponents, foes-and-ally, side and user target classes, legal empty/fainted targets and source retargeting.
-- Prove Follow Me/Lightning Rod precedence, Helping Hand, ally attacks, Teeter Dance/Perish Song/Explosion and per-target hit/secondary/contact behavior.
+- Extend shared target classes to remaining recipes while retaining tested empty/fainted target and retargeting behavior.
+- Add Teeter Dance/Perish Song and remaining per-target secondary families to the established Follow Me/Lightning Rod/Helping Hand, ally attack and Explosion boundaries.
 - Use FireRed spread/screen rules and RNG consumption; no later-generation damage reduction or priority semantics.
 
 <a id="c12"></a>
 ### C12 — Switch, Baton Pass, phasing and faint ownership
 
-Actual party arrays and indices, Baton Pass subset, Roar/Whirlwind random reserve selection, Pursuit, Toxic counter reset, Natural Cure and source faint continuations are implemented for singles.
+Actual party arrays and indices, Baton Pass subset, Roar/Whirlwind random reserve selection, Pursuit, Toxic counter reset, Natural Cure and source faint continuations are implemented for singles. The bounded four-slot owner now shares voluntary/Baton/Roar switching and entry, with pending action cancellation and slot relationship cleanup; Spikes and wider switching combinations remain gated.
 
 Dependencies: C07, C09, C10.
 

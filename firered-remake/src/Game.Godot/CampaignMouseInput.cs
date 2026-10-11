@@ -76,7 +76,7 @@ public partial class CampaignView
         {
             if (_session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
                 _session.State.ItemMenu is not null || _session.State.Pc is not null ||
-                ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
+                DoubleBattleVisible || ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
                 _session.State.Battle is not null || FieldDialogueVisible || NameRaterChoosing || DepartmentElevatorMenuActive || RocketElevatorMenuActive || BillPcMenuActive || BillPcPictureActive ||
                 _session.State.Repel?.Phase == CampaignRepelPhase.WoreOff)
             { MouseKey(Key.Backspace); QueueRedraw(); GetViewport().SetInputAsHandled(); }
@@ -91,6 +91,7 @@ public partial class CampaignView
             : _session.State.Shop is not null ? MouseShop(point)
             : _session.State.ItemMenu is not null ? MouseItems(point)
             : _session.State.Pc is not null ? MouseStorage(point)
+            : DoubleBattleVisible ? MouseDouble(point)
             : ForestTrainerCombatVisible || _session.State.WildBattle is not null ? MouseWild(point)
             : _session.State.Battle is not null ? MouseLabBattle(point)
             : RocketElevatorMenuActive ? MouseRocketElevator(point)
@@ -168,6 +169,7 @@ public partial class CampaignView
             }
             return false;
         }
+        if (DoubleBattleVisible) return NavigateDoublePointer(point,direction);
         if (ForestTrainerCombatVisible || _session.State.WildBattle is not null) return NavigateWildPointer(point, direction);
         if (_session.State.Battle is { } battle)
         {
@@ -338,6 +340,7 @@ public partial class CampaignView
         }
         return (wait?.Kind is StoryWaitKind.Dialog or StoryWaitKind.MessagePrinting or StoryWaitKind.Choice or StoryWaitKind.MenuChoice or StoryWaitKind.ButtonPress ||
             _session.State.ForestTrainerBattle?.Stage == CampaignForestTrainerStage.Intro ||
+            _session.State.DoubleBattle?.Stage == CampaignDoubleBattleStage.Intro ||
             _session.State.Repel?.Phase == CampaignRepelPhase.WoreOff) && MouseConfirm(point, MouseMessage);
     }
 

@@ -50,8 +50,15 @@ public static class SourceBattleKernel
             !frame.PendingSwitches.IsEmpty || action.ActionOrderIndex < 0 || action.ActionOrderIndex >= frame.BattlerCount)
             return "source_kernel_action_phase";
         var actor = frame.Get(action.Actor.Slot).Body!;
-        if (action.ChosenSlot < 0 || action.ChosenSlot >= actor.Pokemon.Moves.Length) return "source_kernel_move_slot";
-        if (!catalog.Moves.TryGetValue(actor.Pokemon.Moves[action.ChosenSlot].Move, out var move) ||
+        bool struggle = action.ChosenSlot == WildBattleRules.StruggleSlot;
+        if (action.ChosenSlot < WildBattleRules.StruggleSlot || action.ChosenSlot >= actor.Pokemon.Moves.Length) return "source_kernel_move_slot";
+        bool earned = frame.FourTurn is not null && action.ActionOrderIndex < frame.Queue.Length &&
+            frame.Queue[action.ActionOrderIndex] is { Kind: SourceActionKind.Move, MoveSlot: WildBattleRules.StruggleSlot } queued &&
+            queued.Token?.Owner == action.Actor && queued.OriginalChosenMove == WildBattleRules.StruggleMove;
+        if (struggle && !earned && !SourceFourActionTurns.RequiresStruggle(catalog, frame, action.Actor.Slot))
+            return "source_kernel_struggle_not_required";
+        if (struggle && action.Target.Side == action.Actor.Slot.Side) return "source_kernel_target_mode";
+        if (!catalog.Moves.TryGetValue(struggle ? WildBattleRules.StruggleMove : actor.Pokemon.Moves[action.ChosenSlot].Move, out var move) ||
             !MetronomeSourceMoveDefinition.Matches(move)) return "source_kernel_move_definition";
         var recharge = frame.Get(action.Actor.Slot).Registers.Turn?.Lock;
         if (recharge is not null)
@@ -99,7 +106,7 @@ public static class SourceBattleKernel
                 body.BindTurnsRemaining != 0 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.EncoreMoveSlot is not null ||
-                cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null || cell.Registers.WrappedBy is not null || (body.HeldItem != "ITEM_NONE" && !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFourRewards.SupportsRewardHeldItem(body.HeldItem))) || body.WaterSport || body.MudSport)
+                cell.Registers.LeechSeedSource is not null || cell.Registers.MeanLookSource is not null || cell.Registers.WrappedBy is not null || (body.HeldItem != "ITEM_NONE" && !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFrameBerryItems.SupportsHeldItem(body.HeldItem))) || body.WaterSport || body.MudSport)
                 return "source_kernel_volatile_not_migrated";
             if (body.ConfusionTurnsRemaining is < 0 or > 5 || body.TruantLoafing && body.Pokemon.CurrentHp == 0 ||
                 cell.Registers.Turn?.Lock is { } retainedLock && (!SupportsTurnLock(catalog, retainedLock) || body.Pokemon.CurrentHp == 0))
@@ -125,7 +132,7 @@ public static class SourceBattleKernel
 
     internal static PokemonMoveDefinition ActionMove(PokemonCatalog catalog, SourceBattleSlot actor, int chosenSlot) =>
         catalog.Moves[actor.Registers.Turn?.Lock is { } recharge
-            ? recharge.Move : actor.Body!.Pokemon.Moves[chosenSlot].Move];
+            ? recharge.Move : chosenSlot == WildBattleRules.StruggleSlot ? WildBattleRules.StruggleMove : actor.Body!.Pokemon.Moves[chosenSlot].Move];
 
     internal static bool SupportsTurnLock(PokemonCatalog catalog, SourceTurnLock locked) => SupportsRecharge(catalog, locked) ||
         locked.Kind == WildBattleCalledLockKind.Rollout && locked.TurnsRemaining is >= 1 and <= 4 &&
@@ -140,7 +147,7 @@ public static class SourceBattleKernel
 
     public static bool SupportsRecipe(PokemonMoveDefinition move) => MetronomeSourceMoveDefinition.Matches(move) &&
         move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" &&
-        (SourceRecipeContext.HasGenericRecipe(move.Effect) && move.Effect is not
+        (move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) && move.Effect is not
             ("EFFECT_CONFUSE" or "EFFECT_MEAN_LOOK" or "EFFECT_TRAP") ||
          SourceRecipeContext.HasStatRecoveryRecipe(move.Effect) || SourceRecipeContext.HasFieldSettingRecipe(move.Effect) ||
          SourceRecipeContext.HasAllySupportRecipe(move.Effect) || SourceRecipeContext.HasTurnMoveRecipe(move.Effect) || SourceRecipeContext.HasSwitchRecipe(move.Effect));

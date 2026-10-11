@@ -79,7 +79,15 @@ public sealed record SourceFieldRegisters
 }
 public enum SourceActionKind { Move, Item, Switch, Cancelled }
 public sealed record SourceActionSelection(OccupantToken Actor, SourceActionKind Kind,
-    int? MoveSlot = null, BattlerSlot? Target = null, PartyMemberKey? Incoming = null, ItemId? Item = null);
+    int? MoveSlot = null, BattlerSlot? Target = null, PartyMemberKey? Incoming = null, ItemId? Item = null)
+{
+    [JsonIgnore] public bool IsStruggle => Kind == SourceActionKind.Move && MoveSlot == WildBattleRules.StruggleSlot;
+    public static SourceActionSelection Struggle(OccupantToken actor, BattlerSlot? target = null) =>
+        new(actor, SourceActionKind.Move, WildBattleRules.StruggleSlot, target ?? actor.Slot.Opposite);
+    // The synchronous trainer chooser already consumed AreAllMovesUnusable's selection draw.
+    // This ephemeral receipt is not battle state; action-time target selection still rerolls.
+    [JsonIgnore] internal bool StruggleSelectionPrepared { get; init; }
+}
 public sealed record SourceQueuedAction(BattlerSlot Slot, SourceActionToken? Token, SourceActionKind Kind,
     int? MoveSlot = null, BattlerSlot? Target = null, PartyMemberKey? Incoming = null, ItemId? Item = null,
     string? CancellationReason = null)

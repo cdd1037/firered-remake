@@ -28,7 +28,7 @@
     "authenticatedMechanicsSpecies": 386
   },
   "gates": {
-    "currentStage": "Fifth-badge singles checkpoint accepted at 5a5b6f7, including actual Godot Koga route and separate two-process native save/Continue. Preset genuine doubles remains an explicit gap.",
+    "currentStage": "Fifth-badge singles accepted at5a5b6f7. Battle-completion stage active; authentic Route8 Twins now has bounded four-slot Application victory/defeat/save/retry. Full354/76 combinations, expanded doubles and dedicated presentation remain open.",
     "newStageStart": "Active after checkpoint 5a5b6f7; battle-system completion precedes the next region.",
     "doublesDeviation": "Only KO replacement is to be postponed to end of turn under the approved doubles rule. Ordinary voluntary switching and Roar/Whirlwind timing remain original; no other Gen IV/later-generation mechanics are proposed.",
     "preservedDecisions": "Existing separately documented approved behavior remains unchanged. This inventory does not infer new permissions or silently rewrite historical profiles.",
@@ -352,29 +352,16 @@
       "title": "Genuine four-slot doubles owner",
       "status": "interaction-unverified",
       "priority": "P1",
-      "scope": "M01 identities through M06 bounded reward/learning and clean end-turn KO replacement are integrated. Actual parties remain authoritative; six opponent completion bits and one recipient cursor avoid an unbounded ledger. Shared ordered sleep/freeze/Truant/recharge/flinch/confusion/paralysis cancellers now run on actual slots, including no-target M06 actions. Initial and actual KO-entry callbacks now share source weather/Trace/Intimidate/Forecast recipes. Voluntary/Baton/Roar/Spikes, remaining recipes/residuals, AI, preset encounter and campaign presentation remain unfinished.",
+      "scope": "M01–M06 shared four-slot actions, rewards/learning and approved end-turn KO replacement are integrated with initial/KO/voluntary/Baton/Roar entry. Authentic Route8 Twins uses its original roster/default moves and CHECK_BAD_MOVE AI. Full earned party with Pecha Berry, real public victory, controlled exhausted-PP defeat, strict save/reload and retry pass138commands/284checks. Dedicated presentation and wider effects/AI/bag support remain open.",
       "implementationEvidence": [
-        "src/Game.Domain/WildBattle/WildBattleContracts.cs",
-        "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
-        "src/Game.Domain/WildBattle/WildBattleSourceEndTurn.cs",
-        "src/Game.Domain/Trainers/SourceTrainerExecution.cs",
-        "src/Game.Domain/Trainers/FuchsiaRouteTrainerCombatValidation.cs",
-        "src/Game.Domain/Battle/SourceBattleFrame.cs",
-        "src/Game.Domain/Battle/SourceBattleIdentityRules.cs",
-        "src/Game.Domain/Battle/SinglesBattleAdapter.cs",
-        "src/Game.Domain/Battle/SourceBattleKernel.cs",
-        "src/Game.Domain/Battle/SourceFourActionTurns.cs"
+        "src/Game.Domain/Battle/SourceFourActionTurns.cs",
+        "src/Game.Domain/Battle/SourceFourRewards.cs",
+        "src/Game.Application/CampaignDoubleBattle.cs"
       ],
       "testEvidence": [
-        "tests/Game.SourceBattleIdentity.Tests/README.md",
-        "evidence/battle-four-slot-identity/result.json",
-        "tests/Game.SourceSharedKernel.Tests/README.md",
-        "tests/Game.FourActionTurns.Tests/README.md",
-        "tests/Game.SourceTargeting.Tests/README.md",
-        "tests/Game.FourEndTurn.Tests/README.md",
-        "tests/Game.FourRewards.Tests/README.md",
-        "tests/Game.SourceActionCancellers.Tests/README.md",
-        "tests/Game.FourEntryAbilities.Tests/README.md"
+        "tests/Game.Route8TwinsCampaign.Tests/README.md",
+        "tests/Game.FourStruggle.Tests/README.md",
+        "tests/Game.FourBerryItems.Tests/README.md"
       ],
       "sourceEvidence": [
         "include/constants/battle.h",
@@ -382,10 +369,9 @@
         "src/battle_util.c:HandleFaintedMonActions"
       ],
       "nextAcceptance": [
-        "Use the canonical slot/party/occupant substrate in the shared execution kernel; own two legal player selections and two actual opposing actions.",
-        "Implement authentic preset roster entry, duplicate-party-selection rejection, per-slot locks and whole-team outcomes.",
-        "Apply the user-approved KO replacement at end of turn as one explicit policy; retain original voluntary switching and Roar/Whirlwind timing.",
-        "Carry EXP, simultaneous faint, delayed attacks and pending replacements through four-slot Application/presentation states."
+        "Complete remaining shared effect/entry and held-item families.",
+        "Integrate broader trainer AI and battle bag actions without changing current single-battle results.",
+        "Track actual dedicated doubles animation/audio coverage separately from functional controls and settled pixels."
       ],
       "dependsOn": [
         "C04",
@@ -399,7 +385,7 @@
       "title": "Doubles targets and multi-target effects",
       "status": "implemented-with-bounded-tests",
       "priority": "P1",
-      "scope": "Real selected/random/side/user/both-opponent targeting, Lightning Rod and Plus/Minus queries, generic spread/Explosion and original doubles screen damage are implemented in the bounded four-slot owner. Deferred-KO no-target failure uses original attack-string/PP/failure/history commands. Follow Me, Helping Hand, callers and additional multi-target effect families remain open.",
+      "scope": "Bounded four-slot selected/random/side/user/both-opponent targeting, Lightning Rod/Plus-Minus queries, spread/Explosion, original screen damage and Follow Me/Helping Hand are integrated. Deferred-KO no-target cancellation retains PP/history timing. Callers and remaining multi-target effect families stay open.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledMoveKernel.cs",
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
@@ -418,9 +404,9 @@
         "src/pokemon.c:CalculateBaseDamage"
       ],
       "nextAcceptance": [
-        "Add selected, random, both-opponents, foes-and-ally, side and user target classes, legal empty/fainted targets and source retargeting.",
-        "Prove Follow Me/Lightning Rod precedence, Helping Hand, ally attacks, Teeter Dance/Perish Song/Explosion and per-target hit/secondary/contact behavior.",
-        "Use FireRed spread/screen rules and RNG consumption; no later-generation damage reduction or priority semantics."
+        "Extend remaining recipes using the existing shared target classes and empty/fainted fallback behavior.",
+        "Cover Teeter Dance/Perish Song and remaining per-target secondary families.",
+        "Preserve original FireRed spread/screen/RNG rules except explicitly approved changes."
       ],
       "dependsOn": [
         "C10"
@@ -432,7 +418,7 @@
       "title": "Switch, Baton Pass, phasing and faint ownership",
       "status": "implemented-with-bounded-tests",
       "priority": "P2",
-      "scope": "Actual party arrays and indices, Baton Pass subset, Roar/Whirlwind random reserve selection, Pursuit, Toxic counter reset, Natural Cure and source faint continuations are implemented for singles.",
+      "scope": "Actual party indices, Baton Pass subset, Roar/Whirlwind reserve selection, Pursuit, Toxic reset, Natural Cure and faint continuations exist for singles. Four-slot voluntary/Baton/Roar now share entry and cancel outgoing actions/relationships. Spikes and broader switch interactions remain pending.",
       "implementationEvidence": [
         "src/Game.Domain/WildBattle/WildBattleCalledPartyEffects.cs",
         "src/Game.Domain/WildBattle/WildBattleSourceWildSwitches.cs",
@@ -11436,6 +11422,37 @@
       "scope": "Shared Follow Me/Helping Hand and numeric immunity",
       "details": "Actual four-slot support16groups5834checks/8fullturns and shared immunity4groups193checks pass together. Support cleanup lifetimes and pre-type damage are source verified; entry alone does not cure status. Old singles full support hashes and general parity remain exact.",
       "evidence": "tests/Game.AllySupport.Tests/README.md; tests/Game.SourceMoveEndImmunity.Tests/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "bda2d6a7bf3722e1dd910e711e25bdd1d5c8f095",
+      "scope": "Authentic Route8 Twins bounded move/contact/switch owner and initial public campaign branch",
+      "details": "Shared voluntary/Baton/Roar entry; original Follow Me/Helping Hand, Defense Curl/Minimize/Disable/Rollout/multihit and Cute Charm. Original roster/default moves/CHECK_BAD_MOVE AI. Initial public branch uses earned fifth-badge party and public PC deposit, then controlled source location; 108 commands/217 checks cover victory, unique prize, save, repeat, insufficient-team and sight entry.",
+      "limits": "Full party with berries and exhausted-PP Struggle are being integrated; other held/residual/caller families, general battle bag, wider AI and dedicated doubles animations remain unverified. Native presentation remains separate.",
+      "evidence": [
+        "docs/preset-doubles-route8.md",
+        "tests/Game.Route8TwinsCampaign.Tests/README.md",
+        "tests/Game.FourContact.Tests/README.md",
+        "tests/Game.FourTurnMoves.Tests/README.md"
+      ]
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "scope": "Authentic Twins full party, shared berries and forced Struggle through defeat/retry",
+      "details": "Public 138 commands/284 checks: original six earned members and Pecha Berry, victory/repeat/sight/gate, controlled all-zero-PP real defeat, five-badge penalty, nurse restoration, strict reload and retry. Shared Struggle 12 groups/2049 checks including72 immutable singles hashes.",
+      "limits": "Controlled map positioning/defeat HP/PP are explicit. Remaining recipes, battle bag, broader AI and dedicated animations remain open; GUI acceptance is separate.",
+      "evidence": [
+        "docs/preset-doubles-route8.md",
+        "tests/Game.Route8TwinsCampaign.Tests/evidence/struggle-public/result.json",
+        "tests/Game.FourStruggle.Tests/evidence/integrated/result.json"
+      ]
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "scope": "Actual Route8 Twins production view and normal-project host",
+      "details": "17 source-art checks; 115 current main draw/input checks; native46 accepted commands through first full turn, automatic Sand-Attack learning, poison faint, forced replacement/Intimidate and next-turn input, exit0.",
+      "limits": "Functional target/party adapters and settled source pixels; no complete original intro/faint/party/target motion or dedicated doubles move scripts. Seven berries/Struggle/full-learning are headless only. Dummy audio stream/identities are not physical hearing. Native source/executable identities and one equivalent profile-predicate delta are explicitly retained.",
+      "evidence": "tests/CampaignDoubleHost/README.md"
     }
   ]
 }
