@@ -16,6 +16,7 @@ p = argparse.ArgumentParser()
 p.add_argument('output', type=Path)
 p.add_argument('--doubles', action='store_true')
 p.add_argument('--stats', action='store_true')
+p.add_argument('--stat-mask', action='store_true')
 p.add_argument('--motion-vectors', action='store_true')
 p.add_argument('--vacant-partner', action='store_true')
 p.add_argument('--reference', type=Path, default=Path((root / '.tools/reference-root').read_text().strip()))
@@ -23,6 +24,101 @@ a = p.parse_args()
 if a.vacant_partner and not a.doubles: p.error("--vacant-partner requires --doubles")
 out = a.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
+
+def run_stat_mask_oracle():
+    """Run the original general-animation task scheduler with register-only adapters."""
+    module_spec = importlib.util.spec_from_file_location('stat_mask_importer', root / 'scripts/import-source-stat-mask.py')
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    authenticated = module.authenticated(a.reference)
+    identities, bodies = [], []
+
+    def extract(path, name, kind='function'):
+        original = authenticated[path].decode()
+        match = re.search(r'^((?:static )?\w+ ' + re.escape(name) + r'\([^;]*?\))\n\{', original, re.M)
+        if match is None:
+            raise ValueError('Missing original function: ' + name)
+        pos, depth = match.end(), 1
+        while depth:
+            if original[pos] == '{': depth += 1
+            if original[pos] == '}': depth -= 1
+            pos += 1
+        body = original[match.start():pos]
+        identities.append(dict(path=path, name=name, line=original.count('\n', 0, match.start()) + 1,
+                               sha256=hashlib.sha256(body.encode()).hexdigest(), kind=kind))
+        if kind == 'function': bodies.append((match[1], body))
+
+    original_functions = {
+        'src/battle_anim_status_effects.c': ['AnimTask_StatsChange'],
+        'src/battle_anim_utility_funcs.c': ['InitStatsChangeAnimation', 'StatsChangeAnimation_Step1', 'StatsChangeAnimation_Step2', 'StatsChangeAnimation_Step3'],
+        'src/battle_anim.c': ['RunAnimScriptCommand', 'Cmd_createvisualtask', 'Cmd_waitforvisualfinish', 'Cmd_end', 'DestroyAnimVisualTask', 'BattleAnimAdjustPanning2'],
+        'src/battle_anim_mons.c': ['CreateInvisibleSpriteCopy'],
+        'src/task.c': ['ResetTasks', 'CreateTask', 'InsertTask', 'DestroyTask', 'RunTasks', 'FindFirstActiveTask'],
+        'src/battle_gfx_sfx_util.c': ['Task_ClearBitWhenBattleTableAnimDone'],
+    }
+    for path, names in original_functions.items():
+        for name in names: extract(path, name)
+    for path, name in [('src/battle_main.c', 'BattleMainCB2'),
+                       ('src/battle_gfx_sfx_util.c', 'TryHandleLaunchBattleTableAnimation'),
+                       ('src/battle_controller_player.c', 'PlayerHandleBattleAnimation'),
+                       ('src/battle_controller_opponent.c', 'OpponentHandleBattleAnimation')]:
+        extract(path, name, 'schedulingReference')
+    utility = authenticated['src/battle_anim_utility_funcs.c'].decode()
+    stats_struct = re.search(r'^struct AnimStatsChangeData\n\{.*?^\};', utility, re.M | re.S)
+    if stats_struct is None: raise ValueError('Missing original stat task storage')
+    constants = []
+    for path, pattern in [('include/battle_anim.h', r'STAT_ANIM_\w+'),
+                          ('include/constants/pokemon.h', r'STAT_(?:ATK|DEF|SPEED|SPATK|SPDEF|ACC|EVASION)'),
+                          ('include/constants/songs.h', r'SE_M_STAT_(?:INCREASE|DECREASE)')]:
+        constants.extend(re.findall(r'^#define (?:' + pattern + r')\s+[^\n]+', authenticated[path].decode(), re.M))
+    original_script = authenticated['data/battle_anim_scripts.s'].decode()
+    script_match = re.search(r'^General_StatsChange:\n(?P<body>(?:\t[^\n]*\n){3})', original_script, re.M)
+    if script_match is None or script_match['body'].splitlines() != [
+        '\tcreatevisualtask AnimTask_StatsChange, 5', '\twaitforvisualfinish', '\tend']:
+        raise ValueError('General_StatsChange command stream differs')
+    # Pointer payload is a relocatable task index; original command decoders remain unchanged.
+    script = 'static const u8 statScript[]={0,0,0,0,0,5,0,1,2};'
+    generated = '\n'.join([
+        authenticated['include/gba/io_reg.h'].decode(), '\n'.join(constants),
+        (root / 'tests/SourceHitAnimation.Oracle/stat-mask-host.h').read_text(),
+        stats_struct[0], 'static struct AnimStatsChangeData *sAnimStatsChangeData;',
+        '\n'.join(sig + ';' for sig, body in bodies),
+        '\n'.join(body for sig, body in bodies), script,
+        (root / 'tests/SourceHitAnimation.Oracle/stat-mask-driver.c').read_text(),
+    ])
+    (out / 'oracle.c').write_text(generated)
+    compile_result = subprocess.run(['cc', '-std=c99', '-O0', '-Wall', '-Wextra', '-Werror',
+        '-Wno-unused-parameter', str(out / 'oracle.c'), '-o', str(out / 'oracle')], capture_output=True, text=True)
+    (out / 'compile.log').write_text(compile_result.stdout + compile_result.stderr)
+    if compile_result.returncode: raise SystemExit(compile_result.stderr)
+    result = subprocess.run([str(out / 'oracle')], cwd=out, capture_output=True, text=True, timeout=10)
+    (out / 'source-c.csv').write_text(result.stdout)
+    if result.returncode: raise SystemExit('Stat mask source oracle failed: ' + result.stderr)
+    rows = len(result.stdout.splitlines()) - 1
+    if rows <= 0: raise SystemExit('Empty source trace')
+    provenance = dict(commit=module.COMMIT, sourceLockSha256=module.LOCK_SHA,
+        functions=[x for x in identities if x['kind'] == 'function'],
+        schedulingReferences=[x for x in identities if x['kind'] == 'schedulingReference'],
+        script=dict(label='General_StatsChange', line=original_script.count('\n', 0, script_match.start())+1,
+                    sha256=hashlib.sha256(script_match[0].encode()).hexdigest()),
+        sourceFiles=[dict(path=path, bytes=len(data), sha256=hashlib.sha256(data).hexdigest()) for path,data in authenticated.items()],
+        mode='stat-mask', rows=rows, vectors=330, validArguments=32, unsupportedArgument=0,
+        fixture='For each argument: singles actor 0/1, doubles actor 0..3 with all battlers visible and actor partner absent.',
+        scheduling='BuildOamBuffer snapshot precedes original RunTasks. Original priority-10 general script wrapper creates priority-5 stat task. The new task first steps next frame. Source task cleanup precedes same-frame priority-10 script end.',
+        maskVisibility='Pre-task OAM snapshot; a copy created in a task first appears next frame, and destroyed copy remains in that frame OAM snapshot. Window disable gates its visible effect.',
+        fields='arg,actor,doubles,visibleMask,frame,active,window,bgLoaded,palette,scrollX,scrollY,alphaA,alphaB,maskSlot,maskVisible,priorityPartner,sound,pan',
+        fieldNotes='maskSlot is the affected battler, -1 until window setup; palette 0 before load then source palette suffix 1..8 retained after cleanup; priorityPartner is -1 when unchanged. Sound is original song ID, 0 for no cue; pan can be +64.',
+        platformShims=['GPU register array', 'background/palette resource identity', 'fixed visible battler sprite slots and species', 'sprite allocation/destruction and pre-task OBJ-window OAM snapshot', 'no asynchronous audio tail'],
+        hostSha256=hashlib.sha256(generated.encode()).hexdigest(), originalRuntimeCompared=False)
+    (out / 'provenance.json').write_text(json.dumps(provenance, indent=2)+'\n')
+    print('PASS original General_StatsChange callbacks and scheduler:', len(bodies), 'functions,', rows, 'frames, 330 vectors')
+
+if a.stat_mask:
+    if a.stats or a.motion_vectors or a.doubles or a.vacant_partner:
+        p.error('--stat-mask is exhaustive and cannot be combined with other fixture modes')
+    run_stat_mask_oracle()
+    raise SystemExit(0)
+
 raw = imp.authenticated(a.reference)
 # The existing authenticated lock also pins this display-scheduler provenance source.
 scheduler_path = 'src/battle_main.c'

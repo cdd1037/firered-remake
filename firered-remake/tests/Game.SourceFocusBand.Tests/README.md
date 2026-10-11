@@ -21,3 +21,22 @@ The combined main candidate passed 18 groups / 71,301 checks, with 202 accumulat
 The integration also runs shared action cancellers, actual M06 reward/replacement continuation and the unchanged 64-phase legacy single-battle golden. Four-slot held damage remains gated. The main comparison confirms delayed Future Sight and confusion self-damage reach the same canonical Focus adjustment after their own damage-random calculation.
 
 The author runner recreates C vectors from the pinned source, so generated C executables and bulk vector output are not delivery dependencies. Both small authored oracle hosts (`source-prefix.h`, `source-main.c`) must accompany `source_probe.py`. They are included in the explicit required-test-input manifest.
+
+## Four-slot extension
+
+`bash tests/Game.SourceFocusBand.Tests/run-four.sh CONTENT_ROOT PRET_ROOT NEW_OUTPUT`
+uses the same held-damage primitive with position-local sticky state. It covers all
+four actor positions in an actual Fury Swipes action, per-hit random draws even
+after success, one PP cost, no item consumption, action-end cleanup, next-action
+failure and atomic publication failure. A complete turn verifies poison bypass,
+one EXP settlement and deferred replacement. A controlled legal Future Sight
+queue verifies normal2 adjustment and retention through Ready/turn setup, followed
+by the real switch action's global SpecialStatusesClear boundary. Casting Future
+Sight remains separately gated. Item/switch actions clear special status at the
+same completed-action boundary; turn setup does not.
+
+The source primitive and earlier exact-C vectors are unchanged. The first new
+probe attempt used unadmitted Splash/Gust helper actions and stopped at capability
+validation; the corrected fixture uses actual level-up Barrier/Tackle. Compact
+results preserve that fixture correction. Mechanical HungOn receipts still do not
+claim the dedicated item result text, native rendering, or campaign acquisition.

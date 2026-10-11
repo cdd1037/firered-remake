@@ -4,7 +4,7 @@
   "baseCommit": "67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba",
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "scope": "Living battle-completion matrix. Initial inventory is bound to baseCommit; later implementation updates identify their own tested scope.",
-  "snapshotNote": "Initial inspectedFiles and retained evidence hashes remain the 67c89d3 inventory. Additive implementationUpdates preserve historical snapshots, including the 211/354 eight-script checkpoint. currentFourSlotAdmissionSnapshot identifies the dirty 16a45ea-based working tree and separately hashed predicate inputs. Later rules evidence does not relabel earlier animation/native identities as current main.",
+  "snapshotNote": "Initial inspectedFiles and retained hashes remain the 67c89d3 inventory; additive updates preserve historical source identities. The current combined Domain admission is measured from the actual runtime predicate and bounded evidence, without relabeling older presentation/native runs.",
   "statusDefinitions": {
     "implemented-with-bounded-tests": "An identified implementation and bounded retained tests exist. Only the stated scope is credited; no exhaustive coverage or fresh run is implied.",
     "missing": "A required executable branch/state/owner is absent or explicitly rejected in the inspected scope, even when metadata/AI references exist.",
@@ -4273,7 +4273,7 @@
         "startLine": 172,
         "symbol": "MOVE_RAZOR_WIND"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SWORDS_DANCE",
@@ -4404,7 +4404,7 @@
         "startLine": 250,
         "symbol": "MOVE_FLY"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BIND",
@@ -5597,7 +5597,7 @@
         "startLine": 952,
         "symbol": "MOVE_LEECH_SEED"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_GROWTH",
@@ -5665,7 +5665,7 @@
         "startLine": 991,
         "symbol": "MOVE_SOLAR_BEAM"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_POISON_POWDER",
@@ -6005,7 +6005,7 @@
         "startLine": 1186,
         "symbol": "MOVE_DIG"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TOXIC",
@@ -6879,7 +6879,7 @@
         "startLine": 1693,
         "symbol": "MOVE_SKULL_BASH"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SPIKE_CANNON",
@@ -7162,7 +7162,7 @@
         "startLine": 1862,
         "symbol": "MOVE_SKY_ATTACK"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TRANSFORM",
@@ -10015,7 +10015,7 @@
         "startLine": 3578,
         "symbol": "MOVE_INGRAIN"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SUPERPOWER",
@@ -10356,7 +10356,7 @@
         "startLine": 3786,
         "symbol": "MOVE_DIVE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ARM_THRUST",
@@ -11400,7 +11400,7 @@
         "startLine": 4423,
         "symbol": "MOVE_BOUNCE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MUD_SHOT",
@@ -12430,30 +12430,43 @@
       "scope": "Shared Color Change and Conversion overlay lifecycle",
       "details": "Adds two admitted recipes: 228/354, 126 gated. Color Change already had a bounded ability record, so totals remain36/40. One main combined new mode7/1038; original C/entry/canonical broader tests retain worker provenance. Ten dedicated animation scripts unchanged.",
       "evidence": "evidence/shared-type-changes-20261011/result.json"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "9329fc900b709fb92d6c0ac61d72c622cbc35d70",
+      "scope": "Eight shared charge moves, Leech Seed/Ingrain and four-slot Focus Band",
+      "details": "Main 10/929 charge, 13/21341 residual and 3/4410 Focus Band; 238 recipes admitted,116 gated. Source oracle and original-singles baselines retain their separate isolated-worker provenance. No new dedicated move scripts; Focus Band item result text remains open.",
+      "evidence": "evidence/shared-charge-residual-focus-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "1a3f6ae58b999beddcb2e1e284b0e5791753670b",
+      "scope": "Shared General_StatsChange masked result layer",
+      "details": "One source general root, zero dedicated move roots. Direct ordinary successful Growth/Harden/TailWhip/Flash results admitted; Scene Off exception and completion without ACK. Isolated source2885/headless3073/nativeHarden527; main exact material check and Godot compilation only.",
+      "evidence": "tests/SourceHitAnimation.Tests/evidence/stat-mask-20261011/README.md"
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
-    "method": "Read-only static evaluation of actual SourceBattleKernel.SupportsRecipe target whitelist and every referenced shared effect-family predicate over the 354 authenticated move inventory entries. Live capability guards remain separate. This is recipe admission, not execution or cross-state completeness; no product build/test was run by the inventory refresh.",
+    "method": "Runtime evaluation of SourceBattleKernel.SupportsRecipe over the authenticated catalog during the bounded combined Focus Band test. This is recipe admission, not full interaction or campaign completeness. Exact product hashes are in the referenced evidence.",
     "inventoryDateUtc": "2026-10-11",
-    "baseCommit": "e911e565ce903691aeee7413c7f8275e540f3db8",
-    "workingTreeState": "dirty integrated tree based on baseCommit; hashes below identify inspected current predicate inputs, not a clean commit",
+    "baseCommit": "9329fc900b709fb92d6c0ac61d72c622cbc35d70",
+    "workingTreeState": "integrated source identified by evidence/shared-charge-residual-focus-20261011/main-source-files.json, based on baseCommit",
     "singleRecipesRegistered": 354,
-    "fourSlotRecipeAdmission": 228,
-    "fourSlotRecipeNotAdmitted": 126,
+    "fourSlotRecipeAdmission": 238,
+    "fourSlotRecipeNotAdmitted": 116,
     "newFamilyMoveCounts": {
-      "retaliation": 3,
-      "selected-volatile-target": 12,
-      "type-change": 2
+      "charge": 8,
+      "residual-status": 2
     },
     "dedicatedSingleAnimationScriptsAccepted": 10,
     "dedicatedScriptsRemaining": 344,
     "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 10,
     "dedicatedFourSlotPresentationOnlyScripts": [],
-    "sourceKernelSha256": "e52f45d7e6289e532e4e7e5322de1914ad82a7a405e26ab4a7c03368f464f468",
+    "sourceKernelSha256": "b4da386d2762e879d3c29ce1c13ddfc4ed9d798046a206fe365bdd5b84199a78",
     "predicateInputs": [
       {
         "path": "src/Game.Domain/Battle/SourceBattleKernel.cs",
-        "sha256": "e52f45d7e6289e532e4e7e5322de1914ad82a7a405e26ab4a7c03368f464f468"
+        "sha256": "b4da386d2762e879d3c29ce1c13ddfc4ed9d798046a206fe365bdd5b84199a78"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.AdditionalPrimaryStatus.cs",
@@ -12477,7 +12490,7 @@
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Generic.cs",
-        "sha256": "03affb19224c5a801da3252431cc331718c0516ed2d7df2699c7bf5f4e8240f8"
+        "sha256": "1927e99bbfedb2a297392897ed67ba876eff761fcfba416559d006aeb2da13ab"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Protection.cs",
@@ -12502,6 +12515,14 @@
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.TypeChanges.cs",
         "sha256": "131c50a50aa5fb6b56da381cde699633aa2a998910ca49933d543c11116567b6"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Charge.cs",
+        "sha256": "9e875c390499c586d2225911c7960be0c51820a41b37db6a45c4c658dfe1fa74"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.ResidualStatus.cs",
+        "sha256": "dd4bc3bc4fae6a8387f9882f260281ccd91f8a07bcb18d0dae302c479b468ee4"
       }
     ],
     "continuationVersion": "firered-four-action-lifetimes-v7",
@@ -12822,6 +12843,7 @@
       "completeFourActionTurns": 9,
       "exactSinglesComparisons": 64,
       "limits": "Bounded overlay/ColorChange and Conversion recipes; no broad caller/Transform or campaign admission."
-    }
+    },
+    "sharedChargeResidualFocusEvidence": "evidence/shared-charge-residual-focus-20261011/README.md"
   }
 }

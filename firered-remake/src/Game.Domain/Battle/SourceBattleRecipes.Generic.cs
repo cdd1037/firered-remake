@@ -95,6 +95,8 @@ internal abstract partial class SourceRecipeContext
                 vermilionRules: true, ssAnneRules: true, vermilionGymRules: true, route11Rules: true,
                 rain: SourceCalledRain, rockTunnelRules: true, reflect: RockTunnelReflects(targetSide),
                 sourceDefinition: move, sun: SourceCalledSun, lightScreen: SourceCalledLightScreen(targetSide),
+                sourceDamageMultiplier: SourceChargeRules.DamageMultiplier(SemiInvulnerable(targetSide),move),
+                sourceSolarBeamWeakWeather: move.Effect == "EFFECT_SOLAR_BEAM" && (SourceCalledRain || StruggleSandstorm || SettingWeather.HailTurnsRemaining > 0),
                 weatherSuppressed: SourceDamageWeatherSuppressed, sourceDoubleBattle: SourceDoubleBattle,
                 sourceDefenderCount: SourceDefenderCount(targetSide), sourcePlusMinusBoost: SourcePlusMinusBoost(actor),
                 sourceHelpingHand: Invocation is { } invocation && HelpingHand(invocation.Actor)).Damage;

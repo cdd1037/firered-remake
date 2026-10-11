@@ -273,7 +273,7 @@ public partial class CampaignView
     }
     private void DoubleAcknowledge()
     {
-        if(_sourceMoveAnimationGate.IsBlocking)return;
+        if(SourceAnimationBlocking)return;
         if(_doubleElapsed<(_session.State.DoubleBattle?.CurrentEvent is SourceAbilityDamageEvent or SourceMedicineAppliedEvent ? .4 : .12))return;
         if(_doubleOpening&&_doublePage>0&&
             (_doubleElapsed<1||_doubleSecondCry is not null||_sourceAudio?.Snapshot().Cry?.Playing==true))return;
@@ -371,7 +371,7 @@ public partial class CampaignView
         var b=_session.State.DoubleBattle!;
         if(DrawDoubleMedicineOverlay(b))return;
         _battleSkin.DrawBackground(this);DrawTexture(CurrentWildBattleTerrain,Vector2.Zero);
-        if(_sourceMoveContinuation is not null)DrawTexture(_sourceMoveField!,Vector2.Zero);
+        if(SourceAnimationPresented)DrawTexture(_sourceMoveField!,Vector2.Zero);
         bool entry=_doubleOpening||b.CurrentEvent is SourceStartedEvent;
         bool portrait=entry&&_doublePage==0||b.Stage==CampaignDoubleBattleStage.Finished&&b.Frame.Outcome==WildBattleOutcome.Won&&b.FinishPageIndex>0;
         if(portrait)DrawTexture(_doubleTextures["twins-front"],new(144,8));
@@ -382,13 +382,14 @@ public partial class CampaignView
             if(entry&&(_doublePage==0||_doublePage==1&&(i&1)==0)||portrait&&(i&1)!=0)continue;
             if(mon.CurrentHp==0&&!(b.CurrentEvent is SourceHpChangedEvent {HpBefore:>0} hit&&hit.Target.Value==i))continue;
             var asset=_battleArt[(mon.SourceSpeciesId,(i&1)==0?"back":"front",mon.IsShiny)];
-            if(_sourceMoveContinuation is null)DrawTexture(asset.Texture,asset.Position+DoubleSpriteOffsets[i]);
+            if(!SourceAnimationPresented)DrawTexture(asset.Texture,asset.Position+DoubleSpriteOffsets[i]);
             DrawDoubleHealth(i,body);
         }
         bool choosing=b.SelectingSlot is not null&&_doubleNotice is null&&_doublePages.IsEmpty;
         if(choosing)_uiCorrections.ClearBattleMenu(this);else _battleSkin.DrawBattleMessage(this);
         if(_doubleMenu is "party" or "learn-moves"){DrawDoublePartyOrMoves(b);return;}
         if(_doubleNotice is not null){DoubleLines(_doubleNotice);return;}
+        if(_sourceStatContinuation is not null)return;
         if(_doublePages.Length>0)
         {
             if(_doubleRewardStats.TryGetValue(_doublePage,out var stats)){DrawDoubleRewardStats(stats.Level,stats.Totals);return;}

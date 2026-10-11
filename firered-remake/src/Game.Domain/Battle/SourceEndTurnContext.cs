@@ -12,7 +12,7 @@ internal enum SourceBattlerEndTurnStep { Ingrain, Abilities, Items1, LeechSeed, 
 
 /// <summary>The one source residual scheduler and migrated recipes. Contexts supply storage,
 /// phase-only compatibility commands and boundaries; they never supply another weather/status loop.</summary>
-internal abstract class SourceEndTurnContext
+internal abstract partial class SourceEndTurnContext
 {
     internal abstract int Turn { get; }
     internal abstract long Revision { get; }
@@ -140,6 +140,8 @@ internal abstract class SourceEndTurnContext
             if (!Ongoing) break;
             switch (step)
             {
+                case SourceBattlerEndTurnStep.Ingrain: IngrainResidual(slot); break;
+                case SourceBattlerEndTurnStep.LeechSeed: LeechSeedResidual(slot); break;
                 case SourceBattlerEndTurnStep.Abilities: Ability(slot); break;
                 case SourceBattlerEndTurnStep.Poison: StatusDamage(slot, WildBattleStatus.Poison); break;
                 case SourceBattlerEndTurnStep.Toxic: ToxicDamage(slot); break;

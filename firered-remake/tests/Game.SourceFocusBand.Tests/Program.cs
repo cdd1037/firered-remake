@@ -10,6 +10,7 @@ using Game.Domain.Randomness;
 using Game.Domain.Rules;
 using Game.Domain.WildBattle;
 
+if(args.Length==4 && args[3]=="--four") return FourFocusBandChecks.Run(args[0],args[1],args[2]);
 if (args.Length != 3) return 2;
 var proof = SourceMechanicsCatalogLoader.LoadAuthenticated(args[0]); var catalog = proof.Catalog;
 string source = args[1], evidence = args[2];

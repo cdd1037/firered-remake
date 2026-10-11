@@ -292,7 +292,7 @@ public partial class CampaignView
 
     private void ProcessWildBattle(double delta)
     {
-        if(_sourceMoveAnimationGate.IsBlocking)return;
+        if(SourceAnimationBlocking)return;
         _wildElapsed += delta;
         if(PresentedWildBattle is {Phase:CampaignBattlePhase.Events} fluteBattle && ProcessPokemonTowerFluteBattle(fluteBattle))return;
         if (_wildNotice is null && PresentedWildBattle is { Phase: CampaignBattlePhase.Events } b &&
@@ -392,7 +392,7 @@ public partial class CampaignView
     {
         if (key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape) return false;
         if (!key.Pressed || key.Echo) return true;
-        if(_sourceMoveAnimationGate.IsBlocking)return true;
+        if(SourceAnimationBlocking)return true;
         _held = null;
         var b = PresentedWildBattle!;
         if(PokemonTowerRevealInputLocked(b))return true;
@@ -528,7 +528,7 @@ public partial class CampaignView
             return;
         }
         DrawRect(new(0, 0, 240, 160), Colors.Black); _battleSkin.DrawBackground(this);DrawTexture(CurrentWildBattleTerrain,Vector2.Zero);
-        if(_sourceMoveContinuation is not null)DrawTexture(_sourceMoveField!,Vector2.Zero);
+        if(SourceAnimationPresented)DrawTexture(_sourceMoveField!,Vector2.Zero);
         bool portrait = DrawForestTrainerPortrait(b);
         bool defeatedTrainer = DrawForestTrainerDefeatPortrait(b);
         foreach (var (side, mon) in new[] { (WildBattleSide.Opponent, b.DisplayOpponent), (WildBattleSide.Player, WildDisplayPlayer(b)) })
@@ -541,7 +541,7 @@ public partial class CampaignView
             {
                 var appearance=FuchsiaBattleAppearance(b,side,mon);
                 var asset = _battleArt[(appearance.Species, side == WildBattleSide.Player ? "back" : "front", appearance.Shiny)];
-                if(_sourceMoveContinuation is null && !DrawSourceSubstitute(side) && (side!=WildBattleSide.Opponent||!DrawPokemonTowerOpponent(b)))DrawTexture(asset.Texture, asset.Position);
+                if(!SourceAnimationPresented && !DrawSourceSubstitute(side) && (side!=WildBattleSide.Opponent||!DrawPokemonTowerOpponent(b)))DrawTexture(asset.Texture, asset.Position);
             }
             int hp = WildDisplayedHp(b, mon, side);
             DrawWildHealth(mon, side, hp);
@@ -552,6 +552,7 @@ public partial class CampaignView
         if (_wildNotice is not null) { WildLines(_wildNotice); return; }
         if (_wildMenu.StartsWith("learn-", StringComparison.Ordinal)) { DrawWildLearning(b); return; }
         if (WildStatsPage(b)) { DrawWildStats(b, (WildRewardLevelEvent)b.Pages[b.PageIndex].Reward!); return; }
+        if(_sourceStatContinuation is not null)return;
         if (!_wildPages.IsEmpty)
         {
             if(WildCurrentEvent(b) is not WildBattleTowerHpEvent {Effect:"curse-cost"} || _wildElapsed>=.4)WildLines(_wildPages[_wildPage]);

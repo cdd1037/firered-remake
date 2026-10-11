@@ -39,12 +39,8 @@ public static partial class WildBattleRules
     }
 
     public static WildBattleSemiInvulnerable CalledSemiInvulnerable(WildBattleCombatant mon) =>
-        mon.CalledTurnState?.Lock is { Kind: WildBattleCalledLockKind.Charge } charge ? charge.Move.Value switch {
-            "pret:MOVE_FLY" or "pret:MOVE_BOUNCE" => WildBattleSemiInvulnerable.Air,
-            "pret:MOVE_DIG" => WildBattleSemiInvulnerable.Underground,
-            "pret:MOVE_DIVE" => WildBattleSemiInvulnerable.Underwater,
-            _ => WildBattleSemiInvulnerable.None
-        } : mon.DigMoveSlot is not null ? WildBattleSemiInvulnerable.Underground : WildBattleSemiInvulnerable.None;
+        mon.CalledTurnState?.Lock is { Kind: WildBattleCalledLockKind.Charge } charge ? SourceChargeRules.SemiInvulnerable(charge.Move)
+            : mon.DigMoveSlot is not null ? WildBattleSemiInvulnerable.Underground : WildBattleSemiInvulnerable.None;
 
     private static string? ValidateCalledTurnLockState(PokemonCatalog catalog, WildBattleState state)
     {
@@ -143,19 +139,10 @@ public static partial class WildBattleRules
         private bool CalledSemiInvulnerableMiss(WildBattleSide side, WildBattleSide target, PokemonMoveDefinition move)
         {
             if (!CalledTurnActive || side == target || CalledSureHit(side, target)) return false;
-            return CalledSemiInvulnerable(Get(target)) switch {
-                WildBattleSemiInvulnerable.Air => move.Id.Value is not ("pret:MOVE_GUST" or "pret:MOVE_TWISTER" or "pret:MOVE_THUNDER" or "pret:MOVE_SKY_UPPERCUT"),
-                WildBattleSemiInvulnerable.Underground => move.Effect is not ("EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE"),
-                WildBattleSemiInvulnerable.Underwater => move.Id.Value is not ("pret:MOVE_SURF" or "pret:MOVE_WHIRLPOOL"),
-                _ => false
-            };
+            return SourceChargeRules.Misses(CalledSemiInvulnerable(Get(target)),move);
         }
-        private int CalledSemiDamageMultiplier(WildBattleSide target, PokemonMoveDefinition move) => CalledSemiInvulnerable(Get(target)) switch {
-            WildBattleSemiInvulnerable.Air when move.Id.Value is "pret:MOVE_GUST" or "pret:MOVE_TWISTER" => 2,
-            WildBattleSemiInvulnerable.Underground when move.Effect is "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE" => 2,
-            WildBattleSemiInvulnerable.Underwater when move.Id.Value is "pret:MOVE_SURF" or "pret:MOVE_WHIRLPOOL" => 2,
-            _ => 1
-        };
+        private int CalledSemiDamageMultiplier(WildBattleSide target, PokemonMoveDefinition move) =>
+            SourceChargeRules.DamageMultiplier(CalledSemiInvulnerable(Get(target)),move);
         private bool CalledUproarPreventsSleep(WildBattleSide side) => WildBattleEffective.Ability(Get(side)) != "ABILITY_SOUNDPROOF" &&
             new[] { State.Player, State.Opponent }.Any(m => m.CalledTurnState?.Lock is { Kind: WildBattleCalledLockKind.Uproar });
         private void CalledUproarWake(WildBattleSide side)
@@ -261,30 +248,15 @@ public static partial class WildBattleRules
             if (!HasCalledTurnLockRecipe(move.Effect)) return;
             handled = true;
             var target = activeInvocation!.Target;
-            bool charge = move.Effect is "EFFECT_RAZOR_WIND" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_SOLAR_BEAM" or "EFFECT_SKULL_BASH" or "EFFECT_SKY_ATTACK";
-            bool releasing = Get(side).CalledTurnState?.Lock?.Kind == WildBattleCalledLockKind.Charge;
-            bool solarSun = move.Effect == "EFFECT_SOLAR_BEAM" && SourceCalledSun && !SourceCalledWeatherSuppressed;
-            // attackcanceler ignores Protect on a first charging turn. Protection cancels existing locks.
-            bool protectedMove = Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") && (!charge || releasing);
-            if (protectedMove) { CancelRoute3Rollout(side, "protected"); CancelCalledTurnLock(side, "protected"); }
-            if (charge)
+            if (SourceRecipeContext.HasChargeRecipe(move.Effect))
             {
-                if (!releasing || solarSun)
-                {
-                    if (solarSun) StartCalledLock(side, move, WildBattleCalledLockKind.Charge, 1);
-                    SpendInvocationPp(side, target, move, printAttackString: false);
-                    if (!solarSun)
-                    {
-                        StartCalledLock(side, move, WildBattleCalledLockKind.Charge, 1);
-                        if (move.Effect == "EFFECT_SKULL_BASH") ChangeStage(side, side, WildBattleStat.Defense, 1, move.Id);
-                        return;
-                    }
-                }
-                ChangeCalledLock(side, null, "released");
-                activeInvocation = activeInvocation with { Flags = activeInvocation.Flags | WildBattleInvocationFlags.NoPpDeduct };
-                CalledTurnHit(catalog, side, target, move, purpose, spendBeforeAccuracy: false, spendPp: true);
-                return;
+                // Protect was recorded by attackcanceler; the script still executes its release.
+                if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") && !Recipes.ChargeFirstTurn(move))
+                    CancelRoute3Rollout(side,"protected");
+                Recipes.ExecuteCharge(catalog,S(side),move,purpose,ref handled);return;
             }
+            if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"))
+            { CancelRoute3Rollout(side,"protected"); CancelCalledTurnLock(side,"protected"); }
             if (move.Effect == "EFFECT_BIDE")
             {
                 SpendInvocationPp(side, target, move);

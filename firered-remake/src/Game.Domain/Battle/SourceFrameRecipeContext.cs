@@ -31,15 +31,16 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             struggle ? WildBattleInvocationFlags.NoPpDeduct : WildBattleInvocationFlags.None);
     }
     // BattleScript_MonTookFutureAttack reuses accuracycheck and the ordinary damage update.
-    // Protection has already expired before delayed work; Focus Band and Substitute remain gated.
+    // Protection has already expired before delayed work; Focus Band uses the shared adjustment, while Substitute remains gated.
     internal void RunFutureHit(SourceFutureAttack future, BattlerSlot target)
     {
         string purpose = $"source-battle.slot-{future.Attacker.Value}.future-attack";
         SetHitItemReceipt(target, HitItemReceipt(target) with { Damage = 0xFFFF });
         var hit = PrepareFutureHit(future.Attacker, target, move, future.Damage, purpose);
         if (!hit.Hit) return;
+        int adjusted = AdjustHeldDamage(target, move.Id, hit.Damage, purpose, normal2: true);
         delayedContactDamage = true;
-        int lost = SourceGenericApplyDamage(future.Attacker, target, move, hit.Damage, false, hit.Percent);
+        int lost = SourceGenericApplyDamage(future.Attacker, target, move, adjusted, false, hit.Percent);
         delayedContactDamage = false;
         var cell = Frame.Get(target); var prior = cell.Registers.Damage;
         Frame = Frame with { Slots = Frame.Slots.SetItem(target.Value, cell with { Registers = cell.Registers with {
@@ -52,6 +53,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     {
         string purpose = Frame.Layout == SourceBattleLayout.Singles
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
+        PrepareCharge(invocation.Actor,move);
         if (ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose))
         {
             CompleteScriptTarget();
@@ -61,6 +63,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         invocation = invocation with { CancellerPhase = WildBattleAttackCancellerPhase.ConditionsPassed,
             Flags = invocation.Flags | WildBattleInvocationFlags.Obeys };
         BeginScriptTarget(action.Target);
+        ReleaseChargeWithoutTarget(invocation.Actor,move);
         SpendEarlyPartyPp(action.Actor.Slot, action.Target, action.ChosenSlot, move);
         Add(n => new SourceMoveFailedEvent(n, Turn, action.Actor.Slot, action.Target, move.Id, "deferred-ko-no-target"));
         commandNoEffect = true;
@@ -72,6 +75,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         string purpose = Frame.Layout == SourceBattleLayout.Singles
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
         var firstTarget = invocation.Target;
+        PrepareCharge(invocation.Actor,move);
         bool blocked = ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose);
         if (blocked) CompleteScriptTarget();
         else
@@ -81,7 +85,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         }
         // MOVEEND_NEXT_TARGET uses HP only. It does not test source absence or restart action
         // ownership, so PP exhaustion and the attacker's zero HP cannot cancel the second pass.
-        if (!blocked && Frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_BOTH" &&
+        if (!blocked && !ChargeFirstTurn(move) && Frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_BOTH" &&
             Frame.Get(firstTarget.Partner).Body?.Pokemon.CurrentHp > 0)
         {
             invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.NoAttackString };
@@ -100,7 +104,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             }
             else if (invocation.PpSlot >= 0 && Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0 &&
                 (invocation.Flags & WildBattleInvocationFlags.NoAttackString) == 0 &&
-                Frame.Get(invocation.Actor).Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Rollout })
+                Frame.Get(invocation.Actor).Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge })
             {
                 invocation = invocation with { Flags = WildBattleInvocationFlags.AttackStringPrinted };
                 Add(n => new SourceAttackStringEvent(n, Turn, invocation.Actor, move.Id, move.Id));
@@ -111,7 +115,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 invocation = invocation with { Flags = invocation.Flags | WildBattleInvocationFlags.Obeys };
                 if (action.LightningRodRedirected)
                     Add(n => new SourceAbilityActivatedEvent(n, Turn, target, "ABILITY_LIGHTNING_ROD"));
-                if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"))
+                if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") && !ChargeFirstTurn(move))
                 {
                     // attackcanceler sets the miss before the script's own PP/accuracy commands.
                     // Keep those commands in their original per-target positions (not an early return).
@@ -131,8 +135,15 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled) ExecuteAllySupport(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled && HasSwitchRecipe(move.Effect)) { ExecuteSwitch(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && move.Effect == "EFFECT_SPIKES") { ExecuteSpikes(invocation.Actor, invocation.ChosenSlot, move); handled = true; }
+                if (!handled && HasResidualStatusRecipe(move.Effect))
+                {
+                    if (move.Effect == "EFFECT_INGRAIN") ExecuteIngrain(invocation.Actor, invocation.ChosenSlot, move);
+                    else ExecuteLeechSeed(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose);
+                    handled = true;
+                }
                 if (!handled) ExecuteTypeChange(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteFieldSetting(invocation.Actor, invocation.ChosenSlot, move, ref handled);
+                if (!handled) ExecuteCharge(catalog,invocation.Actor,move,purpose,ref handled);
                 if (!handled) ExecuteTurnMove(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteBasicStat(invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteAdditionalPrimaryStatus(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
@@ -291,13 +302,15 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     internal override void SourceCalledProtectionFailure(BattlerSlot actor, BattlerSlot target, MoveId move, string reason) =>
         Add(n => new SourceMoveFailedEvent(n, Turn, actor, target, move, reason));
     internal override bool CalledSureHit(BattlerSlot actor, BattlerSlot target) => Frame.Get(target).Registers.Turn is { SureHitTurnsRemaining: > 0 } t && t.SureHitSource == actor;
-    internal override bool BillUnderground(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) => false;
+    internal override bool BillUnderground(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move) =>
+        actor != target && !CalledSureHit(actor,target) && SourceChargeRules.Misses(SemiInvulnerable(target),move);
 
 
-    internal override void SpendEarlyPartyPp(BattlerSlot actor, BattlerSlot target, int slot, PokemonMoveDefinition move)
+    internal override void SpendEarlyPartyPp(BattlerSlot actor, BattlerSlot target, int slot, PokemonMoveDefinition move) => SpendFramePp(actor,target,move,true);
+    private void SpendFramePp(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, bool attackString)
     {
         invocation = invocation with { Target = target };
-        bool printed = (invocation.Flags & (WildBattleInvocationFlags.AttackStringPrinted | WildBattleInvocationFlags.NoAttackString)) == 0;
+        bool printed = attackString && (invocation.Flags & (WildBattleInvocationFlags.AttackStringPrinted | WildBattleInvocationFlags.NoAttackString)) == 0;
         if (printed)
         {
             Add(n => new SourceAttackStringEvent(n, Turn, actor, invocation.ChosenMove, move.Id));
@@ -392,7 +405,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     }
     internal override void SourceGenericMiss(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
-        if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"))
+        if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") && !ChargeFirstTurn(move))
         {
             MarkProtectionMiss(target);
             Add(n => new SourceMoveFailedEvent(n, Turn, actor, target, move.Id, "protected"));

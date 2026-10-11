@@ -25,7 +25,8 @@ public sealed record AnimationBattler(AnimationSlot Slot, string Asset, int YOff
         return new(p.X,y);
     }
 }
-public sealed record CommittedMoveAnimation(string BattleId, long Sequence, int MoveId, AnimationSlot Actor, AnimationSlot Target);
+public sealed record CommittedMoveAnimation(string BattleId, long Sequence, int MoveId, AnimationSlot Actor, AnimationSlot Target)
+{ public int? StatAnimationArgument {get;init;} }
 public sealed record SourceAnimationCommand(string Op, string[] Args, int Line);
 public sealed record SourceSpriteAnimFrame(int Tile,int Duration,bool HFlip,bool VFlip);
 public sealed record SourceSpriteRecipe(string Template,string Asset,string Callback,bool Blend,SourceSpriteAnimFrame[][] Animations);
@@ -57,6 +58,7 @@ public sealed record SourceAnimationFrame(int Frame, bool Active, PixelPoint[] O
 {
     public SourceVisualSpriteFrame[] Sprites {get;init;} = [];
     public SourcePaletteBlend[] PaletteBlends {get;init;} = [];
+    public SourceStatMaskFrame? StatMask {get;init;}
     public bool BlendEnabled {get;init;}
     public bool Doubles {get;init;}
     public int[] BattlerOamRanks {get;init;} = [];
@@ -93,6 +95,7 @@ public sealed partial class SourceBattleAnimation
         if(_battlers.Count!=_battlerCount||Enumerable.Range(0,_battlerCount).Any(i=>!_battlers.ContainsKey(i)))throw new InvalidDataException("Animation needs every canonical battle position.");
         if(script.MoveId!=cue.MoveId||!_battlers.ContainsKey(cue.Actor.Value)||!_battlers.ContainsKey(cue.Target.Value))throw new ArgumentException("Animation participants/script differ.");
         if(script.Commands.Length is <1 or >32||script.Commands[^1].Op!="end")throw new InvalidDataException("Unbounded or unterminated script.");
+        ValidateStatRoot();
         foreach(var command in script.Commands)Validate(command);
     }
     private void Fail(SourceAnimationCommand c,string reason)=>throw new SourceAnimationException(new(_script.MoveId,_script.Label,c.Line,c.Op,reason));
@@ -100,7 +103,7 @@ public sealed partial class SourceBattleAnimation
     {
         if(!SupportedCommands.Contains(c.Op))Fail(c,"No accepted source adapter.");
         int count=c.Op switch{"loadspritegfx" or "monbg" or "clearmonbg" or "delay"=>1,"setalpha" or "playsewithpan"=>2,"createsprite"=>c.Args.FirstOrDefault() switch
-        {"gBasicHitSplatSpriteTemplate" or "gScratchSpriteTemplate"=>7,"gHorizontalLungeSpriteTemplate"=>5,"gCuttingSliceSpriteTemplate" or "gSlashSliceSpriteTemplate"=>6,"gFalseSwipeSliceSpriteTemplate"=>3,"gFalseSwipePositionedSliceSpriteTemplate"=>4,"gSlideMonToOffsetSpriteTemplate" or "gFistFootSpriteTemplate"=>8,"gSlideMonToOriginalPosSpriteTemplate"=>6,_=>-1},"createvisualtask"=>c.Args.FirstOrDefault()=="AnimTask_Flash"?2:7,"loopsewithpan"=>4,_=>0};
+        {"gBasicHitSplatSpriteTemplate" or "gScratchSpriteTemplate"=>7,"gHorizontalLungeSpriteTemplate"=>5,"gCuttingSliceSpriteTemplate" or "gSlashSliceSpriteTemplate"=>6,"gFalseSwipeSliceSpriteTemplate"=>3,"gFalseSwipePositionedSliceSpriteTemplate"=>4,"gSlideMonToOffsetSpriteTemplate" or "gFistFootSpriteTemplate"=>8,"gSlideMonToOriginalPosSpriteTemplate"=>6,_=>-1},"createvisualtask"=>c.Args.FirstOrDefault() is "AnimTask_Flash" or "AnimTask_StatsChange"?2:7,"loopsewithpan"=>4,_=>0};
         if(c.Args.Length!=count)Fail(c,"Command argument shape differs.");
         if(c.Op=="loadspritegfx"&&c.Args[0] is not ("ANIM_TAG_IMPACT" or "ANIM_TAG_SCRATCH" or "ANIM_TAG_CUT" or "ANIM_TAG_SLASH" or "ANIM_TAG_SLASH_2" or "ANIM_TAG_HANDS_AND_FEET"))Fail(c,"Unadmitted source graphics tag.");
         if(c.Op is "monbg" or "clearmonbg"&&c.Args[0] is not ("ANIM_TARGET" or "ANIM_DEF_PARTNER"))Fail(c,"Only target/defender-partner monbg is admitted.");
@@ -108,20 +111,21 @@ public sealed partial class SourceBattleAnimation
         {
             if(!_script.SpriteRecipes.TryGetValue(c.Args[0],out var recipe)||recipe.Callback is not ("AnimSpriteOnMonPos" or "AnimCuttingSlice" or "AnimSlashSlice" or "AnimFalseSwipeSlice" or "AnimFalseSwipePositionedSlice" or "AnimBasicFistOrFoot"))Fail(c,"Unknown sprite callback recipe.");
         }
-        if(c.Op=="createvisualtask"&&c.Args[0] is not ("AnimTask_ShakeMon" or "AnimTask_ShakeMon2" or "AnimTask_TranslateMonEllipticalRespectSide" or "AnimTask_Flash"))Fail(c,"Unknown task callback.");
+        if(c.Op=="createvisualtask"&&c.Args[0] is not ("AnimTask_ShakeMon" or "AnimTask_ShakeMon2" or "AnimTask_TranslateMonEllipticalRespectSide" or "AnimTask_Flash" or "AnimTask_StatsChange"))Fail(c,"Unknown task callback.");
         if(c.Op is "playsewithpan" or "loopsewithpan"&&(c.Args[0] is not ("SE_M_DOUBLE_SLAP" or "SE_M_COMET_PUNCH" or "SE_M_SCRATCH" or "SE_M_CUT" or "SE_M_RAZOR_WIND" or "SE_M_VITAL_THROW" or "SE_M_DOUBLE_TEAM" or "SE_M_VITAL_THROW2" or "SE_M_TAIL_WHIP" or "SE_M_LEER")||c.Args[1] is not ("SOUND_PAN_TARGET" or "SOUND_PAN_ATTACKER")))Fail(c,"Unknown sound/pan command.");
         ValidateOperands(c);
     }
     private static int Number(string s)=>s switch{"ANIM_ATTACKER"=>0,"ANIM_TARGET"=>1,_=>int.Parse(s,System.Globalization.CultureInfo.InvariantCulture)};
     private AnimationSlot Resolve(string s)=>Number(s) switch{0=>_cue.Actor,1=>_cue.Target,_=>throw new InvalidDataException("Unknown animation participant.")};
-    public SourceAnimationFrame Snapshot()=>new(_frame,Active,(PixelPoint[])_offsets.Clone(),[.._backgrounds.Order()],_alphaA,_alphaB,[.._sprites.OfType<HitSplat>().OrderBy(x=>x.Slot).Select(x=>new HitSplatFrame(x.Center,x.Scale))],[.._trace]){PaletteBlends=[.._paletteBlends.Values.OrderBy(p=>p.Palette)],BlendEnabled=_blendEnabled,Doubles=_doubles,BattlerOamRanks=Enumerable.Range(0,_battlerCount).Select(i=>Array.IndexOf(_oamOrder,i)).ToArray(),ObjectOffsets=(PixelPoint[])_objectOffsets.Clone(),Sprites=[.._sprites.OrderBy(x=>x.Slot).Select(x=>x.Frame with{OamRank=Array.IndexOf(_oamOrder,x.Slot)})]};
+    public SourceAnimationFrame Snapshot()=>new(_frame,Active,(PixelPoint[])_offsets.Clone(),[.._backgrounds.Order()],_alphaA,_alphaB,[.._sprites.OfType<HitSplat>().OrderBy(x=>x.Slot).Select(x=>new HitSplatFrame(x.Center,x.Scale))],[.._trace]){StatMask=_statMask,PaletteBlends=[.._paletteBlends.Values.OrderBy(p=>p.Palette)],BlendEnabled=_blendEnabled,Doubles=_doubles,BattlerOamRanks=Enumerable.Range(0,_battlerCount).Select(i=>Array.IndexOf(_oamOrder,i)).ToArray(),ObjectOffsets=(PixelPoint[])_objectOffsets.Clone(),Sprites=[.._sprites.OrderBy(x=>x.Slot).Select(x=>x.Frame with{OamRank=Array.IndexOf(_oamOrder,x.Slot)})]};
     public SourceAnimationFrame Tick()
     {
         if(!Active)throw new InvalidOperationException("Animation already ended.");
         _frame++;_trace.Clear();
         // callback1 then BattleMainCB2: AnimateSprites, BuildOamBuffer, RunTasks.
-        if(_waitCallback){if(_wait<=0){_waitCallback=false;_wait=0;}else _wait--;}
-        else RunScript();
+        bool general=_cue.StatAnimationArgument is not null;
+        if(!general&&_waitCallback){if(_wait<=0){_waitCallback=false;_wait=0;}else _wait--;}
+        else if(!general)RunScript();
         foreach(var sprite in _sprites.OrderBy(x=>x.Slot).ToArray()){sprite.Step(this);if(sprite.Finished)_sprites.Remove(sprite);}
         for(int i=0;i<_battlerCount;i++)
         {
@@ -135,6 +139,10 @@ public sealed partial class SourceBattleAnimation
         foreach(var task in _soundTasks.ToArray()){task.Step(this);if(task.Finished)_soundTasks.Remove(task);}
         foreach(var task in _tasks.ToArray()){task.Step(this);if(task.Finished)_tasks.Remove(task);}
         if(_clearTicks>=0&&++_clearTicks==2){_clearTicks=-1;_backgrounds.Clear();_trace.Add("monbg-cleared");}
+        // General animations run the script in the priority-10 table task, after
+        // OAM construction and the priority-5 visual callback. Newly created tasks
+        // therefore begin on the following frame. Dedicated move roots keep callback1.
+        if(general)RunScript();
         return Snapshot();
     }
     private void SortSourceSprites()
@@ -195,6 +203,7 @@ public sealed partial class SourceBattleAnimation
                     }
                     break;
                 case "createvisualtask":
+                    if(a[0]=="AnimTask_StatsChange"){_tasks.Add(new StatMaskTask(this));break;}
                     if(a[0]=="AnimTask_Flash"){_tasks.Add(new FlashTask(this));break;}
                     if(a[0]=="AnimTask_TranslateMonEllipticalRespectSide")
                     {var ellipse=new EllipseTask(Resolve(a[2]),Number(a[3])*(_cue.Actor.IsPlayer?1:-1),Number(a[4]),Number(a[5]),Number(a[6]));ellipse.Step(this);if(!ellipse.Finished)_tasks.Add(ellipse);break;}
@@ -221,7 +230,7 @@ public sealed partial class SourceBattleAnimation
     public void Cancel()
     {
         if(_cancelled)return;_cancelled=true;Active=false;
-        _audio.StopAnimationEffects();_soundTasks.Clear();_paletteBlends.Clear();_sprites.Clear();_tasks.Clear();_backgrounds.Clear();Array.Clear(_offsets);Array.Clear(_objectOffsets);_alphaA=_alphaB=0;_blendEnabled=false;_clearTicks=-1;
+        _statMask=null;_audio.StopAnimationEffects();_soundTasks.Clear();_paletteBlends.Clear();_sprites.Clear();_tasks.Clear();_backgrounds.Clear();Array.Clear(_offsets);Array.Clear(_objectOffsets);_alphaA=_alphaB=0;_blendEnabled=false;_clearTicks=-1;
     }
     private abstract class VisualSprite(int slot,int subpriority)
     {

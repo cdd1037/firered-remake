@@ -110,15 +110,16 @@ public static class SourceBattleKernel
             if (new[] { body.AttackStage, body.DefenseStage, body.SpeedStage, body.AccuracyStage, body.EvasionStage,
                 6 + body.SpecialAttackStageDelta, 6 + body.SpecialDefenseStageDelta }.Any(stage => stage is < 0 or > 12))
                 return "source_kernel_stat_stage";
-            if (cell.Position.FocusBanded || body.Transform is not null || body.CopyMoves is not null || body.CalledVolatile is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.DestinyBond || body.Nightmare || body.Cursed || body.Rooted || body.YawnTurnsRemaining != 0 || body.ChargeTurnsRemaining != 0 || body.Imprison || body.SourcePartyStatusOverride is not null ||
-                cell.Registers.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout) } || body.Rage ||
+            if (body.Transform is not null || body.CopyMoves is not null || body.CalledVolatile is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.DestinyBond || body.Nightmare || body.Cursed || body.YawnTurnsRemaining != 0 || body.ChargeTurnsRemaining != 0 || body.Imprison || body.SourcePartyStatusOverride is not null ||
+                cell.Registers.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge) } || body.Rage ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.EncoreMoveSlot is not null ||
-                cell.Registers.LeechSeedSource is not null || (body.HeldItem != "ITEM_NONE" && !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFrameBerryItems.SupportsHeldItem(body.HeldItem))) || body.WaterSport || body.MudSport)
+                (body.HeldItem != "ITEM_NONE" && !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFrameBerryItems.SupportsHeldItem(body.HeldItem))) || body.WaterSport || body.MudSport)
                 return "source_kernel_volatile_not_migrated";
             if (body.ConfusionTurnsRemaining is < 0 or > 5 || body.TruantLoafing && body.Pokemon.CurrentHp == 0 ||
                 cell.Registers.Turn?.Lock is { } retainedLock && (!SupportsTurnLock(catalog, retainedLock) || body.Pokemon.CurrentHp == 0))
                 return "source_kernel_canceller_state";
+            if (SourceResidualStatusRules.Validate(frame, cell) is { } residualError) return residualError;
             if (SourceVolatileTargetRules.Validate(catalog, frame, cell) is { } volatileError) return volatileError;
             if (SourceProtectionRules.Validate(body) is { } protectionError) return protectionError;
             if (frame.Layout == SourceBattleLayout.Singles && (body.Protected || body.Enduring))
@@ -134,7 +135,7 @@ public static class SourceBattleKernel
         }
         if (move.Power > 0 && move.Type == "TYPE_FIRE" && frame.Slots.Any(c => c.Body?.Status == WildBattleStatus.Freeze))
             return "source_kernel_fire_thaw_move_end_not_migrated";
-        if (frame.FourTurn is null && frame.Queue.IsEmpty && move.Effect is "EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT")
+        if (frame.FourTurn is null && frame.Queue.IsEmpty && move.Effect is "EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT" or "EFFECT_SKY_ATTACK")
             return "source_kernel_flinch_order_not_migrated";
         return null;
     }
@@ -144,6 +145,9 @@ public static class SourceBattleKernel
             ? recharge.Move : chosenSlot == WildBattleRules.StruggleSlot ? WildBattleRules.StruggleMove : actor.Body!.Pokemon.Moves[chosenSlot].Move];
 
     internal static bool SupportsTurnLock(PokemonCatalog catalog, SourceTurnLock locked) => SupportsRecharge(catalog, locked) ||
+        locked.Kind == WildBattleCalledLockKind.Charge && locked.TurnsRemaining == 1 &&
+        locked.StoredDamage == 0 && locked.StoredDamageSource is null && !locked.UnableToUseMove &&
+        catalog.Moves.TryGetValue(locked.Move,out var chargeMove) && SourceRecipeContext.HasChargeRecipe(chargeMove.Effect) && MetronomeSourceMoveDefinition.Matches(chargeMove) ||
         locked.Kind == WildBattleCalledLockKind.Rollout && locked.TurnsRemaining is >= 1 and <= 4 &&
         locked.StoredDamage == 0 && locked.StoredDamageSource is null && !locked.UnableToUseMove &&
         catalog.Moves.TryGetValue(locked.Move, out var move) && move.Effect == "EFFECT_ROLLOUT" && MetronomeSourceMoveDefinition.Matches(move);
@@ -156,7 +160,7 @@ public static class SourceBattleKernel
 
     public static bool SupportsRecipe(PokemonMoveDefinition move) => MetronomeSourceMoveDefinition.Matches(move) &&
         move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_OPPONENTS_FIELD" or "MOVE_TARGET_DEPENDS" &&
-        (SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
+        (SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
          SourceRecipeContext.HasTypeChangeRecipe(move.Effect) || SourceRecipeContext.HasRetaliationRecipe(move.Effect) || SourceRecipeContext.HasFixedDamageRecipe(move.Effect) ||
          SourceRecipeContext.HasStatRecoveryRecipe(move.Effect) || SourceRecipeContext.HasFieldSettingRecipe(move.Effect) ||
          SourceRecipeContext.HasProtectionRecipe(move.Effect) || SourceRecipeContext.HasAllySupportRecipe(move.Effect) || SourceRecipeContext.HasTurnMoveRecipe(move.Effect) || SourceRecipeContext.HasSwitchRecipe(move.Effect));

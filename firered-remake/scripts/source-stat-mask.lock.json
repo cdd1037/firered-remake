@@ -1,0 +1,184 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/battle_anim_scripts.s",
+      "bytes": 406484,
+      "sha256": "f1566a2d43fad88619f4e3799f995bfd1c53b65fe8de4c4a91d66a440284ea9e"
+    },
+    {
+      "path": "asm/macros/battle_anim_script.inc",
+      "bytes": 4279,
+      "sha256": "cb193c567289983c26ed8acaa8dd64501c64c7e088e28995c49439333b52b27c"
+    },
+    {
+      "path": "data/battle_scripts_1.s",
+      "bytes": 138642,
+      "sha256": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034"
+    },
+    {
+      "path": "src/battle_script_commands.c",
+      "bytes": 355862,
+      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3"
+    },
+    {
+      "path": "src/battle_anim.c",
+      "bytes": 46944,
+      "sha256": "5883d9ee0483120ef67461952f5880499f322fb1c706cc213ca13c0c2b0e88c5"
+    },
+    {
+      "path": "src/battle_anim_mons.c",
+      "bytes": 70676,
+      "sha256": "fcb002acc48b8cd6b8cf8b7eddcb3034d721ff5887eb6bdeedfe183b7b3908bb"
+    },
+    {
+      "path": "src/battle_anim_status_effects.c",
+      "bytes": 17047,
+      "sha256": "e574e88a1a235973010647d1ec11bead112b4be2d0044b45de8be2a80b6328b3"
+    },
+    {
+      "path": "src/battle_anim_utility_funcs.c",
+      "bytes": 34923,
+      "sha256": "8dbf0d05319980658ac1f698b1fed5a9dba02d1bda5aba487fec42d9ae16d297"
+    },
+    {
+      "path": "src/graphics.c",
+      "bytes": 99258,
+      "sha256": "65f71604b006c1f302aa8e86763dc6d064dd4f421cea3e349e6eaa244da06fa3"
+    },
+    {
+      "path": "include/battle_anim.h",
+      "bytes": 15982,
+      "sha256": "15d0a815fec54ed669e1cf7130d323070d799ecfba0f3a935da4b9c28d6f09a7"
+    },
+    {
+      "path": "include/constants/pokemon.h",
+      "bytes": 10894,
+      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "bytes": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "path": "include/gba/defines.h",
+      "bytes": 2518,
+      "sha256": "4356e895d7108dedd2c788bbbe98e0948778712a4ea6374193bdc1a851efe69b"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat.png",
+      "bytes": 430,
+      "sha256": "b7e7a329d3d4ac579b9fadefc00400f06ae6cafb4273ee4402b15cec02c50c55"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat1.pal",
+      "bytes": 171,
+      "sha256": "afc9c909c46eef4e170315fb596e90a921da7bc712073534d35152d63a8822eb",
+      "gitBlobBytes": 152,
+      "gitBlobSha256": "203d4c05d86d8a18044618bed04d184ee7deac58cdbe91ad644bbb3e48b84085",
+      "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat2.pal",
+      "bytes": 171,
+      "sha256": "bf8d09321368502faf5ad0ff9b46eee11cd630ab6024f38a799e29bc92d643b8",
+      "gitBlobBytes": 152,
+      "gitBlobSha256": "4d33120b1a9545302cc18a2defbe6fed771ae32e1ac777958dc7473b41580ec3",
+      "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat3.pal",
+      "bytes": 183,
+      "sha256": "c6e739735577a21e533b3b3df6c2e4c9ed4038b9e9ff1d628f79d399b21fc035",
+      "gitBlobBytes": 164,
+      "gitBlobSha256": "57bded8388f2dd012539db1667278c872a0bfc9a7e7ab64bc754aa33720c8ef8",
+      "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat4.pal",
+      "bytes": 174,
+      "sha256": "405e3e04ed17895931ecf1e19253c6dffad2bb89f1b1d32a3f5a3d3ce8a70f82",
+      "gitBlobBytes": 155,
+      "gitBlobSha256": "47672355ae588b2451fcfc2826f21bd9545c0324a5a3f220c985dd72192dc524",
+      "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat5.pal",
+      "bytes": 178,
+      "sha256": "ffbc4fd2e92f6912c9d05441e52eccd4088a78dadf231116be297343acc63c00",
+      "gitBlobBytes": 159,
+      "gitBlobSha256": "f4d2b3724f562978308b892c9df99e9cd5364f6a7fcf38f29ca0c5376feb2454",
+      "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat6.pal",
+      "bytes": 174,
+      "sha256": "b7c618b0fdd8282710a9302cae43a4974123d4dba377e717193c34fb723f9b9b",
+      "gitBlobBytes": 155,
+      "gitBlobSha256": "e66b6167c500fe5bac27d9147711cf6f01224c993ecae7f9d5c4aea32bab65fe",
+      "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat7.pal",
+      "bytes": 171,
+      "sha256": "8189f5b1d379f9daf79a93c959ce0ae225d2033211ba7df15e3fd50d8166f463",
+      "gitBlobBytes": 152,
+      "gitBlobSha256": "0be72ee27b0824a8dafaa916a30682dbf1862292faab402bd625f17b494e0e22",
+      "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat8.pal",
+      "bytes": 171,
+      "sha256": "9bfb2fc31ff0eda001ba9a8d68353051e0947428f1f93e2aa326e43fb2e5a580",
+      "gitBlobBytes": 152,
+      "gitBlobSha256": "e01f544d3d3d18b66a77349f8e7cea51bc7647f0db04a95dc8f600d81f5dd1a4",
+      "gitTextLineEndings": "lf"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat_tilemap_1.bin",
+      "bytes": 2048,
+      "sha256": "f0a6a00cd8ecff5acbdfd15b59f0c95b189f0c5a74d0cb381b540cc03a0bb301"
+    },
+    {
+      "path": "graphics/battle_anims/masks/stat_tilemap_2.bin",
+      "bytes": 2048,
+      "sha256": "dc18daf7d44bc10950ae84f0121c4f6e1d19aa5ee4d5f41f409013599a27ca62"
+    },
+    {
+      "path": "src/battle_gfx_sfx_util.c",
+      "bytes": 38339,
+      "sha256": "c4c009637d19310decd87c89781f6798f677e727fc6acd0a0e6071d74ae23b3b"
+    },
+    {
+      "path": "src/battle_controller_player.c",
+      "bytes": 116151,
+      "sha256": "1fc12b9ed3e5f598eb1fc3761db3d57d44b5b68d6e432042d13d1679d76efa05"
+    },
+    {
+      "path": "src/battle_controller_opponent.c",
+      "bytes": 73524,
+      "sha256": "1b4393635fc4e199203829ad078bda665c9b9c82a487fe17fbd6cac12a5dba98"
+    },
+    {
+      "path": "src/task.c",
+      "bytes": 5029,
+      "sha256": "8bdd5205ec396be7b66d6e384a82309b3cab59783d46fb8c4c991b2172d4868b"
+    },
+    {
+      "path": "src/battle_main.c",
+      "bytes": 171904,
+      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+    },
+    {
+      "path": "include/gba/io_reg.h",
+      "bytes": 33335,
+      "sha256": "4b1d9592c1f2fdbefaa4f7f0d2751e5cef11069432303aa46bec142af57086d0"
+    },
+    {
+      "path": "tools/gbagfx/gfx.c",
+      "bytes": 18570,
+      "sha256": "3cd8346e273b76d74324af0c3aecfeda6607af5757503f3a973bf6be0faaccf2"
+    }
+  ]
+}

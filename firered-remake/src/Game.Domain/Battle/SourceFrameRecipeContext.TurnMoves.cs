@@ -12,6 +12,8 @@ internal sealed partial class FrameRecipeContext
     internal override bool CancellerCompatibilityLocks(PokemonCatalog catalog, BattlerSlot slot, MoveId move) => DisabledPreventsMove(slot, move);
     internal override void CancellerCancelMultiTurn(BattlerSlot slot, string reason)
     {
+        if (Frame.Get(slot).Registers.Turn?.Lock is { Kind: WildBattleCalledLockKind.Charge } charge)
+            ChangeCharge(slot,catalog.Moves[charge.Move],false,reason);
         if (Frame.Get(slot).Registers.Turn?.Lock is { Kind: WildBattleCalledLockKind.Rollout } locked)
             ChangeRollout(slot, catalog.Moves[locked.Move], 0, reason);
     }

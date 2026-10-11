@@ -67,16 +67,16 @@ public static partial class SourceFourActionTurns
             if (SourcePokemonValidator.ValidateForBattle(catalog, body.Pokemon) is not null) return "source_four_action_pokemon";
             if (body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter != 0 ||
                 (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || body.CalledVolatile is not null ||
-                body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null || body.Cursed || body.Rooted ||
+                body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null || body.Cursed ||
                 body.Nightmare || body.DestinyBond || body.Imprison || body.YawnTurnsRemaining != 0 ||
                 body.ChargeTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.EncoreMoveSlot is not null ||
                 body.Rage || body.WaterSport || body.MudSport ||
                 cell.Registers.Turn is { } turn && (turn.SureHitTurnsRemaining != 0 || turn.Lock is not { } locked || !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
-                cell.Registers.LeechSeedSource is not null ||
-                cell.Position.FocusBanded || cell.Position.Wish is not null)
+                cell.Position.Wish is not null)
                 return "source_four_action_residual_or_canceller_not_migrated";
+            if (SourceResidualStatusRules.Validate(frame, cell) is { } residualError) return residualError;
             if (SourceVolatileTargetRules.Validate(catalog, frame, cell) is { } volatileError) return volatileError;
             if (SourceProtectionRules.Validate(body) is { } protectionError) return protectionError;
             if (SourceTurnMoveRules.Validate(body, catalog) is { } turnMoveError) return turnMoveError;
@@ -257,6 +257,8 @@ public static partial class SourceFourActionTurns
                         FourTurn = next.FourTurn! with { Defeats = next.FourTurn.Defeats.Add(new(defeated, faint.Sequence, faint.Side.Side == BattleSide.Opponent)) } };
                 }
             }
+            if (action.Kind is SourceActionKind.Switch or SourceActionKind.Item)
+                next = SourceFrameSpecialStatuses.Clear(next);
             next = next with { NextAction = frame.NextAction + 1, FourTurn = next.FourTurn! with {
                 Phase = frame.NextAction + 1 == frame.Queue.Length ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.Actions } };
             bool playerAlive = next.Party(BattleSide.Player).Members.Any(m => !m.IsEgg && m.Pokemon.CurrentHp > 0);
@@ -307,6 +309,7 @@ public static partial class SourceFourActionTurns
         if (cursor is null)
         {
             var preparation = new FrameEndTurnContext(next); preparation.Prepare(); next = preparation.Frame;
+            events.AddRange(preparation.Events); trace.AddRange(preparation.Trace);
             var order = SourceBattleTurnOrder.Resolve(catalog, next, WildBattleOrderPhase.EndTurn);
             if (order.Fault is { } fault) return Fail(frame, fault);
             next = next with { Rng = order.Rng };

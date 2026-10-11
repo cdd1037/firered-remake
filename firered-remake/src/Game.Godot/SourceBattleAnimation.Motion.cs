@@ -30,6 +30,7 @@ public sealed partial class SourceBattleAnimation
             if(value<min||value>max)Fail(c,$"Operand {index} outside accepted range {min}..{max}.");
         }
         if(c.Op=="loopsewithpan"){Range(2,0,255);Range(3,2,255);}
+        if(c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_StatsChange"){Range(1,5,5);return;}
         if(c.Op=="createvisualtask"&&c.Args[0]=="AnimTask_Flash"){Range(1,2,2);return;}
         if(c.Op=="delay")Range(0,0,255);
         if(c.Op=="setalpha"){Range(0,0,16);Range(1,0,16);}

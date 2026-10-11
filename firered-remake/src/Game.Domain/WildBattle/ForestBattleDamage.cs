@@ -186,12 +186,7 @@ internal static class ForestBattleDamage
         if (critical) value *= 2;
         steps.Add(new("critical", value));
         if (sourceMove && sourceDamageMultiplier == 1)
-            sourceDamageMultiplier = WildBattleRules.CalledSemiInvulnerable(target) switch {
-                WildBattleSemiInvulnerable.Air when move!.Effect is "EFFECT_GUST" or "EFFECT_TWISTER" => 2,
-                WildBattleSemiInvulnerable.Underground when move!.Effect is "EFFECT_EARTHQUAKE" or "EFFECT_MAGNITUDE" => 2,
-                WildBattleSemiInvulnerable.Underwater when move!.Id.Value is "pret:MOVE_SURF" or "pret:MOVE_WHIRLPOOL" => 2,
-                _ => 1
-            };
+            sourceDamageMultiplier = SourceChargeRules.DamageMultiplier(WildBattleRules.CalledSemiInvulnerable(target), move!);
         if (sourceDamageMultiplier != 1) { value = checked(value * sourceDamageMultiplier); steps.Add(new("source-damage-multiplier", value)); }
         if (rockTunnelRules && move?.Effect == "EFFECT_REVENGE" && user.DamagedByOpponentThisTurn) { value *= 2; steps.Add(new("revenge", value)); }
         if (mtMoonRules && user.ChargeTurnsRemaining > 0 && (sourceMove ? move!.Type == "TYPE_ELECTRIC" : type == ElementType.Electric)) { value *= 2; steps.Add(new("charge", value)); }

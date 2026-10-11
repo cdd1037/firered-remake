@@ -7,12 +7,13 @@ namespace Game.Domain.Battle;
 // Shared source commands; the older historical profiles retain their compatibility helpers.
 internal abstract partial class SourceRecipeContext
 {
-    internal bool EarlyPartyAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, bool reportMiss)
+    internal bool EarlyPartyAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, bool reportMiss, bool? sandstorm = null)
     {
         if (CalledSureHit(actor, target)) return true;
+        if (BillUnderground(actor,target,move)) { if(reportMiss)SourceGenericMiss(actor,target,move);return false; }
         int accuracy = WildBattleDamage.Accuracy(move.Accuracy, Get(actor).AccuracyStage, Get(target).Identified ? 6 : Get(target).EvasionStage);
         if (WildBattleEffective.Ability(Get(actor)) == "ABILITY_COMPOUND_EYES") accuracy = accuracy * 130 / 100;
-        if (SandstormTurnsRemaining > 0 && !SourceCalledWeatherSuppressed && WildBattleEffective.Ability(Get(target)) == "ABILITY_SAND_VEIL") accuracy = accuracy * 80 / 100;
+        if ((sandstorm ?? SandstormTurnsRemaining > 0) && !SourceCalledWeatherSuppressed && WildBattleEffective.Ability(Get(target)) == "ABILITY_SAND_VEIL") accuracy = accuracy * 80 / 100;
         // Cmd_accuracycheck applies Hustle by original type category, including
         // physical-type status moves. Always-hit/sure-hit commands bypass this path.
         if (WildBattleEffective.Ability(Get(actor)) == "ABILITY_HUSTLE" &&

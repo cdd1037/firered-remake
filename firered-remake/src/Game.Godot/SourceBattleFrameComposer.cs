@@ -8,14 +8,15 @@ public sealed class SourceBattleFrameComposer
     public const int Width=240,Height=160;
     private readonly Dictionary<string,SourcePixelAsset> _assets=[];
     private readonly AnimationBattler[] _battlers;
-    public SourceBattleFrameComposer(IReadOnlyDictionary<string,SourcePixelAsset> assets,AnimationBattler[] battlers)
+    private readonly SourceStatMaskMaterial? _statMaterial;
+    public SourceBattleFrameComposer(IReadOnlyDictionary<string,SourcePixelAsset> assets,AnimationBattler[] battlers,SourceStatMaskMaterial? statMaterial=null)
     {
         foreach(var (id,asset) in assets)
         {
             if(asset.Width is <1 or >240||asset.Height is <1 or >160||asset.Pixels.Length!=asset.Width*asset.Height)throw new InvalidDataException("Campaign animation asset shape differs.");
             _assets.Add(id,asset);
         }
-        _battlers=battlers;
+        _battlers=battlers;_statMaterial=statMaterial;
         if(_assets["background"].Width!=240||_assets["background"].Height!=112||_assets["impact"].Width!=32||_assets["impact"].Height!=32)throw new InvalidDataException("Source field/impact shape differs.");
         foreach(var b in battlers)if(_assets[b.Asset].Width!=64||_assets[b.Asset].Height!=64)throw new InvalidDataException("Battler canvas differs.");
     }
@@ -54,6 +55,22 @@ public sealed class SourceBattleFrameComposer
             // Preserve the accepted singles composition and every existing pixel hash.
             foreach(var b in _battlers.OrderBy(b=>frame.BackgroundSlots.Contains(b.Slot.Value)?0:1).ThenBy(b=>b.Slot.IsPlayer?1:0))Battler(b);
             foreach(var sprite in frame.Sprites.OrderByDescending(s=>s.OamRank))Sprite(sprite);
+        }
+        if(frame.StatMask is {WindowEnabled:true,BackgroundLoaded:true,MaskVisible:true} mask)
+        {
+            if(_statMaterial is null)throw new InvalidDataException("Source stat material missing.");
+            var selected=_battlers.Single(b=>b.Slot.Value==mask.MaskSlot);var center=selected.DisplayCenter??selected.Center(frame.Doubles);
+            var silhouette=_assets[selected.Asset];
+            bool Opaque(AnimationBattler b,int x,int y)
+            {var p=b.DisplayCenter??b.Center(frame.Doubles);int sx=x-p.X+32,sy=y-p.Y+32;return b.Visible&&sx>=0&&sx<64&&sy>=0&&sy<64&&(_assets[b.Asset].Pixels[sy*64+sx]&0x8000)!=0;}
+            var priority=mask.PriorityPartner<0?null:_battlers.Single(b=>b.Slot.Value==mask.PriorityPartner);
+            for(int y=0;y<64;y++)for(int x=0;x<64;x++)
+            {
+                int dx=center.X-32+x,dy=center.Y-32+y;
+                if(dx<0||dx>=240||dy<0||dy>=112||(silhouette.Pixels[y*64+x]&0x8000)==0||priority is not null&&Opaque(priority,dx,dy))continue;
+                ushort pixel=_statMaterial.Pixel(mask.ScrollX==64?1:0,mask.Palette,dx+mask.ScrollX,dy+mask.ScrollY);
+                if((pixel&0x8000)!=0)pixels[dy*240+dx]=Blend(pixel,pixels[dy*240+dx],frame.AlphaA,frame.AlphaB);
+            }
         }
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=255;}return rgba;

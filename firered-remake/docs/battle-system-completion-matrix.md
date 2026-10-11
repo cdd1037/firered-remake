@@ -2,7 +2,7 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
-Current integrated checkpoint: **dirty working tree based on `16a45ea4d803a2656a6cbf27fa6b7262de22c780`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **228 / 354**, with **126 gated**; dedicated script coverage is **10 / 354**, with **344 remaining**. Neither is a complete battle-system percentage.
+Current integrated checkpoint: **integrated working tree based on `9329fc900b709fb92d6c0ac61d72c622cbc35d70`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **238 / 354**, with **116 gated**; dedicated script coverage is **10 / 354**, with **344 remaining**. Neither is a complete battle-system percentage.
 
 The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles now has a bounded authentic Route8 Twins public victory/save branch; full held-item/recipe and presentation completion remains open. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
@@ -611,3 +611,26 @@ This refresh edits documentation only and runs no product builds, test executabl
 ## Shared type-change follow-on
 
 Conversion and Conversion 2 add two recipes to the preceding 226 checkpoint: **228/354 admitted, 126 gated**. Color Change is already one of the 36 bounded ability records; this expands its scope without changing that count. Main integration passes seven groups/1,038 checks, nine complete turns and 64 exact singles/shared state/event/RNG comparisons. Type-only overlays preserve Trace and clear on actual departure. Original Color Change uses retained SpecialStatus damage, including the independently demonstrated delayed-hit/zero-loss case. Conversion 2 retains the user-approved modern sampler. See [source details](source-four-type-changes.md) and `evidence/shared-type-changes-20261011/README.md`. Dedicated-script coverage remains ten; no new campaign/native run or general caller/Transform admission is claimed.
+
+### Shared charge, seed/roots and Focus Band — 2026-10-11
+
+Eight charge scripts now share lifecycle and PP rules across canonical singles and
+four-slot execution. Leech Seed/Ingrain use shared source-slot application and the
+existing residual scheduler, including Liquid Ooze double KO, EXP and deferred
+replacement. Focus Band uses the same held-damage primitive with per-position
+sticky state and correct completed-action cleanup. Current measured recipe
+admission is 238/354; neither this count nor item support establishes complete
+mechanics or presentation. Nightmare/Curse/Yawn, Substitute and broad callers
+remain explicit gates. Focus Band dedicated result text is still open.
+
+[Combined evidence and exact scope](../evidence/shared-charge-residual-focus-20261011/README.md).
+
+### Shared stat result animation — 2026-10-11
+
+The original General_StatsChange task now has one shared masked BG1/OBJ-window
+renderer, including source timing, sound pan and Scene Off exception. Direct
+ordinary successful Growth/Harden/Tail Whip/Flash results are connected; it adds
+zero dedicated move scripts. Completion releases existing result text without
+ACK or state/RNG mutation. The isolated worker ran grouped source/headless tests
+and one representative HARDEN desktop check; main reused that result and built
+the integrated Godot project. [Scope and evidence](../tests/SourceHitAnimation.Tests/evidence/stat-mask-20261011/README.md).

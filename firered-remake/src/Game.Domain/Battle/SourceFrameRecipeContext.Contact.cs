@@ -35,8 +35,7 @@ internal sealed partial class FrameRecipeContext
     private bool delayedContactDamage;
     private void ClearContactReceipts()
     {
-        foreach (var slot in ActiveSlots) if (Frame.Get(slot).Position.HitItemReceipt is not null)
-            SetHitItemReceipt(slot, new());
+        Frame = SourceFrameSpecialStatuses.Clear(Frame);
     }
     internal override void Route3ContactAbility(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         PokemonMoveDefinition move, string purpose, int damage)

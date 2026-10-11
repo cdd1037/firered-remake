@@ -38,7 +38,7 @@ internal abstract partial class SourceRecipeContext
             ApplyConfusion(target, purpose, false); return;
         }
         // NO_ACC_CALC does not roll accuracy or apply Normal/Ghost type immunity.
-        if (body.DigMoveSlot is not null) { Fail("semi-invulnerable"); return; }
+        if (SemiInvulnerable(target) != WildBattleSemiInvulnerable.None) { Fail("semi-invulnerable"); return; }
         if (body.Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) { SourceGenericMiss(actor, target, move); return; }
         if (MeanLookSource(target) is not null) { Fail("already-trapped"); return; }
         if (SourceCalledSecondaryBlocked(target)) { Fail("substitute"); return; }

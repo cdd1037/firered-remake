@@ -124,7 +124,7 @@ Test("sun charging branches and PP commands follow source even on a later releas
     var ordinary = Continue(charged with { Rng = new(7) }); var wet = Continue(rain); Accepted(ordinary); Accepted(wet);
     Check(Damage(wet) < Damage(ordinary), "non-sun weather halves base damage before plus-two");
 });
-Test("Skull Bash defense, charge cancellation, FRLG paralysis retention", () => {
+Test("Skull Bash defense, source charge cancellation, bounded other-lock parity", () => {
     var bash = Accepted(Act(Pair(), "SKULL_BASH")); Check(bash.Player.DefenseStage == 7, "charging defense rise");
     var capped = Accepted(Act(Pair() with { Player = Pair().Player with { DefenseStage = 12 } }, "SKULL_BASH")); Check(capped.Player.CalledTurnState?.Lock is not null, "cap does not block charge");
     foreach (string name in chargeMoves.Concat(new[] { "PETAL_DANCE", "OUTRAGE", "UPROAR", "ICE_BALL", "BIDE" })) {
@@ -134,8 +134,9 @@ Test("Skull Bash defense, charge cancellation, FRLG paralysis retention", () => 
         // Find one source full-paralysis seed, then inspect the source residual distinction.
         for (uint seed = 0; seed < 100 && !paralyzed.Battle.Events.OfType<WildBattleActionBlockedEvent>().Any(); seed++) paralyzed = Continue(locked with { Rng = new(seed), Player = locked.Player with { Status = WildBattleStatus.Paralysis } });
         var s = Accepted(paralyzed); Check(paralyzed.Battle.Events.OfType<WildBattleActionBlockedEvent>().Any(), "full paralysis found");
-        Check(s.Player.CalledTurnState?.Lock is not null, name + " source paralysis initially retains lock");
-        var tick = Tick(s); bool residualCancels = name is "PETAL_DANCE" or "OUTRAGE" or "UPROAR";
+        bool charge = chargeMoves.Contains(name);
+        Check((s.Player.CalledTurnState?.Lock is null) == charge, name + " charge paralysis script cancels lock and semi bits");
+        var tick = Tick(s); bool residualCancels = charge || name is "PETAL_DANCE" or "OUTRAGE" or "UPROAR";
         Check((tick.Player.CalledTurnState?.Lock is null) == residualCancels, name + " residual interruption policy");
     }
 });

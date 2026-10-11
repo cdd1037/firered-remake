@@ -1,0 +1,191 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceFiles": {
+    "src/battle_util.c": "87cf810eb2d58361d1beb1537b3bd71c9160a77c2a17d703399f6ed373bb5720",
+    "src/battle_script_commands.c": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3",
+    "src/battle_main.c": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928",
+    "data/battle_scripts_1.s": "27e9c39f3147b05e5ba2ed36ca0c89fcdc9b26718778083bd362c582de800034",
+    "src/data/battle_moves.h": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384",
+    "include/battle.h": "bf64a16fb4e660f8a326eb352a511bb9e8fd54a74ebb03e328c08d5a23e5d8fa",
+    "include/battle_controllers.h": "051ebf096d6538d1cc7ea321dacf5d3e9e54f0d4edc9ddeb29996242de618120",
+    "include/constants/battle.h": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3",
+    "include/constants/pokemon.h": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5",
+    "include/constants/abilities.h": "1c1b93de5d5ff65d8b3066e9b40229b5d30e02842e587e3851a1d708ece1292b",
+    "include/constants/battle_script_commands.h": "2365a9d5581325edcf41bf654ebbe70df6dea89defdf4f51bb0c962637444b30",
+    "include/constants/battle_string_ids.h": "4766f2d31c75a31c0cc2e2dfc7be80b9887820ca3153aabdfb93cb2c3419f246",
+    "include/constants/battle_move_effects.h": "fa15e285903818cc3cc7ecb2ca32c11d8317b14d261ca2d1caf44e614b53828a",
+    "include/constants/moves.h": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+  },
+  "extractions": [
+    {
+      "name": "static void Cmd_setseeded(void)",
+      "file": "src/battle_script_commands.c",
+      "startLine": 6436,
+      "lines": 21,
+      "sha256": "150dec7a789fa927b3b859434af47ea7ce3ec44fc7c7056ea30afdee069345d2"
+    },
+    {
+      "name": "static void Cmd_trysetroots(void)",
+      "file": "src/battle_script_commands.c",
+      "startLine": 8933,
+      "lines": 12,
+      "sha256": "a29bd844027ec72429f59b0520b53ba46388dac210499e166f5847840c598f53"
+    },
+    {
+      "name": "static void Cmd_datahpupdate(void)",
+      "file": "src/battle_script_commands.c",
+      "startLine": 1744,
+      "lines": 125,
+      "sha256": "ab745395a57a7b0e83206355ea0b74fea19e648ebfa71b06e12b3880a113eb66"
+    },
+    {
+      "name": "static void Cmd_manipulatedamage(void)",
+      "file": "src/battle_script_commands.c",
+      "startLine": 6458,
+      "lines": 21,
+      "sha256": "634c7e8fe73a7b716f76b668936915517036cf688868f81660bde123f0c66159"
+    },
+    {
+      "name": "void SwitchInClearSetData(void)",
+      "file": "src/battle_main.c",
+      "startLine": 2329,
+      "lines": 103,
+      "sha256": "7a3b7c40cca85c737910d084e2b2f67f8a0068de152eec81eb2563d617fead5b"
+    },
+    {
+      "name": "end-turn enum",
+      "file": "src/battle_util.c",
+      "startLine": 720,
+      "lines": 24,
+      "sha256": "1484ff466260228094062d7703a3b6f890522d7484be915f0ae32a3093ecf568"
+    },
+    {
+      "name": "Ingrain residual case",
+      "file": "src/battle_util.c",
+      "startLine": 760,
+      "lines": 15,
+      "sha256": "55bc9d806aae4fe6fa66a351774d67bfa056077a359b5c4fdac5d73097d81756"
+    },
+    {
+      "name": "Leech Seed residual case",
+      "file": "src/battle_util.c",
+      "startLine": 789,
+      "lines": 17,
+      "sha256": "29f90fe338816bdad43638c5ba39f43efed1d2bb33e2456c7b25478022c2b90b"
+    },
+    {
+      "name": "end-turn absent gate",
+      "file": "src/battle_util.c",
+      "startLine": 752,
+      "lines": 5,
+      "sha256": "feb96a6168a3e802fb270bdfc6f7efb4c6c20f0e3ccb2d7a856ab455f220b273"
+    },
+    {
+      "name": "LeechSeedApplication",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 1153,
+      "lines": 16,
+      "sha256": "bd8e8899ceeab6ea1092c72ec024a095fdbb37a92d5dc0dca21b2be6c5a59946"
+    },
+    {
+      "name": "IngrainApplication",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 2372,
+      "lines": 12,
+      "sha256": "e69dfe5ead447a7405c8ffce277a71f284ce23320ca59384ef756c1ebda04ff0"
+    },
+    {
+      "name": "LeechSeedResidual",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 3223,
+      "lines": 24,
+      "sha256": "23d1185cd860863e48d1a4761bd77a630ee46d0eca0ec71dee2840947a6acc40"
+    },
+    {
+      "name": "IngrainResidual",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 3553,
+      "lines": 10,
+      "sha256": "9a2814161bac2207e58bde8ccb06ab5ec9d95d5a103e29f199a822cec2b6ac3e"
+    },
+    {
+      "name": "BatonPass",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 1690,
+      "lines": 22,
+      "sha256": "02fddc365b163619ca68aac0e6a0f4c74905e1e9f729ff5803ab9793ebdc360e"
+    },
+    {
+      "name": "Roar",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 595,
+      "lines": 11,
+      "sha256": "f13cbc35d667d41fb6af0c78fd296c4061664cd49fd1ac456322cc40ced9c96b"
+    },
+    {
+      "name": "NightmareFutureGap",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 1455,
+      "lines": 18,
+      "sha256": "00e1865190fa8ef935c5db76b219dcf67c1c4b2659a5bd42d60ef8f5b26c631d"
+    },
+    {
+      "name": "YawnFutureGap",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 2446,
+      "lines": 17,
+      "sha256": "32532929d5f9ade2612e59bb7e6a68578518cd46b5c16f961469b5d3490268b8"
+    },
+    {
+      "name": "GhostCurseFutureGap",
+      "file": "data/battle_scripts_1.s",
+      "startLine": 1507,
+      "lines": 22,
+      "sha256": "f42e2e6007a7ab656ea2b41acb7628dd17449a7eb4f8d606538ea8a1f4fca04c"
+    },
+    {
+      "name": "Nightmare residual future gap",
+      "file": "src/battle_util.c",
+      "startLine": 841,
+      "lines": 21,
+      "sha256": "66cd6a987739db8071f5a051f758039491573f5d374bbf8ba234ca9451e16913"
+    },
+    {
+      "name": "Yawn residual future gap",
+      "file": "src/battle_util.c",
+      "startLine": 1032,
+      "lines": 20,
+      "sha256": "b667cae26dba6862315ca8acee26bb91772713200d2dd3e68c676fb295b9e1ba"
+    },
+    {
+      "name": "bool8 UproarWakeUpCheck(u8 battlerId)",
+      "file": "src/battle_script_commands.c",
+      "startLine": 6519,
+      "lines": 26,
+      "sha256": "bb74f342bae87c8172a10c3860f4ed4a3a34835fde16c06f6dfd74780be0e134"
+    },
+    {
+      "name": "Leech Seed move data",
+      "file": "src/data/battle_moves.h",
+      "startLine": 952,
+      "lines": 14,
+      "sha256": "f63cc6644705af3edbebf2c18e246202cdd814300fe88718e7f2c3b0e4f1d5d0"
+    },
+    {
+      "name": "Ingrain move data",
+      "file": "src/data/battle_moves.h",
+      "startLine": 3578,
+      "lines": 14,
+      "sha256": "cf673db91cc017fa60dd9d28a0c032fe29d4a1563b5b3704ec5916377d3b2c5f"
+    }
+  ],
+  "vectorSha256": "708f7fa6b5ca2c99b230e4813d3113fd0ed143857f8509ef29cc2beb96f57f1c",
+  "counts": {
+    "seedApplication": 576,
+    "ingrainApplication": 16,
+    "leechResidual": 4080,
+    "leechResidualSlots": 1728,
+    "ingrainResidual": 1216,
+    "switchTransfer": 32
+  }
+}

@@ -34,6 +34,7 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         var cell = Frame.Get(slot);
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Registers = cell.Registers with { WrappedBy = null } }) };
     }
+    internal override BattlerSlot? LeechSeedSource(BattlerSlot target) => Frame.Get(target).Registers.LeechSeedSource;
     internal override bool IsAbsent(BattlerSlot slot) => Frame.IsSourceAbsent(slot);
     internal override bool WeatherSuppressed => SourceWeatherRules.IsSuppressed(Frame);
     internal override bool HasWeather(string weather) => weather switch {
@@ -41,7 +42,9 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         "sun" => SourceWeatherRules.HasSun(Frame.Field), "hail" => Frame.Field.HailTurnsRemaining > 0,
         _ => throw new SourceRecipeUnsupported("source_end_turn_weather") };
     internal override bool WeatherDamageEnabled(BattlerSlot slot, string weather) => true;
-    internal override bool UnderGroundOrWater(BattlerSlot slot) => Get(slot).DigMoveSlot is not null; // Other semi-invulnerable locks are not admitted.
+    internal override bool UnderGroundOrWater(BattlerSlot slot) => SourceChargeRules.SemiInvulnerable(
+        Frame.Get(slot).Registers.Turn?.Lock is {Kind:WildBattleCalledLockKind.Charge} charge?charge.Move:null)
+        is WildBattleSemiInvulnerable.Underground or WildBattleSemiInvulnerable.Underwater;
     internal override int GetTimer(BattleSide side, string effect)
     {
         var s = Frame.Sides[(int)side]; var f = Frame.Field;
@@ -126,7 +129,17 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         // TurnValuesCleanUp(TRUE) resets Follow Me before residuals, retaining Helping Hand.
         Frame = Frame with { Sides = Frame.Sides.Select(s => s with { FollowMeTimer = 0, FollowMeTarget = null }).ToImmutableArray() };
         foreach (var cell in Frame.Slots.Take(BattlerCount))
-            Set(cell.Slot, SourceTurnBoundaryRules.PrepareBody(cell.Body!));
+        {
+            // HandleEndTurn_ContinueBattle cancels a sleeping charge before weather.
+            if (WildBattleStatus.IsSleeping(cell.Body!.Status) && cell.Registers.Turn?.Lock is { Kind: WildBattleCalledLockKind.Charge } charge)
+            {
+                var turn = cell.Registers.Turn;
+                Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, cell with { Registers = cell.Registers with {
+                    Turn = turn.SureHitTurnsRemaining == 0 ? null : turn with { Lock = null } } }) };
+                Add(n => new SourceMtMoonVolatileEvent(n, Turn, cell.Slot, "called-charge", charge.TurnsRemaining, 0, "sleep"));
+            }
+            Set(cell.Slot, SourceTurnBoundaryRules.PrepareBody(Get(cell.Slot)));
+        }
     }
     internal override void ExposeFaintedActions() => CheckTeamsLost();
     internal override void FaintedActionItems()
@@ -151,11 +164,9 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         }
         var m = Get(slot); var r = Frame.Get(slot).Registers;
         bool nonempty = step switch {
-            SourceBattlerEndTurnStep.Ingrain => m.Rooted,
-            SourceBattlerEndTurnStep.LeechSeed => r.LeechSeedSource is not null,
             SourceBattlerEndTurnStep.Nightmare => m.Nightmare,
             SourceBattlerEndTurnStep.Curse => m.Cursed,
-            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout) } || m.RampageTurnsRemaining != 0,
+            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge) } || m.RampageTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Disable => m.DisabledMove is not null,
             SourceBattlerEndTurnStep.Encore => m.EncoreMoveSlot is not null,
             SourceBattlerEndTurnStep.LockOn => r.Turn?.SureHitTurnsRemaining > 0,
