@@ -24,7 +24,7 @@ public sealed partial class CampaignSession
     // Generation and original held-item assignment belong to the caller. Start consumes only the
     // Safari turn-number draw. Completing the candidate never regenerates this permanent identity.
     private CampaignState BeginSafariBattle(CampaignState state, PokemonInstance generated,
-        RngState rng, ImmutableArray<RandomTrace> generationTrace, string heldItem)
+        RngState rng, ImmutableArray<RandomTrace> generationTrace, string heldItem, WaterEncounterState? waterEncounter=null)
     {
         var exploration = state.Exploration;
         var pending = exploration?.EarlyEncounter?.Pending;
@@ -35,15 +35,18 @@ public sealed partial class CampaignSession
             state.ForestTrainerBattle is not null || state.DoubleBattle is not null || state.Party.IsEmpty ||
             exploration is null || exploration.Captured is not { IsDefault: false } ||
             exploration.NextWildBattleId is < 1 or long.MaxValue || state.NextPokemonId is < 2 or long.MaxValue ||
-            long.MaxValue - Revision < 256 || pending is null || generationTrace.IsDefault)
+            long.MaxValue - Revision < 256 || (waterEncounter is null&&pending is null) || generationTrace.IsDefault)
             throw new InvalidDataException("safari_battle_context_invalid");
-        var table = _content.LandEncounters![state.World.Player.MapId];
-        if (pending.Candidate.Map != table.Map || pending.Candidate.Species != generated.Species ||
-            pending.Candidate.Level != generated.Level)
+        var table = waterEncounter is null ? _content.LandEncounters![state.World.Player.MapId] : null;
+        var waterTable=waterEncounter is null?null:_content.WaterEncounters![state.World.Player.MapId];
+        var candidateMap=waterEncounter?.Pending?.Candidate.Map??pending!.Candidate.Map;
+        var candidateSpecies=waterEncounter?.Pending?.Candidate.Species??pending!.Candidate.Species;
+        var candidateLevel=waterEncounter?.Pending?.Candidate.Level??pending!.Candidate.Level;
+        if (candidateMap != state.World.Player.MapId || candidateSpecies != generated.Species || candidateLevel != generated.Level)
             throw new InvalidDataException("safari_generated_candidate_mismatch");
         var started = SafariBattleRules.Start(_content.PresetDoubleMechanics, generated, visit.Balls, rng);
         if (!started.Succeeded) throw new InvalidDataException(started.Fault);
-        var origin = new CampaignWildOrigin(_content.MapDefinition(table.Map).RegionMapSection,
+        var origin = new CampaignWildOrigin(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,
             generated.Level, _content.PokemonContent!.SpeciesNames[generated.SourceSpeciesId]);
         // Check the owned projection before accepting a battle whose caught receipt we could not deliver.
         var owned = new PartyPokemon(state.NextPokemonId, generated with { OriginalTrainerId = state.TrainerId },
@@ -60,7 +63,8 @@ public sealed partial class CampaignSession
             SafariBattle = battle,
             Exploration = exploration with
             {
-                EarlyEncounter = EarlyLandEncounterRules.CompleteCandidate(exploration.EarlyEncounter!, table),
+                EarlyEncounter = waterEncounter is null?EarlyLandEncounterRules.CompleteCandidate(exploration.EarlyEncounter!, table!):
+                    SharedWaterProcess(exploration.EarlyEncounter!,WaterEncounterRules.CompleteCandidate(waterEncounter,waterTable!)),
                 NextWildBattleId = checked(exploration.NextWildBattleId + 1)
             },
             World = state.World with { Rng = battle.State.Rng },
@@ -229,7 +233,7 @@ public sealed partial class CampaignSession
         if (battle.State.Outcome == SafariBattleOutcome.Active || battle.Capture is not null ||
             !state.Exploration!.Battles.Any(h => h.Id == battle.Id && h.Safari && h.ExperienceGained == 0))
             throw new InvalidDataException("safari_return_unsettled");
-        var next = state with { SafariBattle = null, Music = _content.MapDefinition(state.World.Player.MapId).Music,
+        var next = state with { SafariBattle = null, Music = FieldTravelMusic(state),
             Exploration = ResetEncounterModifiers(state.Exploration) };
         // Failed final ball announces game over in battle, then scene 3/setwarp. A caught final
         // ball reaches the field's out-of-balls message only after Dex, naming and PC delivery.
@@ -241,6 +245,7 @@ public sealed partial class CampaignSession
     }
 
     private bool SafariOriginSupported(int species, int level, string? location = null) =>
+        SurfOriginSupported(species,level,location,safariOnly:true) ||
         _content.SafariEnabled && (location is null || location == "MAPSEC_KANTO_SAFARI_ZONE") &&
         _content.LandEncounters!.Values.Any(table => _content.MapDefinition(table.Map).SourceMapSymbol.StartsWith("MAP_SAFARI_ZONE_", StringComparison.Ordinal) &&
             table.Slots.Any(slot => _content.PokemonContent!.Catalog.Species[slot.Species].SourceSpeciesId == species && level >= slot.MinimumLevel && level <= slot.MaximumLevel));

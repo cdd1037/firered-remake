@@ -24,6 +24,7 @@ public partial class CampaignView
 
     private int FieldStepTicksForDirection(CampaignState state,Game.Domain.World.Direction direction)
     {
+        if (_catalog.SurfEnabled && state.IsSurfing) return 8;
         if (_catalog.CityServicesEnabled && state.IsCycling)
         {
             var p=state.World.Player;int y=direction==Game.Domain.World.Direction.South?p.Y+1:p.Y;

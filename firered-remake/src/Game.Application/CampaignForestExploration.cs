@@ -16,10 +16,10 @@ public sealed partial class CampaignSession
     private CampaignExploration ResetEncounterModifiers(CampaignExploration state)=>_content.ForestEnabled
         ?state with{EarlyEncounter=EarlyLandEncounterRules.ResetRateModifiers(state.EarlyEncounter??throw new InvalidDataException("early_encounter_missing"))}
         :state with{Encounter=Route1EncounterRules.ResetRateModifiers(state.Encounter!)};
-    private bool WildSpeciesSupported(int id)=>_content.CityServicesEnabled&&id==129||(_content.ForestEnabled
+    private bool WildSpeciesSupported(int id)=>_content.SurfEnabled&&_content.WaterEncounters!.Values.SelectMany(t=>t.Slots).Any(s=>_content.PokemonContent!.Catalog.Species[s.Species].SourceSpeciesId==id)||_content.CityServicesEnabled&&id==129||(_content.ForestEnabled
         ?_content.LandEncounters!.Values.SelectMany(t=>t.Slots).Any(s=>_content.PokemonContent!.Catalog.Species[s.Species].SourceSpeciesId==id)
         :id is 16 or 19);
-    private bool WildOriginSupported(int id,int level,string? region=null)=>_content.CityServicesEnabled&&id==129&&_content.OldRodEncounters!.Values.Any(t=>(region is null||_content.MapDefinition(t.Map).RegionMapSection==region)&&t.Slots.Any(s=>level>=s.MinimumLevel&&level<=s.MaximumLevel))||(_content.ForestEnabled
+    private bool WildOriginSupported(int id,int level,string? region=null)=>SurfOriginSupported(id,level,region)||_content.CityServicesEnabled&&id==129&&_content.OldRodEncounters!.Values.Any(t=>(region is null||_content.MapDefinition(t.Map).RegionMapSection==region)&&t.Slots.Any(s=>level>=s.MinimumLevel&&level<=s.MaximumLevel))||(_content.ForestEnabled
         ?_content.LandEncounters!.Values.Any(t=>(region is null||_content.MapDefinition(t.Map).RegionMapSection==region)&&t.Slots.Any(s=>_content.PokemonContent!.Catalog.Species[s.Species].SourceSpeciesId==id&&level>=s.MinimumLevel&&level<=s.MaximumLevel))
         :id is 16 or 19&&level is >=2 and <=5&&(region is null||region=="MAPSEC_ROUTE_1"));
     private CampaignState CheckEarlyLandEncounter(CampaignState state,EncounterCheckTrigger trigger)

@@ -122,3 +122,9 @@ checkpoint, not fifth-badge or whole-route completion.
 The shared ordinary-core integration and bounded refactor passed the affected rule, Application, strict provenance-save and actual menu-host checks recorded in [the checkpoint](../evidence/held-obedience-items-20261011/README.md). Mew/Deoxys use ordinary OT/badge obedience; modern-fateful provenance remains save metadata without battle effect. Dedicated animations/audio continue independently.
 
 Resume the campaign with Fuchsia Safari's actual special action/step loop and necessary Surf / Gold Teeth-to-Strength rewards, then Saffron/Silph. Safari capture must have its own source contract rather than reuse ordinary ball behavior. Continue ordinary regional interactions alongside the route. Other declared special modes and later NPC-trade provenance remain content-dependent work, not implicitly completed by this core exit.
+
+### 2026-10-11 Safari rewards and field HM continuation
+
+Safari admission, special capture,600-step exit, Gold Teeth/HM03 and the Warden HM04 exchange form a real public campaign chain; a native natural Rhyhorn catch and fresh-process Continue are separately accepted at28a. See [Safari campaign](safari-campaign.md). Strength at the source Warden boulder and Surf across already loaded mainland/Safari water are the current bounded field-HM successor; their own [Strength](field-strength.md) and [Surf](field-surf.md) records separate source/module, combined and native acceptance. Later boulder holes/current modes remain explicit boundaries.
+
+Next, use the existing Tea/Fuji prerequisites for actual Saffron gate entry, Silph teleport pads/Card Key doors/elevator, rival/Giovanni and Lapras/Master Ball, then Sabrina. Region imports retain source topology and do not imply completed story interactions.

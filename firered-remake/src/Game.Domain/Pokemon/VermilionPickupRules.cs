@@ -33,6 +33,10 @@ public static class VermilionPickupRules
         return ApplyCore(catalog, party, rng, outcome);
     }
     public static VermilionPickupResult ApplySafariOwned(SafariOwnedPokemonCatalog owned,
+        ImmutableArray<PartyPokemon> party, RngState rng, WildBattleOutcome outcome) =>
+        ApplySafariOwned((OwnedBattlePokemonCatalog)owned, party, rng, outcome);
+
+    public static VermilionPickupResult ApplySafariOwned(OwnedBattlePokemonCatalog owned,
         ImmutableArray<PartyPokemon> party, RngState rng, WildBattleOutcome outcome)
     {
         ArgumentNullException.ThrowIfNull(owned);

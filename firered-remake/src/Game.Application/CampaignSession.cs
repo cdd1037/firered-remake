@@ -32,7 +32,10 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool SafariExitPending{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int FlashLevel{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFlashEffect? FlashEffect{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignStrengthEffect? StrengthEffect{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool IsCycling{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool IsSurfing{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSurfEffect? SurfEffect{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFishing? Fishing{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMoneyBox? MoneyBox{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMagikarpGift? MagikarpGift{get;init;}
@@ -178,7 +181,8 @@ public sealed partial class CampaignSession
     public const string SnorlaxRulesVersion="fr-snorlax-campaign-v1";
     public const string PresetDoublesRulesVersion="fr-preset-doubles-campaign-v1";
     public const string SafariRulesVersion="fr-safari-campaign-v1";
-    public string RulesVersion=>_content.SafariEnabled?SafariRulesVersion:_content.PresetDoublesEnabled?PresetDoublesRulesVersion:_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
+    public const string SurfRulesVersion="fr-surf-campaign-v1";
+    public string RulesVersion=>_content.SurfEnabled?SurfRulesVersion:_content.SafariEnabled?SafariRulesVersion:_content.PresetDoublesEnabled?PresetDoublesRulesVersion:_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
     public CampaignState State=>_commands.State;
@@ -207,7 +211,7 @@ public sealed partial class CampaignSession
             FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
             if(content.SafariEnabled)
             {
-                if(!SafariMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("safari_machine_proof_missing");
+                if(content.SurfEnabled?!SurfMachineCatalog.IsAuthenticated(content.PewterMachines):!SafariMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("safari_machine_proof_missing");
                 SafariShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("safari_items_missing"));
             }
             else
@@ -276,6 +280,8 @@ public sealed partial class CampaignSession
         var teaError=ValidateRegionalTeaProgress(s);if(teaError is not null)return teaError;
         var parcelError=ValidateParcelState(s);if(parcelError is not null)return parcelError;
         if(!_content.Maps.TryGetValue(s.World.Player.MapId,out var map))return "save_map_missing";
+        var surfError=ValidateFieldSurfState(s);if(surfError is not null)return surfError;
+        var strengthError=ValidateFieldStrengthState(s);if(strengthError is not null)return strengthError;
         var flashError=ValidateFieldFlashState(s);if(flashError is not null)return flashError;
         var pickupError=ValidateFieldPickupState(s);if(pickupError is not null)return pickupError;
         var worldError=ValidateCampaignWorld(s,map);if(worldError is not null)return worldError;
@@ -378,6 +384,11 @@ public sealed partial class CampaignSession
     {
         try
         {
+            if(state.SurfEffect is not null)return CompleteFieldSurf(state,command);
+            if(command.Kind=="field_surf")return StartFieldSurf(state,command);
+            if(state.StrengthEffect is {Phase:FieldStrengthSourcePresentation.Push})return CompleteFieldStrengthPush(state,command);
+            if(state.StrengthEffect is not null&&command.Kind!="ack")return new(CommandStatus.Rejected,state,"field_strength_event_active");
+            if(command.Kind=="field_strength")return StartFieldStrength(state,command);
             if(state.SafariBattle is not null)return DecideSafariBattle(state,command);
             if(TryDecideNameRater(state,command,out var nameRaterDecision))return nameRaterDecision;
             if(command.Kind=="safari_retire")return DecideSafariRetire(state);
@@ -427,6 +438,7 @@ public sealed partial class CampaignSession
                 {var preflight=PreflightStarterAcceptance(state);if(preflight is not null)return new(CommandStatus.Rejected,state,preflight);}
                 var next=state with{HealingEffect=wait.Kind==StoryWaitKind.Presentation&&state.PresentationEffects.Any(e=>e.Opcode=="waitfieldeffect")?null:state.HealingEffect,Nickname=state.Nickname?.Submitted==true?null:state.Nickname,Dialogue=state.Dialogue?.CloseOnCompletion==true&&wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice?null:state.Dialogue,Motions=[],PresentationTicks=0,PresentationEffects=[]};
                 next=CompleteFieldCutPresentation(state,next);
+                next=CompleteFieldStrengthPresentation(state,next);
                 next=ReleaseForestTrainerPostDialogue(state,next);
                 return new(CommandStatus.Accepted,Pump(Advance(next,StoryRules.Continue(next.Script,wait.CorrelationId,_content,command.Choice))));
             }
@@ -491,6 +503,7 @@ public sealed partial class CampaignSession
                     context=BeginItemBall(context,actor);
                     return new(CommandStatus.Accepted,Pump(StartStory(context,actor.ScriptId)));
                 }
+                if(TryStartFieldSurfInteraction(state) is {} surfInteraction)return surfInteraction;
                 var sign=InteractionBackgroundAt(state,p.X+dx,p.Y+dy,p.Facing);
                 if(_content.SupportsRegionalFlavor(p.MapId))return DecideRegionalInteraction(state,sign,p.X+dx,p.Y+dy);
                 if(sign?.HiddenItem is not null)return BeginHiddenPickup(state,sign);
@@ -504,6 +517,8 @@ public sealed partial class CampaignSession
     }
     private CampaignState EnterMap(CampaignState state,Direction? arrival)
     {
+        if(state.SurfEffect is not null)throw new InvalidDataException("field_surf_map_entry_while_active");
+        state=ApplyFieldStrengthMapEntry(state);
         state=ApplyFieldFlashMapEntry(state);
         var definition=_content.MapDefinition(state.World.Player.MapId);
         var variables=state.Script.Variables.RemoveRange(state.Script.Variables.Keys.Where(k=>k.StartsWith("VAR_TEMP_",StringComparison.Ordinal)));
@@ -514,7 +529,7 @@ public sealed partial class CampaignSession
         queue.Add("@spawn");
         // Markers evaluate conditional tables after transition flags/vars have committed.
         if(definition.Programs.OnWarpTable is {} onWarp)queue.Add("@table:"+onWarp);
-        return state with{IsCycling=state.IsCycling&&_content.AllowsCycling(state.World.Player.MapId),ObjectSlots=state.ObjectSlots is null?null:EmptyObjectPool,Actors=actors,Script=state.Script with{Variables=variables,Flags=flags},EntryPrograms=queue.ToImmutable(),ArrivalFacing=arrival,LastTalked=null,PlayerVisible=true,MapEdits=_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId)?RocketExpectedEdits(state):null,MessagePointer=null};
+        return state with{IsSurfing=false,SurfEffect=null,Music=state.IsSurfing?definition.Music:state.Music,IsCycling=state.IsCycling&&_content.AllowsCycling(state.World.Player.MapId),ObjectSlots=state.ObjectSlots is null?null:EmptyObjectPool,Actors=actors,Script=state.Script with{Variables=variables,Flags=flags},EntryPrograms=queue.ToImmutable(),ArrivalFacing=arrival,LastTalked=null,PlayerVisible=true,MapEdits=_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId)?RocketExpectedEdits(state):null,MessagePointer=null};
     }
     private CampaignState Pump(CampaignState state)
     {
@@ -589,6 +604,8 @@ public sealed partial class CampaignSession
             if(TryApplyOakRatingEffect(state,effect,out var oakState)){state=oakState;continue;}
             if(TryApplyOldManEffect(state,effect,out var tutorialState)){state=tutorialState;continue;}
             if(TryApplyPcEffect(state,effect,out var pcState)){state=pcState;continue;}
+            if(TryApplyFieldSurfEffect(state,effect,out var surfState)){state=surfState;continue;}
+            if(TryApplyFieldStrengthEffect(state,effect,out var strengthState)){state=strengthState;continue;}
             if(TryApplyFieldFlashEffect(state,effect,out var flashState)){state=flashState;continue;}
             if(TryApplyFieldCutEffect(state,effect,out var cutState)){state=cutState;continue;}
             if(TryApplyCenterEffect(state,effect,out var centerState)){state=centerState;continue;}
@@ -705,9 +722,10 @@ public sealed partial class CampaignSession
         var definition=content.Catalog.Species.Values.SingleOrDefault(x=>x.SourceSpeciesId==sourceId)??throw new InvalidDataException("pokemon_species_not_supported: "+sourceId);
         return (definition,content.SpeciesNames[sourceId]);
     }
-    private CampaignState ApplyMovement(CampaignState state,string actorId,string program)
+    private CampaignState ApplyMovement(CampaignState state,string actorId,string program)=>ApplyMovementActions(state,actorId,_content.Movement(program));
+    private CampaignState ApplyMovementActions(CampaignState state,string actorId,ImmutableArray<string> actions)
     {
-        var actions=_content.Movement(program);var path=ImmutableArray.CreateBuilder<TilePosition>();
+        var path=ImmutableArray.CreateBuilder<TilePosition>();
         var actor=actorId=="LOCALID_PLAYER"?null:state.Actors[actorId];var position=actor is null?state.World.Player:new(state.World.Player.MapId,actor.X,actor.Y,actor.Elevation,actor.Facing);
         path.Add(position);
         bool visible=actor is null?state.PlayerVisible:!actor.Invisible;

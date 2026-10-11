@@ -47,11 +47,18 @@ public static partial class WildBattleRules
     public static WildBattleResult StartSafariOwnedWild(SafariOwnedPokemonCatalog owned,
         ImmutableArray<WildBattleCombatant> playerParty, int activeIndex, WildBattleCombatant opponent,
         RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain, bool oldRodFishing = false,
+        PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false) =>
+        StartSafariOwnedWild((OwnedBattlePokemonCatalog)owned, playerParty, activeIndex, opponent, rng,
+            terrain, oldRodFishing, towerKind, scriptedSnorlax);
+
+    public static WildBattleResult StartSafariOwnedWild(OwnedBattlePokemonCatalog owned,
+        ImmutableArray<WildBattleCombatant> playerParty, int activeIndex, WildBattleCombatant opponent,
+        RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain, bool oldRodFishing = false,
         PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false)
     {
-        if (SourceBattleAdmission.ValidateSafariOwnedEntry(owned, playerParty, activeIndex) is { } error)
+        if (SourceBattleAdmission.ValidateOwnedEntry(owned, playerParty, activeIndex) is { } error)
             return Fail(null, error);
-        if (opponent?.Pokemon is null || !owned.Predecessor.Species.ContainsKey(opponent.Pokemon.Species))
+        if (opponent?.Pokemon is null || !owned.AdmitsWildOpponent(opponent.Pokemon))
             return Fail(null, "source_campaign_opponent_species");
         if (SourceBattleAdmission.ValidateEntry(owned.Mechanics, BattleRulesProfile.CanonicalSourceSingles,
             playerParty, activeIndex, opponent) is { } sourceError) return Fail(null, sourceError);
@@ -61,7 +68,7 @@ public static partial class WildBattleRules
 
     private static WildBattleResult StartSourceWildCore(PokemonCatalog catalog, ImmutableArray<WildBattleCombatant> playerParty,
         int activeIndex, WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain,
-        bool oldRodFishing, PokemonTowerBattleKind? towerKind, bool scriptedSnorlax, BattleRulesProfile? profile = null, SafariOwnedPokemonCatalog? owned = null)
+        bool oldRodFishing, PokemonTowerBattleKind? towerKind, bool scriptedSnorlax, BattleRulesProfile? profile = null, OwnedBattlePokemonCatalog? owned = null)
     {
         if (playerParty.IsDefaultOrEmpty || playerParty.Length > 6 || activeIndex < 0 || activeIndex >= playerParty.Length ||
             playerParty.Any(m => m?.Pokemon is null) || opponent?.Pokemon is null) return Fail(null, "source_wild_party");
@@ -81,13 +88,13 @@ public static partial class WildBattleRules
         if (oldRodFishing && (opponent.Pokemon.SourceSpeciesId != 129 || opponent.Pokemon.Level is < 5 or > 10))
             return Fail(null, "wild_battle_old_rod_context_unsupported");
         if ((profile is null || owned is not null) && !oldRodFishing && !scriptedSnorlax && towerKind is not (PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak) &&
-            !FuchsiaBattleScope.SupportsWildOpponent(opponent.Pokemon.SourceSpeciesId)) return Fail(null, "wild_battle_opponent_species_unsupported");
+            !(owned?.SupportsOrdinaryWildOpponent(opponent.Pokemon) ?? FuchsiaBattleScope.SupportsWildOpponent(opponent.Pokemon.SourceSpeciesId))) return Fail(null, "wild_battle_opponent_species_unsupported");
         var player = playerParty[activeIndex] with { FirstTurnCounter = 2 };
         opponent = opponent with { FirstTurnCounter = 2 };
         WildBattleCalledPartyMember Member(WildBattleCombatant m) => new(m.Pokemon, m.HeldItem, m.Status);
         var state = new WildBattleState(player, opponent, 0, 0, 0, rng, 0, WildBattleOutcome.Ongoing, RulesVersion: FuchsiaRulesVersion)
         { Terrain = terrain, TowerBattleKind = towerKind, ScriptedSnorlax = scriptedSnorlax, SourceWild = new(),
-            SourceMechanicsRulesVersion = profile?.Version, SourceCampaignRulesVersion = owned is null ? null : SafariOwnedPokemonCatalog.Profile,
+            SourceMechanicsRulesVersion = profile?.Version, SourceCampaignRulesVersion = owned?.RulesVersion,
             CalledParty = new(playerParty.Select(Member).ToImmutableArray(), [Member(opponent)], activeIndex, 0) };
         if (playerParty.Any(m => WildBattleSourceFieldEffects.IsValidToxic(m.Status)) || WildBattleSourceFieldEffects.IsValidToxic(opponent.Status))
             state = state with { CalledField = new() };

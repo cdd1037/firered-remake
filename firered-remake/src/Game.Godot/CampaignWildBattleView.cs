@@ -19,6 +19,8 @@ public partial class CampaignView
     private readonly Dictionary<string,Texture2D> _cityBattleScenes = [];
     private Texture2D WildBattleTerrainForMap(MapId mapId)
     {
+        if (_catalog.SurfEnabled && PresentedWildBattle?.State.Terrain is WildBattleTerrain.Water or WildBattleTerrain.Pond)
+            return _cityBattleScenes[PresentedWildBattle.State.Terrain == WildBattleTerrain.Water ? "water" : "pond"];
         if(_catalog.PokemonTowerEnabled&&PokemonTowerPresentationModel.UsesTowerTerrain(mapId.Value))return _towerTerrain??throw new InvalidDataException("Tower terrain missing.");
         if (_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId)==true&&_catalog.SourceMaps[mapId].Events.GetProperty("battle_scene").GetString()=="MAP_BATTLE_SCENE_INDOOR_2")
             return _rocketIndoorTerrain??throw new InvalidDataException("Rocket Indoor2 terrain was not loaded.");

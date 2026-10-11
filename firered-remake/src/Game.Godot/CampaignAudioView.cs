@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled,includeSafari:_catalog.SafariEnabled);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled,includeSafari:_catalog.SafariEnabled,includeSurf:_catalog.SurfEnabled,surfContentRoot:OS.GetEnvironment("FIRERED_SURF_CONTENT_ROOT") is {Length:>0} surfRoot?surfRoot:null);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -39,6 +39,7 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
                     SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
                     sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.SurfEnabled)Write("surfAudioCatalog",new{SurfSynthManifestIdentity.Sha256,SurfSynthManifestIdentity.CueCount,audibleOutputVerified=false});
                 if(_catalog.SafariEnabled)Write("safariAudioCatalog",new{SafariSynthManifestIdentity.Sha256,SafariSynthManifestIdentity.CueCount,priorRegionalCueCount=303,audibleOutputVerified=false});
                 if(_catalog.FuchsiaRouteEnabled)Write("fuchsiaRouteAudioCatalog",new{FuchsiaRouteSynthManifestIdentity.Sha256,FuchsiaRouteSynthManifestIdentity.CueCount,priorCueCount=299,audibleOutputVerified=false});
                 if(_catalog.SnorlaxEnabled)Write("snorlaxAudioCatalog",new{SnorlaxSynthManifestIdentity.Sha256,SnorlaxSynthManifestIdentity.CueCount,priorCueCount=297,encounterCryMode=2,audibleOutputVerified=false});

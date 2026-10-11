@@ -107,6 +107,12 @@ public static class WildVictoryRewards
     /// Campaign ownership, participation and settlement receipts remain the application's authority.</summary>
     public static WildVictoryRewardResult ApplySafariOwned(SafariOwnedPokemonCatalog owned,
         PartyPokemon participantAfterBattle, PokemonInstance defeatedPokemon, string currentRegion,
+        int aliveParticipants = 1, bool trainerBattle = false, WildBattleCombatant? defeatedBattleView = null) =>
+        ApplySafariOwned((OwnedBattlePokemonCatalog)owned, participantAfterBattle, defeatedPokemon, currentRegion,
+            aliveParticipants, trainerBattle, defeatedBattleView);
+
+    public static WildVictoryRewardResult ApplySafariOwned(OwnedBattlePokemonCatalog owned,
+        PartyPokemon participantAfterBattle, PokemonInstance defeatedPokemon, string currentRegion,
         int aliveParticipants = 1, bool trainerBattle = false, WildBattleCombatant? defeatedBattleView = null)
     {
         ArgumentNullException.ThrowIfNull(owned);
@@ -142,7 +148,7 @@ public static class WildVictoryRewards
         var names = catalog.Species.Values.ToImmutableSortedDictionary(s => s.SourceSpeciesId,
             s => s.SourceSpeciesId switch { 29 => "NIDORAN♀", 32 => "NIDORAN♂", _ => s.Id.Value["pret:SPECIES_".Length..] });
         var error = PokemonStateValidator.ValidateParty(new(catalog, names, PokemonStateValidator.NicknameAlphabet) { AllowSleepStatus = route22Rules, AllowFreezeStatus = route11Rules,
-            AllowToxicStatus = SafariOwnedPokemonCatalog.IsAuthenticated(catalog) || catalog.Species.Count == 107 && catalog.Moves.Count == 354 }, owned);
+            AllowToxicStatus = OwnedBattlePokemonCatalog.For(catalog) is not null || catalog.Species.Count == 107 && catalog.Moves.Count == 354 }, owned);
         if (error is not null) throw new ArgumentException(error, nameof(owned));
         if (route22Rules && owned.Pokemon.AbilityId == "ABILITY_VITAL_SPIRIT" && WildBattleStatus.IsSleeping(owned.Status))
             throw new NotSupportedException("Vital Spirit cannot enter rewards asleep in the Route22 profile.");

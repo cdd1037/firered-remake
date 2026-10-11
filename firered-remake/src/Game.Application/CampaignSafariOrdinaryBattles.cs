@@ -6,7 +6,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private SafariOwnedPokemonCatalog? SafariOrdinaryOwnership => SafariOwnedPokemonCatalog.For(BattlePokemon);
+    private OwnedBattlePokemonCatalog? SafariOrdinaryOwnership => OwnedBattlePokemonCatalog.For(BattlePokemon);
     // Encounter tables and original trainer factories retain their historical species scope.
     private PokemonCatalog OrdinaryEncounterPokemon => SafariOrdinaryOwnership?.Predecessor ?? BattlePokemon;
 
@@ -14,7 +14,7 @@ public sealed partial class CampaignSession
     {
         if (battle.SourceCampaignRulesVersion is null) return BattlePokemon;
         if (SafariOrdinaryOwnership is { } owned &&
-            SourceBattleAdmission.IsSafariOwnedCampaign(owned.Mechanics.Catalog, battle)) return owned.Mechanics.Catalog;
+            SourceBattleAdmission.IsOwnedCampaign(owned, battle)) return owned.Mechanics.Catalog;
         throw new InvalidDataException("ordinary_battle_campaign_admission");
     }
 }

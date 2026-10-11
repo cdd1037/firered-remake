@@ -217,6 +217,7 @@ public partial class CampaignView
             else DrawTextureRectRegion(sprite.Texture,new(position,new(sprite.Width,sprite.Height)),new(frame.Value*sprite.Width,0,sprite.Width,sprite.Height));
             return;
         }
+        if (DrawFieldSurfActor(id,pose,camera)) return;
         DrawFieldCutActor(id,asset,pose,camera);
     }
 

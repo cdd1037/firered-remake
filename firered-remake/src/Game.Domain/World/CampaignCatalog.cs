@@ -80,6 +80,9 @@ public interface ICampaignCatalog:IStoryCatalog
     SourceTwinsTrainerDefinition? Route8Twins=>null;
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
+    bool SurfEnabled=>false;
+    SurfOwnedPokemonCatalog? SurfOwnership=>null;
+    IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters=>null;
     FuchsiaGymTrainerCatalog? FuchsiaGymTrainerParties=>null;
     bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;
     string? DeferredRegionalServiceReason(MapId map,string script)=>null;

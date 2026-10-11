@@ -1,0 +1,23 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/scripts/surf.inc",
+      "byteLength": 536,
+      "sha256": "bf9b395e88ddf6dff7149d27f789ee34176372d59eadd6df4788466b4f44aea8",
+      "gitBlobSha1": "e7bf85ec771f84ee46d9d9ff80e6b1cb77c4258b"
+    },
+    {
+      "path": "data/text/surf.inc",
+      "byteLength": 257,
+      "sha256": "1daf8e381098d5ee27c6947e829ddbd6b824a492a42bb68ae64526f4b45efe14",
+      "gitBlobSha1": "4462604273aa93905656f5837752ef42a050ecd2"
+    },
+    {
+      "path": "include/constants/field_effects.h",
+      "byteLength": 5109,
+      "sha256": "ea4276af2ba5997c7639df6629ca7cebcc61f308b62c43ceabbfc7dd744473f0",
+      "gitBlobSha1": "0b2351017ba32d1dab03b2e765e215c7da66107f"
+    }
+  ]
+}

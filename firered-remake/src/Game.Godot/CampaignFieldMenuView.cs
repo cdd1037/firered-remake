@@ -135,6 +135,8 @@ public partial class CampaignView
             }
             else if(actions[_fieldPartyAction] == "CUT") UseFieldPartyCut();
             else if(actions[_fieldPartyAction] == "FLASH") UseFieldPartyFlash();
+            else if(actions[_fieldPartyAction] == "STRENGTH") UseFieldPartyStrength();
+            else if(actions[_fieldPartyAction] == "SURF") UseFieldPartySurf();
             else _fieldMenuMode = "party";
             return true;
         }
@@ -168,6 +170,8 @@ public partial class CampaignView
             foreach(var move in _session.State.Party[_fieldPartyCursor].Pokemon.Moves)
                 if(_catalog.VermilionGymEnabled&&move.Move.Value=="pret:MOVE_CUT")actions.Add("CUT");
                 else if(_catalog.RockTunnelEnabled&&move.Move.Value=="pret:MOVE_FLASH")actions.Add("FLASH");
+                else if(_catalog.SafariEnabled&&move.Move.Value=="pret:MOVE_STRENGTH")actions.Add("STRENGTH");
+                else if(_catalog.SurfEnabled&&move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");
         actions.Add("SWITCH");actions.Add("CANCEL");return actions.ToArray();
     }
     private int FieldPartyActionTop => 152-FieldPartyActions().Length*16;

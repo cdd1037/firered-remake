@@ -589,7 +589,7 @@ public sealed partial class CampaignSession
         // releases and ends. The map post-battle speech is reached on a later interaction.
         next=next with { BattledTrainers = next.BattledTrainers.Add(trainer.Trainer.Value),
             Script = next.Script with { Variables = next.Script.Variables.SetItem("VAR_RESULT", 0) },
-            Music = _content.MapDefinition(next.World.Player.MapId).Music, Exploration = ResetEncounterModifiers(next.Exploration!) };
+            Music = FieldTravelMusic(next), Exploration = ResetEncounterModifiers(next.Exploration!) };
         if((IsPokemonTowerTrainer(trainer.Trainer)||IsRocketHideoutTrainer(trainer.Trainer)||IsMtMoonTrainer(trainer.Trainer)||IsCeruleanTrainer(trainer.Trainer)||IsBillTrainer(trainer.Trainer)||IsSsAnneTrainer(trainer.Trainer))&&OrdinaryTrainerScript(trainer.Trainer).Mode==3)
         {
             var continuation=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",0)};

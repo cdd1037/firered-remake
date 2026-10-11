@@ -104,7 +104,8 @@ public static class EarlyLandEncounterRules
 
     // Public profiles validate their own contracts before entering this single source engine.
     internal static EarlyLandEncounterResult CheckCore(EarlyLandEncounterState state, EarlyLandEncounterTable table,
-        EarlyLandEncounterCheck check, bool wildEncountersDisabled, RngState globalRng, bool stench = false, bool illuminate = false, bool cleanseTag = false)
+        EarlyLandEncounterCheck check, bool wildEncountersDisabled, RngState globalRng, bool stench = false, bool illuminate = false, bool cleanseTag = false,
+        Func<int, int>? chooseSlot = null, string slotPurpose = "encounter.land-slot", ushort repelSteps = 0, int? repelLevel = null)
     {
 
         var trace = ImmutableArray.CreateBuilder<EncounterRandomTrace>();
@@ -123,7 +124,7 @@ public static class EarlyLandEncounterRules
         if (check.EncounterType == EncounterTileType.None) return Finish(EncounterCheckOutcome.NoEncounterTerrain);
         // HandleWildEncounterCooldown retains 8-bit fixed point through held-item
         // then ability modifiers; truncating before Stench/Illuminate changes boundaries.
-        int cooldown = GetBaseCooldown(table) * 256, bypass = 5 * 256;
+        int cooldown = (table.RawEncounterRate >= 80 ? 0 : table.RawEncounterRate < 10 ? 8 : 8 - table.RawEncounterRate / 10) * 256, bypass = 5 * 256;
         if (cleanseTag) { cooldown += cooldown / 3; bypass -= bypass / 3; }
         if (stench) { cooldown *= 2; bypass /= 2; }
         else if (illuminate) { cooldown /= 2; bypass *= 2; }
@@ -148,13 +149,18 @@ public static class EarlyLandEncounterRules
         trace.Add(new("wild-rate", rate.Trace));
         if (rate.Trace.Result >= threshold)
         {
-            state = state with { EncounterRateBuff = unchecked((ushort)(state.EncounterRateBuff + table.RawEncounterRate)) };
+            state = state with { EncounterRateBuff = repelSteps == 0 ? unchecked((ushort)(state.EncounterRateBuff + table.RawEncounterRate)) : (ushort)0 };
             return Finish(EncounterCheckOutcome.RateMiss);
         }
-        // No active roamer/Repel; FR does not add Emerald's Static/Synchronize/Keen Eye branches.
-        var slot = table.Slots[ChooseSlot(DrawGlobal("encounter.land-slot", 100))];
+        // No active roamer; FR does not add Emerald's Static/Synchronize/Keen Eye branches.
+        var slot = table.Slots[(chooseSlot ?? ChooseSlot)(DrawGlobal(slotPurpose, 100))];
         int lo = Math.Min(slot.MinimumLevel, slot.MaximumLevel), hi = Math.Max(slot.MinimumLevel, slot.MaximumLevel);
         byte level = (byte)(lo + DrawGlobal("encounter.level", hi - lo + 1));
+        if (repelSteps > 0 && (repelLevel is null || level < repelLevel))
+        {
+            state = state with { EncounterRateBuff = 0 };
+            return Finish(EncounterCheckOutcome.RepelSuppressed);
+        }
         var candidate = new EarlyLandEncounterCandidate(table.Map, slot.Index, slot.Species, level);
         state = state with { Pending = new(candidate, check.MetatileBehavior) };
         return new(state, globalRng, EncounterCheckOutcome.CandidateReady, candidate, threshold, trace.ToImmutable());

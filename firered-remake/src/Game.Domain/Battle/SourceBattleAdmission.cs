@@ -42,14 +42,20 @@ public static class SourceBattleAdmission
         catalog.Moves.Count == 354 && catalog.Species.Keys.All(CampaignAdmissionPolicy.CurrentFuchsia.Admits);
 
     public static bool IsSafariOwnedCampaign(PokemonCatalog? catalog, WildBattleState state) =>
-        state.SourceCampaignRulesVersion == SafariOwnedPokemonCatalog.Profile &&
-        IsCanonicalSourceState(catalog, state) && SafariOwnedPokemonCatalog.ForMechanics(catalog) is not null;
+        state.SourceCampaignRulesVersion == SafariOwnedPokemonCatalog.Profile && IsOwnedCampaign(catalog, state);
+
+    public static bool IsOwnedCampaign(PokemonCatalog? catalog, WildBattleState state) =>
+        IsCanonicalSourceState(catalog, state) &&
+        OwnedBattlePokemonCatalog.ForMechanics(catalog, state.SourceCampaignRulesVersion) is not null;
+
+    public static bool IsOwnedCampaign(OwnedBattlePokemonCatalog owned, WildBattleState state) =>
+        state.SourceCampaignRulesVersion == owned.RulesVersion && IsOwnedCampaign(owned.Mechanics.Catalog, state);
 
     internal static string? ValidateCampaignMembership(PokemonCatalog? catalog, WildBattleState state)
     {
         if (state.SourceCampaignRulesVersion is null) return null;
-        if (!IsSafariOwnedCampaign(catalog, state)) return "source_campaign_admission";
-        var owned = SafariOwnedPokemonCatalog.ForMechanics(catalog)!;
+        if (!IsOwnedCampaign(catalog, state)) return "source_campaign_admission";
+        var owned = OwnedBattlePokemonCatalog.ForMechanics(catalog, state.SourceCampaignRulesVersion)!;
         if (state.CalledParty is not { } party || party.Player.IsDefaultOrEmpty || party.Opponent.IsDefaultOrEmpty)
             return "source_campaign_actual_parties";
         if (party.Player.Concat(party.Opponent).Any(m => m?.Pokemon is null || !owned.Catalog.Species.ContainsKey(m.Pokemon.Species)))
@@ -57,10 +63,10 @@ public static class SourceBattleAdmission
         return null;
     }
 
-    internal static string? ValidateSafariOwnedEntry(SafariOwnedPokemonCatalog owned,
+    internal static string? ValidateOwnedEntry(OwnedBattlePokemonCatalog owned,
         ImmutableArray<WildBattleCombatant> players, int activeIndex)
     {
-        if (owned is null || !SafariOwnedPokemonCatalog.IsAuthenticated(owned.Catalog)) return "source_campaign_admission";
+        if (owned is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned)) return "source_campaign_admission";
         if (players.IsDefaultOrEmpty || players.Length > 6 || activeIndex < 0 || activeIndex >= players.Length)
             return "source_campaign_party";
         foreach (var member in players)

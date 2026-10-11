@@ -29,7 +29,7 @@ public static class SourceBattleIdentityRules
             (mechanicsVersion != SourceBattleKernel.Version || frame.Layout != SourceBattleLayout.PresetDoubles))
             return "source_frame_mechanics_profile_layout";
         if (frame.SourceCampaignRulesVersion is { } campaign &&
-            (campaign != SafariOwnedPokemonCatalog.Profile || frame.Layout != SourceBattleLayout.Singles ||
+            (!OwnedBattlePokemonCatalog.IsKnownProfile(campaign) || frame.Layout != SourceBattleLayout.Singles ||
              frame.SourceMechanicsRulesVersion != BattleRulesProfile.CanonicalSourceSinglesVersion))
             return "source_frame_campaign_profile";
         if (frame.Turn < 0 || frame.Revision < 0 || frame.EventSequence < 0 || frame.RunAttempts < 0 ||
@@ -55,7 +55,7 @@ public static class SourceBattleIdentityRules
                 return "source_frame_side_registers";
         }
         if (frame.SourceCampaignRulesVersion is not null && frame.Parties.SelectMany(p => p.Members).Any(m =>
-            !CampaignAdmissionPolicy.CurrentFuchsia.Admits(m.Pokemon.Species) && !SafariOwnedPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species)))
+            !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species)))
             return "source_frame_campaign_species";
         if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";
         if (SourceObedienceRules.Validate(frame.Obedience, frame.Parties[0].Members) is { } obedienceError) return obedienceError;

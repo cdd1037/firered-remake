@@ -20,7 +20,7 @@ public partial class Bootstrap : Node2D
         _probe = OS.GetCmdlineUserArgs().Contains("--probe");
         _harness = OS.GetCmdlineUserArgs().Contains("--harness");
         _pallet = OS.GetCmdlineUserArgs().Contains("--pallet");
-        _story = OS.GetCmdlineUserArgs().Contains("--story") || OS.GetCmdlineUserArgs().Contains("--story-rocket-hideout") || OS.GetCmdlineUserArgs().Contains("--story-pokemon-tower") || OS.GetCmdlineUserArgs().Contains("--story-snorlax") || OS.GetCmdlineUserArgs().Contains("--story-regional") || OS.GetCmdlineUserArgs().Contains("--story-regional-services") || OS.GetCmdlineUserArgs().Contains("--story-regional-interiors") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-route") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-gym") || OS.GetCmdlineUserArgs().Contains("--story-safari");
+        _story = OS.GetCmdlineUserArgs().Contains("--story") || OS.GetCmdlineUserArgs().Contains("--story-rocket-hideout") || OS.GetCmdlineUserArgs().Contains("--story-pokemon-tower") || OS.GetCmdlineUserArgs().Contains("--story-snorlax") || OS.GetCmdlineUserArgs().Contains("--story-regional") || OS.GetCmdlineUserArgs().Contains("--story-regional-services") || OS.GetCmdlineUserArgs().Contains("--story-regional-interiors") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-route") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-gym") || OS.GetCmdlineUserArgs().Contains("--story-safari") || OS.GetCmdlineUserArgs().Contains("--story-surf");
         _evidencePath = OS.GetEnvironment("FIRERED_EVIDENCE");
         if (!string.IsNullOrEmpty(_evidencePath)) System.IO.File.WriteAllText(System.IO.Path.ChangeExtension(_evidencePath, ".events.log"), "");
         var evidence = new

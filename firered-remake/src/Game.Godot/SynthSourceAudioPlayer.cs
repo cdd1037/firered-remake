@@ -41,8 +41,9 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null)
     {
+        if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
         if(includeSafari&&!includeFuchsiaRoute)throw new ArgumentException("Safari audio requires Fuchsia route.");
         if(includeFuchsiaRoute&&!includeSnorlax)throw new ArgumentException("Fuchsia route audio requires Snorlax.");
         if(includeSnorlax&&!includePokemonTower)throw new ArgumentException("Snorlax audio requires Pokemon Tower.");
@@ -167,6 +168,22 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
                 !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"CRY_CHANSEY_NORMAL","CRY_SCYTHER_NORMAL","CRY_TAUROS_NORMAL"}))
                 throw new InvalidDataException("Safari cry manifest contract differs.");
             cues=[..cues,..extension.Cues];
+        }
+        if(includeSurf)
+        {
+            string path=Path.Combine(Path.GetFullPath(surfContentRoot??projectRoot),"content/generated/surf-synth-audio/manifest.json");
+            if(new FileInfo(path).Length!=SurfSynthManifestIdentity.Bytes)throw new InvalidDataException("Surf cry manifest length differs.");
+            byte[] extensionBytes=File.ReadAllBytes(path);
+            if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=SurfSynthManifestIdentity.Sha256)throw new InvalidDataException("Surf cry manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Surf cry manifest.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=SurfSynthManifestIdentity.SourceCommit||extension.Cues.Length!=SurfSynthManifestIdentity.CueCount||
+                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"CRY_PSYDUCK_NORMAL","CRY_GOLDUCK_NORMAL"}))
+                throw new InvalidDataException("Surf cry manifest contract differs.");
+            // Tower already admitted Psyduck's scripted cry. Reuse only this exact source cue.
+            var inheritedPsyduck=cues.SingleOrDefault(c=>c.Id=="CRY_PSYDUCK_NORMAL");
+            if(inheritedPsyduck is null||inheritedPsyduck!=extension.Cues.Single(c=>c.Id=="CRY_PSYDUCK_NORMAL")||cues.Any(c=>c.Id=="CRY_GOLDUCK_NORMAL"))
+                throw new InvalidDataException("Inherited Surf cry differs.");
+            cues=[..cues,extension.Cues.Single(c=>c.Id=="CRY_GOLDUCK_NORMAL")];
         }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
         if(includeFuchsiaRoute)

@@ -104,7 +104,11 @@ public partial class CampaignView
     private void DrawFieldFlashBanner()
     {
         if(_session.State.FlashEffect is not {Phase:FieldFlashSourcePresentation.ShowMon} flash)return;
-        int age=FieldFlashFrame-FieldFlashSourcePresentation.PlayerFrameDurations.Sum();if(age<0)return;
+        DrawFieldIndoorShowMonBanner(FieldFlashFrame,flash.PartyIndex);
+    }
+    private void DrawFieldIndoorShowMonBanner(int frame,int partyIndex)
+    {
+        int age=frame-FieldFlashSourcePresentation.PlayerFrameDurations.Sum();if(age<0)return;
         int open=FieldFlashSourcePresentation.IndoorBannerOpenFrames,middle=FieldFlashSourcePresentation.MonSlideInFrames+FieldFlashSourcePresentation.MonHoldFrames+FieldFlashSourcePresentation.MonSlideOutFrames,closing=age-open-middle;
         Span<bool> visible=stackalloc bool[32];
         for(int t=0;t<Math.Min(16,age+1);t++){int column=(32-t*2)&31;visible[column]=true;visible[(column+1)&31]=true;}
@@ -114,7 +118,7 @@ public partial class CampaignView
         int slide=age-open;if(slide<0||slide>=middle)return;
         int exit=slide-FieldFlashSourcePresentation.MonSlideInFrames-FieldFlashSourcePresentation.MonHoldFrames;
         int xMon=slide<FieldFlashSourcePresentation.MonSlideInFrames?Math.Max(120,320-slide*20):exit<0?120:120-exit*20;
-        var mon=_session.State.Party[flash.PartyIndex].Pokemon;DrawTexture(_battleArt[(mon.SourceSpeciesId,"front",mon.IsShiny)].Texture,new(xMon-32,48));
+        var mon=_session.State.Party[partyIndex].Pokemon;DrawTexture(_battleArt[(mon.SourceSpeciesId,"front",mon.IsShiny)].Texture,new(xMon-32,48));
     }
     private ForestMessage? RockTunnelWildMessage(WildBattleEvent current)=>!_catalog.RockTunnelEnabled?null:current switch
     {

@@ -36,7 +36,8 @@ public static class ConnectedFieldRules
 
     public static ConnectedFieldTransition Complete(WorldSnapshot state, ConnectedFieldIntent intent,
         IReadOnlyDictionary<MapId, ConnectedFieldMap> maps,bool enableCaveGround=false,bool enableSand=false,bool biking=false,
-        bool enableSpinTiles=false,RocketSpinState? activeSpin=null,bool enableCardinalLedges=false)
+        bool enableSpinTiles=false,RocketSpinState? activeSpin=null,bool enableCardinalLedges=false,
+        bool surfing=false,Func<MapId,int,int,int?>? sourceTerrain=null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(intent);
@@ -63,7 +64,10 @@ public static class ConnectedFieldRules
         if (here is null || !ValidCell(here) || here.Collision != 0 || here.Occupied ||
             (here.Elevation != 15 && here.Elevation != state.Player.Elevation))
             return Fail("invalid-connected-current-cell", "Current cell is absent, blocked, malformed, or has inconsistent elevation.");
-        if (!WalkableBehavior(here.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles))
+        bool Traversable(ConnectedFieldMap m,int x,int y,ConnectedFieldCell c) => surfing
+            ? c.Elevation==1 && c.SourceBehavior is 0x10 or 0x15 && sourceTerrain?.Invoke(m.Id,x,y)==2
+            : WalkableBehavior(c.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles);
+        if (!Traversable(map,state.Player.X,state.Player.Y,here))
             return Fail(BehaviorFault(here.SourceBehavior), $"Current source behavior 0x{here.SourceBehavior:x2}.");
 
         ConnectedFieldTransition Accepted(ConnectedFieldEventKind kind, TilePosition position, int steps, string reason)
@@ -122,7 +126,7 @@ public static class ConnectedFieldRules
         if (biking && front.SourceBehavior == 0x0a) return Blocked("bicycle-terrain-collision");
         if (front.SourceBehavior == 0x69 && intent.Direction == Direction.North && state.Player.Facing == Direction.North)
             return Fail("field-warp-handler-required", "Dispatch the north-facing front door before ordinary walking.");
-        if (!WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles) && front.SourceBehavior is not (0x3b or 0x69 or 0x80 or 0x84 or 0x87 or 0x88 or 0x8f) &&
+        if (!(surfing && front.SourceBehavior is 0x10 or 0x15) && !WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles) && front.SourceBehavior is not (0x3b or 0x69 or 0x80 or 0x84 or 0x87 or 0x88 or 0x8f) &&
             !(enableCardinalLedges && front.SourceBehavior is >=0x38 and <=0x3a))
             return Fail(BehaviorFault(front.SourceBehavior), $"Target source behavior 0x{front.SourceBehavior:x2}.");
 
@@ -132,7 +136,7 @@ public static class ConnectedFieldRules
             (0x38,Direction.East) or (0x39,Direction.West) or (0x3a,Direction.North)=>enableCardinalLedges,
             _=>false
         };
-        if (matchingLedge)
+        if (matchingLedge && !surfing)
         {
             // Source ShouldJumpLedge overrides the intermediate tile's ordinary collision/elevation result.
             // GetLedgeJumpDirection uses the matching cardinal metatile predicate. Preserve the old
@@ -151,10 +155,13 @@ public static class ConnectedFieldRules
         if (BlocksEdge(here.SourceBehavior, intent.Direction) || BlocksEdge(front.SourceBehavior, Opposite(intent.Direction)))
             return Blocked("directional-collision");
         if (state.Player.Elevation != 0 && front.Elevation is not (0 or 15) && front.Elevation != state.Player.Elevation)
+        {
+            if (surfing && crosses && front.Elevation==3) return Fail("surf-connection-dismount-not-supported", "A shoreline jump across a map connection requires its source transition handler.",TransitionStatus.Rejected);
             return Blocked("elevation");
+        }
         if (front.Occupied) return Blocked("object-collision");
         // A zero-collision ledge/sign/door would need a separately audited action; do not quietly call it floor.
-        if (!WalkableBehavior(front.SourceBehavior,enableCaveGround,enableSand,enableSpinTiles))
+        if (!Traversable(destination,x,y,front))
             return Fail("unsupported-passable-special-cell", $"Source behavior 0x{front.SourceBehavior:x2} is not an ordinary landing.");
         int elevation = front.Elevation == 15 ? state.Player.Elevation : front.Elevation;
         return Accepted(ConnectedFieldEventKind.Walked, new(destination.Id, x, y, elevation, intent.Direction), enableSpinTiles && RocketSpinRules.IsArrow(front.SourceBehavior) ? 0 : 1,

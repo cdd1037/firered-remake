@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "files": [
+    {
+      "path": "graphics/field_effects/pics/ground_impact_dust.png",
+      "sha256": "6a83553050540cd002a506281c9b33b332b52e7b4bdf243a554a7eca3f0cfdbe",
+      "gitBlobSha1": "7c6e2d348c9c341b2b1824029a27970ab719a267",
+      "byteLength": 212
+    },
+    {
+      "path": "graphics/field_effects/palettes/general_0.pal",
+      "sha256": "f68436303707e0fe34d259972238d6a1cf1fc53d6154d61c0b8ddb62bb041f12",
+      "gitBlobSha1": "40f7022bf212ec9066a52da87f52d65adc3ed199",
+      "byteLength": 187
+    },
+    {
+      "path": "src/data/field_effects/field_effect_objects.h",
+      "sha256": "cfdb0c9dbac21ea91964e76a2b9de7ddc104cfdd048d3a517739b9fe7350a98d",
+      "gitBlobSha1": "780ef92f859a2b3cf7aeb07af626e7cc1aecb912",
+      "byteLength": 38717
+    },
+    {
+      "path": "src/field_effect_helpers.c",
+      "sha256": "bd19b5a73def76a864e37bf4c406035d5eae2890893ad7983386ff4a27b944b4",
+      "gitBlobSha1": "278364803e7c9a989863a1014e8a733ea4590dfa",
+      "byteLength": 49443
+    },
+    {
+      "path": "src/field_player_avatar.c",
+      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e",
+      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb",
+      "byteLength": 67969
+    },
+    {
+      "path": "src/event_object_movement.c",
+      "sha256": "920f96b45569e702dd00997e7984effb3a7677ba2b68512b939eda69c2294254",
+      "gitBlobSha1": "8e82824d376d566dbff5ac863f1013d10ad5ec8b",
+      "byteLength": 326145
+    },
+    {
+      "path": "src/data/object_events/object_event_graphics.h",
+      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec",
+      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
+      "byteLength": 23522
+    },
+    {
+      "path": "data/field_effect_scripts.s",
+      "sha256": "ebcc3ca762e1c9a6da8a455368651155f4c1d7058a7b0da3b4fcb9b3bbdc9c6e",
+      "gitBlobSha1": "3245a5bef5cbe14d6035f3fa02f430b7d542a808",
+      "byteLength": 10824
+    }
+  ],
+  "output": {
+    "path": "src/Game.Godot/Assets/Reference/field-strength-dust.rgba",
+    "width": 16,
+    "height": 24,
+    "sha256": "24819e82f884ce9e5267fa5abd227cfea0d544d781d9c2505664e99930c681f5",
+    "byteLength": 1536
+  }
+}

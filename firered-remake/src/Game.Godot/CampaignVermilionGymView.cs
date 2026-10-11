@@ -32,7 +32,7 @@ public partial class CampaignView
             return blink<0 || blink<FieldCutSourcePresentation.TreeBlinkFrames && (blink&1)==1;
         }
     }
-    private int FieldCutBannerAge => FieldCutFrame-FieldCutSourcePresentation.PlayerFrameDurations.Sum();
+    private int FieldCutBannerAge => (_session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon}?FieldSurfFrame:FieldCutFrame)-FieldCutSourcePresentation.PlayerFrameDurations.Sum();
     private Rect2 FieldCutBannerWindow
     {
         get
@@ -109,10 +109,10 @@ public partial class CampaignView
     private void DrawFieldCutActor(string id,SpriteAsset asset,Pose pose,Vector2 camera)
     {
         var cut=_session.State.CutEffect;
-        if((cut?.Phase==FieldCutSourcePresentation.ShowMon||_session.State.FlashEffect?.Phase==FieldFlashSourcePresentation.ShowMon)&&id=="LOCALID_PLAYER")
+        if((cut?.Phase==FieldCutSourcePresentation.ShowMon||_session.State.FlashEffect?.Phase==FieldFlashSourcePresentation.ShowMon||_session.State.StrengthEffect?.Phase==FieldStrengthSourcePresentation.ShowMon||_session.State.SurfEffect?.Phase==FieldSurfSourcePresentation.ShowMon)&&id=="LOCALID_PLAYER")
         {
             var position=pose.Position.Floor()+new Vector2(8,8)-asset.Anchor-camera;
-            DrawTextureRectRegion(_session.State.PlayerGender==0?_fieldCutRed!:_fieldCutGreen!,new(position,new(16,32)),new((_session.State.FlashEffect is null?FieldCutPlayerFrame:FieldFlashPlayerFrame)*16,0,16,32));
+            DrawTextureRectRegion(_session.State.PlayerGender==0?_fieldCutRed!:_fieldCutGreen!,new(position,new(16,32)),new((_session.State.SurfEffect is not null?FieldSurfPlayerFrame:_session.State.StrengthEffect is not null?FieldStrengthPlayerFrame:_session.State.FlashEffect is null?FieldCutPlayerFrame:FieldFlashPlayerFrame)*16,0,16,32));
             return;
         }
         if(cut?.Phase==FieldCutSourcePresentation.TreeCut&&id==cut.ActorId)
@@ -127,7 +127,9 @@ public partial class CampaignView
 
     private void DrawFieldCutBanner()
     {
-        if(_session.State.CutEffect is not {Phase:FieldCutSourcePresentation.ShowMon} cut)return;
+        int partyIndex = _session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon} surf ? surf.PartyIndex :
+            _session.State.CutEffect is {Phase:FieldCutSourcePresentation.ShowMon} cut ? cut.PartyIndex : -1;
+        if(partyIndex < 0)return;
         var window=FieldCutBannerWindow;if(window.Size.X<=0||window.Size.Y<=0)return;
         // Source BG0HOFS subtracts 16 every visual tick. Wrap at the original 256px tilemap width.
         int left=(int)window.Position.X,right=(int)window.End.X,y=(int)window.Position.Y,height=(int)window.Size.Y;
@@ -139,7 +141,7 @@ public partial class CampaignView
         }
         int monAge=FieldCutBannerAge-FieldCutSourcePresentation.OutdoorBannerOpenFrames;
         if(monAge<0||monAge>=FieldCutSourcePresentation.MonSlideInFrames+FieldCutSourcePresentation.MonHoldFrames+FieldCutSourcePresentation.MonSlideOutFrames)return;
-        var mon=_session.State.Party[cut.PartyIndex].Pokemon;
+        var mon=_session.State.Party[partyIndex].Pokemon;
         // The source OBJ is not clipped by the BG0 reveal window.
         DrawTexture(_battleArt[(mon.SourceSpeciesId,"front",mon.IsShiny)].Texture,new(FieldCutMonX-32,FieldCutSourcePresentation.MonY-32));
     }

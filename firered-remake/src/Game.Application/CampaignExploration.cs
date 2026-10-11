@@ -54,7 +54,7 @@ public sealed partial class CampaignSession
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
         if(here is >=0x60 and <=0x71)return (_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map))?.Code;
-        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SafariConnectedMaps(EditedFieldMaps(state)),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled);
+        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SafariConnectedMaps(EditedFieldMaps(state)),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
         return check.Status==TransitionStatus.Accepted?null:check.Diagnostic?.Code??"save_connected_invalid";
     }
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> OccupiedFieldMaps(CampaignState state)
@@ -80,6 +80,8 @@ public sealed partial class CampaignSession
         if(!Enum.IsDefined(command.Direction))return new(CommandStatus.Rejected,state,"invalid_direction");
         var before=state.World.Player;var movementMaps=SafariMovementMaps(RocketMovementMaps(state));var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
         bool turn=command.Kind=="turn";
+        if(!turn&&TryStartFieldSurfDismount(state,command) is {} surfDismount)return surfDismount;
+        if(!turn&&TryStartFieldStrengthPush(state,command) is {} strengthPush)return strengthPush;
         if(!turn&&_content.FuchsiaRouteEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsFuchsiaRouteWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"fuchsia_route_warp_not_open");
         if(!turn&&_content.SnorlaxEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
         if(TryDepartmentDynamicExit(state,command) is {} departmentExit)return departmentExit;
@@ -112,18 +114,19 @@ public sealed partial class CampaignSession
         else
         {
             var action=turn?ConnectedFieldAction.TurnInPlace:ConnectedFieldAction.Walk;
-            var transition=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("field:"+state.World.Revision),state.World.Revision,action,command.Direction),OccupiedFieldMaps(state),_content.MtMoonEnabled,_content.VermilionGymEnabled,biking:_content.CityServicesEnabled&&state.IsCycling,enableSpinTiles:_content.RocketHideoutEnabled,activeSpin:state.RocketSpin?.Forced,enableCardinalLedges:_content.FuchsiaRouteEnabled);
+            var transition=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("field:"+state.World.Revision),state.World.Revision,action,command.Direction),OccupiedFieldMaps(state),_content.MtMoonEnabled,_content.VermilionGymEnabled,biking:_content.CityServicesEnabled&&state.IsCycling,enableSpinTiles:_content.RocketHideoutEnabled,activeSpin:state.RocketSpin?.Forced,enableCardinalLedges:_content.FuchsiaRouteEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
             if(transition.Status!=TransitionStatus.Accepted)return new(transition.Status==TransitionStatus.Rejected?CommandStatus.Rejected:CommandStatus.Fault,state,transition.Diagnostic?.Code);
             moved=state with{World=transition.State with{RulesVersion=RuleVersions.GridWorldV0}};changed=transition.MapChanged;checkEncounter=transition.RequiresEncounterCheck;
             trigger=turn?EncounterCheckTrigger.TurnInPlaceCompleted:EncounterCheckTrigger.WalkingStepCompleted;
         }
+        if(state.IsSurfing&&!SurfRegionAllows(moved.World.Player))return new(CommandStatus.Rejected,state,"field_surf_region_boundary_not_open");
         if(_content.SnorlaxEnabled&&!_content.IsSnorlaxStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"snorlax_region_boundary_not_open");
         if(changed)
         {
             moved=RecordDepartmentElevatorEntrance(state,moved);
             moved=RecordRocketElevatorEntrance(state,moved);
             moved=moved with{Exploration=ResetEncounterModifiers(moved.Exploration!)};
-            moved=Pump(EnterMap(moved,moved.World.Player.Facing));
+            moved=Pump(EnterSurfConnectionMap(moved,moved.World.Player.Facing));
         }
         else
         {
@@ -192,6 +195,7 @@ public sealed partial class CampaignSession
     }
     private CampaignState CheckFieldEncounter(CampaignState state,EncounterCheckTrigger trigger)
     {
+        if(state.IsSurfing)return CheckSurfWaterEncounter(state,trigger);
         if(_content.ForestEnabled)return CheckEarlyLandEncounter(state,trigger);
         var p=state.World.Player;var cell=_content.ConnectedFieldMaps![p.MapId].CellAt(p.X,p.Y)!;
         var exploration=state.Exploration!;

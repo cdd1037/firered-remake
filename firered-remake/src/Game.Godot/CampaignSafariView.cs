@@ -8,7 +8,7 @@ using Godot;
 /// The session owns balls, turns, capture identity, delivery and the field return.</summary>
 public partial class CampaignView
 {
-    private static bool SafariProfileRequested => OS.GetEnvironment("FIRERED_SAFARI") == "1" ||
+    private static bool SafariProfileRequested => SurfProfileRequested || OS.GetEnvironment("FIRERED_SAFARI") == "1" ||
         OS.GetCmdlineUserArgs().Contains("--story-safari");
     private string? _safariPresentationKey, _safariBattleId, _safariNotice;
     private int _safariCursor, _safariTextPage;
@@ -98,7 +98,7 @@ public partial class CampaignView
                 s.OldManTutorial is null && s.FieldPoison is null && s.Evolution is null && s.RareCandy is null &&
                 s.EscapeRope is null && s.HealingEffect is null && s.Shop is null && s.ItemMenu is null &&
                 s.Pc is null && !s.PcPoweredOn && s.Fishing is null && s.MoneyBox is null && s.GiftDelivery is null &&
-                s.TownMap is null && s.Repel is null && s.PokeFlute is null && s.CutEffect is null && s.FlashEffect is null &&
+                s.TownMap is null && s.Repel is null && s.PokeFlute is null && s.CutEffect is null && s.FlashEffect is null && s.StrengthEffect is null && s.SurfEffect is null &&
                 s.HelpContext == "map";
         }
     }
@@ -217,7 +217,7 @@ public partial class CampaignView
         if (battle.Capture?.Stage == CampaignCaptureStage.DexEntry) { DrawCaptureDexEntry(battle.State.Target.SourceSpeciesId); if (_safariNotice is not null) ItemMessageBox(_safariNotice); return; }
         if (battle.Capture?.Stage == CampaignCaptureStage.Naming) { DrawCaptureNamingPanel(); if (_safariNotice is not null) ItemMessageBox(_safariNotice); return; }
         DrawRect(new(0, 0, 240, 160), Colors.Black);
-        _battleSkin.DrawBackground(this); DrawTexture(_wildTerrain, Vector2.Zero);
+        _battleSkin.DrawBackground(this); DrawTexture(_catalog.SurfEnabled && _session.State.IsSurfing ? _cityBattleScenes["water"] : _wildTerrain, Vector2.Zero);
         DrawTexture(_forestTrainerPortraits[_session.State.PlayerGender == 0 ? "red-back" : "leaf-back"], new(48, 48));
         if (battle.Capture is null)
         {

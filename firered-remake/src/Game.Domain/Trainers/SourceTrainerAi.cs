@@ -133,7 +133,7 @@ public static class SourceTrainerAi
     {
         context = null;
         if (catalog is null || state?.Battle is null || state.SourceMoveRulesVersion != ForestTrainerCombatRules.SourceTrainerContractVersion ||
-            (!SourceBattleAdmission.IsCurrentCampaignCatalog(catalog) && !SourceBattleAdmission.IsSafariOwnedCampaign(catalog, state.Battle))) return "source_trainer_ai_contract";
+            (!SourceBattleAdmission.IsCurrentCampaignCatalog(catalog) && !SourceBattleAdmission.IsOwnedCampaign(catalog, state.Battle))) return "source_trainer_ai_contract";
         if ((replacement ? ForestTrainerCombatRules.ValidateSourceTrainerAiState(catalog, state) : ForestTrainerCombatRules.Validate(catalog, state)) is {} error) return error;
         var actual = state.Battle.CalledParty!;
         var party = actual.Opponent.Select((m,i) => i == actual.OpponentActiveIndex ? state.Battle.Opponent :
