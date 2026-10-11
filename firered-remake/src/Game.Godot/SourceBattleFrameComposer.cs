@@ -9,14 +9,15 @@ public sealed class SourceBattleFrameComposer
     private readonly Dictionary<string,SourcePixelAsset> _assets=[];
     private readonly AnimationBattler[] _battlers;
     private readonly SourceStatMaskMaterial? _statMaterial;
-    public SourceBattleFrameComposer(IReadOnlyDictionary<string,SourcePixelAsset> assets,AnimationBattler[] battlers,SourceStatMaskMaterial? statMaterial=null)
+    private readonly SourceMetallicMaterial? _metallicMaterial;
+    public SourceBattleFrameComposer(IReadOnlyDictionary<string,SourcePixelAsset> assets,AnimationBattler[] battlers,SourceStatMaskMaterial? statMaterial=null,SourceMetallicMaterial? metallicMaterial=null)
     {
         foreach(var (id,asset) in assets)
         {
             if(asset.Width is <1 or >240||asset.Height is <1 or >160||asset.Pixels.Length!=asset.Width*asset.Height)throw new InvalidDataException("Campaign animation asset shape differs.");
             _assets.Add(id,asset);
         }
-        _battlers=battlers;_statMaterial=statMaterial;
+        _battlers=battlers;_statMaterial=statMaterial;_metallicMaterial=metallicMaterial;
         if(_assets["background"].Width!=240||_assets["background"].Height!=112||_assets["impact"].Width!=32||_assets["impact"].Height!=32)throw new InvalidDataException("Source field/impact shape differs.");
         foreach(var b in battlers)if(_assets[b.Asset].Width!=64||_assets[b.Asset].Height!=64)throw new InvalidDataException("Battler canvas differs.");
     }
@@ -31,7 +32,9 @@ public sealed class SourceBattleFrameComposer
         {
             if(!b.Visible)return;
             var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=(frame.BackgroundSlots.Contains(b.Slot.Value)?frame.Offsets:frame.ObjectOffsets)[b.Slot.Value];
-            Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y,palettes.GetValueOrDefault(16+b.Slot.Value));
+            var palette=palettes.GetValueOrDefault(16+b.Slot.Value);bool grey=frame.GreyscaleSlots.Contains(b.Slot.Value);
+            if(frame.BattlerAffine.Length>b.Slot.Value&&frame.BattlerAffine[b.Slot.Value].DoubleSize)AffineBattler(pixels,_assets[b.Asset],center.X+offset.X,center.Y+offset.Y,frame.BattlerAffine[b.Slot.Value],palette);
+            else Blit(pixels,_assets[b.Asset],center.X-32+offset.X,center.Y-32+offset.Y,palette,grey);
         }
         void Sprite(SourceVisualSpriteFrame sprite)
         {
@@ -72,13 +75,39 @@ public sealed class SourceBattleFrameComposer
                 if((pixel&0x8000)!=0)pixels[dy*240+dx]=Blend(pixel,pixels[dy*240+dx],frame.AlphaA,frame.AlphaB);
             }
         }
+        if(frame.Metallic is {WindowEnabled:true,BackgroundLoaded:true,MaskVisible:true} metal)
+        {
+            if(_metallicMaterial is null)throw new InvalidDataException("Metallic material missing.");
+            var selected=_battlers.Single(b=>b.Slot.Value==metal.MaskSlot);var center=selected.DisplayCenter??selected.Center(frame.Doubles);var silhouette=_assets[selected.Asset];
+            var partner=metal.PriorityPartner<0?null:_battlers.Single(b=>b.Slot.Value==metal.PriorityPartner);
+            for(int y=0;y<64;y++)for(int x=0;x<64;x++)
+            {
+                int dx=center.X-32+x,dy=center.Y-32+y;
+                if(dx<0||dx>=240||dy<0||dy>=112||(silhouette.Pixels[y*64+x]&0x8000)==0)continue;
+                if(partner is not null){var p=partner.DisplayCenter??partner.Center(frame.Doubles);int sx=dx-p.X+32,sy=dy-p.Y+32;if(sx>=0&&sx<64&&sy>=0&&sy<64&&(_assets[partner.Asset].Pixels[sy*64+sx]&0x8000)!=0)continue;}
+                ushort pixel=_metallicMaterial.Pixel(dx+metal.ScrollX,dy+metal.ScrollY);
+                if((pixel&0x8000)!=0)pixels[dy*240+dx]=Blend(pixel,pixels[dy*240+dx],frame.AlphaA,frame.AlphaB);
+            }
+        }
         var rgba=new byte[pixels.Length*4];
         for(int i=0;i<pixels.Length;i++){int p=pixels[i];rgba[i*4]=(byte)((p&31)*255/31);rgba[i*4+1]=(byte)(((p>>5)&31)*255/31);rgba[i*4+2]=(byte)(((p>>10)&31)*255/31);rgba[i*4+3]=255;}return rgba;
     }
-    private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y,SourcePaletteBlend? palette=null)
+    private static void Blit(ushort[] dest,SourcePixelAsset source,int x,int y,SourcePaletteBlend? palette=null,bool greyscale=false)
     {
         for(int sy=0;sy<source.Height;sy++)for(int sx=0;sx<source.Width;sx++)
-        {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0)dest[dy*240+dx]=palette is null?p:SourcePaletteMath.Blend(p,palette.Coefficient,palette.Color);}
+        {int dx=x+sx,dy=y+sy;ushort p=source.Pixels[sy*source.Width+sx];if(dx>=0&&dx<240&&dy>=0&&dy<112&&(p&0x8000)!=0){if(greyscale){int average=((p&31)+((p>>5)&31)+((p>>10)&31))/3;p=(ushort)(0x8000|average|(average<<5)|(average<<10));}dest[dy*240+dx]=palette is null?p:SourcePaletteMath.Blend(p,palette.Coefficient,palette.Color);}}
+    }
+    private static void AffineBattler(ushort[] dest,SourcePixelAsset source,int centerX,int centerY,SourceBattlerAffine affine,SourcePaletteBlend? palette)
+    {
+        // SetSpriteRotScale supplies the inverse sampling matrix directly to the
+        // GBA BIOS. Growth has zero rotation: a=xScale, d=yScale, b=c=0.
+        for(int y=-64;y<64;y++)for(int x=-64;x<64;x++)
+        {
+            int sx=((x*affine.XScale)>>8)+32,sy=((y*affine.YScale)>>8)+32,dx=centerX+x,dy=centerY+y;
+            if(sx<0||sx>=64||sy<0||sy>=64||dx<0||dx>=240||dy<0||dy>=112)continue;
+            ushort p=source.Pixels[sy*64+sx];if((p&0x8000)==0)continue;
+            dest[dy*240+dx]=palette is null?p:SourcePaletteMath.Blend(p,palette.Coefficient,palette.Color);
+        }
     }
     private static void BlitSprite(ushort[] dest,SourcePixelAsset sheet,SourceVisualSpriteFrame sprite,int eva,int evb,bool blendEnabled)
     {

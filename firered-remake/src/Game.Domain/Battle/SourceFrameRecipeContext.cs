@@ -31,7 +31,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             struggle ? WildBattleInvocationFlags.NoPpDeduct : WildBattleInvocationFlags.None);
     }
     // BattleScript_MonTookFutureAttack reuses accuracycheck and the ordinary damage update.
-    // Protection has already expired before delayed work; Focus Band uses the shared adjustment, while Substitute remains gated.
+    // Protection has already expired before delayed work; Focus Band uses the shared adjustment, with the same Substitute boundary as direct damage.
     internal void RunFutureHit(SourceFutureAttack future, BattlerSlot target)
     {
         string purpose = $"source-battle.slot-{future.Attacker.Value}.future-attack";
@@ -42,6 +42,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         delayedContactDamage = true;
         int lost = SourceGenericApplyDamage(future.Attacker, target, move, adjusted, false, hit.Percent);
         delayedContactDamage = false;
+        SourceDamageResultMessage(future.Attacker, target, move);
+        if (!SubstituteHitReachedPokemon(target)) { EndSubstitutePass(); return; }
         var cell = Frame.Get(target); var prior = cell.Registers.Damage;
         Frame = Frame with { Slots = Frame.Slots.SetItem(target.Value, cell with { Registers = cell.Registers with {
             Damage = SourceMoveHistoryReducer.RecordDamage(prior, Turn, future.Attacker, lost, "TYPE_NORMAL") } }) };
@@ -122,8 +124,10 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                     MarkProtectionMiss(target);
                     CancellerCancelMultiTurn(invocation.Actor, "protected");
                 }
-                bool handled = false;
-                if (HasProtectionRecipe(move.Effect))
+                bool handled = !HasSleepResidualRecipe(move.Effect) &&
+                    SubstituteScriptBlocks(catalog, invocation.Actor, invocation.ChosenSlot, move);
+                if (!handled && move.Effect == "EFFECT_SUBSTITUTE") { ExecuteFrameSubstitute(); handled = true; }
+                if (!handled && HasProtectionRecipe(move.Effect))
                 {
                     SpendEarlyPartyPp(invocation.Actor, target, invocation.PpSlot, move);
                     var previous = initial.Get(invocation.Actor);
@@ -141,6 +145,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                     else ExecuteLeechSeed(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose);
                     handled = true;
                 }
+                if (!handled && HasSleepResidualRecipe(move.Effect)) { ExecuteSleepResidual(catalog, invocation.Actor, target, invocation.ChosenSlot, move); handled = true; }
+                if (!handled && HasTargetMarkRecipe(move.Effect)) { ExecuteTargetMark(invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled) ExecuteTypeChange(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteFieldSetting(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled) ExecuteCharge(catalog,invocation.Actor,move,purpose,ref handled);
@@ -221,6 +227,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             Frame = immunity.State; Events.AddRange(immunity.Events);
             var berries = SourceFrameBerryItems.Apply(Frame, SourceBerryPhase.MoveEnd);
             Frame = berries.State; Events.AddRange(berries.Events);
+            EndSubstitutePass();
             Frame = SourceMoveHistoryReducer.Apply(catalog, Frame, invocation,
                 Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect);
         }
@@ -291,8 +298,8 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     internal override bool RockTunnelReflects(BattlerSlot slot) => Frame.Sides[(int)slot.Side].ReflectTurnsRemaining > 0;
     internal override bool SourceCalledLightScreen(BattlerSlot slot) => Frame.Sides[(int)slot.Side].LightScreenTurnsRemaining > 0;
     internal override bool SourceCalledMist(BattlerSlot slot) => Frame.Sides[(int)slot.Side].MistTurnsRemaining > 0;
-    internal override bool SourceCalledSecondaryBlocked(BattlerSlot slot) => false; // Substitute branch is gated at admission.
-    internal override bool SourceCalledHitReachedPokemon(BattlerSlot slot) => true;
+    internal override bool SourceCalledSecondaryBlocked(BattlerSlot slot) => SubstitutePresent(slot);
+    internal override bool SourceCalledHitReachedPokemon(BattlerSlot slot) => SubstituteHitReachedPokemon(slot);
     internal override bool SourceCalledSafeguardBlocks(BattlerSlot actor, BattlerSlot target, MoveId move)
     {
         if (Frame.Sides[(int)target.Side].SafeguardTurnsRemaining == 0) return false;
@@ -330,6 +337,9 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
 
     internal override int SourceGenericApplyDamage(BattlerSlot actor, BattlerSlot target, MoveId move, int damage, bool critical, int percent)
     {
+        if (ConsumeSubstituteDamage(actor, target, move, damage, critical, percent, out int substituteLost,
+            noEffect: fixedDamageNoEffect ?? (damage == 0 && !HeldDamageEffectiveZero(target))))
+        { RecordContactDamage(target, move, damage, substituteLost, substitute: true); return substituteLost; }
         var body = Get(target); int before = body.Pokemon.CurrentHp, after = Math.Max(0, before - damage);
         Set(target, body with { Pokemon = body.Pokemon with { CurrentHp = after } });
         RecordContactDamage(target, move, damage, before - after);
@@ -360,6 +370,11 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         var body = Get(target); if (body.Status == status) return;
         if (body.Status == 0 && (WildBattleStatus.IsSleeping(status) || status == WildBattleStatus.Freeze))
             CancellerCancelMultiTurn(target, status == WildBattleStatus.Freeze ? "freeze" : "sleep");
+        if (body.Nightmare && !WildBattleStatus.IsSleeping(status))
+        {
+            Set(target, Get(target) with { Nightmare = false });
+            Add(n => new SourceTowerVolatileEvent(n, Turn, target, "nightmare", false, reason));
+        }
         Set(target, Get(target) with { Status = status, SourcePartyStatusOverride = null });
         Add(n => new SourceStatusChangedEvent(n, Turn, target, body.Status, status, reason));
     }
@@ -369,7 +384,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     {
         var body = Get(target);
         if (body.Pokemon.CurrentHp == 0 || body.ConfusionTurnsRemaining > 0 || WildBattleEffective.Ability(body) == "ABILITY_OWN_TEMPO" ||
-            secondary && (WildBattleEffective.Ability(body) == "ABILITY_SHIELD_DUST" || Frame.Sides[(int)target.Side].SafeguardTurnsRemaining > 0)) return;
+            secondary && (SourceCalledSecondaryBlocked(target) || WildBattleEffective.Ability(body) == "ABILITY_SHIELD_DUST" || Frame.Sides[(int)target.Side].SafeguardTurnsRemaining > 0)) return;
         int turns = 2 + (Draw($"{purpose}.confusion-duration", 4) & 3); Set(target, body with { ConfusionTurnsRemaining = turns });
         Add(n => new SourceConfusionChangedEvent(n, Turn, target, 0, turns, "move"));
     }
@@ -392,16 +407,19 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     }
     internal override void ForestOutcome(bool allowReplacement) { }
     internal override void MtMoonRageOnDamage(BattlerSlot actor, BattlerSlot target, MoveId move) { }
-    internal override void SourceCalledMoveEndSubstitute() { }
+    internal override void SourceCalledMoveEndSubstitute() => EndSubstitutePass();
     internal override bool SourceHeldDamageEnabled => Frame.Layout == SourceBattleLayout.PresetDoubles;
     internal override bool Endured(BattlerSlot slot) => HeldDamageEndured(slot);
     internal override void SourceDamageResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
-        if (commandNoEffect || !HeldDamageEndured(target)) return;
-        // Cmd_resultmessage: pure Endure prints once; with type flags it prints EnduredMsg
-        // then returns to resultmessage for the normal effectiveness text below this hook.
-        // Explosion's accuracy miss never reaches this successful-hit result boundary.
-        Add(n => new SourceMtMoonVolatileEvent(n, Turn, target, "endure", 1, 1, "endured"));
+        if (commandNoEffect) return;
+        // Cmd_resultmessage follows HP update, never the earlier adjustment command.
+        // Endure takes precedence; each successful target pass has its own result flags.
+        // Explosion can adjust then miss, and must not print a survival result for that pass.
+        if (HeldDamageEndured(target))
+            Add(n => new SourceMtMoonVolatileEvent(n, Turn, target, "endure", 1, 1, "endured"));
+        else if (HeldDamageHungOn(target))
+            Add(n => new SourceHeldItemSurvivalEvent(n, Turn, target, move.Id, Get(target).HeldItem));
     }
     internal override void SourceGenericMiss(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
@@ -436,7 +454,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             throw new SourceRecipeUnsupported("source_kernel_flinch_order_not_migrated");
         var body = Get(target);
         bool alreadyActed = Frame.Queue.Take(Frame.NextAction + 1).Any(a => a.Slot == target);
-        if (body.Pokemon.CurrentHp == 0 || alreadyActed || WildBattleEffective.Ability(body) is "ABILITY_SHIELD_DUST" or "ABILITY_INNER_FOCUS") return;
+        if (SourceCalledSecondaryBlocked(target) || body.Pokemon.CurrentHp == 0 || alreadyActed || WildBattleEffective.Ability(body) is "ABILITY_SHIELD_DUST" or "ABILITY_INNER_FOCUS") return;
         Set(target, body with { Flinched = true });
         Add(n => new SourceFlinchEvent(n, Turn, target, true));
     }

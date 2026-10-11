@@ -22,7 +22,7 @@ internal sealed partial class FrameRecipeContext
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Position = cell.Position with {
             HitItemReceipt = receipt == new SourceHitDamageReceipt() ? null : receipt } }) };
     }
-    private void RecordContactDamage(BattlerSlot target, MoveId id, int damage, int lost)
+    private void RecordContactDamage(BattlerSlot target, MoveId id, int damage, int lost, bool substitute = false)
     {
         // Delayed datahpupdate executes with gCurrentMove=NONE, hence physical TYPE_NORMAL.
         string type = delayedContactDamage ? "TYPE_NORMAL" : catalog.Moves[id].Type;
@@ -30,7 +30,7 @@ internal sealed partial class FrameRecipeContext
         bool noEffect = fixedDamageNoEffect ?? (damage == 0 && !HeldDamageEffectiveZero(target));
         if (noEffect) commandNoEffect = true;
         SetHitItemReceipt(target, SourceHitItemRules.Record(HitItemReceipt(target), lost,
-            substitute: false, noEffect, physical));
+            substitute, noEffect, physical));
     }
     private bool delayedContactDamage;
     private void ClearContactReceipts()

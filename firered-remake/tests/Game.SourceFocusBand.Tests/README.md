@@ -40,3 +40,15 @@ probe attempt used unadmitted Splash/Gust helper actions and stopped at capabili
 validation; the corrected fixture uses actual level-up Barrier/Tackle. Compact
 results preserve that fixture correction. Mechanical HungOn receipts still do not
 claim the dedicated item result text, native rendering, or campaign acquisition.
+
+## Successful-hit result message
+
+Four-slot execution now emits a separate SourceHeldItemSurvivalEvent at the
+source resultmessage command, after committed HP update. A pre-hit mechanical
+DamageAdjusted event remains silent, including Explosion adjustment followed
+by a miss. Multi-hit produces its result after all hits, and delayed Future Sight
+uses its own result boundary. Endure retains precedence. The adapter retains
+target, move and item, and source text resolves through the existing battle-text
+catalog. Dedicated B_ANIM_FOCUS_BAND is still unimplemented. Canonical singles
+mechanical events are unchanged; this does not claim its missing source item
+message timing is now wired.

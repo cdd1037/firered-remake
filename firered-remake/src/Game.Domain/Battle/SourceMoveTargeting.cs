@@ -17,7 +17,7 @@ public sealed record SourceTargetResult(BattlerSlot? Target, RngState Rng,
 public static class SourceMoveTargeting
 {
     public static SourceTargetResult ResolveLearned(SourceBattleFrame frame, BattlerSlot actor,
-        BattlerSlot selected, PokemonMoveDefinition move) => Resolve(frame, actor, selected, move, false);
+        BattlerSlot selected, PokemonMoveDefinition move, string? targetOverride = null) => Resolve(frame, actor, selected, move, false, targetOverride);
 
     /// <summary>Only target selection for caller/forced-move transitions; this is not caller execution.</summary>
     public static SourceTargetResult ResolveCalled(SourceBattleFrame frame, BattlerSlot actor,
@@ -113,13 +113,13 @@ public static class SourceMoveTargeting
             }
             else
             {
-                if (move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED") selected = actor;
-                if (move.Target == "MOVE_TARGET_SELECTED" && FollowMe()) target = side.FollowMeTarget;
+                if (targetMode is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED") selected = actor;
+                if (targetMode == "MOVE_TARGET_SELECTED" && FollowMe()) target = side.FollowMeTarget;
                 else
                 {
                     BattlerSlot? rod = null;
                     if (frame.Layout == SourceBattleLayout.PresetDoubles && side.FollowMeTimer == 0 &&
-                        (move.Power != 0 || move.Target != "MOVE_TARGET_USER") && !Rod(selected) && move.Type == "TYPE_ELECTRIC")
+                        (move.Power != 0 || targetMode != "MOVE_TARGET_USER") && !Rod(selected) && move.Type == "TYPE_ELECTRIC")
                     {
                         var rods = Enumerable.Range(0, frame.BattlerCount).Select(i => new BattlerSlot(i))
                             .Where(s => s.Side != actor.Side && s != selected && Rod(s)).ToArray();
@@ -130,7 +130,7 @@ public static class SourceMoveTargeting
                         }
                     }
                     if (rod is { } redirectedTarget) { target = redirectedTarget; redirected = true; }
-                    else if (frame.Layout == SourceBattleLayout.PresetDoubles && move.Target == "MOVE_TARGET_RANDOM")
+                    else if (frame.Layout == SourceBattleLayout.PresetDoubles && targetMode == "MOVE_TARGET_RANDOM")
                     {
                         if (!HasOpponent()) return new(null, frame.Rng, [], false, null);
                         var candidate = RandomOpponent(); target = Unavailable(candidate) ? candidate.Partner : candidate;

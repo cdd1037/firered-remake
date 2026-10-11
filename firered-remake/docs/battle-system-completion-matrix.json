@@ -7623,7 +7623,7 @@
         "startLine": 2135,
         "symbol": "MOVE_SUBSTITUTE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_STRUGGLE",
@@ -7754,7 +7754,7 @@
         "startLine": 2213,
         "symbol": "MOVE_MIND_READER"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_NIGHTMARE",
@@ -7775,7 +7775,7 @@
         "startLine": 2226,
         "symbol": "MOVE_NIGHTMARE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FLAME_WHEEL",
@@ -7838,7 +7838,7 @@
         "startLine": 2265,
         "symbol": "MOVE_CURSE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_FLAIL",
@@ -8248,7 +8248,7 @@
         "startLine": 2512,
         "symbol": "MOVE_FORESIGHT"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DESTINY_BOND",
@@ -8377,7 +8377,7 @@
         "startLine": 2590,
         "symbol": "MOVE_LOCK_ON"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_OUTRAGE",
@@ -10141,7 +10141,7 @@
         "startLine": 3656,
         "symbol": "MOVE_YAWN"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_KNOCK_OFF",
@@ -10881,7 +10881,7 @@
         "startLine": 4111,
         "symbol": "MOVE_ODOR_SLEUTH"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ROCK_TOMB",
@@ -12444,29 +12444,55 @@
       "scope": "Shared General_StatsChange masked result layer",
       "details": "One source general root, zero dedicated move roots. Direct ordinary successful Growth/Harden/TailWhip/Flash results admitted; Scene Off exception and completion without ACK. Isolated source2885/headless3073/nativeHarden527; main exact material check and Godot compilation only.",
       "evidence": "tests/SourceHitAnimation.Tests/evidence/stat-mask-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "382cee7ba6ec8944240ac96d557ba25aa9c51fac",
+      "scope": "Four-slot Focus Band successful-hit result messages",
+      "details": "Explicit typed event at resultmessage after HP, not mechanical adjustment. Actual multi-hit and queued Future Sight messages, Explosion adjust-then-miss silent, event adapters/JSON and pinned source template. Dedicated Focus Band animation and canonical singles message timing remain open.",
+      "evidence": "tests/Game.SourceFocusBand.Tests/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "88543cb9ee09fd1a56a5567bc1aaa7bc0aeea900",
+      "scope": "Shared Substitute, Nightmare/Curse/Yawn and four target marks",
+      "details": "Combined main Substitute14/472/11 full turns, sleep16/843/14, marks19/883/10 passed. Actual recipe admission246. Source-aware Protect/Substitute/ability/Safeguard failure projection; fixed normal singles fingerprints preserved. No new campaign or native claim.",
+      "evidence": "evidence/shared-substitute-sleep-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "382cee7ba6ec8944240ac96d557ba25aa9c51fac",
+      "scope": "Growth, Harden and Iron Defense dedicated choreography",
+      "details": "Grouped shared masked metal/affine scripts add3 roots to13; source3166 checks, headless4735, representative nativeIronDefense713 on isolated worker identity. Main22 identical animation paths and Godot compile/material authentication. Withdraw remains gated.",
+      "evidence": "tests/SourceHitAnimation.Tests/evidence/stat-moves-20261011/README.md"
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
-    "method": "Runtime evaluation of SourceBattleKernel.SupportsRecipe over the authenticated catalog during the bounded combined Focus Band test. This is recipe admission, not full interaction or campaign completeness. Exact product hashes are in the referenced evidence.",
+    "method": "Runtime SourceBattleKernel.SupportsRecipe over the authenticated catalog in the final combined target-mark suite. Admission is separate from complete interactions, Application and presentation.",
     "inventoryDateUtc": "2026-10-11",
-    "baseCommit": "9329fc900b709fb92d6c0ac61d72c622cbc35d70",
-    "workingTreeState": "integrated source identified by evidence/shared-charge-residual-focus-20261011/main-source-files.json, based on baseCommit",
+    "baseCommit": "88543cb9ee09fd1a56a5567bc1aaa7bc0aeea900",
+    "workingTreeState": "Exact product input: evidence/shared-substitute-sleep-20261011/main-source-files.json",
     "singleRecipesRegistered": 354,
-    "fourSlotRecipeAdmission": 238,
-    "fourSlotRecipeNotAdmitted": 116,
+    "fourSlotRecipeAdmission": 246,
+    "fourSlotRecipeNotAdmitted": 108,
     "newFamilyMoveCounts": {
-      "charge": 8,
-      "residual-status": 2
+      "Substitute": 1,
+      "sleep-residual": 3,
+      "target-marks": 4
     },
-    "dedicatedSingleAnimationScriptsAccepted": 10,
-    "dedicatedScriptsRemaining": 344,
-    "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 10,
+    "dedicatedSingleAnimationScriptsAccepted": 13,
+    "dedicatedScriptsRemaining": 341,
+    "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 13,
     "dedicatedFourSlotPresentationOnlyScripts": [],
-    "sourceKernelSha256": "b4da386d2762e879d3c29ce1c13ddfc4ed9d798046a206fe365bdd5b84199a78",
+    "sourceKernelSha256": "1d8ed637d1216657f8f93d389ed420c7703127adca4cac0709f76f562aaa8a88",
     "predicateInputs": [
       {
         "path": "src/Game.Domain/Battle/SourceBattleKernel.cs",
-        "sha256": "b4da386d2762e879d3c29ce1c13ddfc4ed9d798046a206fe365bdd5b84199a78"
+        "sha256": "1d8ed637d1216657f8f93d389ed420c7703127adca4cac0709f76f562aaa8a88"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.ActionCancellers.cs",
+        "sha256": "8e838c4e9248e6dd807278f89017145f4c69ae6edb902ea22aa875fe940e9f4c"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.AdditionalPrimaryStatus.cs",
@@ -12481,6 +12507,18 @@
         "sha256": "4d98da18ff93810eea1b3dc9f98230fbde7afaeda53ae680a1170d86a8a458c3"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Charge.cs",
+        "sha256": "9e875c390499c586d2225911c7960be0c51820a41b37db6a45c4c658dfe1fa74"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Contact.cs",
+        "sha256": "f6c55ef27971483581a0cf5c0d4dc88839a5e6fbe82ffe6e4c5f1d48cb3dcd8c"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Delayed.cs",
+        "sha256": "ca004c190f50024da80065fb5622d8131edbf8a5d59a33453229a4d789812d23"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FieldSetting.cs",
         "sha256": "135ac55fb2dddbf96f1da5a7594aff08f82d368caf8b0f3618a4607f03f1db17"
       },
@@ -12493,36 +12531,72 @@
         "sha256": "1927e99bbfedb2a297392897ed67ba876eff761fcfba416559d006aeb2da13ab"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.HeldDamage.cs",
+        "sha256": "6580f5dbaeabccb2057ba63744bae2e81587ab5f86b8e21021e3a51c44b13842"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.HitItems.cs",
+        "sha256": "2175ec4fad9d0bd49e609e3e0945d81cae2c505bf63d4c90ef3eed52b3ef6eab"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.PrimaryStatus.cs",
+        "sha256": "c4a2287621c21cc8efa23d61dd58e01fbdf3320a54d5a1e0a25e9c2604316e1b"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Primitives.cs",
+        "sha256": "93a69d76e1a68aa3c9d7636bace9bca6d23103c1ce55b1f9d967d36f08d23d12"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Protection.cs",
         "sha256": "fe3a9dd9b9f217ed28dba531dfb1d52068087cf8aad6a48b4bf63f12401ddb57"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.ResidualStatus.cs",
+        "sha256": "dd4bc3bc4fae6a8387f9882f260281ccd91f8a07bcb18d0dae302c479b468ee4"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Retaliation.cs",
         "sha256": "2e2d14faa5c380c993210653c8640efdc166817eef7fcc150ae25f28e88550a0"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.SleepResidual.cs",
+        "sha256": "532ee4ca5dd0e0ae2484392b6b43d3a682df803f92f4b149650d4dd7d45f845a"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Spikes.cs",
+        "sha256": "63e8bc7bcba4df8a0499cffb9e7094e341340beaaa170c32584a5c7e6f5c3e8c"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.StatRecovery.cs",
+        "sha256": "3a4ed5cf9e891055d29ddec29e9bb3f8f2638bcd08fd0b587cb85bbe7c163f72"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Struggle.cs",
+        "sha256": "4dc3a40ef8445d7ccd90741af1d0a3c2a412d7a36c89f551b6faf07013cc4507"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Substitute.cs",
+        "sha256": "3518d96839f902b787b4b1ab654dd50cd1506da23161e656532a1c9e6eddee22"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Switching.cs",
         "sha256": "2a02bffdb141463f5db4931e1f58b034bceea22997b13bdd82319ff95334d2d1"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.TargetMarks.cs",
+        "sha256": "96f75b48bc0d1a6403e716298cd556dcfe12c312694378cfc7ba56ac9b50ba82"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.TurnMoves.cs",
         "sha256": "186c6e5f6233f24b72ea6e338b823c8c87784c212a407f76c8f5da7f7b376dd6"
       },
       {
-        "path": "src/Game.Domain/WildBattle/MetronomeSourceMoveDefinition.cs",
-        "sha256": "2bd9a8d78cfa9f20d00dbffe4f61e9ec06e8e3e581256a8d999e7fd9a65dcd26"
-      },
-      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.TypeChanges.cs",
         "sha256": "131c50a50aa5fb6b56da381cde699633aa2a998910ca49933d543c11116567b6"
       },
       {
-        "path": "src/Game.Domain/Battle/SourceBattleRecipes.Charge.cs",
-        "sha256": "9e875c390499c586d2225911c7960be0c51820a41b37db6a45c4c658dfe1fa74"
-      },
-      {
-        "path": "src/Game.Domain/Battle/SourceBattleRecipes.ResidualStatus.cs",
-        "sha256": "dd4bc3bc4fae6a8387f9882f260281ccd91f8a07bcb18d0dae302c479b468ee4"
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.VolatileTargets.cs",
+        "sha256": "adc7e6f0a1c7db78aeef37c3e9b648e03a634364bd8511e4395cd3ea9f83027e"
       }
     ],
     "continuationVersion": "firered-four-action-lifetimes-v7",
@@ -12676,29 +12750,18 @@
       "originalRomPixelParityVerified": false,
       "physicalAudioVerified": false
     },
-    "previousFourSlotRecipeAdmission": 211,
-    "admissionIncrease": 15,
-    "newFamilyMoveIds": {
-      "retaliation": [
-        "pret:MOVE_COUNTER",
-        "pret:MOVE_VITAL_THROW",
-        "pret:MOVE_MIRROR_COAT"
-      ],
-      "selected-volatile-target": [
-        "pret:MOVE_BIND",
-        "pret:MOVE_WRAP",
-        "pret:MOVE_SUPERSONIC",
-        "pret:MOVE_FIRE_SPIN",
-        "pret:MOVE_CONFUSE_RAY",
-        "pret:MOVE_CLAMP",
-        "pret:MOVE_SPIDER_WEB",
-        "pret:MOVE_SWEET_KISS",
-        "pret:MOVE_MEAN_LOOK",
-        "pret:MOVE_WHIRLPOOL",
-        "pret:MOVE_SAND_TOMB",
-        "pret:MOVE_BLOCK"
-      ]
-    },
+    "previousFourSlotRecipeAdmission": 238,
+    "admissionIncrease": 8,
+    "newFamilyMoveIds": [
+      "pret:MOVE_CURSE",
+      "pret:MOVE_FORESIGHT",
+      "pret:MOVE_LOCK_ON",
+      "pret:MOVE_MIND_READER",
+      "pret:MOVE_NIGHTMARE",
+      "pret:MOVE_ODOR_SLEUTH",
+      "pret:MOVE_SUBSTITUTE",
+      "pret:MOVE_YAWN"
+    ],
     "retaliationEvidence": {
       "result": "evidence/shared-target-families-20261011/retaliation-result.json",
       "groups": 13,
@@ -12844,6 +12907,8 @@
       "exactSinglesComparisons": 64,
       "limits": "Bounded overlay/ColorChange and Conversion recipes; no broad caller/Transform or campaign admission."
     },
-    "sharedChargeResidualFocusEvidence": "evidence/shared-charge-residual-focus-20261011/README.md"
+    "sharedChargeResidualFocusEvidence": "evidence/shared-charge-residual-focus-20261011/README.md",
+    "sharedSubstituteSleepTargetEvidence": "evidence/shared-substitute-sleep-20261011/README.md",
+    "statChoreographyEvidence": "tests/SourceHitAnimation.Tests/evidence/stat-moves-20261011/README.md"
   }
 }

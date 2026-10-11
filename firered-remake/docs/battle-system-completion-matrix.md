@@ -634,3 +634,27 @@ zero dedicated move scripts. Completion releases existing result text without
 ACK or state/RNG mutation. The isolated worker ran grouped source/headless tests
 and one representative HARDEN desktop check; main reused that result and built
 the integrated Godot project. [Scope and evidence](../tests/SourceHitAnimation.Tests/evidence/stat-mask-20261011/README.md).
+
+The later Focus Band message increment closes the four-slot successful-hit text
+gap with a separate result event. Mechanical pre-hit adjustment stays silent,
+including an eventual Explosion miss. Dedicated Focus Band animation and the
+canonical singles message timing remain separate open work.
+
+### Substitute, sleep residuals, target marks and three dedicated scripts — 2026-10-11
+
+Current measured recipe admission is **246/354**, with **108 gated**. Added shared
+Substitute, Nightmare/Curse/Yawn and Lock-On/Mind Reader/Foresight/Odor Sleuth.
+Final main targeted groups pass 14/472, 16/843 and 19/883, with 35 actual complete
+four-action turns across the three families. Protect's miss marker retains
+source script ordering around Substitute, Yawn abilities and Safeguard; failure
+text follows resultmessage priority. Exact normal singles fingerprints remain
+frozen. [Combined scope and evidence](../evidence/shared-substitute-sleep-20261011/README.md).
+
+Dedicated presentation is **13/354**, with **341 remaining**: Growth, Harden and
+Iron Defense add three reusable call/mask/affine roots. The worker's grouped
+source and production-view checks plus one representative Iron Defense window
+passed. Main reused the exact 22 files, authenticated the small material and
+built the combined Godot source; it did not repeat the window or animation suite.
+Withdraw remains deferred at the rotated BIOS affine boundary. Abilities remain
+36 bounded records and 40 interaction-unverified records.
+[Presentation evidence](../tests/SourceHitAnimation.Tests/evidence/stat-moves-20261011/README.md).

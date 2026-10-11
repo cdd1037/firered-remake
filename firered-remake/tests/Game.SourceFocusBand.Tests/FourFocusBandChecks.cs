@@ -68,6 +68,10 @@ internal static class FourFocusBandChecks
     Check(r.State.Get(new(target)).Body!.Pokemon.CurrentHp==1&&r.State.Get(new(target)).Body!.HeldItem=="ITEM_FOCUS_BAND","HP1 survives multiple hits without consuming item");
     Check(r.Events.OfType<SourceDamageAdjustedEvent>().Count(e=>e.HungOn&&e.Target.Value==target)>=2,"sticky survival receipts belong to actual target");
     Check(r.State.Slots.All(c=>!c.Position.FocusBanded&&c.Position.HitItemReceipt is null),"ActionFinished clears all special-status fields");
+    var message=r.Events.OfType<SourceHeldItemSurvivalEvent>().Single();Check(message.Target.Value==target&&message.Move==Id("FURY_SWIPES")&&message.Item=="ITEM_FOCUS_BAND","one successful-hit item result belongs to actual multihit target");
+    Check(message.Sequence>r.Events.OfType<SourceHpChangedEvent>().Max(e=>e.Sequence),"multihit result is after actual HP commands");
+    Check(Json<SourceBattleEvent>(message)==Json(JsonSerializer.Deserialize<SourceBattleEvent>(Json<SourceBattleEvent>(message))!),"typed survival result round trip");
+    if(target<2)Check(Json<SourceBattleEvent>(message)==Json(SourceBattleEventAdapter.Import(SourceBattleEventAdapter.Export(message))),"singles event adapter retains item and target");
     Check(r.State.Get(new(side)).Body!.Pokemon.Moves[0].CurrentPp==actor.Pokemon.Moves[0].CurrentPp-1,"one PP per multihit");
     observations.Add(new{kind="multihit",actor=side,target,seed=multihitSeed,draws,events=r.Events});
     bool failedNext=false;
@@ -101,6 +105,7 @@ internal static class FourFocusBandChecks
     var picks=Picks(f).SetItem(1,new(f.Slots[1].Occupant!.Value,SourceActionKind.Move,0,new(0)));
     var r=Ok(SourceFourActionTurns.BeginActions(catalog,f,f.Revision,picks));var all=Finish(ref r);
     if(r.State.Get(new(1)).Body!.Pokemon.CurrentHp!=1||!r.State.Get(new(1)).Position.FocusBanded)continue;
+    var delayedMessage=all.OfType<SourceHeldItemSurvivalEvent>().Single(e=>e.Move==Id("FUTURE_SIGHT"));Check(delayedMessage.Target.Value==1&&delayedMessage.Sequence>all.OfType<SourceHpChangedEvent>().Last(e=>e.Move==Id("FUTURE_SIGHT")).Sequence,"delayed item result follows committed HP update");
     Check(r.CompletedCleanTurn,"delayed success retained through Ready");var next=JsonSerializer.Deserialize<SourceBattleFrame>(Json(r.State))!;
     var choices=Picks(next).SetItem(0,new(next.Slots[0].Occupant!.Value,SourceActionKind.Switch,Incoming:new(BattleSide.Player,2)));
     r=Ok(SourceFourActionTurns.BeginActions(catalog,next,next.Revision,choices));Check(r.State.Get(new(1)).Position.FocusBanded,"TurnValuesCleanUp does not erase SpecialStatus");
@@ -108,6 +113,21 @@ internal static class FourFocusBandChecks
     observations.Add(new{kind="delayed-switch",seed,delayedEvents=all,switchEvents=r.Events});seen=true;
    }
    Check(seen,"bounded delayed Focus trigger");
+  });
+  Test("adjustment before Explosion miss is silent; exact source item text resolves",()=>{
+   bool seen=false;
+   for(uint seed=0;seed<256&&!seen;seed++)
+   {
+    var attacker=Mon("GOLEM","EXPLOSION",70) with{AccuracyStage=0};
+    var f=Frame([attacker,Mon("PIDGEY","TACKLE",20,"ITEM_FOCUS_BAND",1),Mon(),Mon()],seed);
+    var r=Hit(f,0,1);Check(r.Succeeded,r.Fault??"Explosion accepted");
+    if(!r.Events.OfType<SourceDamageAdjustedEvent>().Any(e=>e.Target.Value==1&&e.HungOn)||!r.Events.OfType<SourceMoveMissedEvent>().Any(e=>e.Target.Value==1))continue;
+    Check(!r.Events.OfType<SourceHeldItemSurvivalEvent>().Any(e=>e.Target.Value==1),"missed target cannot print mechanical pre-hit survival");
+    seen=true;observations.Add(new{kind="explosion-adjusted-miss",seed,events=r.Events,trace=r.Trace});
+   }
+   Check(seen,"bounded actual Explosion adjust-then-miss");
+   var templates=PretBattleText.Load(root);var pages=PretBattleText.Pages(templates,"sText_PkmnHungOnWithX",new Dictionary<string,string>{{"B_DEF_NAME_WITH_PREFIX","Foe PIDGEY"},{"B_LAST_ITEM","FOCUS BAND"}});
+   Check(string.Join(" ",pages).Replace('\n',' ').Contains("Foe PIDGEY hung on using its FOCUS BAND!"),"pinned source result text and exact substitutions");
   });
   string source=Path.Combine(reference,"src/battle_main.c");Check(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant()=="c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928","fixed original battle_main SHA256");var text=File.ReadAllText(source);Check(text.Contains("static void SpecialStatusesClear(void)")&&text.Contains("[B_ACTION_SWITCH]                 = HandleAction_Switch"),"pinned action owner source available");
   File.WriteAllText(Path.Combine(output,"result.json"),Json(new{groups,checks,failures,runtime=Environment.Version.ToString(),recipeAdmission=catalog.Moves.Values.Count(SourceBattleKernel.SupportsRecipe),admittedMoves=catalog.Moves.Values.Where(SourceBattleKernel.SupportsRecipe).Select(m=>m.Id.Value).Order().ToArray(),multihitSeed,observations,sourceSha256=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant(),sharedPrimitiveChanged=false}));

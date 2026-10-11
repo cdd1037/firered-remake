@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Game.Domain.Battle;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Rules;
@@ -120,15 +121,14 @@ public static partial class WildBattleRules
     internal sealed partial class Execution
     {
         internal WildBattleCalledActionContext calledActionContext = new();
-        private readonly HashSet<WildBattleSide> calledSubstituteFaded = [];
-        private readonly HashSet<WildBattleSide> calledSubstituteHit = [];
+        private readonly SourceSubstituteLifecycle substituteLifecycle = new();
         private bool calledPassiveDelayed;
         private void SetCalledVolatile(WildBattleSide side, WildBattleCalledVolatileState next) =>
             Set(side, Get(side) with { CalledVolatile = next == new WildBattleCalledVolatileState() ? null : next });
         private bool SourceCalledHasSubstitute(WildBattleSide side) =>
-            (Get(side).CalledVolatile?.SubstituteHp ?? 0) > 0 || calledSubstituteFaded.Contains(side);
+            Recipes.SubstitutePresent(S(side));
         private bool SourceCalledSecondaryBlocked(WildBattleSide side) => SourceCalledHasSubstitute(side);
-        private bool SourceCalledHitReachedPokemon(WildBattleSide side) => !calledSubstituteHit.Contains(side);
+        private bool SourceCalledHitReachedPokemon(WildBattleSide side) => Recipes.SubstituteHitReachedPokemon(S(side));
         private void SourceCalledVolatileEvent(WildBattleSide side, string field, int before, int after, string reason = "move") =>
             Add(n => new WildBattleMtMoonVolatileEvent(n, State.Turn, side, field, before, after, reason));
         private void SourceCalledVolatileFail(WildBattleSide side, WildBattleSide target, MoveId move, string reason) =>
@@ -166,17 +166,7 @@ public static partial class WildBattleRules
             switch (move.Effect)
             {
                 case "EFFECT_SUBSTITUTE":
-                    if (SourceCalledHasSubstitute(side)) { SourceCalledVolatileFail(side, side, move.Id, "already-substitute"); return; }
-                    var mon = Get(side); int cost = Math.Max(1, mon.Pokemon.Stats.MaxHp / 4);
-                    if (mon.Pokemon.CurrentHp <= cost) { SourceCalledVolatileFail(side, side, move.Id, "substitute-insufficient-hp"); return; }
-                    int hp = mon.Pokemon.CurrentHp;
-                    SourceHitItemsRecord(side, move.Id, cost, cost, substitute: false);
-                    Set(side, mon with { Pokemon = mon.Pokemon with { CurrentHp = hp - cost }, BindTurnsRemaining = 0, BindingMove = null,
-                        CalledVolatile = v with { SubstituteHp = cost } });
-                    Add(n => new WildBattleHpChangedEvent(n, State.Turn, side, side, move.Id, hp, hp - cost, cost, false, 100));
-                    SourceCalledVolatileEvent(side, "substitute", 0, cost);
-                    if (mon.BindTurnsRemaining > 0) Add(n => new WildBattleBindingChangedEvent(n, State.Turn, side, mon.BindTurnsRemaining, 0, "substitute") { Move = mon.BindingMove });
-                    return;
+                    Recipes.ApplySubstitute(S(side), move); return;
                 case "EFFECT_STOCKPILE":
                     if (v.StockpileCount == 3) { SourceCalledVolatileFail(side, side, move.Id, "stockpile-full"); return; }
                     SetCalledVolatile(side, v with { StockpileCount = v.StockpileCount + 1 });
@@ -279,15 +269,7 @@ public static partial class WildBattleRules
         private bool SourceCalledConsumeSubstituteDamage(WildBattleSide side, WildBattleSide target, MoveId move,
             int damage, bool critical, int percent, out int lost)
         {
-            calledSubstituteHit.Remove(target); lost = 0;
-            var v = Get(target).CalledVolatile;
-            if (v is null || v.SubstituteHp == 0 || damage <= 0) return false;
-            int after = Math.Max(0, v.SubstituteHp - damage); lost = v.SubstituteHp - after;
-            SetCalledVolatile(target, v with { SubstituteHp = after }); calledSubstituteHit.Add(target);
-            if (after == 0) calledSubstituteFaded.Add(target);
-            Add(n => new WildBattleSubstituteDamagedEvent(n, State.Turn, side, target, move, v.SubstituteHp, after, damage, critical, percent));
-            if (critical) Add(n => new WildBattleCriticalHitEvent(n, State.Turn, side, target));
-            return true;
+            return Recipes.ConsumeSubstituteDamage(S(side), S(target), move, damage, critical, percent, out lost, noEffect: fixedDamageNoEffect ?? (damage == 0 && !Recipes.HeldDamageEffectiveZero(S(target))));
         }
 
         // One datahpupdate boundary, also used by inherited admitted hit recipes. Passive damage,
@@ -320,39 +302,16 @@ public static partial class WildBattleRules
         private bool SourceCalledSubstituteScriptBlocks(PokemonCatalog catalog, WildBattleSide side, int slot,
             PokemonMoveDefinition move)
         {
-            if (activeInvocation is null) return false;
-            WildBattleSide target = activeInvocation.Target;
-            if (!SourceCalledHasSubstitute(target)) return false;
-            string ability = WildBattleEffective.Ability(Get(target));
-            bool directStage = move.Effect is "EFFECT_ATTACK_DOWN" or "EFFECT_DEFENSE_DOWN" or "EFFECT_SPEED_DOWN" or
-                "EFFECT_SPECIAL_ATTACK_DOWN" or "EFFECT_SPECIAL_DEFENSE_DOWN" or "EFFECT_ACCURACY_DOWN" or "EFFECT_EVASION_DOWN" or
-                "EFFECT_ATTACK_DOWN_2" or "EFFECT_DEFENSE_DOWN_2" or "EFFECT_SPEED_DOWN_2" or "EFFECT_SPECIAL_ATTACK_DOWN_2" or
-                "EFFECT_SPECIAL_DEFENSE_DOWN_2" or "EFFECT_ACCURACY_DOWN_2" or "EFFECT_EVASION_DOWN_2";
-            bool blocked = directStage || move.Effect switch {
-                "EFFECT_SLEEP" or "EFFECT_LEECH_SEED" or "EFFECT_LOCK_ON" or "EFFECT_NIGHTMARE" or "EFFECT_WILL_O_WISP" or
-                    "EFFECT_PAIN_SPLIT" or "EFFECT_DREAM_EATER" or "EFFECT_MEAN_LOOK" or "EFFECT_SWAGGER" or "EFFECT_FLATTER" => true,
-                "EFFECT_POISON" or "EFFECT_TOXIC" => ability != "ABILITY_IMMUNITY",
-                "EFFECT_CONFUSE" => ability != "ABILITY_OWN_TEMPO",
-                "EFFECT_PARALYZE" => ability != "ABILITY_LIMBER",
-                "EFFECT_YAWN" => ability is not ("ABILITY_VITAL_SPIRIT" or "ABILITY_INSOMNIA"),
-                "EFFECT_CURSE" => WildBattleEffective.Types(catalog, Get(side)).Type1 == "TYPE_GHOST" ||
-                    WildBattleEffective.Types(catalog, Get(side)).Type2 == "TYPE_GHOST",
-                _ => false
-            };
-            if (!blocked) return false;
-            SpendEarlyPartyPp(side, target, slot, move);
-            if (move.Effect is "EFFECT_SWAGGER" or "EFFECT_FLATTER") SourceGenericMiss(side, target, move);
-            else SourceCalledVolatileFail(side, target, move.Id, "substitute");
-            return true;
+            return Recipes.SubstituteScriptBlocks(catalog, S(side), slot, move);
         }
 
         private void SourceCalledBeginAction(WildBattleSide side)
         {
-            calledSubstituteFaded.Clear(); calledSubstituteHit.Clear();
+            Recipes.BeginSubstituteAction();
             if (Get(side).CalledVolatile is { Grudge: true } v)
             { SetCalledVolatile(side, v with { Grudge = false }); SourceCalledVolatileEvent(side, "grudge", 1, 0, "action-attempt"); }
         }
-        private void SourceCalledMoveEndSubstitute() => calledSubstituteFaded.Clear();
+        private void SourceCalledMoveEndSubstitute() => Recipes.EndSubstitutePass();
         private bool SourceCalledTauntPreventsMove(PokemonCatalog catalog, WildBattleSide side, MoveId move)
         {
             if (Get(side).CalledVolatile is not { TauntTurnsRemaining: > 0 } || !catalog.Moves.TryGetValue(move, out var definition) || definition.Power != 0) return false;
@@ -370,7 +329,7 @@ public static partial class WildBattleRules
             Add(n => new WildBattleGrudgePpEvent(n, State.Turn, fainted, invocation.Actor, actor.Pokemon.Moves[slot].Move, slot, pp));
         }
         private void SourceCalledClearVolatiles(WildBattleSide side)
-        { Set(side, Get(side) with { CalledVolatile = null }); calledSubstituteFaded.Remove(side); calledSubstituteHit.Remove(side); }
+        { Set(side, Get(side) with { CalledVolatile = null }); substituteLifecycle.Faded.Remove(S(side)); substituteLifecycle.Hit.Remove(S(side)); }
 
         private bool SourceCalledReflectMove(PokemonCatalog catalog, ref WildBattleSide side, int slot, PokemonMoveDefinition move)
         {

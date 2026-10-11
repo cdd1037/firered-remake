@@ -371,7 +371,8 @@ public static class SourceBattleIdentityRules
                 bool unwrap = r.WrappedBy == departed;
                 r = r with { MeanLookSource = r.MeanLookSource == departed && kind != SourceDepartureKind.BatonPass ? null : r.MeanLookSource,
                     InfatuationSource = r.InfatuationSource == departed ? null : r.InfatuationSource,
-                    WrappedBy = unwrap ? null : r.WrappedBy, History = history, Turn = turn };
+                    WrappedBy = unwrap ? null : r.WrappedBy, History = history,
+                    Turn = turn is { Lock: null, SureHitTurnsRemaining: 0 } ? null : turn };
                 if (unwrap && cell.Body is { } body) cell = cell with { Body = body with { BindTurnsRemaining = 0, BindingMove = null } };
             }
             cells = cells.SetItem(i, cell with { Registers = r });

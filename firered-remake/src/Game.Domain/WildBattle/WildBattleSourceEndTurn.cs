@@ -151,13 +151,6 @@ public static partial class WildBattleRules
         private void SourceEndTurnAbility(WildBattleSide side) => new SinglesEndTurnBridge(this).Ability(new((int)side));
         private void SourceEndTurnStatusDamage(WildBattleSide side, uint status) =>
             new SinglesEndTurnBridge(this).StatusDamage(new((int)side), status);
-        private void SourceEndTurnNightmare(WildBattleSide side)
-        {
-            var mon = Get(side);
-            if (mon.Pokemon.CurrentHp == 0 || !mon.Nightmare) return;
-            if (!WildBattleStatus.IsSleeping(mon.Status)) SetTowerFlag(side, "nightmare", false, "awake");
-            else TowerHp(side, "nightmare", Math.Max(1, mon.Pokemon.Stats.MaxHp / 4));
-        }
         private void SourceEndTurnDisable(WildBattleSide side)
             => new SinglesEndTurnBridge(this).Disable(new((int)side));
         private void SourceEndTurnEncore(WildBattleSide side)

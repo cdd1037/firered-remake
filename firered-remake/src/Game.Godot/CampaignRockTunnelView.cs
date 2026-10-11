@@ -131,10 +131,11 @@ public partial class CampaignView
         WildBattleMtMoonVolatileEvent {Volatile:"sandstorm",Reason:"expired"}=>new("sText_SandstormSubsided"),
         WildBattleWeatherDamageEvent {Weather:"sandstorm"} w=>new("sText_PkmnBuffetedBySandstorm",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(w.Side))),
         WildBattleMtMoonVolatileEvent {Volatile:"identified"} i=>new("sText_PkmnIdentified",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Side==WildBattleSide.Player?WildBattleSide.Opponent:WildBattleSide.Player)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Side))),
+        WildBattleHeldItemSurvivalEvent i=>new("sText_PkmnHungOnWithX",("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",RockTunnelHeldItemName(i.Item))),
         WildBattleHeldItemKnockedOffEvent i=>new("sText_PkmnKnockedOff",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Actor)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",RockTunnelHeldItemName(i.Item))),
         WildBattleHeldItemStolenEvent i=>new("sText_PkmnStoleItem",("B_ATK_NAME_WITH_PREFIX",WildPrefixedName(i.Actor)),("B_DEF_NAME_WITH_PREFIX",WildPrefixedName(i.Target)),("B_LAST_ITEM",RockTunnelHeldItemName(i.Item))),
         _=>null
     };
     private bool RockTunnelSilentEvent(CampaignWildBattle b)=>WildCurrentEvent(b) is {} e&&RockTunnelWildMessage(e) is {Symbol.Length:0};
-    private string RockTunnelHeldItemName(string symbol)=>symbol=="ITEM_HARD_STONE"?"HARD STONE":_catalog.EarlyShop?.Items.FirstOrDefault(i=>i.SourceItemSymbol==symbol)?.Name??VermilionHeldItemName(symbol)??MtMoonHeldItemName(symbol);
+    private string RockTunnelHeldItemName(string symbol)=>symbol=="ITEM_FOCUS_BAND"?"FOCUS BAND":symbol=="ITEM_HARD_STONE"?"HARD STONE":_catalog.EarlyShop?.Items.FirstOrDefault(i=>i.SourceItemSymbol==symbol)?.Name??VermilionHeldItemName(symbol)??MtMoonHeldItemName(symbol);
 }

@@ -54,7 +54,7 @@ Test("31 frozen singles fingerprints and bounded admission",()=>{
  Check(Environment.Version.Major==10,"runtime10");Check(source.RootElement.GetProperty("sourceCommit").GetString()==PokemonFactory.SourceCommit,"source pin");
  Check(LegacyParity.Run(args[0],true)==File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"../../..","legacy-baseline.json")).Trim(),"full singles state/events/RNG fingerprints unchanged");
  foreach(var m in new[]{"LEECH_SEED","INGRAIN"})Check(SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" admitted");
- foreach(var m in new[]{"NIGHTMARE","CURSE","YAWN","UPROAR","METRONOME","TRANSFORM"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" stays gated");
+ foreach(var m in new[]{"UPROAR","METRONOME","TRANSFORM"})Check(!SourceBattleKernel.SupportsRecipe(catalog.Moves[Id(m)]),m+" stays gated");
 });
 Test("verbatim C seed/root application vectors match actual selected slot commands",()=>{
  foreach(var v in source.RootElement.GetProperty("groups").GetProperty("seedApplication").GetProperty("rows").EnumerateArray()){
@@ -165,7 +165,7 @@ Test("source-absent live receiver loses Ooze HP without absent faint callback",(
  Check(done.State.Slots[0].Body!.Pokemon.CurrentHp==0&&done.Events.OfType<SourceLeechSeedDrainEvent>().Count()==1,"absent receiver HP-only transfer");Check(!done.Events.OfType<SourceFaintedEvent>().Any(e=>e.Side.Value==0),"tryfaint source absence suppresses callback");
 });
 Test("malformed and deferred residual families reject atomically before RNG and PP",()=>{
- var f=Frame();foreach(var bad in new[]{Seed(f,0,0),Put(f,0,f.Slots[0].Body!with{Nightmare=true,Status=3}),Put(f,0,f.Slots[0].Body!with{Cursed=true}),Put(f,0,f.Slots[0].Body!with{YawnTurnsRemaining=2})})
+ var f=Frame();foreach(var bad in new[]{Seed(f,0,0),Put(f,0,f.Slots[0].Body!with{Nightmare=true}),Put(f,0,f.Slots[0].Body!with{YawnTurnsRemaining=3})})
   Atomic(bad,SourceFourActionTurns.BeginActions(catalog,bad,bad.Revision,Choices(bad)),"unsupported/invalid residual state");
 });
 Check(groups>0&&checks>0&&oracleCases>0,"nonempty suite");var result=new{groups,checks,failures,completedTurns=turns,oracleCases,runtime=Environment.Version.ToString(),results};File.WriteAllText(args[2],JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true})+"\n");using var parsed=JsonDocument.Parse(File.ReadAllText(args[2]));Console.WriteLine(Json(result));return failures==0?0:1;

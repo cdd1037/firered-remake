@@ -84,13 +84,12 @@ public static partial class WildBattleRules
             if (move.Effect is not ("EFFECT_SPITE" or "EFFECT_CURSE" or "EFFECT_MEAN_LOOK" or "EFFECT_NIGHTMARE" or "EFFECT_DESTINY_BOND")) return false;
             if (move.Effect == "EFFECT_MEAN_LOOK")
             { Recipes.ExecuteVolatileTarget(S(side), S(activeInvocation?.Target ?? targetSide), slot, move, purpose); return true; }
+            if (move.Effect is "EFFECT_CURSE" or "EFFECT_NIGHTMARE")
+            { Recipes.ExecuteSleepResidual(catalog, S(side), S(activeInvocation?.Target ?? targetSide), slot, move); return true; }
             bool self = move.Effect == "EFFECT_DESTINY_BOND";
-            var species = WildBattleEffective.Types(catalog, Get(side));
-            bool ghost = species.Type1 == "TYPE_GHOST" || species.Type2 == "TYPE_GHOST";
-            if (move.Effect == "EFFECT_CURSE" && !ghost) self = true;
             SpendEarlyPartyPp(side, self ? side : targetSide, slot, move);
             void Fail(string reason) => Add(n => new WildBattleMoveFailedEvent(n, State.Turn, side, self ? side : targetSide, move.Id, reason));
-            var actor = Get(side); var target = Get(targetSide);
+            var target = Get(targetSide);
             switch (move.Effect)
             {
                 case "EFFECT_SPITE":
@@ -105,29 +104,6 @@ public static partial class WildBattleRules
                     Add(n => new WildBattleSpiteEvent(n, State.Turn, side, targetSide, pp.Move, lastSlot, pp.CurrentPp, after, reduction));
                     if (after == 0) CancelRoute3Rollout(targetSide, "spite-empty-pp");
                     break;
-                case "EFFECT_CURSE":
-                    if (!ghost)
-                    {
-                        if (actor.SpeedStage == 0 && actor.AttackStage == 12 && actor.DefenseStage == 12) { Fail("stat-limits"); return true; }
-                        ChangeStage(side, side, WildBattleStat.Speed, -1, move.Id);
-                        ChangeStage(side, side, WildBattleStat.Attack, 1, move.Id);
-                        ChangeStage(side, side, WildBattleStat.Defense, 1, move.Id);
-                    }
-                    else
-                    {
-                        // NO_ACC_CALC_CHECK_LOCK_ON still fails against the admitted semi-invulnerable Dig state.
-                        if (target.DigMoveSlot is not null) { Fail("semi-invulnerable"); return true; }
-                        if (target.Cursed) { Fail("already-cursed"); return true; }
-                        SetTowerFlag(targetSide, "curse", true, "move");
-                        SourceHitItemsRecord(side, move.Id, Math.Max(1, actor.Pokemon.Stats.MaxHp / 2), Math.Min(actor.Pokemon.CurrentHp, Math.Max(1, actor.Pokemon.Stats.MaxHp / 2)), substitute: false);
-                        TowerHp(side, "curse-cost", Math.Max(1, actor.Pokemon.Stats.MaxHp / 2));
-                        ForestOutcome(true);
-                    }
-                    break;
-                case "EFFECT_NIGHTMARE":
-                    if (target.Nightmare || !WildBattleStatus.IsSleeping(target.Status)) { Fail(target.Nightmare ? "already-nightmare" : "target-awake"); return true; }
-                    SetTowerFlag(targetSide, "nightmare", true, "move");
-                    break;
                 case "EFFECT_DESTINY_BOND":
                     SetTowerFlag(side, "destiny-bond", true, "move");
                     break;
@@ -136,15 +112,17 @@ public static partial class WildBattleRules
         }
         private void TowerResidual(WildBattleSide side)
         {
-            // Source turn-effects order: poison/burn, nightmare, curse, wrapping.
+            // Historical scheduler retains its outcome boundary around the shared recipes.
             if (Get(side).Pokemon.CurrentHp == 0) return;
+            var residuals = new SinglesEndTurnBridge(this);
             if (Get(side).Nightmare)
             {
-                if (!WildBattleStatus.IsSleeping(Get(side).Status)) SetTowerFlag(side, "nightmare", false, "awake");
-                else { TowerHp(side, "nightmare", Math.Max(1, Get(side).Pokemon.Stats.MaxHp / 4)); ForestOutcome(false); }
+                bool sleeping = WildBattleStatus.IsSleeping(Get(side).Status);
+                residuals.NightmareResidual(S(side));
+                if (sleeping) ForestOutcome(false);
             }
             if (State.Outcome == WildBattleOutcome.Ongoing && Get(side).Pokemon.CurrentHp > 0 && Get(side).Cursed)
-            { TowerHp(side, "curse", Math.Max(1, Get(side).Pokemon.Stats.MaxHp / 4)); ForestOutcome(false); }
+            { residuals.CurseResidual(S(side)); ForestOutcome(false); }
         }
     }
 }

@@ -31,7 +31,8 @@ internal static class SourceFrameImmunityRules
             Add((n,t)=>new SourceAbilityActivatedEvent(n,t,slot,ability));
             if(cure.Cure==SourceImmunityCure.PrimaryStatus)
             {
-                SetBody(slot,body with{Status=WildBattleStatus.None,SourcePartyStatusOverride=null});
+                if (body.Nightmare) Add((n,t)=>new SourceTowerVolatileEvent(n,t,slot,"nightmare",false,cure.Reason));
+                SetBody(slot,body with{Status=WildBattleStatus.None,Nightmare=false,SourcePartyStatusOverride=null});
                 Add((n,t)=>new SourceStatusChangedEvent(n,t,slot,body.Status,WildBattleStatus.None,cure.Reason));
             }
             else if(cure.Cure==SourceImmunityCure.Confusion)

@@ -27,9 +27,11 @@ internal abstract partial class SourceRecipeContext
     internal virtual void RecordEndureAdjustment(BattlerSlot slot) { }
     private readonly HashSet<BattlerSlot> heldDamageEndured = [];
     internal bool HeldDamageEndured(BattlerSlot slot) => heldDamageEndured.Contains(slot);
+    private readonly HashSet<BattlerSlot> heldDamageHungOn = [];
+    internal bool HeldDamageHungOn(BattlerSlot slot) => heldDamageHungOn.Contains(slot);
     private readonly HashSet<BattlerSlot> heldDamageEffectiveZeros = [];
     internal bool HeldDamageEffectiveZero(BattlerSlot slot) => heldDamageEffectiveZeros.Contains(slot);
-    internal void ClearHeldActionResults() { heldDamageEndured.Clear(); heldDamageEffectiveZeros.Clear(); }
+    internal void ClearHeldActionResults() { heldDamageEndured.Clear(); heldDamageHungOn.Clear(); heldDamageEffectiveZeros.Clear(); }
 
     internal bool RollFocusBand(BattlerSlot target, string purpose)
     {
@@ -52,9 +54,11 @@ internal abstract partial class SourceRecipeContext
         var result = SourceHeldDamageRules.Adjust(mon.Pokemon.CurrentHp, damage,
             !ohko && HasDamageSubstitute(target), mon.Enduring, !normal2 && falseSwipe, focus);
         heldDamageEndured.Remove(target);
+        heldDamageHungOn.Remove(target);
         heldDamageEffectiveZeros.Remove(target);
         if (damage > 0 && result.Damage == 0) heldDamageEffectiveZeros.Add(target);
         if (result.Endured) { heldDamageEndured.Add(target); RecordEndureAdjustment(target); }
+        if (result.HungOn) heldDamageHungOn.Add(target);
         // Mechanical adjustment receipt, not Cmd_resultmessage or an item-consumption event.
         // Explosion can reach this command before a later accuracy failure.
         if (result.Damage != damage || result.Endured || result.HungOn)

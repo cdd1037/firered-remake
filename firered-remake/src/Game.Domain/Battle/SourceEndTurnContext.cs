@@ -146,7 +146,11 @@ internal abstract partial class SourceEndTurnContext
                 case SourceBattlerEndTurnStep.Poison: StatusDamage(slot, WildBattleStatus.Poison); break;
                 case SourceBattlerEndTurnStep.Toxic: ToxicDamage(slot); break;
                 case SourceBattlerEndTurnStep.Burn: StatusDamage(slot, WildBattleStatus.Burn); break;
+                case SourceBattlerEndTurnStep.Nightmare: NightmareResidual(slot); break;
+                case SourceBattlerEndTurnStep.Curse: CurseResidual(slot); break;
+                case SourceBattlerEndTurnStep.Yawn: YawnResidual(slot); break;
                 case SourceBattlerEndTurnStep.Wrap: BindingResidual(slot); break;
+                case SourceBattlerEndTurnStep.LockOn: LockOnResidual(slot); break;
                 default: UnmigratedBattlerStep(step, slot); break;
             }
             CheckTeamsLost();

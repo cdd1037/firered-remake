@@ -176,6 +176,9 @@ public partial class CampaignView
                 Source("sText_PkmnHurtsWith",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Holder)),("B_DEF_ABILITY","ROUGH SKIN"),("B_ATK_NAME_WITH_PREFIX",DoublePrefixed(x.Target)));break;
             case SourceAbilityPreventedEvent x when x.Move.Value=="pret:MOVE_NONE"&&DoubleIntimidateActive(b,x.Actor,x.Sequence):
                 Source("sText_PreventedFromWorking",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(x.Target)),("B_DEF_ABILITY",x.Ability.Replace("ABILITY_","",StringComparison.Ordinal).Replace('_',' ')),("B_SCR_ACTIVE_NAME_WITH_PREFIX",DoublePrefixed(x.Actor)),("B_BUFF1","INTIMIDATE"));break;
+            case SourceHeldItemSurvivalEvent item:
+                Source("sText_PkmnHungOnWithX",("B_DEF_NAME_WITH_PREFIX",DoublePrefixed(item.Target)),
+                    ("B_LAST_ITEM",item.Item.Replace("ITEM_","",StringComparison.Ordinal).Replace('_',' ')));break;
             case SourceHeldItemConsumedEvent item:
                 Source(item.Item switch {
                     "ITEM_ORAN_BERRY"=>"sText_PkmnsItemRestoredHealth","ITEM_CHERI_BERRY"=>"sText_PkmnsItemCuredParalysis",

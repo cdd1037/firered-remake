@@ -150,6 +150,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleTowerHpEvent), "tower-hp")]
 [JsonDerivedType(typeof(WildBattleHeldItemKnockedOffEvent), "held-item-knocked-off")]
 [JsonDerivedType(typeof(WildBattleDamageAdjustedEvent), "source-damage-adjusted")]
+[JsonDerivedType(typeof(WildBattleHeldItemSurvivalEvent), "held-item-survival")]
 [JsonDerivedType(typeof(WildBattleWeatherDamageEvent), "weather-damage")]
 [JsonDerivedType(typeof(WildBattleProtectAttemptEvent), "protect-attempt")]
 [JsonDerivedType(typeof(WildBattlePayDayEvent), "pay-day")]
@@ -379,3 +380,6 @@ public sealed record WildBattleAbilityRecoveredEvent(long Sequence, int Turn, Wi
 /// <summary>The source adjustment command result; display and HP application may follow later.</summary>
 public sealed record WildBattleDamageAdjustedEvent(long Sequence, int Turn, WildBattleSide Target, MoveId Move, string Item,
     int DamageBefore, int DamageAfter, bool Endured, bool HungOn) : WildBattleEvent(Sequence, Turn);
+
+/// <summary>Successful source item-survival result message; not item consumption.</summary>
+public sealed record WildBattleHeldItemSurvivalEvent(long Sequence, int Turn, WildBattleSide Target, MoveId Move, string Item) : WildBattleEvent(Sequence, Turn);

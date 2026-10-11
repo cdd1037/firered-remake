@@ -6,7 +6,7 @@ using Game.Domain.WildBattle;
 namespace Game.Domain.Battle;
 
 /// <summary>Actual four-slot storage and KO ownership for the common residual commands.</summary>
-internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTurnContext
+internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTurnContext
 {
     internal SourceBattleFrame Frame { get; private set; } = frame;
     private ImmutableArray<SourceBattleParty> reportedParties = frame.Parties;
@@ -28,6 +28,14 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
             Status = WildBattleTransformationRules.PersistentStatus(body), HeldItem = body.HeldItem, KnockedOffItem = body.KnockedOffItem };
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Body = body }),
             Parties = Frame.Parties.SetItem((int)key.Side, party with { Members = party.Members.SetItem(key.Index, member) }) };
+    }
+    internal override int SureHitTurnsRemaining(BattlerSlot slot) => Frame.Get(slot).Registers.Turn?.SureHitTurnsRemaining ?? 0;
+    internal override void SetSureHitTurnsRemaining(BattlerSlot slot, int remaining)
+    {
+        var cell = Frame.Get(slot); var turn = cell.Registers.Turn!;
+        Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Registers = cell.Registers with {
+            Turn = turn.Lock is null && remaining == 0 ? null : turn with {
+                SureHitTurnsRemaining = remaining, SureHitSource = remaining == 0 ? null : turn.SureHitSource } } }) };
     }
     internal override void ClearBindingSource(BattlerSlot slot)
     {
@@ -82,7 +90,9 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
     internal override void ChangeStatus(BattlerSlot slot, uint status, string reason)
     {
         var before = Get(slot);
-        Set(slot, before with { Status = status, Nightmare = false, SourcePartyStatusOverride = null });
+        if (before.Nightmare && !WildBattleStatus.IsSleeping(status))
+            Add(n => new SourceTowerVolatileEvent(n, Turn, slot, "nightmare", false, reason));
+        Set(slot, before with { Status = status, Nightmare = WildBattleStatus.IsSleeping(status) && before.Nightmare, SourcePartyStatusOverride = null });
         if (before.Status != status) Add(n => new SourceStatusChangedEvent(n, Turn, slot, before.Status, status, reason));
     }
     internal override void Faint(BattlerSlot slot)
@@ -164,15 +174,11 @@ internal sealed class FrameEndTurnContext(SourceBattleFrame frame) : SourceEndTu
         }
         var m = Get(slot); var r = Frame.Get(slot).Registers;
         bool nonempty = step switch {
-            SourceBattlerEndTurnStep.Nightmare => m.Nightmare,
-            SourceBattlerEndTurnStep.Curse => m.Cursed,
             SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge) } || m.RampageTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Disable => m.DisabledMove is not null,
             SourceBattlerEndTurnStep.Encore => m.EncoreMoveSlot is not null,
-            SourceBattlerEndTurnStep.LockOn => r.Turn?.SureHitTurnsRemaining > 0,
             SourceBattlerEndTurnStep.Charge => m.ChargeTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Taunt => m.CalledVolatile?.TauntTurnsRemaining > 0,
-            SourceBattlerEndTurnStep.Yawn => m.YawnTurnsRemaining != 0,
             _ => throw new SourceRecipeUnsupported("source_end_turn_phase") };
         if (nonempty) throw new SourceRecipeUnsupported("source_four_action_residual_phase_not_migrated");
     }

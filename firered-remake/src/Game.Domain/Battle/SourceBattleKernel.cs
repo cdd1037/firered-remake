@@ -81,7 +81,7 @@ public static class SourceBattleKernel
         if (SourceRecipeContext.HasSwitchRecipe(move.Effect) && frame.Layout == SourceBattleLayout.PresetDoubles && frame.FourTurn is null && frame.Queue.IsEmpty)
             return "source_kernel_switch_owner_required";
         if (move.Target is "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" && action.Target != action.Actor.Slot ||
-            move.Target == "MOVE_TARGET_SELECTED" && action.Target == action.Actor.Slot ||
+            move.Target == "MOVE_TARGET_SELECTED" && action.Target == action.Actor.Slot && !(move.Effect == "EFFECT_CURSE" && !WildBattleEffective.HasType(catalog, actor, "TYPE_GHOST")) ||
             move.Target == "MOVE_TARGET_OPPONENTS_FIELD" && action.Target.Side == action.Actor.Slot.Side)
             return "source_kernel_target_mode";
         if (action.LightningRodRedirected && WildBattleEffective.Ability(frame.Get(action.Target).Body!) != "ABILITY_LIGHTNING_ROD")
@@ -110,15 +110,17 @@ public static class SourceBattleKernel
             if (new[] { body.AttackStage, body.DefenseStage, body.SpeedStage, body.AccuracyStage, body.EvasionStage,
                 6 + body.SpecialAttackStageDelta, 6 + body.SpecialDefenseStageDelta }.Any(stage => stage is < 0 or > 12))
                 return "source_kernel_stat_stage";
-            if (body.Transform is not null || body.CopyMoves is not null || body.CalledVolatile is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.DestinyBond || body.Nightmare || body.Cursed || body.YawnTurnsRemaining != 0 || body.ChargeTurnsRemaining != 0 || body.Imprison || body.SourcePartyStatusOverride is not null ||
+            if (body.Transform is not null || body.CopyMoves is not null || !SourceSubstituteRules.Supported(body) || !SourceFourEntryAbilities.OverlaySupported(body) || body.DestinyBond || body.ChargeTurnsRemaining != 0 || body.Imprison || body.SourcePartyStatusOverride is not null ||
                 cell.Registers.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge) } || body.Rage ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.EncoreMoveSlot is not null ||
                 (body.HeldItem != "ITEM_NONE" && !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFrameBerryItems.SupportsHeldItem(body.HeldItem))) || body.WaterSport || body.MudSport)
                 return "source_kernel_volatile_not_migrated";
             if (body.ConfusionTurnsRemaining is < 0 or > 5 || body.TruantLoafing && body.Pokemon.CurrentHp == 0 ||
+                cell.Registers.Turn is { SureHitTurnsRemaining: > 0 } && body.Pokemon.CurrentHp == 0 ||
                 cell.Registers.Turn?.Lock is { } retainedLock && (!SupportsTurnLock(catalog, retainedLock) || body.Pokemon.CurrentHp == 0))
                 return "source_kernel_canceller_state";
+            if (SourceSleepResidualRules.Validate(frame, cell) is { } sleepResidualError) return sleepResidualError;
             if (SourceResidualStatusRules.Validate(frame, cell) is { } residualError) return residualError;
             if (SourceVolatileTargetRules.Validate(catalog, frame, cell) is { } volatileError) return volatileError;
             if (SourceProtectionRules.Validate(body) is { } protectionError) return protectionError;
@@ -140,6 +142,9 @@ public static class SourceBattleKernel
         return null;
     }
 
+    internal static string? SelectedTargetOverride(PokemonCatalog catalog, SourceBattleFrame frame, BattlerSlot actor, PokemonMoveDefinition move) =>
+        move.Effect == "EFFECT_CURSE" && !WildBattleEffective.HasType(catalog, frame.Get(actor).Body!, "TYPE_GHOST") ? "MOVE_TARGET_USER" : null;
+
     internal static PokemonMoveDefinition ActionMove(PokemonCatalog catalog, SourceBattleSlot actor, int chosenSlot) =>
         catalog.Moves[actor.Registers.Turn?.Lock is { } recharge
             ? recharge.Move : chosenSlot == WildBattleRules.StruggleSlot ? WildBattleRules.StruggleMove : actor.Body!.Pokemon.Moves[chosenSlot].Move];
@@ -160,7 +165,7 @@ public static class SourceBattleKernel
 
     public static bool SupportsRecipe(PokemonMoveDefinition move) => MetronomeSourceMoveDefinition.Matches(move) &&
         move.Target is "MOVE_TARGET_SELECTED" or "MOVE_TARGET_USER" or "MOVE_TARGET_USER_OR_SELECTED" or "MOVE_TARGET_BOTH" or "MOVE_TARGET_FOES_AND_ALLY" or "MOVE_TARGET_OPPONENTS_FIELD" or "MOVE_TARGET_DEPENDS" &&
-        (SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
+        (SourceRecipeContext.HasTargetMarkRecipe(move.Effect) || move.Effect == "EFFECT_SUBSTITUTE" || SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || SourceRecipeContext.HasChargeRecipe(move.Effect) || SourceRecipeContext.HasResidualStatusRecipe(move.Effect) || SourceRecipeContext.HasBasicStatRecipe(move.Effect) || SourceRecipeContext.HasAdditionalPrimaryStatusRecipe(move.Effect) || move.Effect == "EFFECT_SPIKES" || move.Id == WildBattleRules.StruggleMove || SourceRecipeContext.HasGenericRecipe(move.Effect) ||
          SourceRecipeContext.HasTypeChangeRecipe(move.Effect) || SourceRecipeContext.HasRetaliationRecipe(move.Effect) || SourceRecipeContext.HasFixedDamageRecipe(move.Effect) ||
          SourceRecipeContext.HasStatRecoveryRecipe(move.Effect) || SourceRecipeContext.HasFieldSettingRecipe(move.Effect) ||
          SourceRecipeContext.HasProtectionRecipe(move.Effect) || SourceRecipeContext.HasAllySupportRecipe(move.Effect) || SourceRecipeContext.HasTurnMoveRecipe(move.Effect) || SourceRecipeContext.HasSwitchRecipe(move.Effect));

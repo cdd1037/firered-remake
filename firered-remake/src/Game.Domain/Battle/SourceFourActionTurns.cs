@@ -66,16 +66,17 @@ public static partial class SourceFourActionTurns
                 return "source_four_action_initial_entry_required";
             if (SourcePokemonValidator.ValidateForBattle(catalog, body.Pokemon) is not null) return "source_four_action_pokemon";
             if (body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter != 0 ||
-                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || body.CalledVolatile is not null ||
-                body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null || body.Cursed ||
-                body.Nightmare || body.DestinyBond || body.Imprison || body.YawnTurnsRemaining != 0 ||
+                (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || !SourceSubstituteRules.Supported(body) ||
+                body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null ||
+                body.DestinyBond || body.Imprison ||
                 body.ChargeTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
                 body.EncoreMoveSlot is not null ||
                 body.Rage || body.WaterSport || body.MudSport ||
-                cell.Registers.Turn is { } turn && (turn.SureHitTurnsRemaining != 0 || turn.Lock is not { } locked || !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
+                cell.Registers.Turn is { } turn && (turn.Lock is { } locked && !SourceBattleKernel.SupportsTurnLock(catalog, locked) || body.Pokemon.CurrentHp == 0) ||
                 cell.Position.Wish is not null)
                 return "source_four_action_residual_or_canceller_not_migrated";
+            if (SourceSleepResidualRules.Validate(frame, cell) is { } sleepResidualError) return sleepResidualError;
             if (SourceResidualStatusRules.Validate(frame, cell) is { } residualError) return residualError;
             if (SourceVolatileTargetRules.Validate(catalog, frame, cell) is { } volatileError) return volatileError;
             if (SourceProtectionRules.Validate(body) is { } protectionError) return protectionError;
@@ -141,7 +142,7 @@ public static partial class SourceFourActionTurns
             if (recharge is null && !CleanRecipe(move)) return Fail(frame, "source_four_action_effect_phase_not_migrated");
             // Preflight never publishes target-selection RNG; execution resolves against retained order.
             var selection = struggle ? SourceMoveTargeting.ResolveCalled(next, action.Slot, move)
-                : SourceMoveTargeting.ResolveLearned(next, action.Slot, action.Target.Value, move);
+                : ResolveLearnedTarget(catalog, next, action.Slot, action.Target.Value, move);
             if (selection.Fault is { } targetError) return Fail(frame, targetError);
             var target = selection.Target ?? (move.Effect == "EFFECT_SPIKES" ? action.Slot.Opposite : (BattlerSlot?)null);
             if (target is null) return Fail(frame, "source_four_action_selection_no_target");
@@ -174,6 +175,17 @@ public static partial class SourceFourActionTurns
             FourTurn = new(next.Turn, SourceFourActionPhase.Actions, []) };
         var published = SourceBattleEventHooks.Publish(next, (n, t) => new SourceOrderEvent(n, t, WildBattleOrderPhase.Actions, sorted.Order));
         return new(published.State, [published.Event], selectionTrace.ToImmutable().AddRange(sorted.Trace), null);
+    }
+
+    private static SourceTargetResult ResolveLearnedTarget(PokemonCatalog catalog, SourceBattleFrame frame,
+        BattlerSlot actor, BattlerSlot selected, PokemonMoveDefinition move)
+    {
+        var mode = SourceBattleKernel.SelectedTargetOverride(catalog, frame, actor, move);
+        // A type change after choosing self-target Curse reaches the source GhostCurse
+        // getmovetarget command before attackcanceler, retaining its rejection-loop RNG.
+        return move.Effect == "EFFECT_CURSE" && mode is null && selected == actor
+            ? SourceMoveTargeting.ResolveCalled(frame, actor, move)
+            : SourceMoveTargeting.ResolveLearned(frame, actor, selected, move, mode);
     }
 
     /// <summary>Source absent-position fallback, with deferred KO vacancies applied only at this
@@ -222,7 +234,7 @@ public static partial class SourceFourActionTurns
                 var replaced = !struggle && frame.Get(action.Slot).Registers.Turn?.Lock is null && action.OriginalChosenMove != move.Id;
                 var selection = struggle ? SourceMoveTargeting.ResolveCalled(frame, action.Slot, move)
                     : replaced ? SourceMoveTargeting.ResolveReplaced(frame, action.Slot, move)
-                    : SourceMoveTargeting.ResolveLearned(frame, action.Slot, action.Target!.Value, move);
+                    : ResolveLearnedTarget(catalog, frame, action.Slot, action.Target!.Value, move);
                 if (selection.Fault is { } targetError) return Fail(frame, targetError);
                 var target = selection.Target ?? (move.Effect == "EFFECT_SPIKES" ? action.Slot.Opposite : (BattlerSlot?)null);
                 SourceKernelResult result;

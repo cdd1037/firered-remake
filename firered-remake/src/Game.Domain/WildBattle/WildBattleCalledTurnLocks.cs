@@ -228,12 +228,7 @@ public static partial class WildBattleRules
             }
             else ChangeCalledLock(side, locked with { TurnsRemaining = locked.TurnsRemaining - 1 }, "countdown");
         }
-        internal void CalledSureHitResidual(WildBattleSide side)
-        {
-            if (Get(side).Pokemon.CurrentHp > 0 && Get(side).CalledTurnState is { SureHitTurnsRemaining: > 0 } turn)
-                SetCalledTurnState(side, turn with { SureHitTurnsRemaining = turn.SureHitTurnsRemaining - 1,
-                    SureHitSource = turn.SureHitTurnsRemaining == 1 ? null : turn.SureHitSource });
-        }
+        internal void CalledSureHitResidual(WildBattleSide side) => new SinglesEndTurnBridge(this).LockOnResidual(S(side));
         internal void CalledCancelSleepingLocks()
         {
             // Complete source turns call HandleEndTurn_ContinueBattle before field/battler residuals.
@@ -263,12 +258,7 @@ public static partial class WildBattleRules
                 StartCalledLock(side, move, WildBattleCalledLockKind.Bide, 2); return;
             }
             if (move.Effect == "EFFECT_LOCK_ON")
-            {
-                SpendInvocationPp(side, target, move);
-                if (!ScalarAccuracy(side, target, move, purpose, ScalarType(move.Type))) { SourceGenericMiss(side, target, move); return; }
-                SetCalledTurnState(target, (Get(target).CalledTurnState ?? new()) with { SureHitTurnsRemaining = 2, SureHitSource = side });
-                Add(n => new WildBattleMtMoonVolatileEvent(n, State.Turn, target, "sure-hit", 0, 2, "move")); return;
-            }
+            { Recipes.ExecuteTargetMark(S(side), S(target), slot, move, purpose); return; }
             if (move.Effect == "EFFECT_FURY_CUTTER") { CalledFuryCutter(catalog, side, target, move, purpose); return; }
             if (move.Effect == "EFFECT_ROLLOUT") { CalledRollout(catalog, side, target, move, purpose); return; }
             bool beforeAccuracy = move.Effect == "EFFECT_EARTHQUAKE";

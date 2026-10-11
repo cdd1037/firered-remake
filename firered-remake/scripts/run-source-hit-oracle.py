@@ -17,6 +17,7 @@ p.add_argument('output', type=Path)
 p.add_argument('--doubles', action='store_true')
 p.add_argument('--stats', action='store_true')
 p.add_argument('--stat-mask', action='store_true')
+p.add_argument('--stat-moves', action='store_true')
 p.add_argument('--motion-vectors', action='store_true')
 p.add_argument('--vacant-partner', action='store_true')
 p.add_argument('--reference', type=Path, default=Path((root / '.tools/reference-root').read_text().strip()))
@@ -112,6 +113,12 @@ def run_stat_mask_oracle():
         hostSha256=hashlib.sha256(generated.encode()).hexdigest(), originalRuntimeCompared=False)
     (out / 'provenance.json').write_text(json.dumps(provenance, indent=2)+'\n')
     print('PASS original General_StatsChange callbacks and scheduler:', len(bodies), 'functions,', rows, 'frames, 330 vectors')
+
+if a.stat_moves:
+    helper=importlib.util.spec_from_file_location('stat_moves_oracle',root/'scripts/source-stat-moves-oracle.py')
+    module=importlib.util.module_from_spec(helper);helper.loader.exec_module(module)
+    module.run(root,a.reference,out)
+    raise SystemExit(0)
 
 if a.stat_mask:
     if a.stats or a.motion_vectors or a.doubles or a.vacant_partner:
