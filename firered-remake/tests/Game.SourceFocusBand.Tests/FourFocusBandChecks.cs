@@ -129,6 +129,18 @@ internal static class FourFocusBandChecks
    var templates=PretBattleText.Load(root);var pages=PretBattleText.Pages(templates,"sText_PkmnHungOnWithX",new Dictionary<string,string>{{"B_DEF_NAME_WITH_PREFIX","Foe PIDGEY"},{"B_LAST_ITEM","FOCUS BAND"}});
    Check(string.Join(" ",pages).Replace('\n',' ').Contains("Foe PIDGEY hung on using its FOCUS BAND!"),"pinned source result text and exact substitutions");
   });
+  Test("confusion resultmessage follows self damage in each real position",()=>{
+   for(int slot=0;slot<4;slot++) {
+    bool found=false;
+    for(uint seed=0;seed<128&&!found;seed++) {
+     var mons=Enumerable.Range(0,4).Select(_=>Mon()).ToArray();mons[slot]=Mon(item:"ITEM_FOCUS_BAND",hp:1)with{ConfusionTurnsRemaining=3};
+     var r=Hit(Frame(mons,seed),slot,slot);Check(r.Succeeded,r.Fault??"confusion action");
+     var hit=r.Events.OfType<SourceConfusionSelfHitEvent>().SingleOrDefault();if(hit is null||hit.HpAfter!=1)continue;
+     var message=r.Events.OfType<SourceHeldItemSurvivalEvent>().Single();Check(message.Target.Value==slot&&message.Sequence>hit.Sequence,"own slot survival text after confusion HP");Check(!r.Events.OfType<SourcePpCommandEvent>().Any(),"confusion does not spend selected move PP");found=true;
+    }
+    Check(found,"real successful confusion survival vector");
+   }
+  });
   string source=Path.Combine(reference,"src/battle_main.c");Check(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant()=="c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928","fixed original battle_main SHA256");var text=File.ReadAllText(source);Check(text.Contains("static void SpecialStatusesClear(void)")&&text.Contains("[B_ACTION_SWITCH]                 = HandleAction_Switch"),"pinned action owner source available");
   File.WriteAllText(Path.Combine(output,"result.json"),Json(new{groups,checks,failures,runtime=Environment.Version.ToString(),recipeAdmission=catalog.Moves.Values.Count(SourceBattleKernel.SupportsRecipe),admittedMoves=catalog.Moves.Values.Where(SourceBattleKernel.SupportsRecipe).Select(m=>m.Id.Value).Order().ToArray(),multihitSeed,observations,sourceSha256=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant(),sharedPrimitiveChanged=false}));
   Console.WriteLine($"RESULT four Focus Band {groups} groups {checks} checks {failures} failures");return failures==0?0:1;

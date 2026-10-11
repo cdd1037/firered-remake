@@ -658,3 +658,34 @@ built the combined Godot source; it did not repeat the window or animation suite
 Withdraw remains deferred at the rotated BIOS affine boundary. Abilities remain
 36 bounded records and 40 interaction-unverified records.
 [Presentation evidence](../tests/SourceHitAnimation.Tests/evidence/stat-moves-20261011/README.md).
+
+### Canonical survival result text — 2026-10-11
+
+Canonical singles now publish Focus Band result text after successful HP update,
+including scalar/multi-hit/delayed cases. Shared confusion self-hit also publishes
+its source result message in both adapters. Main focused singles 7/352 and affected
+four-slot 5/4489 pass; no arithmetic or RNG policy changes. Dedicated item animation
+and a fresh native visual check remain open. Recipe/animation totals are unchanged.
+See `evidence/focus-result-messages-20261011/README.md`.
+
+### Dynamic power, freeze and action locks — 2026-10-11
+
+Eighteen further recipes share canonical/four-slot commands: seven dynamic-power
+moves, four ice freeze-hit moves and seven Recharge/Rampage moves. Admission is
+now **264/354**, with **90 gated**. Main combined builds and affected suites pass;
+Yawn cancels Rampage while retaining unrelated Lock-On state. Canonical Low Kick
+PP placement and accuracy gates follow the source, and zero-loss freeze chance
+uses the source command even when Endure/Focus Band leaves one HP. No new
+dedicated animation or campaign claim. See
+`evidence/shared-dynamic-freeze-rampage-20261011/README.md`.
+
+### Withdraw and Minimize affine choreography — 2026-10-11
+
+Dedicated scripts are now **15/354**, with **339 remaining**. The shared signed
+Q14 rotation and cloned-battler compositor serve both roots, with separate
+General stat-result presentation. Fixed-worker source24,326 checks/4,860 frames,
+headless7,671 and representative native1,223 passed. Main imports the identical
+33-path patch, authenticates regenerated material, and compiles the combined
+application. Worker native proof retains its original Domain/DLL identity.
+Defense Curl's orb family remains open; physical listening and original-runtime
+pixel parity are not claimed. See `docs/source-affine-stat-choreography.md`.

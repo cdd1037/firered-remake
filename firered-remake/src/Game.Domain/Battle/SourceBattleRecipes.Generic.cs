@@ -9,7 +9,7 @@ internal abstract partial class SourceRecipeContext
 {
     internal static bool HasGenericRecipe(string effect) => effect is
         "EFFECT_HIT" or "EFFECT_QUICK_ATTACK" or "EFFECT_HIGH_CRITICAL" or "EFFECT_ALWAYS_HIT" or
-        "EFFECT_BURN_HIT" or "EFFECT_PARALYZE_HIT" or "EFFECT_POISON_HIT" or "EFFECT_CONFUSE_HIT" or
+        "EFFECT_FREEZE_HIT" or "EFFECT_BURN_HIT" or "EFFECT_PARALYZE_HIT" or "EFFECT_POISON_HIT" or "EFFECT_CONFUSE_HIT" or
         "EFFECT_FLINCH_HIT" or "EFFECT_FLINCH_MINIMIZE_HIT" or "EFFECT_SPEED_DOWN_HIT" or
         "EFFECT_ACCURACY_DOWN_HIT" or "EFFECT_DEFENSE_DOWN_HIT" or "EFFECT_SPECIAL_DEFENSE_DOWN_HIT" or
         "EFFECT_ATTACK_UP_HIT" or "EFFECT_TRAP" or "EFFECT_ABSORB" or "EFFECT_MULTI_HIT" or
@@ -60,6 +60,7 @@ internal abstract partial class SourceRecipeContext
                     ChangeStage(side, target, move.Effect == "EFFECT_ATTACK_DOWN_2" ? WildBattleStat.Attack :
                         move.Effect == "EFFECT_SPEED_DOWN_2" ? WildBattleStat.Speed : WildBattleStat.SpecialDefense, -2, move.Id);
                     return;
+                case "EFFECT_FREEZE_HIT": ExecuteFreezeHit(catalog, side, target, slot, move, purpose); return;
                 case "EFFECT_MULTI_HIT": SourceGenericMultiHit(catalog, side, target, slot, move, purpose); return;
                 case "EFFECT_EXPLOSION": SourceGenericExplosion(catalog, side, target, slot, move, purpose); return;
                 default: SourceGenericHit(catalog, side, target, slot, move, purpose); return;

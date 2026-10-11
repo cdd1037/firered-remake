@@ -45,7 +45,41 @@ public sealed class SourceBattleFrameComposer
         // monbg transfers the target and its visible partner to BG1/BG2 at priority 2.
         // At equal hardware priority, OBJ is in front; BG1 is in front of BG2.
         // Object battlers and effect sprites share the same persistent source OAM order.
-        if(frame.Doubles)
+        if(frame.Sprites.Any(s=>s.Template=="ClonedMinizeSprite_Step"))
+        {
+            // Hardware first selects one frontmost OBJ pixel. A translucent clone
+            // blends with the background, never recursively with lower OBJ copies.
+            var objects=new ushort[pixels.Length];var translucent=new bool[pixels.Length];
+            void AffineObject(SourcePixelAsset asset,PixelPoint center,SourceBattlerAffine matrix,bool blend)
+            {
+                int half=matrix.DoubleSize?64:32;
+                for(int y=-half;y<half;y++)for(int x=-half;x<half;x++)
+                {
+                    int sx=((x*matrix.XScale+y*matrix.MatrixB)>>8)+32,sy=((x*matrix.MatrixC+y*matrix.YScale)>>8)+32,dx=center.X+x,dy=center.Y+y;
+                    if(sx<0||sx>=64||sy<0||sy>=64||dx<0||dx>=240||dy<0||dy>=112)continue;
+                    ushort pixel=asset.Pixels[sy*64+sx];if((pixel&0x8000)==0)continue;
+                    objects[dy*240+dx]=pixel;translucent[dy*240+dx]=blend;
+                }
+            }
+            var ordered=_battlers.Where(b=>b.Visible).Select(b=>(Rank:frame.BattlerOamRanks[b.Slot.Value],Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
+                .Concat(frame.Sprites.Where(s=>s.Visible).Select(s=>(s.OamRank,(AnimationBattler?)null,(SourceVisualSpriteFrame?)s)));
+            foreach(var item in ordered.OrderByDescending(x=>x.Item1))
+            {
+                if(item.Item2 is {} b)
+                {
+                    var center=b.DisplayCenter??b.Center(frame.Doubles);var offset=frame.ObjectOffsets[b.Slot.Value];
+                    AffineObject(_assets[b.Asset],new(center.X+offset.X,center.Y+offset.Y),frame.BattlerAffine[b.Slot.Value],false);
+                }
+                else
+                {
+                    var clone=item.Item3!;
+                    if(clone.Template!="ClonedMinizeSprite_Step"||clone.Asset is null)throw new InvalidDataException("Unadmitted object mixed with battler copies.");
+                    AffineObject(_assets[clone.Asset],new(clone.Position.X+clone.Offset.X,clone.Position.Y+clone.Offset.Y),new(false,clone.Scale,clone.Scale),true);
+                }
+            }
+            for(int i=0;i<pixels.Length;i++)if((objects[i]&0x8000)!=0)pixels[i]=translucent[i]&&frame.BlendEnabled?Blend(objects[i],pixels[i],frame.AlphaA,frame.AlphaB):objects[i];
+        }
+        else if(frame.Doubles)
         {
             foreach(var b in _battlers.Where(b=>frame.BackgroundSlots.Contains(b.Slot.Value)).OrderByDescending(b=>b.BackgroundRank))Battler(b);
             var objects=_battlers.Where(b=>!frame.BackgroundSlots.Contains(b.Slot.Value)).Select(b=>(Rank:frame.BattlerOamRanks[b.Slot.Value],Battler:(AnimationBattler?)b,Sprite:(SourceVisualSpriteFrame?)null))
@@ -100,10 +134,10 @@ public sealed class SourceBattleFrameComposer
     private static void AffineBattler(ushort[] dest,SourcePixelAsset source,int centerX,int centerY,SourceBattlerAffine affine,SourcePaletteBlend? palette)
     {
         // SetSpriteRotScale supplies the inverse sampling matrix directly to the
-        // GBA BIOS. Growth has zero rotation: a=xScale, d=yScale, b=c=0.
+        // GBA BIOS. Signed products use arithmetic shifts, including the off-diagonal terms.
         for(int y=-64;y<64;y++)for(int x=-64;x<64;x++)
         {
-            int sx=((x*affine.XScale)>>8)+32,sy=((y*affine.YScale)>>8)+32,dx=centerX+x,dy=centerY+y;
+            int sx=((x*affine.XScale+y*affine.MatrixB)>>8)+32,sy=((x*affine.MatrixC+y*affine.YScale)>>8)+32,dx=centerX+x,dy=centerY+y;
             if(sx<0||sx>=64||sy<0||sy>=64||dx<0||dx>=240||dy<0||dy>=112)continue;
             ushort p=source.Pixels[sy*64+sx];if((p&0x8000)==0)continue;
             dest[dy*240+dx]=palette is null?p:SourcePaletteMath.Blend(p,palette.Coefficient,palette.Color);

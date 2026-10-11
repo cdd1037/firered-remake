@@ -11,7 +11,8 @@ using Game.Domain.Rules;
 using Game.Domain.WildBattle;
 
 if(args.Length==4 && args[3]=="--four") return FourFocusBandChecks.Run(args[0],args[1],args[2]);
-if (args.Length != 3) return 2;
+bool messagesOnly=args.Length==4 && args[3]=="--messages";
+if (args.Length != 3 && !messagesOnly) return 2;
 var proof = SourceMechanicsCatalogLoader.LoadAuthenticated(args[0]); var catalog = proof.Catalog;
 string source = args[1], evidence = args[2];
 string tm = File.ReadAllText(Path.Combine(source,"src/data/pokemon/tmhm_learnsets.h"));
@@ -21,7 +22,9 @@ var receipts = new List<object>();
 const string Band = "ITEM_FOCUS_BAND";
 string Json<T>(T value) => JsonSerializer.Serialize(value);
 void Check(bool ok,string label) { checks++; if(!ok) throw new Exception(label); }
-void Test(string label,Action body) { groups++; try { body(); Console.WriteLine("PASS "+label); } catch(Exception ex) { failures++; Console.WriteLine("FAIL "+label+" "+ex); } }
+void Test(string label,Action body) {
+    if(messagesOnly&&!new[]{"ordinary lethal","ordinary accuracy","nonlethal and substitute","two-hit sticky","Explosion adjustment","real Future Sight","confusion normal2"}.Any(label.StartsWith))return;
+    groups++; try { body(); Console.WriteLine("PASS "+label); } catch(Exception ex) { failures++; Console.WriteLine("FAIL "+label+" "+ex); } }
 MoveId Move(string name) => new("pret:MOVE_"+name);
 WildBattleCombatant Mon(string species,string[] moves,string item="ITEM_NONE",int level=50,uint pid=0)
 {
@@ -59,6 +62,17 @@ void Save(string label,uint seed,WildBattleResult r)
         var canonical=SourceBattleEventAdapter.Import(e);
         var restored=JsonSerializer.Deserialize<SourceBattleEvent>(Json<SourceBattleEvent>(canonical))!;
         Check(Json<WildBattleEvent>(SourceBattleEventAdapter.Export(restored))==Json<WildBattleEvent>(e),"mechanical receipt event adapter and serializer round trip");
+    }
+    if(messagesOnly) {
+        var messages=r.Events.OfType<WildBattleHeldItemSurvivalEvent>().ToArray();
+        bool expected=label is "ordinary proc" or "substitute primes next hit" or "sticky Double Kick" or "delayed Future Sight" or "Future Sight next-action sticky" or "confusion proc";
+        Check(messages.Length==(expected?1:0),label+" actual result count");
+        foreach(var message in messages) {
+            var lastHp=r.Events.Where(e=>e is WildBattleHpChangedEvent hp&&hp.Target==message.Target&&hp.Move==message.Move || e is WildBattleConfusionSelfHitEvent self&&self.Side==message.Target&&self.SelectedMove==message.Move).Last();
+            Check(message.Sequence>lastHp.Sequence&&message.Item==Band,"survival result follows last actual HP update");
+            var canonical=SourceBattleEventAdapter.Import(message);
+            Check(Json<WildBattleEvent>(SourceBattleEventAdapter.Export(JsonSerializer.Deserialize<SourceBattleEvent>(Json<SourceBattleEvent>(canonical))!))==Json<WildBattleEvent>(message),"survival event adapters and JSON round trip");
+        }
     }
     receipts.Add(new {label,seed,trace=r.Trace,events=r.Events,mask=r.State!.SourceFocusBandedMask,playerHp=r.State.Player.Pokemon.CurrentHp,opponentHp=r.State.Opponent.Pokemon.CurrentHp,turn=r.State.Turn});
 }
@@ -314,7 +328,7 @@ Test("four-slot action owner rejects Focus item and forged sticky register",()=>
         Check(!r.Succeeded&&ReferenceEquals(r.State,frame)&&r.Events.IsEmpty&&r.Trace.IsEmpty,"unsupported four-slot Focus boundary is atomic");
     }
 });
-var report=new {groups,checks,failures,fullTurns=turns,nonMoveActions,sourceOracleVectors,comparedScalarVectors=vectors,scenarioReceipts=receipts.Count,runtime=Environment.Version.ToString(),baseline="4c9fd2dab41635eb98661d0f2896b9e9a9a22380",scope="Bounded post-random scalar differential plus authentic canonical source singles actual-turn integration. Exact C oracle separately covers OHKO and command state; no ROM claim."};
+var report=new {groups,checks,failures,fullTurns=turns,nonMoveActions,sourceOracleVectors,comparedScalarVectors=vectors,scenarioReceipts=receipts.Count,runtime=Environment.Version.ToString(),baseline="4c9fd2dab41635eb98661d0f2896b9e9a9a22380",messagesOnly,scope=messagesOnly?"Seven affected result-message cases; reuses existing authentic singles fixtures, no new C oracle or whole historical suite.":"Bounded post-random scalar differential plus authentic canonical source singles actual-turn integration. Exact C oracle separately covers OHKO and command state; no ROM claim."};
 File.WriteAllText(Path.Combine(evidence,"result.json"),JsonSerializer.Serialize(report,new JsonSerializerOptions{WriteIndented=true}));
 File.WriteAllText(Path.Combine(evidence,"scenario-receipts.json"),JsonSerializer.Serialize(receipts,new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine(Json(report));
-return failures==0&&groups>=18&&turns>=20&&nonMoveActions>0&&sourceOracleVectors==3770&&vectors==2123?0:1;
+return failures==0&&(messagesOnly?groups==7&&receipts.Count>=11:groups>=18&&turns>=20&&nonMoveActions>0&&sourceOracleVectors==3770&&vectors==2123)?0:1;

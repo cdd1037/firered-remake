@@ -49,6 +49,9 @@ DamageAdjusted event remains silent, including Explosion adjustment followed
 by a miss. Multi-hit produces its result after all hits, and delayed Future Sight
 uses its own result boundary. Endure retains precedence. The adapter retains
 target, move and item, and source text resolves through the existing battle-text
-catalog. Dedicated B_ANIM_FOCUS_BAND is still unimplemented. Canonical singles
-mechanical events are unchanged; this does not claim its missing source item
-message timing is now wired.
+catalog. Dedicated B_ANIM_FOCUS_BAND is still unimplemented. A subsequent canonical
+singles increment wires successful result text and shared confusion self-hit
+results. Run `run-messages.sh CONTENT_ROOT PRET_ROOT NEW_OUTPUT`, or
+`./dev test-focus-messages NEW_NAME`, for the seven affected groups. The four-slot
+mode additionally checks confusion at all positions. See
+[focused integration evidence](../../evidence/focus-result-messages-20261011/README.md).

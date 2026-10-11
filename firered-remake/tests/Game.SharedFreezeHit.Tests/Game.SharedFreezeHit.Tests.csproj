@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj" />
+    <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="singles-baseline-88543cb9.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="singles-positive-baseline-88543cb9.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="singles-zero-boundary-88543cb9.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="singles-zero-positive-baseline-88543cb9.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="source-vectors.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

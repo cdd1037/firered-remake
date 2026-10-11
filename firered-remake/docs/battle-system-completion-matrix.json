@@ -12465,34 +12465,55 @@
       "scope": "Growth, Harden and Iron Defense dedicated choreography",
       "details": "Grouped shared masked metal/affine scripts add3 roots to13; source3166 checks, headless4735, representative nativeIronDefense713 on isolated worker identity. Main22 identical animation paths and Godot compile/material authentication. Withdraw remains gated.",
       "evidence": "tests/SourceHitAnimation.Tests/evidence/stat-moves-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "886fb92a8e9c74e53a92a6cc70fecefd830c5150",
+      "scope": "Canonical and confusion Focus Band result messages",
+      "details": "Focused main singles7/352, affected four-slot5/4489. Actual successful result boundaries and context-local confusion protection; no new arithmetic/RNG or dedicated animation claim.",
+      "evidence": "evidence/focus-result-messages-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "242275ce63a8c1241e5a1ffd068b651141890fc1",
+      "scope": "Shared dynamic power, freeze and Recharge/Rampage",
+      "details": "18 distinct new admitted recipes,264 total/90 gated. Main13/142828,12/18441,14/863 after combined merge; worker C proofs reused. No new dedicated animation or campaign acceptance.",
+      "evidence": "evidence/shared-dynamic-freeze-rampage-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "886fb92a8e9c74e53a92a6cc70fecefd830c5150",
+      "scope": "Withdraw and Minimize affine/cloned-battler choreography",
+      "details": "Adds2 dedicated roots to15,339 remaining. Worker source24326/headless7671/native1223 pass on identical worker identity; main33 files exact, material regenerate/verify and combined compilation. No original-runtime or physical listening claim.",
+      "evidence": "tests/SourceHitAnimation.Tests/evidence/affine-stat-20261011/README.md"
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
-    "method": "Runtime SourceBattleKernel.SupportsRecipe over the authenticated catalog in the final combined target-mark suite. Admission is separate from complete interactions, Application and presentation.",
+    "method": "Previous runtime predicate inventory246 plus18 unique authenticated newly admitted recipes, each exercised by the three actual-action suites. Admission is separate from complete interactions, Application and presentation.",
     "inventoryDateUtc": "2026-10-11",
-    "baseCommit": "88543cb9ee09fd1a56a5567bc1aaa7bc0aeea900",
-    "workingTreeState": "Exact product input: evidence/shared-substitute-sleep-20261011/main-source-files.json",
+    "baseCommit": "242275ce63a8c1241e5a1ffd068b651141890fc1",
+    "workingTreeState": "evidence/shared-dynamic-freeze-rampage-20261011/main-source-files.json",
     "singleRecipesRegistered": 354,
-    "fourSlotRecipeAdmission": 246,
-    "fourSlotRecipeNotAdmitted": 108,
+    "fourSlotRecipeAdmission": 264,
+    "fourSlotRecipeNotAdmitted": 90,
     "newFamilyMoveCounts": {
-      "Substitute": 1,
-      "sleep-residual": 3,
-      "target-marks": 4
+      "dynamic-power": 7,
+      "freeze-hit": 4,
+      "recharge-rampage": 7
     },
-    "dedicatedSingleAnimationScriptsAccepted": 13,
-    "dedicatedScriptsRemaining": 341,
-    "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 13,
+    "dedicatedSingleAnimationScriptsAccepted": 15,
+    "dedicatedScriptsRemaining": 339,
+    "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 15,
     "dedicatedFourSlotPresentationOnlyScripts": [],
-    "sourceKernelSha256": "1d8ed637d1216657f8f93d389ed420c7703127adca4cac0709f76f562aaa8a88",
+    "sourceKernelSha256": "9bbf686ca4fc4ffb4619bc65740ebeee71b4f6a69bdbaeee86775456557a91c8",
     "predicateInputs": [
       {
         "path": "src/Game.Domain/Battle/SourceBattleKernel.cs",
-        "sha256": "1d8ed637d1216657f8f93d389ed420c7703127adca4cac0709f76f562aaa8a88"
+        "sha256": "9bbf686ca4fc4ffb4619bc65740ebeee71b4f6a69bdbaeee86775456557a91c8"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.ActionCancellers.cs",
-        "sha256": "8e838c4e9248e6dd807278f89017145f4c69ae6edb902ea22aa875fe940e9f4c"
+        "sha256": "a6f2a65aaf5836fb8bd68a8b214e705345ca494083f09c824b63454122dda796"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.AdditionalPrimaryStatus.cs",
@@ -12519,6 +12540,10 @@
         "sha256": "ca004c190f50024da80065fb5622d8131edbf8a5d59a33453229a4d789812d23"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.DynamicPower.cs",
+        "sha256": "8dccd3c882184d34a4fa316fca2ac3068b94d4290cf349d61a08cbd5d8da574f"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FieldSetting.cs",
         "sha256": "135ac55fb2dddbf96f1da5a7594aff08f82d368caf8b0f3618a4607f03f1db17"
       },
@@ -12527,8 +12552,12 @@
         "sha256": "aec6c50e44959182ea980ee6d019a02b2e58f519dbb38501a1a73fd2915a0f82"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.FreezeHit.cs",
+        "sha256": "a2085fbd01a32cbba8a439bb01efbed294dce443005da3c6ebe8e767c2a26927"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Generic.cs",
-        "sha256": "1927e99bbfedb2a297392897ed67ba876eff761fcfba416559d006aeb2da13ab"
+        "sha256": "48f6eebb8426dc5bb1025409057a9bd123b63b1b7d6c1ff714cb619b74db290e"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.HeldDamage.cs",
@@ -12549,6 +12578,10 @@
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Protection.cs",
         "sha256": "fe3a9dd9b9f217ed28dba531dfb1d52068087cf8aad6a48b4bf63f12401ddb57"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.RechargeRampage.cs",
+        "sha256": "c4274d280b2af9e9e507c24021bf92d70a4a275bad317c5983dffdc0bf9e5031"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.ResidualStatus.cs",
@@ -12750,17 +12783,27 @@
       "originalRomPixelParityVerified": false,
       "physicalAudioVerified": false
     },
-    "previousFourSlotRecipeAdmission": 238,
-    "admissionIncrease": 8,
+    "previousFourSlotRecipeAdmission": 246,
+    "admissionIncrease": 18,
     "newFamilyMoveIds": [
-      "pret:MOVE_CURSE",
-      "pret:MOVE_FORESIGHT",
-      "pret:MOVE_LOCK_ON",
-      "pret:MOVE_MIND_READER",
-      "pret:MOVE_NIGHTMARE",
-      "pret:MOVE_ODOR_SLEUTH",
-      "pret:MOVE_SUBSTITUTE",
-      "pret:MOVE_YAWN"
+      "pret:MOVE_RETURN",
+      "pret:MOVE_FRUSTRATION",
+      "pret:MOVE_FLAIL",
+      "pret:MOVE_REVERSAL",
+      "pret:MOVE_ERUPTION",
+      "pret:MOVE_WATER_SPOUT",
+      "pret:MOVE_LOW_KICK",
+      "pret:MOVE_ICE_PUNCH",
+      "pret:MOVE_ICE_BEAM",
+      "pret:MOVE_BLIZZARD",
+      "pret:MOVE_POWDER_SNOW",
+      "pret:MOVE_HYPER_BEAM",
+      "pret:MOVE_FRENZY_PLANT",
+      "pret:MOVE_BLAST_BURN",
+      "pret:MOVE_HYDRO_CANNON",
+      "pret:MOVE_THRASH",
+      "pret:MOVE_OUTRAGE",
+      "pret:MOVE_PETAL_DANCE"
     ],
     "retaliationEvidence": {
       "result": "evidence/shared-target-families-20261011/retaliation-result.json",
@@ -12810,93 +12853,65 @@
       "limits": "Expands the already-bounded Hustle record; does not increase 36/40 ability counts. Poison Powder ability/move pairing is a controlled legal-register fixture, not a natural learnset or Metronome claim."
     },
     "dedicatedFourSlotPresentationOnlyScriptsNote": "All ten accepted scripts have bounded actual kernel animation dispatch evidence. Four same-side Counter motion cases remain explicitly presentation-only cases, not valid Counter rule successes.",
-    "focusedRuleCodeIdentity": "evidence/shared-target-families-20261011/code-at-focused-tests.json",
+    "focusedRuleCodeIdentity": "evidence/shared-dynamic-freeze-rampage-20261011/main-source-files.json",
     "predicateInspectionUtc": "2026-10-11T12:37:00Z",
     "predicateEvidenceBoundary": "Current predicate inputs are a static source snapshot. Focused rule evidence and stat-host/native evidence retain their own code identities; later deferred-spread or other edits are not retroactively tested by those runs.",
     "currentEvidenceInputs": [
       {
-        "path": "evidence/recovery-20261011/four-hustle-02/source-proof.json",
-        "sha256": "fdd1e7c63ea92e2d166cc98dfefdf8f9c2816f0dee6748d881920d502cdab0e3"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/Game.DynamicPower.Tests-build.log",
+        "sha256": "281adb2b3b0a0d43aa5f7cec9e301e62c9d7b32b129fd0d5fa0d18825ed4c2b7"
       },
       {
-        "path": "evidence/shared-target-families-20261011/code-at-focused-tests.json",
-        "sha256": "45b0ad32aad0bc35a8680374b6f87e3b7c3acace0066a8ff9b81857f9ae42be1"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/Game.SharedFreezeHit.Tests-build.log",
+        "sha256": "24fbc748fdc15850bff49f7ef1bae2938dc9fd31001e0262b00ab147d0df08ed"
       },
       {
-        "path": "evidence/shared-target-families-20261011/hustle-result.json",
-        "sha256": "4cf3917a3d1745c97235d75987dbe4fae0969cbdf1c3d365132686e0a631d27b"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/Game.SharedRechargeRampage.Tests-build.log",
+        "sha256": "51e342ae948cf7761e8d1d31fdc984926e3156f376486cdcd8d414d2eaa3c7dd"
       },
       {
-        "path": "evidence/shared-target-families-20261011/motion-result.json",
-        "sha256": "d70c58eb219ac7ad69f8670a7481674b38c46241febf5b67bcbb3321b4a04548"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/README.md",
+        "sha256": "4f322148c5588004117848da58b301785260fb21a3cdfe06c2b6e6b4097dfd1c"
       },
       {
-        "path": "evidence/shared-target-families-20261011/retaliation-result.json",
-        "sha256": "08c459c6cf2628eed61d7946c16158479d3ac2ff117c4bff600c6fdf28705aaa"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/dynamic-details.json.gz",
+        "sha256": "1daa7108ccfee0e36c7a8181b6e0df8461c1d34aa15f8537c77d9a3627c79503"
       },
       {
-        "path": "evidence/shared-target-families-20261011/reused-stat-source-inputs.json",
-        "sha256": "a7d7cf6ebb1e0678c7b491a70313487a7842f235eaec0d3bf2bc41e57018c79a"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/dynamic-result.json",
+        "sha256": "bee67818f78e02ad2cb98a011bc9eacec5b55f47dc12141cb8e8336a2eda220c"
       },
       {
-        "path": "evidence/shared-target-families-20261011/stat-host-assembly-identity.json",
-        "sha256": "b3ef83d3ecc69bcf190156fd169ecffdd05ee0d06480b876a45c22f3c03dec38"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/dynamic-worker-manifest.json",
+        "sha256": "27dc404e49099e2358df87040d648821c06368bc2a34c915d9e8a6da7124976b"
       },
       {
-        "path": "evidence/shared-target-families-20261011/stat-host-quit-result.json",
-        "sha256": "f23566846b25c513c4994d5a7ff95374cc7e5e6c4c10d2d80310019e3292e720"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/freeze-details.json.gz",
+        "sha256": "a5863a36e4acd7c7ad2f5ad7009ff50088a08c30604493a262019a097901ba46"
       },
       {
-        "path": "evidence/shared-target-families-20261011/stat-host-result.json",
-        "sha256": "83c4f8e205a1315a5631819e3901e92b61a3c51d616291a81dfa707efb5f9f5b"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/freeze-result.json",
+        "sha256": "129f374f8958dce867539a1e739f5ec574ad7451a5e98ed9af0b591549fc1e1f"
       },
       {
-        "path": "evidence/shared-target-families-20261011/stat-host-source-manifest.json",
-        "sha256": "ed7e86fbb0b267dd3bb283d780ef1916b24b25c9475c6381acb234b68951817a"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/freeze-worker-manifest.json",
+        "sha256": "ef3ccc59b1e0b29109208bdd9c0008c82c511626f8edbc90364e79e50c273e09"
       },
       {
-        "path": "evidence/shared-target-families-20261011/stat-result.json",
-        "sha256": "c8e0e63e0cea7a6ea21f9ce07be40f1fae654de399c7d11e3d7c493b401f8754"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/main-source-files.json",
+        "sha256": "0f2b052372d0486c5ddbb328f36c4cd55672bb6cdbd92f2ec54eb426d3b0378c"
       },
       {
-        "path": "evidence/shared-target-families-20261011/volatile-result.json",
-        "sha256": "c149c0b2299a49664cd8e9db59da908821269e95799797b45ccee200a85769ec"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/rampage-details.json.gz",
+        "sha256": "b723054760523fdadc7c2eb2fee0bad814d31bbbdb61f9df3253ef7add980ef8"
       },
       {
-        "path": "tests/Game.FourVolatileTargets.Tests/evidence/fixture-import-failure.json",
-        "sha256": "452ca3119f1a574ba447bb3c96e094e9da9b2d836db5254bccb80659630dc89b"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/rampage-result.json",
+        "sha256": "708ae44d237fd395efc8fd37aab974dbc90fe0acfb3346d9552e887d0e70db5c"
       },
       {
-        "path": "tests/Game.FourVolatileTargets.Tests/source-vectors.json",
-        "sha256": "b578cb9b2d70edced088c43b8460ae594d5acfb35f3540c96d8dcc79af87ea32"
-      },
-      {
-        "path": "tests/Game.Retaliation.Tests/source-proof.json",
-        "sha256": "ac632c22e73f9cf4c45a9be2bcf2d6ccbc9599346da8455ca6f0e6932821c39f"
-      },
-      {
-        "path": "tests/Game.Retaliation.Tests/vital-throw-correction.json",
-        "sha256": "197d25b51b799c59d714153a78e1010b8eb437f069acb478e75baa23a243550d"
-      },
-      {
-        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/delivery.json",
-        "sha256": "624b67d75b9ba41776ece101c54a421eae44e863c338dd56e644a279fa613be4"
-      },
-      {
-        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/assembly-identity.json",
-        "sha256": "b2caf89bdfd6bd7e6beffb73bd9a3c53f6a0bad8c1c2a495d87df6b2a70c6261"
-      },
-      {
-        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/result.json.gz",
-        "sha256": "2b5e47d4581394108348991dbcacf6e8e593cccd4dd00d7f75cc4f04f5816ed3"
-      },
-      {
-        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-flash/source-manifest.json",
-        "sha256": "9cb823f0512c53a2d6e65453d5a06ab067edbdb883cc7b39e81fc9f60be11c31"
-      },
-      {
-        "path": "tests/SourceHitAnimation.Tests/evidence/stat-family-20261011/native-mask-diagnostic/result.json",
-        "sha256": "01eff3e173179078da772f311f8f9cfd2ea9e77e7dcbc88b5abb64f7c1d554f9"
+        "path": "evidence/shared-dynamic-freeze-rampage-20261011/rampage-worker-manifest.json",
+        "sha256": "e5b4ca7af582b73b7361da22411b039ffad0cfda2b372498a102399f51079fe9"
       }
     ],
     "typeChangeEvidence": {
@@ -12909,6 +12924,8 @@
     },
     "sharedChargeResidualFocusEvidence": "evidence/shared-charge-residual-focus-20261011/README.md",
     "sharedSubstituteSleepTargetEvidence": "evidence/shared-substitute-sleep-20261011/README.md",
-    "statChoreographyEvidence": "tests/SourceHitAnimation.Tests/evidence/stat-moves-20261011/README.md"
+    "statChoreographyEvidence": "tests/SourceHitAnimation.Tests/evidence/stat-moves-20261011/README.md",
+    "sharedDynamicFreezeRampageEvidence": "evidence/shared-dynamic-freeze-rampage-20261011/README.md",
+    "affineStatChoreographyEvidence": "tests/SourceHitAnimation.Tests/evidence/affine-stat-20261011/README.md"
   }
 }

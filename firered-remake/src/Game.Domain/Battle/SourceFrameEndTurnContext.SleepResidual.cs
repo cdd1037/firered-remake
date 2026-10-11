@@ -9,12 +9,12 @@ internal sealed partial class FrameEndTurnContext
     internal override void YawnCancelMultiTurn(BattlerSlot slot)
     {
         var cell = Frame.Get(slot);
-        if (cell.Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rollout } locked) return;
+        if (cell.Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Rampage } locked) return;
         var turn = cell.Registers.Turn;
         Frame = Frame with { Slots = Frame.Slots.SetItem(slot.Value, cell with { Registers = cell.Registers with {
             Turn = turn.SureHitTurnsRemaining == 0 ? null : turn with { Lock = null } } }) };
         Add(n => new SourceMtMoonVolatileEvent(n, Turn, slot,
-            locked.Kind == WildBattleCalledLockKind.Charge ? "called-charge" : "called-rollout", locked.TurnsRemaining, 0, "yawn"));
+            locked.Kind == WildBattleCalledLockKind.Charge ? "called-charge" : locked.Kind == WildBattleCalledLockKind.Rampage ? "called-rampage" : "called-rollout", locked.TurnsRemaining, 0, "yawn"));
     }
 }
 

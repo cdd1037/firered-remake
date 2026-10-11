@@ -120,6 +120,8 @@ public static partial class WildBattleRules
                 throw new UnsupportedAction("called_field_source_definition");
             handled = true;
             var target = activeInvocation.Target;
+            if (SourceRecipeContext.HasFreezeHitRecipe(move.Effect))
+            { Recipes.ExecuteFreezeHit(catalog, S(side), S(target), slot, move, purpose); return; }
             if (move.Power > 0) { SourceCalledFieldHit(catalog, side, target, slot, move, purpose); return; }
             SpendEarlyPartyPp(side, target, slot, move);
             if (move.Effect == "EFFECT_TOXIC") { SourceCalledToxic(catalog, side, target, move, purpose); return; }
@@ -132,17 +134,13 @@ public static partial class WildBattleRules
 
         private void SourceCalledInflictStatus(PokemonCatalog catalog, WildBattleSide targetSide, uint status, bool primary = false)
         {
+            if (status == WildBattleStatus.Freeze) { Recipes.ApplyFreeze(catalog, S(targetSide)); return; }
             var target = Get(targetSide);
             if (target.Pokemon.CurrentHp == 0 || target.Status != 0 || !primary &&
                 (SourceCalledSecondaryBlocked(targetSide) || WildBattleEffective.Ability(target) == "ABILITY_SHIELD_DUST" || SourceCalledSafeguard(targetSide))) return;
             var species = WildBattleEffective.Types(catalog, target);
             bool HasType(string type) => species.Type1 == type || species.Type2 == type;
-            if (status == WildBattleStatus.Freeze)
-            {
-                if (HasType("TYPE_ICE") || WildBattleEffective.Ability(target) == "ABILITY_MAGMA_ARMOR" || SourceCalledSun && !SourceCalledWeatherSuppressed) return;
-                CancelRoute3Rollout(targetSide, "freeze");
-            }
-            else if (WildBattleSourceFieldEffects.IsToxic(status))
+            if (WildBattleSourceFieldEffects.IsToxic(status))
             {
                 if (HasType("TYPE_POISON") || HasType("TYPE_STEEL"))
                 {
@@ -197,7 +195,6 @@ public static partial class WildBattleRules
             {
                 switch (move.Effect)
                 {
-                    case "EFFECT_FREEZE_HIT": SourceCalledInflictStatus(catalog, targetSide, WildBattleStatus.Freeze); break;
                     case "EFFECT_POISON_FANG": SourceCalledInflictStatus(catalog, targetSide, WildBattleSourceFieldEffects.ToxicPoison); break;
                     case "EFFECT_THUNDER": InflictStatus(catalog, targetSide, WildBattleStatus.Paralysis, false); break;
                     case "EFFECT_THAW_HIT": InflictStatus(catalog, targetSide, WildBattleStatus.Burn, false); break;

@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image
 ROOT=Path(__file__).resolve().parent.parent
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-LOCK_SHA='37d2a56c29329649294d4420db50d1cc19a625d8620fb744c2b456e21af65095'
+LOCK_SHA='bd560934a4ff721e8b904b6b7c885db388a446d458fa6c960bfff02357494f43'
 def sha(b):return hashlib.sha256(b).hexdigest()
 def authenticated(reference):
     spec=importlib.util.spec_from_file_location('hit_importer',ROOT/'scripts/import-source-hit-animations.py');mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
@@ -34,11 +34,11 @@ def build(reference):
             if not text:continue
             if text.endswith(':'):raise ValueError('Unexpected label')
             op,*tail=text.split(None,1);args=[s.strip() for s in tail[0].split(',')] if tail else []
-            if op not in {'call','return','waitforvisualfinish','end','createvisualtask','playsewithpan','loopsewithpan','createsprite'}:raise ValueError('Unadmitted command')
+            if op not in {'call','return','waitforvisualfinish','end','createvisualtask','playsewithpan','loopsewithpan','createsprite','setalpha','blendoff'}:raise ValueError('Unadmitted command')
             result.append(dict(op=op,args=args,line=source[:start.end()].count('\n')+offset+1))
             if op==end:return result
         raise ValueError('Unterminated root')
-    scripts=[dict(moveId=n,label='Move_'+label,commands=commands('Move_'+label,'end')) for n,label in [(74,'GROWTH'),(106,'HARDEN'),(334,'IRON_DEFENSE')]]
+    scripts=[dict(moveId=n,label='Move_'+label,commands=commands('Move_'+label,'end')) for n,label in [(74,'GROWTH'),(106,'HARDEN'),(334,'IRON_DEFENSE'),(110,'WITHDRAW'),(107,'MINIMIZE')]]
     subs={'GrowthEffect':commands('GrowthEffect','return')}
     with Image.open(io.BytesIO(raw['graphics/battle_anims/masks/metal_shine.png'])) as im:
         if im.mode!='P' or im.size!=(64,64):raise ValueError('Metal sheet shape differs '+str(im.size))
@@ -57,4 +57,4 @@ if __name__=='__main__':
         if a.check:
             if (a.output/name).read_bytes()!=data:raise SystemExit('Generated output differs: '+name)
         else:a.output.mkdir(parents=True,exist_ok=True);(a.output/name).write_bytes(data)
-    print(json.dumps(dict(manifestSha256=sha(manifest),materialSha256=sha(material),materialBytes=len(material),dedicatedMoveRoots=3)))
+    print(json.dumps(dict(manifestSha256=sha(manifest),materialSha256=sha(material),materialBytes=len(material),dedicatedMoveRoots=5)))

@@ -19,6 +19,8 @@ public static class CampaignStatAnimationPresentation
         var spec=pp.Move switch
         {
             "pret:MOVE_GROWTH"=>(Move:74,Stat:WildBattleStat.SpecialAttack,Delta:1,Arg:18),
+            "pret:MOVE_MINIMIZE"=>(Move:107,Stat:WildBattleStat.Evasion,Delta:1,Arg:21),
+            "pret:MOVE_WITHDRAW"=>(Move:110,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
             "pret:MOVE_HARDEN"=>(Move:106,Stat:WildBattleStat.Defense,Delta:1,Arg:16),
             "pret:MOVE_IRON_DEFENSE"=>(Move:334,Stat:WildBattleStat.Defense,Delta:2,Arg:40),
             "pret:MOVE_TAIL_WHIP"=>(Move:39,Stat:WildBattleStat.Defense,Delta:-1,Arg:23),

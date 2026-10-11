@@ -217,17 +217,7 @@ public static partial class WildBattleRules
             if (locked.UnableToUseMove || locked.TurnsRemaining == 1) CancelCalledTurnLock(side, "uproar-ended");
             else ChangeCalledLock(side, locked with { TurnsRemaining = locked.TurnsRemaining - 1 }, "countdown");
         }
-        internal void CalledRampageResidual(WildBattleSide side)
-        {
-            if (Get(side).Pokemon.CurrentHp == 0 || Get(side).CalledTurnState?.Lock is not { Kind: WildBattleCalledLockKind.Rampage } locked) return;
-            if (locked.UnableToUseMove) CancelCalledTurnLock(side, "rampage-interrupted");
-            else if (locked.TurnsRemaining == 1)
-            {
-                ChangeCalledLock(side, null, "rampage-ended");
-                ApplyConfusion(side, $"wild-battle.{side.ToString().ToLowerInvariant()}", false);
-            }
-            else ChangeCalledLock(side, locked with { TurnsRemaining = locked.TurnsRemaining - 1 }, "countdown");
-        }
+        internal void CalledRampageResidual(WildBattleSide side) => new SinglesEndTurnBridge(this).RampageResidual(S(side));
         internal void CalledSureHitResidual(WildBattleSide side) => new SinglesEndTurnBridge(this).LockOnResidual(S(side));
         internal void CalledCancelSleepingLocks()
         {
@@ -252,6 +242,8 @@ public static partial class WildBattleRules
             }
             if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED"))
             { CancelRoute3Rollout(side,"protected"); CancelCalledTurnLock(side,"protected"); }
+            if (SourceRecipeContext.HasRechargeRampageRecipe(move.Effect))
+            { Recipes.ExecuteRechargeRampage(catalog, S(side), move, purpose); return; }
             if (move.Effect == "EFFECT_BIDE")
             {
                 SpendInvocationPp(side, target, move);
@@ -283,21 +275,14 @@ public static partial class WildBattleRules
             int lost = SourceGenericApplyDamage(side, target, move, damage, critical, percent);
             ScalarReportType(catalog, side, target, move, ScalarType(move.Type));
             bool effective = !ScalarTypeResult(catalog, target, ScalarType(move.Type)).Immune;
-            if (move.Effect == "EFFECT_RECHARGE" && effective)
-                StartCalledLock(side, move, WildBattleCalledLockKind.Recharge, SourceTurnCycleEnabled ? 2 : 1); // Source rechargeTimer=2; MOVE_EFFECT_CERTAIN has no chance draw.
-            else
+            int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
+            int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
+            if (effective && roll <= chance)
             {
-                int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
-                int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(side)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-                if (effective && roll <= chance)
-                {
-                    if (move.Effect == "EFFECT_RAMPAGE" && Get(side).CalledTurnState?.Lock is null)
-                        StartCalledLock(side, move, WildBattleCalledLockKind.Rampage, (Draw($"{purpose}.rampage-duration", 2) & 1) + 2);
-                    else if (move.Effect == "EFFECT_UPROAR" && Get(side).CalledTurnState?.Lock is null)
-                        StartCalledLock(side, move, WildBattleCalledLockKind.Uproar, (Draw($"{purpose}.uproar-duration", 4) & 3) + 2);
-                    else if (move.Effect is "EFFECT_SKY_ATTACK" or "EFFECT_TWISTER") ApplyFlinch(target);
-                    else if (move.Id.Value == "pret:MOVE_BOUNCE") InflictStatus(catalog, target, WildBattleStatus.Paralysis, false);
-                }
+                if (move.Effect == "EFFECT_UPROAR" && Get(side).CalledTurnState?.Lock is null)
+                    StartCalledLock(side, move, WildBattleCalledLockKind.Uproar, (Draw($"{purpose}.uproar-duration", 4) & 3) + 2);
+                else if (move.Effect is "EFFECT_SKY_ATTACK" or "EFFECT_TWISTER") ApplyFlinch(target);
+                else if (move.Id.Value == "pret:MOVE_BOUNCE") InflictStatus(catalog, target, WildBattleStatus.Paralysis, false);
             }
             ScalarFinish(catalog, side, target, move, purpose, lost, ScalarType(move.Type));
         }

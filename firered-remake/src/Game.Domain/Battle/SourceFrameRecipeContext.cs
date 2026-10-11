@@ -56,6 +56,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         string purpose = Frame.Layout == SourceBattleLayout.Singles
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
         PrepareCharge(invocation.Actor,move);
+        PrepareDynamicPower(invocation.Actor, move);
         if (ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose))
         {
             CompleteScriptTarget();
@@ -78,6 +79,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}";
         var firstTarget = invocation.Target;
         PrepareCharge(invocation.Actor,move);
+        PrepareDynamicPower(invocation.Actor, move);
         bool blocked = ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose);
         if (blocked) CompleteScriptTarget();
         else
@@ -106,7 +108,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
             }
             else if (invocation.PpSlot >= 0 && Get(invocation.Actor).Pokemon.Moves[invocation.PpSlot].CurrentPp == 0 &&
                 (invocation.Flags & WildBattleInvocationFlags.NoAttackString) == 0 &&
-                Frame.Get(invocation.Actor).Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge })
+                Frame.Get(invocation.Actor).Registers.Turn?.Lock is not { Kind: WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage })
             {
                 invocation = invocation with { Flags = WildBattleInvocationFlags.AttackStringPrinted };
                 Add(n => new SourceAttackStringEvent(n, Turn, invocation.Actor, move.Id, move.Id));
@@ -149,12 +151,15 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                 if (!handled && HasTargetMarkRecipe(move.Effect)) { ExecuteTargetMark(invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled) ExecuteTypeChange(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteFieldSetting(invocation.Actor, invocation.ChosenSlot, move, ref handled);
+                if (!handled && HasRechargeRampageRecipe(move.Effect))
+                { ExecuteRechargeRampage(catalog, invocation.Actor, move, purpose); handled = true; }
                 if (!handled) ExecuteCharge(catalog,invocation.Actor,move,purpose,ref handled);
                 if (!handled) ExecuteTurnMove(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteBasicStat(invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteAdditionalPrimaryStatus(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteStatRecovery(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteRetaliation(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
+                if (!handled && HasDynamicPowerRecipe(move.Effect)) { ExecuteDynamicPower(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasFixedDamageRecipe(move.Effect)) { ExecuteFixedDamage(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled) ExecuteGeneric(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) throw new SourceRecipeUnsupported("source_kernel_recipe_not_migrated");
@@ -165,6 +170,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     }
     private void FinishAction()
     {
+        RecordRampageInability();
         ClearContactReceipts();
         // Party storage stayed synchronized during each mutation; report the same action-end delta
         // once per actual member. Equal species never serve as the identity key.

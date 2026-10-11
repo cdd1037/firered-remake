@@ -105,6 +105,16 @@
       "path": "src/data/battle_moves.h",
       "bytes": 121457,
       "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+    },
+    {
+      "path": "src/battle_anim_effects_2.c",
+      "bytes": 110677,
+      "sha256": "50561e4882a0f8813f305af6f4147ed1c394657278e32aae6c733bef31994a04"
+    },
+    {
+      "path": "src/sprite.c",
+      "bytes": 48783,
+      "sha256": "2a804302eb5a89d31c3ec2f33dc645a80a0c645113d4b33b9bd571064c0286ae"
     }
   ]
 }

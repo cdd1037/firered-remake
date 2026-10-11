@@ -3,7 +3,8 @@ using System.Security.Cryptography;
 using System.Text.Json;
 namespace Game.Presentation.BattleAnimations;
 
-public sealed record SourceBattlerAffine(bool DoubleSize,int XScale,int YScale);
+public sealed record SourceBattlerAffine(bool DoubleSize,int XScale,int YScale)
+{ public int MatrixB {get;init;} public int MatrixC {get;init;} }
 public sealed record SourceMetallicFrame(bool WindowEnabled,bool BackgroundLoaded,int ScrollX,int ScrollY,int MaskSlot,bool MaskVisible,int PriorityPartner);
 public sealed class SourceMetallicMaterial
 {
@@ -19,8 +20,8 @@ public sealed class SourceMetallicMaterial
 }
 public static class SourceStatMoveCatalog
 {
-    public const string ManifestSha256="75e4ba8b5282ae616f4f57b0a16b6f6095527f36c57e05048b183b10521abf9d";
-    public static bool Supports(int move)=>move is 74 or 106 or 334;
+    public const string ManifestSha256="b10c77ef3aaa8a1085d07efdde8447ca9c6a5f9830a7d17e475d4791588b2355";
+    public static bool Supports(int move)=>move is 74 or 106 or 334 or 110 or 107;
     public static (IReadOnlyDictionary<int,SourceAnimationScript> Scripts,SourceMetallicMaterial Material) Read(string folder)
     {
         var bytes=SourceHitAnimationCatalog.ReadBounded(Path.Combine(folder,"manifest.json"),16384);
@@ -40,6 +41,7 @@ public sealed partial class SourceBattleAnimation
     private readonly HashSet<int> _greyscale=[];
     private readonly bool[] _affineMode=new bool[4],_affineOamMode=new bool[4];
     private readonly int[] _xScale=Enumerable.Repeat(256,4).ToArray(),_yScale=Enumerable.Repeat(256,4).ToArray();
+    private readonly int[] _matrixB=new int[4],_matrixC=new int[4];
     private PaletteFade? _fade;
     private SourceAnimationCommand[]? _subroutine;
     private int _returnPc;
@@ -51,6 +53,8 @@ public sealed partial class SourceBattleAnimation
             "call"=>["GrowthEffect"],"return"=>[],
             "createvisualtask"=>c.Args.FirstOrDefault() switch
             {
+                "AnimTask_Minimize"=>["AnimTask_Minimize","2"],
+                "AnimTask_Withdraw"=>["AnimTask_Withdraw","5"],
                 "AnimTask_MetallicShine"=>["AnimTask_MetallicShine","5","0","0","0"],
                 "AnimTask_BlendColorCycle"=>["AnimTask_BlendColorCycle","2","F_PAL_ATTACKER","0","2","0","8","RGB_WHITE"],
                 "AnimTask_ScaleMonAndRestore"=>["AnimTask_ScaleMonAndRestore","5","-3","-3","16","ANIM_ATTACKER","0"],_=>null

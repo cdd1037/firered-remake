@@ -392,6 +392,7 @@ public static partial class WildBattleRules
             try
             {
                 int lost = SourceGenericApplyDamage(future.Attacker, target, move, damage, false, percent);
+                SourceHeldDamageResult(target, move.Id);
                 if (SourceCalledHitReachedPokemon(target)) RecordCalledDamage(target, future.Attacker, lost, "TYPE_NORMAL");
                 if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
                 // HandleAction_ActionFinished cleared gCurrentMove to MOVE_NONE; the source's

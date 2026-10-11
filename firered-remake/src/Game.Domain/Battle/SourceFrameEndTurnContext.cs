@@ -148,6 +148,8 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
                     Turn = turn.SureHitTurnsRemaining == 0 ? null : turn with { Lock = null } } }) };
                 Add(n => new SourceMtMoonVolatileEvent(n, Turn, cell.Slot, "called-charge", charge.TurnsRemaining, 0, "sleep"));
             }
+            if (WildBattleStatus.IsSleeping(Get(cell.Slot).Status) && RampageRemaining(cell.Slot) != 0)
+                SetRampageRemaining(cell.Slot, 0, "sleep");
             Set(cell.Slot, SourceTurnBoundaryRules.PrepareBody(Get(cell.Slot)));
         }
     }
@@ -165,6 +167,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
     }
     internal override void UnmigratedBattlerStep(SourceBattlerEndTurnStep step, BattlerSlot slot)
     {
+        if (step == SourceBattlerEndTurnStep.Thrash) { RampageResidual(slot); return; }
         if (step == SourceBattlerEndTurnStep.Disable) { Disable(slot); return; }
         if (step is SourceBattlerEndTurnStep.Items1 or SourceBattlerEndTurnStep.Items2)
         {
@@ -174,7 +177,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
         }
         var m = Get(slot); var r = Frame.Get(slot).Registers;
         bool nonempty = step switch {
-            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge) } || m.RampageTurnsRemaining != 0,
+            SourceBattlerEndTurnStep.Uproar or SourceBattlerEndTurnStep.Thrash => r.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage) } || m.RampageTurnsRemaining != 0,
             SourceBattlerEndTurnStep.Disable => m.DisabledMove is not null,
             SourceBattlerEndTurnStep.Encore => m.EncoreMoveSlot is not null,
             SourceBattlerEndTurnStep.Charge => m.ChargeTurnsRemaining != 0,
@@ -222,7 +225,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
                 int after = SourceTurnBoundaryRules.RechargeAfterReady(recharge.TurnsRemaining);
                 var turn = cell.Registers.Turn;
                 Frame = Frame with { Slots = Frame.Slots.SetItem(cell.Slot.Value, cell with { Registers = cell.Registers with {
-                    Turn = after == 0 ? null : turn with { Lock = recharge with { TurnsRemaining = after } } } }) };
+                    Turn = after == 0 && turn.SureHitTurnsRemaining == 0 ? null : turn with { Lock = after == 0 ? null : recharge with { TurnsRemaining = after } } } }) };
                 Add(n => new SourceMtMoonVolatileEvent(n, Turn, cell.Slot, "called-recharge", recharge.TurnsRemaining, after, "recharge-timer"));
             }
         }

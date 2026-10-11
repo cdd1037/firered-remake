@@ -95,6 +95,7 @@ internal abstract partial class SourceRecipeContext
         int before = actor.Pokemon.CurrentHp, after = Math.Max(0, before - damage);
         Set(actorSlot, actor with { Pokemon = actor.Pokemon with { CurrentHp = after } });
         Add(n => new SourceConfusionSelfHitEvent(n, Turn, actorSlot, move, before, after, damage, percent));
+        SourceDamageResultMessage(actorSlot, actorSlot, catalog.Moves[move]);
         if (after == 0) ForestFaint(actorSlot);
         ForestOutcome(true);
         return true;
