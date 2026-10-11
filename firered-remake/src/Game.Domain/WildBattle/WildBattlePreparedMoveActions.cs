@@ -57,6 +57,7 @@ public static partial class WildBattleRules
         private void BeginPreparedMoveInvocation(PokemonCatalog catalog, MoveId? previousMove)
         {
             SourceHitItemsBegin(catalog);
+            invocationFireThawStart = State.EventSequence;
             choiceBatonPassFailed = false;
             preparedSwapAttackerTarget = false;
             preparedPpOwnerPreviousMove = previousMove;

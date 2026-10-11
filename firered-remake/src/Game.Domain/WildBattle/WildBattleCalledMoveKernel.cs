@@ -248,7 +248,7 @@ public static partial class WildBattleRules
         private bool DeferInvocationProtection(PokemonMoveDefinition? move)
         {
             if (activeInvocation is null || move is null) return false;
-            bool deferred = State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion && SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || move.Effect == "EFFECT_FOCUS_PUNCH" || HasCalledPartyRecipe(move.Effect) || move.Effect is "EFFECT_EXPLOSION" or "EFFECT_SPIT_UP" or "EFFECT_MIMIC" or "EFFECT_SKETCH" || HasCalledTurnLockRecipe(move.Effect);
+            bool deferred = State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion && (SourceRecipeContext.HasSleepResidualRecipe(move.Effect) || SourceRecipeContext.HasSleepAttackRecipe(move.Effect)) || move.Effect == "EFFECT_FOCUS_PUNCH" || HasCalledPartyRecipe(move.Effect) || move.Effect is "EFFECT_EXPLOSION" or "EFFECT_SPIT_UP" or "EFFECT_MIMIC" or "EFFECT_SKETCH" || HasCalledTurnLockRecipe(move.Effect);
             deferred |= State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion && move.Effect == "EFFECT_FORESIGHT";
             DeferCalledScalarProtection(move, ref deferred);
             return deferred;

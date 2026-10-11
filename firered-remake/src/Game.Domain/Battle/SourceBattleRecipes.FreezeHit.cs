@@ -11,10 +11,19 @@ internal abstract partial class SourceRecipeContext
     // hit script. The singles storage bridge retains its scalar command hooks.
     internal void ExecuteFreezeHit(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
         int slot, PokemonMoveDefinition move, string purpose)
+        => ExecuteStatusHit(catalog, actor, target, slot, move, purpose);
+
+    internal void ExecuteTriAttack(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
+        int slot, PokemonMoveDefinition move, string purpose)
+        => ExecuteStatusHit(catalog, actor, target, slot, move, purpose);
+
+    private void ExecuteStatusHit(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target,
+        int slot, PokemonMoveDefinition move, string purpose)
     {
         bool hit = FreezeHitAccuracy(actor, target, move, purpose);
         SpendEarlyPartyPp(actor, target, slot, move);
         if (!hit) { SourceGenericMiss(actor, target, move); return; }
+        if (move.Effect == "EFFECT_THAW_HIT" && SsAnneFlashFire(actor, target, move)) return;
         bool critical = SourceGenericCritical(Get(actor), Get(target), move, purpose);
         int percent = 100 - Draw($"{purpose}.damage", 16) % 16;
         int damage = FreezeHitDamage(catalog, actor, target, move, critical, percent);
@@ -26,7 +35,12 @@ internal abstract partial class SourceRecipeContext
         // substitute, lethal damage, existing status and immunity to this effect.
         int roll = Draw($"{purpose}.secondary-effect", 100) % 100;
         int chance = move.SecondaryEffectChance * (WildBattleEffective.Ability(Get(actor)) == "ABILITY_SERENE_GRACE" ? 2 : 1);
-        if (roll <= chance && FreezeHitSecondaryDamage(effectiveDamage, damage) > 0) ApplyFreeze(catalog, target);
+        if (roll <= chance && FreezeHitSecondaryDamage(effectiveDamage, damage) > 0)
+        {
+            if (move.Effect == "EFFECT_TRI_ATTACK") ApplyTriAttack(catalog, target, purpose);
+            else if (move.Effect == "EFFECT_THAW_HIT") InflictStatus(catalog, target, WildBattleStatus.Burn, false);
+            else ApplyFreeze(catalog, target);
+        }
         if (Get(target).Pokemon.CurrentHp == 0) ForestFaint(target);
         if (damage > 0) MtMoonRageOnDamage(actor, target, move.Id);
         SourceGenericContact(catalog, actor, target, move, purpose, damage);

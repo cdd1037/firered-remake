@@ -38,12 +38,13 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         SetHitItemReceipt(target, HitItemReceipt(target) with { Damage = 0xFFFF });
         var hit = PrepareFutureHit(future.Attacker, target, move, future.Damage, purpose);
         if (!hit.Hit) return;
+        delayedHitItemsPending = true;
         int adjusted = AdjustHeldDamage(target, move.Id, hit.Damage, purpose, normal2: true);
         delayedContactDamage = true;
         int lost = SourceGenericApplyDamage(future.Attacker, target, move, adjusted, false, hit.Percent);
         delayedContactDamage = false;
         SourceDamageResultMessage(future.Attacker, target, move);
-        if (!SubstituteHitReachedPokemon(target)) { EndSubstitutePass(); return; }
+        if (!SubstituteHitReachedPokemon(target)) return;
         var cell = Frame.Get(target); var prior = cell.Registers.Damage;
         Frame = Frame with { Slots = Frame.Slots.SetItem(target.Value, cell with { Registers = cell.Registers with {
             Damage = SourceMoveHistoryReducer.RecordDamage(prior, Turn, future.Attacker, lost, "TYPE_NORMAL") } }) };
@@ -126,7 +127,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                     MarkProtectionMiss(target);
                     CancellerCancelMultiTurn(invocation.Actor, "protected");
                 }
-                bool handled = !HasSleepResidualRecipe(move.Effect) &&
+                bool handled = !HasSleepAttackRecipe(move.Effect) && !HasSleepResidualRecipe(move.Effect) &&
                     SubstituteScriptBlocks(catalog, invocation.Actor, invocation.ChosenSlot, move);
                 if (!handled && move.Effect == "EFFECT_SUBSTITUTE") { ExecuteFrameSubstitute(); handled = true; }
                 if (!handled && HasProtectionRecipe(move.Effect))
@@ -147,8 +148,11 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
                     else ExecuteLeechSeed(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose);
                     handled = true;
                 }
+                if (!handled && HasSleepAttackRecipe(move.Effect)) { ExecuteSleepAttack(catalog, invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
                 if (!handled && HasSleepResidualRecipe(move.Effect)) { ExecuteSleepResidual(catalog, invocation.Actor, target, invocation.ChosenSlot, move); handled = true; }
                 if (!handled && HasTargetMarkRecipe(move.Effect)) { ExecuteTargetMark(invocation.Actor, target, invocation.ChosenSlot, move, purpose); handled = true; }
+                if (!handled && HasCopyStateRecipe(move.Effect))
+                { ExecuteCopyState(catalog, invocation.Actor, target, invocation.PpSlot, move); handled = true; }
                 if (!handled) ExecuteTypeChange(catalog, invocation.Actor, invocation.ChosenSlot, move, purpose, ref handled);
                 if (!handled) ExecuteFieldSetting(invocation.Actor, invocation.ChosenSlot, move, ref handled);
                 if (!handled && HasRechargeRampageRecipe(move.Effect))
@@ -215,7 +219,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     internal override void BeginScriptTarget(BattlerSlot target)
     {
         invocation = invocation with { Target = target };
-        commandNoEffect = false; skipsMoveEnd = false;
+        commandNoEffect = false; hitItemsNoEffect = false; skipsMoveEnd = false;
         targetEventStart = Events.Count;
     }
     internal override void CompleteScriptTarget()
@@ -229,10 +233,12 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         if (skipsMoveEnd) Set(action.Actor.Slot, Get(action.Actor.Slot) with { LastUsedMove = initial.Get(action.Actor.Slot).Body!.LastUsedMove });
         else
         {
+            FireHitThaw(invocation.Actor, invocation.Target, move);
             var immunity = SourceFrameImmunityRules.Apply(Frame);
             Frame = immunity.State; Events.AddRange(immunity.Events);
             var berries = SourceFrameBerryItems.Apply(Frame, SourceBerryPhase.MoveEnd);
             Frame = berries.State; Events.AddRange(berries.Events);
+            ApplyFrameHitItems();
             EndSubstitutePass();
             Frame = SourceMoveHistoryReducer.Apply(catalog, Frame, invocation,
                 Events.Skip(targetEventStart).ToImmutableArray(), commandNoEffect);
@@ -429,6 +435,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     }
     internal override void SourceGenericMiss(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
+        commandNoEffect = true;
         if (Get(target).Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED") && !ChargeFirstTurn(move))
         {
             MarkProtectionMiss(target);

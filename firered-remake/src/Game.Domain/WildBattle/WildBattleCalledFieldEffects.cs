@@ -120,6 +120,8 @@ public static partial class WildBattleRules
                 throw new UnsupportedAction("called_field_source_definition");
             handled = true;
             var target = activeInvocation.Target;
+            if (move.Effect == "EFFECT_THAW_HIT" && State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion)
+            { Recipes.ExecuteThawHit(catalog, S(side), S(target), slot, move, purpose); return; }
             if (SourceRecipeContext.HasFreezeHitRecipe(move.Effect))
             { Recipes.ExecuteFreezeHit(catalog, S(side), S(target), slot, move, purpose); return; }
             if (move.Power > 0) { SourceCalledFieldHit(catalog, side, target, slot, move, purpose); return; }

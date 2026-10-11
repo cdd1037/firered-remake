@@ -114,20 +114,8 @@ public static partial class WildBattleRules
         private bool TransformScript(PokemonCatalog catalog, WildBattleSide side, int slot, PokemonMoveDefinition move)
         {
             if (move.Effect != "EFFECT_TRANSFORM") return false;
-            var targetSide = Other(side);
-            SpendEarlyPartyPp(side, targetSide, slot, move);
-            // Source gChosenMove is MOVE_UNAVAILABLE on success and failure alike.
-            if (activeInvocation is not null && State.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion)
-                activeInvocation = activeInvocation with { ChosenMove = new("pret:MOVE_UNAVAILABLE") };
-            Set(side, Get(side) with { LastUsedMove = new("pret:MOVE_UNAVAILABLE") });
-            if (WildBattleTransformationRules.FailureReason(Get(targetSide)) is { } failure)
-            { Add(n => new WildBattleMoveFailedEvent(n, State.Turn, side, targetSide, move.Id, failure)); return true; }
-            var target = Get(targetSide);
-            var transformed = WildBattleTransformationRules.Copy(catalog, Get(side), target);
-            Set(side, transformed);
-            Add(n => new WildBattleTransformedEvent(n, State.Turn, side, targetSide,
-                transformed.Transform!.OriginalPokemon.Species, target.Pokemon.Species,
-                target.Pokemon.Personality, target.Pokemon.OriginalTrainerId, transformed.Pokemon));
+            new SinglesRecipeBridge(this).ExecuteCopyState(catalog, SinglesBattleAdapter.Slot(side),
+                SinglesBattleAdapter.Slot(Other(side)), slot, move);
             return true;
         }
     }

@@ -26,13 +26,19 @@ internal abstract partial class SourceRecipeContext
     internal abstract void CancellerClearRecharge(BattlerSlot slot);
     internal virtual BattlerSlot CancellerFailureTarget(BattlerSlot slot) => Invocation!.Target;
 
-    internal bool ActionPreventsMove(PokemonCatalog catalog, BattlerSlot actor, MoveId move, string purpose) =>
-        CancellerSleepEnabled && SleepPreventsMove(actor, move) ||
+    internal virtual bool CancellerMoveThawEnabled => true;
+    internal virtual bool CancellerLateMoveThawEnabled => true;
+    internal bool ActionPreventsMove(PokemonCatalog catalog, BattlerSlot actor, MoveId move, string purpose)
+    {
+        bool blocked = CancellerSleepEnabled && SleepPreventsMove(actor, move) ||
         CancellerFreezeEnabled && FreezePreventsMove(actor, move, purpose) ||
         TruantPreventsMove(actor, move) || RechargePreventsMove(actor, move) ||
         CancellerEarlyPartyEnabled && FlinchLocksConfusionPreventMove(catalog, actor, move, purpose) ||
         ParalysisPreventsMove(actor, move, purpose) ||
         CancellerInfatuationEnabled && InfatuationPreventsMove(actor, move, purpose);
+        if (!blocked && CancellerLateMoveThawEnabled) ThawByMove(actor, move);
+        return blocked;
+    }
 
     internal bool SleepPreventsMove(BattlerSlot actor, MoveId move)
     {
@@ -51,6 +57,7 @@ internal abstract partial class SourceRecipeContext
         if (Get(actor).Status != WildBattleStatus.Freeze) return false;
         if (Draw($"{purpose}.freeze-thaw", 5) % 5 == 0)
         { ChangeStatus(actor, WildBattleStatus.None, "thawed-out"); return false; }
+        if (CancellerMoveThawEnabled && IsThawHitMove(move)) return false;
         Add(n => new SourceActionBlockedEvent(n, Turn, actor, move, WildBattleStatus.Freeze));
         return true;
     }

@@ -28,6 +28,7 @@ internal sealed partial class FrameRecipeContext
         string type = delayedContactDamage ? "TYPE_NORMAL" : catalog.Moves[id].Type;
         bool physical = TypeRules.Category(Enum.Parse<ElementType>(type[5..], true)) == DamageCategory.Physical;
         bool noEffect = fixedDamageNoEffect ?? (damage == 0 && !HeldDamageEffectiveZero(target));
+        HitItemsCommandDamage(damage, noEffect);
         if (noEffect) commandNoEffect = true;
         SetHitItemReceipt(target, SourceHitItemRules.Record(HitItemReceipt(target), lost,
             substitute, noEffect, physical));

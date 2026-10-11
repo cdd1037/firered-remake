@@ -201,6 +201,9 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame) : Sou
         hit.RunFutureHit(future, slot);
         Frame = hit.Frame; Events.AddRange(hit.Events); Trace.AddRange(hit.Trace);
         if (Get(slot).Pokemon.CurrentHp == 0) Faint(slot);
+        int priorEvents = hit.Events.Count, priorTrace = hit.Trace.Count;
+        hit.CompleteFutureHitItems(Frame);
+        Frame = hit.Frame; Events.AddRange(hit.Events.Skip(priorEvents)); Trace.AddRange(hit.Trace.Skip(priorTrace));
         return true;
     }
     internal override bool Perish(BattlerSlot slot)

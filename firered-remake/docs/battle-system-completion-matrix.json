@@ -4168,7 +4168,7 @@
         "startLine": 107,
         "symbol": "MOVE_ICE_PUNCH"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_THUNDER_PUNCH",
@@ -4252,7 +4252,7 @@
         "startLine": 159,
         "symbol": "MOVE_GUILLOTINE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_RAZOR_WIND",
@@ -4687,7 +4687,7 @@
         "startLine": 419,
         "symbol": "MOVE_HORN_DRILL"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TACKLE",
@@ -4797,7 +4797,7 @@
         "startLine": 484,
         "symbol": "MOVE_THRASH"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DOUBLE_EDGE",
@@ -5268,7 +5268,7 @@
         "startLine": 757,
         "symbol": "MOVE_ICE_BEAM"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BLIZZARD",
@@ -5289,7 +5289,7 @@
         "startLine": 770,
         "symbol": "MOVE_BLIZZARD"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_PSYBEAM",
@@ -5373,7 +5373,7 @@
         "startLine": 822,
         "symbol": "MOVE_HYPER_BEAM"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_PECK",
@@ -5457,7 +5457,7 @@
         "startLine": 874,
         "symbol": "MOVE_LOW_KICK"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_COUNTER",
@@ -5754,7 +5754,7 @@
         "startLine": 1043,
         "symbol": "MOVE_PETAL_DANCE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_STRING_SHOT",
@@ -5984,7 +5984,7 @@
         "startLine": 1173,
         "symbol": "MOVE_FISSURE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_DIG",
@@ -6251,7 +6251,7 @@
         "startLine": 1329,
         "symbol": "MOVE_MIMIC"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SCREECH",
@@ -7057,7 +7057,7 @@
         "startLine": 1797,
         "symbol": "MOVE_DREAM_EATER"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_POISON_GAS",
@@ -7183,7 +7183,7 @@
         "startLine": 1875,
         "symbol": "MOVE_TRANSFORM"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BUBBLE",
@@ -7450,7 +7450,7 @@
         "startLine": 2031,
         "symbol": "MOVE_REST"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_ROCK_SLIDE",
@@ -7555,7 +7555,7 @@
         "startLine": 2096,
         "symbol": "MOVE_TRI_ATTACK"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SUPER_FANG",
@@ -7665,7 +7665,7 @@
         "startLine": 2161,
         "symbol": "MOVE_SKETCH"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_TRIPLE_KICK",
@@ -7796,7 +7796,7 @@
         "startLine": 2239,
         "symbol": "MOVE_FLAME_WHEEL"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SNORE",
@@ -7817,7 +7817,7 @@
         "startLine": 2252,
         "symbol": "MOVE_SNORE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CURSE",
@@ -7859,7 +7859,7 @@
         "startLine": 2278,
         "symbol": "MOVE_FLAIL"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_CONVERSION_2",
@@ -7943,7 +7943,7 @@
         "startLine": 2330,
         "symbol": "MOVE_REVERSAL"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SPITE",
@@ -7985,7 +7985,7 @@
         "startLine": 2356,
         "symbol": "MOVE_POWDER_SNOW"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_PROTECT",
@@ -8398,7 +8398,7 @@
         "startLine": 2603,
         "symbol": "MOVE_OUTRAGE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SANDSTORM",
@@ -8747,7 +8747,7 @@
         "startLine": 2811,
         "symbol": "MOVE_RETURN"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_PRESENT",
@@ -8789,7 +8789,7 @@
         "startLine": 2837,
         "symbol": "MOVE_FRUSTRATION"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SAFEGUARD",
@@ -8852,7 +8852,7 @@
         "startLine": 2876,
         "symbol": "MOVE_SACRED_FIRE"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MAGNITUDE",
@@ -10209,7 +10209,7 @@
         "startLine": 3695,
         "symbol": "MOVE_ERUPTION"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SKILL_SWAP",
@@ -10692,7 +10692,7 @@
         "startLine": 3994,
         "symbol": "MOVE_BLAST_BURN"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_HYDRO_CANNON",
@@ -10713,7 +10713,7 @@
         "startLine": 4007,
         "symbol": "MOVE_HYDRO_CANNON"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_METEOR_MASH",
@@ -11033,7 +11033,7 @@
         "startLine": 4202,
         "symbol": "MOVE_WATER_SPOUT"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_SIGNAL_BEAM",
@@ -11164,7 +11164,7 @@
         "startLine": 4280,
         "symbol": "MOVE_SHEER_COLD"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_MUDDY_WATER",
@@ -11358,7 +11358,7 @@
         "startLine": 4397,
         "symbol": "MOVE_FRENZY_PLANT"
       },
-      "fourSlotRecipeAdmission": "not-admitted"
+      "fourSlotRecipeAdmission": "admitted-with-capability-guards"
     },
     {
       "id": "pret:MOVE_BULK_UP",
@@ -12486,34 +12486,42 @@
       "scope": "Withdraw and Minimize affine/cloned-battler choreography",
       "details": "Adds2 dedicated roots to15,339 remaining. Worker source24326/headless7671/native1223 pass on identical worker identity; main33 files exact, material regenerate/verify and combined compilation. No original-runtime or physical listening claim.",
       "evidence": "tests/SourceHitAnimation.Tests/evidence/affine-stat-20261011/README.md"
+    },
+    {
+      "dateUtc": "2026-10-11",
+      "baseCommit": "d449a1d71e313ab5e6bac2a7ef7f8ae2fc41b3e3",
+      "scope": "Shared copied state, OHKO, fire-thaw/TriAttack, sleep attacks and four-slot King/ShellBell",
+      "details": "13 newly admitted move recipes,264→277; four-slot item callbacks reuse canonical formulas. Immutable canonical and historical baselines retained with narrow source corrections documented. Animation coverage remains15.",
+      "evidence": "evidence/shared-copy-ohko-hit-sleep-20261011/README.md"
     }
   ],
   "currentFourSlotAdmissionSnapshot": {
-    "method": "Previous runtime predicate inventory246 plus18 unique authenticated newly admitted recipes, each exercised by the three actual-action suites. Admission is separate from complete interactions, Application and presentation.",
+    "method": "Runtime SourceBattleKernel.SupportsRecipe over all354 authenticated definitions in final OHKO four-slot runner. Admission is separate from complete interactions/Application/presentation.",
     "inventoryDateUtc": "2026-10-11",
-    "baseCommit": "242275ce63a8c1241e5a1ffd068b651141890fc1",
-    "workingTreeState": "evidence/shared-dynamic-freeze-rampage-20261011/main-source-files.json",
+    "baseCommit": "d449a1d71e313ab5e6bac2a7ef7f8ae2fc41b3e3",
+    "workingTreeState": "evidence/shared-copy-ohko-hit-sleep-20261011/main-source-files.json",
     "singleRecipesRegistered": 354,
-    "fourSlotRecipeAdmission": 264,
-    "fourSlotRecipeNotAdmitted": 90,
+    "fourSlotRecipeAdmission": 277,
+    "fourSlotRecipeNotAdmitted": 77,
     "newFamilyMoveCounts": {
-      "dynamic-power": 7,
-      "freeze-hit": 4,
-      "recharge-rampage": 7
+      "copy-state": 3,
+      "one-hit-ko": 4,
+      "fire-thaw-triattack": 3,
+      "sleep-attacks": 3
     },
     "dedicatedSingleAnimationScriptsAccepted": 15,
     "dedicatedScriptsRemaining": 339,
     "dedicatedFourSlotAnimationScriptsWithActualKernelAcceptance": 15,
     "dedicatedFourSlotPresentationOnlyScripts": [],
-    "sourceKernelSha256": "9bbf686ca4fc4ffb4619bc65740ebeee71b4f6a69bdbaeee86775456557a91c8",
+    "sourceKernelSha256": "38bf099ad46eaf28065aee69bfca5a727f776f17533d76abcdc31ee838a6e168",
     "predicateInputs": [
       {
         "path": "src/Game.Domain/Battle/SourceBattleKernel.cs",
-        "sha256": "9bbf686ca4fc4ffb4619bc65740ebeee71b4f6a69bdbaeee86775456557a91c8"
+        "sha256": "38bf099ad46eaf28065aee69bfca5a727f776f17533d76abcdc31ee838a6e168"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.ActionCancellers.cs",
-        "sha256": "a6f2a65aaf5836fb8bd68a8b214e705345ca494083f09c824b63454122dda796"
+        "sha256": "52911bf7cfd26ed2eb8f060166cfb97b502f43fe25155e7abe440aa7693441d7"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.AdditionalPrimaryStatus.cs",
@@ -12536,6 +12544,10 @@
         "sha256": "f6c55ef27971483581a0cf5c0d4dc88839a5e6fbe82ffe6e4c5f1d48cb3dcd8c"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.CopyState.cs",
+        "sha256": "1490faef4006415fffb36b73672783013065a8390472861b2535f6936393e470"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Delayed.cs",
         "sha256": "ca004c190f50024da80065fb5622d8131edbf8a5d59a33453229a4d789812d23"
       },
@@ -12548,16 +12560,20 @@
         "sha256": "135ac55fb2dddbf96f1da5a7594aff08f82d368caf8b0f3618a4607f03f1db17"
       },
       {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.FireThawTriAttack.cs",
+        "sha256": "e3e25b53caddae726337d68b5610f3fffae1a9bcc93218d1ee1e663766078af1"
+      },
+      {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FixedDamage.cs",
-        "sha256": "aec6c50e44959182ea980ee6d019a02b2e58f519dbb38501a1a73fd2915a0f82"
+        "sha256": "f12aff2ebc503e8809a7e03a46e75faecc999a29cc4840c9e912ce42d46dd274"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.FreezeHit.cs",
-        "sha256": "a2085fbd01a32cbba8a439bb01efbed294dce443005da3c6ebe8e767c2a26927"
+        "sha256": "71c55a0c13f838282d192515d3f5ddbb11e49f88672db7077f077317a56fd68d"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Generic.cs",
-        "sha256": "48f6eebb8426dc5bb1025409057a9bd123b63b1b7d6c1ff714cb619b74db290e"
+        "sha256": "bdd90fdcf6cc4f357b76dd5755267ad9718549e7c587383bbe55c8b8983d1a4e"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.HeldDamage.cs",
@@ -12566,6 +12582,10 @@
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.HitItems.cs",
         "sha256": "2175ec4fad9d0bd49e609e3e0945d81cae2c505bf63d4c90ef3eed52b3ef6eab"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.OneHitKo.cs",
+        "sha256": "33d8684c8a1211e50074d2c7f0108ed75333ead30215235977cc427eb5ff5bc4"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.PrimaryStatus.cs",
@@ -12590,6 +12610,10 @@
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.Retaliation.cs",
         "sha256": "2e2d14faa5c380c993210653c8640efdc166817eef7fcc150ae25f28e88550a0"
+      },
+      {
+        "path": "src/Game.Domain/Battle/SourceBattleRecipes.SleepAttacks.cs",
+        "sha256": "1fd86c819c646891b45427148e0eb6899a4668f688a55b15954a7b5b49d50ada"
       },
       {
         "path": "src/Game.Domain/Battle/SourceBattleRecipes.SleepResidual.cs",
@@ -12783,27 +12807,22 @@
       "originalRomPixelParityVerified": false,
       "physicalAudioVerified": false
     },
-    "previousFourSlotRecipeAdmission": 246,
-    "admissionIncrease": 18,
+    "previousFourSlotRecipeAdmission": 264,
+    "admissionIncrease": 13,
     "newFamilyMoveIds": [
-      "pret:MOVE_RETURN",
-      "pret:MOVE_FRUSTRATION",
-      "pret:MOVE_FLAIL",
-      "pret:MOVE_REVERSAL",
-      "pret:MOVE_ERUPTION",
-      "pret:MOVE_WATER_SPOUT",
-      "pret:MOVE_LOW_KICK",
-      "pret:MOVE_ICE_PUNCH",
-      "pret:MOVE_ICE_BEAM",
-      "pret:MOVE_BLIZZARD",
-      "pret:MOVE_POWDER_SNOW",
-      "pret:MOVE_HYPER_BEAM",
-      "pret:MOVE_FRENZY_PLANT",
-      "pret:MOVE_BLAST_BURN",
-      "pret:MOVE_HYDRO_CANNON",
-      "pret:MOVE_THRASH",
-      "pret:MOVE_OUTRAGE",
-      "pret:MOVE_PETAL_DANCE"
+      "pret:MOVE_TRANSFORM",
+      "pret:MOVE_MIMIC",
+      "pret:MOVE_SKETCH",
+      "pret:MOVE_GUILLOTINE",
+      "pret:MOVE_HORN_DRILL",
+      "pret:MOVE_FISSURE",
+      "pret:MOVE_SHEER_COLD",
+      "pret:MOVE_TRI_ATTACK",
+      "pret:MOVE_FLAME_WHEEL",
+      "pret:MOVE_SACRED_FIRE",
+      "pret:MOVE_REST",
+      "pret:MOVE_SNORE",
+      "pret:MOVE_DREAM_EATER"
     ],
     "retaliationEvidence": {
       "result": "evidence/shared-target-families-20261011/retaliation-result.json",
@@ -12926,6 +12945,31 @@
     "sharedSubstituteSleepTargetEvidence": "evidence/shared-substitute-sleep-20261011/README.md",
     "statChoreographyEvidence": "tests/SourceHitAnimation.Tests/evidence/stat-moves-20261011/README.md",
     "sharedDynamicFreezeRampageEvidence": "evidence/shared-dynamic-freeze-rampage-20261011/README.md",
-    "affineStatChoreographyEvidence": "tests/SourceHitAnimation.Tests/evidence/affine-stat-20261011/README.md"
+    "affineStatChoreographyEvidence": "tests/SourceHitAnimation.Tests/evidence/affine-stat-20261011/README.md",
+    "sharedCopyOhkoHitSleepEvidence": {
+      "root": "evidence/shared-copy-ohko-hit-sleep-20261011",
+      "ohkoSinglesByteIdentity": "evidence/shared-copy-ohko-hit-sleep-20261011/ohko-exact-singles.json",
+      "copy": [
+        14,
+        1889
+      ],
+      "heldItems": [
+        15,
+        1470
+      ],
+      "fireThawTriAttack": [
+        11,
+        25006
+      ],
+      "sleepAttacks": [
+        10,
+        1815
+      ],
+      "ohkoFour": [
+        4,
+        2282
+      ],
+      "scope": "Actual main combined Domain/Content builds and bounded actual actions/turns. Source witnesses reused by recorded hash, not regenerated. No new campaign/UI/native/physical audio acceptance."
+    }
   }
 }

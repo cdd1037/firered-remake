@@ -62,12 +62,12 @@ public static partial class SourceFourActionTurns
         {
             var body = cell.Body!;
             if (frame.EntryAbilities is { } entry && entry.AppliedEntries[cell.Slot.Value] != cell.Occupant ||
-                frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(body.Pokemon.AbilityId))
+                frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(WildBattleTransformationRules.PersistentPokemon(body).AbilityId))
                 return "source_four_action_initial_entry_required";
-            if (SourcePokemonValidator.ValidateForBattle(catalog, body.Pokemon) is not null) return "source_four_action_pokemon";
+            if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
             if (body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter != 0 ||
                 (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem) || !SourceSubstituteRules.Supported(body) ||
-                body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) || body.Transform is not null || body.CopyMoves is not null ||
+                body.SourceChoiceMove is not null || !SourceFourEntryAbilities.OverlaySupported(body) ||
                 body.DestinyBond || body.Imprison ||
                 body.ChargeTurnsRemaining != 0 || body.ConfusionTurnsRemaining is < 0 or > 5 ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||

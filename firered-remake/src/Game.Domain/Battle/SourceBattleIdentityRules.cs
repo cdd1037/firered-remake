@@ -74,6 +74,7 @@ public static class SourceBattleIdentityRules
                 if (cell.Body.Pokemon is null || cell.Body.Pokemon.Moves.IsDefault ||
                     cell.Body.Transform is { } transform && (transform.OriginalPokemon is null || transform.OriginalPokemon.Moves.IsDefault))
                     return "source_frame_pokemon_shape";
+                if (SourceCopyStateRules.ValidateShape(cell.Body) is { } copyShape) return copyShape;
                 if (SourceTraceForecastRules.Validate(cell.Body, frame.SourceMechanicsRulesVersion) is { } formError) return formError;
                 var key = cell.Member!.Value;
                 if (key.Side != cell.Slot.Side || key.Index >= frame.Party(key.Side).Members.Length || cell.EntrySerial == 0)

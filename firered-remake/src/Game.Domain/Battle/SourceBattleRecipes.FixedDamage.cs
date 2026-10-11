@@ -8,7 +8,7 @@ internal abstract partial class SourceRecipeContext
 {
     internal static bool HasFixedDamageRecipe(string effect) => effect is
         "EFFECT_FALSE_SWIPE" or "EFFECT_DRAGON_RAGE" or "EFFECT_SONICBOOM" or "EFFECT_LEVEL_DAMAGE" or
-        "EFFECT_PSYWAVE" or "EFFECT_SUPER_FANG" or "EFFECT_ENDEAVOR";
+        "EFFECT_PSYWAVE" or "EFFECT_SUPER_FANG" or "EFFECT_ENDEAVOR" or "EFFECT_OHKO";
 
     // One command owner for canonical singles and real four-position execution. Historical
     // profiles keep their pre-existing adapters; fixed damage does not imply a normal hit script.
@@ -17,6 +17,7 @@ internal abstract partial class SourceRecipeContext
     {
         if (!HasFixedDamageRecipe(move.Effect) || !MetronomeSourceMoveDefinition.Matches(move))
             throw new SourceRecipeUnsupported("source_fixed_damage_definition");
+        if (move.Effect == "EFFECT_OHKO") { ExecuteOneHitKo(catalog, actor, target, slot, move, purpose); return; }
         bool endeavor = move.Effect == "EFFECT_ENDEAVOR", fang = move.Effect == "EFFECT_SUPER_FANG";
         bool swipe = move.Effect == "EFFECT_FALSE_SWIPE";
         int damage = 0;

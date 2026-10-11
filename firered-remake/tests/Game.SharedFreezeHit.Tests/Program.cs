@@ -236,12 +236,14 @@ Test("Ice Punch contact draws follow freeze chance and target status",()=>{
  }
  Check(frozen>5&&paralyzed>10,"nonempty freeze/contact coverage");
 });
-Test("failed admission remains atomic for unported thaw and Tri Attack",()=>{
+Test("shared thaw and Tri Attack admission retains atomic stale rejection",()=>{
  foreach(var fixture in new[]{("DODRIO","TRI_ATTACK"),("GROWLITHE","FLAME_WHEEL"),("HO_OH","SACRED_FIRE")}){
   var f=Entry(Frame([Mon(),Mon(),Mon(fixture.Item1,fixture.Item2,100),Mon()]));var r=SourceBattleKernel.ResolveAction(catalog,f,new(f.Slots[2].Occupant!.Value,f.Revision,0,new(3)));
-  Check(!r.Succeeded&&ReferenceEquals(r.State,f)&&r.Trace.IsEmpty&&r.Events.IsEmpty,"bounded unmigrated effect "+fixture.Item2);
+  Check(r.Succeeded,"shared effect admitted "+fixture.Item2);
+  var stale=SourceBattleKernel.ResolveAction(catalog,f,new(f.Slots[2].Occupant!.Value,f.Revision-1,0,new(3)));
+  Check(!stale.Succeeded&&ReferenceEquals(stale.State,f)&&stale.Trace.IsEmpty&&stale.Events.IsEmpty,"stale shared effect remains atomic "+fixture.Item2);
  }
  var fire=Entry(Frame([Mon(),Mon(),Mon("CHARMANDER","EMBER"),Mon()]));fire=Body(fire,3,fire.Slots[3].Body! with{Status=WildBattleStatus.Freeze});var denied=SourceBattleKernel.ResolveAction(catalog,fire,new(fire.Slots[2].Occupant!.Value,fire.Revision,0,new(3)));
- Check(denied.Fault=="source_kernel_fire_thaw_move_end_not_migrated"&&ReferenceEquals(fire,denied.State)&&denied.Trace.IsEmpty&&denied.Events.IsEmpty,"global fire-thaw source gate retained");
+ Check(denied.Succeeded&&denied.Events.OfType<SourceStatusChangedEvent>().Any(x=>x.Side.Value==3&&x.Reason=="fire-hit-thaw"),"shared Fire thaw replaces the former global gate");
 });
 var report=new{passed=failures==0&&groups>0,groups,checks,failures,turns,singlesBaseline=baseline.Count,sourceVectors=vectors.Count,runtime=Environment.Version.ToString()};File.WriteAllText(output,J(report));Console.WriteLine(J(report));return failures==0&&groups>0?0:1;

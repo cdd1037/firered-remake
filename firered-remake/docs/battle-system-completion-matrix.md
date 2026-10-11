@@ -2,7 +2,7 @@
 
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
-Current integrated checkpoint: **integrated working tree based on `9329fc900b709fb92d6c0ac61d72c622cbc35d70`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **238 / 354**, with **116 gated**; dedicated script coverage is **10 / 354**, with **344 remaining**. Neither is a complete battle-system percentage.
+Current integrated checkpoint: **integrated working tree based on `d449a1d71e313ab5e6bac2a7ef7f8ae2fc41b3e3`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **277 / 354**, with **77 gated**; dedicated script coverage is **15 / 354**, with **339 remaining**. Neither is a complete battle-system percentage.
 
 The initial inventory is bound to that product base. The fifth-badge singles stage subsequently closed at `5a5b6f7`, with actual Godot Koga verification and a separate native save/Continue checkpoint. This battle-completion stage is now active. Genuine preset doubles now has a bounded authentic Route8 Twins public victory/save branch; full held-item/recipe and presentation completion remains open. The JSON retains initial inspected-file hashes and records later implementation updates separately.
 
@@ -689,3 +689,9 @@ headless7,671 and representative native1,223 passed. Main imports the identical
 application. Worker native proof retains its original Domain/DLL identity.
 Defense Curl's orb family remains open; physical listening and original-runtime
 pixel parity are not claimed. See `docs/source-affine-stat-choreography.md`.
+
+## Shared copy, OHKO, hit items and sleep attacks — 2026-10-11
+
+Transform/Mimic/Sketch, four one-hit-KO moves, Tri Attack/Flame Wheel/Sacred Fire and Rest/Snore/Dream Eater now use shared recipes in canonical singles and actual four-slot frames. King’s Rock/Shell Bell use the unchanged shared item formulas with actual battler ownership, per-target move-end timing and the already-approved King parameter correction. These thirteen admissions raise the predicate inventory from 264 to 277; 77 recipes remain gated.
+
+The [combined evidence](../evidence/shared-copy-ohko-hit-sleep-20261011/README.md) records the affected builds and cases. Immutable singles baselines, original source-fragment witnesses and narrow canonical corrections are identified separately. No new Application, campaign, rendered animation or physical-audio claim is made by this Domain increment. The [source animation grouping](battle-animation-batch-plan.md#current-script-grouping-2026-10-11) confirms 352 strict graphs, not a few dozen identical scripts; shared callback families remain the batching strategy.

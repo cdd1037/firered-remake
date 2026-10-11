@@ -56,45 +56,8 @@ public static partial class WildBattleRules
 
     internal sealed partial class Execution
     {
-        private void CalledCopyMove(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move)
-        {
-            var targetSide = activeInvocation!.Target;
-            bool permanent = move.Effect == "EFFECT_SKETCH";
-            SpendInvocationPp(side, targetSide, move);
-            void FailCopy(string reason) => Add(n => new WildBattleMoveFailedEvent(n, State.Turn, side, targetSide, move.Id, reason));
-            // The scripts test Substitute before either command mutates gChosenMove.
-            if (SourceCalledHasSubstitute(targetSide)) { FailCopy("substitute"); return; }
-            if (!permanent && !ScalarNoAccuracy(side, targetSide, move))
-            { FailCopy(CalledSemiInvulnerable(Get(targetSide)) != WildBattleSemiInvulnerable.None ? "semi-invulnerable" : "protected"); return; }
-
-            activeInvocation = activeInvocation! with { ChosenMove = new("pret:MOVE_UNAVAILABLE") };
-            var actor = Get(side); var target = Get(targetSide);
-            var copiedId = permanent ? target.SourceMoveHistory?.LastPrintedMove : target.LastUsedMove;
-            bool unavailable = copiedId is null || copiedId.Value.Value is "pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE";
-            if (actor.Transform is not null) { FailCopy("copy-transformed"); return; }
-            if (unavailable || copiedId!.Value.Value is "pret:MOVE_STRUGGLE" or "pret:MOVE_SKETCH" ||
-                !permanent && copiedId.Value.Value is "pret:MOVE_METRONOME" or "pret:MOVE_MIMIC")
-            { FailCopy("copy-forbidden"); return; }
-            if (actor.Pokemon.Moves.Any(slot => slot.Move == copiedId.Value)) { FailCopy("copy-already-known"); return; }
-            if (!catalog.Moves.TryGetValue(copiedId.Value, out var definition) || !MetronomeSourceMoveDefinition.Matches(definition))
-                throw new UnsupportedAction("copy_move_definition");
-            int position = activeInvocation.PpSlot;
-            if (position < 0 || position >= actor.Pokemon.Moves.Length) throw new UnsupportedAction("copy_move_slot");
-            var original = actor.Pokemon.Moves[position];
-            int pp = definition.Pp;
-            var replacement = new PokemonMoveSlot(definition.Id, permanent ? pp : Math.Min(5, pp),
-                pp + pp * 20 * original.PpUps / 100, original.PpUps);
-            var slots = actor.CopyMoves?.Slots ?? [];
-            if (!permanent && !slots.Any(copy => copy.Slot == position)) slots = slots.Add(new(position, original));
-            actor = actor with { Pokemon = actor.Pokemon with { Moves = actor.Pokemon.Moves.SetItem(position, replacement) } };
-            if (permanent)
-            {
-                // Cmd_copymovepermanently sends REQUEST_MOVES_PP_BATTLE for ALL live slots and ppBonuses.
-                // Existing mimickedMoves flags survive; later battle PP still must not update those party slots.
-                slots = slots.Select(copy => copy with { PersistentSlot = actor.Pokemon.Moves[copy.Slot] }).ToImmutableArray();
-            }
-            Set(side, actor with { CopyMoves = slots.IsEmpty ? null : new(slots) });
-            Add(n => new WildBattleMoveCopiedEvent(n, State.Turn, side, targetSide, move.Id, definition.Id, position, permanent, replacement));
-        }
+        private void CalledCopyMove(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move) =>
+            new SinglesRecipeBridge(this).ExecuteCopyState(catalog, SinglesBattleAdapter.Slot(side),
+                SinglesBattleAdapter.Slot(activeInvocation!.Target), activeInvocation.PpSlot, move);
     }
 }
