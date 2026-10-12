@@ -7,10 +7,10 @@ public sealed partial class CampaignSession
 {
     // The source owns ONE encounter-rate RNG, previous behavior, cooldown and rate buff.
     // Water uses a distinct authenticated five-slot table, with a transient adapter only.
-    private static WaterEncounterState WaterProcess(EarlyLandEncounterState shared)
+    private WaterEncounterState WaterProcess(EarlyLandEncounterState shared)
     {
         if(shared.Pending is not null)throw new InvalidDataException("surf_land_candidate_pending");
-        return new(shared.RateRng,shared.PreviousMetatileBehavior,shared.EncounterRateBuff,shared.StepsSinceLastEncounter);
+        return new(shared.RateRng,shared.PreviousMetatileBehavior,shared.EncounterRateBuff,shared.StepsSinceLastEncounter){RulesVersion=_content.VictoryRoadEnabled?WaterEncounterRules.VictoryRoadRulesVersion:WaterEncounterRules.RulesVersion};
     }
     private static EarlyLandEncounterState SharedWaterProcess(EarlyLandEncounterState shared,WaterEncounterState water)=>
         shared with{RateRng=water.RateRng,PreviousMetatileBehavior=water.PreviousMetatileBehavior,EncounterRateBuff=water.EncounterRateBuff,StepsSinceLastEncounter=water.StepsSinceLastEncounter,Pending=null};
@@ -45,7 +45,7 @@ public sealed partial class CampaignSession
             return BeginSafariBattle(next,generated.Pokemon,held.GlobalRng,trace.ToImmutable(),held.HeldItem,result.State);
         }
         next=next with{Exploration=next.Exploration! with{EarlyEncounter=SharedWaterProcess(shared,WaterEncounterRules.CompleteCandidate(result.State,table))}};
-        return BeginWildBattle(next,surfPokemon:generated);
+        return BeginWildBattle(next,surfPokemon:generated,victoryRoadOrigin:_content.VictoryRoadEnabled&&VictoryRoadEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.VictoryRoadEncounterKind.Surf,result.Candidate.Slot):null);
     }
     private bool SurfOriginSupported(int species,int level,string? region=null,bool safariOnly=false)=>_content.SurfEnabled&&
         _content.WaterEncounters!.Values.Any(t=>(!safariOnly||t.SourceMapSymbol.StartsWith("MAP_SAFARI_ZONE_",StringComparison.Ordinal))&&

@@ -1,0 +1,207 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-victory-road-rules-v1",
+  "files": [
+    {
+      "path": "content/generated/victory-road-rules/items.json",
+      "byteLength": 34904,
+      "sha256": "d79fb6009d6e4b8641deed63064fe9363bb8d070d56171e3e57f3311edf49ed7"
+    },
+    {
+      "path": "content/generated/victory-road-rules/machines.json",
+      "byteLength": 212459,
+      "sha256": "69e3c8edc439c955a7d8fd21a66a799f9c38476990c11736589c855a8d33dfee"
+    },
+    {
+      "path": "content/generated/victory-road-rules/rules.json",
+      "byteLength": 5656,
+      "sha256": "b3980f71246d2793cd48d0340841986a351aa9f70c2f6135641a2a80fc401f2b"
+    },
+    {
+      "path": "content/generated/victory-road-rules/source-input-hashes.json",
+      "byteLength": 8884,
+      "sha256": "bbec1ba691c4bcf352323fb507cabe258b0fcb682d7ef1a6193b8b2604bd8f3d"
+    },
+    {
+      "path": "content/generated/victory-road-rules/trainers.json",
+      "byteLength": 97128,
+      "sha256": "4cfac795d1af3de34cda10f50a4c012e6d1df4e3ecb48a3a1b38fcf41712f752"
+    },
+    {
+      "path": "content/generated/victory-road-rules/wild.json",
+      "byteLength": 70378,
+      "sha256": "40ad72030b49658741d3d4916ae0863780a11fe4bdf457a21d151159ca176db4"
+    },
+    {
+      "path": "content/raw/victory-road-rules/charmap.txt",
+      "byteLength": 21853,
+      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+    },
+    {
+      "path": "content/raw/victory-road-rules/data/maps/Route23/map.json",
+      "byteLength": 15426,
+      "sha256": "cdcca456f3bbf7c5b591815b21611fddde631e55829ae588883f55627ed9cfe4"
+    },
+    {
+      "path": "content/raw/victory-road-rules/data/maps/VictoryRoad_1F/map.json",
+      "byteLength": 4460,
+      "sha256": "3885d2cac79afe4ce663b776dca2b4b758a680a49c8c23dbb69bfcf9d9951d2e"
+    },
+    {
+      "path": "content/raw/victory-road-rules/data/maps/VictoryRoad_1F/scripts.inc",
+      "byteLength": 1470,
+      "sha256": "cdcc21ffc6954ac2b5da5c7da1a47341b37971bdf61adf7a31653c6c32be1046"
+    },
+    {
+      "path": "content/raw/victory-road-rules/data/maps/VictoryRoad_2F/scripts.inc",
+      "byteLength": 2805,
+      "sha256": "ee8a47d14edb1e1ff084032f102e0193e4b517eb780d1283bef47e7090ae598a"
+    },
+    {
+      "path": "content/raw/victory-road-rules/data/maps/VictoryRoad_3F/scripts.inc",
+      "byteLength": 2319,
+      "sha256": "c8dae23f151a2eced7bf71135cbded590823c01b912da5ec20d6ecfa610664e4"
+    },
+    {
+      "path": "content/raw/victory-road-rules/data/scripts/item_ball_scripts.inc",
+      "byteLength": 12171,
+      "sha256": "0a660b0eddcecc31cec1a815f343c7e5aea54ac2fb7a54597c2ae38fbbd5d65c"
+    },
+    {
+      "path": "content/raw/victory-road-rules/data/scripts/move_tutors.inc",
+      "byteLength": 14295,
+      "sha256": "f4c92284b5535577ba815441c5d6b76e36c5c1dd1a3b1a632a1a8cb6e665821f"
+    },
+    {
+      "path": "content/raw/victory-road-rules/include/constants/battle_ai.h",
+      "byteLength": 1436,
+      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5"
+    },
+    {
+      "path": "content/raw/victory-road-rules/include/constants/battle_setup.h",
+      "byteLength": 701,
+      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+    },
+    {
+      "path": "content/raw/victory-road-rules/include/constants/flags.h",
+      "byteLength": 95397,
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "path": "content/raw/victory-road-rules/include/constants/items.h",
+      "byteLength": 12436,
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "content/raw/victory-road-rules/include/constants/moves.h",
+      "byteLength": 10249,
+      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+    },
+    {
+      "path": "content/raw/victory-road-rules/include/constants/opponents.h",
+      "byteLength": 39946,
+      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+    },
+    {
+      "path": "content/raw/victory-road-rules/include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "path": "content/raw/victory-road-rules/include/constants/trainers.h",
+      "byteLength": 20887,
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/battle_main.c",
+      "byteLength": 171904,
+      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/battle_setup.c",
+      "byteLength": 33351,
+      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/battle_moves.h",
+      "byteLength": 121457,
+      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/items.json",
+      "byteLength": 194280,
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/party_menu.h",
+      "byteLength": 36157,
+      "sha256": "cfd30a7b5fdc0026da999a62d3ff72159cad88d9a921730c179d804ee026a9f7"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/pokemon/item_effects.h",
+      "byteLength": 12207,
+      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/pokemon/level_up_learnset_pointers.h",
+      "byteLength": 20597,
+      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/pokemon/level_up_learnsets.h",
+      "byteLength": 182027,
+      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/pokemon/species_info.h",
+      "byteLength": 342600,
+      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/pokemon/tmhm_learnsets.h",
+      "byteLength": 559340,
+      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/text/species_names.h",
+      "byteLength": 15851,
+      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/trainer_parties.h",
+      "byteLength": 242256,
+      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/trainers.h",
+      "byteLength": 302118,
+      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/data/wild_encounters.json",
+      "byteLength": 706967,
+      "sha256": "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/move_descriptions.c",
+      "byteLength": 62085,
+      "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/pokemon.c",
+      "byteLength": 221865,
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/renewable_hidden_items.c",
+      "byteLength": 17690,
+      "sha256": "62ec167c060a50d58d250c22516a1b34abeb134adec20cd5adc73782eef7118c"
+    },
+    {
+      "path": "content/raw/victory-road-rules/src/wild_encounter.c",
+      "byteLength": 24781,
+      "sha256": "06021f7ef390bbb49a7801ca44def3a67380c53e5ab5fd211e472fc53b10ca8f"
+    }
+  ]
+}

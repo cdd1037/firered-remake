@@ -41,21 +41,22 @@ public sealed partial class CampaignSession
         throw new InvalidDataException("preset_double_content_missing");
     private SourceTwinsTrainerDefinition TwinsDefinition => _content.Route8Twins ??
         throw new InvalidDataException("preset_double_definition_missing");
+    private bool IsVictoryRoadDoubleScript(string script)=>_content.VictoryRoadEnabled&&_content.VictoryRoadTrainerParties?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
     private bool IsCinnabarDoubleScript(string script)=>_content.CinnabarEnabled&&
         _content.CinnabarTrainerParties?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
     private bool IsFirstSeviiDoubleScript(string script)=>_content.FirstSeviiEnabled&&
         _content.FirstSeviiTrainerParties!.BattlesBySource.Values.Any(b=>b.ScriptEntry==script&&b.Mode==4);
     private Game.Domain.Trainers.CeruleanTrainerBattleDefinition FirstSeviiDoubleScript(string script)=>
         _content.FirstSeviiTrainerParties!.BattlesBySource.Values.Single(b=>b.ScriptEntry==script&&b.Mode==4);
-    private bool IsTwinsScript(string script) => script is "Route8_EventScript_Eli" or "Route8_EventScript_Anne" || IsCinnabarDoubleScript(script) || IsFirstSeviiDoubleScript(script);
-    private TrainerId DoubleTrainerId(string script)=>IsFirstSeviiDoubleScript(script)?FirstSeviiDoubleTrainerEncounter.TrainerId:IsCinnabarDoubleScript(script)?CinnabarDoubleTrainerEncounter.TrainerId:SourceTwinsTrainerEncounter.TrainerId;
-    private TrainerDefinition DoubleTrainer(TrainerId trainer)=>_content.FirstSeviiEnabled&&trainer==FirstSeviiDoubleTrainerEncounter.TrainerId?_content.FirstSeviiTrainerParties!.Trainers[trainer]:trainer==SourceTwinsTrainerEncounter.TrainerId?TwinsDefinition.Trainer:
+    private bool IsTwinsScript(string script) => script is "Route8_EventScript_Eli" or "Route8_EventScript_Anne" || IsCinnabarDoubleScript(script) || IsFirstSeviiDoubleScript(script) || IsVictoryRoadDoubleScript(script);
+    private TrainerId DoubleTrainerId(string script)=>IsVictoryRoadDoubleScript(script)?VictoryRoadDoubleTrainerEncounter.TrainerId:IsFirstSeviiDoubleScript(script)?FirstSeviiDoubleTrainerEncounter.TrainerId:IsCinnabarDoubleScript(script)?CinnabarDoubleTrainerEncounter.TrainerId:SourceTwinsTrainerEncounter.TrainerId;
+    private TrainerDefinition DoubleTrainer(TrainerId trainer)=>_content.VictoryRoadEnabled&&trainer==VictoryRoadDoubleTrainerEncounter.TrainerId?_content.VictoryRoadTrainerParties!.Trainers[trainer]:_content.FirstSeviiEnabled&&trainer==FirstSeviiDoubleTrainerEncounter.TrainerId?_content.FirstSeviiTrainerParties!.Trainers[trainer]:trainer==SourceTwinsTrainerEncounter.TrainerId?TwinsDefinition.Trainer:
         _content.CinnabarEnabled&&trainer==CinnabarDoubleTrainerEncounter.TrainerId?_content.CinnabarTrainerParties!.Trainers[trainer]:
         throw new InvalidDataException("preset_double_trainer_unsupported");
     private SourceTwinsBattleDefinition DoubleInteraction(TrainerId trainer,string script)
     {
         if(trainer==SourceTwinsTrainerEncounter.TrainerId)return TwinsDefinition.Interactions.Single(i=>i.ScriptEntry==script);
-        var b=trainer==FirstSeviiDoubleTrainerEncounter.TrainerId?FirstSeviiDoubleScript(script):_content.CinnabarTrainerParties!.BattlesByScript.GetValueOrDefault(script)??throw new InvalidDataException("cinnabar_double_script_missing");
+        var b=trainer==VictoryRoadDoubleTrainerEncounter.TrainerId?_content.VictoryRoadTrainerParties!.BattlesByScript.GetValueOrDefault(script)??throw new InvalidDataException("victory_road_double_script_missing"):trainer==FirstSeviiDoubleTrainerEncounter.TrainerId?FirstSeviiDoubleScript(script):_content.CinnabarTrainerParties!.BattlesByScript.GetValueOrDefault(script)??throw new InvalidDataException("cinnabar_double_script_missing");
         if(b.Trainer!=trainer||b.Mode!=4||b.NotEnoughMonsText is null)throw new InvalidDataException("cinnabar_double_script_mismatch");
         return new(b.ScriptEntry,b.IntroText,b.DefeatText,b.PostBattleText,b.NotEnoughMonsText,b.Source);
     }
@@ -63,12 +64,16 @@ public sealed partial class CampaignSession
         checked(2*4*DoubleTrainer(trainer).BaseMoney*DoubleTrainer(trainer).Party[^1].Level);
     private SourceTwinsEncounterResult PrepareDoubleBattle(CampaignState state,string? battleScript=null)
     {
-        if(!_content.PresetDoublesEnabled||!(state.World.Player.MapId.Value=="map.route-8"||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"&&battleScript is not null&&IsFirstSeviiDoubleScript(battleScript)||_content.CinnabarEnabled&&state.World.Player.MapId.Value=="map.route-21-north"&&battleScript is not null&&IsCinnabarDoubleScript(battleScript))||
+        if(!_content.PresetDoublesEnabled||!(state.World.Player.MapId.Value=="map.route-8"||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f"&&battleScript is not null&&IsVictoryRoadDoubleScript(battleScript)||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"&&battleScript is not null&&IsFirstSeviiDoubleScript(battleScript)||_content.CinnabarEnabled&&state.World.Player.MapId.Value=="map.route-21-north"&&battleScript is not null&&IsCinnabarDoubleScript(battleScript))||
             state.DoubleBattle is not null||state.ForestTrainerBattle is not null||state.WildBattle is not null||state.Battle is not null||
             state.Party.Any(p=>p.IsEgg||p.Pokemon.OriginalTrainerId!=state.TrainerId||p.OriginalTrainerName!=state.PlayerName||p.OriginalTrainerGender!=state.PlayerGender))
             throw new InvalidDataException("preset_double_entry_context");
         var party=state.Party.Select(p=>new WildBattleCalledPartyMember(p.Pokemon,p.HeldItem,p.Status,p.IsEgg)).ToImmutableArray();
-        var entry=battleScript is not null&&IsFirstSeviiDoubleScript(battleScript)?
+        var entry=battleScript is not null&&IsVictoryRoadDoubleScript(battleScript)?
+            VictoryRoadDoubleTrainerEncounter.Begin(_content.VictoryRoadTrainerParties!,_content.CinnabarOpponents!,battleScript,party,state.World.Rng,
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
+            battleScript is not null&&IsFirstSeviiDoubleScript(battleScript)?
             FirstSeviiDoubleTrainerEncounter.Begin(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,battleScript,FirstSeviiDoubleScript(battleScript).Source.StartLine,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
@@ -93,7 +98,7 @@ public sealed partial class CampaignSession
     {
         if(!_content.PresetDoublesEnabled||effect.Args.Length!=4||state.Script.Wait?.Kind!=StoryWaitKind.Battle||
             state.LastTalked is not {} actorId||!state.Actors.TryGetValue(actorId,out var actor)||!IsTwinsScript(actor.ScriptId)||
-            !(state.World.Player.MapId.Value=="map.route-8"||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"&&IsFirstSeviiDoubleScript(actor.ScriptId)||_content.CinnabarEnabled&&state.World.Player.MapId.Value=="map.route-21-north"&&IsCinnabarDoubleScript(actor.ScriptId)))throw new InvalidDataException("preset_double_source_context");
+            !(state.World.Player.MapId.Value=="map.route-8"||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f"&&IsVictoryRoadDoubleScript(actor.ScriptId)||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"&&IsFirstSeviiDoubleScript(actor.ScriptId)||_content.CinnabarEnabled&&state.World.Player.MapId.Value=="map.route-21-north"&&IsCinnabarDoubleScript(actor.ScriptId)))throw new InvalidDataException("preset_double_source_context");
         var trainerId=DoubleTrainerId(actor.ScriptId);
         var d=DoubleInteraction(trainerId,actor.ScriptId);
         bool rematch=effect.Opcode=="trainerbattle_rematch_double";
@@ -237,7 +242,9 @@ public sealed partial class CampaignSession
             if(unselected.Length>1)return new(CommandStatus.Accepted,state with{DoubleBattle=b with{PlayerSelections=selections}});
         }
         else if(command.Kind!="ack")return No("preset_double_forced_turn_ready");
-        var ai=b.Trainer==FirstSeviiDoubleTrainerEncounter.TrainerId
+        var ai=b.Trainer==VictoryRoadDoubleTrainerEncounter.TrainerId
+            ?VictoryRoadDoubleTrainerEncounter.ChooseEnemyActions(_content.VictoryRoadTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
+            :b.Trainer==FirstSeviiDoubleTrainerEncounter.TrainerId
             ?FirstSeviiDoubleTrainerEncounter.ChooseEnemyActions(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
             :b.Trainer==CinnabarDoubleTrainerEncounter.TrainerId
             ?CinnabarDoubleTrainerEncounter.ChooseEnemyActions(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
@@ -384,7 +391,7 @@ public sealed partial class CampaignSession
         var pages=ImmutableArray.CreateBuilder<string>();
         if(won)
         {
-            pages.Add($"{state.PlayerName} defeated\n{(b.Trainer==CinnabarDoubleTrainerEncounter.TrainerId?"SIS AND BRO":"TWINS")} {DoubleTrainer(b.Trainer).SourceTrainerName}!");
+            pages.Add($"{state.PlayerName} defeated\n{(b.Trainer==VictoryRoadDoubleTrainerEncounter.TrainerId?"COOL COUPLE":b.Trainer==CinnabarDoubleTrainerEncounter.TrainerId?"SIS AND BRO":"TWINS")} {DoubleTrainer(b.Trainer).SourceTrainerName}!");
             var def=DoubleInteraction(b.Trainer,state.Actors[b.ActorId].ScriptId);
             pages.AddRange(_content.TextPages(def.DefeatText));pages.Add($"{state.PlayerName} got ¥{award}\nfor winning!");
         }
@@ -428,7 +435,7 @@ public sealed partial class CampaignSession
     }
 
     private IEnumerable<TrainerId> SupportedDoubleTrainerIds=>!_content.PresetDoublesEnabled?[]:
-        _content.FirstSeviiEnabled?[SourceTwinsTrainerEncounter.TrainerId,CinnabarDoubleTrainerEncounter.TrainerId,FirstSeviiDoubleTrainerEncounter.TrainerId]:_content.CinnabarEnabled?[SourceTwinsTrainerEncounter.TrainerId,CinnabarDoubleTrainerEncounter.TrainerId]:[SourceTwinsTrainerEncounter.TrainerId];
+        _content.VictoryRoadEnabled?[SourceTwinsTrainerEncounter.TrainerId,CinnabarDoubleTrainerEncounter.TrainerId,FirstSeviiDoubleTrainerEncounter.TrainerId,VictoryRoadDoubleTrainerEncounter.TrainerId]:_content.FirstSeviiEnabled?[SourceTwinsTrainerEncounter.TrainerId,CinnabarDoubleTrainerEncounter.TrainerId,FirstSeviiDoubleTrainerEncounter.TrainerId]:_content.CinnabarEnabled?[SourceTwinsTrainerEncounter.TrainerId,CinnabarDoubleTrainerEncounter.TrainerId]:[SourceTwinsTrainerEncounter.TrainerId];
     private int TwinsWonFlagCount(CampaignState state)=>SupportedDoubleTrainerIds.Count(id=>state.BattledTrainers.Contains(id.Value));
     private bool SeenByTwins(CampaignState state,int species)=>(state.DoubleBattleHistory??[]).Any(h=>
         SupportedDoubleTrainerIds.Contains(new TrainerId(h.TrainerId))&&DoubleTrainer(new(h.TrainerId)).Party.Any(p=>p.SourceSpeciesId==species));

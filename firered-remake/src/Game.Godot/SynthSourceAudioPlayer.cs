@@ -41,7 +41,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false)
     {
         if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
         if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
@@ -232,6 +232,18 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=Game.Content.FirstSeviiPresentationIdentity.SynthCueCount||
                 !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_123","MUS_NET_CENTER","SE_SHIP"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
                 throw new InvalidDataException("First-Sevii source cue scope differs.");
+            cues=[..cues,..extension.Cues];
+        }
+        if(includeVictoryRoad)
+        {
+            if(!includeFirstSevii)throw new InvalidDataException("Victory Road audio requires its predecessor.");
+            byte[] addition=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),VictoryRoadPresentationAssets.Base+"synth-manifest.json"));
+            if(addition.Length!=VictoryRoadPresentationAssets.SynthBytes||Convert.ToHexStringLower(SHA256.HashData(addition))!=VictoryRoadPresentationAssets.SynthSha256)
+                throw new InvalidDataException("Victory Road synth identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(addition,options)??throw new InvalidDataException("Victory Road synth metadata missing.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=1||
+                extension.Cues[0].Id!="SE_ICE_BREAK"||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
+                throw new InvalidDataException("Victory Road source cue scope differs.");
             cues=[..cues,..extension.Cues];
         }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.

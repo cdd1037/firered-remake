@@ -5,7 +5,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool OwnedHeldItemSupported(CampaignState state,PartyPokemon owned)=>owned.HeldItem=="ITEM_NONE" || _content.SafariEnabled&&owned.HeldItem is "ITEM_LUCKY_EGG" or "ITEM_QUICK_CLAW" || _content.FuchsiaRouteEnabled&&owned.HeldItem=="ITEM_METAL_POWDER" ||
+    private bool OwnedHeldItemSupported(CampaignState state,PartyPokemon owned)=>owned.HeldItem=="ITEM_NONE" || _content.VictoryRoadEnabled&&Game.Domain.Encounters.VictoryRoadWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SafariEnabled&&owned.HeldItem is "ITEM_LUCKY_EGG" or "ITEM_QUICK_CLAW" || _content.FuchsiaRouteEnabled&&owned.HeldItem=="ITEM_METAL_POWDER" ||
         _content.PokemonTowerEnabled&&owned.HeldItem is "ITEM_SPELL_TAG" or "ITEM_THICK_CLUB" or "ITEM_CLEANSE_TAG" or "ITEM_SOOTHE_BELL" ||
         _content.RockTunnelEnabled&&owned.HeldItem is "ITEM_HARD_STONE" or "ITEM_EVERSTONE" ||
         _content.VermilionEnabled&&VermilionPickupRules.IsKnownHeldItem(owned.HeldItem)||
@@ -30,7 +30,7 @@ public sealed partial class CampaignSession
         var a=effect.Args;
         if(effect.Opcode=="specialvar"&&a.Length==2&&a[1]=="ShouldTryRematchBattle")
         {
-            if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&(state.World.Player.MapId.Value is "map.route-8" or "map.route-21-north"||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge")&&
+            if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&(state.World.Player.MapId.Value is "map.route-8" or "map.route-21-north"||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f")&&
                 state.LastTalked is {} twinsActor&&state.Actors.TryGetValue(twinsActor,out var twins)&&IsTwinsScript(twins.ScriptId))
             {
                 next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",

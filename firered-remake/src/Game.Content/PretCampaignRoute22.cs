@@ -5,7 +5,7 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    public bool IsRoute22StablePosition(MapId map,int x,int y)=>Route22Enabled && (map.Value!="map.route-23"||Route22Region!.FirstBadgeRoute23SourceStops.Contains((x,y)));
+    public bool IsRoute22StablePosition(MapId map,int x,int y)=>Route22Enabled && (map.Value!="map.route-23"||VictoryRoadEnabled&&Maps[map].GetTile(x,y) is not null||Route22Region!.FirstBadgeRoute23SourceStops.Contains((x,y)));
 
     private static ImmutableDictionary<MapId,EarlyLandEncounterTable> Route22EncounterTables(PretForestRegion forest,PretRoute22Region? region)
     {

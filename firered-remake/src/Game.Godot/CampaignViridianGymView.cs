@@ -14,7 +14,8 @@ public partial class CampaignView
         if (!_catalog.ViridianGymEnabled) return;
         if (!_catalog.FirstSeviiEnabled ||
             _session.RulesVersion != Game.Application.CampaignSession.ViridianGymRulesVersion &&
-            !(_catalog.LeagueRivalEnabled && _session.RulesVersion == Game.Application.CampaignSession.LeagueRivalRulesVersion))
+            !(_catalog.LeagueRivalEnabled && _session.RulesVersion == Game.Application.CampaignSession.LeagueRivalRulesVersion) &&
+            !(_catalog.VictoryRoadEnabled && _session.RulesVersion == Game.Application.CampaignSession.VictoryRoadRulesVersion))
             throw new InvalidDataException("Viridian Gym presentation requires its authenticated successor profile.");
         var art = ViridianGymPresentationAssets.Load(_root);
         var source = _catalog.ViridianGymTrainerParties ?? throw new InvalidDataException("Viridian Gym trainers missing.");

@@ -59,12 +59,14 @@ public static class SourceBattleIdentityRules
         if (frame.SourceCampaignRulesVersion is not null && frame.Parties.Any(p => p.Members.Any(m =>
             !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species) &&
             !(p.Side == BattleSide.Opponent && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
-              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile &&
+              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile &&
                SilphOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile &&
+               frame.SourceCampaignRulesVersion is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile &&
                SaffronGymOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion == CinnabarOpponentPokemonCatalog.Profile &&
-               CinnabarOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species))))))
+               frame.SourceCampaignRulesVersion is CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile &&
+               CinnabarOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
+               frame.SourceCampaignRulesVersion == VictoryRoadOpponentPokemonCatalog.Profile &&
+               VictoryRoadOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species))))))
             return "source_frame_campaign_species";
         if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";
         if (SourceObedienceRules.Validate(frame.Obedience, frame.Parties[0].Members) is { } obedienceError) return obedienceError;
@@ -166,8 +168,16 @@ public static class SourceBattleIdentityRules
             encoding.HasPartyExtension != (encoding.PartyRulesVersion is not null) ||
             new[] { encoding.PartyRulesVersion, encoding.FieldRulesVersion, encoding.DelayedRulesVersion }
                 .Any(v => v is not null && v != WildBattleRules.CalledMoveKernelRulesVersion) ||
-            encoding.SourceWildRulesVersion is not null && encoding.SourceWildRulesVersion != WildBattleRules.SourceWildRulesVersion ||
+            encoding.SourceWildRulesVersion is not null && encoding.SourceWildRulesVersion is not (WildBattleRules.SourceWildRulesVersion or VictoryRoadWildBattleContract.Version) ||
             frame.WildTurn is not null && encoding.SourceWildRulesVersion is null)) return "source_frame_boundary_encoding";
+        if ((frame.SinglesEncoding?.SourceWildRulesVersion == VictoryRoadWildBattleContract.Version) != (frame.SinglesEncoding?.VictoryRoadWildOrigin is not null))
+            return "source_frame_victory_road_required_origin";
+        if (frame.SinglesEncoding?.VictoryRoadWildOrigin is {} victory &&
+            (frame.SinglesEncoding.SourceWildRulesVersion != VictoryRoadWildBattleContract.Version ||
+             frame.SourceCampaignRulesVersion != Game.Domain.Pokemon.CinnabarOwnedPokemonCatalog.Profile ||
+             frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.Party(BattleSide.Opponent).Members.Length != 1 ||
+             !VictoryRoadWildBattleContract.Matches(victory,frame.Party(BattleSide.Opponent).Members[0].Pokemon)))
+            return "source_frame_victory_road_origin";
         if (frame.WildTurn is { } wild && (!ValidOrder(wild.Order, 2) || wild.PlayerMoveSlot is < -1 or > 3 ||
             wild.OpponentMoveSlot is < -1 or > 3 || wild.NextAction is < 0 or > 2 ||
             wild.EndTurn is { } end && (!ValidOrder(end.Order, 2) || end.Turn != frame.Turn || end.NextBattler is < 0 or > 2 ||

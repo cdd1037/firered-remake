@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/maps/Route23/map.json",
+      "byteLength": 15426,
+      "sha256": "cdcca456f3bbf7c5b591815b21611fddde631e55829ae588883f55627ed9cfe4",
+      "gitBlobSha1": "9371d9ffa6f252637d65f9af788f885241e2aa2d"
+    },
+    {
+      "path": "data/maps/VictoryRoad_1F/map.json",
+      "byteLength": 4460,
+      "sha256": "3885d2cac79afe4ce663b776dca2b4b758a680a49c8c23dbb69bfcf9d9951d2e",
+      "gitBlobSha1": "24d4550f90b3920bd782b8b437ff837eb4f77385"
+    },
+    {
+      "path": "data/maps/VictoryRoad_2F/map.json",
+      "byteLength": 7743,
+      "sha256": "4fc48795f3cf7a945e46bb0358dba23c50a6ede35c2875210f75b2195cc450d2",
+      "gitBlobSha1": "753eb93bb6646774965387844a1737c9ce3de735"
+    },
+    {
+      "path": "data/maps/VictoryRoad_3F/map.json",
+      "byteLength": 6536,
+      "sha256": "99d3c7bbcdd381ff3ce756cb0c6012ecde1d407ad436d1255f2348b83d95d03a",
+      "gitBlobSha1": "982939220d41f0d5244d20565847919c89287814"
+    },
+    {
+      "path": "data/layouts/Route23/map.bin",
+      "byteLength": 7680,
+      "sha256": "935a3ce74624a9ea52f2d34edbe314955b97d52d1d134486c5851af61a1fd31a",
+      "gitBlobSha1": "f6f5f5662dd5cafef0cb9fe969d43280bb54bb58"
+    },
+    {
+      "path": "data/tilesets/primary/general/metatile_attributes.bin",
+      "byteLength": 2560,
+      "sha256": "1f62a949da41adca90ad36ca3597754bee953a8f21781f32aedf6158922c89cb",
+      "gitBlobSha1": "45f6f352ef262d9c34b0f3e5ff379d9fc6b5eee6"
+    },
+    {
+      "path": "src/overworld.c",
+      "byteLength": 103643,
+      "sha256": "df352e738b56856765aec65adc6fdea0a4b25fe567bc760d4ce2d34afc6ff7e2",
+      "gitBlobSha1": "339014da46ae8543143edc99ab72bf7496203a0d"
+    },
+    {
+      "path": "src/field_control_avatar.c",
+      "byteLength": 40928,
+      "sha256": "305daa295f88ce682b2b1868700d2f76012c659cb0df2905e6177a51ee4e9b8d",
+      "gitBlobSha1": "b1b6465941133b927505be92d189a7c283e4722f"
+    },
+    {
+      "path": "src/item_use.c",
+      "byteLength": 28138,
+      "sha256": "035ca3bdb70f5708dc8771d2bc6cc5450e775e3144278e7683aacba218cb9c98",
+      "gitBlobSha1": "954f4821d469a342865875f4e36cd1abec91409f"
+    },
+    {
+      "path": "src/field_effect.c",
+      "byteLength": 125868,
+      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a",
+      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be"
+    },
+    {
+      "path": "data/layouts/layouts.json",
+      "byteLength": 158096,
+      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394",
+      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d"
+    },
+    {
+      "path": "data/tilesets/secondary/indigo_plateau/metatile_attributes.bin",
+      "byteLength": 704,
+      "sha256": "6c3e1ec7307a76a3916869fcdab90c8e552c6ac3899395763e2c5e99a80bc7cc",
+      "gitBlobSha1": "f840f6486fd90d69a36eb06fbb95a1a005a8741d"
+    }
+  ]
+}

@@ -59,6 +59,9 @@ public sealed class OwnedBattlePokemonCatalog
         trainerProfile == SaffronGymOpponentPokemonCatalog.Profile &&
         SilphOwnedPokemonCatalog.For(Catalog) is { } saffronOwned &&
         SaffronGymOpponentPokemonCatalog.For(saffronOwned) is { } saffron && saffron.Catalog.Species.ContainsKey(species) ||
+        trainerProfile == VictoryRoadOpponentPokemonCatalog.Profile &&
+        CinnabarOwnedPokemonCatalog.For(Catalog) is { } victoryOwned &&
+        VictoryRoadOpponentPokemonCatalog.For(victoryOwned) is { } victory && victory.Catalog.Species.ContainsKey(species) ||
         trainerProfile == CinnabarOpponentPokemonCatalog.Profile &&
         CinnabarOwnedPokemonCatalog.For(Catalog) is { } cinnabarOwned &&
         CinnabarOpponentPokemonCatalog.For(cinnabarOwned) is { } cinnabar && cinnabar.Catalog.Species.ContainsKey(species) ||
@@ -68,6 +71,8 @@ public sealed class OwnedBattlePokemonCatalog
     internal static OwnedBattlePokemonCatalog? ForMechanics(PokemonCatalog? catalog, string? rulesVersion)
     {
         if (catalog is null || rulesVersion is null) return null;
+        if (rulesVersion == VictoryRoadOpponentPokemonCatalog.Profile &&
+            VictoryRoadOpponentPokemonCatalog.ForMechanics(catalog) is { } victory) return For(victory.Owned.Catalog);
         if (rulesVersion == CinnabarOpponentPokemonCatalog.Profile &&
             CinnabarOpponentPokemonCatalog.ForMechanics(catalog) is { } cinnabar) return For(cinnabar.Owned.Catalog);
         if (rulesVersion == SaffronGymOpponentPokemonCatalog.Profile &&
@@ -78,12 +83,12 @@ public sealed class OwnedBattlePokemonCatalog
     }
 
     internal static bool IsKnownProfile(string profile) =>
-        profile is SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile;
+        profile is SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile;
     internal static bool ProfileAdmits(string profile, SpeciesId species) => IsKnownProfile(profile) &&
         (Battle.CampaignAdmissionPolicy.CurrentFuchsia.Admits(species) || SafariOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile && SurfOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile && SilphOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile && CinnabarOwnedPokemonCatalog.AdditionalSpecies.Contains(species));
+         profile is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile && SurfOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile && SilphOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile && CinnabarOwnedPokemonCatalog.AdditionalSpecies.Contains(species));
 
     // Surf adds only Psyduck to historical wild membership. Golduck is an owned
     // evolution; Safari's three extra catches still use their separate encounter owner.

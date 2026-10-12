@@ -17,13 +17,14 @@ public sealed partial class CampaignSession
 
     private static void ValidateViridianGymCatalog(ICampaignCatalog content)
     {
+        ValidateVictoryRoadCatalog(content);
         ValidateLeagueRivalCatalog(content);
         if(!content.ViridianGymEnabled)return;
         if(!content.FirstSeviiEnabled||!content.CinnabarEnabled||content.ViridianGymTrainerParties is null||
             content.CinnabarOwnership is null||content.CinnabarOpponents is null||
             !ReferenceEquals(content.CinnabarOpponents.Owned,content.CinnabarOwnership)||
-            ViridianGymMachineCatalog.For(content.PewterMachines) is not {} proof||
-            !ReferenceEquals(proof.Pokemon,content.CinnabarOwnership)||content.Maps.Count!=207||
+            (VictoryRoadMachineCatalog.For(content.PewterMachines)?.Predecessor??ViridianGymMachineCatalog.For(content.PewterMachines)) is not {} proof||
+            !ReferenceEquals(proof.Pokemon,content.CinnabarOwnership)||content.Maps.Count!=(content.VictoryRoadEnabled?211:207)||
             !content.Maps.ContainsKey(new(ViridianGymMap))||content.Maps.ContainsKey(new("map.viridian-gym"))||
             content.MapFromSourceSymbol("MAP_VIRIDIAN_CITY_GYM").Value!=ViridianGymMap||
             content.MapDefinition(new(ViridianGymMap)).Actors.Length!=10||!content.SupportsRegionalFlavor(new(ViridianGymMap)))

@@ -142,14 +142,16 @@ public sealed partial class CampaignSession
     // while completing that step; the post-coordinate-event hook starts the source fall script.
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> CinnabarWalkingMaps(IReadOnlyDictionary<MapId,ConnectedFieldMap> maps)
     {
-        var id=new MapId("map.pokemon-mansion-3f");
-        if(!_content.CinnabarEnabled||!maps.TryGetValue(id,out var map))return maps;
+        if(!_content.CinnabarEnabled)return maps;
         var result=maps.ToDictionary(p=>p.Key,p=>p.Value);
-        result[id]=map with{Cells=map.Cells.Select(c=>c.SourceBehavior==0x66?c with{SourceBehavior=0x08}:c).ToImmutableArray()};return result;
+        foreach(var id in new[]{new MapId("map.pokemon-mansion-3f"),new MapId("map.victory-road-3f")})
+            if((id.Value=="map.pokemon-mansion-3f"||_content.VictoryRoadEnabled)&&maps.TryGetValue(id,out var map))
+                result[id]=map with{Cells=map.Cells.Select(c=>c.SourceBehavior==0x66?c with{SourceBehavior=0x08}:c).ToImmutableArray()};
+        return result;
     }
     private IReadOnlyDictionary<MapId,IFieldMap> CinnabarMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
-        if(!_content.CinnabarEnabled||!CinnabarFieldMap(state.World.Player.MapId))return maps;
+        if(!_content.CinnabarEnabled||!CinnabarFieldMap(state.World.Player.MapId)&&!(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId)))return maps;
         var result=maps.ToDictionary(p=>p.Key,p=>p.Value);var id=state.World.Player.MapId;
         result[id]=new CinnabarMovementMap(result[id],state.MapEdits,_content);return result;
     }
@@ -161,7 +163,8 @@ public sealed partial class CampaignSession
         public int? SourceBehaviorAt(int x,int y)
         {
             int? b=edits?.TryGetValue(x+":"+y,out var edit)==true?content.MetatileDefinition(Id,edit.SourceMetatileId)!.Behavior:original.SourceBehaviorAt(x,y);
-            return Id.Value=="map.pokemon-mansion-3f"&&b==0x66?0x08:b;
+            if(content.VictoryRoadEnabled&&VictoryRoadFieldMap(Id)&&b==VictoryRoadButtonBehavior)return 0x08;
+            return (Id.Value=="map.pokemon-mansion-3f"||content.VictoryRoadEnabled&&Id.Value=="map.victory-road-3f")&&b==0x66?0x08:b;
         }
         public TileCell? GetTile(int x,int y)
         {
@@ -174,6 +177,7 @@ public sealed partial class CampaignSession
 
     private TilePosition CinnabarFallDestination(TilePosition hole)
     {
+        if(_content.VictoryRoadEnabled&&hole.MapId.Value=="map.victory-road-3f")return VictoryRoadPlayerFallDestination(hole);
         if(hole.MapId.Value!="map.pokemon-mansion-3f"||hole.Y!=18||hole.X is not (18 or 19 or 20 or 23 or 24))
             throw new InvalidDataException("cinnabar_fall_source_position");
         var map=_content.Maps[hole.MapId];
@@ -194,7 +198,7 @@ public sealed partial class CampaignSession
     private CampaignState? TryStartCinnabarFall(CampaignState previous,CampaignState moved)
     {
         var hole=moved.World.Player;
-        if(!_content.CinnabarEnabled||hole.MapId.Value!="map.pokemon-mansion-3f"||
+        if(!_content.CinnabarEnabled||hole.MapId.Value!="map.pokemon-mansion-3f"&&!(_content.VictoryRoadEnabled&&hole.MapId.Value=="map.victory-road-3f")||
             previous.World.Player.MapId!=hole.MapId||previous.World.StepCount==moved.World.StepCount||
             _content.Maps[hole.MapId].SourceBehaviorAt(hole.X,hole.Y)!=0x66)return null;
         if(moved.CinnabarFall is not null||!moved.Script.Completed||moved.Script.Wait is not null||moved.Script.Locked||

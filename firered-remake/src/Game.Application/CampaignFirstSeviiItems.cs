@@ -7,10 +7,17 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private FirstSeviiShopCatalog FirstSeviiShopProof=>FirstSeviiShopCatalog.For(ShopCatalog)??throw new InvalidDataException("first_sevii_shop_proof_missing");
-    private InventoryState FirstSeviiPredecessorInventory(InventoryState inventory)=>_content.FirstSeviiEnabled?FirstSeviiShopProof.InventoryForPredecessor(inventory):inventory;
-    private InventoryState MergeFirstSeviiPredecessorInventory(InventoryState original,InventoryState changed)=>
-        MergeShopInventory(original,_content.FirstSeviiEnabled?FirstSeviiShopProof.RestoreFromPredecessor(ShopInventoryView(original),changed):changed);
+    private VictoryRoadShopCatalog VictoryRoadShopProof=>VictoryRoadShopCatalog.For(ShopCatalog)??throw new InvalidDataException("victory_road_shop_proof_missing");
+    private InventoryState VictoryRoadPredecessorInventory(InventoryState inventory)=>_content.VictoryRoadEnabled?VictoryRoadShopProof.InventoryForPredecessor(inventory):inventory;
+    private FirstSeviiShopCatalog FirstSeviiShopProof=>(_content.VictoryRoadEnabled?VictoryRoadShopProof.Predecessor:FirstSeviiShopCatalog.For(ShopCatalog))??throw new InvalidDataException("first_sevii_shop_proof_missing");
+    private InventoryState FirstSeviiPredecessorInventory(InventoryState inventory)=>_content.FirstSeviiEnabled?FirstSeviiShopProof.InventoryForPredecessor(VictoryRoadPredecessorInventory(inventory)):inventory;
+    private InventoryState MergeFirstSeviiPredecessorInventory(InventoryState original,InventoryState changed)
+    {
+        var view=ShopInventoryView(original);
+        if(_content.FirstSeviiEnabled)changed=FirstSeviiShopProof.RestoreFromPredecessor(VictoryRoadPredecessorInventory(view),changed);
+        if(_content.VictoryRoadEnabled)changed=VictoryRoadShopProof.RestoreFromPredecessor(view,changed);
+        return MergeShopInventory(original,changed);
+    }
     private bool TryApplyFirstSeviiItemEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;

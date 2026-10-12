@@ -57,7 +57,7 @@ public partial class CampaignView
     {
         WildBattleTransformedEvent transformed => new("sText_PkmnTransformedInto",
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(transformed.Actor)),
-            ("B_BUFF1", _catalog.PresentedSpeciesName(PresentedSpeciesId(transformed.AppearanceSpecies)))),
+            ("B_BUFF1", PresentedBattleSpeciesName(PresentedSpeciesId(transformed.AppearanceSpecies)))),
         WildBattleMoveFailedEvent { Reason: "target-transformed" or "semi-invulnerable" } => new("sText_ButItFailed"),
         _ => null
     };

@@ -56,7 +56,8 @@ public sealed partial class CampaignSession
         int active=Enumerable.Range(0,party.Length).First(i=>party[i].Pokemon.CurrentHp>0);
         var style=EffectiveBattleStyle(state);var terrain=CampaignBattleTerrain(state);
         var owned=SafariOrdinaryOwnership;var catalog=owned?.Predecessor??BattlePokemon;
-        var result=IsLeagueRivalTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.LeagueRivalTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+        var result=IsVictoryRoadTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.VictoryRoadTrainerParties!,_content.VictoryRoadOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+            : IsLeagueRivalTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.LeagueRivalTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
             : IsViridianGymTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.ViridianGymTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
             : IsFirstSeviiTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
             : IsCinnabarTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)

@@ -91,7 +91,7 @@ public sealed partial class CampaignSession
         var owned=new PartyPokemon(state.NextPokemonId,pokemon,nickname,state.PlayerName,state.PlayerGender,2,c.Origin.MetLocation,c.Origin.MetLevel,4,c.Ball??"ITEM_POKE_BALL",c.HeldItem){Status=c.Status};
         var error=PokemonStateValidator.ValidateParty(_content.PokemonContent,owned);if(error is not null)throw new InvalidDataException(error);
         var record=new CampaignCapturedPokemon(owned.InstanceId,b.Id,pokemon.SourceSpeciesId,pokemon.Personality,pokemon.Ivs,c.Origin.MetLevel,c.Origin.MetLocation){Ball=c.Ball};
-        var history=new CampaignWildHistory(b.Id,pokemon.SourceSpeciesId,pokemon.Level,WildBattleOutcome.Caught,0){LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute};
+        var history=new CampaignWildHistory(b.Id,pokemon.SourceSpeciesId,pokemon.Level,WildBattleOutcome.Caught,0){VictoryRoad=b.State.SourceWild?.VictoryRoad,LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute};
         var received=_content.PokemonStorageEnabled?PokemonStorageRules.Receive(_content.PokemonContent,state.Party,state.Storage!,owned):null;
         if(received is {Succeeded:false})throw new InvalidDataException(received.Diagnostic!.Code);
         var next=state with{Party=received?.Party??state.Party.Add(owned),Storage=received?.Storage??state.Storage,NextPokemonId=checked(state.NextPokemonId+1),Exploration=state.Exploration with{Captured=captures.Add(record),Battles=state.Exploration.Battles.Add(history)},WildBattle=b with{Capture=null}};
@@ -150,7 +150,7 @@ public sealed partial class CampaignSession
             if(capture is null||capture.InstanceId<2||!ids.Add(capture.InstanceId)||!battles.Add(capture.BattleId)||(safari?!IsSafariCapture(state,capture):!(IsLostelleHypnoCapture(state,capture)||IsSnorlaxCapture(state,capture)||WildOriginSupported(capture.SourceSpeciesId,capture.MetLevel,capture.MetLocation))||capture.Ball is not null&&!AdditionalCaptureBallSupported(capture.Ball)))return "save_capture_provenance_invalid";
             var owned=allOwned.SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
             if(owned is null||!EvolutionSpeciesMatchesOrigin(state,owned,capture.SourceSpeciesId)||owned.Pokemon.Personality!=capture.Personality||owned.Pokemon.Ivs!=capture.Ivs||owned.MetLevel!=capture.MetLevel||owned.MetLocation!=capture.MetLocation||owned.Ball!=(capture.Ball??"ITEM_POKE_BALL"))return "save_capture_instance_mismatch";
-            if(!state.Exploration.Battles.Any(b=>b.Id==capture.BattleId&&b.SourceSpeciesId==capture.SourceSpeciesId&&b.Level==capture.MetLevel&&b.Outcome==WildBattleOutcome.Caught&&b.ExperienceGained==0))return "save_capture_history_missing";
+            if(!state.Exploration.Battles.Any(b=>b.Id==capture.BattleId&&b.SourceSpeciesId==capture.SourceSpeciesId&&b.Level==capture.MetLevel&&b.Outcome==WildBattleOutcome.Caught&&b.ExperienceGained==0&&(b.VictoryRoad is null||_content.MapDefinition(b.VictoryRoad.Map).RegionMapSection==capture.MetLocation)))return "save_capture_history_missing";
         }
         if(state.Exploration.Battles.Any(b=>b.Outcome==WildBattleOutcome.Caught&&!battles.Contains(b.Id)))return "save_capture_delivery_missing";
         return null;

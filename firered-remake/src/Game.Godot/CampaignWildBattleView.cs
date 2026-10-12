@@ -19,6 +19,8 @@ public partial class CampaignView
     private readonly Dictionary<string,Texture2D> _cityBattleScenes = [];
     private Texture2D WildBattleTerrainForMap(MapId mapId)
     {
+        if (_catalog.VictoryRoadEnabled && IsVictoryRoadCave(mapId))
+            return _mtMoonTerrain ?? throw new InvalidDataException("Victory Road cave terrain was not loaded.");
         if (_catalog.SurfEnabled && PresentedWildBattle?.State.Terrain is WildBattleTerrain.Water or WildBattleTerrain.Pond)
             return _cityBattleScenes[PresentedWildBattle.State.Terrain == WildBattleTerrain.Water ? "water" : "pond"];
         if(_catalog.PokemonTowerEnabled&&PokemonTowerPresentationModel.UsesTowerTerrain(mapId.Value))return _towerTerrain??throw new InvalidDataException("Tower terrain missing.");
@@ -144,7 +146,7 @@ public partial class CampaignView
     private PartyPokemon WildRewardRecipient(CampaignWildBattle b) => _session.State.Party[b.RewardPartyIndex];
     private string WildName(WildBattleSide side) => side == WildBattleSide.Player
         ? WildWithdrawing(PresentedWildBattle!) ? PresentedWildBattle!.LastSwitch!.Outgoing.Nickname : SsAnnePendingPlayerForceOut(PresentedWildBattle!) is {} forced ? _session.State.Party[forced.PreviousIndex].Nickname : PresentedWildBattle!.OwnedBefore.Nickname
-        : TowerOpponentAppearance()?.Name ?? _catalog.PresentedSpeciesName(PresentedWildBattle!.DisplayOpponent.SourceSpeciesId);
+        : TowerOpponentAppearance()?.Name ?? PresentedBattleSpeciesName(PresentedWildBattle!.DisplayOpponent.SourceSpeciesId);
     private string WildPrefixedName(WildBattleSide side) => (side == WildBattleSide.Opponent ? _session.State.ForestTrainerBattle is not null ? "Foe " : "Wild " : "") + WildName(side);
     private static string WildStatName(WildBattleStat stat) => stat switch
     {

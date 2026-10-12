@@ -9,6 +9,7 @@ namespace Game.Domain.Encounters;
 /// Field ownership, completed-step precedence, movement and battle dispatch belong to the session.</summary>
 public static class WaterEncounterRules
 {
+    public const string VictoryRoadRulesVersion = "firered-victory-road-water-candidates-v1";
     public const string RulesVersion = "firered-surf-water-candidates-v1";
     public static ImmutableArray<int> SlotWeights { get; } = [60,30,5,4,1];
     public static int ChooseSlot(int roll)
@@ -19,8 +20,10 @@ public static class WaterEncounterRules
     public static void ValidateState(WaterEncounterState state, WaterEncounterTable table)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (!CinnabarWaterEncounterCatalog.IsAuthenticated(table) && !FirstSeviiWaterEncounterCatalog.IsAuthenticated(table)) WaterEncounterCatalog.ValidateTable(table);
-        if (state.RulesVersion != RulesVersion || state.RateRng.AlgorithmId != EncounterRateRng.AlgorithmId ||
+        if (!CinnabarWaterEncounterCatalog.IsAuthenticated(table) && !FirstSeviiWaterEncounterCatalog.IsAuthenticated(table) && !VictoryRoadWaterEncounterCatalog.IsAuthenticated(table)) WaterEncounterCatalog.ValidateTable(table);
+        if (VictoryRoadWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion != VictoryRoadRulesVersion)
+            throw new ArgumentException("victory_road_water_profile");
+        if (state.RulesVersion is not (RulesVersion or VictoryRoadRulesVersion) || state.RateRng.AlgorithmId != EncounterRateRng.AlgorithmId ||
             state.PreviousMetatileBehavior > 255 || state.StepsSinceLastEncounter > 21)
             throw new ArgumentException("water_state");
         if (state.Pending is not { } pending) return;
@@ -93,7 +96,7 @@ public static class WaterEncounterRules
             stench,illuminate,lead.HeldItem == "ITEM_CLEANSE_TAG",ChooseSlot,"encounter.water-slot",repelSteps,repelLevel);
         var c = result.Candidate is { } candidate ? new WaterEncounterCandidate(candidate.Map,candidate.Slot,candidate.Species,candidate.Level) : null;
         return new(new(result.State.RateRng,result.State.PreviousMetatileBehavior,result.State.EncounterRateBuff,
-            result.State.StepsSinceLastEncounter,c is null ? null : new(c,check.MetatileBehavior)),result.GlobalRng,result.Outcome,c,result.RateThreshold,result.RandomTrace);
+            result.State.StepsSinceLastEncounter,c is null ? null : new(c,check.MetatileBehavior),RulesVersion:state.RulesVersion),result.GlobalRng,result.Outcome,c,result.RateThreshold,result.RandomTrace);
     }
     public static WaterEncounterState CompleteCandidate(WaterEncounterState state, WaterEncounterTable table)
     {

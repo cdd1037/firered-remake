@@ -220,6 +220,7 @@ public sealed class PretRuntimeMapData : IFieldMap
         _mapIdFromSymbol = data.FullSourceHash switch
         {
             PretViridianGymRegion.FullSourceHash => PretViridianGymRegion.MapIdFromSourceSymbol,
+            PretVictoryRoadRegion.FullSourceHash => PretVictoryRoadRegion.MapIdFromSourceSymbol,
             PretFirstSeviiRegion.FullSourceHash => PretFirstSeviiRegion.MapIdFromSourceSymbol,
             PretCinnabarRegion.FullSourceHash => PretCinnabarRegion.MapIdFromSourceSymbol,
             PretSaffronGymRegion.FullSourceHash => PretSaffronGymRegion.MapIdFromSourceSymbol,

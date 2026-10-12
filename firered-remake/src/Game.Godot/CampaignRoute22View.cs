@@ -43,6 +43,7 @@ public partial class CampaignView
     private PokedexMenuPage PresentedPokedexPage(int species)
     {
         var page=_pokedexMenu!.BuildPage(species,_session.State.SeenSpecies,_session.State.CaughtSpecies,PokedexAccess);
+        if(VictoryRoadDexPortrait(species) is {} victoryPortrait)return page with{Portrait=victoryPortrait};
         var entry=_catalog.CinnabarArt?.DexEntries.GetValueOrDefault(species)??_catalog.SaffronGymArt?.DexEntries.GetValueOrDefault(species)??_catalog.SilphArt?.DexEntries.GetValueOrDefault(species)??_catalog.SurfArt?.DexEntries.GetValueOrDefault(species)??_catalog.SafariArt?.DexEntries.GetValueOrDefault(species)??_catalog.FuchsiaRouteArt?.DexEntries.GetValueOrDefault(species)??_catalog.EeveeArt?.DexEntries.GetValueOrDefault(species)??_catalog.SnorlaxArt?.DexEntries.GetValueOrDefault(species)??_towerDexEntries.GetValueOrDefault(species)??_catalog.RocketHideoutPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.CeladonGymPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.CeladonApproachPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.RockTunnelPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.Route11Pokemon?.DexEntries.GetValueOrDefault(species)??_catalog.SsAnnePokemon?.DexEntries.GetValueOrDefault(species)??_catalog.VermilionPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.BillPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.CeruleanPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.MtMoonPokemon?.DexEntries.GetValueOrDefault(species)??_catalog.Route3Pokemon?.DexEntries.GetValueOrDefault(species)??_catalog.Route22Pokemon?.DexEntries.GetValueOrDefault(species);
         if(entry is not null)return page with{Portrait=entry.Portrait,Footprint=page.Caught?entry.Footprint:null};
         var preview=_catalog.BillItems?.DexViews.FirstOrDefault(v=>v.SourceSpeciesId==species);
@@ -53,6 +54,7 @@ public partial class CampaignView
 
     private byte[] ReadPokedexTexture(PokedexMenuTexture texture)
     {
+        if(ReadVictoryRoadDexTexture(texture) is {} victoryPixels)return victoryPixels;
         if(_catalog.CinnabarArt is {} cinnabar&&cinnabar.DexEntries.Values.Any(e=>texture==e.Portrait||texture==e.Footprint))return cinnabar.ReadTexture(texture.TexturePath);
         if(_catalog.SaffronGymArt is {} saffron&&saffron.DexEntries.Values.Any(e=>texture==e.Portrait||texture==e.Footprint))return saffron.ReadTexture(texture.TexturePath);
         if(_catalog.SilphArt is {} silph&&silph.DexEntries.Values.Any(e=>texture==e.Portrait||texture==e.Footprint))return silph.ReadTexture(texture.TexturePath);

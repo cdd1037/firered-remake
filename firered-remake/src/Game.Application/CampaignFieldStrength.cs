@@ -27,7 +27,9 @@ public sealed partial class CampaignSession
     private CampaignActor? AdjacentFieldStrengthBoulder(CampaignState state,Direction? direction=null)
     {
         var p=state.World.Player;
-        if(!_content.SafariEnabled||p.MapId.Value!=FieldStrengthMap)return null;
+        if(!_content.SafariEnabled)return null;
+        if(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(p.MapId))return AdjacentVictoryRoadBoulder(state,direction??p.Facing);
+        if(p.MapId.Value!=FieldStrengthMap)return null;
         var definition=_content.MapDefinition(p.MapId).Actors.SingleOrDefault(a=>a.SourceLocalId==2);
         if(definition is null||definition.GraphicsId!=FieldHmSourceRules.BoulderGraphics||definition.ScriptId!="EventScript_StrengthBoulder"||
             (definition.X,definition.Y,definition.Elevation,definition.MovementType,definition.HideFlag)!=(11,6,3,"MOVEMENT_TYPE_FACE_DOWN","0"))
@@ -124,7 +126,7 @@ public sealed partial class CampaignSession
         {
             // The compact interpreter projects msgbox as one wait. Strength's source
             // MSGBOX_SIGN owns Std_MsgboxSign's releaseall after its final text page.
-            if(_content.SafariEnabled&&before.World.Player.MapId.Value==FieldStrengthMap&&
+            if(_content.SafariEnabled&&(before.World.Player.MapId.Value==FieldStrengthMap||_content.VictoryRoadEnabled&&VictoryRoadFieldMap(before.World.Player.MapId))&&
                 before.Script.Wait?.Kind==StoryWaitKind.Dialog&&before.Dialogue is {CloseOnCompletion:true} dialogue&&
                 dialogue.TextSymbol is "Text_MonUsedStrengthCanMoveBoulders" or "Text_MonMayPushBoulder" or "Text_StrengthMadeMovingBouldersPossible"&&
                 !before.Script.Stack.IsEmpty)
@@ -171,8 +173,8 @@ public sealed partial class CampaignSession
         var target=EditedFieldMaps(state)[state.World.Player.MapId].CellAt(destination.X,destination.Y);
         if(target is null)return null;
         var result=FieldHmSourceRules.ClassifyStrengthPush(true,boulder.GraphicsId,target.SourceBehavior,collision);
-        if(result==FieldStrengthPush.FallWarpRequiresHandler)return new(CommandStatus.Rejected,state,"field_strength_fall_warp_not_supported");
-        if(result!=FieldStrengthPush.OrdinaryPush)return null;
+        if(result==FieldStrengthPush.FallWarpRequiresHandler&&!VictoryRoadBoulderFallSupported(state,boulder,destination))return new(CommandStatus.Rejected,state,"field_strength_fall_warp_not_supported");
+        if(result is not (FieldStrengthPush.OrdinaryPush or FieldStrengthPush.FallWarpRequiresHandler))return null;
         if(!IsStableFieldForParty(state)||state.StrengthEffect is not null)return new(CommandStatus.Rejected,state,"field_strength_event_active");
         string suffix=command.Direction switch{Direction.North=>"up",Direction.South=>"down",Direction.West=>"left",_=>"right"};
         var origin=state.World.Player with{Facing=command.Direction};
@@ -199,13 +201,15 @@ public sealed partial class CampaignSession
             !state.Actors.TryGetValue(effect.ActorId,out var boulder)||!boulder.Active||boulder.Invisible||
             (boulder.X,boulder.Y,boulder.Elevation,boulder.Facing)!=(effect.BoulderDestination.X,effect.BoulderDestination.Y,effect.BoulderDestination.Elevation,effect.BoulderDestination.Facing))
             throw new InvalidDataException("field_strength_push_context_changed");
-        return new(CommandStatus.Accepted,state with{StrengthEffect=null,Script=state.Script with{Locked=false},Motions=[],PresentationTicks=0,PresentationEffects=[]});
+        var complete=state with{StrengthEffect=null,Script=state.Script with{Locked=false},Motions=[],PresentationTicks=0,PresentationEffects=[]};
+        return new(CommandStatus.Accepted,CompleteVictoryRoadBoulderPush(complete,boulder));
     }
 
     /// <summary>ClearTempFieldEventData runs on real map entry, never on Continue.</summary>
     private CampaignState ApplyFieldStrengthMapEntry(CampaignState state)
     {
         if(state.StrengthEffect is not null)throw new InvalidDataException("field_strength_map_entry_while_active");
+        ValidateVictoryRoadMapEntry(state);
         return _content.SafariEnabled&&state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthActiveFlag)
             ?state with{Script=state.Script with{Flags=state.Script.Flags.SetItem(FieldHmSourceRules.StrengthActiveFlag,false)}}:state;
     }
@@ -215,7 +219,8 @@ public sealed partial class CampaignSession
         if(state.StrengthEffect is not null)return "save_field_strength_active";
         bool active=state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthActiveFlag);
         if(!_content.SafariEnabled)return active?"save_field_strength_profile_missing":null;
-        if(active&&(state.World.Player.MapId.Value!=FieldStrengthMap||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthBadge)))return "save_field_strength_flag_invalid";
+        if(active&&(state.World.Player.MapId.Value!=FieldStrengthMap&&!(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthBadge)))return "save_field_strength_flag_invalid";
+        if(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))return ValidateVictoryRoadBoulders(state);
         if(state.World.Player.MapId.Value!=FieldStrengthMap)return null;
         var boulder=state.Actors.Values.SingleOrDefault(a=>a.SourceLocalId==2);
         if(boulder is null||boulder.TemplateX!=11||boulder.TemplateY!=6||boulder.Elevation!=3||boulder.Invisible||

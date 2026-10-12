@@ -97,6 +97,9 @@ public static class SourceTrainerAi
             // itemsNo is the initial compacted inventory size, not the remaining item count.
             if ((state.CeruleanItemsUsedMask & (1 << i)) != 0 || i > 0 && validMons > items.Length - i + 1) continue;
             string item = items[i]; int heal = item switch { "ITEM_POTION" => 20, "ITEM_SUPER_POTION" => 50, "ITEM_HYPER_POTION" => 200, _ => 0 };
+            // Source GetAI_ItemType treats Full Restore separately: status alone is not a trigger.
+            if (item == "ITEM_FULL_RESTORE" && mon.CurrentHp < mon.Stats.MaxHp / 4)
+                return Done(i, item, mon.Stats.MaxHp, status: 0, confusion: 0);
             if (heal > 0 && (mon.CurrentHp < mon.Stats.MaxHp / 4 || mon.Stats.MaxHp - mon.CurrentHp > heal))
                 return Done(i, item, Math.Min(mon.Stats.MaxHp, mon.CurrentHp + heal));
             if (item == "ITEM_FULL_HEAL" && (active.Status != 0 || active.ConfusionTurnsRemaining > 0))
@@ -107,6 +110,7 @@ public static class SourceTrainerAi
 
     internal static ImmutableArray<string> Items(TrainerId id)
     {
+        if (VictoryRoadTrainerPartyFactory.Expected.TryGetValue(id, out var victory)) return victory.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (LeagueRivalTrainerPartyFactory.Expected.TryGetValue(id, out var league)) return league.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (ViridianGymTrainerPartyFactory.Expected.TryGetValue(id, out var viridian)) return viridian.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (FirstSeviiTrainerPartyFactory.Expected.TryGetValue(id, out var sevii)) return sevii.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
@@ -121,6 +125,7 @@ public static class SourceTrainerAi
 
     internal static uint Flags(TrainerId id)
     {
+        if (VictoryRoadTrainerPartyFactory.Expected.TryGetValue(id, out var victory)) return victory.AiFlags;
         if (LeagueRivalTrainerPartyFactory.Expected.TryGetValue(id, out var league)) return league.AiFlags;
         if (ViridianGymTrainerPartyFactory.Expected.TryGetValue(id, out var viridian)) return viridian.AiFlags;
         if (FirstSeviiTrainerPartyFactory.Expected.TryGetValue(id, out var sevii)) return sevii.AiFlags;

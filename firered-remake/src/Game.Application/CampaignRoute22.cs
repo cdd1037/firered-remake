@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
             state.World.Player.MapId.Value=="map.route-23" && effect.Args[1]=="STDSTRING_CASCADE_BADGE";
         // The imported Route23 slice ends at the Cascade checkpoint. Do not publish
         // its now-successful recognition script until the northern slice is admitted.
-        if(cascade&&_content.CeruleanEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))
+        if(cascade&&!_content.VictoryRoadEnabled&&_content.CeruleanEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))
             throw new InvalidDataException("route23_northern_section_not_implemented");
         if(effect.Args.Length!=2||effect.Args[0]!="STR_VAR_1"||!(boulder||cascade))throw new InvalidDataException("route22_badge_string_unsupported");
         next=state with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",boulder?"BOULDERBADGE":"CASCADEBADGE")};
@@ -100,8 +100,8 @@ public sealed partial class CampaignSession
         if(scene!=expected||rivals.Any(h=>_content.Route22Trainers!.Battles[new(h.TrainerId)].PlayerStarterVar!=state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON")))
             return "save_route22_rival_progress_invalid";
         int gate=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE23");
-        if(gate is <0 or >1||gate==1&&!state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"))return "save_route23_gate_invalid";
-        if(state.World.Player.MapId.Value=="map.route-23"&&(gate!=1||!_content.IsRoute22StablePosition(state.World.Player.MapId,state.World.Player.X,state.World.Player.Y)))return "save_route23_boundary_invalid";
+        if(gate<0||gate>(_content.VictoryRoadEnabled?8:1)||Enumerable.Range(1,gate).Any(i=>!state.Script.Flags.GetValueOrDefault("FLAG_BADGE0"+i+"_GET")))return "save_route23_gate_invalid";
+        if(state.World.Player.MapId.Value=="map.route-23"&&(gate<1||!_content.IsRoute22StablePosition(state.World.Player.MapId,state.World.Player.X,state.World.Player.Y)))return "save_route23_boundary_invalid";
         bool extraBalls=state.Script.Flags.GetValueOrDefault("FLAG_GOT_POKEBALLS_FROM_OAK_AFTER_22_RIVAL");
         if(state.Script.Flags.GetValueOrDefault("FLAG_OAK_SKIP_22_RIVAL_CHECK")&&!extraBalls||extraBalls&&!won)
             return "save_route22_oak_progress_invalid";

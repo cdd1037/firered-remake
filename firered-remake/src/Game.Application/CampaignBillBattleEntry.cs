@@ -11,6 +11,7 @@ public sealed partial class CampaignSession
         return sourceMap switch
         {
             _ when _content.SsAnneEnabled && sourceMap.StartsWith("SSAnne_",StringComparison.Ordinal)=>_content.MapFromSourceSymbol("MAP_"+System.Text.RegularExpressions.Regex.Replace(sourceMap,"([a-z])([A-Z])","$1_$2").ToUpperInvariant()),
+            _ when _content.VictoryRoadEnabled&&sourceMap.StartsWith("VictoryRoad_",StringComparison.Ordinal)=>new("map.victory-road-"+sourceMap.Split('_')[1].ToLowerInvariant()),
             "ViridianCity_Gym" when _content.ViridianGymEnabled=>new("map.viridian-city-gym"),
             "VermilionCity_Gym" when _content.VermilionGymEnabled=>new("map.vermilion-city-gym"),
             _ when _content.PokemonTowerEnabled&&sourceMap.StartsWith("PokemonTower_",StringComparison.Ordinal)=>new("map.pokemon-tower-"+sourceMap.Split('_')[1].ToLowerInvariant()),

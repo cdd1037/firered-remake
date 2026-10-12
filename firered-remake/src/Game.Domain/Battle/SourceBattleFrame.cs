@@ -129,6 +129,7 @@ public sealed record SinglesBoundaryEncoding
     public string? FieldRulesVersion { get; init; }
     public string? DelayedRulesVersion { get; init; }
     public string? SourceWildRulesVersion { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public VictoryRoadWildOrigin? VictoryRoadWildOrigin { get; init; }
     public bool AwaitingReplacement { get; init; }
     public bool ForestResidualsFinished { get; init; }
     public bool ScriptedSnorlax { get; init; }

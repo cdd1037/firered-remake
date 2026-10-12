@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled,includeSafari:_catalog.SafariEnabled,includeSurf:_catalog.SurfEnabled,includeSilph:_catalog.SilphEnabled,includeSaffronGym:_catalog.SaffronGymEnabled,includeCinnabar:_catalog.CinnabarEnabled,includeFirstSevii:_catalog.FirstSeviiEnabled,surfContentRoot:OS.GetEnvironment("FIRERED_SURF_CONTENT_ROOT") is {Length:>0} surfRoot?surfRoot:null);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled,includeSafari:_catalog.SafariEnabled,includeSurf:_catalog.SurfEnabled,includeSilph:_catalog.SilphEnabled,includeSaffronGym:_catalog.SaffronGymEnabled,includeCinnabar:_catalog.CinnabarEnabled,includeFirstSevii:_catalog.FirstSeviiEnabled,includeVictoryRoad:_catalog.VictoryRoadEnabled,surfContentRoot:OS.GetEnvironment("FIRERED_SURF_CONTENT_ROOT") is {Length:>0} surfRoot?surfRoot:null);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -322,7 +322,7 @@ public partial class CampaignView
             // a faint replacement or forced replacement has its send-out page immediately.
             int page=!forcedOpponent&&!SourceBatonSwitchBefore(replacing.Presentation,WildBattleSide.Opponent,replacement.Sequence)&&
                 _catalog.CeruleanEnabled&&replacement.Previous.Pokemon.CurrentHp>0
-                ? WildSourcePages("sText_Trainer1WithdrewPkmn",("B_BUFF1",_catalog.PresentedSpeciesName(replacement.Previous.Pokemon.SourceSpeciesId))).Length:0;
+                ? WildSourcePages("sText_Trainer1WithdrewPkmn",("B_BUFF1",PresentedBattleSpeciesName(replacement.Previous.Pokemon.SourceSpeciesId))).Length:0;
             if(_wildPage==page&&_audioTrainerOneShots.Add($"{replacing.Id}:opponent-replaced:{replacement.Sequence}"))
                 SourceCry(replacement.Replacement.Pokemon);
         }

@@ -10,6 +10,7 @@ namespace Game.Domain.WildBattle;
 public sealed record WildBattleSourceWildState
 {
     public string RulesVersion { get; init; } = WildBattleRules.SourceWildRulesVersion;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public VictoryRoadWildOrigin? VictoryRoad { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public WildBattleSourceWildTurn? Turn { get; init; }
 }
 public sealed record WildBattleSourceWildTurn(WildBattleSide First, int PlayerSlot, int OpponentSlot, int NextAction = 0)
@@ -68,7 +69,7 @@ public static partial class WildBattleRules
 
     private static WildBattleResult StartSourceWildCore(PokemonCatalog catalog, ImmutableArray<WildBattleCombatant> playerParty,
         int activeIndex, WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain,
-        bool oldRodFishing, PokemonTowerBattleKind? towerKind, bool scriptedSnorlax, BattleRulesProfile? profile = null, OwnedBattlePokemonCatalog? owned = null, bool firstSeviiWild = false)
+        bool oldRodFishing, PokemonTowerBattleKind? towerKind, bool scriptedSnorlax, BattleRulesProfile? profile = null, OwnedBattlePokemonCatalog? owned = null, bool firstSeviiWild = false, VictoryRoadWildOrigin? victoryRoad = null)
     {
         if (playerParty.IsDefaultOrEmpty || playerParty.Length > 6 || activeIndex < 0 || activeIndex >= playerParty.Length ||
             playerParty.Any(m => m?.Pokemon is null) || opponent?.Pokemon is null) return Fail(null, "source_wild_party");
@@ -88,12 +89,12 @@ public static partial class WildBattleRules
         if (oldRodFishing && (opponent.Pokemon.SourceSpeciesId != 129 || opponent.Pokemon.Level is < 5 or > 10))
             return Fail(null, "wild_battle_old_rod_context_unsupported");
         if ((profile is null || owned is not null) && !oldRodFishing && !scriptedSnorlax && towerKind is not (PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak) &&
-            !(firstSeviiWild ? Game.Domain.Encounters.FirstSeviiWildPokemonFactory.WildSpecies.Contains(opponent.Pokemon.Species) : owned?.SupportsOrdinaryWildOpponent(opponent.Pokemon) ?? FuchsiaBattleScope.SupportsWildOpponent(opponent.Pokemon.SourceSpeciesId))) return Fail(null, "wild_battle_opponent_species_unsupported");
+            !(victoryRoad is not null ? VictoryRoadWildBattleContract.Matches(victoryRoad, opponent.Pokemon) : firstSeviiWild ? Game.Domain.Encounters.FirstSeviiWildPokemonFactory.WildSpecies.Contains(opponent.Pokemon.Species) : owned?.SupportsOrdinaryWildOpponent(opponent.Pokemon) ?? FuchsiaBattleScope.SupportsWildOpponent(opponent.Pokemon.SourceSpeciesId))) return Fail(null, "wild_battle_opponent_species_unsupported");
         var player = playerParty[activeIndex] with { FirstTurnCounter = 2 };
         opponent = opponent with { FirstTurnCounter = 2 };
         WildBattleCalledPartyMember Member(WildBattleCombatant m) => new(m.Pokemon, m.HeldItem, m.Status);
         var state = new WildBattleState(player, opponent, 0, 0, 0, rng, 0, WildBattleOutcome.Ongoing, RulesVersion: FuchsiaRulesVersion)
-        { Terrain = terrain, TowerBattleKind = towerKind, ScriptedSnorlax = scriptedSnorlax, SourceWild = new(),
+        { Terrain = terrain, TowerBattleKind = towerKind, ScriptedSnorlax = scriptedSnorlax, SourceWild = new() { RulesVersion = victoryRoad is null ? SourceWildRulesVersion : VictoryRoadWildBattleContract.Version, VictoryRoad = victoryRoad },
             SourceMechanicsRulesVersion = profile?.Version, SourceCampaignRulesVersion = owned?.RulesVersion,
             CalledParty = new(playerParty.Select(Member).ToImmutableArray(), [Member(opponent)], activeIndex, 0) };
         if (playerParty.Any(m => WildBattleSourceFieldEffects.IsValidToxic(m.Status)) || WildBattleSourceFieldEffects.IsValidToxic(opponent.Status))
@@ -110,6 +111,7 @@ public static partial class WildBattleRules
                 int roll = context.Draw("wild-battle.held-item", 100) % 100;
                 string item = opponent.Pokemon.SourceSpeciesId switch
                 {
+                    _ when victoryRoad is not null => Game.Domain.Encounters.VictoryRoadWildPokemonFactory.HeldItem(opponent.Pokemon.Species,roll),
                     _ when firstSeviiWild => Game.Domain.Encounters.FirstSeviiWildPokemonFactory.HeldItem(opponent.Pokemon.Species,roll),
                     _ when owned?.RulesVersion == CinnabarOwnedPokemonCatalog.Profile &&
                         Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(opponent.Pokemon.Species) =>
@@ -141,7 +143,12 @@ public static partial class WildBattleRules
         if (SourceBattleAdmission.ValidateRulesProfile(catalog, state) is { } profileError) return profileError;
         if (!SourceBattleAdmission.IsCanonicalSourceState(catalog, state) && !SourceBattleAdmission.IsCurrentCampaignCatalog(catalog))
             return "source_wild_catalog";
-        if (state.SourceWild?.RulesVersion != SourceWildRulesVersion || state.RulesVersion != FuchsiaRulesVersion)
+        if (state.SourceWild?.VictoryRoad is {} victory && (state.SourceCampaignRulesVersion != CinnabarOwnedPokemonCatalog.Profile ||
+            state.CalledParty is not { Opponent.Length: 1 } sourceParty || !VictoryRoadWildBattleContract.Matches(victory, sourceParty.Opponent[0].Pokemon)))
+            return "victory_road_wild_origin";
+        if ((state.SourceWild?.RulesVersion == VictoryRoadWildBattleContract.Version) != (state.SourceWild?.VictoryRoad is not null))
+            return "victory_road_wild_required_origin";
+        if (state.SourceWild?.RulesVersion is not (SourceWildRulesVersion or VictoryRoadWildBattleContract.Version) || state.RulesVersion != FuchsiaRulesVersion)
             return "source_wild_version";
         if (state.CalledParty is not { BattleKind: WildBattleCalledBattleKind.Wild, OpponentActiveIndex: 0 } party || party.Opponent.Length != 1)
             return "source_wild_actual_parties_required";

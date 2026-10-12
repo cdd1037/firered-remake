@@ -69,7 +69,7 @@ public partial class CampaignView
         var b=_session.State.DoubleBattle!;
         int member=b.CurrentEvent is SourceCalledPartySwitchedEvent change&&change.Side.Value==slot?(DoubleSwitchSending(change)?change.IncomingIndex:change.OutgoingIndex):b.DisplayedMembers[slot].Index;
         return (slot & 1) == 0 ? _session.State.Party[member].Nickname :
-            _catalog.PresentedSpeciesName(WildBattleTransformationRules.PersistentPokemon(body).SourceSpeciesId);
+            PresentedBattleSpeciesName(WildBattleTransformationRules.PersistentPokemon(body).SourceSpeciesId);
     }
     private bool DoubleSwitchSending(SourceCalledPartySwitchedEvent change)=>change.Kind is WildBattleCalledSwitchKind.FaintedReplacement or WildBattleCalledSwitchKind.BatonPass or WildBattleCalledSwitchKind.Forced||_doublePage>0;
     private WildBattleCombatant DoubleDisplayedBody(int slot)
@@ -216,7 +216,7 @@ public partial class CampaignView
                     if(x.Kind==WildBattleCalledSwitchKind.Voluntary)Source("sText_PkmnThatsEnough",("B_BUFF1",_session.State.Party[x.OutgoingIndex].Nickname));
                     Source("sText_GoPkmn2",("B_BUFF1",_session.State.Party[x.IncomingIndex].Nickname));
                 }
-                else Source("sText_Trainer1SentOutPkmn2",("B_BUFF1",_catalog.PokemonContent!.SpeciesNames[b.Frame.Party(BattleSide.Opponent).Members[x.IncomingIndex].Pokemon.SourceSpeciesId]));
+                else Source("sText_Trainer1SentOutPkmn2",("B_BUFF1",PresentedBattleSpeciesName(b.Frame.Party(BattleSide.Opponent).Members[x.IncomingIndex].Pokemon.SourceSpeciesId)));
                 break;
             case SourcePlayerSwitchedEvent x:
                 Source("sText_PkmnThatsEnough",("B_BUFF1",DoubleBodyName(x.Previous.Body)));
