@@ -52,7 +52,7 @@ public sealed partial class CampaignSession
         if (!OldRodFishingRules.CanCast(context)) return No("fishing_invalid_shore");
         if (!_content.OldRodEncounters.ContainsKey(position.MapId) && !OldRodEncounterRules.MapsWithoutFishingMons.Contains(position.MapId))
             return No("fishing_map_not_admitted");
-        var result = OldRodFishingRules.Start(context, state.World.Rng);
+        var result = _content.CinnabarEnabled?CinnabarOldRodEncounterRules.Start(_content.CinnabarOwnership!,context,state.World.Rng):OldRodFishingRules.Start(context, state.World.Rng);
         long sequence = checked(state.Script.EffectSequence + 1);
         return new(CommandStatus.Accepted, state with
         {
@@ -66,7 +66,7 @@ public sealed partial class CampaignSession
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         var fishing = state.Fishing ?? throw new InvalidDataException("fishing_state_missing");
-        OldRodFishingRules.ValidateState(fishing.State);
+        if(_content.CinnabarEnabled)CinnabarOldRodEncounterRules.ValidateState(_content.CinnabarOwnership!,fishing.State);else OldRodFishingRules.ValidateState(fishing.State);
         if (!_content.CityServicesEnabled || fishing.State.Map != state.World.Player.MapId ||
             fishing.State.Status != OldRodFishingStatus.Running || state.ItemMenu is not null ||
             state.Battle is not null || state.WildBattle is not null || state.ForestTrainerBattle is not null)
@@ -92,7 +92,8 @@ public sealed partial class CampaignSession
             return new(CommandStatus.Accepted, state with { Fishing = fishing with { MessageFinished = true } });
         }
         if (command.Kind != "fishing_tick") return No("fishing_active");
-        var result = OldRodFishingRules.Advance(fishing.State,
+        var result = _content.CinnabarEnabled?CinnabarOldRodEncounterRules.Advance(_content.CinnabarOwnership!,fishing.State,
+            new(MessageFinished:fishing.MessageFinished,NoCatchAnimationFinished:fishing.NoCatchAnimationFinished),state.World.Rng):OldRodFishingRules.Advance(fishing.State,
             new(MessageFinished: fishing.MessageFinished, NoCatchAnimationFinished: fishing.NoCatchAnimationFinished), state.World.Rng);
         var next = state with
         {

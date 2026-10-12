@@ -41,16 +41,35 @@ public sealed partial class CampaignSession
         throw new InvalidDataException("preset_double_content_missing");
     private SourceTwinsTrainerDefinition TwinsDefinition => _content.Route8Twins ??
         throw new InvalidDataException("preset_double_definition_missing");
-    private static bool IsTwinsScript(string script) => script is "Route8_EventScript_Eli" or "Route8_EventScript_Anne";
-    private SourceTwinsEncounterResult PrepareDoubleBattle(CampaignState state)
+    private bool IsCinnabarDoubleScript(string script)=>_content.CinnabarEnabled&&
+        _content.CinnabarTrainerParties?.BattlesByScript.TryGetValue(script,out var battle)==true&&battle.Mode==4;
+    private bool IsTwinsScript(string script) => script is "Route8_EventScript_Eli" or "Route8_EventScript_Anne" || IsCinnabarDoubleScript(script);
+    private TrainerId DoubleTrainerId(string script)=>IsCinnabarDoubleScript(script)?CinnabarDoubleTrainerEncounter.TrainerId:SourceTwinsTrainerEncounter.TrainerId;
+    private TrainerDefinition DoubleTrainer(TrainerId trainer)=>trainer==SourceTwinsTrainerEncounter.TrainerId?TwinsDefinition.Trainer:
+        _content.CinnabarEnabled&&trainer==CinnabarDoubleTrainerEncounter.TrainerId?_content.CinnabarTrainerParties!.Trainers[trainer]:
+        throw new InvalidDataException("preset_double_trainer_unsupported");
+    private SourceTwinsBattleDefinition DoubleInteraction(TrainerId trainer,string script)
     {
-        if(!_content.PresetDoublesEnabled||state.World.Player.MapId.Value!="map.route-8"||
+        if(trainer==SourceTwinsTrainerEncounter.TrainerId)return TwinsDefinition.Interactions.Single(i=>i.ScriptEntry==script);
+        var b=_content.CinnabarTrainerParties!.BattlesByScript.GetValueOrDefault(script)??throw new InvalidDataException("cinnabar_double_script_missing");
+        if(b.Trainer!=trainer||b.Mode!=4||b.NotEnoughMonsText is null)throw new InvalidDataException("cinnabar_double_script_mismatch");
+        return new(b.ScriptEntry,b.IntroText,b.DefeatText,b.PostBattleText,b.NotEnoughMonsText,b.Source);
+    }
+    private int DoublePrize(TrainerId trainer)=>trainer==SourceTwinsTrainerEncounter.TrainerId?TwinsDefinition.VictoryMoney:
+        checked(2*4*DoubleTrainer(trainer).BaseMoney*DoubleTrainer(trainer).Party[^1].Level);
+    private SourceTwinsEncounterResult PrepareDoubleBattle(CampaignState state,string? battleScript=null)
+    {
+        if(!_content.PresetDoublesEnabled||!(state.World.Player.MapId.Value=="map.route-8"||_content.CinnabarEnabled&&state.World.Player.MapId.Value=="map.route-21-north"&&battleScript is not null&&IsCinnabarDoubleScript(battleScript))||
             state.DoubleBattle is not null||state.ForestTrainerBattle is not null||state.WildBattle is not null||state.Battle is not null||
             state.Party.Any(p=>p.IsEgg||p.Pokemon.OriginalTrainerId!=state.TrainerId||p.OriginalTrainerName!=state.PlayerName||p.OriginalTrainerGender!=state.PlayerGender))
             throw new InvalidDataException("preset_double_entry_context");
         var party=state.Party.Select(p=>new WildBattleCalledPartyMember(p.Pokemon,p.HeldItem,p.Status,p.IsEgg)).ToImmutableArray();
-        var entry=SourceTwinsTrainerEncounter.Begin(DoubleBattlePokemon,TwinsDefinition,party,state.World.Rng,
-            state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"));
+        var entry=battleScript is not null&&IsCinnabarDoubleScript(battleScript)?
+            CinnabarDoubleTrainerEncounter.Begin(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,battleScript,party,state.World.Rng,
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
+            SourceTwinsTrainerEncounter.Begin(DoubleBattlePokemon,TwinsDefinition,party,state.World.Rng,
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"));
         if(!entry.Succeeded)throw new InvalidDataException(entry.Fault);
         // This successor still accepts only the original local gifts/captures. Its stable
         // schema has no infection or trade route. ValidatePlayerSave enforces that closed
@@ -66,15 +85,16 @@ public sealed partial class CampaignSession
     {
         if(!_content.PresetDoublesEnabled||effect.Args.Length!=4||state.Script.Wait?.Kind!=StoryWaitKind.Battle||
             state.LastTalked is not {} actorId||!state.Actors.TryGetValue(actorId,out var actor)||!IsTwinsScript(actor.ScriptId)||
-            state.World.Player.MapId.Value!="map.route-8")throw new InvalidDataException("preset_double_source_context");
-        var d=TwinsDefinition.Interactions.Single(x=>x.ScriptEntry==actor.ScriptId);
+            !(state.World.Player.MapId.Value=="map.route-8"||_content.CinnabarEnabled&&state.World.Player.MapId.Value=="map.route-21-north"&&IsCinnabarDoubleScript(actor.ScriptId)))throw new InvalidDataException("preset_double_source_context");
+        var trainerId=DoubleTrainerId(actor.ScriptId);
+        var d=DoubleInteraction(trainerId,actor.ScriptId);
         bool rematch=effect.Opcode=="trainerbattle_rematch_double";
         if(effect.Source.Path!=d.Source.Path||effect.Source.Symbol!=d.ScriptEntry+(rematch?"Rematch":"")||
-            effect.Args[0]!="TRAINER_TWINS_ELI_ANNE"||effect.Args[1]!=(rematch?d.IntroText.Replace("Intro","RematchIntro",StringComparison.Ordinal):d.IntroText)||
+            effect.Args[0]!=trainerId.Value[5..]||effect.Args[1]!=(rematch?d.IntroText.Replace("Intro","RematchIntro",StringComparison.Ordinal):d.IntroText)||
             effect.Args[2]!=d.DefeatText||effect.Args[3]!=d.NotEnoughMonsText)
             throw new InvalidDataException("preset_double_source_mismatch");
         if(!_forestTrainerApproaching)state=FaceSelectedObject(state);
-        if(state.BattledTrainers.Contains(SourceTwinsTrainerEncounter.TrainerId.Value))
+        if(state.BattledTrainers.Contains(trainerId.Value))
         {
             // The current campaign has no VS Seeker. The source rematch wrapper reaches
             // its post-battle speech without creating a second encounter.
@@ -85,14 +105,14 @@ public sealed partial class CampaignSession
         if(state.Party.Count(p=>!p.IsEgg&&p.Pokemon.CurrentHp>0)<2)
             return state with{Dialogue=new(d.NotEnoughMonsText,_content.TextPages(d.NotEnoughMonsText),0,false,true),
                 Script=state.Script with{Stack=[],Locked=false,Wait=state.Script.Wait! with{Kind=StoryWaitKind.Dialog}}};
-        var prepared=PrepareDoubleBattle(state);var frame=prepared.State!;
+        var prepared=PrepareDoubleBattle(state,actor.ScriptId);var frame=prepared.State!;
         string id="double-trainer-battle:"+((state.DoubleBattleHistory?.Length??0)+1);
-        return state with{DoubleBattle=new(id,SourceTwinsTrainerEncounter.TrainerId,actorId,frame,CampaignDoubleBattleStage.Intro,
+        return state with{DoubleBattle=new(id,trainerId,actorId,frame,CampaignDoubleBattleStage.Intro,
             prepared.Events,0,[],state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),0,0,
             frame.Slots.Select(c=>c.Body!).ToImmutableArray(),frame.Slots.Select(c=>c.Member!.Value).ToImmutableArray(),prepared.Trace,[],0),
             Dialogue=new(d.IntroText,_content.TextPages(d.IntroText),0,false,false),
             Script=state.Script with{Locked=true,Variables=state.Script.Variables.SetItem("VAR_RESULT",0)},
-            Actors=state.Actors.SetItem(actorId,actor with{MovementType=ForestTrainerFacingType(actor.Facing)}),Music=TwinsDefinition.EncounterMusic};
+            Actors=state.Actors.SetItem(actorId,actor with{MovementType=ForestTrainerFacingType(actor.Facing)}),Music=trainerId==SourceTwinsTrainerEncounter.TrainerId?TwinsDefinition.EncounterMusic:"MUS_ENCOUNTER_BOY"};
     }
 
     private static SourceTurnContinuation DoubleContinuation(SourceBattleFrame f)=>
@@ -204,7 +224,9 @@ public sealed partial class CampaignSession
             if(unselected.Length>1)return new(CommandStatus.Accepted,state with{DoubleBattle=b with{PlayerSelections=selections}});
         }
         else if(command.Kind!="ack")return No("preset_double_forced_turn_ready");
-        var ai=SourceTwinsTrainerEncounter.ChooseEnemyActions(DoubleBattlePokemon,frame,frame.Revision);
+        var ai=b.Trainer==CinnabarDoubleTrainerEncounter.TrainerId
+            ?CinnabarDoubleTrainerEncounter.ChooseEnemyActions(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,frame,frame.Revision)
+            :SourceTwinsTrainerEncounter.ChooseEnemyActions(DoubleBattlePokemon,frame,frame.Revision);
         if(!ai.Succeeded)return No(ai.Fault!);
         var begun=SourceFourActionTurns.BeginActions(DoubleBattlePokemon,ai.State,ai.State.Revision,selections.AddRange(ai.Selections));
         if(!begun.Succeeded)return No(begun.Fault!);
@@ -342,13 +364,13 @@ public sealed partial class CampaignSession
         if(b.Frame.Outcome==WildBattleOutcome.Ongoing||b.Frame.Rewards?.Pending is not null||
             (state.DoubleBattleHistory??[]).Any(h=>h.Id==b.Id))throw new InvalidDataException("preset_double_settlement_context");
         bool won=b.Frame.Outcome==WildBattleOutcome.Won;
-        var prize=SourceBattleMoneyRules.SettleTrainerPrize(state.Money,TwinsDefinition.VictoryMoney,b.Frame.Outcome,b.Frame.Field.MoneyMultiplier);
+        var prize=SourceBattleMoneyRules.SettleTrainerPrize(state.Money,DoublePrize(b.Trainer),b.Frame.Outcome,b.Frame.Field.MoneyMultiplier);
         int award=prize.DisplayAmount,money=prize.Money;
         var pages=ImmutableArray.CreateBuilder<string>();
         if(won)
         {
-            pages.Add($"{state.PlayerName} defeated\nTWINS ELI & ANNE!");
-            var def=TwinsDefinition.Interactions.Single(d=>d.ScriptEntry==state.Actors[b.ActorId].ScriptId);
+            pages.Add($"{state.PlayerName} defeated\n{(b.Trainer==SourceTwinsTrainerEncounter.TrainerId?"TWINS":"SIS AND BRO")} {DoubleTrainer(b.Trainer).SourceTrainerName}!");
+            var def=DoubleInteraction(b.Trainer,state.Actors[b.ActorId].ScriptId);
             pages.AddRange(_content.TextPages(def.DefeatText));pages.Add($"{state.PlayerName} got ¥{award}\nfor winning!");
         }
         else
@@ -390,24 +412,32 @@ public sealed partial class CampaignSession
             Music=_content.MapDefinition(next.World.Player.MapId).Music,Exploration=ResetEncounterModifiers(next.Exploration!)};
     }
 
-    private int TwinsWonFlagCount(CampaignState state)=>_content.PresetDoublesEnabled&&state.BattledTrainers.Contains(SourceTwinsTrainerEncounter.TrainerId.Value)?1:0;
-    private bool SeenByTwins(CampaignState state,int species)=>_content.PresetDoublesEnabled&&species is 35 or 39&&(state.DoubleBattleHistory??[]).Length>0;
+    private IEnumerable<TrainerId> SupportedDoubleTrainerIds=>!_content.PresetDoublesEnabled?[]:
+        _content.CinnabarEnabled?[SourceTwinsTrainerEncounter.TrainerId,CinnabarDoubleTrainerEncounter.TrainerId]:[SourceTwinsTrainerEncounter.TrainerId];
+    private int TwinsWonFlagCount(CampaignState state)=>SupportedDoubleTrainerIds.Count(id=>state.BattledTrainers.Contains(id.Value));
+    private bool SeenByTwins(CampaignState state,int species)=>(state.DoubleBattleHistory??[]).Any(h=>
+        SupportedDoubleTrainerIds.Contains(new TrainerId(h.TrainerId))&&DoubleTrainer(new(h.TrainerId)).Party.Any(p=>p.SourceSpeciesId==species));
     private string? ValidateDoubleBattleHistory(CampaignState state)
     {
         var history=state.DoubleBattleHistory??[];
-        bool won=state.BattledTrainers.Contains(SourceTwinsTrainerEncounter.TrainerId.Value);
-        if(!_content.PresetDoublesEnabled)return history.Length!=0||won||state.DoubleBattle is not null?"save_preset_double_profile_missing":null;
+        var ids=SupportedDoubleTrainerIds.ToHashSet();
+        var recorded=state.BattledTrainers.Where(id=>ids.Contains(new TrainerId(id))).ToHashSet(StringComparer.Ordinal);
+        if(!_content.PresetDoublesEnabled)return history.Length!=0||state.BattledTrainers.Contains(SourceTwinsTrainerEncounter.TrainerId.Value)||state.DoubleBattle is not null?"save_preset_double_profile_missing":null;
         if(history.IsDefault)return "save_preset_double_history_invalid";
-        bool winner=false;
+        var winners=new HashSet<string>(StringComparer.Ordinal);
         for(int i=0;i<history.Length;i++)
         {
             var h=history[i];
-            if(h is null||winner||h.Id!="double-trainer-battle:"+(i+1)||h.TrainerId!=SourceTwinsTrainerEncounter.TrainerId.Value||
-                h.Outcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw)||h.ExperienceGained<0||h.ExperienceGained>TwinsDefinition.Trainer.Party.Sum(p=>DoubleBattlePokemon.Species[p.Species].ExperienceYield*p.Level/7*150/100)||
-                !SourceBattleMoneyRules.ValidMultiplier(h.MoneyMultiplier)||h.MoneyGained<0||h.MoneyGained>(h.Outcome==WildBattleOutcome.Won?TwinsDefinition.VictoryMoney*(h.MoneyMultiplier??1):0)||h.OpponentsSeen.IsDefault||!h.OpponentsSeen.SequenceEqual(new[]{0,1})||
-                !state.SeenSpecies.Contains(35)||!state.SeenSpecies.Contains(39))return "save_preset_double_history_invalid";
-            winner=h.Outcome==WildBattleOutcome.Won;
+            if(h is null||!ids.Contains(new TrainerId(h.TrainerId))||winners.Contains(h.TrainerId)||h.Id!="double-trainer-battle:"+(i+1))return "save_preset_double_history_invalid";
+            var trainer=DoubleTrainer(new(h.TrainerId));
+            if(h.Outcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw)||h.ExperienceGained<0||
+                h.ExperienceGained>trainer.Party.Sum(p=>DoubleBattlePokemon.Species[p.Species].ExperienceYield*p.Level/7*150/100)||
+                !SourceBattleMoneyRules.ValidMultiplier(h.MoneyMultiplier)||h.MoneyGained<0||
+                h.MoneyGained>(h.Outcome==WildBattleOutcome.Won?DoublePrize(trainer.Id)*(h.MoneyMultiplier??1):0)||
+                h.OpponentsSeen.IsDefault||!h.OpponentsSeen.SequenceEqual(new[]{0,1})||
+                trainer.Party.Any(p=>!state.SeenSpecies.Contains(p.SourceSpeciesId)))return "save_preset_double_history_invalid";
+            if(h.Outcome==WildBattleOutcome.Won)winners.Add(h.TrainerId);
         }
-        return won==winner?null:"save_preset_double_flag_mismatch";
+        return recorded.SetEquals(winners)?null:"save_preset_double_flag_mismatch";
     }
 }

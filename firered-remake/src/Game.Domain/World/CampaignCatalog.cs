@@ -80,6 +80,10 @@ public interface ICampaignCatalog:IStoryCatalog
     SourceTwinsTrainerDefinition? Route8Twins=>null;
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
+    bool CinnabarEnabled=>false;
+    CinnabarOwnedPokemonCatalog? CinnabarOwnership=>null;
+    CinnabarOpponentPokemonCatalog? CinnabarOpponents=>null;
+    CinnabarTrainerCatalog? CinnabarTrainerParties=>null;
     bool SaffronGymEnabled=>false;
     SaffronGymTrainerCatalog? SaffronGymTrainerParties=>null;
     SaffronGymOpponentPokemonCatalog? SaffronGymOpponents=>null;

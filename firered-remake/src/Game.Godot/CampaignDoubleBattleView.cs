@@ -69,7 +69,7 @@ public partial class CampaignView
         var b=_session.State.DoubleBattle!;
         int member=b.CurrentEvent is SourceCalledPartySwitchedEvent change&&change.Side.Value==slot?(DoubleSwitchSending(change)?change.IncomingIndex:change.OutgoingIndex):b.DisplayedMembers[slot].Index;
         return (slot & 1) == 0 ? _session.State.Party[member].Nickname :
-            _catalog.PokemonContent!.SpeciesNames[WildBattleTransformationRules.PersistentPokemon(body).SourceSpeciesId];
+            _catalog.PresentedSpeciesName(WildBattleTransformationRules.PersistentPokemon(body).SourceSpeciesId);
     }
     private bool DoubleSwitchSending(SourceCalledPartySwitchedEvent change)=>change.Kind is WildBattleCalledSwitchKind.FaintedReplacement or WildBattleCalledSwitchKind.BatonPass or WildBattleCalledSwitchKind.Forced||_doublePage>0;
     private WildBattleCombatant DoubleDisplayedBody(int slot)
@@ -87,7 +87,7 @@ public partial class CampaignView
     {
         var values = new Dictionary<string,string>(StringComparer.Ordinal) {
             ["B_PLAYER_NAME"]=_session.State.PlayerName,["PLAYER"]=_session.State.PlayerName,
-            ["B_TRAINER1_CLASS"]="TWINS",["B_TRAINER1_NAME"]="ELI & ANNE",
+            ["B_TRAINER1_CLASS"]=DoubleTrainerClass,["B_TRAINER1_NAME"]=DoubleTrainerName,
             ["B_PLAYER_MON1_NAME"]=DoubleName(0),["B_PLAYER_MON2_NAME"]=DoubleName(2),
             ["B_OPPONENT_MON1_NAME"]=DoubleName(1),["B_OPPONENT_MON2_NAME"]=DoubleName(3)
         };
@@ -381,7 +381,7 @@ public partial class CampaignView
         if(SourceAnimationPresented)DrawTexture(_sourceMoveField!,Vector2.Zero);
         bool entry=_doubleOpening||b.CurrentEvent is SourceStartedEvent;
         bool portrait=entry&&_doublePage==0||b.Stage==CampaignDoubleBattleStage.Finished&&b.Frame.Outcome==WildBattleOutcome.Won&&b.FinishPageIndex>0;
-        if(portrait)DrawTexture(_doubleTextures["twins-front"],new(144,8));
+        if(portrait)DrawTexture(DoubleTrainerPortrait,new(144,8));
         if(entry&&_doublePage==0)DrawTexture(_forestTrainerPortraits[_session.State.PlayerGender==0?"red-back":"leaf-back"],new(48,48));
         foreach(int i in new[]{3,1,0,2})
         {

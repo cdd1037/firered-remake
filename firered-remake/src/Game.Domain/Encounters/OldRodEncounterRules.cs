@@ -40,6 +40,11 @@ public static class OldRodEncounterRules
         OldRodFishingRules.ValidateState(fishing);
         if (fishing.Status != OldRodFishingStatus.EncounterReady || fishing.Map != table.Map)
             throw new InvalidOperationException("The matching fishing task must finish successfully first.");
+        return GenerateCandidateCore(table, rng);
+    }
+
+    internal static OldRodEncounterResult GenerateCandidateCore(OldRodEncounterTable table, RngState rng)
+    {
         var slotDraw = Gen3Rng.Next(rng, "fishing.slot", 100);
         var slot = table.Slots[ChooseSlot(slotDraw.Trace.Result)];
         int lo = Math.Min(slot.MinimumLevel, slot.MaximumLevel), hi = Math.Max(slot.MinimumLevel, slot.MaximumLevel);

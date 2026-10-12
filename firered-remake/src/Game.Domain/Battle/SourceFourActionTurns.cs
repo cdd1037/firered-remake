@@ -65,6 +65,7 @@ public static partial class SourceFourActionTurns
         foreach (var cell in frame.Slots)
         {
             var body = cell.Body!;
+            if (body.SpecialBadgeBoost && cell.Slot.Side != BattleSide.Player) return "source_four_enemy_special_badge";
             if (frame.EntryAbilities is { } entry && entry.AppliedEntries[cell.Slot.Value] != cell.Occupant ||
                 frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(WildBattleTransformationRules.PersistentPokemon(body).AbilityId))
                 return "source_four_action_initial_entry_required";

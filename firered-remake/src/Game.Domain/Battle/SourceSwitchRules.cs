@@ -14,7 +14,7 @@ internal static class SourceSwitchRules
         var next = new WildBattleCombatant(incoming.Pokemon,
             HeldItem: incoming.KnockedOffItem is not null ? "ITEM_NONE" : WildBattleSourcePartyEffects.PersistentHeldItem(incoming),
             Status: WildBattleSourceFieldEffects.ResetToxicCounter(incoming.Status), AttackBadgeBoost: departing.AttackBadgeBoost)
-        { SpeedBadgeBoost = departing.SpeedBadgeBoost, DefenseBadgeBoost = departing.DefenseBadgeBoost,
+        { SpeedBadgeBoost = departing.SpeedBadgeBoost, DefenseBadgeBoost = departing.DefenseBadgeBoost, SpecialBadgeBoost = departing.SpecialBadgeBoost,
             FirstTurnCounter = 2, KnockedOffItem = incoming.KnockedOffItem, CalledDamage = departing.CalledDamage };
         if (!baton) return next;
         return next with {

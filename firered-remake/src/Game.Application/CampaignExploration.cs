@@ -25,7 +25,7 @@ public sealed partial class CampaignSession
     {
         if(_content.ForestEnabled)
         {
-            var early=EarlyLandEncounterRules.SeedFromGlobal(state.World.Rng,rulesVersion:_content.SafariEnabled?EarlyLandEncounterRules.SafariRulesVersion:_content.FuchsiaRouteEnabled?EarlyLandEncounterRules.FuchsiaRulesVersion:_content.SnorlaxEnabled?EarlyLandEncounterRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?EarlyLandEncounterRules.PokemonTowerRulesVersion:_content.RocketHideoutEnabled?EarlyLandEncounterRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?EarlyLandEncounterRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?EarlyLandEncounterRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?EarlyLandEncounterRules.RockTunnelRulesVersion:_content.Route11Enabled?EarlyLandEncounterRules.Route11RulesVersion:_content.SsAnneEnabled?EarlyLandEncounterRules.SsAnneRulesVersion:_content.VermilionEnabled?EarlyLandEncounterRules.VermilionRulesVersion:_content.BillEnabled?EarlyLandEncounterRules.BillRulesVersion:_content.MtMoonEnabled?EarlyLandEncounterRules.MtMoonRulesVersion:_content.Route3Enabled?EarlyLandEncounterRules.Route3RulesVersion:_content.Route22Enabled?EarlyLandEncounterRules.Route22RulesVersion:EarlyLandEncounterRules.RulesVersion);
+            var early=EarlyLandEncounterRules.SeedFromGlobal(state.World.Rng,rulesVersion:_content.CinnabarEnabled?EarlyLandEncounterRules.CinnabarRulesVersion:_content.SafariEnabled?EarlyLandEncounterRules.SafariRulesVersion:_content.FuchsiaRouteEnabled?EarlyLandEncounterRules.FuchsiaRulesVersion:_content.SnorlaxEnabled?EarlyLandEncounterRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?EarlyLandEncounterRules.PokemonTowerRulesVersion:_content.RocketHideoutEnabled?EarlyLandEncounterRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?EarlyLandEncounterRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?EarlyLandEncounterRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?EarlyLandEncounterRules.RockTunnelRulesVersion:_content.Route11Enabled?EarlyLandEncounterRules.Route11RulesVersion:_content.SsAnneEnabled?EarlyLandEncounterRules.SsAnneRulesVersion:_content.VermilionEnabled?EarlyLandEncounterRules.VermilionRulesVersion:_content.BillEnabled?EarlyLandEncounterRules.BillRulesVersion:_content.MtMoonEnabled?EarlyLandEncounterRules.MtMoonRulesVersion:_content.Route3Enabled?EarlyLandEncounterRules.Route3RulesVersion:_content.Route22Enabled?EarlyLandEncounterRules.Route22RulesVersion:EarlyLandEncounterRules.RulesVersion);
             return state with{Exploration=new(null,1,[]){EarlyEncounter=early.State,Captured=[]},World=state.World with{Rng=early.GlobalRng}};
         }
         var seeded=Route1EncounterRules.SeedFromGlobal(state.World.Rng);
@@ -41,7 +41,7 @@ public sealed partial class CampaignSession
         {
             if(exploration.Encounter is not null||exploration.EarlyEncounter is null)return "save_encounter_profile_invalid";
             try{EarlyLandEncounterRules.ValidateState(exploration.EarlyEncounter);}catch(Exception ex) when(ex is ArgumentException or NotSupportedException){return "save_encounter_invalid";}
-            if(exploration.EarlyEncounter.RulesVersion!=(_content.SafariEnabled?EarlyLandEncounterRules.SafariRulesVersion:_content.FuchsiaRouteEnabled?EarlyLandEncounterRules.FuchsiaRulesVersion:_content.SnorlaxEnabled?EarlyLandEncounterRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?EarlyLandEncounterRules.PokemonTowerRulesVersion:_content.RocketHideoutEnabled?EarlyLandEncounterRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?EarlyLandEncounterRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?EarlyLandEncounterRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?EarlyLandEncounterRules.RockTunnelRulesVersion:_content.Route11Enabled?EarlyLandEncounterRules.Route11RulesVersion:_content.SsAnneEnabled?EarlyLandEncounterRules.SsAnneRulesVersion:_content.VermilionEnabled?EarlyLandEncounterRules.VermilionRulesVersion:_content.BillEnabled?EarlyLandEncounterRules.BillRulesVersion:_content.MtMoonEnabled?EarlyLandEncounterRules.MtMoonRulesVersion:_content.Route3Enabled?EarlyLandEncounterRules.Route3RulesVersion:_content.Route22Enabled?EarlyLandEncounterRules.Route22RulesVersion:EarlyLandEncounterRules.RulesVersion))return "save_encounter_profile_invalid";
+            if(exploration.EarlyEncounter.RulesVersion!=(_content.CinnabarEnabled?EarlyLandEncounterRules.CinnabarRulesVersion:_content.SafariEnabled?EarlyLandEncounterRules.SafariRulesVersion:_content.FuchsiaRouteEnabled?EarlyLandEncounterRules.FuchsiaRulesVersion:_content.SnorlaxEnabled?EarlyLandEncounterRules.SnorlaxRulesVersion:_content.PokemonTowerEnabled?EarlyLandEncounterRules.PokemonTowerRulesVersion:_content.RocketHideoutEnabled?EarlyLandEncounterRules.RocketHideoutRulesVersion:_content.CeladonGymEnabled?EarlyLandEncounterRules.CeladonGymRulesVersion:_content.CeladonApproachEnabled?EarlyLandEncounterRules.CeladonApproachRulesVersion:_content.RockTunnelEnabled?EarlyLandEncounterRules.RockTunnelRulesVersion:_content.Route11Enabled?EarlyLandEncounterRules.Route11RulesVersion:_content.SsAnneEnabled?EarlyLandEncounterRules.SsAnneRulesVersion:_content.VermilionEnabled?EarlyLandEncounterRules.VermilionRulesVersion:_content.BillEnabled?EarlyLandEncounterRules.BillRulesVersion:_content.MtMoonEnabled?EarlyLandEncounterRules.MtMoonRulesVersion:_content.Route3Enabled?EarlyLandEncounterRules.Route3RulesVersion:_content.Route22Enabled?EarlyLandEncounterRules.Route22RulesVersion:EarlyLandEncounterRules.RulesVersion))return "save_encounter_profile_invalid";
             if(exploration.EarlyEncounter.Pending is not null)return "save_encounter_pending";
         }
         else
@@ -74,12 +74,12 @@ public sealed partial class CampaignSession
             }
             maps[pair.Key]=pair.Value with{Cells=cells.ToImmutable()};
         }
-        return SafariConnectedMaps(maps);
+        return CinnabarWalkingMaps(SafariConnectedMaps(maps));
     }
     private Decision<CampaignState> DecideConnectedField(CampaignState state,CampaignCommand command)
     {
         if(!Enum.IsDefined(command.Direction))return new(CommandStatus.Rejected,state,"invalid_direction");
-        var before=state.World.Player;var movementMaps=SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state));var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
+        var before=state.World.Player;var movementMaps=CinnabarMovementMaps(SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state)),state);var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
         bool turn=command.Kind=="turn";
         if(!turn&&TryStartFieldSurfDismount(state,command) is {} surfDismount)return surfDismount;
         if(!turn&&TryStartFieldStrengthPush(state,command) is {} strengthPush)return strengthPush;
@@ -153,6 +153,7 @@ public sealed partial class CampaignSession
                 if(coord is not null&&_content.BattleContent is not null&&p.MapId==_content.MapFromSourceSymbol("MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB")&&moved.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB")==3)PreflightLabBattle(moved);
                 if(coord is not null)moved=StartStory(moved,coord.ScriptId);
             }
+            if(!preempted&&TryStartCinnabarFall(state,moved) is {} cinnabarFall)return new(CommandStatus.Accepted,cinnabarFall);
             moved=Pump(moved);
         }
         // Coordinate/map scripts take precedence over TryStandardWildEncounter.

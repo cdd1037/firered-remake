@@ -191,6 +191,61 @@ public static class WildVictoryRewards
             currentRegion, aliveParticipants, true, battle.Battle.Opponent, SaffronGymOpponentPokemonCatalog.Profile);
     }
 
+    /// <summary>Original Silph roster settlement with the current authenticated Cinnabar ownership.</summary>
+    public static WildVictoryRewardResult ApplySilphTrainer(CinnabarOpponentPokemonCatalog opponents,
+        PartyPokemon participantAfterBattle, Game.Domain.Trainers.ForestTrainerCombatState battle,
+        string currentRegion, int aliveParticipants = 1) =>
+        ApplyCinnabarHistoricalTrainer(opponents, participantAfterBattle, battle, currentRegion,
+            aliveParticipants, Game.Domain.Trainers.ForestTrainerCombatRules.SilphRulesVersion);
+
+    /// <summary>Original Saffron roster settlement with the current authenticated Cinnabar ownership.</summary>
+    public static WildVictoryRewardResult ApplySaffronGymTrainer(CinnabarOpponentPokemonCatalog opponents,
+        PartyPokemon participantAfterBattle, Game.Domain.Trainers.ForestTrainerCombatState battle,
+        string currentRegion, int aliveParticipants = 1) =>
+        ApplyCinnabarHistoricalTrainer(opponents, participantAfterBattle, battle, currentRegion,
+            aliveParticipants, Game.Domain.Trainers.ForestTrainerCombatRules.SaffronGymRulesVersion);
+
+    private static WildVictoryRewardResult ApplyCinnabarHistoricalTrainer(CinnabarOpponentPokemonCatalog opponents,
+        PartyPokemon participantAfterBattle, Game.Domain.Trainers.ForestTrainerCombatState battle,
+        string currentRegion, int aliveParticipants, string trainerRulesVersion)
+    {
+        ArgumentNullException.ThrowIfNull(opponents); ArgumentNullException.ThrowIfNull(battle);
+        OwnedBattlePokemonCatalog proof = opponents.Owned;
+        if (!ReferenceEquals(CinnabarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
+            battle.Battle.SourceCampaignRulesVersion != CinnabarOpponentPokemonCatalog.Profile ||
+            battle.RulesVersion != trainerRulesVersion ||
+            !Game.Domain.Battle.SourceBattleAdmission.IsOwnedCampaign(proof, battle.Battle) ||
+            battle.Phase != Game.Domain.Trainers.ForestTrainerCombatPhase.AwaitingExperience ||
+            Game.Domain.Trainers.ForestTrainerCombatRules.Validate(proof.Mechanics.Catalog, battle) is not null ||
+            participantAfterBattle?.Pokemon is null || battle.Battle.CalledParty is not { } party ||
+            !party.Player.Any(member => WildBattleSourcePartyEffects.SamePokemon(member.Pokemon, participantAfterBattle.Pokemon) &&
+                member.Status == participantAfterBattle.Status && WildBattleSourcePartyEffects.PersistentHeldItem(member) == participantAfterBattle.HeldItem))
+            throw new ArgumentException("cinnabar_historical_trainer_reward_context");
+        return ApplyOwnedReward(proof, participantAfterBattle, battle.Battle.Opponent.Pokemon,
+            currentRegion, aliveParticipants, true, battle.Battle.Opponent, CinnabarOpponentPokemonCatalog.Profile);
+    }
+
+    public static WildVictoryRewardResult ApplyCinnabarTrainer(CinnabarOpponentPokemonCatalog opponents,
+        PartyPokemon participantAfterBattle, Game.Domain.Trainers.ForestTrainerCombatState battle,
+        string currentRegion, int aliveParticipants = 1)
+    {
+        ArgumentNullException.ThrowIfNull(opponents);
+        var owned = opponents.Owned; ArgumentNullException.ThrowIfNull(battle);
+        OwnedBattlePokemonCatalog proof = owned;
+        if (!ReferenceEquals(CinnabarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
+            battle.Battle.SourceCampaignRulesVersion != CinnabarOpponentPokemonCatalog.Profile ||
+            battle.RulesVersion != Game.Domain.Trainers.ForestTrainerCombatRules.CinnabarRulesVersion ||
+            !Game.Domain.Battle.SourceBattleAdmission.IsOwnedCampaign(proof, battle.Battle) ||
+            battle.Phase != Game.Domain.Trainers.ForestTrainerCombatPhase.AwaitingExperience ||
+            Game.Domain.Trainers.ForestTrainerCombatRules.Validate(owned.Mechanics.Catalog, battle) is not null ||
+            participantAfterBattle?.Pokemon is null || battle.Battle.CalledParty is not { } party ||
+            !party.Player.Any(member => WildBattleSourcePartyEffects.SamePokemon(member.Pokemon, participantAfterBattle.Pokemon) &&
+                member.Status == participantAfterBattle.Status && WildBattleSourcePartyEffects.PersistentHeldItem(member) == participantAfterBattle.HeldItem))
+            throw new ArgumentException("cinnabar_trainer_reward_context");
+        return ApplyOwnedReward(proof, participantAfterBattle, battle.Battle.Opponent.Pokemon,
+            currentRegion, aliveParticipants, true, battle.Battle.Opponent, CinnabarOpponentPokemonCatalog.Profile);
+    }
+
     private static void ValidateOwned(PokemonCatalog catalog, PartyPokemon owned, bool route22Rules = false, bool route11Rules = false, bool rockTunnelRules = false)
     {
         route11Rules |= rockTunnelRules;

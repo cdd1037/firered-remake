@@ -25,7 +25,10 @@ public sealed partial class CampaignSession
         // A source map without a water table retains the previous-behavior callback only.
         if(!tables.TryGetValue(p.MapId,out var table))return state with{Exploration=exploration with{EarlyEncounter=shared with{PreviousMetatileBehavior=behavior}}};
         if(state.Party.IsEmpty||state.Party.All(p=>p.IsEgg||p.Pokemon.CurrentHp==0))throw new InvalidDataException("wild_encounter_live_party_required");
-        var result=_content.SilphEnabled?WaterEncounterRules.Check(_content.SilphOwnership!,WaterProcess(shared),table,
+        var result=_content.CinnabarEnabled?WaterEncounterRules.Check(_content.CinnabarOwnership!,WaterProcess(shared),table,
+            new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
+            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,saffronShop:SaffronGymShopProof)
+            :_content.SilphEnabled?WaterEncounterRules.Check(_content.SilphOwnership!,WaterProcess(shared),table,
             new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
             state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,saffronShop:_content.SaffronGymEnabled?SaffronGymShopProof:null)
             :WaterEncounterRules.Check(owned,WaterProcess(shared),table,
@@ -33,7 +36,7 @@ public sealed partial class CampaignSession
             state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng);
         var next=state with{Exploration=exploration with{EarlyEncounter=SharedWaterProcess(shared,result.State)},World=state.World with{Rng=result.GlobalRng}};
         if(result.Candidate is null)return next;
-        var generated=WaterEncounterRules.Generate(owned,result.State,table,next.World.Rng,next.TrainerId);
+        var generated=_content.CinnabarEnabled?WaterEncounterRules.Generate(_content.CinnabarOwnership!,result.State,table,next.World.Rng,next.TrainerId):WaterEncounterRules.Generate(owned,result.State,table,next.World.Rng,next.TrainerId);
         if(state.SafariVisit is {Active:true})
         {
             var rng=generated.GlobalRng;var trace=generated.RandomTrace.ToBuilder();

@@ -18,7 +18,8 @@ public static class WaterEncounterRules
     }
     public static void ValidateState(WaterEncounterState state, WaterEncounterTable table)
     {
-        ArgumentNullException.ThrowIfNull(state); WaterEncounterCatalog.ValidateTable(table);
+        ArgumentNullException.ThrowIfNull(state);
+        if (!CinnabarWaterEncounterCatalog.IsAuthenticated(table)) WaterEncounterCatalog.ValidateTable(table);
         if (state.RulesVersion != RulesVersion || state.RateRng.AlgorithmId != EncounterRateRng.AlgorithmId ||
             state.PreviousMetatileBehavior > 255 || state.StepsSinceLastEncounter > 21)
             throw new ArgumentException("water_state");
@@ -34,7 +35,7 @@ public static class WaterEncounterRules
         ushort repelSteps, RngState globalRng, bool wildEncountersDisabled = false,
         EncounterMovementMode movement = EncounterMovementMode.Surfing)
     {
-        ArgumentNullException.ThrowIfNull(owned);
+        ArgumentNullException.ThrowIfNull(owned); WaterEncounterCatalog.ValidateTable(table);
         if (!SurfOwnedPokemonCatalog.IsAuthenticated(owned.Catalog)) throw new ArgumentException("water_check_scope");
         EarlyRepelRules.ValidateSteps(repelSteps, pokemonTowerRules: true);
         return CheckOwned(owned, state, table, check, party, repelSteps, globalRng, wildEncountersDisabled, movement);
@@ -47,11 +48,22 @@ public static class WaterEncounterRules
         ushort repelSteps, RngState globalRng, bool wildEncountersDisabled = false,
         EncounterMovementMode movement = EncounterMovementMode.Surfing, SaffronGymShopCatalog? saffronShop = null)
     {
-        ArgumentNullException.ThrowIfNull(owned);
+        ArgumentNullException.ThrowIfNull(owned); WaterEncounterCatalog.ValidateTable(table);
         if (!SilphOwnedPokemonCatalog.IsAuthenticated(owned.Catalog)) throw new ArgumentException("water_check_scope");
         if (saffronShop is null) EarlyRepelRules.ValidateSteps(repelSteps, pokemonTowerRules: true);
         else SaffronGymRepelRules.ValidateSteps(saffronShop, repelSteps);
         return CheckOwned(owned, state, table, check, party, repelSteps, globalRng, wildEncountersDisabled, movement);
+    }
+
+    public static WaterEncounterResult Check(CinnabarOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
+        ushort repelSteps, RngState globalRng, bool wildEncountersDisabled = false,
+        EncounterMovementMode movement = EncounterMovementMode.Surfing, SaffronGymShopCatalog? saffronShop = null)
+    {
+        if (owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned)) throw new ArgumentException("water_check_scope");
+        if (saffronShop is null) EarlyRepelRules.ValidateSteps(repelSteps,pokemonTowerRules:true);
+        else SaffronGymRepelRules.ValidateSteps(saffronShop,repelSteps);
+        return CheckOwned(owned,state,table,check,party,repelSteps,globalRng,wildEncountersDisabled,movement);
     }
 
     private static WaterEncounterResult CheckOwned(OwnedBattlePokemonCatalog owned, WaterEncounterState state,
@@ -96,12 +108,22 @@ public static class WaterEncounterRules
     public static Route1WildPokemonResult Generate(SurfOwnedPokemonCatalog owned, WaterEncounterState state,
         WaterEncounterTable table, RngState globalRng, uint playerTrainerId)
     {
-        ArgumentNullException.ThrowIfNull(owned); ValidateState(state,table);
+        ArgumentNullException.ThrowIfNull(owned); WaterEncounterCatalog.ValidateTable(table); ValidateState(state,table);
         var pending = state.Pending ?? throw new InvalidOperationException("water_pending_missing");
         if (!SurfOwnedPokemonCatalog.IsAuthenticated(owned.Catalog) || !owned.Catalog.Species.ContainsKey(pending.Candidate.Species) || globalRng.AlgorithmId != Gen3Rng.AlgorithmId)
             throw new ArgumentException("water_generation_scope");
         return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog,pending.Candidate.Species,pending.Candidate.Level,globalRng,playerTrainerId);
     }
+    public static Route1WildPokemonResult Generate(CinnabarOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, RngState globalRng, uint playerTrainerId)
+    {
+        ValidateState(state,table);
+        var pending = state.Pending ?? throw new InvalidOperationException("water_pending_missing");
+        if (owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned) ||
+            !owned.Catalog.Species.ContainsKey(pending.Candidate.Species)) throw new ArgumentException("water_generation_scope");
+        return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog,pending.Candidate.Species,pending.Candidate.Level,globalRng,playerTrainerId);
+    }
+
     /// <summary>All3 exact source water species have NONE/NONE, but SetWildMonHeldItem draws once.</summary>
     public static EarlyLandWildHeldItemResult AssignHeldItem(WaterEncounterState state, WaterEncounterTable table, RngState globalRng)
     {

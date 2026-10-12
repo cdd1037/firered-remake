@@ -36,7 +36,7 @@ public sealed partial class CampaignSession
     {
         var encounter = state.Exploration?.EarlyEncounter ?? throw new InvalidDataException("safari_encounter_missing");
         var table = _content.LandEncounters![state.World.Player.MapId];
-        var generated = EarlyLandWildPokemonFactory.Generate(BattlePokemon, table, encounter,
+        var generated = _content.CinnabarEnabled?CinnabarWildPokemonFactory.Generate(_content.CinnabarOwnership!,table,encounter,state.World.Rng,state.TrainerId):EarlyLandWildPokemonFactory.Generate(BattlePokemon, table, encounter,
             state.World.Rng, state.TrainerId, safariRules: true);
         var rng = generated.GlobalRng;
         var trace = generated.RandomTrace.ToBuilder();

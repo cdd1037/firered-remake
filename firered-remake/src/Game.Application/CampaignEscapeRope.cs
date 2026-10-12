@@ -12,7 +12,7 @@ public sealed partial class CampaignSession
         if (state.EscapeRope is not null) return "save_event_active";
         if (!_content.MtMoonEnabled)
             return state.EscapeDestination is null ? null : "save_escape_rope_profile_missing";
-        return EscapeRopeRules.ValidateDestination(state.EscapeDestination,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,silphRules:_content.SilphEnabled);
+        return _content.CinnabarEnabled?CinnabarEscapeRopeRules.ValidateDestination(state.EscapeDestination):EscapeRopeRules.ValidateDestination(state.EscapeDestination,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,silphRules:_content.SilphEnabled);
     }
 
     private CampaignState RecordEscapeWarp(CampaignState before, CampaignState moved, Direction direction)
@@ -26,7 +26,7 @@ public sealed partial class CampaignSession
             var (dx, dy) = Delta(direction);
             p = p with { X = p.X + dx, Y = p.Y + dy };
         }
-        return moved with { EscapeDestination = EscapeRopeRules.RecordWarp(before.EscapeDestination,
+        return moved with { EscapeDestination = _content.CinnabarEnabled?CinnabarEscapeRopeRules.RecordWarp(before.EscapeDestination,p with{Facing=direction},moved.World.Player.MapId):EscapeRopeRules.RecordWarp(before.EscapeDestination,
             p with { Facing = direction }, moved.World.Player.MapId,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,silphRules:_content.SilphEnabled) };
     }
 
@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
             command.Text != EscapeRopeRules.Item.Value || command.Quantity != 1 || command.MoveSlot != -1)
             return No("field_escape_rope_context_invalid");
         if (ValidateCampaignInventory(state.Inventory) is { } error) return No(error);
-        var use = EscapeRopeRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
+        var use = _content.CinnabarEnabled?CinnabarEscapeRopeRules.Use(CinnabarShopProof,ShopInventoryView(state.Inventory!),state.World.Player.MapId,state.EscapeDestination,PotionUseContext.Field):EscapeRopeRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
             state.World.Player.MapId, state.EscapeDestination, PotionUseContext.Field,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,silphRules:_content.SilphEnabled);
         if (!use.Succeeded) return No(use.Error!);
         var arrival = use.Arrival!;

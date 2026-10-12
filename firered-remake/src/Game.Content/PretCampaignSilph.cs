@@ -28,6 +28,7 @@ public sealed partial class PretCampaignCatalog
     public string PresentedSpeciesName(int species)=>PokemonContent?.SpeciesNames.GetValueOrDefault(species)
         ??SilphPokemon?.AdditionalSpeciesNames.GetValueOrDefault(species)
         ??SaffronGymSpeciesNames.GetValueOrDefault(species)
+        ??CinnabarSpeciesName(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
     public static PretCampaignCatalog LoadSilphProfile(string root,bool useCompactMapData=true,string? silphContentRoot=null)=>
         LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,

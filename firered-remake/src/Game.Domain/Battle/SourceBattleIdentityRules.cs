@@ -29,8 +29,10 @@ public static class SourceBattleIdentityRules
             (mechanicsVersion != SourceBattleKernel.Version || frame.Layout != SourceBattleLayout.PresetDoubles))
             return "source_frame_mechanics_profile_layout";
         if (frame.SourceCampaignRulesVersion is { } campaign &&
-            (!OwnedBattlePokemonCatalog.IsKnownProfile(campaign) || frame.Layout != SourceBattleLayout.Singles ||
-             frame.SourceMechanicsRulesVersion != BattleRulesProfile.CanonicalSourceSinglesVersion))
+            (!OwnedBattlePokemonCatalog.IsKnownProfile(campaign) ||
+             !((frame.Layout == SourceBattleLayout.Singles && frame.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion) ||
+               (campaign == CinnabarOpponentPokemonCatalog.Profile && frame.Layout == SourceBattleLayout.PresetDoubles &&
+                frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version && frame.BattleKind == WildBattleCalledBattleKind.Trainer))))
             return "source_frame_campaign_profile";
         if (frame.Turn < 0 || frame.Revision < 0 || frame.EventSequence < 0 || frame.RunAttempts < 0 ||
             frame.Rng.AlgorithmId != Gen3Rng.AlgorithmId) return "source_frame_counters";
@@ -57,10 +59,12 @@ public static class SourceBattleIdentityRules
         if (frame.SourceCampaignRulesVersion is not null && frame.Parties.Any(p => p.Members.Any(m =>
             !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species) &&
             !(p.Side == BattleSide.Opponent && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
-              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile &&
+              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile &&
                SilphOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion == SaffronGymOpponentPokemonCatalog.Profile &&
-               SaffronGymOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species))))))
+               frame.SourceCampaignRulesVersion is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile &&
+               SaffronGymOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
+               frame.SourceCampaignRulesVersion == CinnabarOpponentPokemonCatalog.Profile &&
+               CinnabarOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species))))))
             return "source_frame_campaign_species";
         if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";
         if (SourceObedienceRules.Validate(frame.Obedience, frame.Parties[0].Members) is { } obedienceError) return obedienceError;

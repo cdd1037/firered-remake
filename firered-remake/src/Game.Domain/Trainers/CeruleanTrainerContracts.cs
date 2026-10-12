@@ -12,6 +12,8 @@ public sealed record CeruleanTrainerBattleDefinition(TrainerId Trainer, int Mode
 {
     public string? PostBattleScript { get; init; }
     public string? MusicOption { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? NotEnoughMonsText { get; init; }
 }
 public sealed record CeruleanTrainerCatalog(string SourceCommit, string Profile, bool CompleteSourceRoster,
     ImmutableDictionary<TrainerId, TrainerDefinition> Trainers,

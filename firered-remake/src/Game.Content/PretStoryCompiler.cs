@@ -26,7 +26,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -94,6 +94,19 @@ public static partial class PretStoryCompiler
                         ".2byte ITEM_ESCAPE_ROPE",".2byte ITEM_MAX_REPEL",".2byte ITEM_NONE","release","end"}))
                     {assemblyData.Add(label,body.Take(7).Select(b=>b.Text).ToImmutableArray());continue;}
                 }
+                if(includeCinnabarData&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&file.SourceRef.Repository=="pret/pokefirered"&&
+                    (file.Path,file.SourceRef.Sha256) is
+                        ("data/maps/CinnabarIsland_Mart/scripts.inc","f9a3d744dab7e62f3517cab34d7542f2fe1e0bda64fb63c159800c3886ebe4ac") or
+                        ("data/maps/Route21_North/scripts.inc","6400ed7650028810cf2dec75a80f09c8f2141c75d7c6f051b10c01e868613ce5") or
+                        ("data/maps/Route21_South/scripts.inc","905cecbf72714346866843161d1f120ffe8aa422c4bc5141131c1513974bdc06"))
+                {
+                    if(label is "CinnabarIsland_Mart_MapScripts" or "Route21_North_MapScripts" or "Route21_South_MapScripts"&&body.Count==1&&body[0].Text==".byte 0")
+                    {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
+                    if(label=="CinnabarIsland_Mart_Items"&&body.Select(b=>b.Text).SequenceEqual(new[]{
+                        ".2byte ITEM_ULTRA_BALL",".2byte ITEM_GREAT_BALL",".2byte ITEM_HYPER_POTION",".2byte ITEM_REVIVE",
+                        ".2byte ITEM_FULL_HEAL",".2byte ITEM_ESCAPE_ROPE",".2byte ITEM_MAX_REPEL",".2byte ITEM_NONE","release","end"}))
+                    {assemblyData.Add(label,body.Take(8).Select(b=>b.Text).ToImmutableArray());continue;}
+                }
                 if(body[0].Text.StartsWith(".string",StringComparison.Ordinal))continue;
                 if(body.Any(x=>x.Text.StartsWith("map_script ",StringComparison.Ordinal)))
                 {
@@ -132,6 +145,13 @@ public static partial class PretStoryCompiler
                         {
                             if(operands.Length!=4||operands[0]!="TRAINER_TWINS_ELI_ANNE")
                                 throw ContentJson.Error("preset_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
+                            (kind,min,max)=(StoryOp.TrainerBattle,4,4);
+                        }
+                        if(includeCinnabarData&&includePresetDoubleOpcodes&&opcode is "trainerbattle_double" or "trainerbattle_rematch_double"&&
+                            file.Path=="data/scripts/trainers.inc"&&file.SourceRef.Sha256=="d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945"&&
+                            label is "Route21_North_EventScript_Lil" or "Route21_North_EventScript_Ian" or "Route21_North_EventScript_LilRematch" or "Route21_North_EventScript_IanRematch")
+                        {
+                            if(operands.Length!=4||operands[0]!="TRAINER_SIS_AND_BRO_LIL_IAN")throw ContentJson.Error("cinnabar_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
                             (kind,min,max)=(StoryOp.TrainerBattle,4,4);
                         }
                         // The successor only admits the two pinned static Snorlax call sites
@@ -211,7 +231,7 @@ public static partial class PretStoryCompiler
         if(op is "goto_if_eq" or "goto_if_ne" or "goto_if_lt" or "goto_if_le" or "goto_if_gt" or "goto_if_ge")return(StoryOp.ConditionalGoto,3,3);
         if(op is "call_if_eq" or "call_if_ne" or "call_if_lt" or "call_if_le" or "call_if_gt" or "call_if_ge")return(StoryOp.ConditionalCall,3,3);
         if(includeMtMoonOpcodes&&op=="trainerbattle_no_intro")return(StoryOp.TrainerBattle,2,2);
-        if(includeMtMoonOpcodes&&op=="goto_if_defeated")return(StoryOp.Special,2,2);
+        if(includeMtMoonOpcodes&&op is "goto_if_defeated" or "goto_if_not_defeated")return(StoryOp.Special,2,2);
         if(includeMtMoonOpcodes&&op=="copyobjectxytoperm")return(StoryOp.Special,1,1);
         if(includeRoute3Opcodes&&op=="trainerbattle_rematch")return(StoryOp.TrainerBattle,3,3);
         if(includeGiftOpcodes)

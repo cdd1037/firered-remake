@@ -13,7 +13,9 @@ public sealed record CampaignRepel(CampaignRepelPhase Phase, string WaitId)
 
 public sealed partial class CampaignSession
 {
-    private SaffronGymShopCatalog SaffronGymShopProof=>SaffronGymShopCatalog.For(ShopCatalog)??throw new InvalidDataException("saffron_gym_shop_proof_missing");
+    private CinnabarShopCatalog CinnabarShopProof=>CinnabarShopCatalog.For(ShopCatalog)??throw new InvalidDataException("cinnabar_shop_proof_missing");
+    private InventoryState RepelInventory(InventoryState inventory)=>_content.CinnabarEnabled?CinnabarShopProof.InventoryForPredecessor(ShopInventoryView(inventory)):ShopInventoryView(inventory);
+    private SaffronGymShopCatalog SaffronGymShopProof=>(_content.CinnabarEnabled?CinnabarShopProof.Predecessor:SaffronGymShopCatalog.For(ShopCatalog))??throw new InvalidDataException("saffron_gym_shop_proof_missing");
     public const string RepelCounterVariable = "VAR_REPEL_STEP_COUNT";
     public ushort RepelSteps => checked((ushort)State.Script.Variables.GetValueOrDefault(RepelCounterVariable));
 
@@ -38,7 +40,7 @@ public sealed partial class CampaignSession
         var item = new ItemId(command.Text!);
         var error = ValidateCampaignInventory(state.Inventory);
         if (error is not null) return No(error);
-        var use = _content.SaffronGymEnabled ? SaffronGymRepelRules.Use(SaffronGymShopProof,ShopInventoryView(state.Inventory!),
+        var use = _content.SaffronGymEnabled ? SaffronGymRepelRules.Use(SaffronGymShopProof,RepelInventory(state.Inventory!),
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),PotionUseContext.Field,item)
             : EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field,
@@ -69,7 +71,7 @@ public sealed partial class CampaignSession
         if (command.Kind != "repel_presented" || command.Text != repel.WaitId) return No("repel_sound_pending");
         if (!_content.RepelEnabled || state.ItemMenu is not { Origin: "bag", View: "bag" } menu)
             throw new InvalidDataException("repel_use_wait_context_invalid");
-        var use = _content.SaffronGymEnabled ? SaffronGymRepelRules.Use(SaffronGymShopProof,ShopInventoryView(state.Inventory!),
+        var use = _content.SaffronGymEnabled ? SaffronGymRepelRules.Use(SaffronGymShopProof,RepelInventory(state.Inventory!),
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),PotionUseContext.Field,repel.Item)
             : EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field,

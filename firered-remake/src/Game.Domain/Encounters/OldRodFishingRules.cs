@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Randomness;
+using Game.Domain.Ids;
 
 namespace Game.Domain.Encounters;
 
@@ -28,14 +29,19 @@ public static class OldRodFishingRules
     /// Cancellation is the item-selection cancellation before StartFishing, never a post-cast B rule.
     /// </summary>
     public static OldRodFishingResult Start(OldRodCastContext context, RngState rng, bool cancelBeforeCast = false)
+        => StartCore(context, rng, cancelBeforeCast, cinnabarRules: false);
+
+    internal static OldRodFishingResult StartCore(OldRodCastContext context, RngState rng,
+        bool cancelBeforeCast, bool cinnabarRules)
     {
         ValidateContext(context);
         ValidateRng(rng);
-        bool hasMons = OldRodEncounterRules.Tables.Any(t => t.Map == context.Map);
-        var state = new OldRodFishingState(context.Map, hasMons);
+        bool hasMons = HasFishingMons(context.Map, cinnabarRules);
+        var state = new OldRodFishingState(context.Map, hasMons, RulesVersion:
+            cinnabarRules ? CinnabarOldRodEncounterRules.RulesVersion : RulesVersion);
         if (cancelBeforeCast) return new(state with { Status = OldRodFishingStatus.Cancelled }, rng, []);
         if (!CanCast(context)) return new(state with { Status = OldRodFishingStatus.Rejected }, rng, []);
-        if (!OldRodEncounterRules.IsAdmittedMap(context.Map)) throw new NotSupportedException("Fishing on this map is outside the bounded Old Rod profile.");
+        if (!IsAdmittedMap(context.Map, cinnabarRules)) throw new NotSupportedException("Fishing on this map is outside the bounded Old Rod profile.");
         return new(state, rng, []);
     }
 
@@ -45,8 +51,12 @@ public static class OldRodFishingRules
     /// A/B cannot cancel this task; message/animation completion must come from the presentation.
     /// </summary>
     public static OldRodFishingResult Advance(OldRodFishingState state, OldRodFrameInput input, RngState rng)
+        => AdvanceCore(state, input, rng, cinnabarRules: false);
+
+    internal static OldRodFishingResult AdvanceCore(OldRodFishingState state, OldRodFrameInput input,
+        RngState rng, bool cinnabarRules)
     {
-        ValidateState(state);
+        ValidateStateCore(state, cinnabarRules);
         ArgumentNullException.ThrowIfNull(input);
         ValidateRng(rng);
         if (state.Status != OldRodFishingStatus.Running)
@@ -100,16 +110,18 @@ public static class OldRodFishingRules
             default:
                 throw new InvalidOperationException("Unreachable Old Rod fishing state.");
         }
-        ValidateState(state);
+        ValidateStateCore(state, cinnabarRules);
         return new(state, rng, traces.ToImmutable());
     }
 
-    public static void ValidateState(OldRodFishingState state)
+    public static void ValidateState(OldRodFishingState state) => ValidateStateCore(state, cinnabarRules: false);
+
+    internal static void ValidateStateCore(OldRodFishingState state, bool cinnabarRules)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.RulesVersion != RulesVersion) throw new NotSupportedException("Unknown Old Rod rules version.");
+        if (state.RulesVersion != (cinnabarRules ? CinnabarOldRodEncounterRules.RulesVersion : RulesVersion)) throw new NotSupportedException("Unknown Old Rod rules version.");
         if (string.IsNullOrWhiteSpace(state.Map.Value) || !state.Map.Value.StartsWith("map.", StringComparison.Ordinal) ||
-            state.HasFishingMons != OldRodEncounterRules.Tables.Any(t => t.Map == state.Map) || !Enum.IsDefined(state.Status))
+            state.HasFishingMons != HasFishingMons(state.Map, cinnabarRules) || !Enum.IsDefined(state.Status))
             throw new ArgumentException("Fishing map or status differs from the bounded source profile.");
         if (state.Status is OldRodFishingStatus.Cancelled or OldRodFishingStatus.Rejected)
         {
@@ -117,7 +129,7 @@ public static class OldRodFishingRules
                 state.RoundsPlayed != 0 || state.MinimumRoundsRequired != 0) throw new ArgumentException("A non-started cast cannot contain fishing progress.");
             return;
         }
-        if (!OldRodEncounterRules.IsAdmittedMap(state.Map)) throw new NotSupportedException("Fishing map is not admitted.");
+        if (!IsAdmittedMap(state.Map, cinnabarRules)) throw new NotSupportedException("Fishing map is not admitted.");
         if (state.SourceStep is not (1 or 2 or 3 or 4 or 5 or 9 or 10 or 14 or 15) ||
             state.FrameCounter is < 0 or > 60 || state.NumDots is < 0 or > 10 || state.DotsRequired is < 0 or > 10 ||
             state.RoundsPlayed is < 0 or > 1 || state.MinimumRoundsRequired is < 0 or > 1)
@@ -143,6 +155,12 @@ public static class OldRodFishingRules
             state.Status == OldRodFishingStatus.NotEvenANibble && state.SourceStep != 15)
             throw new ArgumentException("Terminal fishing phase differs.");
     }
+
+    private static bool HasFishingMons(MapId map, bool cinnabarRules) =>
+        (cinnabarRules ? CinnabarOldRodEncounterRules.Tables : OldRodEncounterRules.Tables).Any(t => t.Map == map);
+
+    private static bool IsAdmittedMap(MapId map, bool cinnabarRules) => cinnabarRules
+        ? CinnabarOldRodEncounterRules.IsAdmittedMap(map) : OldRodEncounterRules.IsAdmittedMap(map);
 
     private static void ValidateContext(OldRodCastContext context)
     {

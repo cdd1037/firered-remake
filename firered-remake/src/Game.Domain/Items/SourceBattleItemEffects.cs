@@ -95,7 +95,7 @@ public static class SourceBattleItemEffects
                     {
                         // CopyPlayerPartyMonToBattleData restores permanent species/moves/types, stat stages and status2.
                         body = new(pokemon, HeldItem: member.HeldItem, Status: status) { KnockedOffItem = member.KnockedOffItem,
-                            AttackBadgeBoost = body!.AttackBadgeBoost, DefenseBadgeBoost = body.DefenseBadgeBoost, SpeedBadgeBoost = body.SpeedBadgeBoost };
+                            AttackBadgeBoost = body!.AttackBadgeBoost, DefenseBadgeBoost = body.DefenseBadgeBoost, SpecialBadgeBoost = body.SpecialBadgeBoost, SpeedBadgeBoost = body.SpeedBadgeBoost };
                         cell = cell with { Registers = new() };
                         next = next with { SourceAbsentMask = (byte)(next.SourceAbsentMask & ~cell.Slot.Mask) };
                     }

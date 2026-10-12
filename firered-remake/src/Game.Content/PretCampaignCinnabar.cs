@@ -1,0 +1,84 @@
+using System.Collections.Immutable;
+using Game.Domain.Ids;
+using Game.Domain.Encounters;
+using Game.Domain.Items;
+using Game.Domain.Pokemon;
+using Game.Domain.Trainers;
+using Game.Domain.World;
+
+namespace Game.Content;
+
+public sealed partial class PretCampaignCatalog
+{
+    public const string CinnabarContentProfile="firered-cinnabar-campaign-v1";
+    public PretCinnabarRegion? CinnabarRegion{get;}
+    public PretCinnabarArt? CinnabarArt{get;}
+    public PretCinnabarPresentation? CinnabarPresentation{get;}
+    public SilphPokemonDocument? CinnabarPokemon{get;}
+    public PretCinnabarItemsDocument? CinnabarItems{get;}
+    public CinnabarOwnedPokemonCatalog? CinnabarOwnership{get;}
+    public CinnabarOpponentPokemonCatalog? CinnabarOpponents{get;}
+    public CinnabarTrainerCatalog? CinnabarTrainerParties{get;}
+    public CinnabarWaterEncounterCatalog? CinnabarWaterEncounters{get;}
+    public bool CinnabarEnabled=>CinnabarRegion is not null;
+    public static PretCampaignCatalog LoadCinnabarProfile(string root,bool useCompactMapData=true,string? cinnabarContentRoot=null)=>
+        LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,
+            includeSilph:true,includeSaffronGym:true,includeCinnabar:true,cinnabarContentRoot:cinnabarContentRoot);
+
+    private static void AppendCinnabarSources(PretCinnabarRegion region,PretCinnabarItemsDocument items,
+        List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants,List<string> hashes)
+    {
+        var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
+        foreach(var source in region.Scripts)
+        {
+            if(prior.TryGetValue(source.Path,out var old))
+            {
+                if(old.SourceRef.Sha256!=source.SourceRef.Sha256||old.Text!=source.Text)
+                    throw new InvalidDataException("cinnabar_source_conflict: "+source.Path);
+            }
+            else{prior.Add(source.Path,source);sources.Add(source);}
+            if(!texts.Contains(source.Text,StringComparer.Ordinal))texts.Add(source.Text);
+        }
+        foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
+        MergeRegionalServiceConstants(constants,region.Constants);
+        hashes.AddRange(region.AdditionalSourceHashes);hashes.AddRange(items.AdditionalSourceHashes);
+        hashes.Add("cinnabar-pokemon:"+PretCinnabarPokemon.GeneratedSha256);
+        hashes.Add("cinnabar-trainers:"+PretCinnabarTrainers.GeneratedSha256);
+        hashes.Add("cinnabar-campaign:"+CinnabarContentProfile);
+    }
+    private string? CinnabarSpeciesName(int species)=>CinnabarPokemon?.SpeciesNames.FirstOrDefault(n=>
+        CinnabarPokemon.Species.Concat(CinnabarPokemon.OpponentSpecies).Any(s=>s.SourceSpeciesId==species&&s.Id==n.Id))?.Name;
+
+    private static IEnumerable<FieldPickupDefinition> CinnabarPickupDefinitions(PretCinnabarRegion region,
+        EarlyShopCatalog shop,PewterMachineCatalog machines,PretStoryCompilation scripts)
+    {
+        foreach(var row in region.Contracts.GetProperty("itemPickups").EnumerateArray())
+        {
+            var item=row.GetProperty("event");var source=row.GetProperty("script");
+            string label=source.GetProperty("label").GetString()!;
+            var program=scripts.FindProgram(label)??throw new InvalidDataException("cinnabar_pickup_script_missing");
+            var assignment=program.Instructions.Single(i=>i.Opcode=="setorcopyvar"&&i.Args[0]=="VAR_0x8000");
+            string symbol=assignment.Args[1];var id=new ItemId("pret:"+symbol);
+            var ordinary=shop.Items.SingleOrDefault(i=>i.Id==id);
+            var machine=PewterMachineRules.Definition(machines,id)?.Machine.Item;
+            if(ordinary is null&&machine is null)throw new InvalidDataException("cinnabar_pickup_item_missing");
+            var map=region.NewMaps[new(row.GetProperty("map").GetString()!)];int local=row.GetProperty("localId").GetInt32();
+            string flag=item.GetProperty("flag").GetString()!;
+            if(!scripts.TryConstant(flag,out int flagId)||!System.Text.Json.JsonElement.DeepEquals(item,map.Events.GetProperty("object_events")[local-1]))
+                throw new InvalidDataException("cinnabar_pickup_source_mismatch");
+            yield return new("cinnabar:"+flag,map.SourceMapSymbol,false,local,item.GetProperty("x").GetInt32(),item.GetProperty("y").GetInt32(),
+                item.GetProperty("elevation").GetInt32(),label,symbol,ordinary?.SourceItemId??machine!.SourceItemId,id,
+                ordinary?.Name??machine!.Name,ordinary?.Pocket??machine!.Pocket,1,flag,flagId);
+        }
+        foreach(var row in region.Contracts.GetProperty("hiddenItems").EnumerateArray())
+        {
+            var item=row.GetProperty("event");var map=region.NewMaps[new(row.GetProperty("map").GetString()!)];
+            var definition=shop.Items.Single(i=>i.Id.Value=="pret:"+item.GetProperty("item").GetString());
+            string flag=item.GetProperty("flag").GetString()!;
+            if(!scripts.TryConstant(flag,out int flagId)||item.GetProperty("underfoot").GetBoolean())throw new InvalidDataException("cinnabar_hidden_source");
+            yield return new("cinnabar:"+flag,map.SourceMapSymbol,true,null,item.GetProperty("x").GetInt32(),item.GetProperty("y").GetInt32(),
+                item.GetProperty("elevation").GetInt32(),"EventScript_HiddenItemScript",definition.SourceItemSymbol,definition.SourceItemId,
+                definition.Id,definition.Name,definition.Pocket,item.GetProperty("quantity").GetInt32(),flag,flagId);
+        }
+    }
+}

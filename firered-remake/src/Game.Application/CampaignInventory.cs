@@ -42,6 +42,8 @@ public sealed partial class CampaignSession
             keys=(keys??[]).Add(new(SsAnneItemRules.BerryPouchId,1));
         if((changed.KeyItems??[]).Any(s=>s.Item==SilphShopCatalog.CardKeyId)&&!(keys??[]).Any(s=>s.Item==SilphShopCatalog.CardKeyId))
             keys=(keys??[]).Add(new(SilphShopCatalog.CardKeyId,1));
+        if((changed.KeyItems??[]).Any(s=>s.Item.Value=="pret:ITEM_SECRET_KEY")&&!(keys??[]).Any(s=>s.Item.Value=="pret:ITEM_SECRET_KEY"))
+            keys=(keys??[]).Add(new(new("pret:ITEM_SECRET_KEY"),1));
         return original with{BagItems=changed.BagItems,PcItems=changed.PcItems,Balls=changed.Balls,Berries=changed.Berries,KeyItems=keys};
     }
     private InventoryState PotionView(InventoryState inventory)

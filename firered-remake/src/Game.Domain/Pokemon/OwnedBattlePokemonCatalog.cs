@@ -32,6 +32,8 @@ public sealed class OwnedBattlePokemonCatalog
             proof = new(catalog, surf.Predecessor.Predecessor, surf.Mechanics, SurfOwnedPokemonCatalog.Profile);
         else if (SilphOwnedPokemonCatalog.For(catalog) is { } silph)
             proof = new(catalog, silph.Predecessor.Predecessor.Predecessor, silph.Mechanics, SilphOwnedPokemonCatalog.Profile);
+        else if (CinnabarOwnedPokemonCatalog.For(catalog) is { } cinnabar)
+            proof = new(catalog, cinnabar.Predecessor.Predecessor.Predecessor.Predecessor, cinnabar.Mechanics, CinnabarOwnedPokemonCatalog.Profile);
         else return null;
         proof = Authenticated.GetValue(catalog, _ => proof);
         MechanicsOwners.GetValue(proof.Mechanics.Catalog, _ => new())[proof.RulesVersion] = proof;
@@ -49,16 +51,25 @@ public sealed class OwnedBattlePokemonCatalog
     public static implicit operator OwnedBattlePokemonCatalog?(SilphOwnedPokemonCatalog? owned) =>
         owned is null ? null : For(owned.Catalog)!;
 
+    [return: NotNullIfNotNull(nameof(owned))]
+    public static implicit operator OwnedBattlePokemonCatalog?(CinnabarOwnedPokemonCatalog? owned) =>
+        owned is null ? null : For(owned.Catalog)!;
+
     internal bool AdmitsTrainerOpponent(SpeciesId species, string? trainerProfile = null) => Catalog.Species.ContainsKey(species) ||
         trainerProfile == SaffronGymOpponentPokemonCatalog.Profile &&
         SilphOwnedPokemonCatalog.For(Catalog) is { } saffronOwned &&
         SaffronGymOpponentPokemonCatalog.For(saffronOwned) is { } saffron && saffron.Catalog.Species.ContainsKey(species) ||
+        trainerProfile == CinnabarOpponentPokemonCatalog.Profile &&
+        CinnabarOwnedPokemonCatalog.For(Catalog) is { } cinnabarOwned &&
+        CinnabarOpponentPokemonCatalog.For(cinnabarOwned) is { } cinnabar && cinnabar.Catalog.Species.ContainsKey(species) ||
         SilphOwnedPokemonCatalog.For(Catalog) is { } silph && SilphOpponentPokemonCatalog.For(silph) is { } opponents &&
         opponents.Catalog.Species.ContainsKey(species);
 
     internal static OwnedBattlePokemonCatalog? ForMechanics(PokemonCatalog? catalog, string? rulesVersion)
     {
         if (catalog is null || rulesVersion is null) return null;
+        if (rulesVersion == CinnabarOpponentPokemonCatalog.Profile &&
+            CinnabarOpponentPokemonCatalog.ForMechanics(catalog) is { } cinnabar) return For(cinnabar.Owned.Catalog);
         if (rulesVersion == SaffronGymOpponentPokemonCatalog.Profile &&
             SaffronGymOpponentPokemonCatalog.ForMechanics(catalog) is { } saffron) return For(saffron.Owned.Catalog);
         if (MechanicsOwners.TryGetValue(catalog, out var owners) && owners.TryGetValue(rulesVersion, out var proof)) return proof;
@@ -67,19 +78,21 @@ public sealed class OwnedBattlePokemonCatalog
     }
 
     internal static bool IsKnownProfile(string profile) =>
-        profile is SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile;
+        profile is SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile;
     internal static bool ProfileAdmits(string profile, SpeciesId species) => IsKnownProfile(profile) &&
         (Battle.CampaignAdmissionPolicy.CurrentFuchsia.Admits(species) || SafariOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile && SurfOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile && SilphOwnedPokemonCatalog.AdditionalSpecies.Contains(species));
+         profile is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile && SurfOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile && SilphOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile && CinnabarOwnedPokemonCatalog.AdditionalSpecies.Contains(species));
 
     // Surf adds only Psyduck to historical wild membership. Golduck is an owned
     // evolution; Safari's three extra catches still use their separate encounter owner.
     internal bool AdmitsWildOpponent(PokemonInstance pokemon) =>
-        Predecessor.Species.ContainsKey(pokemon.Species) || RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile &&
-        pokemon.Species == SurfOwnedPokemonCatalog.AdditionalSpecies[0];
+        Predecessor.Species.ContainsKey(pokemon.Species) || RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile &&
+        pokemon.Species == SurfOwnedPokemonCatalog.AdditionalSpecies[0] ||
+        RulesVersion == CinnabarOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species);
 
     internal bool SupportsOrdinaryWildOpponent(PokemonInstance pokemon) => AdmitsWildOpponent(pokemon) &&
         (FuchsiaBattleScope.SupportsWildOpponent(pokemon.SourceSpeciesId) ||
-         RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile && pokemon.SourceSpeciesId is 54 or 72 or 109);
+         RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile && pokemon.SourceSpeciesId is 54 or 72 or 109 || RulesVersion == CinnabarOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species));
 }

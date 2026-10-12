@@ -25,6 +25,7 @@ public static class EarlyShopInventoryRules
     public static void ValidateCatalog(EarlyShopCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.Profile == CinnabarShopCatalog.Profile) { CinnabarShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == SaffronGymShopCatalog.Profile) { SaffronGymShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == SilphShopCatalog.Profile) { SilphShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == SafariShopCatalog.Profile) { SafariShopCatalog.ValidateCatalog(catalog); return; }
@@ -104,6 +105,7 @@ public static class EarlyShopInventoryRules
     public static string? Validate(EarlyShopCatalog catalog, InventoryState? state)
     {
         ValidateCatalog(catalog);
+        if (CinnabarShopCatalog.For(catalog) is { } cinnabar) return cinnabar.ValidateInventory(state);
         if (state is null) return "inventory_missing";
         if (state.Limits != catalog.Limits) return "inventory_limits";
         if (catalog.Profile is not (SsAnneItemRules.Profile or Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile or RocketHideoutItemRules.Profile or PokemonTowerItemRules.Profile or FuchsiaGymItemRules.Profile or SafariShopCatalog.Profile or SilphShopCatalog.Profile or SaffronGymShopCatalog.Profile) && state.Berries is not null) return "inventory_berry_profile_missing";

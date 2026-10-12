@@ -110,6 +110,9 @@ public static partial class WildBattleRules
                 int roll = context.Draw("wild-battle.held-item", 100) % 100;
                 string item = opponent.Pokemon.SourceSpeciesId switch
                 {
+                    _ when owned?.RulesVersion == CinnabarOwnedPokemonCatalog.Profile &&
+                        Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(opponent.Pokemon.Species) =>
+                        Game.Domain.Encounters.CinnabarWildPokemonFactory.HeldItem(opponent.Pokemon.Species,roll),
                     132 => roll >= 95 ? "ITEM_METAL_POWDER" : "ITEM_NONE",
                     _ when scriptedSnorlax => SnorlaxBattleContract.WildHeldItem(roll),
                     93 or 104 or 105 => PokemonTowerBattleContract.WildHeldItem(opponent.Pokemon.SourceSpeciesId, roll),

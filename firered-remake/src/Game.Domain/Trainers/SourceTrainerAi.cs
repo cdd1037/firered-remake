@@ -107,6 +107,7 @@ public static class SourceTrainerAi
 
     internal static ImmutableArray<string> Items(TrainerId id)
     {
+        if (CinnabarTrainerPartyFactory.Expected.TryGetValue(id, out var cinnabar)) return cinnabar.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (SaffronGymTrainerPartyFactory.Expected.TryGetValue(id, out var saffron)) return saffron.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (SilphTrainerPartyFactory.Expected.TryGetValue(id, out var silph)) return silph.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (FuchsiaGymTrainerPartyFactory.Expected.TryGetValue(id, out var gym)) return gym.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
@@ -117,6 +118,7 @@ public static class SourceTrainerAi
 
     internal static uint Flags(TrainerId id)
     {
+        if (CinnabarTrainerPartyFactory.Expected.TryGetValue(id, out var cinnabar)) return cinnabar.AiFlags;
         if (SaffronGymTrainerPartyFactory.Expected.TryGetValue(id, out var saffron)) return saffron.AiFlags;
         if (SilphTrainerPartyFactory.Expected.TryGetValue(id, out var silph)) return silph.AiFlags;
         if (FuchsiaGymTrainerPartyFactory.Expected.TryGetValue(id, out var gym)) return gym.AiFlags;

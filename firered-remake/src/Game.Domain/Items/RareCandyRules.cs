@@ -40,10 +40,15 @@ public static class RareCandyRules
     /// once. Status and existing PP/PP Ups survive. Level 100 has no effect, even when fainted.
     /// Caller must establish field context, bag ownership and exclusive modal state.
     /// </summary>
-    public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion, bool snorlaxRules = false, bool fuchsiaRules = false, bool safariRules = false, bool surfRules = false, bool silphRules = false)
+    public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion, bool snorlaxRules = false, bool fuchsiaRules = false, bool safariRules = false, bool surfRules = false, bool silphRules = false, bool cinnabarRules = false)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (silphRules)
+        if (cinnabarRules)
+        {
+            if (!CinnabarOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || snorlaxRules || fuchsiaRules || safariRules || surfRules || silphRules)
+                throw new NotSupportedException("Explicit authenticated Cinnabar Rare Candy profile required.");
+        }
+        else if (silphRules)
         {
             if (!SilphOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || snorlaxRules || fuchsiaRules || safariRules || surfRules)
                 throw new NotSupportedException("Explicit authenticated Silph Rare Candy profile required.");
@@ -65,7 +70,7 @@ public static class RareCandyRules
         }
         else if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) == 102) != snorlaxRules) throw new NotSupportedException("Explicit Snorlax Rare Candy profile required.");
         LevelEvolutionRules.Validate(content, owned);
-        if (!fuchsiaRules && !safariRules && !surfRules && !silphRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
+        if (!cinnabarRules && !fuchsiaRules && !safariRules && !surfRules && !silphRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
             throw new NotSupportedException("Rare Candy requires the verified MtMoon or later Kanto catalog.");
         if (!ValidRegion(currentRegion))
             throw new ArgumentException("A source MAPSEC region is required.", nameof(currentRegion));

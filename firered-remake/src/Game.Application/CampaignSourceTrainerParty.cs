@@ -45,7 +45,8 @@ public sealed partial class CampaignSession
         {
             AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),
             SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),
-            DefenseBadgeBoost=_content.FuchsiaGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET")
+            DefenseBadgeBoost=_content.FuchsiaGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
+            SpecialBadgeBoost=_content.CinnabarEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET")
         }).ToImmutableArray();
     }
 
@@ -55,8 +56,9 @@ public sealed partial class CampaignSession
         int active=Enumerable.Range(0,party.Length).First(i=>party[i].Pokemon.CurrentHp>0);
         var style=EffectiveBattleStyle(state);var terrain=CampaignBattleTerrain(state);
         var owned=SafariOrdinaryOwnership;var catalog=owned?.Predecessor??BattlePokemon;
-        var result=IsSaffronGymTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SaffronGymTrainerParties!,_content.SaffronGymOpponents!,trainer,party,active,state.World.Rng,style,terrain)
-            : IsSilphTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.SilphOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+        var result=IsCinnabarTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+            : IsSaffronGymTrainer(trainer) ? (_content.CinnabarEnabled ? ForestTrainerCombatRules.StartSource(_content.SaffronGymTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain) : ForestTrainerCombatRules.StartSource(_content.SaffronGymTrainerParties!,_content.SaffronGymOpponents!,trainer,party,active,state.World.Rng,style,terrain))
+            : IsSilphTrainer(trainer) ? (_content.CinnabarEnabled ? ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain) : ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.SilphOpponents!,trainer,party,active,state.World.Rng,style,terrain))
             : IsFuchsiaGymTrainer(trainer) ? ForestTrainerCombatRules.Start(_content.FuchsiaGymTrainerParties!,catalog,trainer,party,active,state.World.Rng,style,owned)
             : IsFuchsiaRouteTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FuchsiaRouteTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
             : IsPokemonTowerTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.PokemonTowerTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)

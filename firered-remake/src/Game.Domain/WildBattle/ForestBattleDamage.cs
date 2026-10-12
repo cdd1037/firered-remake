@@ -122,6 +122,11 @@ internal static class ForestBattleDamage
             defense = defense * 110 / 100;
             steps.Add(new("defense-badge", defense));
         }
+        // pokemon.c:2444-2447 applies each special badge multiplication before held effects.
+        if (canonicalSource && !physical && user.SpecialBadgeBoost)
+        { attack = attack * 110 / 100; steps.Add(new("special-attack-badge", attack)); }
+        if (canonicalSource && !physical && target.SpecialBadgeBoost)
+        { defense = defense * 110 / 100; steps.Add(new("special-defense-badge", defense)); }
         if (canonicalSource && user.HeldItem is not ("ITEM_HARD_STONE" or "ITEM_BLACK_GLASSES" or "ITEM_SPELL_TAG"))
         {
             int held = SourceHeldItemModifiers.TypeAttack(catalog, user, type, attack);

@@ -54,6 +54,8 @@ public sealed record WildBattleCombatant(PokemonInstance Pokemon, int AttackStag
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool TruantLoafing { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool SpeedBadgeBoost { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool DefenseBadgeBoost { get; init; }
+    // FireRed Badge07 boosts both special stats; omitted from all historical snapshots.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool SpecialBadgeBoost { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SpecialAttackStageDelta { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int SpecialDefenseStageDelta { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public int ChargeTurnsRemaining { get; init; }

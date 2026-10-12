@@ -1,6 +1,6 @@
 # 完整单机目标的实施顺序
 
-状态（2026-10-10）：已进入关都分批扩展，五徽章单打主线、火箭队基地、宝可梦塔、两处卡比兽和有限玉虹/紫苑服务已分别验收；这不代表所有已载入地区交互完成。下表保留阶段门禁定义，实际边界见各阶段证据及覆盖清单。最终范围见 [scope.md](scope.md)，源冻结见 [source-baseline.md](source-baseline.md)。本路线不承诺缺乏测量依据的日历工期。
+状态（2026-10-12）：已进入关都分批扩展，普通共享战斗核心、六徽章主线、狩猎地带及 Surf/Strength、西尔佛、火箭队基地、宝可梦塔、两处卡比兽和有限地区服务已分别验收；红莲仍是推进中的候选。这不代表所有已载入地区交互完成。下表保留阶段门禁定义，实际边界见各阶段证据及覆盖清单。最终范围见 [scope.md](scope.md)，源冻结见 [source-baseline.md](source-baseline.md)。本路线不承诺缺乏测量依据的日历工期。
 
 ## 阶段与退出证据
 
@@ -128,3 +128,19 @@ Resume the campaign with Fuchsia Safari's actual special action/step loop and ne
 Safari admission, special capture,600-step exit, Gold Teeth/HM03 and the Warden HM04 exchange form a real public campaign chain; a native natural Rhyhorn catch and fresh-process Continue are separately accepted at28a. See [Safari campaign](safari-campaign.md). Strength at the source Warden boulder and Surf across already loaded mainland/Safari water are the current bounded field-HM successor; their own [Strength](field-strength.md) and [Surf](field-surf.md) records separate source/module, combined and native acceptance. Later boulder holes/current modes remain explicit boundaries.
 
 Next, use the existing Tea/Fuji prerequisites for actual Saffron gate entry, Silph teleport pads/Card Key doors/elevator, rival/Giovanni and Lapras/Master Ball, then Sabrina. Region imports retain source topology and do not imply completed story interactions.
+
+### 2026-10-12 Cinnabar candidate and first Sevii continuation
+
+The sixth badge is accepted in [the Saffron campaign](saffron-gym-campaign.md).
+The [Cinnabar candidate](cinnabar-campaign.md) now integrates the original Pallet
+Surf approach, Mansion switches/falls/Secret Key and Blaine callback. Its actual
+public route has reached Route21 and won Lil/Ian, while the natural Mansion and
+seventh-badge chain is still being verified. Module and build results do not
+replace that pending campaign result.
+
+After that node, continue Bill's first visit to One Island, Two Island and Three
+Island at the original pre-League time, including Lostelle and the return path.
+Do not skip this to rush the eighth badge. Seafoam, Cinnabar Lab services and
+Good/Super Rod remain explicit regional work; no claim of complete Cinnabar
+interaction coverage is made. Dedicated move animations remain tracked and
+deferred under the user's latest priority, without blocking complete rules.
