@@ -340,8 +340,9 @@ public static class PewterMachineRules
         }
         int friendship = Math.Min(255, before.Friendship + delta);
         var after = pokemon with { Pokemon = before with { Moves = moves, Friendship = friendship } };
-        int consumed = machine == Hm01Id || machine == Hm05Id ||
-            (safari is not null || surf is not null || silph is not null || saffron is not null || cinnabar is not null) && (machine == SafariMachineCatalog.Hm03Id || machine == SafariMachineCatalog.Hm04Id) ? 0 : 1;
+        // party_menu.c consumes only source items below ITEM_HM01 (339).
+        // The definition is already authenticated; reuse cannot depend on region.
+        int consumed = definition.Machine.Item.SourceItemId < 339 ? 1 : 0;
         var afterInventory = inventory with { Machines = OpeningInventoryRules.SetQuantity(inventory.Machines ?? [], machine, count - consumed) };
         return new(afterInventory, after, true, null, slot, consumed, friendship - before.Friendship);
     }
