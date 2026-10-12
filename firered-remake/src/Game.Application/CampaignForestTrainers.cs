@@ -53,7 +53,7 @@ public sealed partial class CampaignSession
         // The next city chapter owns the rival's Fame Checker and Rocket TM28 continuations.
         // Reject before committing their first lock/battle until those complete reward paths exist.
         if(!_content.BillEnabled&&IsCeruleanTrainer(trainer)&&definition.Mode==3)throw new InvalidDataException("cerulean_north_events_not_implemented");
-        if (definition.Mode != 0 && !(IsSilphTrainer(trainer) && definition.Mode is 2 or 3) && !(IsPokemonTowerTrainer(trainer) && definition.Mode is 2 or 3) && !(IsRocketHideoutTrainer(trainer) && definition.Mode is 2 or 3) && !(IsFuchsiaGymTrainer(trainer) && definition.Mode == 1) && !(IsCeladonGymTrainer(trainer) && definition.Mode == 1) && !(IsPewterTrainer(trainer) && definition.Mode == 1) && !(IsRoute22Trainer(trainer) && definition.Mode == 9) && !(IsMtMoonTrainer(trainer) && definition.Mode == 3) && !(IsCeruleanTrainer(trainer)&&definition.Mode is 1 or 3) && !(IsBillTrainer(trainer)&&definition.Mode==3) && !(IsSsAnneTrainer(trainer)&&definition.Mode==3)) throw new InvalidDataException("forest_trainer_mode_unsupported");
+        if (definition.Mode != 0 && !(IsSilphTrainer(trainer) && definition.Mode is 2 or 3) && !(IsPokemonTowerTrainer(trainer) && definition.Mode is 2 or 3) && !(IsRocketHideoutTrainer(trainer) && definition.Mode is 2 or 3) && !(IsSaffronGymTrainer(trainer) && definition.Mode == 1) && !(IsFuchsiaGymTrainer(trainer) && definition.Mode == 1) && !(IsCeladonGymTrainer(trainer) && definition.Mode == 1) && !(IsPewterTrainer(trainer) && definition.Mode == 1) && !(IsRoute22Trainer(trainer) && definition.Mode == 9) && !(IsMtMoonTrainer(trainer) && definition.Mode == 3) && !(IsCeruleanTrainer(trainer)&&definition.Mode is 1 or 3) && !(IsBillTrainer(trainer)&&definition.Mode==3) && !(IsSsAnneTrainer(trainer)&&definition.Mode==3)) throw new InvalidDataException("forest_trainer_mode_unsupported");
         if(!string.IsNullOrEmpty(definition.IntroText))_ = _content.TextPages(definition.IntroText);
         _ = _content.TextPages(definition.DefeatText);
         if(!string.IsNullOrEmpty(definition.PostBattleText))_ = _content.TextPages(definition.PostBattleText);
@@ -122,7 +122,7 @@ public sealed partial class CampaignSession
             var selected=state.Actors.Values.SingleOrDefault(a=>a.Active&&a.SourceLocalId==state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED"))??throw new InvalidDataException("mtmoon_no_intro_actor_missing");
             state=SelectInteractedObject(state,selected.LocalId) with{LastTalked=selected.LocalId};
         }
-        var expectedLine=IsSilphTrainer(trainer)||IsFuchsiaGymTrainer(trainer)||IsFuchsiaRouteTrainer(trainer)||IsPokemonTowerTrainer(trainer)||IsRocketHideoutTrainer(trainer)||IsCeladonGymTrainer(trainer)||IsCeladonApproachTrainer(trainer)||IsRockTunnelTrainer(trainer)||IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
+        var expectedLine=IsSaffronGymTrainer(trainer)||IsSilphTrainer(trainer)||IsFuchsiaGymTrainer(trainer)||IsFuchsiaRouteTrainer(trainer)||IsPokemonTowerTrainer(trainer)||IsRocketHideoutTrainer(trainer)||IsCeladonGymTrainer(trainer)||IsCeladonApproachTrainer(trainer)||IsRockTunnelTrainer(trainer)||IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
         if (effect.Source.Path != definition.Source.Path || ((effect.Source.Symbol != definition.ScriptEntry || effect.Source.Line != expectedLine) && !IsBillRocketTriggeredBattle(effect,trainer)) ||
             (!noIntro&&(effect.Args[1] != definition.IntroText || effect.Args[2] != definition.DefeatText)) ||
             state.LastTalked is not { } actorId || !state.Actors.TryGetValue(actorId, out var actor) ||
@@ -147,6 +147,13 @@ public sealed partial class CampaignSession
             int expected=source.PostBattleScript is not null?4:3;
             if(effect.Args.Length!=expected||expected==4&&effect.Args[3]!=source.PostBattleScript)
                 throw new InvalidDataException("rocket_trainer_optional_arguments_mismatch");
+        }
+        else if(IsSaffronGymTrainer(trainer))
+        {
+            var source=_content.SaffronGymTrainerParties!.Battles[trainer];
+            int expected=source.MusicOption is not null?5:source.PostBattleScript is not null?4:3;
+            if(effect.Args.Length!=expected||expected>=4&&effect.Args[3]!=source.PostBattleScript||expected==5&&effect.Args[4]!=source.MusicOption)
+                throw new InvalidDataException("saffron_gym_trainer_optional_arguments_mismatch");
         }
         else if(IsFuchsiaGymTrainer(trainer))
         {
@@ -204,7 +211,7 @@ public sealed partial class CampaignSession
         var next=state with { ForestTrainerBattle = battle,
             Dialogue = noIntro?null:new(definition.IntroText, _content.TextPages(definition.IntroText), 0, false, false),
             Script = state.Script with { Locked = true, Variables = _forestTrainerApproaching ? state.Script.Variables : state.Script.Variables.SetItem("VAR_RESULT", 0) },
-            Music = noIntro||IsFuchsiaGymTrainer(trainer)&&_content.FuchsiaGymTrainerParties!.Battles[trainer].MusicOption=="NO_MUSIC"||IsCeladonGymTrainer(trainer)&&_content.CeladonGymTrainers!.Battles[trainer].MusicOption=="NO_MUSIC"||IsVermilionGymTrainer(trainer)&&_content.VermilionGymTrainers!.Battles[trainer].MusicOption=="NO_MUSIC"||(IsPewterTrainer(trainer)||IsCeruleanTrainer(trainer)) && definition.Mode == 1 ? state.Music : OrdinaryEncounterMusic(trainer) };
+            Music = noIntro||IsSaffronGymTrainer(trainer)&&_content.SaffronGymTrainerParties!.Battles[trainer].MusicOption=="NO_MUSIC"||IsFuchsiaGymTrainer(trainer)&&_content.FuchsiaGymTrainerParties!.Battles[trainer].MusicOption=="NO_MUSIC"||IsCeladonGymTrainer(trainer)&&_content.CeladonGymTrainers!.Battles[trainer].MusicOption=="NO_MUSIC"||IsVermilionGymTrainer(trainer)&&_content.VermilionGymTrainers!.Battles[trainer].MusicOption=="NO_MUSIC"||(IsPewterTrainer(trainer)||IsCeruleanTrainer(trainer)) && definition.Mode == 1 ? state.Music : OrdinaryEncounterMusic(trainer) };
         return noIntro?PrepareForestTrainerPresentation(ResetFieldPoisonCounterForBattle(next) with{ForestTrainerBattle=battle with{Stage=CampaignForestTrainerStage.Combat},Dialogue=null,Motions=[],PresentationTicks=0,World=next.World with{Rng=combat.Battle.Rng},SeenSpecies=next.SeenSpecies.Add(combat.Battle.Opponent.Pokemon.SourceSpeciesId)}):next;
     }
 
@@ -449,7 +456,7 @@ public sealed partial class CampaignSession
         trainer=WithSsAnnePartyContext(state,trainer);
         var indices = Enumerable.Range(0, state.Party.Length).Where(i => b.ParticipatingMembers!.Contains(state.Party[i].InstanceId) &&
             !state.Party[i].IsEgg && state.Party[i].Pokemon.CurrentHp > 0).ToArray();
-        var receivers = indices.Select(i => new CampaignWildRewardReceiver(i, IsSilphTrainer(trainer.Trainer)?WildVictoryRewards.ApplySilphTrainer(_content.SilphOwnership!,state.Party[i],trainer.Combat,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,indices.Length):SafariOrdinaryOwnership is {} safari?WildVictoryRewards.ApplySafariOwned(safari,state.Party[i],trainer.Combat.Battle.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,indices.Length,trainerBattle:true,defeatedBattleView:trainer.Combat.Battle.Opponent):WildVictoryRewards.Apply(BattlePokemon, state.Party[i],
+        var receivers = indices.Select(i => new CampaignWildRewardReceiver(i, IsSaffronGymTrainer(trainer.Trainer)?WildVictoryRewards.ApplySaffronGymTrainer(_content.SaffronGymOpponents!,state.Party[i],trainer.Combat,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,indices.Length):IsSilphTrainer(trainer.Trainer)?WildVictoryRewards.ApplySilphTrainer(_content.SilphOwnership!,state.Party[i],trainer.Combat,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,indices.Length):SafariOrdinaryOwnership is {} safari?WildVictoryRewards.ApplySafariOwned(safari,state.Party[i],trainer.Combat.Battle.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,indices.Length,trainerBattle:true,defeatedBattleView:trainer.Combat.Battle.Opponent):WildVictoryRewards.Apply(BattlePokemon, state.Party[i],
             trainer.Combat.Battle.Opponent.Pokemon, _content.MapDefinition(state.World.Player.MapId).RegionMapSection,
             indices.Length, forestRules: true, trainerBattle: true,pewterRules:_content.PewterEnabled,route22Rules:_content.Route22Enabled,route3Rules:_content.Route3Enabled,mtMoonRules:_content.MtMoonEnabled,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,vermilionGymRules:_content.VermilionGymEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled,defeatedBattleView:trainer.Combat.Battle.Opponent))).ToImmutableArray();
         return StartForestTrainerRewardReceiver(state with { ForestTrainerBattle = trainer with
@@ -599,6 +606,8 @@ public sealed partial class CampaignSession
             return Pump(StartStory(next with{Script=next.Script with{Locked=true}},towerCallback));
         if(IsRocketHideoutTrainer(trainer.Trainer)&&_content.RocketHideoutTrainers!.Battles[trainer.Trainer].PostBattleScript is {} rocketCallback)
             return Pump(StartStory(next with{Script=next.Script with{Locked=true}},rocketCallback));
+        if(IsSaffronGymTrainer(trainer.Trainer)&&_content.SaffronGymTrainerParties!.Battles[trainer.Trainer].PostBattleScript is {} saffronGymCallback)
+            return Pump(StartStory(next with{Script=next.Script with{Locked=true}},saffronGymCallback));
         if(IsFuchsiaGymTrainer(trainer.Trainer)&&_content.FuchsiaGymTrainerParties!.Battles[trainer.Trainer].PostBattleScript is {} fuchsiaGymCallback)
             return Pump(StartStory(next with{Script=next.Script with{Locked=true}},fuchsiaGymCallback));
         if(IsCeladonGymTrainer(trainer.Trainer)&&_content.CeladonGymTrainers!.Battles[trainer.Trainer].PostBattleScript is {} celadonGymCallback)

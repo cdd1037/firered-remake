@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState>? TrySilphPadStep(CampaignState state,CampaignCommand command)
     {
-        if(!_content.SilphEnabled||command.Kind!="move"||!SilphFieldRules.IsSilphMap(state.World.Player.MapId))return null;
+        if(command.Kind!="move"||!_content.SupportsTeleportPads(state.World.Player.MapId))return null;
         var p=state.World.Player;var(dx,dy)=Delta(command.Direction);
         if(SourceBehavior(state,p.X+dx,p.Y+dy)!=SilphFieldRules.PadBehavior)return null;
         var result=SilphFieldRules.StepOntoPad(state.World,new(new("silph-pad:"+state.World.Revision),state.World.Revision,command.Direction),
@@ -63,7 +63,7 @@ public sealed partial class CampaignSession
     private IReadOnlyDictionary<MapId,IFieldMap> SilphMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> maps,CampaignState state)
     {
         if(!_content.SilphEnabled)return maps;
-        return maps.ToDictionary(x=>x.Key,x=>SilphFieldRules.IsSilphMap(x.Key)?(IFieldMap)new SilphMovementMap(x.Value,
+        return maps.ToDictionary(x=>x.Key,x=>_content.SupportsTeleportPads(x.Key)?(IFieldMap)new SilphMovementMap(x.Value,
             x.Key==state.World.Player.MapId?state.MapEdits:null,_content):x.Value);
     }
 

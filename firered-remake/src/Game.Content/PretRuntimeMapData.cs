@@ -219,6 +219,7 @@ public sealed class PretRuntimeMapData : IFieldMap
         Id = new(data.StableId);
         _mapIdFromSymbol = data.FullSourceHash switch
         {
+            PretSaffronGymRegion.FullSourceHash => PretSaffronGymRegion.MapIdFromSourceSymbol,
             PretSilphRegion.FullSourceHash => PretSilphRegion.MapIdFromSourceSymbol,
             PretWorldMap.FullSourceHash => symbol => PretWorldCatalog.Specifications.SingleOrDefault(s => s.SourceMapSymbol == symbol) is { } spec
                 ? new MapId(spec.StableId) : throw new InvalidDataException("Unknown base runtime map symbol: " + symbol),

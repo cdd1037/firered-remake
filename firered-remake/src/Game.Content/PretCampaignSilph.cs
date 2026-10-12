@@ -20,13 +20,14 @@ public sealed partial class PretCampaignCatalog
     public PretSilphArt? SilphArt { get; }
     public bool SilphEnabled=>SilphRegion is not null;
     SilphTrainerCatalog? ICampaignCatalog.SilphTrainerParties=>SilphTrainers is {} t?new(t.SourceCommit,t.Profile,t.CompleteSourceRoster,t.Trainers,t.Battles):null;
-    public ImmutableArray<SilphWarpPad> SilphWarpPads=>SilphRegion?.WarpPads??[];
+    public ImmutableArray<SilphWarpPad> SilphWarpPads=>(SilphRegion?.WarpPads??[]).AddRange(SaffronGymWarpPads);
     public ImmutableArray<SilphDoorDefinition> SilphDoors=>SilphRegion?.Doors??[];
     public ImmutableArray<CampaignSilphElevatorFloor> SilphElevatorFloors=>SilphRegion?.ElevatorFloors??[];
     public ImmutableArray<CampaignSilphElevatorEntrance> SilphElevatorEntrances=>SilphRegion?.ElevatorEntrances??[];
     public ImmutableArray<CampaignSilphDynamicExit> SilphDynamicExits=>SilphRegion?.DynamicExits??[];
     public string PresentedSpeciesName(int species)=>PokemonContent?.SpeciesNames.GetValueOrDefault(species)
         ??SilphPokemon?.AdditionalSpeciesNames.GetValueOrDefault(species)
+        ??SaffronGymSpeciesNames.GetValueOrDefault(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
     public static PretCampaignCatalog LoadSilphProfile(string root,bool useCompactMapData=true,string? silphContentRoot=null)=>
         LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,

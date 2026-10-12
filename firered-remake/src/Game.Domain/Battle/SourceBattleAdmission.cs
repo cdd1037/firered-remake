@@ -49,7 +49,10 @@ public static class SourceBattleAdmission
         OwnedBattlePokemonCatalog.ForMechanics(catalog, state.SourceCampaignRulesVersion) is not null;
 
     public static bool IsOwnedCampaign(OwnedBattlePokemonCatalog owned, WildBattleState state) =>
-        state.SourceCampaignRulesVersion == owned.RulesVersion && IsOwnedCampaign(owned.Mechanics.Catalog, state);
+        (state.SourceCampaignRulesVersion == owned.RulesVersion ||
+         state.SourceCampaignRulesVersion == SaffronGymOpponentPokemonCatalog.Profile &&
+         SaffronGymOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } saffron &&
+         ReferenceEquals(saffron.Owned.Catalog, owned.Catalog)) && IsOwnedCampaign(owned.Mechanics.Catalog, state);
 
     internal static string? ValidateCampaignMembership(PokemonCatalog? catalog, WildBattleState state)
     {
@@ -60,7 +63,7 @@ public static class SourceBattleAdmission
             return "source_campaign_actual_parties";
         if (party.Player.Any(m => m?.Pokemon is null || !owned.Catalog.Species.ContainsKey(m.Pokemon.Species)) ||
             party.Opponent.Any(m => m?.Pokemon is null || !(party.BattleKind == WildBattleCalledBattleKind.Trainer
-                ? owned.AdmitsTrainerOpponent(m.Pokemon.Species) : owned.Catalog.Species.ContainsKey(m.Pokemon.Species))))
+                ? owned.AdmitsTrainerOpponent(m.Pokemon.Species, state.SourceCampaignRulesVersion) : owned.Catalog.Species.ContainsKey(m.Pokemon.Species))))
             return "source_campaign_species_unsupported";
         return null;
     }

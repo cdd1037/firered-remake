@@ -39,7 +39,7 @@ public sealed record DepartmentStoreOrdinaryStock(string SourceCommit, string Co
         // This authenticates every inherited definition and the original five stock tables before
         // resolving these nine IDs. Full item effects/metadata come only from that unchanged catalog.
         EarlyShopInventoryRules.ValidateCatalog(catalog);
-        if (catalog.Profile is not (PokemonTowerItemRules.Profile or FuchsiaGymItemRules.Profile or SafariShopCatalog.Profile or SilphShopCatalog.Profile) || SourceCommit != OpeningInventoryRules.SourceCommit ||
+        if (catalog.Profile is not (PokemonTowerItemRules.Profile or FuchsiaGymItemRules.Profile or SafariShopCatalog.Profile or SilphShopCatalog.Profile or SaffronGymShopCatalog.Profile) || SourceCommit != OpeningInventoryRules.SourceCommit ||
             ContractSha256 != ExpectedContractSha256 || MapId != ExpectedMapId || ClerkScript != ExpectedClerkScript ||
             Source != ExpectedSource || Entries.IsDefault || !Entries.SequenceEqual(ExpectedEntries))
             throw new NotSupportedException("Exact Department Store 2F ordinary source shelf required.");

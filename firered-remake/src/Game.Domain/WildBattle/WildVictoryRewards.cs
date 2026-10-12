@@ -113,13 +113,19 @@ public static class WildVictoryRewards
 
     public static WildVictoryRewardResult ApplySafariOwned(OwnedBattlePokemonCatalog owned,
         PartyPokemon participantAfterBattle, PokemonInstance defeatedPokemon, string currentRegion,
-        int aliveParticipants = 1, bool trainerBattle = false, WildBattleCombatant? defeatedBattleView = null)
+        int aliveParticipants = 1, bool trainerBattle = false, WildBattleCombatant? defeatedBattleView = null) =>
+        ApplyOwnedReward(owned, participantAfterBattle, defeatedPokemon, currentRegion, aliveParticipants,
+            trainerBattle, defeatedBattleView, null);
+
+    private static WildVictoryRewardResult ApplyOwnedReward(OwnedBattlePokemonCatalog owned,
+        PartyPokemon participantAfterBattle, PokemonInstance defeatedPokemon, string currentRegion,
+        int aliveParticipants, bool trainerBattle, WildBattleCombatant? defeatedBattleView, string? trainerProfile)
     {
         ArgumentNullException.ThrowIfNull(owned);
         var catalog = owned.Catalog;
         ValidateOwned(catalog, participantAfterBattle, route22Rules: true, route11Rules: true, rockTunnelRules: true);
         if (aliveParticipants is < 1 or > 6 || !ValidRegion(currentRegion)) throw new ArgumentException("safari_reward_context");
-        if (defeatedPokemon is null || !(trainerBattle ? owned.AdmitsTrainerOpponent(defeatedPokemon.Species) : catalog.Species.ContainsKey(defeatedPokemon.Species)) || defeatedPokemon.CurrentHp != 0)
+        if (defeatedPokemon is null || !(trainerBattle ? owned.AdmitsTrainerOpponent(defeatedPokemon.Species, trainerProfile) : catalog.Species.ContainsKey(defeatedPokemon.Species)) || defeatedPokemon.CurrentHp != 0)
             throw new ArgumentException("safari_reward_defeated");
         if (defeatedBattleView is not null && defeatedBattleView.Pokemon != defeatedPokemon)
             throw new ArgumentException("safari_reward_view_mismatch");
@@ -160,6 +166,29 @@ public static class WildVictoryRewards
             throw new ArgumentException("silph_trainer_reward_context");
         return ApplySafariOwned(proof, participantAfterBattle, battle.Battle.Opponent.Pokemon,
             currentRegion, aliveParticipants, trainerBattle: true, defeatedBattleView: battle.Battle.Opponent);
+    }
+
+    /// <summary>Exact Saffron trainer settlement; Slowbro rewards require this authenticated
+    /// source battle at its actual EXP boundary. Historical rewards retain their earlier species scope.</summary>
+    public static WildVictoryRewardResult ApplySaffronGymTrainer(SaffronGymOpponentPokemonCatalog opponents,
+        PartyPokemon participantAfterBattle, Game.Domain.Trainers.ForestTrainerCombatState battle,
+        string currentRegion, int aliveParticipants = 1)
+    {
+        ArgumentNullException.ThrowIfNull(opponents);
+        var owned = opponents.Owned; ArgumentNullException.ThrowIfNull(battle);
+        OwnedBattlePokemonCatalog proof = owned;
+        if (!ReferenceEquals(SaffronGymOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
+            battle.Battle.SourceCampaignRulesVersion != SaffronGymOpponentPokemonCatalog.Profile ||
+            battle.RulesVersion != Game.Domain.Trainers.ForestTrainerCombatRules.SaffronGymRulesVersion ||
+            !Game.Domain.Battle.SourceBattleAdmission.IsOwnedCampaign(proof, battle.Battle) ||
+            battle.Phase != Game.Domain.Trainers.ForestTrainerCombatPhase.AwaitingExperience ||
+            Game.Domain.Trainers.ForestTrainerCombatRules.Validate(owned.Mechanics.Catalog, battle) is not null ||
+            participantAfterBattle?.Pokemon is null || battle.Battle.CalledParty is not { } party ||
+            !party.Player.Any(member => WildBattleSourcePartyEffects.SamePokemon(member.Pokemon, participantAfterBattle.Pokemon) &&
+                member.Status == participantAfterBattle.Status && WildBattleSourcePartyEffects.PersistentHeldItem(member) == participantAfterBattle.HeldItem))
+            throw new ArgumentException("saffron_gym_trainer_reward_context");
+        return ApplyOwnedReward(proof, participantAfterBattle, battle.Battle.Opponent.Pokemon,
+            currentRegion, aliveParticipants, true, battle.Battle.Opponent, SaffronGymOpponentPokemonCatalog.Profile);
     }
 
     private static void ValidateOwned(PokemonCatalog catalog, PartyPokemon owned, bool route22Rules = false, bool route11Rules = false, bool rockTunnelRules = false)

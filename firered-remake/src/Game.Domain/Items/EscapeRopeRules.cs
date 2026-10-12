@@ -100,7 +100,7 @@ public static class EscapeRopeRules
         if (error is not null) return Fail(error);
         if (context != PotionUseContext.Field) return Fail("escape_rope_field_only");
         if (!IsSupportedMap(currentMap, route11Rules, rockTunnelRules, pokemonTowerRules, silphRules)) return Fail("escape_rope_map_not_allowed");
-        bool authenticatedSilph = silphRules && SilphShopCatalog.For(catalog) is not null;
+        bool authenticatedSilph = silphRules && (SilphShopCatalog.For(catalog) is not null || SaffronGymShopCatalog.For(catalog) is not null);
         if (!authenticatedSilph && (IsTowerMap(currentMap) && catalog.Profile != PokemonTowerItemRules.Profile ||
             IsRockMap(currentMap) && catalog.Profile is not (RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile or RocketHideoutItemRules.Profile or PokemonTowerItemRules.Profile) ||
             IsDiglettMap(currentMap) && catalog.Profile is not (Route11ItemRules.Profile or RockTunnelItemRules.Profile or LavenderItemRules.Profile or CeladonGymItemRules.Profile or RocketHideoutItemRules.Profile or PokemonTowerItemRules.Profile)))

@@ -41,7 +41,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false)
     {
         if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
         if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
@@ -196,6 +196,18 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=SilphSynthManifestIdentity.SourceCommit||extension.Cues.Length!=SilphSynthManifestIdentity.CueCount||
                 !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SILPH","SE_WARP_OUT","CRY_ALAKAZAM_NORMAL","CRY_MR_MIME_NORMAL","CRY_LAPRAS_NORMAL"}))
                 throw new InvalidDataException("Silph synth manifest contract differs.");
+            cues=[..cues,..extension.Cues];
+        }
+        if(includeSaffronGym)
+        {
+            if(!includeSilph)throw new InvalidDataException("Saffron Gym audio requires Silph predecessor.");
+            byte[] extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/saffron-gym-synth-audio/manifest.json"));
+            if(extensionBytes.Length!=SaffronGymSynthManifestIdentity.Bytes||Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=SaffronGymSynthManifestIdentity.Sha256)
+                throw new InvalidDataException("Saffron Gym cry manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Saffron Gym cry manifest missing.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=SaffronGymSynthManifestIdentity.SourceCommit||
+                extension.Cues.Length!=1||extension.Cues[0].Id!="CRY_SLOWBRO_NORMAL"||extension.Cues[0].Species!=80||cues.Any(c=>c.Id=="CRY_SLOWBRO_NORMAL"))
+                throw new InvalidDataException("Saffron Gym source cry scope differs.");
             cues=[..cues,..extension.Cues];
         }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.

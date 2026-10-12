@@ -55,7 +55,8 @@ public sealed partial class CampaignSession
         int active=Enumerable.Range(0,party.Length).First(i=>party[i].Pokemon.CurrentHp>0);
         var style=EffectiveBattleStyle(state);var terrain=CampaignBattleTerrain(state);
         var owned=SafariOrdinaryOwnership;var catalog=owned?.Predecessor??BattlePokemon;
-        var result=IsSilphTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.SilphOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+        var result=IsSaffronGymTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SaffronGymTrainerParties!,_content.SaffronGymOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+            : IsSilphTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.SilphOpponents!,trainer,party,active,state.World.Rng,style,terrain)
             : IsFuchsiaGymTrainer(trainer) ? ForestTrainerCombatRules.Start(_content.FuchsiaGymTrainerParties!,catalog,trainer,party,active,state.World.Rng,style,owned)
             : IsFuchsiaRouteTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FuchsiaRouteTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
             : IsPokemonTowerTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.PokemonTowerTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)

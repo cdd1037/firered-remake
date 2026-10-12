@@ -80,6 +80,10 @@ public interface ICampaignCatalog:IStoryCatalog
     SourceTwinsTrainerDefinition? Route8Twins=>null;
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
+    bool SaffronGymEnabled=>false;
+    SaffronGymTrainerCatalog? SaffronGymTrainerParties=>null;
+    SaffronGymOpponentPokemonCatalog? SaffronGymOpponents=>null;
+    bool SupportsTeleportPads(MapId map)=>SilphEnabled && SilphFieldRules.IsSilphMap(map) && SilphWarpPads.Any(p=>p.SourceMapId==map);
     bool SilphEnabled=>false;
     SilphOwnedPokemonCatalog? SilphOwnership=>null;
     SilphOpponentPokemonCatalog? SilphOpponents=>null;

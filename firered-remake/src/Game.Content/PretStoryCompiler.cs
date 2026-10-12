@@ -15,6 +15,7 @@ public sealed record PretStoryCompilation(
     ImmutableDictionary<string,ImmutableArray<PretMovementCommand>> Movements,
     ImmutableArray<ContentDiagnostic> UnsupportedInstructions, ImmutableDictionary<string,int> Constants) : IStoryCatalog
 {
+    public ImmutableDictionary<string,ImmutableArray<string>> AssemblyData { get; init; }=ImmutableDictionary<string,ImmutableArray<string>>.Empty;
     public StoryProgram? FindProgram(string id)=>Programs.GetValueOrDefault(id);
     public bool TryConstant(string symbol,out int value)
     {
@@ -25,13 +26,14 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
         var conditions=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptCondition>>(StringComparer.Ordinal);
         var movements=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMovementCommand>>(StringComparer.Ordinal);
         var unsupported=ImmutableArray.CreateBuilder<ContentDiagnostic>();
+        var assemblyData=ImmutableDictionary.CreateBuilder<string,ImmutableArray<string>>(StringComparer.Ordinal);
         foreach(var file in files)
         {
             var errors=ContentValidator.ValidateSource(file.SourceRef,file.Path);if(errors.Count>0)throw new ContentValidationException(errors);
@@ -78,6 +80,20 @@ public static partial class PretStoryCompiler
             foreach(var (label,body) in blocks)
             {
                 if(body.Count==0)continue;
+                // Exact authenticated declarations are data, never swallowed script effects.
+                if(includeSaffronGymData&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&
+                    file.SourceRef.Repository=="pret/pokefirered"&&
+                    (file.Path,file.SourceRef.Sha256) is
+                        ("data/maps/SaffronCity_Gym/scripts.inc","54a8956e1f0aa8d60250c13de4919ffa581f0bda0a9c41a8c97a0c02b1fb421b") or
+                        ("data/maps/SaffronCity_Mart/scripts.inc","d45b8f0282dde2cdfb5a31a02b91b7c417a058cb07b6bb819561e9a0379bb3bb"))
+                {
+                    if(label is "SaffronCity_Gym_MapScripts" or "SaffronCity_Mart_MapScripts"&&body.Count==1&&body[0].Text==".byte 0")
+                    {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
+                    if(label=="SaffronCity_Mart_Items"&&body.Select(b=>b.Text).SequenceEqual(new[]{
+                        ".2byte ITEM_GREAT_BALL",".2byte ITEM_HYPER_POTION",".2byte ITEM_REVIVE",".2byte ITEM_FULL_HEAL",
+                        ".2byte ITEM_ESCAPE_ROPE",".2byte ITEM_MAX_REPEL",".2byte ITEM_NONE","release","end"}))
+                    {assemblyData.Add(label,body.Take(7).Select(b=>b.Text).ToImmutableArray());continue;}
+                }
                 if(body[0].Text.StartsWith(".string",StringComparison.Ordinal))continue;
                 if(body.Any(x=>x.Text.StartsWith("map_script ",StringComparison.Ordinal)))
                 {
@@ -162,7 +178,7 @@ public static partial class PretStoryCompiler
                 if(!programs.TryAdd(label,new(label,instructions.ToImmutable())))throw ContentJson.Error("duplicate_global_label",file.Path,label);
             }
         }
-        return new(programs.ToImmutable(),headers.ToImmutable(),conditions.ToImmutable(),movements.ToImmutable(),unsupported.ToImmutable(), (constants ?? new Dictionary<string,int>()).ToImmutableDictionary(StringComparer.Ordinal));
+        return new(programs.ToImmutable(),headers.ToImmutable(),conditions.ToImmutable(),movements.ToImmutable(),unsupported.ToImmutable(), (constants ?? new Dictionary<string,int>()).ToImmutableDictionary(StringComparer.Ordinal)){AssemblyData=assemblyData.ToImmutable()};
     }
     private static bool IsSnorlaxEventSource(PretSourceScriptFile file,string label) =>
         file.SourceRef.Kind==SourceKind.Pret&&file.SourceRef.Repository=="pret/pokefirered"&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&

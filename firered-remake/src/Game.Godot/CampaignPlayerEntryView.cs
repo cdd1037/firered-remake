@@ -322,6 +322,7 @@ public partial class CampaignView
     public override void _ExitTree()
     {
         DisposeSourceMoveAnimation();
+        _saffronGymTrainerPortraits.Clear(); _saffronGymTrainerClasses.Clear();
         DisposeSilphPresentation();
         DisposeMapResources();
         _entryHeadingFont?.Dispose();foreach(var font in _entryGenderFonts.Values)font.Dispose();_entryGenderFonts.Clear();

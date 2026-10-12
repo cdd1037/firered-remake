@@ -18,6 +18,7 @@ public sealed partial class CampaignSession
             "CeladonCity_GameCorner" when _content.RocketHideoutEnabled=>new("map.celadon-city-game-corner"),
             _ when _content.RocketHideoutEnabled&&sourceMap.StartsWith("RocketHideout_",StringComparison.Ordinal)=>new("map.rocket-hideout-"+sourceMap.Split('_')[1].ToLowerInvariant()),
             _ when _content.SilphEnabled&&sourceMap.StartsWith("SilphCo_",StringComparison.Ordinal)=>new("map.silph-co-"+sourceMap.Split('_')[1].ToLowerInvariant()),
+            "SaffronCity_Gym" when _content.SaffronGymEnabled=>new("map.saffron-city-gym"),
             "FuchsiaCity_Gym" when _content.FuchsiaGymEnabled=>new("map.fuchsia-city-gym"),
             "CeladonCity_Gym" when _content.CeladonGymEnabled=>new("map.celadon-city-gym"),
             "Route8" when _content.CeladonApproachEnabled=>new("map.route-8"),

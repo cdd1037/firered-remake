@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using Game.Application;
+using Game.Domain.Battle;
+using Game.Domain.Pokemon;
 using Game.Domain.Trainers;
 using Game.Domain.WildBattle;
 
@@ -31,19 +33,29 @@ public partial class CampaignView
         (SourceTrainerPresentationActive(battle) ? battle.State.Player.CalledTurnState?.Lock?.PpSlot : null) ??
         WildBattleRules.ForcedMoveSlot(battle.State.Player);
 
+    private PokemonCatalog SourceBattlePresentationCatalog(CampaignWildBattle battle)
+    {
+        var catalog = _catalog.PokemonContent!.Catalog;
+        if (battle.State.SourceCampaignRulesVersion is null) return catalog;
+        if (OwnedBattlePokemonCatalog.For(catalog) is { } owned &&
+            SourceBattleAdmission.IsOwnedCampaign(owned, battle.State))
+            return owned.Mechanics.Catalog;
+        throw new InvalidDataException("source_battle_presentation_campaign_admission");
+    }
+
     private bool SourceBattleRequiresStruggle(CampaignWildBattle battle) =>
         SourceBattleForcedMoveSlot(battle) is null && (SourceTrainerPresentationActive(battle)
-            ? WildBattleRules.ValidateSourceMoveSelection(_catalog.PokemonContent!.Catalog, battle.State, WildBattleSide.Player, WildBattleRules.StruggleSlot) is null
+            ? WildBattleRules.ValidateSourceMoveSelection(SourceBattlePresentationCatalog(battle), battle.State, WildBattleSide.Player, WildBattleRules.StruggleSlot) is null
             : WildBattleRules.RequiresStruggle(battle.State, WildBattleSide.Player));
 
     private bool SourceBattleMoveSelectable(CampaignWildBattle battle, int slot) => SourceTrainerPresentationActive(battle)
-        ? WildBattleRules.ValidateSourceMoveSelection(_catalog.PokemonContent!.Catalog, battle.State, WildBattleSide.Player, slot) is null
+        ? WildBattleRules.ValidateSourceMoveSelection(SourceBattlePresentationCatalog(battle), battle.State, WildBattleSide.Player, slot) is null
         : WildBattleRules.IsMoveSelectable(battle.State, WildBattleSide.Player, slot);
 
     private SourceTrainerText? SourceBattleSelectionNotice(CampaignWildBattle battle, int slot)
     {
         if (!SourceTrainerPresentationActive(battle)) return null;
-        var reason = WildBattleRules.ValidateSourceMoveSelection(_catalog.PokemonContent!.Catalog, battle.State, WildBattleSide.Player, slot);
+        var reason = WildBattleRules.ValidateSourceMoveSelection(SourceBattlePresentationCatalog(battle), battle.State, WildBattleSide.Player, slot);
         if (reason is null) return null;
         string symbol = reason switch {
             "called_move_tormented" => "sText_PkmnCantUseMoveTorment",

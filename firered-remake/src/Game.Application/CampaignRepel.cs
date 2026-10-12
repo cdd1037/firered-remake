@@ -13,6 +13,7 @@ public sealed record CampaignRepel(CampaignRepelPhase Phase, string WaitId)
 
 public sealed partial class CampaignSession
 {
+    private SaffronGymShopCatalog SaffronGymShopProof=>SaffronGymShopCatalog.For(ShopCatalog)??throw new InvalidDataException("saffron_gym_shop_proof_missing");
     public const string RepelCounterVariable = "VAR_REPEL_STEP_COUNT";
     public ushort RepelSteps => checked((ushort)State.Script.Variables.GetValueOrDefault(RepelCounterVariable));
 
@@ -21,7 +22,7 @@ public sealed partial class CampaignSession
         if (state.Repel is not null) return "save_event_active";
         int steps = state.Script.Variables.GetValueOrDefault(RepelCounterVariable);
         if (!_content.RepelEnabled) return steps != 0 ? "save_repel_profile_missing" : null;
-        int maximum = _content.CeladonApproachEnabled ? EarlyRepelRules.SuperDuration : EarlyRepelRules.Duration;
+        int maximum = _content.SaffronGymEnabled ? SaffronGymRepelRules.MaxDuration : _content.CeladonApproachEnabled ? EarlyRepelRules.SuperDuration : EarlyRepelRules.Duration;
         return steps < 0 || steps > maximum ? "save_repel_counter_invalid" : null;
     }
 
@@ -31,12 +32,15 @@ public sealed partial class CampaignSession
         if (!_content.RepelEnabled) return No("repel_not_enabled");
         if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
             !(command.Text == EarlyRepelRules.Item.Value ||
-                _content.CeladonApproachEnabled && command.Text == LavenderItemRules.SuperRepelId.Value))
+                _content.CeladonApproachEnabled && command.Text == LavenderItemRules.SuperRepelId.Value ||
+                _content.SaffronGymEnabled && command.Text == SaffronGymShopCatalog.MaxRepelId.Value))
             return No("field_repel_context_invalid");
         var item = new ItemId(command.Text!);
         var error = ValidateCampaignInventory(state.Inventory);
         if (error is not null) return No(error);
-        var use = EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
+        var use = _content.SaffronGymEnabled ? SaffronGymRepelRules.Use(SaffronGymShopProof,ShopInventoryView(state.Inventory!),
+            checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),PotionUseContext.Field,item)
+            : EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field,
             item, celadonApproachRules: _content.CeladonApproachEnabled, celadonGymRules: _content.CeladonGymEnabled, rocketHideoutRules: _content.RocketHideoutEnabled, pokemonTowerRules: _content.PokemonTowerEnabled);
         if (!use.Succeeded)
@@ -65,7 +69,9 @@ public sealed partial class CampaignSession
         if (command.Kind != "repel_presented" || command.Text != repel.WaitId) return No("repel_sound_pending");
         if (!_content.RepelEnabled || state.ItemMenu is not { Origin: "bag", View: "bag" } menu)
             throw new InvalidDataException("repel_use_wait_context_invalid");
-        var use = EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
+        var use = _content.SaffronGymEnabled ? SaffronGymRepelRules.Use(SaffronGymShopProof,ShopInventoryView(state.Inventory!),
+            checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),PotionUseContext.Field,repel.Item)
+            : EarlyRepelRules.Use(ShopCatalog, ShopInventoryView(state.Inventory!),
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)), PotionUseContext.Field,
             repel.Item, celadonApproachRules: _content.CeladonApproachEnabled, celadonGymRules: _content.CeladonGymEnabled, rocketHideoutRules: _content.RocketHideoutEnabled, pokemonTowerRules: _content.PokemonTowerEnabled);
         if (!use.Succeeded) throw new InvalidDataException("repel_use_wait_changed: " + use.Error);
@@ -84,7 +90,8 @@ public sealed partial class CampaignSession
     {
         if (!_content.RepelEnabled) return state;
         ushort steps = checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable));
-        var step = EarlyRepelRules.AdvanceStep(steps, EncounterCheckTrigger.WalkingStepCompleted,
+        var step = _content.SaffronGymEnabled ? SaffronGymRepelRules.AdvanceStep(SaffronGymShopProof,steps,EncounterCheckTrigger.WalkingStepCompleted)
+            : EarlyRepelRules.AdvanceStep(steps, EncounterCheckTrigger.WalkingStepCompleted,
             celadonApproachRules: _content.CeladonApproachEnabled, celadonGymRules: _content.CeladonGymEnabled, rocketHideoutRules: _content.RocketHideoutEnabled, pokemonTowerRules: _content.PokemonTowerEnabled);
         if (step.Steps == steps) return state; // Keep absent zero absent, including upgraded saves.
         state = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem(RepelCounterVariable, step.Steps) } };

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain.Pokemon;
+using Game.Domain.Items;
 using Game.Domain.Randomness;
 
 namespace Game.Domain.Encounters;
@@ -33,8 +34,32 @@ public static class WaterEncounterRules
         ushort repelSteps, RngState globalRng, bool wildEncountersDisabled = false,
         EncounterMovementMode movement = EncounterMovementMode.Surfing)
     {
-        ArgumentNullException.ThrowIfNull(owned); ArgumentNullException.ThrowIfNull(check); ValidateState(state,table);
-        if (!SurfOwnedPokemonCatalog.IsAuthenticated(owned.Catalog) || state.Pending is not null ||
+        ArgumentNullException.ThrowIfNull(owned);
+        if (!SurfOwnedPokemonCatalog.IsAuthenticated(owned.Catalog)) throw new ArgumentException("water_check_scope");
+        EarlyRepelRules.ValidateSteps(repelSteps, pokemonTowerRules: true);
+        return CheckOwned(owned, state, table, check, party, repelSteps, globalRng, wildEncountersDisabled, movement);
+    }
+
+    /// <summary>Silph keeps the same source water tables while admitting its exact113 party.
+    /// The Saffron proof is required only for counters above the inherited200-step limit.</summary>
+    public static WaterEncounterResult Check(SilphOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
+        ushort repelSteps, RngState globalRng, bool wildEncountersDisabled = false,
+        EncounterMovementMode movement = EncounterMovementMode.Surfing, SaffronGymShopCatalog? saffronShop = null)
+    {
+        ArgumentNullException.ThrowIfNull(owned);
+        if (!SilphOwnedPokemonCatalog.IsAuthenticated(owned.Catalog)) throw new ArgumentException("water_check_scope");
+        if (saffronShop is null) EarlyRepelRules.ValidateSteps(repelSteps, pokemonTowerRules: true);
+        else SaffronGymRepelRules.ValidateSteps(saffronShop, repelSteps);
+        return CheckOwned(owned, state, table, check, party, repelSteps, globalRng, wildEncountersDisabled, movement);
+    }
+
+    private static WaterEncounterResult CheckOwned(OwnedBattlePokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
+        ushort repelSteps, RngState globalRng, bool wildEncountersDisabled, EncounterMovementMode movement)
+    {
+        ArgumentNullException.ThrowIfNull(check); ValidateState(state,table);
+        if (state.Pending is not null ||
             movement != EncounterMovementMode.Surfing || check.Map != table.Map ||
             !Enum.IsDefined(check.Trigger) || check.EncounterType is not (EncounterTileType.Water or EncounterTileType.None) ||
             globalRng.AlgorithmId != Gen3Rng.AlgorithmId || party.IsDefaultOrEmpty || party.Length > 6)

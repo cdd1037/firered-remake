@@ -8,7 +8,7 @@ using Direction = Game.Domain.World.Direction;
 public partial class CampaignView
 {
     private static readonly Game.Domain.Ids.MapId SilphElevatorId = new("map.silph-co-elevator");
-    private static bool SilphProfileRequested => OS.GetEnvironment("FIRERED_SILPH") == "1" || OS.GetCmdlineUserArgs().Contains("--story-silph");
+    private static bool SilphProfileRequested => SaffronGymProfileRequested || OS.GetEnvironment("FIRERED_SILPH") == "1" || OS.GetCmdlineUserArgs().Contains("--story-silph");
     private sealed class SilphPadAnimation
     {
         public required CampaignSilphPad Pad;

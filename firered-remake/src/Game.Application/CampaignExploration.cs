@@ -52,7 +52,7 @@ public sealed partial class CampaignSession
         }
         if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||!(b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
-        if(_content.SilphEnabled&&SilphFieldRules.IsSilphMap(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
+        if(_content.SupportsTeleportPads(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
         if(here is >=0x60 and <=0x71)return (_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map))?.Code;
         var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SafariConnectedMaps(EditedFieldMaps(state)),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
@@ -124,6 +124,7 @@ public sealed partial class CampaignSession
         }
         if(state.IsSurfing&&!SurfRegionAllows(moved.World.Player))return new(CommandStatus.Rejected,state,"field_surf_region_boundary_not_open");
         if(_content.SnorlaxEnabled&&!_content.IsSnorlaxStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"snorlax_region_boundary_not_open");
+        if(changed&&moved.World.Player.MapId.Value=="map.saffron-city-gym"&&(!_content.SaffronGymEnabled||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFFRON_ROCKETS")))return new(CommandStatus.Rejected,state,"saffron_gym_rocket_blockade");
         if(changed)
         {
             moved=RecordSilphElevatorEntrance(state,moved);

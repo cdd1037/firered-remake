@@ -20,7 +20,7 @@ public partial class Bootstrap : Node2D
         _probe = OS.GetCmdlineUserArgs().Contains("--probe");
         _harness = OS.GetCmdlineUserArgs().Contains("--harness");
         _pallet = OS.GetCmdlineUserArgs().Contains("--pallet");
-        _story = OS.GetCmdlineUserArgs().Contains("--story") || OS.GetCmdlineUserArgs().Contains("--story-rocket-hideout") || OS.GetCmdlineUserArgs().Contains("--story-pokemon-tower") || OS.GetCmdlineUserArgs().Contains("--story-snorlax") || OS.GetCmdlineUserArgs().Contains("--story-regional") || OS.GetCmdlineUserArgs().Contains("--story-regional-services") || OS.GetCmdlineUserArgs().Contains("--story-regional-interiors") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-route") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-gym") || OS.GetCmdlineUserArgs().Contains("--story-safari") || OS.GetCmdlineUserArgs().Contains("--story-surf") || OS.GetCmdlineUserArgs().Contains("--story-silph");
+        _story = OS.GetCmdlineUserArgs().Contains("--story") || OS.GetCmdlineUserArgs().Contains("--story-rocket-hideout") || OS.GetCmdlineUserArgs().Contains("--story-pokemon-tower") || OS.GetCmdlineUserArgs().Contains("--story-snorlax") || OS.GetCmdlineUserArgs().Contains("--story-regional") || OS.GetCmdlineUserArgs().Contains("--story-regional-services") || OS.GetCmdlineUserArgs().Contains("--story-regional-interiors") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-route") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-gym") || OS.GetCmdlineUserArgs().Contains("--story-safari") || OS.GetCmdlineUserArgs().Contains("--story-surf") || OS.GetCmdlineUserArgs().Contains("--story-silph") || OS.GetCmdlineUserArgs().Contains("--story-saffron-gym");
         _evidencePath = OS.GetEnvironment("FIRERED_EVIDENCE");
         if (!string.IsNullOrEmpty(_evidencePath)) System.IO.File.WriteAllText(System.IO.Path.ChangeExtension(_evidencePath, ".events.log"), "");
         var evidence = new
@@ -49,6 +49,12 @@ public partial class Bootstrap : Node2D
             return;
         }
         _font = GD.Load<FontFile>("res://Assets/ProbeFont.ttc");
+        if (_font is null)
+        {
+            GD.PushError("Required font res://Assets/ProbeFont.ttc could not be loaded. From the project repository root, run bash scripts/ensure-godot-imports.sh to restore its Godot import cache, then launch again.");
+            GetTree().Quit(18);
+            return;
+        }
         var missing = "火红工程验证方向键确认退出等待按键".Where(c => !_font.HasChar(c)).ToArray();
         Record("CHINESE_GLYPHS " + (missing.Length == 0 ? "PASS" : "MISSING " + new string(missing)));
         if (_story) { AddChild(new CampaignView()); return; }
@@ -76,7 +82,7 @@ public partial class Bootstrap : Node2D
     }
     public override void _Draw()
     {
-        if (_harness || _pallet || _story) return;
+        if (_font is null || _harness || _pallet || _story) return;
         DrawRect(new Rect2(12, 12, 216, 136), new Color("172a43"));
         DrawRect(new Rect2(17, 17, 206, 126), new Color("0d182c"));
         DrawString(_font, new Vector2(25, 44), "火红工程验证", fontSize: 14, modulate: new Color("ffdb85"));

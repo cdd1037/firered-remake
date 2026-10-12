@@ -49,24 +49,29 @@ public sealed class OwnedBattlePokemonCatalog
     public static implicit operator OwnedBattlePokemonCatalog?(SilphOwnedPokemonCatalog? owned) =>
         owned is null ? null : For(owned.Catalog)!;
 
-    internal bool AdmitsTrainerOpponent(SpeciesId species) => Catalog.Species.ContainsKey(species) ||
+    internal bool AdmitsTrainerOpponent(SpeciesId species, string? trainerProfile = null) => Catalog.Species.ContainsKey(species) ||
+        trainerProfile == SaffronGymOpponentPokemonCatalog.Profile &&
+        SilphOwnedPokemonCatalog.For(Catalog) is { } saffronOwned &&
+        SaffronGymOpponentPokemonCatalog.For(saffronOwned) is { } saffron && saffron.Catalog.Species.ContainsKey(species) ||
         SilphOwnedPokemonCatalog.For(Catalog) is { } silph && SilphOpponentPokemonCatalog.For(silph) is { } opponents &&
         opponents.Catalog.Species.ContainsKey(species);
 
     internal static OwnedBattlePokemonCatalog? ForMechanics(PokemonCatalog? catalog, string? rulesVersion)
     {
         if (catalog is null || rulesVersion is null) return null;
+        if (rulesVersion == SaffronGymOpponentPokemonCatalog.Profile &&
+            SaffronGymOpponentPokemonCatalog.ForMechanics(catalog) is { } saffron) return For(saffron.Owned.Catalog);
         if (MechanicsOwners.TryGetValue(catalog, out var owners) && owners.TryGetValue(rulesVersion, out var proof)) return proof;
         return rulesVersion == SafariOwnedPokemonCatalog.Profile && SafariOwnedPokemonCatalog.ForMechanics(catalog) is { } safari
             ? For(safari.Catalog) : null;
     }
 
     internal static bool IsKnownProfile(string profile) =>
-        profile is SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile;
+        profile is SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile;
     internal static bool ProfileAdmits(string profile, SpeciesId species) => IsKnownProfile(profile) &&
         (Battle.CampaignAdmissionPolicy.CurrentFuchsia.Admits(species) || SafariOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile && SurfOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile == SilphOwnedPokemonCatalog.Profile && SilphOwnedPokemonCatalog.AdditionalSpecies.Contains(species));
+         profile is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile && SurfOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile && SilphOwnedPokemonCatalog.AdditionalSpecies.Contains(species));
 
     // Surf adds only Psyduck to historical wild membership. Golduck is an owned
     // evolution; Safari's three extra catches still use their separate encounter owner.
