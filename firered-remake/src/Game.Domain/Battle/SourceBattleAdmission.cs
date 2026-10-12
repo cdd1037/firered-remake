@@ -58,7 +58,9 @@ public static class SourceBattleAdmission
         var owned = OwnedBattlePokemonCatalog.ForMechanics(catalog, state.SourceCampaignRulesVersion)!;
         if (state.CalledParty is not { } party || party.Player.IsDefaultOrEmpty || party.Opponent.IsDefaultOrEmpty)
             return "source_campaign_actual_parties";
-        if (party.Player.Concat(party.Opponent).Any(m => m?.Pokemon is null || !owned.Catalog.Species.ContainsKey(m.Pokemon.Species)))
+        if (party.Player.Any(m => m?.Pokemon is null || !owned.Catalog.Species.ContainsKey(m.Pokemon.Species)) ||
+            party.Opponent.Any(m => m?.Pokemon is null || !(party.BattleKind == WildBattleCalledBattleKind.Trainer
+                ? owned.AdmitsTrainerOpponent(m.Pokemon.Species) : owned.Catalog.Species.ContainsKey(m.Pokemon.Species))))
             return "source_campaign_species_unsupported";
         return null;
     }

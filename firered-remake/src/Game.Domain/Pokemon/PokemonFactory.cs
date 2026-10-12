@@ -138,7 +138,7 @@ public static class PokemonFactory
     public static void ValidateCatalog(PokemonCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (SafariOwnedPokemonCatalog.IsAuthenticated(catalog) || SurfOwnedPokemonCatalog.IsAuthenticated(catalog)) return;
+        if (SafariOwnedPokemonCatalog.IsAuthenticated(catalog) || SurfOwnedPokemonCatalog.IsAuthenticated(catalog) || SilphOwnedPokemonCatalog.IsAuthenticated(catalog)) return;
         if (catalog.SourceCommit != SourceCommit) throw new NotSupportedException("Unsupported Pokemon source commit.");
         if (catalog.Species is null || catalog.Moves is null || catalog.Species.Count is not (9 or 14 or 17 or 22 or 29 or 32 or 40 or 56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102 or 103 or 107) || catalog.Moves.Count == 0)
             throw new ArgumentException("A complete bounded starter, Route 1, old-man tutorial, forest, Pewter, Route22, Route3, Mt. Moon or Cerulean catalog is required.");

@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+"""Regenerate Silph source metadata from immutable pret Git blobs, without upstream execution."""
+from pathlib import Path
+import argparse, collections, hashlib, json, os, re, struct, subprocess, sys
+COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
+TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
+PROFILE='firered-silph-catalogs-v1'
+CORE=[f'SilphCo_{i}F' for i in range(1,12)]+['SilphCo_Elevator']
+SCRIPT_PATHS=tuple('data/maps/'+n+'/scripts.inc' for n in CORE)
+TRAINERS=()
+def sha(data): return hashlib.sha256(data).hexdigest()
+def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
+def directory(name): return re.sub(r'route(\d+)', r'route-\1', re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower())
+def git(repo, *args):
+    env={k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
+    env.update(GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL=os.devnull,GIT_NO_REPLACE_OBJECTS='1',GIT_OPTIONAL_LOCKS='0')
+    return subprocess.check_output(['git','--no-replace-objects','--no-optional-locks','-C',str(repo),*args],env=env)
+
+class LazyBlobs(dict):
+    def __init__(self, owner): super().__init__(); self.owner=owner
+    def __missing__(self, path): return self.owner.read(path)
+
+class Source:
+    def __init__(self, reference):
+        self.reference=reference
+        if git(reference,'rev-parse','HEAD').decode().strip()!=COMMIT or git(reference,'rev-parse',COMMIT+'^{tree}').decode().strip()!=TREE: raise ValueError('Source HEAD/tree differs')
+        self.tree={}
+        for row in git(reference,'ls-tree','-rz',COMMIT).split(b'\0'):
+            if row:
+                fields,path=row.split(b'\t'); self.tree[path.decode()]=tuple(fields.decode().split())
+        self.data=LazyBlobs(self);self.entries={};self.roles=collections.defaultdict(set)
+    def read(self,path,role='source-dependency'):
+        if path not in self.tree or self.tree[path][:2]!=('100644','blob'): raise ValueError('Not a regular source blob: '+path)
+        self.roles[path].add(role)
+        if path not in self.data:
+            b=git(self.reference,'cat-file','blob',self.tree[path][2])
+            if hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()!=self.tree[path][2]:raise ValueError('Blob identity differs')
+            self.data[path]=b;self.entries[path]=dict(path=path,byteLength=len(b),sha256=sha(b),gitBlobSha1=self.tree[path][2])
+        return self.data[path]
+    def text(self,path):return self.read(path).decode()
+    def json(self,path):return json.loads(self.read(path))
+    def units(self,path,code):
+        b=self.read(path);size=struct.calcsize(code)
+        if len(b)%size:raise ValueError('Misaligned source binary')
+        return list(struct.unpack('<'+str(len(b)//size)+code,b))
+    def ref(self,path,symbol,line=None):
+        self.read(path)
+        v=dict(kind='pret',repository='pret/pokefirered',commit=COMMIT,path=path,symbol=symbol,sha256=self.entries[path]['sha256'])
+        if line is not None:v['line']=line
+        return v
+    def lock(self):
+        return dict(schemaVersion=1,repository='pret/pokefirered',commit=COMMIT,tree=TREE,profile=PROFILE,files=[dict(**self.entries[p],roles=sorted(self.roles[p])) for p in sorted(self.entries)])
+
+def trainer_convert(lock,sources):
+ text={p:b.decode() for p,b in sources.items() if not p.endswith(('.png','.wav'))};entries={e['path']:e for e in lock['files']}
+ def one(pattern,p):
+  matches=list(re.finditer(pattern,text[p],re.M|re.S))
+  if len(matches)!=1:raise ValueError('Expected exactly one match: '+pattern)
+  return matches[0]
+ def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1,sha256=entries[p]['sha256'])
+ def number(p,s):return int(one(r'^#define '+s+r'\s+(\d+)\b[^\n]*',p)[1])
+ def encode(s):
+  return [int(one("^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$",'charmap.txt')[1],16) for c in s]
+ def expr(s):
+  out=0
+  for symbol in s.split(' | '):
+   if symbol=='F_TRAINER_FEMALE':out|=1<<int(one(r'^#define F_TRAINER_FEMALE\s+\(1 << (\d+)\)[^\n]*','include/constants/trainers.h')[1])
+   elif symbol.startswith('AI_SCRIPT_'):
+    m=one(r'^#define '+symbol+r'\s+\(1 << (\d+)\)[^\n]*','include/constants/battle_ai.h');out|=1<<int(m[1])
+   else:out|=number('include/constants/trainers.h',symbol)
+  return out
+ battleType=1<<int(one(r'^#define BATTLE_TYPE_TRAINER\s+\(1 << (\d+)\)[^\n]*','include/constants/battle.h')[1])
+ for macro,expansion in (
+   ('single',r'trainerbattle TRAINER_BATTLE_SINGLE, \trainer, 0, \intro_text, \lose_text'),
+   ('no_intro',r'trainerbattle TRAINER_BATTLE_SINGLE_NO_INTRO_TEXT, \trainer, 0, \lose_text')):
+  body=one(r'^\t\.macro trainerbattle_'+macro+r' [^\n]+\n(.*?)^\t\.endm','asm/macros/event.inc')[1]
+  if '\t'+expansion+'\n' not in body:raise ValueError('Battle macro parameters differ')
+ defaultFlags=int(one(r'^#define NO_ITEM_DEFAULT_MOVES\(party\)[^\n]*\.partyFlags = (\d+)[ \t]*$','include/battle.h')[1])
+ customFlags=1<<int(one(r'^#define F_TRAINER_PARTY_CUSTOM_MOVESET\s+\(1 << (\d+)\)[^\n]*','include/constants/trainers.h')[1])
+ trainers=[];battles=[];resolved=[]
+ for short in TRAINERS:
+  s='TRAINER_'+short;p='src/data/trainers.h';m=one(r'^    \['+s+r'\] = \{\n(.*?)^    \},',p)
+  fields=dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M));name=re.fullmatch(r'_\("([A-Z. ]+)"\)',fields['trainerName'])[1]
+  shape,partySymbol=re.fullmatch(r'(NO_ITEM_(?:DEFAULT|CUSTOM)_MOVES)\((\w+)\)',fields['party']).groups();custom=shape=='NO_ITEM_CUSTOM_MOVES'
+  pp='src/data/trainer_parties.h';party=one(r'^static const struct TrainerMonNoItem'+('Custom' if custom else 'Default')+'Moves '+partySymbol+r'\[\] = \{\n(.*?)^\};',pp)
+  rows=list(re.finditer(r'    \{\n        \.iv = (\d+),\n        \.lvl = (\d+),\n        \.species = (SPECIES_\w+),\n(?:        \.moves = \{([^}]+)\},\n)?    \},\n',party[1]))
+  if ''.join(r[0] for r in rows)!=party[1]:raise ValueError('Unsupported party')
+  mons=[];natural=[]
+  for row in rows:
+   iv,lv,sp=int(row[1]),int(row[2]),row[3];np='src/data/text/species_names.h';nm=one(r'^    \['+sp+r'\] = _\("([^"]+)"\),$',np);speciesName=nm[1]
+   pointer=one(r'^    \['+sp+r'\] = (\w+),$','src/data/pokemon/level_up_learnset_pointers.h')[1]
+   learn=one(r'^static const u16 '+pointer+r'\[\] = \{\n(.*?)^\};','src/data/pokemon/level_up_learnsets.h');moves=[]
+   for level,move in re.findall(r'LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\)',learn[1]):
+    if int(level)<=lv and move not in moves:moves=(moves+[move])[-4:]
+   slots=row[4].split(', ') if custom else []
+   if custom and len(slots)!=4:raise ValueError('Expected four custom slots')
+   natural.append(dict(species=sp,level=lv,moves=slots if custom else moves,learnsetSource=ref('src/data/pokemon/level_up_learnsets.h',pointer,learn)))
+   mons.append(dict(species=dict(value='pret:'+sp),sourceSpeciesId=number('include/constants/species.h',sp),speciesName=speciesName,encodedSpeciesName=encode(speciesName),level=lv,sourceIv=iv,heldItem='ITEM_NONE',customMoves=[dict(value='pret:'+x) for x in slots],source=ref(pp,partySymbol,party),speciesNameSource=ref(np,sp,nm)))
+  if fields['doubleBattle']!='FALSE':raise ValueError('Unexpected double')
+  items=[x for x in fields['items'].strip('{}').split(', ') if x]
+  if items!=[]:raise ValueError('Unexpected trainer items')
+  items+=['ITEM_NONE']*(4-len(items))
+  money=one(r'^\s*\{'+fields['trainerClass']+r', (\d+)\},$','src/battle_main.c')
+  trainers.append(dict(id=dict(value='pret:'+s),sourceTrainerId=number('include/constants/opponents.h',s),trainerClass=fields['trainerClass'],sourceTrainerClass=number('include/constants/trainers.h',fields['trainerClass']),trainerPic=fields['trainerPic'],sourceTrainerPic=number('include/constants/trainers.h',fields['trainerPic']),sourceTrainerName=name,encodedTrainerName=encode(name),encounterMusicGender=expr(fields['encounterMusic_gender']),items=items,doubleBattle=False,partyFlags=customFlags if custom else defaultFlags,aiFlags=expr(fields['aiFlags']),aiFlagSymbols=fields['aiFlags'].split(' | '),baseMoney=int(money[1]),party=mons,source=ref(p,s,m),moneySource=ref('src/battle_main.c',fields['trainerClass'],money)))
+  candidates=[]
+  for p in SCRIPT_PATHS:
+   for label in re.finditer(r'^(\w+)::\n((?:(?!^\w+::).)*)',text[p],re.M|re.S):
+    battle=re.search(r'^\ttrainerbattle_(single|no_intro) '+s+r', ([^\n]+)$',label[2],re.M)
+    if battle:candidates.append((p,label,battle))
+  if len(candidates)!=1:raise ValueError('Expected one initial trainer battle: '+s)
+  p,label,battle=candidates[0];args=battle[2].split(', ');noIntro=battle[1]=='no_intro'
+  if len(args) not in ((1,) if noIntro else (2,3,4)):raise ValueError('Unsupported battle arguments')
+  defeat=args[0] if noIntro else args[1];intro='' if noIntro else args[0]
+  post=re.search(r'^\tmsgbox (\w+)',label[2][battle.end():],re.M)
+  postText=post[1] if post else ''
+  if short.startswith('RIVAL_SILPH_'):
+   context=one(r'^SilphCo_7F_EventScript_RivalScene::\n((?:(?!^\w+::).)*)',p)[1]
+   speech=re.findall(r'^\tmsgbox (\w+)$',context,re.M)
+   if speech!=['SilphCo_7F_Text_RivalWhatKeptYou','SilphCo_7F_Text_RivalIntro','SilphCo_7F_Text_RivalPostBattle']:raise ValueError('Unexpected rival context')
+   intro,postText=speech[1:]
+  battles.append(dict(trainer=dict(value='pret:'+s),mode=number('include/constants/battle_setup.h','TRAINER_BATTLE_SINGLE_NO_INTRO_TEXT' if noIntro else 'TRAINER_BATTLE_CONTINUE_SCRIPT_NO_MUSIC' if len(args)>3 and args[3]=='NO_MUSIC' else 'TRAINER_BATTLE_CONTINUE_SCRIPT' if len(args)>2 else 'TRAINER_BATTLE_SINGLE'),rivalFlags=0,battleTypeFlags=battleType,scriptEntry=label[1],introText=intro,defeatText=defeat,victoryText='',postBattleText=postText,entryScript='EventScript_DoNoIntroTrainerBattle' if noIntro else 'EventScript_TryDoNormalTrainerBattle',callback='CB2_EndTrainerBattle',source=ref(p,label[1],label),postBattleScript=args[2] if len(args)>2 else None,musicOption=args[3] if len(args)>3 else None))
+  resolved.append(dict(trainer=s,party=natural))
+ moves=[];moveNames=[]
+ for symbol in sorted({m for r in resolved for p in r['party'] for m in p['moves']} - {'MOVE_NONE'}):
+  p='src/data/battle_moves.h';m=one(r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},',p)
+  f=dict(re.findall(r'^\s*\.(\w+) = (.+),$',m[1],re.M))
+  moves.append(dict(id=dict(value='pret:'+symbol),sourceMoveId=number('include/constants/moves.h',symbol),pp=int(f['pp']),power=int(f['power']),accuracy=int(f['accuracy']),type=f['type'],effect=f['effect'],target=f['target'],secondaryEffectChance=int(f['secondaryEffectChance']),priority=int(f['priority']),battleEffectImplemented=False,flags=f['flags'].split(' | ') if f['flags']!='0' else [],source=ref(p,symbol,m)))
+  np='src/data/text/move_names.h';nm=one(r'^    \['+symbol+r'\]\s*= _\("([^"]+)"\),$',np)
+  moveNames.append(dict(id=dict(value='pret:'+symbol),name=nm[1],source=ref(np,symbol,nm)))
+ return dict(schemaVersion=1,profile='firered-silph-trainers-v1',sourceCommit=COMMIT,completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved,moves=moves,moveNames=moveNames,limitations=['The34 Silph trainer variants with101 original party members; no field or battle activation.','Rematches, double battles and the complete game trainer roster are not enabled.','Source declarations and party construction do not implement field callbacks, Silph progression, trainer portraits or audio.'])
+
+META_PATHS=['charmap.txt','include/battle.h','include/constants/battle.h','include/constants/battle_ai.h','include/constants/battle_setup.h','include/constants/trainers.h','include/constants/opponents.h','include/constants/species.h','include/constants/moves.h','include/constants/items.h','src/data/trainers.h','src/data/trainer_parties.h','src/battle_main.c','src/data/pokemon/species_info.h','src/data/pokemon/evolution.h','src/data/pokemon/level_up_learnsets.h','src/data/pokemon/level_up_learnset_pointers.h','src/data/pokemon/tmhm_learnsets.h','src/data/battle_moves.h','src/data/text/species_names.h','src/data/text/move_names.h','src/data/items.json','src/data/party_menu.h','src/move_descriptions.c','asm/macros/event.inc','data/scripts/item_ball_scripts.inc']
+MACHINES=('TM39','TM05','TM09','TM46','TM03','TM45','TM43','TM28','TM31','TM44','HM01','TM34','HM05','TM40','TM19','TM12','TM21','TM49','TM06','HM03','HM04','TM11','TM47','TM32')
+ITEMS=('CARD_KEY','MASTER_BALL','ULTRA_BALL','TM01','TM08','TM41','HYPER_POTION','MAX_REVIVE','ESCAPE_ROPE','FULL_HEAL','PROTEIN','HP_UP','X_SPECIAL','CALCIUM','CARBOS','RARE_CANDY','IRON','ZINC','ELIXIR','PP_UP','NUGGET','MAX_POTION','REVIVE')
+CANONICAL_SHA='c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc'
+
+def need(ok,message):
+ if not ok:raise ValueError(message)
+def safe(root,rel):
+ need(not Path(rel).is_absolute() and '\\' not in rel and not any(p in ('','.','..') for p in rel.split('/')),'Unsafe path')
+ p=Path(root).absolute()/rel
+ need(not any(t.is_symlink() for t in (p,*p.parents)),'Symlink denied')
+ return p
+
+def metadata(src,dependency):
+ text={p:src.text(p) for p in META_PATHS};ident=lambda s:dict(value='pret:'+s)
+ def one(p,pattern):
+  ms=list(re.finditer(pattern,text[p],re.M|re.S));need(len(ms)==1,'Expected one source match: '+p+' '+pattern);return ms[0]
+ def ref(p,s,m):return dict(path=p,symbol=s,startLine=text[p].count('\n',0,m.start())+1,endLine=text[p].count('\n',0,m.end())+1,sha256=src.entries[p]['sha256'])
+ def number(p,s):return int(one(p,r'^#define '+s+r'[ \t]+(\d+)\b[^\n]*')[1])
+ proofbytes=safe(dependency,'content/generated/canonical-pokemon/catalog.json').read_bytes()
+ # The exact canonical identity is taken from the reviewed product loader, and
+ # every selected species reference must also match the pinned Git source below.
+ expected=CANONICAL_SHA
+ need(sha(proofbytes)==expected,'Canonical386 proof differs');proof=json.loads(proofbytes)
+ selected=[next(s for s in proof['species'] if s['sourceSpeciesId']==i) for i in (131,65,122)]
+ for s in selected:
+  for r in [s['source'],s['learnsetSource']]+[m['source'] for m in s['levelUpMoves']]:
+   need(r['sha256']==src.entries[r['path']]['sha256'],'Canonical species source differs')
+ names=[];encoded=[];machines=[];held=[];evolutions=[]
+ for s in selected:
+  symbol=s['id']['value'][5:];p='src/data/text/species_names.h';m=one(p,r'^    \['+symbol+r'\]\s*= _\("([^"\n]+)"\),$');name=m[1];r=ref(p,symbol,m)
+  names.append(dict(id=s['id'],name=name,source=r))
+  codes=[int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in name+'$']
+  encoded.append(dict(symbol=symbol,name=name,bytes=codes,source=r,encodingSource=ref('charmap.txt','English name encoding and EOS',one('charmap.txt',r'\A.*\Z'))))
+  p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),');need(not re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]),'Unhandled machine syntax');machines.append(dict(species=s['id'],machineSymbols=re.findall(r'TMHM\((\w+)\)',m[1]),source=ref(p,symbol,m)))
+  meta=next(m for m in proof['metadata'] if m['id']==s['id']);held.append(dict(species=s['id'],common=meta['originalFields']['itemCommon'],rare=meta['originalFields']['itemRare'],source=s['source']));evolutions.append(dict(species=s['id'],sourceEvolutions=meta['sourceEvolutions']))
+ pokemon=dict(schemaVersion=1,profile='firered-silph-pokemon-v1',sourceCommit=COMMIT,species=selected[:1],opponentSpecies=selected[1:],speciesNames=names,encodedNames=encoded,machines=machines,heldItems=held,sourceEvolutions=evolutions,requiredMoves=sorted({json.dumps(m['move'],sort_keys=True) for s in selected for m in s['levelUpMoves']}),canonicalCatalogSha256=expected,limitations=['Only Lapras is added to the112 owned predecessor; Alakazam and Mr. Mime are opponent-only.','Full natural source moves are retained; metadata does not admit battles, gifts, evolution or teaching.'])
+ pokemon['requiredMoves']=[json.loads(m) for m in pokemon['requiredMoves']]
+ baseline=safe(dependency,'scripts/fuchsia-gym-baseline.lock.json').read_bytes();need(sha(baseline)=='3775e076364c67d145c5754e88907d1bdf3de334b7e714e90a63b86cb87b396d','Species predecessor identity differs')
+ owned=json.loads(baseline)['species']+['CHANSEY','SCYTHER','TAUROS','PSYDUCK','GOLDUCK','LAPRAS'];need(len(owned)==len(set(owned))==113,'Expected113 owned species')
+ def compatibility(short,tm):
+  symbol='SPECIES_'+short;p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),');tokens=re.findall(r'TMHM\((\w+)\)',m[1]);need(not re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]),'Unhandled machine row')
+  return dict(species=ident(symbol),sourceSpeciesId=number('include/constants/species.h',symbol),canLearn=any(t.startswith(tm+'_') for t in tokens),source=ref(p,symbol,m))
+ sourceitems=json.loads(text['src/data/items.json'])['items'];items=[];new=[]
+ p='src/data/party_menu.h';mm=one(p,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'MOVE_\w+',mm[1]);need(len(mapping)==58,'58 machine mapping differs')
+ for short in ITEMS:
+  symbol='ITEM_'+short;item=next(i for i in sourceitems if i['itemId']==symbol);p='src/data/items.json';m=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}');r=ref(p,symbol,m)
+  definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=str(item['type']),holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,canGive=item['importance']==0,source=r)
+  declaration=item['description_english'].replace(chr(92)+'n',chr(10));description=declaration;dr=r
+  if short.startswith('TM'):
+   p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+item['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1]);dr=ref(p,'gMoveDescription_'+item['moveId'],m)
+  wrapped=dict(item=definition,description=description,declarationDescription=declaration,descriptionSource=dr);items.append(dict(metadata=wrapped,effectBytes=[],effectSource=None))
+  if short.startswith('TM'):
+   move=mapping[int(short[2:])-1];p='src/data/battle_moves.h';m=one(p,r'^    \['+move+r'\] =\n    \{(.*?)^    \},');pp=int(re.search(r'\.pp = (\d+),',m[1])[1]);new.append(dict(machine=wrapped,move=ident(move),sourceMoveId=number('include/constants/moves.h',move),movePp=pp,compatibility=[compatibility(s,short) for s in owned]))
+ itemdoc=dict(schemaVersion=1,profile='firered-silph-items-v1',sourceCommit=COMMIT,items=items,rulesSources=[ref('src/data/party_menu.h','sTMHMMoves',mm)],limitations=['23 original item definitions cover17 visible and12 hidden source pickups plus President Master Ball; metadata creates no rewards.','Inherited item objects must remain unchanged; only missing identities may extend the shop.'])
+ machinedoc=dict(schemaVersion=1,profile='firered-silph-machines-v1',sourceCommit=COMMIT,inheritedItemIds=[ident('ITEM_'+x) for x in MACHINES],additions=[dict(item=ident('ITEM_'+x),compatibility=[compatibility('LAPRAS',x)]) for x in MACHINES],newMachines=new,limitations=['All24 inherited112-species matrices retain identity and append Lapras; TM01/TM08/TM41 add exact113 cells each.'])
+ return pokemon,itemdoc,machinedoc
+
+def main():
+ global TRAINERS
+ ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--reference-root',type=Path,required=True);ap.add_argument('--project-root',type=Path,default=Path(__file__).absolute().parents[1]);ap.add_argument('--dependency-root',type=Path,required=True);ap.add_argument('--check',action='store_true');a=ap.parse_args()
+ src=Source(a.reference_root)
+ for p in META_PATHS+list(SCRIPT_PATHS):src.read(p)
+ TRAINERS=tuple(n[8:] for p in SCRIPT_PATHS for n in re.findall(r'trainerbattle_(?:single|no_intro) (TRAINER_\w+)',src.text(p)))
+ need(len(TRAINERS)==len(set(TRAINERS))==34,'Expected34 source trainers')
+ trainers=trainer_convert(src.lock(),src.data);need(sum(len(t['party']) for t in trainers['trainers'])==101,'Expected101 original trainer members')
+ pokemon,items,machines=metadata(src,a.dependency_root)
+ lock=src.lock();lock['gameEdition']='FIRERED';lock['romRevision']=0
+ docs={'trainers.json':trainers,'pokemon.json':pokemon,'items.json':items,'machines.json':machines}
+ output={f'content/generated/silph-catalogs/{p}':canonical(d) for p,d in docs.items()};output['scripts/silph-catalogs.lock.json']=canonical(lock)
+ output.update({'content/raw/silph-catalogs/'+p:b for p,b in src.data.items()})
+ manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,sourceTree=TREE,fullSourceHash=sha(''.join(p+'\0'+e['sha256']+'\n' for p,e in sorted(src.entries.items())).encode()),lockSha256=sha(output['scripts/silph-catalogs.lock.json']),outputs=[dict(path=p,sha256=sha(b),byteLength=len(b)) for p,b in sorted(output.items()) if p.startswith('content/generated/')])
+ output['content/generated/silph-catalogs/manifest.json']=canonical(manifest)
+ need(sha(canonical(manifest))=='18d32aeb40285c49ae7bfd9eb74819768735fe3703750d09704ebbaaa648c1fd','Silph catalog manifest identity differs')
+ need(sha(output['scripts/silph-catalogs.lock.json'])=='c89452508b53d251a0c3ad382b514fb7cb4e86009dc1f54ee91d91304ad19d28','Silph source lock identity differs')
+ for rel,b in output.items():
+  p=safe(a.project_root,rel)
+  if a.check:need(p.read_bytes()==b,'Regeneration differs: '+rel)
+  else:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
+ print(json.dumps(dict(trainers=len(TRAINERS),members=101,sourceFiles=len(src.entries),items=len(items['items']),machines=len(MACHINES)+len(machines['newMachines']),manifestSha256=sha(canonical(manifest)),outputs=manifest['outputs'])))
+if __name__=='__main__':main()

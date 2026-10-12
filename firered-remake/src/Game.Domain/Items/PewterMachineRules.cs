@@ -47,7 +47,7 @@ public static class PewterMachineRules
     public static void ValidateCatalog(PewterMachineCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (SafariMachineCatalog.IsAuthenticated(catalog) || SurfMachineCatalog.IsAuthenticated(catalog)) return;
+        if (SafariMachineCatalog.IsAuthenticated(catalog) || SurfMachineCatalog.IsAuthenticated(catalog) || SilphMachineCatalog.IsAuthenticated(catalog)) return;
         if (catalog.Profile == FuchsiaGymMachineRules.Profile) { FuchsiaGymMachineRules.ValidateCatalog(catalog); return; }
         if (catalog.Profile == FuchsiaMachineRules.Profile) { FuchsiaMachineRules.ValidateCatalog(catalog); return; }
         if (catalog.Profile == EeveeMachineRules.Profile) { EeveeMachineRules.ValidateCatalog(catalog); return; }
@@ -279,6 +279,9 @@ public static class PewterMachineRules
         if (definition is null) return Fail("inventory_machine_unsupported");
         var safari = SafariMachineCatalog.For(catalog);
         var surf = SurfMachineCatalog.For(catalog);
+        var silph = SilphMachineCatalog.For(catalog);
+        if (silph is not null && !ReferenceEquals(silph.Pokemon.Catalog, pokemonCatalog)) return Fail("machine_pokemon_catalog");
+        if (silph is not null && !PokemonMoveRules.IsLearningSupported(pokemonCatalog, definition.Move)) return Fail("machine_move_execution_unsupported");
         if (surf is not null && !ReferenceEquals(surf.Pokemon.Catalog, pokemonCatalog)) return Fail("machine_pokemon_catalog");
         if (surf is not null && !PokemonMoveRules.IsLearningSupported(pokemonCatalog, definition.Move)) return Fail("machine_move_execution_unsupported");
         if (safari is not null && !ReferenceEquals(safari.Pokemon.Catalog, pokemonCatalog))
@@ -289,7 +292,7 @@ public static class PewterMachineRules
             return Fail("machine_move_execution_unsupported");
         error = PokemonStateValidator.Validate(pokemonCatalog, pokemon.Pokemon);
         if (error is not null) return Fail(error);
-        if (pokemonCatalog.Species.Count != (surf is not null ? 112 : safari is not null ? 110 : catalog.Profile is FuchsiaMachineRules.Profile or FuchsiaGymMachineRules.Profile ? 107 : catalog.Profile == EeveeMachineRules.Profile ? 103 : catalog.Profile == SnorlaxMachineRules.Profile ? 102 : catalog.Profile == PokemonTowerMachineRules.Profile ? 101 : catalog.Profile == RocketHideoutMachineRules.Profile ? 99 : catalog.Profile == CeladonGymMachineRules.Profile ? 98 : catalog.Profile == CeladonApproachMachineRules.Profile ? 94 : catalog.Profile == RockTunnelMachineRules.Profile ? 93 : catalog.Profile == Route11Profile ? 79 : catalog.Profile is SsAnneProfile or VermilionGymProfile ? 73 : catalog.Profile == VermilionProfile ? 70 : catalog.Profile == BillProfile ? 68 : catalog.Profile == CeruleanProfile ? 65 : catalog.Profile == MtMoonProfile ? 56 : catalog.Profile == Route3Profile ? 40 : catalog.Profile == Route22Profile ? 32 : 29) || !pokemonCatalog.Moves.TryGetValue(definition.Move, out var move) ||
+        if (pokemonCatalog.Species.Count != (silph is not null ? 113 : surf is not null ? 112 : safari is not null ? 110 : catalog.Profile is FuchsiaMachineRules.Profile or FuchsiaGymMachineRules.Profile ? 107 : catalog.Profile == EeveeMachineRules.Profile ? 103 : catalog.Profile == SnorlaxMachineRules.Profile ? 102 : catalog.Profile == PokemonTowerMachineRules.Profile ? 101 : catalog.Profile == RocketHideoutMachineRules.Profile ? 99 : catalog.Profile == CeladonGymMachineRules.Profile ? 98 : catalog.Profile == CeladonApproachMachineRules.Profile ? 94 : catalog.Profile == RockTunnelMachineRules.Profile ? 93 : catalog.Profile == Route11Profile ? 79 : catalog.Profile is SsAnneProfile or VermilionGymProfile ? 73 : catalog.Profile == VermilionProfile ? 70 : catalog.Profile == BillProfile ? 68 : catalog.Profile == CeruleanProfile ? 65 : catalog.Profile == MtMoonProfile ? 56 : catalog.Profile == Route3Profile ? 40 : catalog.Profile == Route22Profile ? 32 : 29) || !pokemonCatalog.Moves.TryGetValue(definition.Move, out var move) ||
             move.SourceMoveId != definition.SourceMoveId || move.Pp != definition.MovePp)
             return Fail("machine_pokemon_catalog");
         if (string.IsNullOrEmpty(currentMapSection) || !currentMapSection.StartsWith("MAPSEC_", StringComparison.Ordinal))
@@ -326,7 +329,7 @@ public static class PewterMachineRules
         int friendship = Math.Min(255, before.Friendship + delta);
         var after = pokemon with { Pokemon = before with { Moves = moves, Friendship = friendship } };
         int consumed = machine == Hm01Id || machine == Hm05Id ||
-            (safari is not null || surf is not null) && (machine == SafariMachineCatalog.Hm03Id || machine == SafariMachineCatalog.Hm04Id) ? 0 : 1;
+            (safari is not null || surf is not null || silph is not null) && (machine == SafariMachineCatalog.Hm03Id || machine == SafariMachineCatalog.Hm04Id) ? 0 : 1;
         var afterInventory = inventory with { Machines = OpeningInventoryRules.SetQuantity(inventory.Machines ?? [], machine, count - consumed) };
         return new(afterInventory, after, true, null, slot, consumed, friendship - before.Friendship);
     }

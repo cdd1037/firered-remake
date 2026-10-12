@@ -63,6 +63,11 @@ public sealed partial class CampaignSession
     private InventoryState LegacyQuestInventory(InventoryState inventory)
     {
         var view=WithoutCityServiceItems(_content.PewterEnabled?PewterMachineRules.WithoutMachines(inventory):inventory);
+        if(_content.SilphEnabled)view=view with
+        {
+            KeyItems=view.KeyItems?.Where(s=>s.Item!=SilphShopCatalog.CardKeyId).ToImmutableArray(),
+            Balls=view.Balls?.Where(s=>s.Item!=SilphShopCatalog.UltraBallId&&s.Item!=SilphShopCatalog.MasterBallId).ToImmutableArray()
+        };
         if(_content.PokemonTowerEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=PokemonTowerItemRules.PokeFluteId).ToImmutableArray()};
         if(_content.RocketHideoutEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item.Value is not("pret:ITEM_LIFT_KEY" or "pret:ITEM_SILPH_SCOPE")).ToImmutableArray(),Balls=view.Balls?.Where(s=>s.Item.Value is not("pret:ITEM_NET_BALL" or "pret:ITEM_NEST_BALL")).ToImmutableArray()};
         if(_content.SsAnneEnabled)view=view with{Berries=null,Balls=view.Balls is {} balls?balls.Where(s=>s.Item!=SsAnneItemRules.GreatBallId).ToImmutableArray():null,KeyItems=view.KeyItems is {} shipKeys?shipKeys.Where(s=>s.Item!=SsAnneItemRules.BerryPouchId).ToImmutableArray():null};

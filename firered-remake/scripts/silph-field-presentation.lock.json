@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "repository": "pret/pokefirered",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "files": [
+    {
+      "path": "src/field_player_avatar.c",
+      "byteLength": 67969,
+      "sha256": "d36588c4d02385393a5e8dc74d78f907944ca556700b5c67b39f8304f4dde08e",
+      "gitBlobSha1": "ef086dda3a6bf2d175861d6a7be1831790208ecb"
+    },
+    {
+      "path": "src/field_fadetransition.c",
+      "byteLength": 25263,
+      "sha256": "6fa3cb3b827470de6c4942b0296bf823529faec41c6473ffe88675a44114851e",
+      "gitBlobSha1": "f392a06d5c05966441ab448fec9f5a06c908c489"
+    },
+    {
+      "path": "src/field_specials.c",
+      "byteLength": 77314,
+      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9",
+      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d"
+    },
+    {
+      "path": "src/list_menu.c",
+      "byteLength": 25630,
+      "sha256": "065fd44e600802f3e988b559f5fb834070d4132897a24917b3f375213a8f4a31",
+      "gitBlobSha1": "36b81faec0de5f45d38c539954e3e22fe35aa51a"
+    },
+    {
+      "path": "include/constants/songs.h",
+      "byteLength": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4",
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded"
+    },
+    {
+      "path": "sound/song_table.inc",
+      "byteLength": 9204,
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061",
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57"
+    },
+    {
+      "path": "sound/songs/midi/mus_silph.mid",
+      "byteLength": 18472,
+      "sha256": "06fafd18765301a549a902ebef08bf86634e6e556b564c297351fdf61a576ef6",
+      "gitBlobSha1": "8f66ea874cf336c190a17c6cc93172574b4d5499"
+    },
+    {
+      "path": "sound/songs/midi/se_warp_out.mid",
+      "byteLength": 136,
+      "sha256": "e17fab1451547111688b6f5036cfed348efa874dc26de22a5ea411d9731f4041",
+      "gitBlobSha1": "5072e64483c67de55d497e015322faccd4c2d40d"
+    },
+    {
+      "path": "include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a",
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9"
+    },
+    {
+      "path": "sound/cry_tables.inc",
+      "byteLength": 16533,
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a",
+      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9"
+    }
+  ]
+}

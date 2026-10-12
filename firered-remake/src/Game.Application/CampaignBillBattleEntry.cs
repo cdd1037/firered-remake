@@ -17,6 +17,7 @@ public sealed partial class CampaignSession
             "Route12" or "Route13" or "Route14" or "Route15" when _content.FuchsiaRouteEnabled=>new("map.route-"+sourceMap[5..]),
             "CeladonCity_GameCorner" when _content.RocketHideoutEnabled=>new("map.celadon-city-game-corner"),
             _ when _content.RocketHideoutEnabled&&sourceMap.StartsWith("RocketHideout_",StringComparison.Ordinal)=>new("map.rocket-hideout-"+sourceMap.Split('_')[1].ToLowerInvariant()),
+            _ when _content.SilphEnabled&&sourceMap.StartsWith("SilphCo_",StringComparison.Ordinal)=>new("map.silph-co-"+sourceMap.Split('_')[1].ToLowerInvariant()),
             "FuchsiaCity_Gym" when _content.FuchsiaGymEnabled=>new("map.fuchsia-city-gym"),
             "CeladonCity_Gym" when _content.CeladonGymEnabled=>new("map.celadon-city-gym"),
             "Route8" when _content.CeladonApproachEnabled=>new("map.route-8"),
@@ -33,7 +34,7 @@ public sealed partial class CampaignSession
             _=>throw new InvalidDataException("ordinary_trainer_source_map")
         };
     }
-    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
+    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsSilphTrainer(trainer)?"0x0":IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
         IsPokemonTowerRival(trainer)||IsCeruleanRival(trainer)||IsSsAnneRival(trainer)?"0x0":
         IsCeruleanTrainer(trainer)?"CeruleanCity_EventScript_Grunt":
         trainer==Game.Domain.Trainers.BillTrainerPartyFactory.Rocket?"Route24_EventScript_Rocket":

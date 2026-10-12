@@ -40,6 +40,8 @@ public sealed partial class CampaignSession
         var keys=original.KeyItems;
         if((changed.KeyItems??[]).Any(s=>s.Item==SsAnneItemRules.BerryPouchId)&&!(keys??[]).Any(s=>s.Item==SsAnneItemRules.BerryPouchId))
             keys=(keys??[]).Add(new(SsAnneItemRules.BerryPouchId,1));
+        if((changed.KeyItems??[]).Any(s=>s.Item==SilphShopCatalog.CardKeyId)&&!(keys??[]).Any(s=>s.Item==SilphShopCatalog.CardKeyId))
+            keys=(keys??[]).Add(new(SilphShopCatalog.CardKeyId,1));
         return original with{BagItems=changed.BagItems,PcItems=changed.PcItems,Balls=changed.Balls,Berries=changed.Berries,KeyItems=keys};
     }
     private InventoryState PotionView(InventoryState inventory)

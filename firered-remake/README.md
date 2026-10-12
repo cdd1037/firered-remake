@@ -2,36 +2,28 @@
 
 Goal: a complete, local single-player recreation of the English original-revision FireRed. Kanto, story, ordinary single-player side content and reachable post-game are the target. The first badge is an intermediate acceptance milestone. See [scope](docs/scope.md) and [full scope audit](docs/full-scope-audit.md).
 
-## Current recovered state — 2026-10-10
+## Current recovered state — 2026-10-12
 
-The accepted continuation reaches four badges, Celadon Rocket Hideout's Silph Scope,
-Pokémon Tower's Mr. Fuji/Poké Flute, and the two bounded Route12/16 Snorlax events.
-The source/application checks include capture into party/PC and non-victory callbacks;
-the focused real-window Snorlax check covers No, wake, escape, removal, save and a
-second-process normal Continue. See [Snorlax scope and evidence](docs/snorlax-campaign.md).
+The accepted story continuation reaches five badges, Safari HM03/Gold Teeth,
+HM04 from the Warden, Surf/Strength, and the reconstructed Silph rival,
+Lapras, Giovanni and Master Ball route. A fresh natural route through the
+Tea gate and all required Silph events finishes back in Saffron with a strict
+save. See [Silph scope and evidence](docs/silph-campaign.md) and
+[recovery provenance](docs/recovery-20261012.md).
 
-The regional-services continuation includes Tea/four gates, the rooftop Eevee gift,
-ordinary Department Store 2F purchases, store stairs/elevator, ordinary interiors
-and Lavender Name Rater. The next accepted arrival reaches Fuchsia Center through
-Route12–15 with eleven actual source trainer wins and complete nurse/save recovery.
-It adds Ditto/Transform with permanent capture identity retained, plus Farfetch'd,
-Doduo and Dodrio. See [Fuchsia scope and proof](docs/fuchsia-arrival.md) and the
-[per-service regional ledger](docs/regional-interaction-coverage.md).
+Run `bash scripts/launch-current.sh` (or `launch-silph.sh`). Its profile-specific
+saves stay isolated. The explicit Surf-to-Silph upgrade preserves payload and
+generation; earlier profiles retain their own upgrade commands. On a restored
+project, complete the official Godot resource import before the first launch.
 
-Run `bash scripts/launch-current.sh` (or `launch-fuchsia-route.sh`); its isolated
-save directory is `.play/fuchsia-route`. The explicit
-`save upgrade-fuchsia-route INPUT NEW_OUTPUT` accepts the Regional Interiors
-profile, preserves generation and changes only the documented encounter tag in
-the gameplay payload. Earlier profiles keep separate saves and upgrade commands.
-
-Two new singles still require complete Metronome, and three new preset doubles
-require genuine two-versus-two execution; their rosters are not substituted.
-Koga/fifth badge, Safari, Cycling Road, new-route pickups and ordinary city
-services remain next work. The store's TM/tutor/stone/vitamin/drink services,
-coin systems, Itemfinder and Route8 Twins are also explicit gaps. The latest
-asset-complete Drive base is the bounded regional closeout `2c04c7df`; subsequent
-source-only GitHub checkpoints have their own records. This is an unfinished
-complete-FireRed project.
+The ordinary shared battle core and preset doubles are available within their
+documented admission contracts. Dedicated move animations remain a separate
+ongoing coverage track. Saffron Gym/Sabrina is the next integration; optional
+Silph rooms, incomplete earlier facilities, special battle modes and later
+story/post-game content remain open. Passing the main route does not mean all
+regional interactions are complete. This is still an unfinished complete-FireRed
+project. The latest asset-complete recovery base is stage7 `48f9bf9`; later
+source checkpoints and regenerated resources are described in the recovery note.
 
 ## Earlier first-badge checkpoint
 

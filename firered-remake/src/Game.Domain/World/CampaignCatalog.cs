@@ -80,6 +80,15 @@ public interface ICampaignCatalog:IStoryCatalog
     SourceTwinsTrainerDefinition? Route8Twins=>null;
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
+    bool SilphEnabled=>false;
+    SilphOwnedPokemonCatalog? SilphOwnership=>null;
+    SilphOpponentPokemonCatalog? SilphOpponents=>null;
+    SilphTrainerCatalog? SilphTrainerParties=>null;
+    ImmutableArray<SilphWarpPad> SilphWarpPads=>[];
+    ImmutableArray<SilphDoorDefinition> SilphDoors=>[];
+    ImmutableArray<CampaignSilphElevatorFloor> SilphElevatorFloors=>[];
+    ImmutableArray<CampaignSilphElevatorEntrance> SilphElevatorEntrances=>[];
+    ImmutableArray<CampaignSilphDynamicExit> SilphDynamicExits=>[];
     bool SurfEnabled=>false;
     SurfOwnedPokemonCatalog? SurfOwnership=>null;
     IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters=>null;

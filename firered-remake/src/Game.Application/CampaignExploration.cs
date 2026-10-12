@@ -52,6 +52,7 @@ public sealed partial class CampaignSession
         }
         if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||!(b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
+        if(_content.SilphEnabled&&SilphFieldRules.IsSilphMap(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
         if(here is >=0x60 and <=0x71)return (_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map))?.Code;
         var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SafariConnectedMaps(EditedFieldMaps(state)),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
@@ -78,12 +79,14 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideConnectedField(CampaignState state,CampaignCommand command)
     {
         if(!Enum.IsDefined(command.Direction))return new(CommandStatus.Rejected,state,"invalid_direction");
-        var before=state.World.Player;var movementMaps=SafariMovementMaps(RocketMovementMaps(state));var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
+        var before=state.World.Player;var movementMaps=SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state));var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
         bool turn=command.Kind=="turn";
         if(!turn&&TryStartFieldSurfDismount(state,command) is {} surfDismount)return surfDismount;
         if(!turn&&TryStartFieldStrengthPush(state,command) is {} strengthPush)return strengthPush;
         if(!turn&&_content.FuchsiaRouteEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsFuchsiaRouteWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"fuchsia_route_warp_not_open");
         if(!turn&&_content.SnorlaxEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
+        if(TrySilphPadStep(state,command) is {} silphPad)return silphPad;
+        if(TrySilphDynamicExit(state,command) is {} silphExit)return silphExit;
         if(TryDepartmentDynamicExit(state,command) is {} departmentExit)return departmentExit;
         if(TryRocketDynamicExit(state,command) is {} dynamicExit)return dynamicExit;
         if(!turn&&command.Direction is Direction.North or Direction.South&&before.Facing==command.Direction&&RegionalWalkIntoSign(state,x,y) is {} regionalSign)
@@ -123,6 +126,7 @@ public sealed partial class CampaignSession
         if(_content.SnorlaxEnabled&&!_content.IsSnorlaxStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"snorlax_region_boundary_not_open");
         if(changed)
         {
+            moved=RecordSilphElevatorEntrance(state,moved);
             moved=RecordDepartmentElevatorEntrance(state,moved);
             moved=RecordRocketElevatorEntrance(state,moved);
             moved=moved with{Exploration=ResetEncounterModifiers(moved.Exploration!)};

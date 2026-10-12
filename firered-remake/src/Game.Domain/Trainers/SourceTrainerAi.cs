@@ -107,6 +107,7 @@ public static class SourceTrainerAi
 
     internal static ImmutableArray<string> Items(TrainerId id)
     {
+        if (SilphTrainerPartyFactory.Expected.TryGetValue(id, out var silph)) return silph.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (FuchsiaGymTrainerPartyFactory.Expected.TryGetValue(id, out var gym)) return gym.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (CeladonGymTrainerPartyFactory.Expected.TryGetValue(id, out var celadon)) return celadon.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (id == VermilionGymTrainerPartyFactory.LtSurge) return ["ITEM_SUPER_POTION", "ITEM_FULL_HEAL"];
@@ -115,6 +116,7 @@ public static class SourceTrainerAi
 
     internal static uint Flags(TrainerId id)
     {
+        if (SilphTrainerPartyFactory.Expected.TryGetValue(id, out var silph)) return silph.AiFlags;
         if (FuchsiaGymTrainerPartyFactory.Expected.TryGetValue(id, out var gym)) return gym.AiFlags;
         if (PokemonTowerTrainerPartyFactory.Expected.TryGetValue(id, out var tower)) return tower.AiFlags;
         if (RocketHideoutTrainerPartyFactory.Expected.TryGetValue(id, out var rocket)) return rocket.AiFlags;

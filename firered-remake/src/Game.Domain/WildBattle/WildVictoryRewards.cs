@@ -119,7 +119,7 @@ public static class WildVictoryRewards
         var catalog = owned.Catalog;
         ValidateOwned(catalog, participantAfterBattle, route22Rules: true, route11Rules: true, rockTunnelRules: true);
         if (aliveParticipants is < 1 or > 6 || !ValidRegion(currentRegion)) throw new ArgumentException("safari_reward_context");
-        if (defeatedPokemon is null || !catalog.Species.ContainsKey(defeatedPokemon.Species) || defeatedPokemon.CurrentHp != 0)
+        if (defeatedPokemon is null || !(trainerBattle ? owned.AdmitsTrainerOpponent(defeatedPokemon.Species) : catalog.Species.ContainsKey(defeatedPokemon.Species)) || defeatedPokemon.CurrentHp != 0)
             throw new ArgumentException("safari_reward_defeated");
         if (defeatedBattleView is not null && defeatedBattleView.Pokemon != defeatedPokemon)
             throw new ArgumentException("safari_reward_view_mismatch");
@@ -131,7 +131,7 @@ public static class WildVictoryRewards
         // This participant-only campaign adapter does not manufacture a full-party EXP Share context.
         if (participantAfterBattle.HeldItem == "ITEM_EXP_SHARE") throw new NotSupportedException("safari_reward_full_party_required");
         var result = PokemonRewardRecipe.Calculate(catalog, participantAfterBattle.Pokemon,
-            catalog.Species[defeatedPokemon.Species], defeatedPokemon.Level, aliveParticipants, 0,
+            owned.Mechanics.Catalog.Species[defeatedPokemon.Species], defeatedPokemon.Level, aliveParticipants, 0,
             new(true, false, participantAfterBattle.HeldItem == "ITEM_LUCKY_EGG", trainerBattle, false,
                 participantAfterBattle.HeldItem == "ITEM_MACHO_BRACE" ? 2 : 1,
                 participantAfterBattle.HeldItem == "ITEM_SOOTHE_BELL", participantAfterBattle.Ball == "ITEM_LUXURY_BALL",
@@ -140,6 +140,26 @@ public static class WildVictoryRewards
         ValidateOwned(catalog, projected, route22Rules: true, route11Rules: true, rockTunnelRules: true);
         return new(projected, result.ExperienceGained, result.EvsGained, result.LevelsGained,
             result.FriendshipDelta, result.HpDelta, result.Events, result.PendingMoves);
+    }
+
+    /// <summary>Silph settlement authenticates the exact original trainer roster and current EXP boundary.
+    /// Participation, receipt consumption and any remaining party recipients belong to the application.</summary>
+    public static WildVictoryRewardResult ApplySilphTrainer(SilphOwnedPokemonCatalog owned,
+        PartyPokemon participantAfterBattle, Game.Domain.Trainers.ForestTrainerCombatState battle,
+        string currentRegion, int aliveParticipants = 1)
+    {
+        ArgumentNullException.ThrowIfNull(owned); ArgumentNullException.ThrowIfNull(battle);
+        OwnedBattlePokemonCatalog proof = owned;
+        if (battle.RulesVersion != Game.Domain.Trainers.ForestTrainerCombatRules.SilphRulesVersion ||
+            !Game.Domain.Battle.SourceBattleAdmission.IsOwnedCampaign(proof, battle.Battle) ||
+            battle.Phase != Game.Domain.Trainers.ForestTrainerCombatPhase.AwaitingExperience ||
+            Game.Domain.Trainers.ForestTrainerCombatRules.Validate(owned.Mechanics.Catalog, battle) is not null ||
+            participantAfterBattle?.Pokemon is null || battle.Battle.CalledParty is not { } party ||
+            !party.Player.Any(member => WildBattleSourcePartyEffects.SamePokemon(member.Pokemon, participantAfterBattle.Pokemon) &&
+                member.Status == participantAfterBattle.Status && WildBattleSourcePartyEffects.PersistentHeldItem(member) == participantAfterBattle.HeldItem))
+            throw new ArgumentException("silph_trainer_reward_context");
+        return ApplySafariOwned(proof, participantAfterBattle, battle.Battle.Opponent.Pokemon,
+            currentRegion, aliveParticipants, trainerBattle: true, defeatedBattleView: battle.Battle.Opponent);
     }
 
     private static void ValidateOwned(PokemonCatalog catalog, PartyPokemon owned, bool route22Rules = false, bool route11Rules = false, bool rockTunnelRules = false)

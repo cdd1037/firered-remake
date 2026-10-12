@@ -56,7 +56,8 @@ public sealed partial class CampaignSession
         else if(_content.ForestEnabled)
         {
             var early=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");var table=_content.LandEncounters![state.World.Player.MapId];
-            var result=EarlyLandWildPokemonFactory.Generate(OrdinaryEncounterPokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled);
+            var encounterPokemon=_content.SafariEnabled?(_content.SilphOwnership?.Predecessor.Predecessor.Catalog??_content.SurfOwnership?.Predecessor.Catalog??BattlePokemon):OrdinaryEncounterPokemon;
+            var result=EarlyLandWildPokemonFactory.Generate(encounterPokemon,table,early,state.World.Rng,state.TrainerId,ceruleanRules:_content.CeruleanEnabled,billRules:_content.BillEnabled,vermilionRules:_content.VermilionEnabled,ssAnneRules:_content.SsAnneEnabled,route11Rules:_content.Route11Enabled,rockTunnelRules:_content.RockTunnelEnabled,celadonApproachRules:_content.CeladonApproachEnabled,celadonGymRules:_content.CeladonGymEnabled,rocketHideoutRules:_content.RocketHideoutEnabled,pokemonTowerRules:_content.PokemonTowerEnabled,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled&&!_content.SafariEnabled,safariRules:_content.SafariEnabled);
             generated=new(result.Pokemon,result.GlobalRng,result.RandomTrace);
         }
         else generated=Route1WildPokemonFactory.Generate(OrdinaryEncounterPokemon,exploration.Encounter!,state.World.Rng,state.TrainerId);
@@ -73,7 +74,7 @@ public sealed partial class CampaignSession
         var battle=started.State!;
         if(battle.SourceCampaignRulesVersion is not null)battle=battle with{Obedience=CampaignObedienceContext(state)};
         var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,battle,started.Events,0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,null,[],0,[..generated.RandomTrace,..started.Trace],[])
-        {ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=_content.CaptureEnabled?new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]):null,FaintedMembers=_content.CaptureEnabled?ImmutableSortedSet<long>.Empty:null};
+        {ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=_content.CaptureEnabled?new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]):null,FaintedMembers=_content.CaptureEnabled?state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet():null};
         if(_content.PartyTrainingEnabled)b=b with{ParticipatingMembers=ImmutableSortedSet<long>.Empty.Add(owned.InstanceId),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
         if(fishingPokemon is null&&surfPokemon is null)exploration=_content.ForestEnabled?exploration with{EarlyEncounter=EarlyLandEncounterRules.CompleteCandidate(exploration.EarlyEncounter!,_content.LandEncounters![state.World.Player.MapId])}:exploration with{Encounter=Route1EncounterRules.CompleteCandidate(exploration.Encounter!)};
         return PrepareWildPresentation(state with{WildBattle=b,Exploration=exploration with{NextWildBattleId=checked(exploration.NextWildBattleId+1)},World=state.World with{Rng=battle.Rng},SeenSpecies=towerBattle&&!PokemonTowerBattleContract.Policy(kind).RegisterSeen?state.SeenSpecies:state.SeenSpecies.Add(battle.Opponent.Pokemon.SourceSpeciesId),Motions=[],PresentationTicks=0});
@@ -133,18 +134,26 @@ public sealed partial class CampaignSession
         }
         else if(command.Kind=="battle_ball")
         {
-            bool great=command.Text=="pret:ITEM_GREAT_BALL"&&_content.CeladonApproachEnabled;
-            if(!great&&command.Text is not (null or "pret:ITEM_POKE_BALL"))return new(CommandStatus.Rejected,state,"capture_ball_unsupported");
+            var ball=command.Text switch
+            {
+                null or "pret:ITEM_POKE_BALL"=>CaptureBall.Poke,
+                "pret:ITEM_GREAT_BALL" when _content.CeladonApproachEnabled=>CaptureBall.Great,
+                "pret:ITEM_ULTRA_BALL" when _content.SilphEnabled=>CaptureBall.Ultra,
+                "pret:ITEM_MASTER_BALL" when _content.SilphEnabled=>CaptureBall.Master,
+                _=>(CaptureBall)0
+            };
+            if(ball==(CaptureBall)0)return new(CommandStatus.Rejected,state,"capture_ball_unsupported");
             if(!_content.CaptureEnabled||_content.QuestItems is not {} items||state.Inventory is null||!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))return new(CommandStatus.Rejected,state,"capture_not_enabled");
             var capacityError=CaptureCapacityError(state);if(capacityError is not null)return new(CommandStatus.Rejected,state,capacityError);
             if(state.NextPokemonId is <2 or long.MaxValue||long.MaxValue-Revision<256)return new(CommandStatus.Rejected,state,"capture_counter_headroom_required");
-            if(great)
+            if(ball!=CaptureBall.Poke)
             {
                 var inventoryError=ValidateCampaignInventory(state.Inventory);
                 if(inventoryError is not null)return new(CommandStatus.Rejected,state,inventoryError);
+                var ballItem=new ItemId("pret:"+CaptureBallReceipt(ball));
                 var balls=state.Inventory.Balls??[];int index=-1;
-                for(int n=0;n<balls.Length;n++)if(balls[n].Item==SsAnneItemRules.GreatBallId){index=n;break;}
-                if(index<0)return new(CommandStatus.Rejected,state,"capture_no_great_ball");
+                for(int n=0;n<balls.Length;n++)if(balls[n].Item==ballItem){index=n;break;}
+                if(index<0)return new(CommandStatus.Rejected,state,ball switch{CaptureBall.Great=>"capture_no_great_ball",CaptureBall.Ultra=>"capture_no_ultra_ball",_=>"capture_no_master_ball"});
                 var stack=balls[index];
                 capturedInventory=state.Inventory with{Balls=stack.Quantity==1?balls.RemoveAt(index):balls.SetItem(index,stack with{Quantity=stack.Quantity-1})};
             }
@@ -154,7 +163,7 @@ public sealed partial class CampaignSession
                 if(!spend.Succeeded)return new(CommandStatus.Rejected,state,"capture_no_poke_ball");
                 capturedInventory=spend.State;
             }
-            turn=WildBattleRules.ResolveBall(OrdinaryExecutionPokemon(b.State),b.State,great?CaptureBall.Great:CaptureBall.Poke,reserves);
+            turn=WildBattleRules.ResolveBall(OrdinaryExecutionPokemon(b.State),b.State,ball,reserves);
         }
         else return new(CommandStatus.Rejected,state,"wild_battle_active");
         if(!turn.Succeeded)return new(CommandStatus.Rejected,state,turn.Fault);

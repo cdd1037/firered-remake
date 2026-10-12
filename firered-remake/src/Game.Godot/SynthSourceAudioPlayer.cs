@@ -41,8 +41,9 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false)
     {
+        if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
         if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
         if(includeSafari&&!includeFuchsiaRoute)throw new ArgumentException("Safari audio requires Fuchsia route.");
         if(includeFuchsiaRoute&&!includeSnorlax)throw new ArgumentException("Fuchsia route audio requires Snorlax.");
@@ -184,6 +185,18 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(inheritedPsyduck is null||inheritedPsyduck!=extension.Cues.Single(c=>c.Id=="CRY_PSYDUCK_NORMAL")||cues.Any(c=>c.Id=="CRY_GOLDUCK_NORMAL"))
                 throw new InvalidDataException("Inherited Surf cry differs.");
             cues=[..cues,extension.Cues.Single(c=>c.Id=="CRY_GOLDUCK_NORMAL")];
+        }
+        if(includeSilph)
+        {
+            string path=Path.Combine(Path.GetFullPath(projectRoot),"content/generated/silph-synth-audio/manifest.json");
+            if(new FileInfo(path).Length!=SilphSynthManifestIdentity.Bytes)throw new InvalidDataException("Silph synth manifest length differs.");
+            byte[] extensionBytes=File.ReadAllBytes(path);
+            if(Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=SilphSynthManifestIdentity.Sha256)throw new InvalidDataException("Silph synth manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("Missing Silph synth manifest.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.SourceCommit!=SilphSynthManifestIdentity.SourceCommit||extension.Cues.Length!=SilphSynthManifestIdentity.CueCount||
+                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SILPH","SE_WARP_OUT","CRY_ALAKAZAM_NORMAL","CRY_MR_MIME_NORMAL","CRY_LAPRAS_NORMAL"}))
+                throw new InvalidDataException("Silph synth manifest contract differs.");
+            cues=[..cues,..extension.Cues];
         }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
         if(includeFuchsiaRoute)

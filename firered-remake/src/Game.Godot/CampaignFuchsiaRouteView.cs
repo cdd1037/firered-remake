@@ -57,7 +57,7 @@ public partial class CampaignView
     {
         WildBattleTransformedEvent transformed => new("sText_PkmnTransformedInto",
             ("B_ATK_NAME_WITH_PREFIX", WildPrefixedName(transformed.Actor)),
-            ("B_BUFF1", _catalog.PokemonContent!.SpeciesNames[_catalog.PokemonContent.Catalog.Species[transformed.AppearanceSpecies].SourceSpeciesId])),
+            ("B_BUFF1", _catalog.PresentedSpeciesName(PresentedSpeciesId(transformed.AppearanceSpecies)))),
         WildBattleMoveFailedEvent { Reason: "target-transformed" or "semi-invulnerable" } => new("sText_ButItFailed"),
         _ => null
     };
@@ -73,7 +73,7 @@ public partial class CampaignView
         }
         var appearance = side == WildBattleSide.Player ? battle.DisplayPlayerAppearance : battle.DisplayOpponentAppearance;
         if (appearance is null) return (identity.SourceSpeciesId, identity.IsShiny);
-        var species = _catalog.PokemonContent!.Catalog.Species[appearance.Species].SourceSpeciesId;
+        var species = PresentedSpeciesId(appearance.Species);
         bool shiny = ((appearance.OriginalTrainerId >> 16) ^ (appearance.OriginalTrainerId & 0xffff) ^
             (appearance.Personality >> 16) ^ (appearance.Personality & 0xffff)) < 8;
         return (species, shiny);

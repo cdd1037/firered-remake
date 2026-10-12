@@ -143,7 +143,7 @@ public partial class CampaignView
     private PartyPokemon WildRewardRecipient(CampaignWildBattle b) => _session.State.Party[b.RewardPartyIndex];
     private string WildName(WildBattleSide side) => side == WildBattleSide.Player
         ? WildWithdrawing(PresentedWildBattle!) ? PresentedWildBattle!.LastSwitch!.Outgoing.Nickname : SsAnnePendingPlayerForceOut(PresentedWildBattle!) is {} forced ? _session.State.Party[forced.PreviousIndex].Nickname : PresentedWildBattle!.OwnedBefore.Nickname
-        : TowerOpponentAppearance()?.Name ?? _catalog.PokemonContent!.SpeciesNames[PresentedWildBattle!.DisplayOpponent.SourceSpeciesId];
+        : TowerOpponentAppearance()?.Name ?? _catalog.PresentedSpeciesName(PresentedWildBattle!.DisplayOpponent.SourceSpeciesId);
     private string WildPrefixedName(WildBattleSide side) => (side == WildBattleSide.Opponent ? _session.State.ForestTrainerBattle is not null ? "Foe " : "Wild " : "") + WildName(side);
     private static string WildStatName(WildBattleStat stat) => stat switch
     {
