@@ -4,7 +4,7 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool FirstSeviiProfileRequested => OS.GetEnvironment("FIRERED_FIRST_SEVII")=="1" || OS.GetCmdlineUserArgs().Contains("--story-first-sevii");
+    private static bool FirstSeviiProfileRequested => ViridianGymProfileRequested || OS.GetEnvironment("FIRERED_FIRST_SEVII")=="1" || OS.GetCmdlineUserArgs().Contains("--story-first-sevii");
     private PretFirstSeviiPresentation? _firstSeviiPresentation;
     private readonly Dictionary<(string Asset,int Fade),Texture2D> _seagallopTextures=[];
     private SeagallopSourcePresentation? _seagallopClock;

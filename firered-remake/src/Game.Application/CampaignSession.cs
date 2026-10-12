@@ -188,12 +188,13 @@ public sealed partial class CampaignSession
     public const string SnorlaxRulesVersion="fr-snorlax-campaign-v1";
     public const string PresetDoublesRulesVersion="fr-preset-doubles-campaign-v1";
     public const string SafariRulesVersion="fr-safari-campaign-v1";
+    public const string ViridianGymRulesVersion="fr-viridian-gym-campaign-v1";
     public const string FirstSeviiRulesVersion="fr-first-sevii-campaign-v1";
     public const string CinnabarRulesVersion="fr-cinnabar-campaign-v1";
     public const string SaffronGymRulesVersion="fr-saffron-gym-campaign-v1";
     public const string SilphRulesVersion="fr-silph-campaign-v1";
     public const string SurfRulesVersion="fr-surf-campaign-v1";
-    public string RulesVersion=>_content.FirstSeviiEnabled?FirstSeviiRulesVersion:_content.CinnabarEnabled?CinnabarRulesVersion:_content.SaffronGymEnabled?SaffronGymRulesVersion:_content.SilphEnabled?SilphRulesVersion:_content.SurfEnabled?SurfRulesVersion:_content.SafariEnabled?SafariRulesVersion:_content.PresetDoublesEnabled?PresetDoublesRulesVersion:_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
+    public string RulesVersion=>_content.ViridianGymEnabled?ViridianGymRulesVersion:_content.FirstSeviiEnabled?FirstSeviiRulesVersion:_content.CinnabarEnabled?CinnabarRulesVersion:_content.SaffronGymEnabled?SaffronGymRulesVersion:_content.SilphEnabled?SilphRulesVersion:_content.SurfEnabled?SurfRulesVersion:_content.SafariEnabled?SafariRulesVersion:_content.PresetDoublesEnabled?PresetDoublesRulesVersion:_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
     public CampaignState State=>_commands.State;
@@ -213,6 +214,7 @@ public sealed partial class CampaignSession
     public CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options=null)
     {
         _content=content;options??=new();
+        ValidateViridianGymCatalog(content);
         if(content.CinnabarEnabled)
         {
             if(!content.SaffronGymEnabled||content.CinnabarOwnership is null||content.CinnabarOpponents is null||content.CinnabarTrainerParties is null||
@@ -234,7 +236,7 @@ public sealed partial class CampaignSession
             FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
             if(content.SafariEnabled)
             {
-                if(content.CinnabarEnabled?!CinnabarMachineCatalog.IsAuthenticated(content.PewterMachines):content.SaffronGymEnabled?!SaffronGymMachineCatalog.IsAuthenticated(content.PewterMachines):content.SilphEnabled?!SilphMachineCatalog.IsAuthenticated(content.PewterMachines):content.SurfEnabled?!SurfMachineCatalog.IsAuthenticated(content.PewterMachines):!SafariMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("safari_machine_proof_missing");
+                if(content.ViridianGymEnabled?!ViridianGymMachineCatalog.IsAuthenticated(content.PewterMachines):content.CinnabarEnabled?!CinnabarMachineCatalog.IsAuthenticated(content.PewterMachines):content.SaffronGymEnabled?!SaffronGymMachineCatalog.IsAuthenticated(content.PewterMachines):content.SilphEnabled?!SilphMachineCatalog.IsAuthenticated(content.PewterMachines):content.SurfEnabled?!SurfMachineCatalog.IsAuthenticated(content.PewterMachines):!SafariMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("safari_machine_proof_missing");
                 if(content.FirstSeviiEnabled)FirstSeviiShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("first_sevii_items_missing"));
                 else if(content.CinnabarEnabled)CinnabarShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("cinnabar_items_missing"));
                 else if(content.SaffronGymEnabled)SaffronGymShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("saffron_gym_items_missing"));
@@ -284,7 +286,7 @@ public sealed partial class CampaignSession
     }
     private CampaignSession(ICampaignCatalog content,CampaignState state,long revision)
     {
-        _content=content;var error=ValidatePlayerSave(state);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
+        _content=content;ValidateViridianGymCatalog(content);var error=ValidatePlayerSave(state);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
         _commands=new(state,RulesVersion,content.ContentVersion,revision);
     }
     public static CampaignSession Restore(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision);
@@ -346,7 +348,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -627,6 +629,7 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyViridianGymEffect(state,effect,out var viridianGymState)){state=viridianGymState;continue;}
             if(TryApplyFirstSeviiBattleEffect(state,effect,out var seviiBattleState)){state=seviiBattleState;continue;}
             if(TryApplyFirstSeviiEffect(state,effect,out var seviiState)){state=seviiState;continue;}
             if(TryApplySilphFieldEffect(state,effect,out var silphFieldState)){state=silphFieldState;continue;}
@@ -803,6 +806,14 @@ public sealed partial class CampaignSession
                 position=position with{Facing=DirectionFromType(actor.MovementType)};path.Add(position);continue;
             }
             if(action=="face_player"){position=position with{Facing=Opposite(state.World.Player.Facing)};continue;}
+            if(action=="jump_2_down"&&_content.ViridianGymEnabled)
+            {
+                if(actor is not null||sourceProgram!="ViridianCity_Movement_JumpDownLedge"||position.MapId.Value!="map.viridian-city"||
+                    position.X!=36||position.Y!=11||position.Elevation!=3||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_VIRIDIAN_CITY_GYM_DOOR")!=0||
+                    !actions.SequenceEqual(new[]{"jump_2_down","step_end"})||_content.Maps[position.MapId].GetTile(36,13) is not {Blocked:false,Elevation:3})
+                    throw new InvalidDataException("viridian_gym_locked_door_movement_context");
+                position=position with{Y=13,Facing=Direction.South};path.Add(position);continue;
+            }
             var suffix=action.Split('_')[^1];var direction=suffix switch{"up"=>Direction.North,"down"=>Direction.South,"left"=>Direction.West,"right"=>Direction.East,_=>throw new InvalidDataException("movement_unsupported: "+action)};
             bool walk=action.StartsWith("walk_",StringComparison.Ordinal)&&!action.StartsWith("walk_in_place",StringComparison.Ordinal);
             if(!walk&&!action.StartsWith("walk_in_place",StringComparison.Ordinal)&&!action.StartsWith("face_",StringComparison.Ordinal))throw new InvalidDataException("movement_unsupported: "+action);

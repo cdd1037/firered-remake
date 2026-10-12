@@ -80,6 +80,8 @@ public interface ICampaignCatalog:IStoryCatalog
     SourceTwinsTrainerDefinition? Route8Twins=>null;
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
+    bool ViridianGymEnabled=>false;
+    ViridianGymTrainerCatalog? ViridianGymTrainerParties=>null;
     bool FirstSeviiEnabled=>false;
     FirstSeviiTrainerCatalog? FirstSeviiTrainerParties=>null;
     FirstSeviiWaterEncounterCatalog? FirstSeviiWaterEncounters=>null;

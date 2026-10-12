@@ -39,12 +39,13 @@ public partial class CampaignView
                     _ => throw new InvalidDataException("Unsupported committed Route11 terrain.")
                 };
         }
-        if (_catalog.FuchsiaGymEnabled && mapId.Value == "map.fuchsia-city-gym" ||
+        if (_catalog.ViridianGymEnabled && mapId.Value == "map.viridian-city-gym" ||
+            _catalog.FuchsiaGymEnabled && mapId.Value == "map.fuchsia-city-gym" ||
             _catalog.CeladonGymEnabled && mapId.Value == "map.celadon-city-gym" ||
             _catalog.CeruleanEnabled && PretGymBattleTerrain.AppliesToMap(mapId))
         {
             bool leader = _session.State.ForestTrainerBattle?.Trainer.Value is
-                "pret:TRAINER_LEADER_BROCK" or "pret:TRAINER_LEADER_MISTY" or "pret:TRAINER_LEADER_ERIKA" or "pret:TRAINER_LEADER_KOGA";
+                "pret:TRAINER_LEADER_BROCK" or "pret:TRAINER_LEADER_MISTY" or "pret:TRAINER_LEADER_ERIKA" or "pret:TRAINER_LEADER_KOGA" or "pret:TRAINER_LEADER_GIOVANNI";
             return (leader ? _leaderTerrain : _gymTerrain) ?? throw new InvalidDataException("Gym terrain was not loaded.");
         }
         if (_catalog.CityServicesEnabled && _cityBattleTerrain is not null && _session.State.World.Player is var player && player.MapId == mapId)

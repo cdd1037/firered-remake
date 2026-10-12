@@ -95,6 +95,7 @@ public sealed partial class CampaignSession
         int scene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22");
         bool northRivalStarted=_content.BillEnabled&&(state.ForestTrainerHistory??[]).Any(h=>IsCeruleanRival(new(h.TrainerId)));
         int expected=state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET")?(won||northRivalStarted?2:1):0;
+        if(_content.ViridianGymEnabled&&ViridianGymVictory(state))expected=3;
         if(scene!=expected||rivals.Any(h=>_content.Route22Trainers!.Battles[new(h.TrainerId)].PlayerStarterVar!=state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON")))
             return "save_route22_rival_progress_invalid";
         int gate=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE23");

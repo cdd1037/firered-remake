@@ -56,7 +56,8 @@ public sealed partial class CampaignSession
         int active=Enumerable.Range(0,party.Length).First(i=>party[i].Pokemon.CurrentHp>0);
         var style=EffectiveBattleStyle(state);var terrain=CampaignBattleTerrain(state);
         var owned=SafariOrdinaryOwnership;var catalog=owned?.Predecessor??BattlePokemon;
-        var result=IsFirstSeviiTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+        var result=IsViridianGymTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.ViridianGymTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+            : IsFirstSeviiTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
             : IsCinnabarTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain)
             : IsSaffronGymTrainer(trainer) ? (_content.CinnabarEnabled ? ForestTrainerCombatRules.StartSource(_content.SaffronGymTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain) : ForestTrainerCombatRules.StartSource(_content.SaffronGymTrainerParties!,_content.SaffronGymOpponents!,trainer,party,active,state.World.Rng,style,terrain))
             : IsSilphTrainer(trainer) ? (_content.CinnabarEnabled ? ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain) : ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.SilphOpponents!,trainer,party,active,state.World.Rng,style,terrain))

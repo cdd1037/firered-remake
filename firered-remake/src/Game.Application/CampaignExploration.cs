@@ -125,6 +125,7 @@ public sealed partial class CampaignSession
         }
         if(state.IsSurfing&&!SurfRegionAllows(moved.World.Player))return new(CommandStatus.Rejected,state,"field_surf_region_boundary_not_open");
         if(_content.SnorlaxEnabled&&!_content.IsSnorlaxStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"snorlax_region_boundary_not_open");
+        if(changed&&moved.World.Player.MapId.Value==ViridianGymMap&&(!_content.ViridianGymEnabled||state.Script.Variables.GetValueOrDefault(ViridianGymDoor)!=1||!ViridianGymDoorBadges(state)))return new(CommandStatus.Rejected,state,"viridian_gym_door_locked");
         if(changed&&moved.World.Player.MapId.Value=="map.saffron-city-gym"&&(!_content.SaffronGymEnabled||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFFRON_ROCKETS")))return new(CommandStatus.Rejected,state,"saffron_gym_rocket_blockade");
         if(changed)
         {

@@ -216,12 +216,12 @@ public partial class CampaignView
         if(s.DoubleBattle is {} pair)return pair.Stage==CampaignDoubleBattleStage.Intro?s.Music:pair.Stage==CampaignDoubleBattleStage.Finished&&pair.Frame.Outcome==WildBattleOutcome.Won?"MUS_VICTORY_TRAINER":"MUS_VS_TRAINER";
         if(s.ForestTrainerBattle is {Stage:CampaignForestTrainerStage.Intro} intro)
             return s.Dialogue is {} dialogue&&_audioTrainerOneShots.Contains($"{intro.Id}:intro-text:{dialogue.Page}")
-                ? "MUS_ENCOUNTER_GYM_LEADER"
+                ? SourceLeaderIntroMusic(intro.Trainer.Value)
                 : intro.Trainer==PewterTrainerPartyFactory.Brock?_catalog.MapDefinition(s.World.Player.MapId).Music:s.Music;
         if(s.Battle is {} lab)return lab.Phase==CampaignBattlePhase.Results&&lab.State.Outcome==FirstBattleOutcome.Won?"MUS_VICTORY_TRAINER":"MUS_VS_TRAINER";
         if(s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer)
         {
-            bool leader=trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value);
+            bool leader=trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value);
             bool victory=trainer.Combat.Phase==ForestTrainerCombatPhase.Ended&&trainer.Combat.Battle.Outcome==WildBattleOutcome.Won;
             return victory?(leader?"MUS_VICTORY_GYM_LEADER":"MUS_VICTORY_TRAINER"):(leader?"MUS_VS_GYM_LEADER":"MUS_VS_TRAINER");
         }
@@ -356,15 +356,16 @@ public partial class CampaignView
             _session.State.ForestTrainerBattle is not {Stage:CampaignForestTrainerStage.Intro} trainer||
             _session.State.Dialogue is not {} dialogue||
             !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||
-              trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)))return;
-        // All five pinned intro controls are at page end. Waiting for the printer's
+              trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value)))return;
+        // The admitted source intro controls are at page end. Waiting for the printer's
         // EOS step includes its final glyph delay; page entry or last glyph is too early.
         string raw=dialogue.Pages[dialogue.Page];
-        if(!raw.EndsWith("{PLAY_BGM}{MUS_ENCOUNTER_GYM_LEADER}",StringComparison.Ordinal)&&
-            !raw.EndsWith("{PLAY_BGM MUS_ENCOUNTER_GYM_LEADER}",StringComparison.Ordinal))return;
+        string music=SourceLeaderIntroMusic(trainer.Trainer.Value);
+        if(!raw.EndsWith("{PLAY_BGM}{"+music+"}",StringComparison.Ordinal)&&
+            !raw.EndsWith("{PLAY_BGM "+music+"}",StringComparison.Ordinal))return;
         if(FieldTextProgressEnabled&&(_fieldPrintedDialogue!=dialogue||!FieldTextComplete))return;
         if(_audioTrainerOneShots.Add($"{trainer.Id}:intro-text:{dialogue.Page}"))
-            SourceMusic("MUS_ENCOUNTER_GYM_LEADER");
+            SourceMusic(music);
         // This presentation cue neither acknowledges text nor changes campaign Music.
     }
 
@@ -373,7 +374,7 @@ public partial class CampaignView
         if(!_catalog.VermilionGymEnabled||_session.State.ForestTrainerBattle is not
             {Stage:CampaignForestTrainerStage.Finished,Combat.Battle.Outcome:WildBattleOutcome.Won} trainer||
             trainer.Presentation is not {Phase:CampaignBattlePhase.Results} battle||battle.PageIndex<0||battle.PageIndex>=battle.Pages.Length||
-            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)))return;
+            !(trainer.Trainer==PewterTrainerPartyFactory.Brock||trainer.Trainer==CeruleanTrainerPartyFactory.Misty||trainer.Trainer==VermilionGymTrainerPartyFactory.LtSurge||_catalog.CeladonGymEnabled&&trainer.Trainer.Value=="pret:TRAINER_LEADER_ERIKA"||IsFuchsiaGymLeader(trainer.Trainer.Value)||IsSaffronGymLeader(trainer.Trainer.Value)||IsCinnabarGymLeader(trainer.Trainer.Value)||IsViridianGymLeader(trainer.Trainer.Value)))return;
         string raw=battle.Pages[battle.PageIndex].Text;
         int cue=raw.IndexOf("{PLAY_BGM}{MUS_OBTAIN_BADGE}",StringComparison.Ordinal);
         if(cue<0||!raw.Contains("{PAUSE_MUSIC}",StringComparison.Ordinal)||!raw.Contains("{RESUME_MUSIC}",StringComparison.Ordinal))return;
