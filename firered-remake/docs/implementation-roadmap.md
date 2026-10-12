@@ -1,6 +1,6 @@
 # 完整单机目标的实施顺序
 
-状态（2026-10-12）：已进入关都分批扩展，普通共享战斗核心、七徽章应用主线、狩猎地带及 Surf/Strength、西尔佛、火箭队基地、宝可梦塔、两处卡比兽和有限地区服务已分别验收；首次七岛自然应用路线已完成救回迷失女孩、交还陨石和返回红莲，并严格存读。生产表现适配器已完成渡船、三岛地图／城镇地图、F5／继续和训练家开场的93项检查；其发现的Joy胜后对白缺口经窄修与独立11项／4命令回归关闭，实窗／物理音频另列。下一节点为常青第八道馆。这不代表所有已载入地区交互完成。下表保留阶段门禁定义，实际边界见各阶段证据及覆盖清单。最终范围见 [scope.md](scope.md)，源冻结见 [source-baseline.md](source-baseline.md)。本路线不承诺缺乏测量依据的日历工期。
+状态（2026-10-12）：已进入关都分批扩展，普通共享战斗核心、七徽章应用主线、狩猎地带及 Surf/Strength、西尔佛、火箭队基地、宝可梦塔、两处卡比兽和有限地区服务已分别验收；首次七岛自然应用路线已完成救回迷失女孩、交还陨石和返回红莲，并严格存读。生产表现适配器已完成渡船、三岛地图／城镇地图、F5／继续和训练家开场的93项检查；其发现的Joy胜后对白缺口经窄修与独立11项／4命令回归关闭，实窗／物理音频另列。常青第八道馆已通过真实应用路线：九名训练家实际胜利、第八徽章／TM26、坂木离场与存读，另有130项开场和22项终档的分批headless生产表现检查；下一节点为后期22号道路劲敌及23号道路／冠军之路。这不代表所有已载入地区交互完成。下表保留阶段门禁定义，实际边界见各阶段证据及覆盖清单。最终范围见 [scope.md](scope.md)，源冻结见 [source-baseline.md](source-baseline.md)。本路线不承诺缺乏测量依据的日历工期。
 
 ## 阶段与退出证据
 
@@ -157,3 +157,8 @@ byte-integrity checks, with no extra gameplay replay solely for packaging.
 用户明确要求主线完工后再做项目级整理（Sentinel_5fca4d441efc8191a4950762c6bfb345）。该阶段合并重复逻辑、地区适配和临时兼容分支，清理可替代的临时实现与冗余资源，梳理共同资源和构建入口。保留必要玩法、来源证据和存档迁移边界，以维护成本与可恢复交付为衡量标准，不以减少行数为目标。当前首次七岛及后续主线继续推进，不提前展开这轮全项目改造；已有普通战斗核心的有界重构不替代此阶段。
 
 这里的主线出口指第八徽章、冠军之路、四天王与冠军、名人堂及可读的通关存档。完成这轮项目级整理后继续通关后七岛等剩余内容；首次联盟前七岛仍按当前剧情时机完成。
+
+
+## 2026-10-12 backup cadence after the first Sevii visit
+
+The first-Sevii full Drive package proceeds as agreed. The next full Drive backup is scheduled after the first main-story completion and its project-level refactor/simplification, not separately at the eighth badge or Champion. Verified recoverable source checkpoints continue to the private GitHub main branch more frequently, without waiting for an entire badge or large region. Packaging continues to avoid extra local recovery builds or gameplay replay.
