@@ -6,7 +6,7 @@ using Game.Domain.Pokemon;
 namespace Game.Domain.Items;
 
 /// <summary>Availability is data. Only Potion and the three represented status cures execute here.</summary>
-public enum EarlyShopUseSupport { SeparateCapture, Potion, StatusCure, DeferredSleep, DeferredEscape, DeferredRepel, FieldRevive, FieldEther, DeferredRareCandy, SeparateEvolution, NoFieldUse, Fossil }
+public enum EarlyShopUseSupport { SeparateCapture, Potion, StatusCure, DeferredSleep, DeferredEscape, DeferredRepel, FieldRevive, FieldEther, DeferredRareCandy, SeparateEvolution, NoFieldUse, Fossil, FieldRestoreAllPp }
 public sealed record EarlyShopItemDefinition(ItemId Id, string SourceItemSymbol, int SourceItemId,
     string Name, string Description, int Price, string Pocket, int Importance, string Type,
     string FieldUseFunction, int BattleUsage, string BattleUseFunction, int HoldEffectParam,

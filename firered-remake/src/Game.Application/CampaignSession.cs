@@ -43,6 +43,9 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignLaprasGift? LaprasGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSilphElevator? SilphElevator{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCinnabarFall? CinnabarFall{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSeagallopTransition? Seagallop{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSeagallopMenu? SeagallopMenu{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignLostelleHypnoPreparation? LostelleHypnoPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSilphPad? SilphPad{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignNameRater? NameRater{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignDepartmentElevator? DepartmentElevator{get;init;}
@@ -185,11 +188,12 @@ public sealed partial class CampaignSession
     public const string SnorlaxRulesVersion="fr-snorlax-campaign-v1";
     public const string PresetDoublesRulesVersion="fr-preset-doubles-campaign-v1";
     public const string SafariRulesVersion="fr-safari-campaign-v1";
+    public const string FirstSeviiRulesVersion="fr-first-sevii-campaign-v1";
     public const string CinnabarRulesVersion="fr-cinnabar-campaign-v1";
     public const string SaffronGymRulesVersion="fr-saffron-gym-campaign-v1";
     public const string SilphRulesVersion="fr-silph-campaign-v1";
     public const string SurfRulesVersion="fr-surf-campaign-v1";
-    public string RulesVersion=>_content.CinnabarEnabled?CinnabarRulesVersion:_content.SaffronGymEnabled?SaffronGymRulesVersion:_content.SilphEnabled?SilphRulesVersion:_content.SurfEnabled?SurfRulesVersion:_content.SafariEnabled?SafariRulesVersion:_content.PresetDoublesEnabled?PresetDoublesRulesVersion:_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
+    public string RulesVersion=>_content.FirstSeviiEnabled?FirstSeviiRulesVersion:_content.CinnabarEnabled?CinnabarRulesVersion:_content.SaffronGymEnabled?SaffronGymRulesVersion:_content.SilphEnabled?SilphRulesVersion:_content.SurfEnabled?SurfRulesVersion:_content.SafariEnabled?SafariRulesVersion:_content.PresetDoublesEnabled?PresetDoublesRulesVersion:_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
     public CampaignState State=>_commands.State;
@@ -231,7 +235,8 @@ public sealed partial class CampaignSession
             if(content.SafariEnabled)
             {
                 if(content.CinnabarEnabled?!CinnabarMachineCatalog.IsAuthenticated(content.PewterMachines):content.SaffronGymEnabled?!SaffronGymMachineCatalog.IsAuthenticated(content.PewterMachines):content.SilphEnabled?!SilphMachineCatalog.IsAuthenticated(content.PewterMachines):content.SurfEnabled?!SurfMachineCatalog.IsAuthenticated(content.PewterMachines):!SafariMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("safari_machine_proof_missing");
-                if(content.CinnabarEnabled)CinnabarShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("cinnabar_items_missing"));
+                if(content.FirstSeviiEnabled)FirstSeviiShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("first_sevii_items_missing"));
+                else if(content.CinnabarEnabled)CinnabarShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("cinnabar_items_missing"));
                 else if(content.SaffronGymEnabled)SaffronGymShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("saffron_gym_items_missing"));
                 else if(content.SilphEnabled)SilphShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("silph_items_missing"));
                 else SafariShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("safari_items_missing"));
@@ -261,7 +266,7 @@ public sealed partial class CampaignSession
         if(content.Route22Enabled&&!content.OakRatingEnabled)throw new InvalidDataException("route22_requires_oak_profile");
         if(content.OakRatingEnabled&&!content.TownMapEnabled)throw new InvalidDataException("oak_rating_requires_town_map_profile");
         if(content.TownMapEnabled&&(!content.RepelEnabled||content.QuestItems?.Profile!=QuestItemRules.TownMapProfile))throw new InvalidDataException("town_map_requires_repel_profile");
-        if(content.RepelEnabled&&(!content.PokemonStorageEnabled||content.FieldPickups.Length!=(content.CinnabarEnabled?162:content.SilphEnabled?146:content.SafariEnabled?117:content.PokemonTowerEnabled?102:content.RocketHideoutEnabled?93:content.CeladonApproachEnabled?75:content.RockTunnelEnabled?62:content.Route11Enabled?47:content.SsAnneEnabled?41:content.BillEnabled?29:content.MtMoonEnabled?27:8)||content.EarlyShop is null))throw new InvalidDataException("repel_requires_field_pickup_profile");
+        if(content.RepelEnabled&&(!content.PokemonStorageEnabled||content.FieldPickups.Length!=(content.FirstSeviiEnabled?184:content.CinnabarEnabled?162:content.SilphEnabled?146:content.SafariEnabled?117:content.PokemonTowerEnabled?102:content.RocketHideoutEnabled?93:content.CeladonApproachEnabled?75:content.RockTunnelEnabled?62:content.Route11Enabled?47:content.SsAnneEnabled?41:content.BillEnabled?29:content.MtMoonEnabled?27:8)||content.EarlyShop is null))throw new InvalidDataException("repel_requires_field_pickup_profile");
         if(content.PokemonStorageEnabled&&!content.EarlyPartyEnabled)throw new InvalidDataException("storage_requires_early_party_profile");
         if(!ValidTrainerName(options.PlayerName)||!ValidTrainerName(options.RivalName)||options.PlayerGender is <0 or >1)throw new ArgumentException("Invalid explicit new-game identity.");
         var id=content.MapFromSourceSymbol("MAP_PALLET_TOWN_PLAYERS_HOUSE_2F");var map=content.Maps[id];var tile=map.GetTile(6,6)??throw new InvalidDataException("Initial player room coordinate missing.");
@@ -270,6 +275,7 @@ public sealed partial class CampaignSession
         if(content.PokemonStorageEnabled)initial=initial with{Storage=PokemonStorageState.Empty};
         if(content.ConnectedFieldMaps is not null)initial=InitializeExploration(initial);
         if(content.OldManTutorialEnabled)initial=initial with{ObjectSlots=EmptyObjectPool};
+        initial=InitializeRenewableHiddenItems(initial);
         // NewGameInitData runs this real source script before normal map entry. No hand-copied hide flag list.
         initial=StartStory(initial,"EventScript_ResetAllMapFlags");
         initial=EnterMap(initial,null);
@@ -290,8 +296,9 @@ public sealed partial class CampaignSession
         if(s.Script.QuestLogState!=0)return "save_quest_log_state_not_supported";
         if(s.Script.Variables is null||s.Script.Flags is null||s.Script.Fame is null||s.Script.Stack.IsDefault)return "save_script_invalid";
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
+        var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
-        if(s.NameRater is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
+        if(s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NameRater is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
         var escapeError=ValidateEscapeRopeState(s);if(escapeError is not null)return escapeError;
         var repelError=ValidateRepelState(s);if(repelError is not null)return repelError;
@@ -339,7 +346,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -361,7 +368,7 @@ public sealed partial class CampaignSession
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
+            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByLostelleHypno(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
             var starter=_content.EarlyStarterEnabled?OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
@@ -409,6 +416,7 @@ public sealed partial class CampaignSession
     {
         try
         {
+            if(state.Seagallop is not null)return DecideSeagallop(state,command);
             if(TryDecideCinnabarFall(state,command) is {} cinnabarFallDecision)return cinnabarFallDecision;
             if(state.SilphPad is not null)return DecideSilphPad(state,command);
             if(SilphMenuPending(state)||command.Kind=="silph_elevator_choice")return DecideSilphElevatorChoice(state,command);
@@ -464,9 +472,11 @@ public sealed partial class CampaignSession
                 if(wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice or StoryWaitKind.MenuChoice or StoryWaitKind.MessagePrinting && state.Dialogue is {} d&&d.Page+1<d.Pages.Length)return new(CommandStatus.Accepted,state with{Dialogue=d with{Page=d.Page+1}});
                 if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&state.MonPicture is not null)
                 {var preflight=PreflightStarterAcceptance(state);if(preflight is not null)return new(CommandStatus.Rejected,state,preflight);}
-                if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&CinnabarFerryChoice(state))
+                if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&!_content.FirstSeviiEnabled&&CinnabarFerryChoice(state))
                     return new(CommandStatus.Rejected,state,"sevii_first_visit_not_yet_available");
-                var next=state with{HealingEffect=wait.Kind==StoryWaitKind.Presentation&&state.PresentationEffects.Any(e=>e.Opcode=="waitfieldeffect")?null:state.HealingEffect,Nickname=state.Nickname?.Submitted==true?null:state.Nickname,Dialogue=state.Dialogue?.CloseOnCompletion==true&&wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice?null:state.Dialogue,Motions=[],PresentationTicks=0,PresentationEffects=[]};
+                if(state.SeagallopMenu is {} ferryMenu&&command.Choice is not 127&&
+                    (command.Choice is not {} selected||selected<0||selected>=ferryMenu.Options.Length))return new(CommandStatus.Rejected,state,"seagallop_menu_choice_invalid");
+                var next=state with{SeagallopMenu=null,HealingEffect=wait.Kind==StoryWaitKind.Presentation&&state.PresentationEffects.Any(e=>e.Opcode=="waitfieldeffect")?null:state.HealingEffect,Nickname=state.Nickname?.Submitted==true?null:state.Nickname,Dialogue=state.Dialogue?.CloseOnCompletion==true&&wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice?null:state.Dialogue,Motions=[],PresentationTicks=0,PresentationEffects=[]};
                 next=CompleteFieldCutPresentation(state,next);
                 next=CompleteFieldStrengthPresentation(state,next);
                 next=ReleaseForestTrainerPostDialogue(state,next);
@@ -555,6 +565,7 @@ public sealed partial class CampaignSession
         var flags=state.Script.Flags.RemoveRange(state.Script.Flags.Keys.Where(k=>k.StartsWith("FLAG_TEMP_",StringComparison.Ordinal)));
         var actors=definition.Actors.ToImmutableSortedDictionary(a=>a.LocalId,a=>new CampaignActor(a.LocalId,a.SourceLocalId,a.GraphicsId,a.X,a.Y,a.Elevation,DirectionFromType(a.MovementType),a.MovementType,a.ScriptId,a.HideFlag,false,false,a.X,a.Y),StringComparer.Ordinal);
         var queue=ImmutableArray.CreateBuilder<string>();if(definition.Programs.OnLoad is {} onLoad)queue.Add(onLoad);if(definition.Programs.OnTransition is {} onTransition)queue.Add(onTransition);
+        if(_content.FirstSeviiEnabled)queue.Add("@renewable-hidden-items");
         if(_content.ViridianCenterEnabled&&definition.Programs.OnResume is {} onResume)queue.Add(onResume);
         queue.Add("@spawn");
         // Markers evaluate conditional tables after transition flags/vars have committed.
@@ -575,6 +586,16 @@ public sealed partial class CampaignSession
             if(!state.EntryPrograms.IsEmpty)
             {
                 var next=state.EntryPrograms[0];state=state with{EntryPrograms=state.EntryPrograms.RemoveAt(0)};
+                if(next=="@renewable-hidden-items"){state=ApplyRenewableHiddenItemMapEntry(state);continue;}
+                if(next=="@renewable-camera-step")
+                {
+                    state=CheckForestTrainerSight(state);
+                    if(state.ForestTrainerBattle is not null||state.DoubleBattle is not null)return state;
+                    var frameTable=_content.MapDefinition(state.World.Player.MapId).Programs.OnFrameTable;
+                    var frame=frameTable is null?null:_content.Conditions(frameTable).FirstOrDefault(c=>state.Script.Variables.GetValueOrDefault(c.Variable)==c.Expected);
+                    if(frame is not null){state=StartStory(state,frame.ScriptId);continue;}
+                    state=ApplyRenewableHiddenItemWalkingStep(state);continue;
+                }
                 if(next=="@spawn"){state=RefreshActors(state);continue;}
                 if(next.StartsWith("@table:",StringComparison.Ordinal))
                 {var condition=_content.Conditions(next[7..]).FirstOrDefault(c=>state.Script.Variables.GetValueOrDefault(c.Variable)==c.Expected);if(condition is null)continue;next=condition.ScriptId;}
@@ -606,6 +627,8 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyFirstSeviiBattleEffect(state,effect,out var seviiBattleState)){state=seviiBattleState;continue;}
+            if(TryApplyFirstSeviiEffect(state,effect,out var seviiState)){state=seviiState;continue;}
             if(TryApplySilphFieldEffect(state,effect,out var silphFieldState)){state=silphFieldState;continue;}
             if(TryApplySilphGiftEffect(state,effect,out var silphGiftState)){state=silphGiftState;continue;}
             if(TryApplyCinnabarFieldEffect(state,effect,out var cinnabarFieldState)){state=cinnabarFieldState;continue;}
@@ -757,8 +780,8 @@ public sealed partial class CampaignSession
         var definition=content.Catalog.Species.Values.SingleOrDefault(x=>x.SourceSpeciesId==sourceId)??throw new InvalidDataException("pokemon_species_not_supported: "+sourceId);
         return (definition,content.SpeciesNames[sourceId]);
     }
-    private CampaignState ApplyMovement(CampaignState state,string actorId,string program)=>ApplyMovementActions(state,actorId,_content.Movement(program));
-    private CampaignState ApplyMovementActions(CampaignState state,string actorId,ImmutableArray<string> actions)
+    private CampaignState ApplyMovement(CampaignState state,string actorId,string program)=>ApplyMovementActions(state,actorId,_content.Movement(program),program);
+    private CampaignState ApplyMovementActions(CampaignState state,string actorId,ImmutableArray<string> actions,string? sourceProgram=null)
     {
         var path=ImmutableArray.CreateBuilder<TilePosition>();
         var actor=actorId=="LOCALID_PLAYER"?null:state.Actors[actorId];var position=actor is null?state.World.Player:new(state.World.Player.MapId,actor.X,actor.Y,actor.Elevation,actor.Facing);
@@ -783,8 +806,17 @@ public sealed partial class CampaignSession
             var suffix=action.Split('_')[^1];var direction=suffix switch{"up"=>Direction.North,"down"=>Direction.South,"left"=>Direction.West,"right"=>Direction.East,_=>throw new InvalidDataException("movement_unsupported: "+action)};
             bool walk=action.StartsWith("walk_",StringComparison.Ordinal)&&!action.StartsWith("walk_in_place",StringComparison.Ordinal);
             if(!walk&&!action.StartsWith("walk_in_place",StringComparison.Ordinal)&&!action.StartsWith("face_",StringComparison.Ordinal))throw new InvalidDataException("movement_unsupported: "+action);
-            var (dx,dy)=walk?Delta(direction):(0,0);var tile=_content.Maps[position.MapId].GetTile(position.X+dx,position.Y+dy)??throw new InvalidDataException("scripted_move_out_of_bounds");
-            position=position with{X=position.X+dx,Y=position.Y+dy,Facing=direction,Elevation=tile.Elevation==0?position.Elevation:tile.Elevation};path.Add(position);
+            var (dx,dy)=walk?Delta(direction):(0,0);var tile=_content.Maps[position.MapId].GetTile(position.X+dx,position.Y+dy);
+            // The original Cinnabar boat starts at x=30 and approaches to x=25,
+            // beyond the 24-cell map. Its authenticated border blocks have elevation
+            // zero, so the source object retains its elevation. This exception never
+            // admits a player, a general object, or an arbitrary off-map movement.
+            bool boatBorder=tile is null&&_content.FirstSeviiEnabled&&actorId=="LOCALID_CINNABAR_SEAGALLOP"&&
+                sourceProgram=="CinnabarIsland_Movement_BoatArrive"&&position.MapId.Value=="map.cinnabar-island"&&
+                actor is {TemplateX:30,Elevation:1}&&actor.TemplateY==position.Y&&position.Y is 8 or 12&&
+                position.X is >=26 and <=30&&dx==-1&&dy==0;
+            if(tile is null&&!boatBorder)throw new InvalidDataException("scripted_move_out_of_bounds");
+            position=position with{X=position.X+dx,Y=position.Y+dy,Facing=direction,Elevation=tile is null||tile.Elevation==0?position.Elevation:tile.Elevation};path.Add(position);
         }
         state=actor is null?state with{World=state.World with{Player=position},PlayerVisible=visible}:state with{Actors=state.Actors.SetItem(actorId,actor with{X=position.X,Y=position.Y,Elevation=position.Elevation,Facing=position.Facing,Invisible=!visible})};
         if(actor is null)state=RefreshActors(state);

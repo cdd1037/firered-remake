@@ -41,7 +41,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false)
     {
         if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
         if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
@@ -222,6 +222,18 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
                 throw new InvalidDataException("Cinnabar source cue scope differs.");
             cues=[..cues,..extension.Cues];
         }
+        if(includeFirstSevii)
+        {
+            if(!includeCinnabar)throw new InvalidDataException("First-Sevii audio requires Cinnabar predecessor.");
+            byte[] extensionBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),"content/generated/first-sevii-presentation/synth-manifest.json"));
+            if(extensionBytes.Length!=Game.Content.FirstSeviiPresentationIdentity.SynthBytes||Convert.ToHexStringLower(SHA256.HashData(extensionBytes))!=Game.Content.FirstSeviiPresentationIdentity.SynthSha256)
+                throw new InvalidDataException("First-Sevii synth manifest identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(extensionBytes,options)??throw new InvalidDataException("First-Sevii synth manifest missing.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=Game.Content.FirstSeviiPresentationIdentity.SynthCueCount||
+                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_123","MUS_NET_CENTER","SE_SHIP"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
+                throw new InvalidDataException("First-Sevii source cue scope differs.");
+            cues=[..cues,..extension.Cues];
+        }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
         if(includeFuchsiaRoute)
         {
@@ -278,6 +290,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         CancelFanfare(resumeMusic: false);
         CancelCry();
         _synth.Stop(0);
+        _seagallopMusicFade=null;
         _musicGain = 1; _fadeRemaining = 0; _fadePauseAtEnd = _musicTemporarilyPaused = false;
         _music = Start(cue!, "music");
         ApplyMusicGain();
@@ -338,6 +351,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
 
     public void FadeOutMusic(double seconds, bool temporarily = false)
     {
+        _seagallopMusicFade=null;
         if (!double.IsFinite(seconds) || seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
         if (_music is null) return;
         _fadeTargetGain = 0; _fadePauseAtEnd = temporarily;
@@ -348,6 +362,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     /// <summary>Source temporary fade resumes the retained sequence; it does not start its song again.</summary>
     public void FadeInMusic(double seconds)
     {
+        _seagallopMusicFade=null;
         if (!double.IsFinite(seconds) || seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
         if (_music is null) return;
         _musicTemporarilyPaused = _fadePauseAtEnd = false;
@@ -368,6 +383,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
 
     public void ResetPlayback()
     {
+        _seagallopMusicFade=null;
         _generation++;
         _fanfareToken = _fanfareMusicToken = 0; _fanfareCounter = 0; _fanfareCue = null;
         _music = _cry = null; _effects.Clear(); _cryDucking = _renderCryDucking = false; _cryGrace = 0;
@@ -383,6 +399,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
 
     public void AdvanceSourceFrame()
     {
+        AdvanceSeagallopMusicFade();
         if (_fanfareToken != 0)
         {
             if (_fanfareCounter > 0) _fanfareCounter--;

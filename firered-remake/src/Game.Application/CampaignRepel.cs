@@ -13,8 +13,8 @@ public sealed record CampaignRepel(CampaignRepelPhase Phase, string WaitId)
 
 public sealed partial class CampaignSession
 {
-    private CinnabarShopCatalog CinnabarShopProof=>CinnabarShopCatalog.For(ShopCatalog)??throw new InvalidDataException("cinnabar_shop_proof_missing");
-    private InventoryState RepelInventory(InventoryState inventory)=>_content.CinnabarEnabled?CinnabarShopProof.InventoryForPredecessor(ShopInventoryView(inventory)):ShopInventoryView(inventory);
+    private CinnabarShopCatalog CinnabarShopProof=>(_content.FirstSeviiEnabled?FirstSeviiShopProof.Predecessor:CinnabarShopCatalog.For(ShopCatalog))??throw new InvalidDataException("cinnabar_shop_proof_missing");
+    private InventoryState RepelInventory(InventoryState inventory)=>_content.CinnabarEnabled?CinnabarShopProof.InventoryForPredecessor(FirstSeviiPredecessorInventory(ShopInventoryView(inventory))):ShopInventoryView(inventory);
     private SaffronGymShopCatalog SaffronGymShopProof=>(_content.CinnabarEnabled?CinnabarShopProof.Predecessor:SaffronGymShopCatalog.For(ShopCatalog))??throw new InvalidDataException("saffron_gym_shop_proof_missing");
     public const string RepelCounterVariable = "VAR_REPEL_STEP_COUNT";
     public ushort RepelSteps => checked((ushort)State.Script.Variables.GetValueOrDefault(RepelCounterVariable));
@@ -80,7 +80,7 @@ public sealed partial class CampaignSession
         return new(CommandStatus.Accepted, state with
         {
             Repel = null,
-            Inventory = MergeShopInventory(state.Inventory!, use.Inventory),
+            Inventory = MergeFirstSeviiPredecessorInventory(state.Inventory!, use.Inventory),
             Script = state.Script with { Variables = state.Script.Variables.SetItem(RepelCounterVariable, use.Steps) },
             TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", ShopCatalog.Items.Single(i => i.Id == repel.Item).Name),
             ItemMenu = menu with { View = "message", MessageSymbol = "gText_PlayerUsedVar2", ReturnView = "bag" },

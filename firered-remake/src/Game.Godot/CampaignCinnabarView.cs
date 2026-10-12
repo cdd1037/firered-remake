@@ -6,7 +6,7 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool CinnabarProfileRequested => OS.GetEnvironment("FIRERED_CINNABAR") == "1" || OS.GetCmdlineUserArgs().Contains("--story-cinnabar");
+    private static bool CinnabarProfileRequested => FirstSeviiProfileRequested || OS.GetEnvironment("FIRERED_CINNABAR") == "1" || OS.GetCmdlineUserArgs().Contains("--story-cinnabar");
     private readonly Dictionary<string,string> _cinnabarTrainerPortraits = new(StringComparer.Ordinal);
     private readonly Dictionary<string,string> _cinnabarTrainerClasses = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Family,int Id),CinnabarFieldTile> _cinnabarTiles = [];
@@ -76,9 +76,9 @@ public partial class CampaignView
     }
     private string? VisibleCinnabarTrainerClass() => _session.State.ForestTrainerBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : null;
     private string? VisibleCinnabarTrainerPortrait() => _session.State.ForestTrainerBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerPortraits[trainer.TrainerPic] : null;
-    private string DoubleTrainerClass => _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : "TWINS";
-    private string DoubleTrainerName => _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? trainer.SourceTrainerName : "ELI & ANNE";
-    private Texture2D DoubleTrainerPortrait => _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _forestTrainerPortraits[_cinnabarTrainerPortraits[trainer.TrainerPic]] : _doubleTextures["twins-front"];
+    private string DoubleTrainerClass => FirstSeviiDoubleTrainer?.ClassName ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : "TWINS");
+    private string DoubleTrainerName => FirstSeviiDoubleTrainer?.Name ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? trainer.SourceTrainerName : "ELI & ANNE");
+    private Texture2D DoubleTrainerPortrait => FirstSeviiDoublePortrait ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _forestTrainerPortraits[_cinnabarTrainerPortraits[trainer.TrainerPic]] : _doubleTextures["twins-front"]);
     private bool TryCinnabarPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
     {
         if(!_catalog.CinnabarEnabled||_catalog.CinnabarRegion?.NewMaps.ContainsKey(map)!=true)return false;

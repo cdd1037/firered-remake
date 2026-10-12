@@ -14,7 +14,7 @@ public partial class CampaignView
     private int _mtMoonMoveSlot;
     private ItemId _mtMoonTargetItem;
     private bool IsExtendedFieldTarget(ItemId item) =>
-        FieldMedicineEffectFor(item) is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp ||
+        FieldMedicineEffectFor(item) is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp or FieldMedicineEffect.RestoreAllPp ||
         _catalog.MtMoonEnabled && EarlyItem(item)?.UseSupport is EarlyShopUseSupport.SeparateEvolution or EarlyShopUseSupport.DeferredRareCandy;
     private bool MtMoonTargetActive => _fieldMedicineTargetOpen && IsExtendedFieldTarget(_mtMoonTargetItem);
 

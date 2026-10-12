@@ -92,7 +92,7 @@ public sealed partial class CampaignSession
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         if (_content.EarlyShop is not { } shop || state.ItemMenu is not { Origin: "bag", View: "bag" or "berries" } menu || string.IsNullOrEmpty(command.Text)) return No("field_medicine_context_invalid");
-        if (menu.View=="berries" && (!_content.SsAnneEnabled||!(_content.CeladonApproachEnabled?LavenderItemRules.IsBerry(new(command.Text)):_content.RockTunnelEnabled?RockTunnelItemRules.IsBerry(new(command.Text)):_content.Route11Enabled?Route11ItemRules.IsBerry(new(command.Text)):SsAnneItemRules.IsBerry(new(command.Text))))) return No("berry_item_context_invalid");
+        if (menu.View=="berries" && (!_content.SsAnneEnabled||shop.Items.SingleOrDefault(i=>i.Id==new ItemId(command.Text))?.Pocket!="POCKET_BERRY_POUCH")) return No("berry_item_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("item_party_index_invalid");
         var item = new ItemId(command.Text);
         var result = _content.PresetDoubleItems is {} sourceItems && SourceFieldStatusCureRules.Supports(shop, sourceItems, item)

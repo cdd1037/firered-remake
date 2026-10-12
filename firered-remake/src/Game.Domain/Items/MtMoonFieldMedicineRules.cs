@@ -5,7 +5,7 @@ namespace Game.Domain.Items;
 public sealed record MtMoonFieldMedicineResult(InventoryState Inventory, PartyPokemon Pokemon, bool Succeeded,
     int HpRestored, int PpRestored, int ItemsConsumed, string? Error);
 
-/// <summary>Pure field-only Revive and selected-move Ether effects. Source has no status or friendship changes here.</summary>
+/// <summary>Pure field-only Revive, selected-move Ether and all-move PP restoration effects. Source has no status or friendship changes here.</summary>
 public static class MtMoonFieldMedicineRules
 {
     public static MtMoonFieldMedicineResult Use(EarlyShopCatalog catalog, CampaignPokemonContent pokemonContent,
@@ -19,7 +19,7 @@ public static class MtMoonFieldMedicineRules
         error = PokemonStateValidator.ValidateParty(pokemonContent, pokemon);
         if (error is not null) return Fail(error);
         var (definition, effect) = AuthenticatedFieldMedicine.Resolve(catalog, item);
-        if (definition is null || effect is not (FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp))
+        if (definition is null || effect is not (FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp or FieldMedicineEffect.RestoreAllPp))
             return Fail("medicine_effect_unsupported");
         int count = OpeningInventoryRules.Quantity(EarlyShopInventoryRules.Pocket(inventory, definition), item);
         if (count == 0) return Fail("medicine_not_in_bag");
@@ -32,6 +32,21 @@ public static class MtMoonFieldMedicineRules
             if (before.CurrentHp != 0) return Fail("medicine_no_effect");
             hp = Math.Max(1, before.Stats.MaxHp / 2);
             after = before with { CurrentHp = hp };
+        }
+        else if (effect == FieldMedicineEffect.RestoreAllPp)
+        {
+            if (moveSlot is not null) return Fail("medicine_invalid_slot");
+            var moves = before.Moves;
+            for (int index = 0; index < moves.Length; index++)
+            {
+                var slot = moves[index];
+                int restored = slot.MaximumPp - slot.CurrentPp;
+                if (restored == 0) continue;
+                pp += restored;
+                moves = moves.SetItem(index, slot with { CurrentPp = slot.MaximumPp });
+            }
+            if (pp == 0) return Fail("medicine_no_effect");
+            after = before with { Moves = moves };
         }
         else
         {

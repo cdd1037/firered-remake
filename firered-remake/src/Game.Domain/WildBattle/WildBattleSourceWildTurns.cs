@@ -68,7 +68,7 @@ public static partial class WildBattleRules
 
     private static WildBattleResult StartSourceWildCore(PokemonCatalog catalog, ImmutableArray<WildBattleCombatant> playerParty,
         int activeIndex, WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain,
-        bool oldRodFishing, PokemonTowerBattleKind? towerKind, bool scriptedSnorlax, BattleRulesProfile? profile = null, OwnedBattlePokemonCatalog? owned = null)
+        bool oldRodFishing, PokemonTowerBattleKind? towerKind, bool scriptedSnorlax, BattleRulesProfile? profile = null, OwnedBattlePokemonCatalog? owned = null, bool firstSeviiWild = false)
     {
         if (playerParty.IsDefaultOrEmpty || playerParty.Length > 6 || activeIndex < 0 || activeIndex >= playerParty.Length ||
             playerParty.Any(m => m?.Pokemon is null) || opponent?.Pokemon is null) return Fail(null, "source_wild_party");
@@ -88,7 +88,7 @@ public static partial class WildBattleRules
         if (oldRodFishing && (opponent.Pokemon.SourceSpeciesId != 129 || opponent.Pokemon.Level is < 5 or > 10))
             return Fail(null, "wild_battle_old_rod_context_unsupported");
         if ((profile is null || owned is not null) && !oldRodFishing && !scriptedSnorlax && towerKind is not (PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak) &&
-            !(owned?.SupportsOrdinaryWildOpponent(opponent.Pokemon) ?? FuchsiaBattleScope.SupportsWildOpponent(opponent.Pokemon.SourceSpeciesId))) return Fail(null, "wild_battle_opponent_species_unsupported");
+            !(firstSeviiWild ? Game.Domain.Encounters.FirstSeviiWildPokemonFactory.WildSpecies.Contains(opponent.Pokemon.Species) : owned?.SupportsOrdinaryWildOpponent(opponent.Pokemon) ?? FuchsiaBattleScope.SupportsWildOpponent(opponent.Pokemon.SourceSpeciesId))) return Fail(null, "wild_battle_opponent_species_unsupported");
         var player = playerParty[activeIndex] with { FirstTurnCounter = 2 };
         opponent = opponent with { FirstTurnCounter = 2 };
         WildBattleCalledPartyMember Member(WildBattleCombatant m) => new(m.Pokemon, m.HeldItem, m.Status);
@@ -110,6 +110,7 @@ public static partial class WildBattleRules
                 int roll = context.Draw("wild-battle.held-item", 100) % 100;
                 string item = opponent.Pokemon.SourceSpeciesId switch
                 {
+                    _ when firstSeviiWild => Game.Domain.Encounters.FirstSeviiWildPokemonFactory.HeldItem(opponent.Pokemon.Species,roll),
                     _ when owned?.RulesVersion == CinnabarOwnedPokemonCatalog.Profile &&
                         Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(opponent.Pokemon.Species) =>
                         Game.Domain.Encounters.CinnabarWildPokemonFactory.HeldItem(opponent.Pokemon.Species,roll),

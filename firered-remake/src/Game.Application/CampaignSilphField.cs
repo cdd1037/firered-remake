@@ -48,6 +48,7 @@ public sealed partial class CampaignSession
         // TryStartWarpEventScript preempts happiness, poison, Safari and Repel counters.
         // IncrementGameStat(STEPS) already happened; teleport arrival never replays it.
         var next=state with{World=result.State,Exploration=ResetEncounterModifiers(state.Exploration!)};
+        next=ApplyRenewableHiddenItemWalkingStep(next);
         next=Pump(EnterMap(next,command.Direction));
         return new(CommandStatus.Accepted,next with{SilphPad=new("silph-pad:"+result.State.Revision,p,pad,result.State.Player),PresentationTicks=99});
     }

@@ -19,7 +19,14 @@ public sealed partial class CampaignSession
         var catalog = ShopCatalog;
         string map = state.World.Player.MapId.Value;
         string stockId, sourcePath, clerkScript;
-        if (map == DepartmentStoreOrdinaryStock.ExpectedMapId)
+        if (_content.FirstSeviiEnabled && map is "map.two-island" or "map.three-island-mart")
+        {
+            bool two=map=="map.two-island";
+            stockId=two?(state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_TWO_ISLAND")==2?"TwoIsland_Items_ShopExpanded1":"TwoIsland_Items_ShopInitial"):"ThreeIsland_Mart_Items";
+            sourcePath=two?"data/maps/TwoIsland/scripts.inc":"data/maps/ThreeIsland_Mart/scripts.inc";
+            clerkScript=two?"TwoIsland_EventScript_Clerk":"ThreeIsland_Mart_EventScript_Clerk";
+        }
+        else if (map == DepartmentStoreOrdinaryStock.ExpectedMapId)
         {
             var stock = DepartmentStock(DepartmentStoreOrdinaryStock.ExpectedStockId)!;
             stockId = stock.Id; sourcePath = stock.Source.Path; clerkScript = stock.ClerkScript;
@@ -30,7 +37,9 @@ public sealed partial class CampaignSession
             stockId = sourceMap + "_Items"; sourcePath = "data/maps/" + sourceMap + "/scripts.inc"; clerkScript = sourceMap + "_EventScript_Clerk";
         }
         if (effect.Args.Length != 1 || effect.Args[0] != stockId ||
-            effect.Source.Path != sourcePath || effect.Source.Symbol != clerkScript || !state.Script.Locked ||
+            effect.Source.Path != sourcePath ||
+            (effect.Source.Symbol != clerkScript && !(_content.FirstSeviiEnabled && map=="map.two-island" &&
+                effect.Source.Symbol==(stockId=="TwoIsland_Items_ShopExpanded1"?"TwoIsland_EventScript_ShopExpanded1":"TwoIsland_EventScript_ShopInitial"))) || !state.Script.Locked ||
             state.Script.Wait is not { Kind: StoryWaitKind.NativeEffect } wait ||
             state.LastTalked is null || !state.Actors.TryGetValue(state.LastTalked, out var clerk) ||
             clerk.ScriptId != clerkScript || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))

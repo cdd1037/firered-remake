@@ -88,7 +88,7 @@ public sealed partial class CampaignSession
         {
             var effect = _content.EarlyShop is {} fieldShop && !string.IsNullOrEmpty(command.Text)
                 ? AuthenticatedFieldMedicine.Resolve(fieldShop, new(command.Text)).Effect : FieldMedicineEffect.Unsupported;
-            return effect is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp
+            return effect is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp or FieldMedicineEffect.RestoreAllPp
                 ? UseMtMoonFieldMedicine(state,command) : UseFieldMedicine(state,command);
         }
         if(command.Kind=="field_potion")

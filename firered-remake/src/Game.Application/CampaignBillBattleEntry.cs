@@ -19,6 +19,8 @@ public sealed partial class CampaignSession
             _ when _content.RocketHideoutEnabled&&sourceMap.StartsWith("RocketHideout_",StringComparison.Ordinal)=>new("map.rocket-hideout-"+sourceMap.Split('_')[1].ToLowerInvariant()),
             _ when _content.SilphEnabled&&sourceMap.StartsWith("SilphCo_",StringComparison.Ordinal)=>new("map.silph-co-"+sourceMap.Split('_')[1].ToLowerInvariant()),
             _ when _content.CinnabarEnabled&&sourceMap.StartsWith("PokemonMansion_",StringComparison.Ordinal)=>new("map.pokemon-mansion-"+sourceMap.Split('_')[1].ToLowerInvariant()),
+            "ThreeIsland" when _content.FirstSeviiEnabled=>new("map.three-island"),
+            "ThreeIsland_BondBridge" when _content.FirstSeviiEnabled=>new("map.three-island-bond-bridge"),
             "Route21_North" when _content.CinnabarEnabled=>new("map.route-21-north"),
             "Route21_South" when _content.CinnabarEnabled=>new("map.route-21-south"),
             "CinnabarIsland_Gym" when _content.CinnabarEnabled=>new("map.cinnabar-island-gym"),
@@ -39,7 +41,7 @@ public sealed partial class CampaignSession
             _=>throw new InvalidDataException("ordinary_trainer_source_map")
         };
     }
-    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer).ScriptEntry:IsSilphTrainer(trainer)?"0x0":IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
+    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsFirstSeviiTrainer(trainer)?"ThreeIsland_EventScript_Biker":IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer).ScriptEntry:IsSilphTrainer(trainer)?"0x0":IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
         IsPokemonTowerRival(trainer)||IsCeruleanRival(trainer)||IsSsAnneRival(trainer)?"0x0":
         IsCeruleanTrainer(trainer)?"CeruleanCity_EventScript_Grunt":
         trainer==Game.Domain.Trainers.BillTrainerPartyFactory.Rocket?"Route24_EventScript_Rocket":

@@ -88,7 +88,7 @@ public sealed partial class CampaignSession
         }
         var view=ShopInventoryView(inventory);
         var result=effect.Opcode=="additem"?EarlyInventoryAddRules.Add(ShopCatalog,view,definition.Item,quantity):EarlyInventoryAddRules.CheckSpace(ShopCatalog,view,definition.Item,quantity);
-        if(!result.Succeeded&&result.Error is not("inventory_stack_full" or "inventory_destination_full"))throw new InvalidDataException(result.Error);
+        if(!result.Succeeded&&result.Error is not("inventory_stack_full" or "inventory_destination_full" or "inventory_key_items_full"))throw new InvalidDataException(result.Error);
         bool added=result.Succeeded&&effect.Opcode=="additem";
         next=state with{Inventory=added?MergeShopInventory(inventory,result.State):inventory,
             FieldPickup=added?context with{InventoryAdded=true}:context,

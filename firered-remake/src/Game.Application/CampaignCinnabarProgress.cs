@@ -78,7 +78,7 @@ public sealed partial class CampaignSession
         if(won&&CinnabarGymTrainerSymbols.Any(id=>!state.BattledTrainers.Contains("pret:"+id)))return "save_blaine_trainer_flags_missing";
         if(got&&!won||!got&&quantity!=0||quantity>1)return "save_blaine_tm_reward_mismatch";
         int scene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND");
-        if(scene is <0 or >2||!won&&scene!=0||won&&scene==0)return "save_cinnabar_bill_scene";
+        if(scene<0||scene>(_content.FirstSeviiEnabled?4:2)||!won&&scene!=0||won&&scene==0)return "save_cinnabar_bill_scene";
         return null;
     }
     private static readonly string[] CinnabarGymTrainerSymbols=["TRAINER_SUPER_NERD_ERIK","TRAINER_SUPER_NERD_AVERY",

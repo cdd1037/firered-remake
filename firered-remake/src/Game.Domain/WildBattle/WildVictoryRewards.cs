@@ -41,7 +41,7 @@ public sealed record WildVictoryRewardResult(PartyPokemon Pokemon, int Experienc
 /// defeated opponent admitted by an explicit catalog profile. Caller establishes ownership,
 /// participation and no Pokerus, then commits atomically with its settlement ledger. No healing, money or IO.
 /// </summary>
-public static class WildVictoryRewards
+public static partial class WildVictoryRewards
 {
     public const string RulesVersion = "firered-route1-wild-rewards-v1";
     public const string SourceCommit = PokemonFactory.SourceCommit;

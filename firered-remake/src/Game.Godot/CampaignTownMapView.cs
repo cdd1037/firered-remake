@@ -2,7 +2,7 @@ using Game.Content;
 using Game.Domain.Items;
 using Godot;
 
-/// <summary>Bounded Kanto atlas browsing. It never moves the field player or grants Fly.</summary>
+/// <summary>Bounded Kanto and unlocked first-Sevii atlas browsing. It never moves the field player or grants Fly.</summary>
 public partial class CampaignView
 {
     private readonly Dictionary<string, ImageTexture> _townMapTextures = new(StringComparer.Ordinal);
@@ -70,7 +70,7 @@ public partial class CampaignView
     {
         foreach (var texture in _townMapTextures.Values) texture.Dispose();
         foreach (var font in _townMapFonts.Values) font.Dispose();
-        _townMapTextures.Clear(); _townMapFonts.Clear(); _townMapSmallFont?.Dispose(); _townMapSmallFont = null;
+        _townMapTextures.Clear(); _townMapFonts.Clear(); _firstSeviiTownMap = null; _townMapSmallFont?.Dispose(); _townMapSmallFont = null;
     }
 
     private void SynchronizeTownMapPresentation()
@@ -79,14 +79,14 @@ public partial class CampaignView
         if (active && !_townMapWasActive)
         {
             LoadTownMapPresentation(); var p = _session.State.World.Player;
-            var projected = _catalog.TownMap!.PositionForMap(p.MapId.Value, p.X, p.Y);
+            var projected = InitializeFirstSeviiTownMap(p.MapId.Value, p.X, p.Y);
             _townMapPlayer = _townMapCursor = new(projected.X, projected.Y);
             _townMapElapsed = 0; _townMapSnap = 0; _townMapNotice = null;
             _townMapMoving = false; _townMapHeld = null; _held = null; _repeat = 0;
         }
         if (!active && _townMapWasActive)
         {
-            _townMapHeld = null; _townMapMoving = false; _townMapNotice = null;
+            _townMapHeld = null; _townMapMoving = false; _townMapNotice = null; _townMapSwitchMenu = false;
             _questPocket = 1; _questPocketPopup = false;
             _questPocketCursor = Math.Max(0, Enumerable.Range(0, QuestPocketStacks.Length)
                 .FirstOrDefault(i => QuestPocketStacks[i].Item == QuestItemRules.TownMapId, 0));
@@ -114,7 +114,7 @@ public partial class CampaignView
             if (_townMapMoveElapsed >= _catalog.TownMap!.Layout.CursorMoveTicks / 60.0)
             { _townMapCursor = _townMapMoveTo; _townMapMoving = false; PlayTownMapCancelSelection(); }
         }
-        else if (_townMapHeld is { } direction && _townMapNotice is null) BeginTownMapMove(direction);
+        else if (_townMapHeld is { } direction && _townMapNotice is null && !_townMapSwitchMenu) BeginTownMapMove(direction);
         return true;
     }
 
@@ -134,22 +134,22 @@ public partial class CampaignView
         if (!key.Pressed) { if (direction == _townMapHeld) _townMapHeld = null; return true; }
         if (_townMapNotice is not null)
         { if (key.Keycode is Key.Enter or Key.Backspace) _townMapNotice = null; return true; }
+        if (TryTownMapSwitchInput(key)) return true;
         if (direction is { } move) { _townMapHeld = move; if (!_townMapMoving) BeginTownMapMove(move); return true; }
         if (_townMapMoving) return true;
         if (key.Keycode == Key.Backspace) { CloseTownMap(); return true; }
         if (key.Keycode == Key.Tab)
         {
-            _townMapSnap = (_townMapSnap + 1) % 2;
-            var cancel = _catalog.TownMap!.Layout.Cancel;
-            _townMapCursor = _townMapSnap == 0 ? _townMapPlayer : new(cancel.X, cancel.Y);
+            SnapTownMapPage();
             PlayTownMapCancelSelection();
         }
         if (key.Keycode == Key.Enter)
         {
             var map = _catalog.TownMap!;
+            if (TownMapCursorOnSwitch) { OpenTownMapSwitchMenu(); return true; }
             if (_townMapCursor == new Vector2I(map.Layout.Cancel.X, map.Layout.Cancel.Y))
             { SourceSound("SE_M_HYPER_BEAM2"); CloseTownMap(); }
-            else if (map.Icons.Any(i => i.SectionId == map.CellAt(_townMapCursor.X, _townMapCursor.Y).DungeonSectionId &&
+            else if (CurrentTownMapIcons.Any(i => i.SectionId == CurrentTownMapCell.DungeonSectionId &&
                 _session.State.Script.Flags.GetValueOrDefault(i.VisitedFlag)))
                 _townMapNotice = "Detailed guide pages are not\navailable yet.";
         }
@@ -159,8 +159,12 @@ public partial class CampaignView
     private bool MouseTownMap(Vector2 point)
     {
         if (_townMapNotice is not null) return MouseConfirm(point, MouseMessage);
+        if (_townMapSwitchMenu) return MouseTownMapSwitch(point);
         if (_townMapMoving) return false;
         var map = _catalog.TownMap!; var center = map.CursorCenter(map.Layout.Cancel.X, map.Layout.Cancel.Y);
+        var switchCenter = map.CursorCenter(map.Layout.SwitchButton.X, map.Layout.SwitchButton.Y);
+        if (TownMapSwitchAvailable && new Rect2(switchCenter.X - 8, switchCenter.Y - 8, 16, 16).HasPoint(point))
+        { _townMapCursor = new(map.Layout.SwitchButton.X, map.Layout.SwitchButton.Y); return MouseKey(); }
         if (new Rect2(center.X - 8, center.Y - 8, 16, 16).HasPoint(point))
         { _townMapCursor = new(map.Layout.Cancel.X, map.Layout.Cancel.Y); return MouseKey(); }
         if (!new Rect2(32, 32, map.Layout.Columns * 8, map.Layout.Rows * 8).HasPoint(point)) return false;
@@ -171,19 +175,21 @@ public partial class CampaignView
     private void PlayTownMapCancelSelection()
     {
         var cancel=_catalog.TownMap!.Layout.Cancel;
-        if(_townMapCursor==new Vector2I(cancel.X,cancel.Y))SourceSound("SE_M_SPIT_UP");
+        if(TownMapCursorOnSwitch || _townMapCursor==new Vector2I(cancel.X,cancel.Y))SourceSound("SE_M_SPIT_UP");
     }
 
     private bool DrawTownMap()
     {
         if (!TownMapActive) return false;
         var map = _catalog.TownMap!; var layout = map.Layout;
-        DrawTexture(_townMapTextures["kanto"], Vector2.Zero);
+        DrawTexture(_townMapTextures[TownMapBackground], Vector2.Zero);
         var flags = _session.State.Script.Flags.Where(f => f.Value).Select(f => f.Key).ToHashSet(StringComparer.Ordinal);
-        foreach (var icon in map.VisibleIcons(flags))
+        foreach (var icon in CurrentTownMapIcons.Where(i => i.VisibleFlag is null || flags.Contains(i.VisibleFlag)))
             DrawTexture(_townMapTextures[flags.Contains(icon.VisitedFlag) ? "dungeon-visited" : "dungeon-unvisited"], new(icon.CenterX - 4, icon.CenterY - 4));
         var player = map.CursorCenter(_townMapPlayer.X, _townMapPlayer.Y);
-        DrawTexture(_townMapTextures[_session.State.PlayerGender == 1 ? "player-leaf" : "player-red"], new(player.X - 8, player.Y - 8));
+        if (_townMapPlayerKnown && _townMapPage == _townMapPlayerPage)
+            DrawTexture(_townMapTextures[_session.State.PlayerGender == 1 ? "player-leaf" : "player-red"], new(player.X - 8, player.Y - 8));
+        if (_townMapSwitchMenu) { DrawTownMapSwitchMenu(); return true; }
         var cursor = map.CursorCenter(_townMapCursor.X, _townMapCursor.Y); var cursorPosition = new Vector2(cursor.X, cursor.Y);
         if (_townMapMoving)
         {
@@ -191,16 +197,16 @@ public partial class CampaignView
             cursorPosition = new Vector2(from.X, from.Y).Lerp(new(to.X, to.Y), (float)Math.Clamp(_townMapMoveElapsed * 60 / layout.CursorMoveTicks, 0, 1)).Floor();
         }
         DrawTexture(_townMapTextures[(int)(_townMapElapsed * 60 / layout.CursorFrameTicks) % 2 == 0 ? "cursor-0" : "cursor-1"], cursorPosition - new Vector2(8, 8));
-        var cell = map.CellAt(_townMapCursor.X, _townMapCursor.Y);
+        var cell = CurrentTownMapCell;
         void NameWindow(TownMapRect rectangle, TownMapPoint position, string text, int color)
         {
             if (text.Length == 0) return;
             var rect = new Rect2(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
-            DrawTextureRectRegion(_townMapTextures["dark-name-background"], rect, rect);
+            DrawTextureRectRegion(_townMapTextures[TownMapDarkBackground], rect, rect);
             SourceText(_townMapFonts[color], new(position.X, position.Y), text);
         }
         NameWindow(layout.MapNameWindow, layout.MapName, cell.Name, layout.MapTextColor);
-        bool visited = map.Icons.Any(i => i.SectionId == cell.DungeonSectionId && flags.Contains(i.VisitedFlag));
+        bool visited = CurrentTownMapIcons.Any(i => i.SectionId == cell.DungeonSectionId && flags.Contains(i.VisitedFlag));
         NameWindow(layout.DungeonNameWindow, layout.DungeonName, cell.DungeonName,
             visited ? layout.DungeonVisitedTextColor : layout.DungeonUnvisitedTextColor);
         DrawTexture(_townMapTextures["keypad-dpad-any"], new(layout.TopBarLeft.X, layout.TopBarLeft.Y));
@@ -209,6 +215,11 @@ public partial class CampaignView
         {
             DrawTexture(_townMapTextures["keypad-a"], new(layout.TopBarRight.X, layout.TopBarRight.Y));
             SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), "CANCEL");
+        }
+        if (TownMapCursorOnSwitch)
+        {
+            DrawTexture(_townMapTextures["keypad-a"], new(layout.TopBarRight.X, layout.TopBarRight.Y));
+            SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), "SWITCH");
         }
         if (_townMapNotice is not null) ItemMessageBox(_townMapNotice);
         return true;

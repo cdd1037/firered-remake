@@ -148,3 +148,7 @@ Per the latest2026-10-12 user direction, continue normal small GitHub source
 checkpoints; produce the next complete Drive package after this first Sevii
 visit, not a separate seventh-badge package. Backup work remains structural and
 byte-integrity checks, with no extra gameplay replay solely for packaging.
+
+## 2026-10-12 主线完工后的项目级重构与精简
+
+用户明确要求主线完工后再做项目级整理（Sentinel_5fca4d441efc8191a4950762c6bfb345）。该阶段合并重复逻辑、地区适配和临时兼容分支，清理可替代的临时实现与冗余资源，梳理共同资源和构建入口。保留必要玩法、来源证据和存档迁移边界，以维护成本与可恢复交付为衡量标准，不以减少行数为目标。当前首次七岛及后续主线继续推进，不提前展开这轮全项目改造；已有普通战斗核心的有界重构不替代此阶段。

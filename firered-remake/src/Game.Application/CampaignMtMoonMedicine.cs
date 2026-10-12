@@ -6,8 +6,8 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    // Keep these field effects separate from the earlier medicine/battle profiles. Validate the
-    // complete inventory first, then merge only ordinary pockets from the narrow domain result.
+    // Shared Revive and PP medicine transaction. Validate the complete inventory first,
+    // then merge only ordinary pockets from the narrow domain result.
     private Decision<CampaignState> UseMtMoonFieldMedicine(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);

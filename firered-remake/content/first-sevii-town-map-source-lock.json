@@ -1,0 +1,239 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 158096,
+      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
+      "path": "data/layouts/layouts.json",
+      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394"
+    },
+    {
+      "byteLength": 4131,
+      "gitBlobSha1": "9ea66b99afc5a6cf2a3036bdde4df3c04f857fd5",
+      "path": "data/maps/CinnabarIsland/map.json",
+      "sha256": "8afe411bd471c797da763d606cd7d7fd68191201c0c00924f32b8dd258e07b73"
+    },
+    {
+      "byteLength": 4255,
+      "gitBlobSha1": "a89d9c479cc5970f709d098b6c25192c774a86a1",
+      "path": "data/maps/CinnabarIsland_PokemonCenter_1F/map.json",
+      "sha256": "39e377030492a5c82334695d68e3674690b2926a9094069ad9e5d9897bd82ebc"
+    },
+    {
+      "byteLength": 2932,
+      "gitBlobSha1": "d6274409e2e58a27d9b85979262c312e0069ce6d",
+      "path": "data/maps/OneIsland/map.json",
+      "sha256": "8ff9c70f1ba28578f506945a1dbbedc783837f54cbd141b23dd19e2abbd50d3e"
+    },
+    {
+      "byteLength": 1443,
+      "gitBlobSha1": "d26171247b008a8fb3cd513cc8fd9ce9fab0fa43",
+      "path": "data/maps/OneIsland_Harbor/map.json",
+      "sha256": "3c60db2441b6819840b399541f6068aa2cbfc845a9087f2ace1c64f6a7d62e1d"
+    },
+    {
+      "byteLength": 6504,
+      "gitBlobSha1": "713c9cae1cee13131779ef655d2e18751b4127ee",
+      "path": "data/maps/OneIsland_PokemonCenter_1F/map.json",
+      "sha256": "effefc8d202379c06ea28868e52988c5af7406d8de85656fdcfc36a5dc05e5c3"
+    },
+    {
+      "byteLength": 10653,
+      "gitBlobSha1": "140e41ddc2174c1e99eadc68d986f2ad68547d86",
+      "path": "data/maps/ThreeIsland/map.json",
+      "sha256": "53971959e5e045ef2a2b36e6fc843767c1667d50daa92da859135c326e0eb47a"
+    },
+    {
+      "byteLength": 10521,
+      "gitBlobSha1": "f037061a09f43aae1c636e1ec81fae584fe5ff7e",
+      "path": "data/maps/ThreeIsland_BerryForest/map.json",
+      "sha256": "82bcf506a75b06f5662e6619877cd322c4001e06e71d779c8546130f90bee813"
+    },
+    {
+      "byteLength": 5784,
+      "gitBlobSha1": "787fac702a833186a6880b4d81b15f0e406f3245",
+      "path": "data/maps/ThreeIsland_BondBridge/map.json",
+      "sha256": "2435cc95506b51bef21e4bce5c333289248f357cd811177dbc167548d0733077"
+    },
+    {
+      "byteLength": 1461,
+      "gitBlobSha1": "91b0068f3de0a1ca7d6807bf587c0b31ab584c3b",
+      "path": "data/maps/ThreeIsland_Harbor/map.json",
+      "sha256": "c5a7e683795248c49b4193d9010145e4552bc64ba4aa9a69c51bf5dfcc39449f"
+    },
+    {
+      "byteLength": 2293,
+      "gitBlobSha1": "87d40bc50e384c49cf13994363f30b90b32c0df7",
+      "path": "data/maps/ThreeIsland_Mart/map.json",
+      "sha256": "3c23975a9970ae626f95f2f3af1bf0de218512203efc5c17aba3847a2cb5267a"
+    },
+    {
+      "byteLength": 2560,
+      "gitBlobSha1": "663610c189696f55e8362b72657d751c3d04eda0",
+      "path": "data/maps/ThreeIsland_PokemonCenter_1F/map.json",
+      "sha256": "f972b206345a56a5ab1fe947304ec9459196b040a9b3361393eb81964f0e139b"
+    },
+    {
+      "byteLength": 2360,
+      "gitBlobSha1": "061bf28081e2b8343e5fd0e196df4e74a1f998b1",
+      "path": "data/maps/ThreeIsland_Port/map.json",
+      "sha256": "359792aac362e68915f6d1723e93d9c0716d19a4af2eb93ce4f133e20840a7bc"
+    },
+    {
+      "byteLength": 5469,
+      "gitBlobSha1": "2f1f67ff0ad8e63d7d49fb3b2cf53df97d56eed3",
+      "path": "data/maps/TwoIsland/map.json",
+      "sha256": "963a9c65a4db58d755f026e7c3247d58dabcd4904b04d214623d20373903b425"
+    },
+    {
+      "byteLength": 1443,
+      "gitBlobSha1": "19734c66e34ebc9ffa50859ffcfc16696a035df9",
+      "path": "data/maps/TwoIsland_Harbor/map.json",
+      "sha256": "b376ba407fbaa4633ccd43ec2135458438cddf93e2b7367f0a2ffbd26207a6d0"
+    },
+    {
+      "byteLength": 3025,
+      "gitBlobSha1": "5c8be1cbcfff78e7f9916e5859063b72f0081b05",
+      "path": "data/maps/TwoIsland_JoyfulGameCorner/map.json",
+      "sha256": "4bafff44905e8165ddd940aad85e486deccd6592f0c7a7504efd703aa264ac21"
+    },
+    {
+      "byteLength": 2142,
+      "gitBlobSha1": "f294d71b0e1d059ba02b691744a0a77a0b0828e8",
+      "path": "data/maps/TwoIsland_PokemonCenter_1F/map.json",
+      "sha256": "df51f0f92076c135ac754efb4f7ff256fe49a3831068d525eff3f0bd26261eab"
+    },
+    {
+      "byteLength": 297,
+      "gitBlobSha1": "f8c162bb902982a46eb1f13e0c181755118f1953",
+      "path": "graphics/fonts/keypad_icons.png",
+      "sha256": "82889340b871332960ff80d7b310c86aa4a31dc39ba3fe79e8897d1d841d6661"
+    },
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "a8b0c176e37939a04dcfc489cf4d251725edd5c2",
+      "path": "graphics/region_map/kanto.bin",
+      "sha256": "c9f38c5d52099958c18efe737a45ba04ce8101b0eb349e9d2243bf8324d82b49"
+    },
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "45132ebb5f179e98c4ab5c1ec18eaad8f0bc6a5a",
+      "path": "graphics/region_map/map_edge.bin",
+      "sha256": "1f2654980ac75182472a1d6ad9e8f6097afda58d2629d7def18f4a99c0798b3e"
+    },
+    {
+      "byteLength": 556,
+      "gitBlobSha1": "4def326bfcf7029d0260415975762515115ba1e2",
+      "path": "graphics/region_map/map_edge.png",
+      "sha256": "e2e5986fb88678e3e4943f9263842405b84d89f2398c26071561bfdd968befb9"
+    },
+    {
+      "byteLength": 855,
+      "gitBlobSha1": "b223aac5e3b4c16f5376f528821a2a2bca2738f8",
+      "path": "graphics/region_map/region_map.pal",
+      "sha256": "9151a87908033522cf4c3ae2b54cf65f77f7609c353ac73ceae402a386245bc8"
+    },
+    {
+      "byteLength": 3846,
+      "gitBlobSha1": "4e2d06c82cd140eac48898614bb254a728378e47",
+      "path": "graphics/region_map/region_map.png",
+      "sha256": "7c402c5461d5547191cbfefb279727964e19c6dd60d33f5b0bb052ea20545184"
+    },
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "f850a7383c2ead2e9bf3aac1ef3ead34727d9bc9",
+      "path": "graphics/region_map/sevii_123.bin",
+      "sha256": "72c0b2615eaf061f5490779a3caf0470dbb88b08dd010c4887b8ed6d61eac124"
+    },
+    {
+      "byteLength": 125,
+      "gitBlobSha1": "8aacc8685b4fe1b797b1ef9dac572deadffc3c49",
+      "path": "graphics/region_map/switch_map_cursor.pal",
+      "sha256": "339e905608f088228d8dac45cede7e28c27818b64736e44cfec72e890065bd04"
+    },
+    {
+      "byteLength": 169,
+      "gitBlobSha1": "62ec16869e63a5fef1b4a4cfb62fda402a88d940",
+      "path": "graphics/region_map/switch_map_cursor_left.png",
+      "sha256": "b8101d577e7fe68ab1ea324e34d96c1b00e2759925d75b15bec41c9307ba7193"
+    },
+    {
+      "byteLength": 170,
+      "gitBlobSha1": "d2dd3cbe38643caaa95feb8e51e98f435c79880e",
+      "path": "graphics/region_map/switch_map_cursor_right.png",
+      "sha256": "4cc9dd935ef18a5f35bcd0b6425afba219e4605c404a502acda1a888e64a5f64"
+    },
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "97887d51289ba486050bfb5df283d937e9584c51",
+      "path": "graphics/region_map/switch_map_kanto_sevii_123.bin",
+      "sha256": "a763b59134760bbc2a087677e4ced33521ab7f17bbbc78332fcb917b049e05b6"
+    },
+    {
+      "byteLength": 527,
+      "gitBlobSha1": "c09282d0994c89d985b97dd6c50dfb06706f8131",
+      "path": "graphics/region_map/switch_map_menu.png",
+      "sha256": "3eba3aa0f513204507ab684481f55fd00dd48462a06932bf210f19f32f15729a"
+    },
+    {
+      "byteLength": 177,
+      "gitBlobSha1": "dfa6902cbd2ede755d06bbcf37387bd3d59cdb31",
+      "path": "graphics/region_map/top_bar.pal",
+      "sha256": "a521e6d7e5224fcfdc3579cb5ae38f32f370602961fd03b5221fbb5ba6bd71f6"
+    },
+    {
+      "byteLength": 12798,
+      "gitBlobSha1": "d00ecf0a3afcd9fc1fa9534c00f4b74793d5f06f",
+      "path": "include/characters.h",
+      "sha256": "6787db76f83c4f8426c5adbfa7aa061c46585db9522f1fef00ad888616199b98"
+    },
+    {
+      "byteLength": 95397,
+      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa",
+      "path": "include/constants/flags.h",
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "byteLength": 463,
+      "gitBlobSha1": "fec528e1bb7219b7ccc235ee2251a57ff5d1c343",
+      "path": "include/region_map.h",
+      "sha256": "b1b9c68ac6832ee5266c5e20b6923cf7bbb2fdd80db507188889a6210de2c57f"
+    },
+    {
+      "byteLength": 9187,
+      "gitBlobSha1": "2a5c0fbe0b20e28ae5cf67033ac75ce070a647a8",
+      "path": "src/data/region_map/region_map_layout_sevii_123.h",
+      "sha256": "fecd5ea843efb1a83d31fdd63bef09bcb5934f3f23526b6cd3b389110d0523a7"
+    },
+    {
+      "byteLength": 19656,
+      "gitBlobSha1": "601bff65d4a69b6ea03b0e13b3b5354038adf1ed",
+      "path": "src/data/region_map/region_map_sections.json",
+      "sha256": "82e456cbe86a57ebc4bd0d88d6e000e83e28340895ac038079c38d415bc6de5f"
+    },
+    {
+      "byteLength": 138368,
+      "gitBlobSha1": "d65f99fefa2c3a4bff11a69e674894bfd9a51374",
+      "path": "src/region_map.c",
+      "sha256": "b761f02803a1c5aada4465b9a93bf2b02c5ef1118432e677a30a5a4a4b78e0cb"
+    },
+    {
+      "byteLength": 96631,
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
+      "path": "src/strings.c",
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+    },
+    {
+      "byteLength": 63210,
+      "gitBlobSha1": "f3eef07ce6dea8269980a5ecfdd6902c1c9c13d2",
+      "path": "src/text.c",
+      "sha256": "5696f49443eeaaac74b530421ac7f0cbfc71996c557399583788111c322dd80c"
+    }
+  ],
+  "gameEdition": "FIRERED",
+  "profile": "firered-first-sevii-town-map-v1",
+  "repository": "pret/pokefirered",
+  "romRevision": 0,
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}
