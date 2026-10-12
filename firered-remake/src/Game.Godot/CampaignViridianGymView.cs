@@ -3,7 +3,7 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool ViridianGymProfileRequested => OS.GetEnvironment("FIRERED_VIRIDIAN_GYM") == "1" ||
+    private static bool ViridianGymProfileRequested => LeagueRivalProfileRequested || OS.GetEnvironment("FIRERED_VIRIDIAN_GYM") == "1" ||
         OS.GetCmdlineUserArgs().Contains("--story-viridian-gym");
     private ViridianGymPresentationData? _viridianGymPresentation;
     private bool IsViridianGymLeader(string id) => _catalog.ViridianGymEnabled && id == "pret:TRAINER_LEADER_GIOVANNI";
@@ -12,7 +12,9 @@ public partial class CampaignView
     private void LoadViridianGymPresentation()
     {
         if (!_catalog.ViridianGymEnabled) return;
-        if (!_catalog.FirstSeviiEnabled || _session.RulesVersion != Game.Application.CampaignSession.ViridianGymRulesVersion)
+        if (!_catalog.FirstSeviiEnabled ||
+            _session.RulesVersion != Game.Application.CampaignSession.ViridianGymRulesVersion &&
+            !(_catalog.LeagueRivalEnabled && _session.RulesVersion == Game.Application.CampaignSession.LeagueRivalRulesVersion))
             throw new InvalidDataException("Viridian Gym presentation requires its authenticated successor profile.");
         var art = ViridianGymPresentationAssets.Load(_root);
         var source = _catalog.ViridianGymTrainerParties ?? throw new InvalidDataException("Viridian Gym trainers missing.");

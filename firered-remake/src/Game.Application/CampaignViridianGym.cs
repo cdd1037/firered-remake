@@ -17,6 +17,7 @@ public sealed partial class CampaignSession
 
     private static void ValidateViridianGymCatalog(ICampaignCatalog content)
     {
+        ValidateLeagueRivalCatalog(content);
         if(!content.ViridianGymEnabled)return;
         if(!content.FirstSeviiEnabled||!content.CinnabarEnabled||content.ViridianGymTrainerParties is null||
             content.CinnabarOwnership is null||content.CinnabarOpponents is null||

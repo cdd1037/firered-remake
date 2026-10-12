@@ -162,3 +162,14 @@ byte-integrity checks, with no extra gameplay replay solely for packaging.
 ## 2026-10-12 backup cadence after the first Sevii visit
 
 The first-Sevii full Drive package proceeds as agreed. The next full Drive backup is scheduled after the first main-story completion and its project-level refactor/simplification, not separately at the eighth badge or Champion. Verified recoverable source checkpoints continue to the private GitHub main branch more frequently, without waiting for an entire badge or large region. Packaging continues to avoid extra local recovery builds or gameplay replay.
+
+
+## 2026-10-12: late Route22 rival checkpoint
+
+The earned eight-badge party now completes the original six-member late rival,
+including a retained actual loss and legal retry, source scene4/removal, single
+prize, real return/reentry and strict save. The natural final generation is37105.
+See `docs/league-rival-campaign.md`; Route23 eight guards, Surf approach and
+Victory Road Strength mechanisms are the next active bounded node, followed by
+the League. No separate full Drive package is planned before main-story completion
+and the agreed project-level refactor; source checkpoints continue normally.

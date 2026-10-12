@@ -90,12 +90,13 @@ public sealed partial class CampaignSession
     {
         if(!_content.Route22Enabled)return null;
         if(HasUnimplementedBadge(state))return "save_route22_later_badges_unsupported";
+        if(ValidateLeagueRivalProgress(state) is {} lateError)return lateError;
         var rivals=(state.ForestTrainerHistory??[]).Where(h=>_content.Route22Trainers!.Trainers.Keys.Any(t=>t.Value==h.TrainerId)).ToArray();
         bool won=rivals.Any(h=>h.Outcome==WildBattleOutcome.Won);
         int scene=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22");
         bool northRivalStarted=_content.BillEnabled&&(state.ForestTrainerHistory??[]).Any(h=>IsCeruleanRival(new(h.TrainerId)));
         int expected=state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET")?(won||northRivalStarted?2:1):0;
-        if(_content.ViridianGymEnabled&&ViridianGymVictory(state))expected=3;
+        if(_content.ViridianGymEnabled&&ViridianGymVictory(state))expected=LeagueRivalVictory(state)?4:3;
         if(scene!=expected||rivals.Any(h=>_content.Route22Trainers!.Battles[new(h.TrainerId)].PlayerStarterVar!=state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON")))
             return "save_route22_rival_progress_invalid";
         int gate=state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE23");

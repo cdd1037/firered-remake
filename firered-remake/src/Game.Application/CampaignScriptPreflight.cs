@@ -9,7 +9,7 @@ public sealed partial class CampaignSession
     private bool _preflightingStory;
     private CampaignState StartStory(CampaignState state,string program)
     {
-        if(_content.ViridianGymEnabled&&program.StartsWith("Route22_EventScript_LateRival",StringComparison.Ordinal)&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22")==3)
+        if(_content.ViridianGymEnabled&&!_content.LeagueRivalEnabled&&program.StartsWith("Route22_EventScript_LateRival",StringComparison.Ordinal)&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22")==3)
             throw new InvalidDataException("route22_league_rival_not_yet_available");
         if(_content.DeferredRegionalServiceReason(state.World.Player.MapId,program) is {} unavailable)throw new InvalidDataException(unavailable);
         if(_content.ConnectedFieldMaps is not null&&!_preflightingStory&&_commands is not null)PreflightStoryEntry(state,program);
