@@ -14,20 +14,19 @@ public static class MtMoonFieldMedicineRules
         ArgumentNullException.ThrowIfNull(inventory);
         ArgumentNullException.ThrowIfNull(pokemon);
         MtMoonFieldMedicineResult Fail(string error) => new(inventory, pokemon, false, 0, 0, 0, error);
-        if (catalog.Profile is not (EarlyShopInventoryRules.MtMoonProfile or RocketHideoutItemRules.Profile or PokemonTowerItemRules.Profile)) return Fail("medicine_profile_unsupported");
         var error = EarlyShopInventoryRules.Validate(catalog, inventory);
         if (error is not null) return Fail(error);
         error = PokemonStateValidator.ValidateParty(pokemonContent, pokemon);
         if (error is not null) return Fail(error);
-        var definition = EarlyShopInventoryRules.Find(catalog, item);
-        if (definition?.UseSupport is not (EarlyShopUseSupport.FieldRevive or EarlyShopUseSupport.FieldEther))
+        var (definition, effect) = AuthenticatedFieldMedicine.Resolve(catalog, item);
+        if (definition is null || effect is not (FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp))
             return Fail("medicine_effect_unsupported");
-        int count = OpeningInventoryRules.Quantity(inventory.BagItems, item);
+        int count = OpeningInventoryRules.Quantity(EarlyShopInventoryRules.Pocket(inventory, definition), item);
         if (count == 0) return Fail("medicine_not_in_bag");
         var before = pokemon.Pokemon;
         int hp = 0, pp = 0;
         PokemonInstance after;
-        if (definition.UseSupport == EarlyShopUseSupport.FieldRevive)
+        if (effect == FieldMedicineEffect.Revive)
         {
             if (moveSlot is not null) return Fail("medicine_invalid_slot");
             if (before.CurrentHp != 0) return Fail("medicine_no_effect");

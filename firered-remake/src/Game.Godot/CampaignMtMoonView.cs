@@ -13,8 +13,10 @@ public partial class CampaignView
     private bool _mtMoonMoveSlotOpen;
     private int _mtMoonMoveSlot;
     private ItemId _mtMoonTargetItem;
-    private bool MtMoonTargetActive => _catalog.MtMoonEnabled && _fieldMedicineTargetOpen &&
-        EarlyItem(_mtMoonTargetItem)?.UseSupport is EarlyShopUseSupport.FieldRevive or EarlyShopUseSupport.FieldEther or EarlyShopUseSupport.SeparateEvolution or EarlyShopUseSupport.DeferredRareCandy;
+    private bool IsExtendedFieldTarget(ItemId item) =>
+        FieldMedicineEffectFor(item) is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp ||
+        _catalog.MtMoonEnabled && EarlyItem(item)?.UseSupport is EarlyShopUseSupport.SeparateEvolution or EarlyShopUseSupport.DeferredRareCandy;
+    private bool MtMoonTargetActive => _fieldMedicineTargetOpen && IsExtendedFieldTarget(_mtMoonTargetItem);
 
     private void LoadMtMoonPresentation()
     {
@@ -86,8 +88,7 @@ public partial class CampaignView
     {
         // An ordinary medicine selected after a Moon item must not reuse its target mode.
         _mtMoonTargetItem = item;
-        if (!_catalog.MtMoonEnabled || EarlyItem(item)?.UseSupport is not
-            (EarlyShopUseSupport.FieldRevive or EarlyShopUseSupport.FieldEther or EarlyShopUseSupport.SeparateEvolution or EarlyShopUseSupport.DeferredRareCandy)) return false;
+        if (!IsExtendedFieldTarget(item)) return false;
         _mtMoonTargetItem = item; _fieldMedicineTarget = 0; _mtMoonMoveSlot = 0;
         _mtMoonMoveSlotOpen = false; _fieldMedicineTargetOpen = true;
         return true;
@@ -103,7 +104,7 @@ public partial class CampaignView
             if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _fieldMedicineTarget == cancel)
             { _fieldMedicineTargetOpen = false; return true; }
             if (key.Keycode != Key.Enter) return true;
-            if (EarlyItem(_mtMoonTargetItem)!.UseSupport == EarlyShopUseSupport.FieldEther)
+            if (FieldMedicineEffectFor(_mtMoonTargetItem) == FieldMedicineEffect.RestoreMovePp)
             { _mtMoonMoveSlotOpen = true; _mtMoonMoveSlot = 0; return true; }
         }
         else

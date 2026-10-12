@@ -320,7 +320,9 @@ public sealed partial class CampaignSession
             if(!s.Actors.TryGetValue(d.LocalId,out var actor)||actor is null||actor.LocalId!=d.LocalId||actor.SourceLocalId!=d.SourceLocalId||actor.GraphicsId!=d.GraphicsId||actor.ScriptId!=d.ScriptId||actor.HideFlag!=d.HideFlag||string.IsNullOrEmpty(actor.MovementType)||!Enum.IsDefined(actor.Facing))return "save_actor_identity_invalid";
             if(d.IsClone)
             {if(actor.X!=d.X||actor.Y!=d.Y||actor.TemplateX!=d.X||actor.TemplateY!=d.Y||actor.Elevation!=d.Elevation)return "save_clone_position_invalid";}
-            else if(actor.X<0||actor.Y<0||actor.X>=map.Width||actor.Y>=map.Height||actor.TemplateX<0||actor.TemplateY<0||actor.TemplateX>=map.Width||actor.TemplateY>=map.Height||actor.Elevation is <0 or >15)return "save_actor_position_invalid";
+            else if(actor.X<0||actor.Y<0||actor.X>=map.Width||actor.Y>=map.Height||actor.Elevation is <0 or >15||
+                (actor.TemplateX<0||actor.TemplateY<0||actor.TemplateX>=map.Width||actor.TemplateY>=map.Height)&&
+                !ValidCinnabarHiddenFerryTemplate(s,actor))return "save_actor_position_invalid";
         }
         if(s.LastTalked is not null&&!s.Actors.ContainsKey(s.LastTalked))return "save_last_actor_invalid";
         var allOwned=OwnedPokemon(s);

@@ -94,7 +94,10 @@ public sealed partial class CampaignSession
         if (_content.EarlyShop is not { } shop || state.ItemMenu is not { Origin: "bag", View: "bag" or "berries" } menu || string.IsNullOrEmpty(command.Text)) return No("field_medicine_context_invalid");
         if (menu.View=="berries" && (!_content.SsAnneEnabled||!(_content.CeladonApproachEnabled?LavenderItemRules.IsBerry(new(command.Text)):_content.RockTunnelEnabled?RockTunnelItemRules.IsBerry(new(command.Text)):_content.Route11Enabled?Route11ItemRules.IsBerry(new(command.Text)):SsAnneItemRules.IsBerry(new(command.Text))))) return No("berry_item_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("item_party_index_invalid");
-        var result = EarlyShopMedicineRules.Use(shop, Items, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], new ItemId(command.Text), PotionUseContext.Field);
+        var item = new ItemId(command.Text);
+        var result = _content.PresetDoubleItems is {} sourceItems && SourceFieldStatusCureRules.Supports(shop, sourceItems, item)
+            ? SourceFieldStatusCureRules.Use(shop, sourceItems, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], item)
+            : EarlyShopMedicineRules.Use(shop, Items, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], item, PotionUseContext.Field);
         if (!result.Succeeded)
         {
             if (result.Error is "medicine_no_effect" or "potion_no_effect") return new(CommandStatus.Accepted, state with { ItemMenu = menu with { View = "message", MessageSymbol = "gText_WontHaveEffect", ReturnView = menu.View } });

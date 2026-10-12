@@ -66,12 +66,7 @@ public static class SourceBattleItemEffects
             changed = true;
         }
         if (cell?.Slot == actor.Slot) body = actorBody;
-        uint mask = 0;
-        if ((effect[3] & 0x20) != 0) mask |= 7;
-        if ((effect[3] & 0x10) != 0) mask |= 0xf88;
-        if ((effect[3] & 8) != 0) mask |= WildBattleStatus.Burn;
-        if ((effect[3] & 4) != 0) mask |= WildBattleStatus.Freeze;
-        if ((effect[3] & 2) != 0) mask |= WildBattleStatus.Paralysis;
+        uint mask = SourceItemStatusCure.Mask(effect[3]);
         if ((status & mask) != 0)
         {
             bool woke = (status & mask & 7) != 0; status &= ~mask; changed = true;

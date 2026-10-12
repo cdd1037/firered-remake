@@ -117,16 +117,25 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("forest_trainer_source_wait_invalid");
         var trainer = new TrainerId("pret:" + effect.Args[0]);
         var definition = IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer,effect.Source.Symbol):OrdinaryTrainerScript(trainer);
+        string? battleActorId = state.LastTalked;
         if(noIntro)
         {
             if(!(IsCinnabarTrainer(trainer)||IsSilphTrainer(trainer)||IsPokemonTowerTrainer(trainer)||IsRocketHideoutTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer))||definition.Mode!=3||effect.Args[1]!=definition.DefeatText)throw new InvalidDataException("mtmoon_no_intro_context_invalid");
-            var selected=state.Actors.Values.SingleOrDefault(a=>a.Active&&a.SourceLocalId==state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED"))??throw new InvalidDataException("mtmoon_no_intro_actor_missing");
-            state=SelectInteractedObject(state,selected.LocalId) with{LastTalked=selected.LocalId};
+            // Quiz consoles have no talking actor. Source no-intro battle setup does not
+            // call SetMapVarsToTrainer, so its stale VAR_LAST_TALKED is not the opponent.
+            // Resolve only the authenticated Cinnabar trainer actor for presentation;
+            // preserve the source object-selection globals through the quiz branch.
+            var selected=IsCinnabarTrainer(trainer)
+                ? state.Actors.Values.SingleOrDefault(a=>a.Active&&a.ScriptId==OrdinaryNoIntroActorScript(trainer))
+                : state.Actors.Values.SingleOrDefault(a=>a.Active&&a.SourceLocalId==state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED"));
+            if(selected is null)throw new InvalidDataException("mtmoon_no_intro_actor_missing");
+            battleActorId=selected.LocalId;
+            if(!IsCinnabarTrainer(trainer))state=SelectInteractedObject(state,selected.LocalId) with{LastTalked=selected.LocalId};
         }
         var expectedLine=IsCinnabarTrainer(trainer)||IsSaffronGymTrainer(trainer)||IsSilphTrainer(trainer)||IsFuchsiaGymTrainer(trainer)||IsFuchsiaRouteTrainer(trainer)||IsPokemonTowerTrainer(trainer)||IsRocketHideoutTrainer(trainer)||IsCeladonGymTrainer(trainer)||IsCeladonApproachTrainer(trainer)||IsRockTunnelTrainer(trainer)||IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
         if (effect.Source.Path != definition.Source.Path || ((effect.Source.Symbol != definition.ScriptEntry || effect.Source.Line != expectedLine) && !IsBillRocketTriggeredBattle(effect,trainer)) ||
             (!noIntro&&(effect.Args[1] != definition.IntroText || effect.Args[2] != definition.DefeatText)) ||
-            state.LastTalked is not { } actorId || !state.Actors.TryGetValue(actorId, out var actor) ||
+            battleActorId is not { } actorId || !state.Actors.TryGetValue(actorId, out var actor) ||
             actor.ScriptId != (noIntro ? OrdinaryNoIntroActorScript(trainer) : definition.ScriptEntry) ||
             (noIntro&&IsCeruleanRival(trainer)&&actor.LocalId!="LOCALID_CERULEAN_RIVAL") ||
             state.World.Player.MapId != OrdinaryTrainerMap(trainer))

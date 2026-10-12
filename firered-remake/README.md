@@ -4,26 +4,30 @@ Goal: a complete, local single-player recreation of the English original-revisio
 
 ## Current recovered state — 2026-10-12
 
-The accepted story continuation reaches six badges, Safari HM03/Gold Teeth,
-HM04 from the Warden, Surf/Strength, and the reconstructed Silph rival,
-Lapras, Giovanni and Master Ball route, followed by Sabrina and TM04. A fresh natural route through the
-Tea gate and all required Silph events finishes back in Saffron with a strict
-save. The subsequent 25-stage Saffron route wins the sixth badge and returns outside the Gym. See [Saffron scope](docs/saffron-gym-campaign.md), [Silph scope and evidence](docs/silph-campaign.md) and
-[recovery provenance](docs/recovery-20261012.md).
+The accepted Application continuation reaches seven badges. It includes Safari
+HM03/Gold Teeth, Warden HM04, Surf/Strength, Silph rival/Lapras/Giovanni/Master
+Ball, Sabrina, and the natural Pallet→Route21→Cinnabar Mansion→Blaine route.
+The latest2,099-command lineage obtains the Secret Key, Badge07 and TM38,
+declines Bill's invitation and finishes in Cinnabar with a strict save/restore.
+See [Cinnabar scope and evidence](docs/cinnabar-campaign.md), [Saffron scope](docs/saffron-gym-campaign.md)
+and [recovery provenance](docs/recovery-20261012.md).
 
-Run `bash scripts/launch-current.sh` (or `launch-saffron-gym.sh`). Its profile-specific
-saves stay isolated. The explicit Surf-to-Silph and Silph-to-Saffron upgrades preserve payload and
-generation; earlier profiles retain their own upgrade commands. On a restored
-project, complete the official Godot resource import before the first launch.
+Run `bash scripts/launch-current.sh` (or `launch-cinnabar.sh`). Its profile-specific
+saves stay isolated. Explicit predecessor upgrades retain payload/generation
+except their documented encounter-profile tag. On a restored project, complete
+the official Godot resource import before the first launch; the launcher runs
+the existing import check.
 
 The ordinary shared battle core and preset doubles are available within their
 documented admission contracts. Dedicated move animations remain a separate
-ongoing coverage track. The next main-story node is the Surf approach to Cinnabar and Mansion. Optional
-Silph rooms, incomplete earlier facilities, special battle modes and later
-story/post-game content remain open. Passing the main route does not mean all
-regional interactions are complete. This is still an unfinished complete-FireRed
-project. The latest asset-complete recovery base is stage7 `48f9bf9`; later
-source checkpoints and regenerated resources are described in the recovery note.
+coverage track. Next is Bill's original pre-League first visit to One/Two/Three
+Island, Lostelle and the return journey. Cinnabar native screen/physical audio
+checks, Seafoam, the Lab and Good/Super Rod remain open. Passing a main route
+does not mean all regional interactions are complete. This is still an
+unfinished complete-FireRed project. The latest asset-complete recovery base is
+stage8 `16d2a426`; later source checkpoints and deterministic asset importers
+extend it. Normal GitHub source checkpoints continue; the next complete Drive
+package is scheduled after the first Sevii visit.
 
 ## Earlier first-badge checkpoint
 

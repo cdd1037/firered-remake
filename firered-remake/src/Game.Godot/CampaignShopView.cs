@@ -26,6 +26,11 @@ public partial class CampaignView
         }
     }
     private EarlyShopItemDefinition? EarlyItem(ItemId id) => _catalog.EarlyShop?.Items.SingleOrDefault(i => i.Id == id);
+    private FieldMedicineEffect FieldMedicineEffectFor(ItemId id) => _catalog.EarlyShop is {} shop
+        ? AuthenticatedFieldMedicine.Resolve(shop, id).Effect : FieldMedicineEffect.Unsupported;
+    private bool CanSelectFieldMedicine(ItemId id) => FieldMedicineEffectFor(id) is
+        FieldMedicineEffect.HealHp or FieldMedicineEffect.CureStatus or FieldMedicineEffect.CureSleep ||
+        _catalog.EarlyShop is {} shop && _catalog.PresetDoubleItems is {} sourceItems && SourceFieldStatusCureRules.Supports(shop, sourceItems, id);
     private string InventoryName(ItemId id) => EarlyItem(id)?.Name ?? (id == OpeningInventoryRules.PotionId ? _itemSkin.PotionName : _catalog.QuestItems?.Items.SingleOrDefault(i => i.Id == id)?.Name ?? throw new InvalidDataException("inventory_item_name_missing"));
     private string InventoryDescription(ItemId id) => EarlyItem(id)?.Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$') ?? _itemSkin.PotionDescription;
     private void DrawInventoryIcon(ItemId id)

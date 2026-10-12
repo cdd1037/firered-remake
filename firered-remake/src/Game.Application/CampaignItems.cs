@@ -84,7 +84,13 @@ public sealed partial class CampaignSession
         if(command.Kind=="field_escape_rope")return UseFieldEscapeRope(state,command);
         if(command.Kind=="field_repel")return UseFieldRepel(state,command);
         if(command.Kind=="field_evolution")return UseFieldEvolution(state,command);
-        if(command.Kind=="field_medicine")return command.Text is "pret:ITEM_REVIVE" or "pret:ITEM_ETHER"?UseMtMoonFieldMedicine(state,command):UseFieldMedicine(state,command);
+        if(command.Kind=="field_medicine")
+        {
+            var effect = _content.EarlyShop is {} fieldShop && !string.IsNullOrEmpty(command.Text)
+                ? AuthenticatedFieldMedicine.Resolve(fieldShop, new(command.Text)).Effect : FieldMedicineEffect.Unsupported;
+            return effect is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp
+                ? UseMtMoonFieldMedicine(state,command) : UseFieldMedicine(state,command);
+        }
         if(command.Kind=="field_potion")
         {
             if(menu.Origin!="bag"||menu.View!="bag")return No("field_potion_context_invalid");

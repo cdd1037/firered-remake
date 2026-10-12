@@ -83,6 +83,21 @@ public sealed partial class CampaignSession
     }
     private static readonly string[] CinnabarGymTrainerSymbols=["TRAINER_SUPER_NERD_ERIK","TRAINER_SUPER_NERD_AVERY",
         "TRAINER_SUPER_NERD_DEREK","TRAINER_SUPER_NERD_ZAC","TRAINER_BURGLAR_QUINN","TRAINER_BURGLAR_RAMON","TRAINER_BURGLAR_DUSTY"];
+    private bool ValidCinnabarHiddenFerryTemplate(CampaignState state,CampaignActor actor)
+    {
+        // Original setobjectxyperm parks the still-hidden boat beyond the 24-wide
+        // map before Bill's invitation. Declining keeps that dormant template.
+        if(!_content.CinnabarEnabled||state.World.Player.MapId.Value!="map.cinnabar-island"||
+            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND")!=2||
+            actor.LocalId!="LOCALID_CINNABAR_SEAGALLOP"||actor.Active||
+            actor.HideFlag!="FLAG_HIDE_CINNABAR_SEAGALLOP"||!state.Script.Flags.GetValueOrDefault(actor.HideFlag))return false;
+        bool lower=state.Script.Flags.GetValueOrDefault("FLAG_TEMP_2");
+        var source=_content.FindProgram(lower?"CinnabarIsland_EventScript_ReadyObjectsSailToOneIsland":
+            "CinnabarIsland_EventScript_MoveSeagallopDown");
+        return actor.TemplateX==30&&actor.TemplateY==(lower?12:8)&&source is not null&&
+            source.Instructions.Any(i=>i.Opcode=="setobjectxyperm"&&i.Source.Path=="data/maps/CinnabarIsland/scripts.inc"&&
+                i.Args.SequenceEqual(new[]{actor.LocalId,"30",lower?"12":"8"}));
+    }
     private bool CinnabarFerryChoice(CampaignState state)=>_content.CinnabarEnabled&&state.Dialogue?.TextSymbol is
         "CinnabarIsland_Text_ComeWithMeToOneIsland" or "CinnabarIsland_PokemonCenter_1F_Text_ReadyToSailToOneIsland";
 }

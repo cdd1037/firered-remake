@@ -57,6 +57,11 @@ public sealed partial class CampaignSession
                 foreach(var choice in moreText?new int?[]{null}:billMenu?new int?[]{0,1,2,3,4,127}:SilphMenuPending(probe)?new int?[]{0,1,2,3,4,5,6,7,8,9,10,11,127}:probe.DepartmentElevator?.MenuDefault is not null?new int?[]{0,1,2,3,4,5,127}:probe.RocketElevator?.MenuDefault is not null?new int?[]{0,1,2,3,127}:wait.Kind==StoryWaitKind.MenuChoice?new int?[]{0,1,127}:wait.Kind==StoryWaitKind.Choice?new int?[]{0,1}:new int?[]{null})
                 {
                     var decision=Decide(probe,SilphMenuPending(probe)?new("silph_elevator_choice",Choice:choice):wait.Kind==StoryWaitKind.ButtonPress?new("button_press",Text:"A"):new("ack",Choice:choice));
+                    // A declared unavailable Yes option must not block the original No
+                    // branch or entering its choice screen. The public Yes command still
+                    // rejects atomically until the first-Sevii workflow is admitted.
+                    if(decision.Status==CommandStatus.Rejected&&wait.Kind==StoryWaitKind.Choice&&choice==1&&
+                        CinnabarFerryChoice(probe)&&decision.Error=="sevii_first_visit_not_yet_available")continue;
                     if(decision.Status!=CommandStatus.Accepted)throw new InvalidDataException("script_preflight: "+program+": "+decision.Error);
                     pending.Enqueue(decision.State);
                 }
