@@ -30,7 +30,11 @@ public static partial class PretStoryCompiler
             }
         }
         if(FirstSeviiSource(file,"data/scripts/trainers.inc","d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945")&&
-            label is "ThreeIsland_BondBridge_EventScript_Joy" or "ThreeIsland_BondBridge_EventScript_Meg"&&opcode=="trainerbattle_double")
+            (label,opcode) is
+                ("ThreeIsland_BondBridge_EventScript_Joy","trainerbattle_double") or
+                ("ThreeIsland_BondBridge_EventScript_Meg","trainerbattle_double") or
+                ("ThreeIsland_BondBridge_EventScript_JoyRematch","trainerbattle_rematch_double") or
+                ("ThreeIsland_BondBridge_EventScript_MegRematch","trainerbattle_rematch_double"))
         {
             if(operands.Length!=4||operands[0]!="TRAINER_TWINS_JOY_MEG")throw new InvalidDataException("first_sevii_double_operands");
             return(StoryOp.TrainerBattle,4,4);
