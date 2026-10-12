@@ -27,7 +27,14 @@ internal static class SourceTrainerAiScript
         _ = facts.HoldEffect(false); // Validate observed history even if this moveset never reads it.
         uint result = 0;
         MoveId currentMove = facts.CurrentMove;
-        int U8(int at) => code[at];
+        // Approved BUG-05/06 corrections are limited to three operands in the
+        // SHA-256-authenticated original pack. Keep its source bytes unchanged.
+        int U8(int at) => at switch {
+            6845 => 1, // AI_CV_Facade: read AI_USER status instead of AI_TARGET.
+            6691 => 2, // AI_CV_SemiInvulnerable2: sandstorm -> Ground/Rock/Steel.
+            6697 => 3, // AI_CV_SemiInvulnerable2: hail -> Ice.
+            _ => code[at]
+        };
         uint U32(int at) => BinaryPrimitives.ReadUInt32LittleEndian(code.AsSpan(at, 4));
         int Pointer(int at) => checked((int)U32(at));
         int U16(int at) => BinaryPrimitives.ReadUInt16LittleEndian(code.AsSpan(at, 2));

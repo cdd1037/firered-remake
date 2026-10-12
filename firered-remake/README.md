@@ -4,35 +4,40 @@ Goal: a complete, local single-player recreation of the English original-revisio
 
 ## Current recovered state — 2026-10-12
 
-The accepted Application continuation reaches seven badges. It includes Safari
-HM03/Gold Teeth, Warden HM04, Surf/Strength, Silph rival/Lapras/Giovanni/Master
-Ball, Sabrina, and the natural Pallet→Route21→Cinnabar Mansion→Blaine route.
-The seventh-badge 2,099-command lineage obtains the Secret Key, Badge07 and TM38.
-Its 1,252-command first-Sevii successor now accepts Bill's invitation, completes Celio's errand,
-the four bikers, Joy/Meg and Lostelle/Hypno, delivers the Meteorite, and returns
-to Cinnabar with the Tri-Pass and working PC. The final checkpoint passes strict
-save/restore. See [First Sevii scope and evidence](docs/first-sevii-campaign.md),
-[Cinnabar](docs/cinnabar-campaign.md), [Saffron](docs/saffron-gym-campaign.md)
-and [recovery provenance](docs/recovery-20261012.md).
+The accepted Application route reaches all eight badges, completes the first
+Sevii rescue and return, wins the late Route22 rival battle, and traverses the
+original Route23 badge gates and Victory Road to Indigo Plateau. These are
+linked real-command checkpoints with strict save/restore; see
+[Victory Road](docs/victory-road-campaign.md), [Viridian Gym](docs/viridian-gym-campaign.md)
+and [first Sevii](docs/first-sevii-campaign.md).
 
-Run `bash scripts/launch-current.sh` (or `launch-first-sevii.sh`). Its profile-specific
-saves stay isolated. Explicit predecessor upgrades retain payload/generation
-except their documented profile initialization. First-Sevii also initializes
-the original renewable-hidden-item flags and step counter. On a restored project, complete
-the official Godot resource import before the first launch; the launcher runs
-the existing import check.
+The first League successor is integrated and the natural challenge is in
+progress. Lorelei has been defeated; the first Bruno attempt ended in a real
+loss and the next attempt retains its expenses, earned experience and healed
+loss save. Champion, Hall of Fame and final Continue are not yet accepted.
+[League progress](docs/pokemon-league-campaign.md) distinguishes implementation,
+controlled checks and actual route completion.
+
+`bash scripts/launch-pokemon-league.sh` opens the current first-clear successor;
+`launch-current.sh` still selects the previous accepted late-Route22 profile
+until this successor closes. Each profile keeps separate saves. Explicit
+predecessor upgrades preserve gameplay payload and generation except their
+documented initialization. The launcher checks the official Godot resource
+import before startup.
 
 The ordinary shared battle core and preset doubles are available within their
-documented admission contracts. Dedicated move animations remain a separate
-coverage track. Next is Viridian's eighth gym, followed by the League approach.
-Cinnabar and first-Sevii native screen/physical audio
-checks, Seafoam, the Lab and Good/Super Rod remain open. Passing a main route
-does not mean all regional interactions are complete. This is still an
-unfinished complete-FireRed project. The latest asset-complete recovery base is
-stage8 `16d2a426`; later source checkpoints and deterministic asset importers
-extend it. Normal GitHub source checkpoints continue; the next complete Drive
-package is scheduled for this completed first-Sevii Application checkpoint,
-after its bounded production-adapter checks finish.
+documented admission contracts. Dedicated move animation coverage is separate
+(20/354), and native screen/physical audio acceptance remains open in this
+no-display environment. Passing the main route does not mean every regional
+service, optional path or presentation is complete.
+
+The user's current stopping point is first-story completion, followed by a
+bounded project refactor, normal GitHub synchronization and a complete Drive
+backup, cleanup of proven reproducible temporary files, then a pause. No new
+postgame work starts in this batch. The latest asset-complete base is stage9
+`012f7ae`; later source checkpoints and authenticated importers extend it.
+See [the refactor boundary](docs/project-refactor-plan.md) and
+[implementation roadmap](docs/implementation-roadmap.md).
 
 ## Earlier first-badge checkpoint
 

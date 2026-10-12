@@ -27,7 +27,9 @@ public static class FieldMovementRules
         if(enableCaveDoors&&(map.SourceBehaviorAt(frontX,frontY)==0x60||enableLadders&&map.SourceBehaviorAt(frontX,frontY)==0x61))
         {
             var entrance=map.GetTile(frontX,frontY);
-            if(entrance is {Blocked:false}&&entrance.Elevation==state.Player.Elevation)
+            // Source IsElevationMismatchAt treats actor elevation 0 and map
+            // elevations 0/15 as compatible. Open League doors retain map 0.
+            if(entrance is {Blocked:false}&&(entrance.Elevation is 0 or 15||state.Player.Elevation==0||entrance.Elevation==state.Player.Elevation))
             {
                 // Non-animated doors warp after completing the actual step onto the tile.
                 warp=map.FieldWarps.FirstOrDefault(w=>w.X==frontX&&w.Y==frontY&&(w.Elevation==0||w.Elevation==entrance.Elevation));

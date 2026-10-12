@@ -121,6 +121,18 @@ Test("world.elevation-blocked", () => { var s = World(); var m = Map(); var t = 
 Test("world.unsupported-grass-fault-atomic", () => { var s = World(); var m = Map(); var t = WorldRules.Move(s, Walk(s, Direction.North), new GridMap(m.Id, 3, 3, m.Cells.SetItem(1, new(false, 0, TileBehavior.Grass)))); Equal(TransitionStatus.Fault, t.Status); True(ReferenceEquals(s, t.State)); Equal(0, t.Events.Length); });
 Test("world.invalid-direction-rejected", () => { var s = World(); var t = WorldRules.Move(s, Walk(s, (Direction)99), Map()); Equal(TransitionStatus.Rejected, t.Status); True(ReferenceEquals(s, t.State)); });
 Test("world.mismatched-map-fault", () => { var s = World(); s = s with { Player = s.Player with { MapId = new("other/map") } }; Equal(TransitionStatus.Fault, WorldRules.Move(s, Walk(s, Direction.North), Map()).Status); });
+Test("world.cave-door-source-elevation-wildcards", () => {
+    foreach(var (actorElevation,doorElevation,allowed) in new[]{(3,0,true),(0,3,true),(3,3,true),(3,15,true),(3,4,false)})
+    {
+        var before=World() with{Player=World().Player with{Elevation=actorElevation,Facing=Direction.North}};
+        var source=new CaveWarpMap(false,actorElevation,doorElevation);var destination=new CaveWarpMap(true,3,3);
+        var maps=new Dictionary<MapId,IFieldMap>{{source.Id,source},{destination.Id,destination}};
+        var result=FieldMovementRules.Move(before,new(new("fixture/cave-elevation"),0,Direction.North),maps,enableCaveDoors:true);
+        Equal(allowed,result.MapChanged);Equal(before.Rng,result.State.Rng);
+        if(allowed){Equal(TransitionStatus.Accepted,result.Status);Equal(destination.Id,result.State.Player.MapId);Equal(1L,result.State.StepCount);}
+        else{Equal(TransitionStatus.Fault,result.Status);Equal(Json(before),Json(result.State));}
+    }
+});
 Test("world.invalid-grid-fails", () => Throws<ArgumentException>(() => new GridMap(new("map"), 2, 2, [new(false)])));
 Test("world.deterministic-replay", () => { var a = World(); var b = World(); foreach (var direction in new[] { Direction.North, Direction.West, Direction.West, Direction.South, Direction.East }) { var x = WorldRules.Move(a, Walk(a, direction), Map()); var y = WorldRules.Move(b, Walk(b, direction), Map()); Equal(Json(x), Json(y)); a = x.State; b = y.State; } Equal(4L, a.StepCount); Equal(5L, a.Revision); Equal(a.Rng, World().Rng); });
 
@@ -205,4 +217,11 @@ return selected.Length == 0 ? 2 : failed == 0 ? 0 : 1;
 sealed class Catalog(params MoveDefinition[] moves) : IBattleContent
 {
     public MoveDefinition? FindMove(MoveId id) => moves.FirstOrDefault(x => x.Id == id);
+}
+sealed class CaveWarpMap(bool destination,int floorElevation,int doorElevation):IFieldMap
+{
+    public MapId Id=>new(destination?"fixture/arrival":"fixture/map");public int Width=>3;public int Height=>3;
+    public ImmutableArray<FieldWarp> FieldWarps=>[new(0,1,0,0,new(destination?"fixture/map":"fixture/arrival"),0)];
+    public int? SourceBehaviorAt(int x,int y)=>!destination&&x==1&&y==0?0x60:0;
+    public TileCell? GetTile(int x,int y)=>x is <0 or >=3||y is <0 or >=3?null:!destination&&x==1&&y==0?new(false,doorElevation,TileBehavior.Warp):new(false,floorElevation);
 }
