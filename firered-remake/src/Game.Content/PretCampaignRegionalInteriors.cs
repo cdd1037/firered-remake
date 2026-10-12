@@ -40,10 +40,10 @@ public sealed partial class PretCampaignCatalog
     public bool IsRegionalServiceMap(MapId id) => RegionalServicesEnabled && (RegionalServiceMapIds.Contains(id)||RegionalInteriorServicesEnabled&&RegionalInteriorMapIds.Contains(id));
     public ImmutableArray<CampaignDepartmentElevatorFloor> DepartmentStoreElevatorFloors =>
         DepartmentStoreContract?.ElevatorFloors.Select(f=>new CampaignDepartmentElevatorFloor(f.MenuIndex,f.Label,f.SourceFloorValue,
-            new(f.DestinationMapId),f.X,f.Y,SourceMaps[new(f.DestinationMapId)].Cells[f.Y*SourceMaps[new(f.DestinationMapId)].Width+f.X].Elevation,f.DestinationWarpId)).ToImmutableArray() ?? [];
+            new(f.DestinationMapId),f.X,f.Y,SourceMaps[new(f.DestinationMapId)].GetSourceCell(f.X,f.Y)!.Elevation,f.DestinationWarpId)).ToImmutableArray() ?? [];
     public ImmutableArray<CampaignDepartmentElevatorEntrance> DepartmentStoreElevatorEntrances =>
         DepartmentStoreContract?.ElevatorEntrances.Select(e=>new CampaignDepartmentElevatorEntrance(new(e.SourceMapId),e.SourceWarpIndex,e.ElevatorWarpIndex,
-            e.X,e.Y,SourceMaps[new(e.SourceMapId)].Cells[e.Y*SourceMaps[new(e.SourceMapId)].Width+e.X].Elevation)).ToImmutableArray() ?? [];
+            e.X,e.Y,SourceMaps[new(e.SourceMapId)].GetSourceCell(e.X,e.Y)!.Elevation)).ToImmutableArray() ?? [];
     public ImmutableArray<CampaignDepartmentDynamicExit> DepartmentStoreDynamicExits => !RegionalInteriorServicesEnabled ? [] :
         SourceMaps[PretRegionalServiceMaps.ElevatorMapId].Warps.Select(w=>new CampaignDepartmentDynamicExit(w.Index,w.X,w.Y,w.Elevation,w.DestinationWarpId)).ToImmutableArray();
     public int DepartmentStoreElevatorShakeFrames(int from,int to) => DepartmentStoreContract?.ElevatorShakeFrames(from,to) ?? throw new NotSupportedException();

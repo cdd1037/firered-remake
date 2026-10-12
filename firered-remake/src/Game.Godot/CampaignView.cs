@@ -217,12 +217,14 @@ public partial class CampaignView:Node2D
                 foreach(var action in motion.Actions)
                 {
                     if(action=="step_end")break;
+                    if(action is "lock_facing_direction" or "unlock_facing_direction")
+                    {clips.Add(new(new(current.X*16,current.Y*16),new(current.X*16,current.Y*16),current.Facing,1.0/60,visible,action));continue;}
                     if(action is "set_invisible" or "set_visible"){visible=action=="set_visible";clips.Add(new(new(current.X*16,current.Y*16),new(current.X*16,current.Y*16),current.Facing,1.0/60,visible,action));continue;}
                     if(action.StartsWith("delay_",StringComparison.Ordinal)||action.StartsWith("emote_",StringComparison.Ordinal))
                     {double time=action.StartsWith("delay_",StringComparison.Ordinal)&&int.TryParse(action[6..],out var frames)?frames/60.0:.5;clips.Add(new(new(current.X*16,current.Y*16),new(current.X*16,current.Y*16),current.Facing,time,visible,action));continue;}
                     if(action=="face_player"){clips.Add(new(new(current.X*16,current.Y*16),new(current.X*16,current.Y*16),after.Actors.GetValueOrDefault(motion.ActorId)?.Facing??current.Facing,1.0/60,visible,action));continue;}
                     var next=motion.Path[Math.Min(++index,motion.Path.Length-1)];
-                    double seconds=action=="jump_2_down"?32.0/60:action.StartsWith("jump_special_",StringComparison.Ordinal)?FieldSurfSourcePresentation.JumpCueFrames/60.0:action=="cut_tree"?FieldCutSourcePresentation.TreeCutCueFrames/60.0:action=="face_original_direction"?1.0/60:action=="nurse_joy_bow"?48.0/60:action.Contains("fastest",StringComparison.Ordinal)?2.0/60:action.Contains("faster",StringComparison.Ordinal)?4.0/60:action.Contains("fast",StringComparison.Ordinal)?8.0/60:action.StartsWith("walk_slower_",StringComparison.Ordinal)?32.0/60:16.0/60;
+                    double seconds=action=="jump_2_down"?32.0/60:action.StartsWith("jump_special_",StringComparison.Ordinal)?FieldSurfSourcePresentation.JumpCueFrames/60.0:action=="cut_tree"?FieldCutSourcePresentation.TreeCutCueFrames/60.0:action=="face_original_direction"?1.0/60:action=="nurse_joy_bow"?48.0/60:action.Contains("fastest",StringComparison.Ordinal)?2.0/60:action.Contains("faster",StringComparison.Ordinal)?4.0/60:action.Contains("fast",StringComparison.Ordinal)||action.StartsWith("player_run_",StringComparison.Ordinal)?8.0/60:action.StartsWith("walk_slower_",StringComparison.Ordinal)?32.0/60:16.0/60;
                     clips.Add(new(new(current.X*16,current.Y*16),new(next.X*16,next.Y*16),next.Facing,seconds,visible,action));current=next;
                 }
                 if(clips.Count>0){_tracks.Add(new(){Actor=motion.ActorId,Clips=clips});if(!_poses.TryGetValue(motion.ActorId,out var pose))_poses[motion.ActorId]=pose=new();pose.Position=clips[0].From;pose.Facing=clips[0].Facing;pose.Visible=clips[0].Visible;}

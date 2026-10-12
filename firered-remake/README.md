@@ -11,16 +11,17 @@ linked real-command checkpoints with strict save/restore; see
 [Victory Road](docs/victory-road-campaign.md), [Viridian Gym](docs/viridian-gym-campaign.md)
 and [first Sevii](docs/first-sevii-campaign.md).
 
-The first League successor is integrated and the natural challenge is in
-progress. Lorelei has been defeated; the first Bruno attempt ended in a real
-loss and the next attempt retains its expenses, earned experience and healed
-loss save. Champion, Hall of Fame and final Continue are not yet accepted.
-[League progress](docs/pokemon-league-campaign.md) distinguishes implementation,
-controlled checks and actual route completion.
+The first League now passes controlled end-to-end completion: after a disclosed
+trained-party/supplies setup, real commands defeat the original Bruno, Agatha,
+Lance and starter-correct Champion, apply their rewards, durably save the Hall
+at generation 42922, and finish Credits → ResetRequested at generation 42943.
+A separate process strictly Continues the real save in Pallet. The historical
+natural party remains sealed at generation 41923 after its second Lorelei win;
+it did not clear the League. See [League acceptance](docs/pokemon-league-campaign.md)
+and the [controlled route report](tests/Game.PokemonLeagueControlledRoute.Tests/evidence/REPORT.md).
 
-`bash scripts/launch-pokemon-league.sh` opens the current first-clear successor;
-`launch-current.sh` still selects the previous accepted late-Route22 profile
-until this successor closes. Each profile keeps separate saves. Explicit
+`bash scripts/launch-current.sh` selects `launch-pokemon-league.sh`, the current
+first-clear profile. Each profile keeps separate saves. Explicit
 predecessor upgrades preserve gameplay payload and generation except their
 documented initialization. The launcher checks the official Godot resource
 import before startup.
@@ -36,7 +37,9 @@ bounded project refactor, normal GitHub synchronization and a complete Drive
 backup, cleanup of proven reproducible temporary files, then a pause. No new
 postgame work starts in this batch. The latest asset-complete base is stage9
 `012f7ae`; later source checkpoints and authenticated importers extend it.
-See [the refactor boundary](docs/project-refactor-plan.md) and
+The bounded refactor is in progress; final synchronization, full backup and
+cleanup are not yet declared complete. See [the refactor boundary](docs/project-refactor-plan.md),
+[remaining scope](docs/first-clear-remaining-scope.md) and
 [implementation roadmap](docs/implementation-roadmap.md).
 
 ## Earlier first-badge checkpoint

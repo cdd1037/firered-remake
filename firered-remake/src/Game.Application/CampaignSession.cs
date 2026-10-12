@@ -802,12 +802,15 @@ public sealed partial class CampaignSession
         var actor=actorId=="LOCALID_PLAYER"?null:state.Actors[actorId];var position=actor is null?state.World.Player:new(state.World.Player.MapId,actor.X,actor.Y,actor.Elevation,actor.Facing);
         path.Add(position);
         bool visible=actor is null?state.PlayerVisible:!actor.Invisible;
+        bool facingLocked=false;
         foreach(var action in actions)
         {
             if(action=="step_end")break;
+            if(action=="lock_facing_direction"){facingLocked=true;continue;}
+            if(action=="unlock_facing_direction"){facingLocked=false;continue;}
             if(action is "set_invisible" or "set_visible"){visible=action=="set_visible";continue;}
             if(action is "emote_exclamation_mark" or "emote_question_mark"||action.StartsWith("delay_",StringComparison.Ordinal))continue;
-            if(action=="nurse_joy_bow"){if(!_content.ViridianCenterEnabled||!IsSupportedHealingCenter(state.World.Player.MapId)||actor is null||actor.LocalId!=HealingNurse(state.World.Player.MapId).LocalId)throw new InvalidDataException("nurse_bow_context_invalid");position=position with{Facing=Direction.South};path.Add(position);continue;}
+            if(action=="nurse_joy_bow"){if(!_content.ViridianCenterEnabled||!IsSupportedHealingCenter(state.World.Player.MapId)||actor is null||actor.LocalId!=HealingNurse(state.World.Player.MapId).LocalId)throw new InvalidDataException("nurse_bow_context_invalid");position=position with{Facing=facingLocked?position.Facing:Direction.South};path.Add(position);continue;}
             if(action=="face_original_direction")
             {
                 // Source event_object_movement.c uses the current movement type's initial
@@ -815,19 +818,21 @@ public sealed partial class CampaignSession
                 // facing types until the full source movement-direction table is imported.
                 if(actor?.MovementType is not ("MOVEMENT_TYPE_FACE_UP" or "MOVEMENT_TYPE_FACE_DOWN" or "MOVEMENT_TYPE_FACE_LEFT" or "MOVEMENT_TYPE_FACE_RIGHT"))
                     throw new InvalidDataException("original_facing_movement_type_unsupported");
-                position=position with{Facing=DirectionFromType(actor.MovementType)};path.Add(position);continue;
+                position=position with{Facing=facingLocked?position.Facing:DirectionFromType(actor.MovementType)};path.Add(position);continue;
             }
-            if(action=="face_player"){position=position with{Facing=Opposite(state.World.Player.Facing)};continue;}
+            if(action=="face_player"){position=position with{Facing=facingLocked?position.Facing:Opposite(state.World.Player.Facing)};continue;}
             if(action=="jump_2_down"&&_content.ViridianGymEnabled)
             {
                 if(actor is not null||sourceProgram!="ViridianCity_Movement_JumpDownLedge"||position.MapId.Value!="map.viridian-city"||
                     position.X!=36||position.Y!=11||position.Elevation!=3||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_VIRIDIAN_CITY_GYM_DOOR")!=0||
                     !actions.SequenceEqual(new[]{"jump_2_down","step_end"})||_content.Maps[position.MapId].GetTile(36,13) is not {Blocked:false,Elevation:3})
                     throw new InvalidDataException("viridian_gym_locked_door_movement_context");
-                position=position with{Y=13,Facing=Direction.South};path.Add(position);continue;
+                position=position with{Y=13,Facing=facingLocked?position.Facing:Direction.South};path.Add(position);continue;
             }
             var suffix=action.Split('_')[^1];var direction=suffix switch{"up"=>Direction.North,"down"=>Direction.South,"left"=>Direction.West,"right"=>Direction.East,_=>throw new InvalidDataException("movement_unsupported: "+action)};
-            bool walk=action.StartsWith("walk_",StringComparison.Ordinal)&&!action.StartsWith("walk_in_place",StringComparison.Ordinal);
+            bool scriptedRun=action.StartsWith("player_run_",StringComparison.Ordinal);
+            if(scriptedRun&&actor is not null)throw new InvalidDataException("movement_player_run_actor_unsupported");
+            bool walk=scriptedRun||action.StartsWith("walk_",StringComparison.Ordinal)&&!action.StartsWith("walk_in_place",StringComparison.Ordinal);
             if(!walk&&!action.StartsWith("walk_in_place",StringComparison.Ordinal)&&!action.StartsWith("face_",StringComparison.Ordinal))throw new InvalidDataException("movement_unsupported: "+action);
             var (dx,dy)=walk?Delta(direction):(0,0);var tile=_content.Maps[position.MapId].GetTile(position.X+dx,position.Y+dy);
             // The original Cinnabar boat starts at x=30 and approaches to x=25,
@@ -839,8 +844,11 @@ public sealed partial class CampaignSession
                 actor is {TemplateX:30,Elevation:1}&&actor.TemplateY==position.Y&&position.Y is 8 or 12&&
                 position.X is >=26 and <=30&&dx==-1&&dy==0;
             if(tile is null&&!boatBorder)throw new InvalidDataException("scripted_move_out_of_bounds");
-            position=position with{X=position.X+dx,Y=position.Y+dy,Facing=direction,Elevation=tile is null||tile.Elevation==0?position.Elevation:tile.Elevation};path.Add(position);
+            position=position with{X=position.X+dx,Y=position.Y+dy,Facing=facingLocked?position.Facing:direction,Elevation=tile is null||tile.Elevation==0?position.Elevation:tile.Elevation};path.Add(position);
         }
+        // Source SetObjectEventDirection still changes movement direction while facing is locked.
+        // Current source programs balance this flag locally; cross-program locks need persistent state.
+        if(facingLocked)throw new InvalidDataException("movement_facing_lock_unbalanced");
         state=actor is null?state with{World=state.World with{Player=position},PlayerVisible=visible}:state with{Actors=state.Actors.SetItem(actorId,actor with{X=position.X,Y=position.Y,Elevation=position.Elevation,Facing=position.Facing,Invisible=!visible})};
         if(actor is null)state=RefreshActors(state);
         return state with{Motions=state.Motions.Add(new(actorId,path.ToImmutable(),actions))};

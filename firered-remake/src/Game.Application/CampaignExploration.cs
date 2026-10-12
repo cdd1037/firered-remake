@@ -63,8 +63,14 @@ public sealed partial class CampaignSession
     private IReadOnlyDictionary<MapId,ConnectedFieldMap> OccupiedFieldMaps(CampaignState state)
     {
         var maps=EditedFieldMaps(state).ToDictionary(x=>x.Key,x=>x.Value);
+        // Complete reads the current map and at most one direct connection; ledges stay on the current map.
+        var occupiedMaps=new HashSet<MapId>{state.World.Player.MapId};
+        if(maps.TryGetValue(state.World.Player.MapId,out var current)&&current is not null&&!current.Connections.IsDefault)
+            foreach(var connection in current.Connections)
+                if(connection is not null)occupiedMaps.Add(connection.DestinationMapId);
         foreach(var pair in maps.ToArray())
         {
+            if(!occupiedMaps.Contains(pair.Key))continue;
             var cells=pair.Value.Cells.ToBuilder();
             var actors=pair.Key==state.World.Player.MapId?state.Actors.Values.Where(a=>a.Active).Select(a=>(a.X,a.Y,a.Elevation)):
                 _content.MapDefinition(pair.Key).Actors.Where(a=>a.HideFlag=="0"||!state.Script.Flags.GetValueOrDefault(a.HideFlag)).Select(a=>(a.X,a.Y,a.Elevation));

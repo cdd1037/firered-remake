@@ -1,10 +1,12 @@
 # 完整单机目标的实施顺序
 
-状态（2026-10-12）：已进入关都分批扩展，普通共享战斗核心、七徽章应用主线、狩猎地带及 Surf/Strength、西尔佛、火箭队基地、宝可梦塔、两处卡比兽和有限地区服务已分别验收；首次七岛自然应用路线已完成救回迷失女孩、交还陨石和返回红莲，并严格存读。生产表现适配器已完成渡船、三岛地图／城镇地图、F5／继续和训练家开场的93项检查；其发现的Joy胜后对白缺口经窄修与独立11项／4命令回归关闭，实窗／物理音频另列。常青第八道馆已通过真实应用路线：九名训练家实际胜利、第八徽章／TM26、坂木离场与存读，另有130项开场和22项终档的分批headless生产表现检查；后期22号道路劲敌已在真实败退后正常重试取胜并完成重复触发防重与存读（463b9b3）；23号道路／冠军之路已真实走通并严格存读到石英高原（8f885bb）。首次联盟已完成实际科拿胜利及希巴房间进入；首轮希巴真实败退回中心，正在保留成本与成长的合法后继准备，冠军／名人堂仍未验收。这不代表所有已载入地区交互完成。下表保留阶段门禁定义，实际边界见各阶段证据及覆盖清单。最终范围见 [scope.md](scope.md)，源冻结见 [source-baseline.md](source-baseline.md)。本路线不承诺缺乏测量依据的日历工期。
+状态（2026-10-12）：已进入关都分批扩展，普通共享战斗核心、七徽章应用主线、狩猎地带及 Surf/Strength、西尔佛、火箭队基地、宝可梦塔、两处卡比兽和有限地区服务已分别验收；首次七岛自然应用路线已完成救回迷失女孩、交还陨石和返回红莲，并严格存读。生产表现适配器已完成渡船、三岛地图／城镇地图、F5／继续和训练家开场的93项检查；其发现的Joy胜后对白缺口经窄修与独立11项／4命令回归关闭，实窗／物理音频另列。常青第八道馆已通过真实应用路线：九名训练家实际胜利、第八徽章／TM26、坂木离场与存读，另有130项开场和22项终档的分批headless生产表现检查；后期22号道路劲敌已在真实败退后正常重试取胜并完成重复触发防重与存读（463b9b3）；23号道路／冠军之路已真实走通并严格存读到石英高原（8f885bb）。首次联盟的历史自然队伍保留希巴真实败退、正常捕获大嘴蝠与再次赢得科拿的经历，封存于 generation41923，未自然通关。另列成型队／补给的受控夹具已实际战胜原版希巴、菊子、渡和对应冠军，执行奖励，落盘名人堂 generation42922，通过独立进程 Continue，并在 generation42943 到达 Credits → ResetRequested；完整链共 1,020 条已接受命令。详见[联盟验收](pokemon-league-campaign.md)及[剩余范围](first-clear-remaining-scope.md)。这是受控主线产品闭环，不是自然新游戏到通关或全部 P6 范围验收。这不代表所有已载入地区交互完成。下表保留阶段门禁定义，实际边界见各阶段证据及覆盖清单。最终范围见 [scope.md](scope.md)，源冻结见 [source-baseline.md](source-baseline.md)。本路线不承诺缺乏测量依据的日历工期。
 
 ## 2026-10-12 本轮最终停止点
 
 用户最新明确要求“今天做到重构后就先停下，等我后续安排”（Sentinel_fd7407e28f488191aded15e93aa3fffd）。本轮执行顺序固定为：首次主线通关／名人堂与可继续存档 → 有边界的项目级重构和精简 → GitHub 同步及完整 Drive 备份 → 清理已确认可重建的临时材料 → 暂停开发，等待用户后续安排。
+
+受控首次主线战斗／名人堂／Continue／片尾协议已通过；有边界的项目重构已完成四项整理及受影响检查，最终同步、完整备份和缓存清理尚未记为完成。自然队伍封存边界、20/354 专属动画、PC 名人堂回看未实现、无 DISPLAY 的原生画面和实际音频缺口继续保留。
 
 这一决定覆盖此前通关后自动推进七岛后期的安排。下表 P7/P8 保留完整项目的未来范围，但本轮不启动全国图鉴、通关后七岛、强化联盟或其他新阶段。重构集中于已实现主线中的重复地区适配、共同规则接口、临时兼容分支、启动／构建负担及可证明冗余；保留玩法与合法存档迁移边界，不为减行数重写已验证系统，不无限扩充功能。交付时列明精确停止提交、已验收范围和仍未完成的玩法／地区／专属表现。
 
@@ -147,22 +149,23 @@ Bill's first visit to One Island, Two Island and Three Island now completes its
 natural public-command route at the original pre-League time, including
 Celio/Meteorite/Tri-Pass, sequential bikers, Joy/Meg, Lostelle/Hypno and the
 Cinnabar return with strict saves. See [First Sevii](first-sevii-campaign.md) for
-the retained multi-build lineage and separate presentation limits. Continue
-Viridian's eighth gym, then Route23/Victory Road and the League.
+the retained multi-build lineage and separate presentation limits. The later
+Viridian/Route23/Victory Road checkpoints and controlled League completion are
+recorded in the current status above.
 Seafoam, Cinnabar Lab services and Good/Super Rod remain explicit regional work.
 Dedicated move animations remain tracked and deferred under the user's latest
 priority, without blocking complete rules.
 
-Per the latest2026-10-12 user direction, continue normal small GitHub source
-checkpoints; produce the next complete Drive package after this first Sevii
-visit, not a separate seventh-badge package. Backup work remains structural and
-byte-integrity checks, with no extra gameplay replay solely for packaging.
+The earlier first-Sevii backup decision is retained as history. The current
+full-backup stopping condition is the first-story completion plus bounded
+project refactor described above. Packaging checks structure and byte integrity;
+it does not replay gameplay solely for packaging.
 
 ## 2026-10-12 主线完工后的项目级重构与精简
 
-用户明确要求主线完工后再做项目级整理（Sentinel_5fca4d441efc8191a4950762c6bfb345）。该阶段合并重复逻辑、地区适配和临时兼容分支，清理可替代的临时实现与冗余资源，梳理共同资源和构建入口。保留必要玩法、来源证据和存档迁移边界，以维护成本与可恢复交付为衡量标准，不以减少行数为目标。当前首次七岛及后续主线继续推进，不提前展开这轮全项目改造；已有普通战斗核心的有界重构不替代此阶段。
+用户明确要求主线完工后再做项目级整理（Sentinel_5fca4d441efc8191a4950762c6bfb345）。该阶段合并重复逻辑、地区适配和临时兼容分支，清理可替代的临时实现与冗余资源，梳理共同资源和构建入口。保留必要玩法、来源证据和存档迁移边界，以维护成本与可恢复交付为衡量标准，不以减少行数为目标。首次七岛与后续主线现已达到上述受控产品闭环，项目级有界重构已完成四项整理及受影响检查；此前普通战斗核心的有界重构不替代此阶段。最终提交、同步、备份和清理状态以实际交付证据为准。
 
-这里的主线出口指第八徽章、冠军之路、四天王与冠军、名人堂及可读的通关存档。完成这轮项目级整理后继续通关后七岛等剩余内容；首次联盟前七岛仍按当前剧情时机完成。
+这里的主线出口指第八徽章、冠军之路、四天王与冠军、名人堂及可读的通关存档。本轮按最新停止要求，在项目级整理、同步、备份与清理后暂停，通关后七岛等剩余内容等待新安排；首次联盟前七岛已按原剧情时机完成。
 
 
 ## 2026-10-12 backup cadence after the first Sevii visit
@@ -175,7 +178,7 @@ The first-Sevii full Drive package proceeds as agreed. The next full Drive backu
 The earned eight-badge party now completes the original six-member late rival,
 including a retained actual loss and legal retry, source scene4/removal, single
 prize, real return/reentry and strict save. The natural final generation is37105.
-See `docs/league-rival-campaign.md`; Route23 eight guards, Surf approach and
-Victory Road Strength mechanisms are the next active bounded node, followed by
-the League. No separate full Drive package is planned before main-story completion
+See [the late-rival checkpoint](league-rival-campaign.md). Route23 badge guards,
+Surf approach and Victory Road Strength mechanisms subsequently passed; the
+controlled League result is linked in the current status above. No separate full Drive package is planned before main-story completion
 and the agreed project-level refactor; source checkpoints continue normally.
