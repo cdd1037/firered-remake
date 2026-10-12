@@ -10,6 +10,44 @@ public sealed partial class CampaignSession
     private const string PokemonLeagueSharedSource="data/scripts/pokemon_league.inc";
     private const string PokemonLeagueHallSource="data/scripts/hall_of_fame.inc";
     private const string PokemonLeagueHallEntry="PokemonLeague_HallOfFame_EventScript_EnterRoom";
+    private IReadOnlyDictionary<MapId,IFieldMap> PokemonLeagueMovementMaps(IReadOnlyDictionary<MapId,IFieldMap> source,CampaignState state,CampaignCommand command)
+    {
+        if(!_content.PokemonLeagueEnabled)return source;
+        var p=state.World.Player;int room=PokemonLeagueRoomIndex(p.MapId);
+        Dictionary<MapId,IFieldMap>? maps=null;
+        if(room is >=0 and <=3&&state.MapEdits is {Count:>0})
+        {
+            maps=source.ToDictionary(x=>x.Key,x=>x.Value);
+            maps[p.MapId]=new RocketEditedMap(source[p.MapId],state.MapEdits,_content);
+        }
+        // The first three original room warps place the avatar on a blocked bottom
+        // border cell. Their on-frame script walks up five tiles before closing it.
+        // Admit that authenticated destination only for this incoming warp; never
+        // turn the same cell into walkable ground during ordinary room movement.
+        if(command.Kind=="move"&&(room is 0 or 1||p.MapId.Value==PokemonLeagueCenterMap))
+        {
+            var(dx,dy)=Delta(command.Direction);
+            foreach(var warp in source[p.MapId].FieldWarps.Where(w=>(w.X==p.X+dx&&w.Y==p.Y+dy||w.X==p.X&&w.Y==p.Y)&&w.DestinationWarpId==0))
+            {
+                int nextRoom=PokemonLeagueRoomIndex(warp.DestinationMapId);
+                if(nextRoom!=room+1||nextRoom is <0 or >2)continue;
+                var destination=source[warp.DestinationMapId];var arrival=destination.FieldWarps.Single(w=>w.Index==0);
+                if(arrival.X!=6||arrival.Y!=12||arrival.Elevation!=0||destination.SourceBehaviorAt(6,12)!=0||destination.GetTile(6,12) is not {Blocked:true,Elevation:0})
+                    throw new InvalidDataException("pokemon_league_source_entry_cell");
+                maps??=source.ToDictionary(x=>x.Key,x=>x.Value);
+                maps[destination.Id]=new PokemonLeagueArrivalMap(destination);
+            }
+        }
+        return maps??source;
+    }
+    private sealed class PokemonLeagueArrivalMap(IFieldMap source):IFieldMap
+    {
+        public MapId Id=>source.Id;public int Width=>source.Width;public int Height=>source.Height;
+        public ImmutableArray<FieldWarp> FieldWarps=>source.FieldWarps;
+        public int? SourceBehaviorAt(int x,int y)=>source.SourceBehaviorAt(x,y);
+        public int? SourceEncounterTypeAt(int x,int y)=>source.SourceEncounterTypeAt(x,y);
+        public TileCell? GetTile(int x,int y)=>x==6&&y==12?source.GetTile(x,y)! with{Blocked=false}:source.GetTile(x,y);
+    }
     private int PokemonLeagueValue(string token)=>int.TryParse(token,out int n)?n:_content.TryConstant(token,out n)?n:throw new InvalidDataException("pokemon_league_constant_missing: "+token);
     private ImmutableSortedDictionary<string,FieldMetatileEdit> PokemonLeaguePatch(MapId map,string label)
     {
