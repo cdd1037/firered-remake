@@ -95,7 +95,9 @@ public sealed partial class CampaignSession
         if (menu.View=="berries" && (!_content.SsAnneEnabled||shop.Items.SingleOrDefault(i=>i.Id==new ItemId(command.Text))?.Pocket!="POCKET_BERRY_POUCH")) return No("berry_item_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("item_party_index_invalid");
         var item = new ItemId(command.Text);
-        var result = _content.PresetDoubleItems is {} sourceItems && SourceFieldStatusCureRules.Supports(shop, sourceItems, item)
+        var result = _content.PresetDoubleItems is {} sourceHpItems && SourceFieldHpMedicineRules.Supports(shop, sourceHpItems, item)
+            ? SourceFieldHpMedicineRules.Use(shop, sourceHpItems, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], item)
+            : _content.PresetDoubleItems is {} sourceItems && SourceFieldStatusCureRules.Supports(shop, sourceItems, item)
             ? SourceFieldStatusCureRules.Use(shop, sourceItems, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], item)
             : EarlyShopMedicineRules.Use(shop, Items, _content.PokemonContent!, ShopInventoryView(state.Inventory!), state.Party[command.PartyIndex], item, PotionUseContext.Field);
         if (!result.Succeeded)

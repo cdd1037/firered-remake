@@ -38,9 +38,9 @@ public partial class CampaignView
         _femalePlayer=new(ImageTexture.CreateFromImage(display),asset.FrameWidth,asset.FrameHeight,asset.FrameCount,new(asset.TileCenterAnchor.X,asset.TileCenterAnchor.Y),false);
     }
 
-    private bool InitializePlayerEntry(string checkpoint)
+    private bool InitializePlayerEntry(string checkpoint,bool force=false)
     {
-        if(OS.GetEnvironment("FIRERED_PLAYER_ENTRY")!="1"||checkpoint.Length!=0)return false;
+        if(!force&&(OS.GetEnvironment("FIRERED_PLAYER_ENTRY")!="1"||checkpoint.Length!=0))return false;
         if(!_catalog.PokemonStorageEnabled)throw new InvalidDataException("Player entry requires the current complete menu profile.");
         _entrySource=PretMainMenuSource.Load(_root);
         static Color Rgb(System.Collections.Immutable.ImmutableArray<int> c)=>Color.Color8((byte)c[0],(byte)c[1],(byte)c[2]);

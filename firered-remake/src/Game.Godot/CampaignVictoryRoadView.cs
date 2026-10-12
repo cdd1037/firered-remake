@@ -6,7 +6,7 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool VictoryRoadProfileRequested => OS.GetEnvironment("FIRERED_VICTORY_ROAD") == "1" ||
+    private static bool VictoryRoadProfileRequested => PokemonLeagueProfileRequested || OS.GetEnvironment("FIRERED_VICTORY_ROAD") == "1" ||
         OS.GetCmdlineUserArgs().Contains("--story-victory-road");
     private VictoryRoadPresentationData? _victoryRoadPresentation;
     private readonly Dictionary<int, VictoryRoadTilePresentation> _victoryRoadTiles = [];
@@ -16,7 +16,7 @@ public partial class CampaignView
     private void LoadVictoryRoadPresentation()
     {
         if (!_catalog.VictoryRoadEnabled) return;
-        if (!_catalog.LeagueRivalEnabled || _session.RulesVersion != CampaignSession.VictoryRoadRulesVersion)
+        if (!_catalog.LeagueRivalEnabled || _session.RulesVersion != CampaignSession.VictoryRoadRulesVersion && !(_catalog.PokemonLeagueEnabled && _session.RulesVersion == CampaignSession.PokemonLeagueRulesVersion))
             throw new InvalidDataException("Victory Road presentation requires its authenticated successor profile.");
         var art = VictoryRoadPresentationAssets.Load(_root);
         var source = _catalog.VictoryRoadTrainerParties ?? throw new InvalidDataException("Victory Road trainers missing.");
@@ -84,10 +84,10 @@ public partial class CampaignView
     }
 
     // Names come from the already authenticated 386-entry dex, gated by the bounded opponent catalog.
-    private string PresentedBattleSpeciesName(int species) => species is 87 or 103 &&
+    private string PresentedBattleSpeciesName(int species) => PokemonLeagueSpeciesName(species) ?? (species is 87 or 103 &&
         _catalog.VictoryRoadOpponents?.Catalog.Species.Values.Any(s => s.SourceSpeciesId == species) == true
         ? (_pokedexMenu ?? throw new InvalidDataException("Victory Road species names missing.")).Entries[species].Name
-        : _catalog.PresentedSpeciesName(species);
+        : _catalog.PresentedSpeciesName(species));
 
     private PokedexMenuTexture? VictoryRoadDexPortrait(int species)
     {

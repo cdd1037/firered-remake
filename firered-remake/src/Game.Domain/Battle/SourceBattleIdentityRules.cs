@@ -59,14 +59,16 @@ public static class SourceBattleIdentityRules
         if (frame.SourceCampaignRulesVersion is not null && frame.Parties.Any(p => p.Members.Any(m =>
             !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species) &&
             !(p.Side == BattleSide.Opponent && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
-              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile &&
+              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile &&
                SilphOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile &&
+               frame.SourceCampaignRulesVersion is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile &&
                SaffronGymOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile &&
+               frame.SourceCampaignRulesVersion is CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile &&
                CinnabarOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion == VictoryRoadOpponentPokemonCatalog.Profile &&
-               VictoryRoadOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species))))))
+               frame.SourceCampaignRulesVersion is VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile &&
+               VictoryRoadOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
+               frame.SourceCampaignRulesVersion == PokemonLeagueOpponentPokemonCatalog.Profile &&
+               PokemonLeagueOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species))))))
             return "source_frame_campaign_species";
         if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";
         if (SourceObedienceRules.Validate(frame.Obedience, frame.Parties[0].Members) is { } obedienceError) return obedienceError;

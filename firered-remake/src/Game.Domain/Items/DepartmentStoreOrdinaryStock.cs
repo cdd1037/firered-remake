@@ -7,7 +7,7 @@ public sealed record DepartmentStoreOrdinaryItem(ItemId Id, int SourceItemId, st
 
 /// <summary>The one authenticated external shelf. It neither extends nor relabels the five-Mart item catalog.</summary>
 public sealed record DepartmentStoreOrdinaryStock(string SourceCommit, string ContractSha256, string MapId,
-    string ClerkScript, ImmutableArray<DepartmentStoreOrdinaryItem> Entries, OpeningItemSourceRef Source)
+    string ClerkScript, ImmutableArray<DepartmentStoreOrdinaryItem> Entries, OpeningItemSourceRef Source) : AuthenticatedShopStock
 {
     public const string ExpectedMapId = "map.celadon-city-department-store-2f";
     public const string ExpectedStockId = "CeladonCity_DepartmentStore_2F_Items";
@@ -28,13 +28,13 @@ public sealed record DepartmentStoreOrdinaryStock(string SourceCommit, string Co
         new(new("pret:ITEM_SUPER_REPEL"), 83, "SUPER REPEL", 500, "POCKET_ITEMS")
     ];
 
-    public string Id => Source.Symbol;
-    public ImmutableArray<ItemId> Items => Entries.Select(item => item.Id).ToImmutableArray();
+    public override string Id => Source.Symbol;
+    public override ImmutableArray<ItemId> Items => Entries.Select(item => item.Id).ToImmutableArray();
 
     public bool IsClerk(string mapId, string sourcePath, string script, string stockId) =>
         mapId == ExpectedMapId && sourcePath == ExpectedSourcePath && script == ExpectedClerkScript && stockId == ExpectedStockId;
 
-    public void Validate(EarlyShopCatalog catalog)
+    public override void Validate(EarlyShopCatalog catalog)
     {
         // This authenticates every inherited definition and the original five stock tables before
         // resolving these nine IDs. Full item effects/metadata come only from that unchanged catalog.

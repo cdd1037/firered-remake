@@ -110,7 +110,7 @@ public sealed partial class CampaignSession
         {
             if(state.MapEdits is null||state.MapEdits.Count!=2||!state.MapEdits.TryGetValue("1:3",out var top)||!state.MapEdits.TryGetValue("1:4",out var bottom)||top!=new FieldMetatileEdit(1,3,0x2bf,3,3)||bottom!=new FieldMetatileEdit(1,4,0x2c0,3,0))return "save_mart_counter_edits_invalid";
         }
-        else if(state.MapEdits is {Count:>0}&&!(_content.VermilionGymEnabled&&state.World.Player.MapId.Value==VermilionGymMap)&&!(_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId))&&!(_content.SilphEnabled&&SilphFieldRules.IsSilphMap(state.World.Player.MapId))&&!(_content.CinnabarEnabled&&CinnabarFieldMap(state.World.Player.MapId))&&!(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId)))return "save_map_edits_unexpected";
+        else if(state.MapEdits is {Count:>0}&&!(_content.VermilionGymEnabled&&state.World.Player.MapId.Value==VermilionGymMap)&&!(_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId))&&!(_content.SilphEnabled&&SilphFieldRules.IsSilphMap(state.World.Player.MapId))&&!(_content.CinnabarEnabled&&CinnabarFieldMap(state.World.Player.MapId))&&!(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))&&!(_content.PokemonLeagueEnabled&&PokemonLeagueRoomIndex(state.World.Player.MapId)>=0))return "save_map_edits_unexpected";
         return null;
     }
 }

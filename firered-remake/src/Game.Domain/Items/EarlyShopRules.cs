@@ -18,15 +18,17 @@ public static class EarlyShopRules
     }
 
     public static EarlyShopQuote QuoteBuy(EarlyShopCatalog catalog, InventoryState inventory, int money,
-        DepartmentStoreOrdinaryStock stock, ItemId item)
+        AuthenticatedShopStock stock, ItemId item)
     {
         string? error = EarlyShopInventoryRules.Validate(catalog, inventory);
         if (error is not null) return new(false, 0, 0, error);
         if (money < 0 || money > catalog.MaximumMoney) return new(false, 0, 0, "shop_money_invalid");
         ArgumentNullException.ThrowIfNull(stock);
+        if (stock is not (DepartmentStoreOrdinaryStock or PokemonLeagueMartStock))
+            throw new NotSupportedException("shop_stock_authentication");
         stock.Validate(catalog);
         var definition = EarlyShopInventoryRules.Find(catalog, item);
-        if (definition is null || !stock.Entries.Any(entry => entry.Id == item)) return new(false, 0, 0, "shop_item_not_stocked");
+        if (definition is null || !stock.Items.Contains(item)) return new(false, 0, 0, "shop_item_not_stocked");
         return QuoteBuyValidated(catalog, inventory, money, definition);
     }
 
@@ -62,7 +64,7 @@ public static class EarlyShopRules
     }
 
     public static EarlyShopTransactionResult Buy(EarlyShopCatalog catalog, InventoryState inventory, int money,
-        DepartmentStoreOrdinaryStock stock, ItemId item, int quantity)
+        AuthenticatedShopStock stock, ItemId item, int quantity)
     {
         ArgumentNullException.ThrowIfNull(inventory);
         return BuyQuoted(catalog, inventory, money, item, quantity, QuoteBuy(catalog, inventory, money, stock, item));

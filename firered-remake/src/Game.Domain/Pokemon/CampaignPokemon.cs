@@ -7,6 +7,8 @@ public sealed record PartyPokemon(long InstanceId,PokemonInstance Pokemon,string
     // Acquisition metadata only; obedience never reads this flag.
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
     public bool ModernFatefulEncounter{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool ChampionRibbon{get;init;}
     public int Mail{get;init;}=255;
     public uint Status{get;init;}
     public bool IsEgg{get;init;}

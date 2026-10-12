@@ -6,6 +6,7 @@ public sealed partial class CampaignSession
 {
     private MapId OrdinaryTrainerMap(TrainerId trainer)
     {
+        if(IsPokemonLeagueTrainer(trainer))return PokemonLeagueTrainerMap(trainer);
         var definition=OrdinaryTrainerScript(trainer);
         var sourceMap=definition.Source.Path.StartsWith("data/maps/",StringComparison.Ordinal)?definition.Source.Path.Split('/')[2]:definition.ScriptEntry.Split("_EventScript_",StringSplitOptions.None)[0];
         return sourceMap switch
@@ -44,7 +45,7 @@ public sealed partial class CampaignSession
             _=>throw new InvalidDataException("ordinary_trainer_source_map")
         };
     }
-    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsLeagueRivalTrainer(trainer)?"0x0":IsFirstSeviiTrainer(trainer)?"ThreeIsland_EventScript_Biker":IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer).ScriptEntry:IsSilphTrainer(trainer)?"0x0":IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
+    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsPokemonLeagueTrainer(trainer)?PokemonLeagueTrainerActorScript(trainer):IsLeagueRivalTrainer(trainer)?"0x0":IsFirstSeviiTrainer(trainer)?"ThreeIsland_EventScript_Biker":IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer).ScriptEntry:IsSilphTrainer(trainer)?"0x0":IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
         IsPokemonTowerRival(trainer)||IsCeruleanRival(trainer)||IsSsAnneRival(trainer)?"0x0":
         IsCeruleanTrainer(trainer)?"CeruleanCity_EventScript_Grunt":
         trainer==Game.Domain.Trainers.BillTrainerPartyFactory.Rocket?"Route24_EventScript_Rocket":

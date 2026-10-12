@@ -21,7 +21,7 @@ public sealed partial class CampaignSession
         if (state.OakRatingHelpContextBackup is not null) return "save_oak_rating_context_active";
         if (!_content.OakRatingEnabled) return null;
         if (state.Script.Flags.GetValueOrDefault(OakPcFlag)) return "save_oak_rating_pc_flag_active";
-        if (OakLaterProgress(state)) return "save_oak_rating_later_progress_unsupported";
+        if (OakLaterProgress(state)&&!PokemonLeagueCompletedContinue(state)) return "save_oak_rating_later_progress_unsupported";
         // Frozen Oak-only saves cannot acquire the Route22 rival outcome. The explicit
         // Route22 profile validates that outcome against its recorded trainer transaction.
         if ((!_content.Route22Enabled &&

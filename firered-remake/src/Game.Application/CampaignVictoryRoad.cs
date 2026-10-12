@@ -13,12 +13,13 @@ public sealed partial class CampaignSession
     private static bool VictoryRoadDestination(string map)=>VictoryRoadInterior(map)||map=="map.indigo-plateau-exterior";
     private static void ValidateVictoryRoadCatalog(ICampaignCatalog content)
     {
+        ValidatePokemonLeagueCatalog(content);
         if(!content.VictoryRoadEnabled)
         {
             if(content.VictoryRoadTrainerParties is not null||content.VictoryRoadOpponents is not null)throw new InvalidDataException("victory_road_profile_missing");
             return;
         }
-        if(!content.LeagueRivalEnabled||content.Maps.Count!=211||content.CinnabarOwnership is null||content.CinnabarOpponents is null||
+        if(!content.LeagueRivalEnabled||content.Maps.Count!=(content.PokemonLeagueEnabled?218:211)||content.CinnabarOwnership is null||content.CinnabarOpponents is null||
             content.CinnabarOwnership.Catalog.Species.Count!=115||content.VictoryRoadTrainerParties is null||content.VictoryRoadOpponents is null||
             content.VictoryRoadOpponents.Catalog.Species.Count!=124||!ReferenceEquals(content.VictoryRoadOpponents.Predecessor,content.CinnabarOpponents)||
             VictoryRoadShopCatalog.For(content.EarlyShop) is null||VictoryRoadMachineCatalog.For(content.PewterMachines) is not {} machines||

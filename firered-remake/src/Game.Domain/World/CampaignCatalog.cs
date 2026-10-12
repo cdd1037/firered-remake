@@ -80,6 +80,10 @@ public interface ICampaignCatalog:IStoryCatalog
     SourceTwinsTrainerDefinition? Route8Twins=>null;
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
+    bool PokemonLeagueEnabled=>false;
+    PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
+    PokemonLeagueOpponentPokemonCatalog? PokemonLeagueOpponents=>null;
+    PokemonLeagueMartStock? PokemonLeagueMartStock=>null;
     bool VictoryRoadEnabled=>false;
     VictoryRoadTrainerCatalog? VictoryRoadTrainerParties=>null;
     VictoryRoadOpponentPokemonCatalog? VictoryRoadOpponents=>null;

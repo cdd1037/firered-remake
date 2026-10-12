@@ -60,6 +60,8 @@ public sealed partial class CampaignSession
         foreach(var h in state.ForestTrainerHistory??[])
         {
             if(h is null||h.TrainerId is null)continue;
+            if(IsPokemonLeagueTrainer(new(h.TrainerId)))
+            {if(!PokemonLeagueHistoryOriginMatches(h))return "save_pokemon_league_origin";continue;}
             if(IsLeagueRivalTrainer(new(h.TrainerId)))
             {if(!LeagueRivalHistoryOriginMatches(h))return "save_league_rival_origin";continue;}
             if(!IsFirstSeviiTrainer(new(h.TrainerId)))

@@ -126,12 +126,12 @@ public sealed partial class CampaignSession
                 h.ExperienceGained < 0 || h.MoneyGained < 0 || h.MoneyMultiplier is not (null or 2) || h.MoneyMultiplier is not null && !_content.PresetDoublesEnabled || h.OpponentsSent.IsDefaultOrEmpty ||
                 h.OpponentsSent[0] != 0 || h.OpponentsSent.Length > OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length ||
                 h.OpponentsSent.Distinct().Count() != h.OpponentsSent.Length ||
-                h.OpponentsSent.Any(n => n < 0 || n >= OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length) || winners.Contains(h.TrainerId)&&!IsFirstSeviiBikerHistory(h))
+                h.OpponentsSent.Any(n => n < 0 || n >= OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length) || winners.Contains(h.TrainerId)&&!IsFirstSeviiBikerHistory(h)&&!IsPokemonLeagueTrainer(new(h.TrainerId)))
                 return "save_forest_trainer_history_invalid";
             var trainer=OrdinaryTrainer(new TrainerId(h.TrainerId));
             if (h.OpponentsSent.Any(n => !state.SeenSpecies.Contains(trainer.Party[n].SourceSpeciesId)))
                 return "save_forest_trainer_seen_missing";
-            int maximumExp = trainer.Party.Sum(p => Math.Max(1, (BattlePokemon.Species.GetValueOrDefault(p.Species)??(IsVictoryRoadTrainer(new TrainerId(h.TrainerId))?_content.VictoryRoadOpponents?.Catalog.Species.GetValueOrDefault(p.Species):null)??(IsLeagueRivalTrainer(new TrainerId(h.TrainerId))||IsViridianGymTrainer(new TrainerId(h.TrainerId))||IsFirstSeviiTrainer(new TrainerId(h.TrainerId))||IsCinnabarTrainer(new TrainerId(h.TrainerId))?_content.CinnabarOpponents?.Catalog.Species.GetValueOrDefault(p.Species):null)??(IsSaffronGymTrainer(new TrainerId(h.TrainerId))?_content.SaffronGymOpponents?.Catalog.Species.GetValueOrDefault(p.Species):null)??_content.SilphOpponents?.Catalog.Species.GetValueOrDefault(p.Species)??throw new InvalidDataException("trainer_reward_species")).ExperienceYield * p.Level / 7) * 150 / 100);
+            int maximumExp = trainer.Party.Sum(p => Math.Max(1, (BattlePokemon.Species.GetValueOrDefault(p.Species)??(IsPokemonLeagueTrainer(new TrainerId(h.TrainerId))?_content.PokemonLeagueOpponents?.Catalog.Species.GetValueOrDefault(p.Species):null)??(IsVictoryRoadTrainer(new TrainerId(h.TrainerId))?_content.VictoryRoadOpponents?.Catalog.Species.GetValueOrDefault(p.Species):null)??(IsLeagueRivalTrainer(new TrainerId(h.TrainerId))||IsViridianGymTrainer(new TrainerId(h.TrainerId))||IsFirstSeviiTrainer(new TrainerId(h.TrainerId))||IsCinnabarTrainer(new TrainerId(h.TrainerId))?_content.CinnabarOpponents?.Catalog.Species.GetValueOrDefault(p.Species):null)??(IsSaffronGymTrainer(new TrainerId(h.TrainerId))?_content.SaffronGymOpponents?.Catalog.Species.GetValueOrDefault(p.Species):null)??_content.SilphOpponents?.Catalog.Species.GetValueOrDefault(p.Species)??throw new InvalidDataException("trainer_reward_species")).ExperienceYield * p.Level / 7) * 150 / 100);
             if (h.ExperienceGained > maximumExp || h.Outcome == WildBattleOutcome.Won &&
                 (h.OpponentsSent.Length != trainer.Party.Length || h.MoneyGained > 4 * trainer.Party[^1].Level * trainer.BaseMoney * (h.MoneyMultiplier ?? 1)) ||
                 h.Outcome != WildBattleOutcome.Won && h.MoneyGained != 0)
@@ -154,6 +154,7 @@ public sealed partial class CampaignSession
             foreach(var symbol in CinnabarGymTrainerSymbols)winners.Add("pret:"+symbol);
         if(_content.ViridianGymEnabled&&winners.Contains(ViridianGymTrainerPartyFactory.Giovanni.Value)&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE08_GET"))
             foreach(var id in ViridianGymTrainerPartyFactory.GymTrainers)winners.Add(id.Value);
+        if(_content.PokemonLeagueEnabled)winners.RemoveWhere(id=>IsPokemonLeagueChampion(new(id))&&!state.BattledTrainers.Contains(id));
         var recorded = state.BattledTrainers.Where(id => OrdinaryTrainerIds.Contains(new TrainerId(id)));
         return winners.SetEquals(recorded) ? null : "save_forest_trainer_flag_mismatch";
     }

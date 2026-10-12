@@ -19,7 +19,12 @@ public sealed partial class CampaignSession
         var catalog = ShopCatalog;
         string map = state.World.Player.MapId.Value;
         string stockId, sourcePath, clerkScript;
-        if (_content.FirstSeviiEnabled && map is "map.two-island" or "map.three-island-mart")
+        if (_content.PokemonLeagueEnabled && map == PokemonLeagueMartStock.ExpectedMapId)
+        {
+            var stock=PokemonLeagueStock(PokemonLeagueMartStock.ExpectedStockId)!;
+            stockId=stock.Id;sourcePath=PokemonLeagueMartStock.ExpectedSourcePath;clerkScript=PokemonLeagueMartStock.ExpectedClerkScript;
+        }
+        else if (_content.FirstSeviiEnabled && map is "map.two-island" or "map.three-island-mart")
         {
             bool two=map=="map.two-island";
             stockId=two?(state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_TWO_ISLAND")==2?"TwoIsland_Items_ShopExpanded1":"TwoIsland_Items_ShopInitial"):"ThreeIsland_Mart_Items";
@@ -55,7 +60,7 @@ public sealed partial class CampaignSession
         get
         {
             if (State.Shop is not { } shop) return [];
-            if (shop.Mode == "buy") return DepartmentStock(shop.ShopId)?.Items ?? ShopCatalog.Shops.Single(s => s.Id == shop.ShopId).Items;
+            if (shop.Mode == "buy") return PokemonLeagueStock(shop.ShopId)?.Items ?? DepartmentStock(shop.ShopId)?.Items ?? ShopCatalog.Shops.Single(s => s.Id == shop.ShopId).Items;
             return State.Inventory!.BagItems.Concat(State.Inventory.Balls ?? []).Select(s => s.Item).ToImmutableArray();
         }
     }
@@ -68,16 +73,26 @@ public sealed partial class CampaignSession
         stock.Validate(ShopCatalog);
         return stock;
     }
+    private PokemonLeagueMartStock? PokemonLeagueStock(string shopId)
+    {
+        if(shopId!=PokemonLeagueMartStock.ExpectedStockId)return null;
+        if(!_content.PokemonLeagueEnabled||_content.PokemonLeagueMartStock is not {} stock)throw new InvalidDataException("pokemon_league_shop_not_admitted");
+        stock.Validate(ShopCatalog);return stock;
+    }
     private EarlyShopQuote QuoteShop(CampaignState state, CampaignShop shop, ItemId item)
     {
         var inventory = ShopInventoryView(state.Inventory!);
         if (shop.Mode != "buy") return EarlyShopRules.QuoteSell(ShopCatalog, inventory, state.Money, item);
-        return DepartmentStock(shop.ShopId) is { } stock
+        return PokemonLeagueStock(shop.ShopId) is {} league
+            ? EarlyShopRules.QuoteBuy(ShopCatalog,inventory,state.Money,league,item)
+            : DepartmentStock(shop.ShopId) is { } stock
             ? EarlyShopRules.QuoteBuy(ShopCatalog, inventory, state.Money, stock, item)
             : EarlyShopRules.QuoteBuy(ShopCatalog, inventory, state.Money, shop.ShopId, item);
     }
     private EarlyShopTransactionResult BuyShop(CampaignState state, CampaignShop shop, ItemId item) =>
-        DepartmentStock(shop.ShopId) is { } stock
+        PokemonLeagueStock(shop.ShopId) is {} league
+            ? EarlyShopRules.Buy(ShopCatalog,ShopInventoryView(state.Inventory!),state.Money,league,item,shop.Quantity)
+            : DepartmentStock(shop.ShopId) is { } stock
             ? EarlyShopRules.Buy(ShopCatalog, ShopInventoryView(state.Inventory!), state.Money, stock, item, shop.Quantity)
             : EarlyShopRules.Buy(ShopCatalog, ShopInventoryView(state.Inventory!), state.Money, shop.ShopId, item, shop.Quantity);
 
