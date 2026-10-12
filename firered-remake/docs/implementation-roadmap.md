@@ -137,9 +137,12 @@ Key, six quizzes and actual four-member Blaine combat. The2,099-command
 checkpoint lineage ends after Bill's No and strict save/restore. Production
 headless drawing/menu checks pass; native screen/audio remain explicitly open.
 
-Continue Bill's first visit to One Island, Two Island and Three Island at the
-original pre-League time, including Celio/Meteorite/Tri-Pass, sequential bikers,
-Lostelle/Hypno and the return path. Do not skip this to rush the eighth badge.
+Bill's first visit to One Island, Two Island and Three Island now completes its
+natural public-command route at the original pre-League time, including
+Celio/Meteorite/Tri-Pass, sequential bikers, Joy/Meg, Lostelle/Hypno and the
+Cinnabar return with strict saves. See [First Sevii](first-sevii-campaign.md) for
+the retained multi-build lineage and separate presentation limits. Continue
+Viridian's eighth gym, then Route23/Victory Road and the League.
 Seafoam, Cinnabar Lab services and Good/Super Rod remain explicit regional work.
 Dedicated move animations remain tracked and deferred under the user's latest
 priority, without blocking complete rules.
@@ -152,3 +155,5 @@ byte-integrity checks, with no extra gameplay replay solely for packaging.
 ## 2026-10-12 主线完工后的项目级重构与精简
 
 用户明确要求主线完工后再做项目级整理（Sentinel_5fca4d441efc8191a4950762c6bfb345）。该阶段合并重复逻辑、地区适配和临时兼容分支，清理可替代的临时实现与冗余资源，梳理共同资源和构建入口。保留必要玩法、来源证据和存档迁移边界，以维护成本与可恢复交付为衡量标准，不以减少行数为目标。当前首次七岛及后续主线继续推进，不提前展开这轮全项目改造；已有普通战斗核心的有界重构不替代此阶段。
+
+这里的主线出口指第八徽章、冠军之路、四天王与冠军、名人堂及可读的通关存档。完成这轮项目级整理后继续通关后七岛等剩余内容；首次联盟前七岛仍按当前剧情时机完成。

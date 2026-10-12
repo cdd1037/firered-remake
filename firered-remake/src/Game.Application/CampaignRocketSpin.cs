@@ -25,8 +25,8 @@ public sealed partial class CampaignSession
         if(command.Kind!="rocket_spin_ack"||state.RocketSpin is not {} pending||command.Text!=pending.PresentationId)return new(CommandStatus.Rejected,state,"rocket_spin_presentation_pending");
         var completed=RefreshActors(state with{RocketSpin=null,PresentationTicks=0});
         completed=CheckForestTrainerSight(completed);
-        if(completed.ForestTrainerBattle is not null)return new(CommandStatus.Accepted,pending.AdvanceFriendship?completed with{World=completed.World with{StepCount=completed.World.StepCount-1}}:completed);
-        if(pending.AdvanceFriendship)completed=ApplyWalkingFriendship(completed);
+        if(completed.ForestTrainerBattle is not null||completed.DoubleBattle is not null)return new(CommandStatus.Accepted,pending.AdvanceFriendship?completed with{World=completed.World with{StepCount=completed.World.StepCount-1}}:completed);
+        if(pending.AdvanceFriendship)completed=ApplyWalkingFriendship(ApplyRenewableHiddenItemWalkingStep(completed));
         var world=completed.World with{RulesVersion=ConnectedFieldRules.RulesVersion};
         var intent=new RocketSpinIntent(new("rocket-spin:"+state.World.Revision),world.Revision,pending.Forced?.PendingPresentationId);
         var result=pending.Forced is {} active?RocketSpinRules.CompletePresentation(world,RocketSpinRules.ReconcileCallbackRng(active,world),intent,OccupiedFieldMaps(completed)):RocketSpinRules.Start(world,intent,OccupiedFieldMaps(completed));
@@ -35,7 +35,8 @@ public sealed partial class CampaignSession
         next=RefreshActors(next);
 
         // The six authenticated maps have no wild encounter table. Their step lifecycle
-        // advances friendship only; forced motion must never consume poison/Repel ticks.
+        // advances the source step services on floor/stop arrival; forced motion
+        // must never consume poison/Repel ticks, and arrow cells count no step.
         if(result.ActiveSpin is {} spin)
         {
             var e=result.Events.Single();

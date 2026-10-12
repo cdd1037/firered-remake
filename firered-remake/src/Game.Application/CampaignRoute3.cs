@@ -30,14 +30,14 @@ public sealed partial class CampaignSession
         var a=effect.Args;
         if(effect.Opcode=="specialvar"&&a.Length==2&&a[1]=="ShouldTryRematchBattle")
         {
-            if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&(state.World.Player.MapId.Value is "map.route-8" or "map.route-21-north")&&
+            if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&(state.World.Player.MapId.Value is "map.route-8" or "map.route-21-north"||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge")&&
                 state.LastTalked is {} twinsActor&&state.Actors.TryGetValue(twinsActor,out var twins)&&IsTwinsScript(twins.ScriptId))
             {
                 next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",
                     state.BattledTrainers.Contains(DoubleTrainerId(twins.ScriptId).Value)?1:0)}};
                 return true;
             }
-            if(a[0]!="VAR_RESULT"||(state.World.Player.MapId.Value!="map.route-3"&&!(_content.VermilionEnabled&&state.World.Player.MapId.Value=="map.route-6")&&!(_content.CinnabarEnabled&&state.World.Player.MapId.Value is "map.route-21-north" or "map.route-21-south"))||state.LastTalked is not {} actor||!state.Actors.TryGetValue(actor,out var physical))
+            if(a[0]!="VAR_RESULT"||!OrdinaryPostBattleMap(state.World.Player.MapId.Value)||state.LastTalked is not {} actor||!state.Actors.TryGetValue(actor,out var physical))
                 throw new InvalidDataException("route3_rematch_context_invalid");
             var definition=OrdinaryTrainerScripts.SingleOrDefault(b=>b.ScriptEntry==physical.ScriptId)??throw new InvalidDataException("route3_rematch_trainer_unknown");
             // ShouldTryRematchBattle falls back to HasRematchTrainerAlreadyBeenFought.
@@ -46,7 +46,7 @@ public sealed partial class CampaignSession
         }
         if(effect.Opcode=="trainerbattle_rematch")
         {
-            if(a.Length!=3||(state.World.Player.MapId.Value!="map.route-3"&&!(_content.VermilionEnabled&&state.World.Player.MapId.Value=="map.route-6")&&!(_content.CinnabarEnabled&&state.World.Player.MapId.Value is "map.route-21-north" or "map.route-21-south"))||state.Script.Wait?.Kind!=StoryWaitKind.Battle)
+            if(a.Length!=3||!OrdinaryPostBattleMap(state.World.Player.MapId.Value)||state.Script.Wait?.Kind!=StoryWaitKind.Battle)
                 throw new InvalidDataException("route3_rematch_context_invalid");
             var id=new Game.Domain.Ids.TrainerId("pret:"+a[0]);
             var battle=OrdinaryTrainerScripts.SingleOrDefault(x=>x.Trainer==id);
@@ -60,4 +60,8 @@ public sealed partial class CampaignSession
         }
         return false;
     }
+    private bool OrdinaryPostBattleMap(string map)=>map=="map.route-3"||
+        _content.VermilionEnabled&&map=="map.route-6"||
+        _content.CinnabarEnabled&&map is "map.route-21-north" or "map.route-21-south"||
+        _content.FirstSeviiEnabled&&map=="map.three-island-bond-bridge";
 }

@@ -62,9 +62,10 @@ public sealed partial class CampaignSession
         var a=effect.Args;bool own=FirstSeviiSource(effect.Source.Path),ferry=effect.Source.Path==SeagallopSource;
         CampaignState Result(string name,int value)=>state with{Script=state.Script with{Variables=state.Script.Variables.SetItem(name,value)}};
         if(effect.Opcode=="buffernumberstring"&&ferry&&effect.Source.Symbol=="EventScript_SailToDest"&&
-            a.SequenceEqual(new[]{"STR_VAR_1","VAR_RESULT"}))
+            a.Length==2&&a[0]=="STR_VAR_1")
         {
-            int number=SeviiValue(state,"VAR_RESULT");
+            // StoryEffects already resolves the VAR_RESULT read operand to its value.
+            int number=SeviiValue(state,a[1]);
             if(number is not (1 or 2 or 7))throw new InvalidDataException("seagallop_number_invalid");
             next=state with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",number.ToString(System.Globalization.CultureInfo.InvariantCulture))};return true;
         }

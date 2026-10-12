@@ -97,7 +97,10 @@ public sealed partial class CampaignSession
         var trainerId=DoubleTrainerId(actor.ScriptId);
         var d=DoubleInteraction(trainerId,actor.ScriptId);
         bool rematch=effect.Opcode=="trainerbattle_rematch_double";
-        if(IsFirstSeviiDoubleScript(actor.ScriptId)&&(rematch||effect.Source.Line!=d.Source.StartLine))
+        // Both authenticated first-visit wrappers also contain the original post-win
+        // rematch branch. With no VS Seeker it only reaches the ordinary dialogue.
+        int expectedLine=rematch?(actor.ScriptId=="ThreeIsland_BondBridge_EventScript_Joy"?2205:2217):d.Source.StartLine;
+        if(IsFirstSeviiDoubleScript(actor.ScriptId)&&effect.Source.Line!=expectedLine)
             throw new InvalidDataException("first_sevii_double_occurrence");
         if(effect.Source.Path!=d.Source.Path||effect.Source.Symbol!=d.ScriptEntry+(rematch?"Rematch":"")||
             effect.Args[0]!=trainerId.Value[5..]||effect.Args[1]!=(rematch?d.IntroText.Replace("Intro","RematchIntro",StringComparison.Ordinal):d.IntroText)||

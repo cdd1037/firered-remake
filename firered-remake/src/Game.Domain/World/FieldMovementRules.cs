@@ -12,11 +12,11 @@ public sealed record FieldMovementTransition(TransitionStatus Status,WorldSnapsh
 /// <summary>Bounded door, arrow and directional stair rules. Entry scripts are applied by Application.</summary>
 public static class FieldMovementRules
 {
-    public static FieldMovementTransition Move(WorldSnapshot state,MoveIntent intent,IReadOnlyDictionary<MapId,IFieldMap> maps,bool enableCaveDoors=false,bool enableLadders=false)
+    public static FieldMovementTransition Move(WorldSnapshot state,MoveIntent intent,IReadOnlyDictionary<MapId,IFieldMap> maps,bool enableCaveDoors=false,bool enableLadders=false,bool enableSand=false)
     {
         FieldMovementTransition Fail(string code,string message)=>new(TransitionStatus.Fault,state,[],false,new(code,message));
         if(!maps.TryGetValue(state.Player.MapId,out var map))return Fail("map_missing",state.Player.MapId.Value);
-        var validation=WorldRules.ValidateState(state,enableLadders?new LadderGroundMap(map):map);
+        var validation=WorldRules.ValidateState(state,enableLadders||enableSand?new LadderGroundMap(map,enableLadders,enableSand):map);
         if(validation is not null&&!(enableCaveDoors&&validation.Code=="unsupported-current-tile-behavior"&&map.GetTile(state.Player.X,state.Player.Y)?.Behavior==TileBehavior.Grass&&map.SourceBehaviorAt(state.Player.X,state.Player.Y)==0x02))return Fail(validation.Code,validation.Message);
         if(intent.ExpectedRevision!=state.Revision||!Enum.IsDefined(intent.Direction))return new(TransitionStatus.Rejected,state,[],false,new("invalid_field_command","Revision or direction is invalid."));
         static Direction? DirectionFor(int? behavior)=>behavior switch{0x62=>Direction.East,0x63=>Direction.West,0x64=>Direction.North,0x65=>Direction.South,0x6c or 0x6e=>Direction.East,0x6d or 0x6f=>Direction.West,_=>null};
@@ -61,17 +61,18 @@ public static class FieldMovementRules
             var next=state with{Revision=state.Revision+1,Player=state.Player with{Facing=intent.Direction}};
             return new(TransitionStatus.Accepted,next,[new(intent.CommandId,WorldEventKind.Blocked,state.Player,next.Player,"stair-turn")],false,null);
         }
-        if(enableLadders&&(here is 0x08 or 0x2a or 0x2b or 0x61||map.SourceBehaviorAt(frontX,frontY) is 0x08 or 0x2a or 0x2b or 0x61))
+        if(enableLadders&&(here is 0x08 or 0x2a or 0x2b or 0x61||map.SourceBehaviorAt(frontX,frontY) is 0x08 or 0x2a or 0x2b or 0x61)||
+            enableSand&&(here==0x21||map.SourceBehaviorAt(frontX,frontY)==0x21))
         {
             var cells=ImmutableArray.CreateBuilder<ConnectedFieldCell>(map.Width*map.Height);
             for(int y=0;y<map.Height;y++)for(int x=0;x<map.Width;x++)
             {
                 var tile=map.GetTile(x,y);int behavior=map.SourceBehaviorAt(x,y)??255;
-                if(behavior is 0x61 or >=0x62 and <=0x65 or >=0x6c and <=0x6f)behavior=0;
+                if(enableLadders&&behavior==0x61||behavior is >=0x62 and <=0x65 or >=0x6c and <=0x6f)behavior=0;
                 cells.Add(new(behavior,tile?.Blocked==false?0:1,tile?.Elevation??0));
             }
             var ground=new ConnectedFieldMap(map.Id,map.Width,map.Height,cells.ToImmutable(),[]);
-            var ordinary=ConnectedFieldRules.Complete(state with{RulesVersion=ConnectedFieldRules.RulesVersion},new(intent.CommandId,intent.ExpectedRevision,ConnectedFieldAction.Walk,intent.Direction),new Dictionary<MapId,ConnectedFieldMap>{{map.Id,ground}},true);
+            var ordinary=ConnectedFieldRules.Complete(state with{RulesVersion=ConnectedFieldRules.RulesVersion},new(intent.CommandId,intent.ExpectedRevision,ConnectedFieldAction.Walk,intent.Direction),new Dictionary<MapId,ConnectedFieldMap>{{map.Id,ground}},enableLadders,enableSand);
             if(ordinary.Status!=TransitionStatus.Accepted)return new(ordinary.Status,state,[],false,ordinary.Diagnostic);
             var restored=ordinary.State with{RulesVersion=state.RulesVersion};bool moved=restored.Player.X!=state.Player.X||restored.Player.Y!=state.Player.Y;
             return new(TransitionStatus.Accepted,restored,[new(intent.CommandId,moved?WorldEventKind.Moved:WorldEventKind.Blocked,state.Player,restored.Player,ordinary.Events[0].Reason)],false,null);
@@ -82,13 +83,14 @@ public static class FieldMovementRules
     // Ladder arrival occupies the source warp cell. Only the explicit cave profile
     // admits its ground/ladder terrain to the small grid transition helper.
     public static Diagnostic? ValidateLadderPosition(WorldSnapshot state,IFieldMap map)=>WorldRules.ValidateState(state,new LadderGroundMap(map));
-    private sealed class LadderGroundMap(IFieldMap source):IWorldMap
+    private sealed class LadderGroundMap(IFieldMap source,bool enableLadders=true,bool enableSand=false):IWorldMap
     {
         public MapId Id=>source.Id;public int Width=>source.Width;public int Height=>source.Height;
         public TileCell? GetTile(int x,int y)
         {
             var cell=source.GetTile(x,y);
-            return cell is not null&&(cell.Blocked||source.SourceBehaviorAt(x,y) is 0x00 or 0x08 or 0x2a or 0x2b or 0x32 or 0x61)?cell with{Behavior=TileBehavior.Floor}:cell;
+            var behavior=source.SourceBehaviorAt(x,y);
+            return cell is not null&&(cell.Blocked||behavior==0x00||enableLadders&&behavior is 0x08 or 0x2a or 0x2b or 0x32 or 0x61||enableSand&&behavior==0x21)?cell with{Behavior=TileBehavior.Floor}:cell;
         }
     }
 

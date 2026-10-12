@@ -69,13 +69,14 @@ public sealed partial class CampaignSession
             Count(FirstSeviiShopCatalog.TriPassId)!=0||Count(FirstSeviiShopCatalog.MeteoriteId)!=0?"save_first_sevii_profile_missing":null;
         if(state.Seagallop is not null||state.SeagallopMenu is not null)return "save_seagallop_active";
         if(center is <0 or >3||Var("VAR_MAP_SCENE_ONE_ISLAND_HARBOR") is <0 or >3||
-            Var("VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER") is <0 or >3||Var("VAR_MAP_SCENE_THREE_ISLAND") is <0 or >4||
+            Var("VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER") is <0 or >4||Var("VAR_MAP_SCENE_THREE_ISLAND") is <0 or >4||
             Var("VAR_MAP_SCENE_TWO_ISLAND") is <0 or >2)return "save_first_sevii_scene";
         if((center>0||FirstSeviiMap(state.World.Player.MapId.Value))&&!Flag("FLAG_BADGE07_GET"))return "save_first_sevii_without_badge";
         if(Count(FirstSeviiShopCatalog.TriPassId)!=(center>0?1:0)||Count(FirstSeviiShopCatalog.MeteoriteId)!=(center==1?1:0)||
             Flag("FLAG_SYS_SEVII_MAP_123")!=(center>0))return "save_first_sevii_key_progress";
         if(center>=2&&!rescued||received&&(!rescued||center<2)||pending&&center<2)
             return "save_first_sevii_delivery_progress";
+        if(Var("VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER")==4&&!received)return "save_first_sevii_revisit_progress";
         if(rescued!=Flag("FLAG_HIDE_LOSTELLE_IN_BERRY_FOREST"))return "save_first_sevii_lostelle_visibility";
         if(Flag("FLAG_SYS_PC_STORAGE_DISABLED")&&Flag("FLAG_SEVII_DETOUR_FINISHED"))return "save_first_sevii_pc_progress";
         if(Var("VAR_MAP_SCENE_CINNABAR_ISLAND")>=3&&center!=3)return "save_first_sevii_return_progress";

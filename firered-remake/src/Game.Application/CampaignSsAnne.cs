@@ -55,7 +55,12 @@ public sealed partial class CampaignSession
         var a = effect.Args;
         if(effect.Opcode=="bufferstdstring"&&a.Length==2&&a[1]=="STDSTRING_BERRY_POUCH")
         {
-            if(a[0]!="STR_VAR_3"||effect.Source.Path!="data/scripts/obtain_item.inc"||state.FieldPickup is null)throw new InvalidDataException("ssanne_berry_text_context");
+            // The shared obtain-item script formats both field pickups and NPC gifts.
+            // Its switch macro has already replaced VAR_0x8000 with the pocket
+            // selector. Inventory mutation authenticated the item before this text.
+            if(a[0]!="STR_VAR_3"||effect.Source.Path!="data/scripts/obtain_item.inc"||effect.Source.Symbol!="EventScript_BufferBerryPouch"||
+                !_content.TryConstant("POCKET_BERRY_POUCH",out int pocket)||state.Script.Variables.GetValueOrDefault("VAR_0x8000")!=pocket)
+                throw new InvalidDataException("berry_pouch_text_context");
             next=state with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_3",_content.TextPages("gText_BerryPouch_2")[0])};return true;
         }
         int Value(string token) => token.StartsWith("VAR_", StringComparison.Ordinal)

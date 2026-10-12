@@ -7,27 +7,32 @@ Goal: a complete, local single-player recreation of the English original-revisio
 The accepted Application continuation reaches seven badges. It includes Safari
 HM03/Gold Teeth, Warden HM04, Surf/Strength, Silph rival/Lapras/Giovanni/Master
 Ball, Sabrina, and the natural Pallet→Route21→Cinnabar Mansion→Blaine route.
-The latest2,099-command lineage obtains the Secret Key, Badge07 and TM38,
-declines Bill's invitation and finishes in Cinnabar with a strict save/restore.
-See [Cinnabar scope and evidence](docs/cinnabar-campaign.md), [Saffron scope](docs/saffron-gym-campaign.md)
+The seventh-badge 2,099-command lineage obtains the Secret Key, Badge07 and TM38.
+Its 1,252-command first-Sevii successor now accepts Bill's invitation, completes Celio's errand,
+the four bikers, Joy/Meg and Lostelle/Hypno, delivers the Meteorite, and returns
+to Cinnabar with the Tri-Pass and working PC. The final checkpoint passes strict
+save/restore. See [First Sevii scope and evidence](docs/first-sevii-campaign.md),
+[Cinnabar](docs/cinnabar-campaign.md), [Saffron](docs/saffron-gym-campaign.md)
 and [recovery provenance](docs/recovery-20261012.md).
 
-Run `bash scripts/launch-current.sh` (or `launch-cinnabar.sh`). Its profile-specific
+Run `bash scripts/launch-current.sh` (or `launch-first-sevii.sh`). Its profile-specific
 saves stay isolated. Explicit predecessor upgrades retain payload/generation
-except their documented encounter-profile tag. On a restored project, complete
+except their documented profile initialization. First-Sevii also initializes
+the original renewable-hidden-item flags and step counter. On a restored project, complete
 the official Godot resource import before the first launch; the launcher runs
 the existing import check.
 
 The ordinary shared battle core and preset doubles are available within their
 documented admission contracts. Dedicated move animations remain a separate
-coverage track. Next is Bill's original pre-League first visit to One/Two/Three
-Island, Lostelle and the return journey. Cinnabar native screen/physical audio
+coverage track. Next is Viridian's eighth gym, followed by the League approach.
+Cinnabar and first-Sevii native screen/physical audio
 checks, Seafoam, the Lab and Good/Super Rod remain open. Passing a main route
 does not mean all regional interactions are complete. This is still an
 unfinished complete-FireRed project. The latest asset-complete recovery base is
 stage8 `16d2a426`; later source checkpoints and deterministic asset importers
 extend it. Normal GitHub source checkpoints continue; the next complete Drive
-package is scheduled after the first Sevii visit.
+package is scheduled for this completed first-Sevii Application checkpoint,
+after its bounded production-adapter checks finish.
 
 ## Earlier first-badge checkpoint
 

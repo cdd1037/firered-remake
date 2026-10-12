@@ -59,6 +59,18 @@ public static class StoryRules
             if(program is not null&&index>=0&&index<program.Instructions.Length)
             {
                 var instruction=program.Instructions[index];
+                if(instruction.Op==StoryOp.Multichoice&&instruction.Opcode=="multichoice"&&
+                    instruction.Source.Path is "data/scripts/seagallop.inc" or "data/maps/VermilionCity/scripts.inc"&&
+                    instruction.Args.Length==4&&instruction.Args[0]=="19"&&instruction.Args[3]=="FALSE")
+                {
+                    int rows=instruction.Args[2] switch
+                    {
+                        "MULTICHOICE_ISLAND_23" or "MULTICHOICE_ISLAND_13" or "MULTICHOICE_ISLAND_12"=>3,
+                        "MULTICHOICE_SEAGALLOP_V23" or "MULTICHOICE_SEAGALLOP_V13" or "MULTICHOICE_SEAGALLOP_V12" or "MULTICHOICE_SEAGALLOP_123"=>4,
+                        _=>0
+                    };
+                    if(rows>0&&instruction.Args[1]==(rows==3?"6":"5"))return choice==127||choice>=0&&choice<rows;
+                }
                 if(instruction.Op==StoryOp.Multichoice&&instruction.Opcode=="multichoicedefault"&&
                     instruction.Source.Path=="data/maps/CeladonCity_DepartmentStore_Elevator/scripts.inc"&&instruction.Args.Length==5&&
                     instruction.Args[2]=="MULTICHOICE_DEPT_STORE_ELEVATOR"&&instruction.Args[4]=="FALSE")
