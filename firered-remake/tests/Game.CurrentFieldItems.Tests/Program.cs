@@ -137,7 +137,7 @@ Reject(candy, "candy quantity guard", new("field_rare_candy", Text: Item("RARE_C
 Reject(candy, "candy move slot guard", new("field_rare_candy", Text: Item("RARE_CANDY").Value, MoveSlot: 0), "field_rare_candy_context_invalid");
 Reject(candy, "candy party index guard", new("field_rare_candy", Text: Item("RARE_CANDY").Value, PartyIndex: 6), "item_party_index_invalid");
 Accepted(candy, "candy current source admission", new("field_rare_candy", Text: Item("RARE_CANDY").Value));
-Check(ReferenceEquals(catalog.PokemonContent!.Catalog, catalog.CelioOwnership!.Catalog), "candy source remains exact current owned catalog");
+Check(ReferenceEquals(catalog.PokemonContent!.Catalog, catalog.CeruleanCaveOwnership!.Catalog), "candy source remains exact current owned catalog");
 Check(Count(candy.State, "RARE_CANDY") == 1 && candy.State.Party[0].Pokemon.Level == 61,
     "current authenticated candy raises original Gyarados exactly once");
 Same(candyStart.Party[0].Pokemon.Moves, candy.State.Party[0].Pokemon.Moves, "candy preserves existing PP and moves");

@@ -3,7 +3,7 @@
 `PretCampaignCatalog.LoadCurrent(string projectRoot)` is the sole public catalog
 factory. It directly builds the fixed current resource set in `PretCurrentGame.cs`.
 The generic `Load` API, its 60 booleans and 24 alternate roots, and all 22 regional
-public profile wrappers are removed. The private constructor requires 163 typed
+public profile wrappers are removed. The private constructor requires typed
 resource inputs without feature booleans or optional defaults.
 
 This removes historical runtime composition choices. It retains the typed source
@@ -70,3 +70,15 @@ closure are complete in [the final bounded result](project-refactor-plan.md#2026
 historical branch is gone. No historical full solution or regional route was
 replayed, and no resource importer was run for this Content change. Native visual
 and physical audio acceptance are outside this slice.
+
+## Cerulean Cave successor, 2026-10-13
+
+The single current composition now appends the authenticated Cave maps and Mewtwo
+proofs: 257 maps, 139 owned species, 163 opponent species and 244 field pickups.
+Its fingerprint is
+`8ad0e9c765ae8b9f50977c171ed975e2aa55810032eeddb0806ac8077a857713`.
+The preceding fingerprint above remains historical refactor evidence. The
+expanded current contract passed 102 checks without rewriting that baseline or
+the named original checkpoint payloads. Current field items passed their 396-check
+contract against the explicitly converted checkpoint. See [composition test
+scope](current-composition-test-scope.md) and [Cave acceptance](cerulean-cave-implementation.md).

@@ -1,3 +1,4 @@
+using Game.Domain;
 using Game.Domain.Encounters;
 using Game.Domain.Events;
 using Game.Domain.Ids;
@@ -70,6 +71,12 @@ public sealed partial class CampaignSession
         if(!caller)return false;
         if(e.Opcode=="special"&&a.SequenceEqual(new[]{"QuestLog_CutRecording"}))
         {RequireMewtwoCaller(s,e);return true;}
+        if(e.Opcode=="waitbuttonpress")
+        {
+            RequireMewtwoCaller(s,e);
+            if(a.Length!=0||s.MewtwoPreparation is not null)throw new InvalidDataException("mewtwo_button_context");
+            return true;
+        }
         if(e.Opcode=="playmoncry")
         {
             RequireMewtwoCaller(s,e);
@@ -98,6 +105,18 @@ public sealed partial class CampaignSession
             return true;
         }
         return false;
+    }
+
+    private bool MewtwoButtonWait(CampaignState state)=>_content.CeruleanCaveEnabled&&
+        state.World.Player.MapId.Value==MewtwoMap&&state.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&
+        !state.Script.Stack.IsEmpty&&state.Script.Stack[^1].ProgramId==MewtwoScript;
+
+    private Decision<CampaignState> DecideMewtwoButton(CampaignState state,CampaignCommand command)
+    {
+        if(!MewtwoButtonWait(state))return new(CommandStatus.Rejected,state,"mewtwo_button_not_pending");
+        if(command.Text is not("A" or "B"))return new(CommandStatus.Rejected,state,"button_press_requires_a_or_b");
+        var next=state with{PresentationEffects=[],PresentationTicks=0,Motions=[]};
+        return new(CommandStatus.Accepted,Pump(Advance(next,StoryRules.Continue(next.Script,next.Script.Wait!.CorrelationId,_content))));
     }
 
     private CampaignState ReturnFromMewtwoBattle(CampaignState state,CampaignWildBattle battle)
