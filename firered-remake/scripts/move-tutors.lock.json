@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "src/data/pokemon/tutor_learnsets.h",
+      "bytes": 113161,
+      "sha256": "d09053c6fa423a6838fa1eb2c5c28701305e3895ee6b894dc46113be57019e76",
+      "gitBlobSha1": "5396c1ecc0f2c53bb9b74374c74436ee9276e542"
+    },
+    {
+      "path": "src/party_menu.c",
+      "bytes": 211085,
+      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b",
+      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223"
+    },
+    {
+      "path": "src/pokemon_summary_screen.c",
+      "bytes": 171314,
+      "sha256": "855a17fb555f5497dbb47f90a8c1b8cf620532d3bff96e8196d0790515508583",
+      "gitBlobSha1": "b3e3c7763d3e1c9cf2185cd7344fdf49ba78ae85"
+    },
+    {
+      "path": "src/pokemon.c",
+      "bytes": 221865,
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c"
+    },
+    {
+      "path": "src/strings.c",
+      "bytes": 96631,
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1",
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600"
+    },
+    {
+      "path": "data/scripts/move_tutors.inc",
+      "bytes": 14295,
+      "sha256": "f4c92284b5535577ba815441c5d6b76e36c5c1dd1a3b1a632a1a8cb6e665821f",
+      "gitBlobSha1": "e5b0f72b29a1fd4019b9cbc8f98fd3a1d345ef78"
+    },
+    {
+      "path": "include/constants/moves.h",
+      "bytes": 10249,
+      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194",
+      "gitBlobSha1": "14738f1b21597269ba1934762e437dec3b4cc643"
+    },
+    {
+      "path": "include/constants/party_menu.h",
+      "bytes": 5326,
+      "sha256": "6986cb5b65efaab2a0f16e5cd88952153a5aaf295ed8f9ace903693dbe170cf7",
+      "gitBlobSha1": "1321a4ced83823a5b9779dc88e6287804bad3afd"
+    },
+    {
+      "path": "data/maps/SevenIsland/map.json",
+      "bytes": 2782,
+      "sha256": "6e1a696797b2eb99d46202279b2d5656713d6e2219eb2b78b203d22f49d4e753",
+      "gitBlobSha1": "e8b4c1a28ef33241b7cbb6f808766bc78e78d275"
+    },
+    {
+      "path": "data/maps/SevenIsland_SevaultCanyon_Entrance/map.json",
+      "bytes": 4064,
+      "sha256": "af0fe182fc688fa760a4232e79447c89b917a48d18bb8f135bdeff3fcb6bfa4a",
+      "gitBlobSha1": "a49b48869a8af4d338c0ec5f87fbec912d555219"
+    },
+    {
+      "path": "data/maps/SevenIsland/text.inc",
+      "bytes": 1317,
+      "sha256": "ae1e401c2ce799063d6ea647897460f94be53198073b05a228c5f8fac7f8355f",
+      "gitBlobSha1": "4f06fad1c2ad5bccc905c6b3a10a24176b1ff0b6"
+    }
+  ]
+}

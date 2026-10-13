@@ -33,6 +33,7 @@ public sealed partial class CampaignSession
     {
         var history = state.Exploration?.Battles.SingleOrDefault(h => h.Id == capture.BattleId);
         return history is not null && capture.SevenIsland is not null && history.SevenIsland == capture.SevenIsland &&
+            (capture.Ball is null || AdditionalCaptureBallSupported(capture.Ball)) &&
             capture.CeruleanCaveOrigin is null && capture.CelioRoamer is null && capture.FiveIsland is null && capture.SixIsland is null && capture.FourIsland is null &&
             IsSevenIslandWildHistory(history) && history.Outcome == WildBattleOutcome.Caught && history.ExperienceGained == 0 &&
             history.SourceSpeciesId == capture.SourceSpeciesId && history.Level == capture.MetLevel &&

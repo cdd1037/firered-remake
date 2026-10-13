@@ -294,7 +294,7 @@ public partial class CampaignView
         for(int i=0;i<=shown;i++)
         {
             var mon=team.Members[i];bool shiny=((mon.OriginalTrainerId&0xffff)^(mon.OriginalTrainerId>>16)^(mon.Personality&0xffff)^(mon.Personality>>16))<8;
-            if(!_battleArt.TryGetValue((mon.SpeciesOrEgg,"front",shiny),out var sprite))throw new InvalidDataException("Recorded Pokemon art missing.");
+            if(!_battleArt.TryGetValue((SevenIslandRenderKeys.Species(mon.SpeciesOrEgg,mon.Personality),"front",shiny),out var sprite))throw new InvalidDataException("Recorded Pokemon art missing.");
             var p=(team.Members.Length>3?HallFull:HallHalf)[i];Vector2 position=new(p.EndX,p.EndY);
             if(i==phase.Moving)position=new(Mathf.MoveToward(p.X,p.EndX,15*phase.MotionTick),Mathf.MoveToward(p.Y,p.EndY,10*phase.MotionTick));
             DrawTexture(sprite.Texture,position-new Vector2(32,32),phase.PlayerTick>=0||i<phase.Current&&phase.Current<team.Members.Length?new Color(.65f,.68f,.75f):Colors.White);

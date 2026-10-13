@@ -100,7 +100,7 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("tanoby_solved_reentry_context");
             var actor = state.Actors.Values.Single(a => a.SourceLocalId == boulder.LocalId);
             if (actor.Active) throw new InvalidDataException("tanoby_solved_reentry_already_spawned");
-            next = state with { Actors = state.Actors.SetItem(actor.LocalId, actor with { TemplateX = boulder.SolvedX, TemplateY = boulder.SolvedY }) };
+            next = state with { Actors = state.Actors.SetItem(actor.LocalId, actor with { X = boulder.SolvedX, Y = boulder.SolvedY, TemplateX = boulder.SolvedX, TemplateY = boulder.SolvedY }) };
             return true;
         }
         if (key && effect.Opcode == "releaseall" && effect.Source.Symbol == TanobyKeyPrefix + "PuzzleSolved")

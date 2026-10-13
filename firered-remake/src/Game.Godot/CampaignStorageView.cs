@@ -155,12 +155,12 @@ public partial class CampaignView
             {
                 var rect=new Rect2(88+(i%6)*24,32+(i/6)*24,24,24);
                 if(i==_boxCursor)DrawRect(rect,new Color("f4db88"),filled:false,width:1);
-                var owned=slots[i];if(owned is not null)DrawTexture(_storageIcons[owned.Pokemon.Species],new(84+(i%6)*24,28+(i/6)*24));
+                var owned=slots[i];if(owned is not null)DrawTexture(PresentedPokemonIcon(owned.Pokemon),new(84+(i%6)*24,28+(i/6)*24));
             }
             var selected=slots[_boxCursor];
             if(selected is not null)
             {
-                if(_battleArt.TryGetValue((selected.Pokemon.SourceSpeciesId,"front",selected.Pokemon.IsShiny),out var art))DrawTexture(art.Texture,new(8,16));
+                if(_battleArt.TryGetValue((PresentedRenderSpecies(selected.Pokemon),"front",selected.Pokemon.IsShiny),out var art))DrawTexture(art.Texture,new(8,16));
                 SourceText(_sourceSmall,new(6,88),selected.Nickname);SourceText(_sourceSmall,new(6,102),_catalog.PokemonContent!.SpeciesNames[selected.Pokemon.SourceSpeciesId]);SourceText(_sourceSmall,new(10,116),$"Lv{selected.Pokemon.Level}");
             }
             SourceText(_sourceSmall,new(6,132),$"{slots.Count(p=>p is not null)}/30 P{_session.State.Party.Length}");

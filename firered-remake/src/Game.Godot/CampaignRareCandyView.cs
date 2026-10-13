@@ -75,7 +75,7 @@ public partial class CampaignView
                 if (i == _candyMoveCursor) SourceText(_sourceNormal, new(14, 14 + i * 16), "▶");
             }
         }
-        else DrawTexture(_battleArt[(owned.Pokemon.SourceSpeciesId, "front", owned.Pokemon.IsShiny)].Texture, new(88, 24));
+        else DrawTexture(_battleArt[(PresentedRenderSpecies(owned.Pokemon), "front", owned.Pokemon.IsShiny)].Texture, new(88, 24));
         _battleSkin.DrawStandardFrame(this, new(0, 112, 240, 48));
         string text = stats ? $"{owned.Nickname} grew to\nLV. {owned.Pokemon.Level}!"
             : scene.Stage == CampaignRareCandyStage.LearnMove ? MoveLearningPrompt(scene.PendingMoves[0].Move)

@@ -77,7 +77,7 @@ public partial class CampaignView
             if (_session.State.RareCandy is not null || TownMapActive || FieldMenuOpen || _session.State.Shop is not null ||
                 _session.State.ItemMenu is not null || _session.State.Pc is not null ||
                 _session.State.SafariBattle is not null || DoubleBattleVisible || ForestTrainerCombatVisible || _session.State.WildBattle is not null ||
-                _session.State.Battle is not null || FieldDialogueVisible || NameRaterChoosing || SeagallopMenuActive || SilphElevatorMenuActive || DepartmentElevatorMenuActive || RocketElevatorMenuActive || BillPcMenuActive || BillPcPictureActive ||
+                _session.State.Battle is not null || FieldDialogueVisible || MoveTutorActive || NameRaterChoosing || SeagallopMenuActive || SilphElevatorMenuActive || DepartmentElevatorMenuActive || RocketElevatorMenuActive || BillPcMenuActive || BillPcPictureActive ||
                 _session.State.Repel?.Phase == CampaignRepelPhase.WoreOff)
             { MouseKey(Key.Backspace); QueueRedraw(); GetViewport().SetInputAsHandled(); }
             else if (CanOpenFieldMenu)
@@ -85,7 +85,7 @@ public partial class CampaignView
             return true;
         }
 
-        bool acted = SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NameRaterChoosing ? MouseNameRater(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
+        bool acted = MoveTutorActive ? MouseMoveTutor(point) : SeagallopMenuActive ? MouseSeagallopMenu(point) : SilphElevatorMenuActive ? MouseSilphElevator(point) : NameRaterChoosing ? MouseNameRater(point) : DepartmentElevatorMenuActive ? MouseDepartmentElevator(point) : _session.State.RareCandy is not null ? MouseRareCandy(point)
             : TownMapActive ? MouseTownMap(point)
             : FieldMenuOpen ? MouseFieldMenu(point)
             : _session.State.Shop is not null ? MouseShop(point)
@@ -138,6 +138,7 @@ public partial class CampaignView
     {
         if(SeagallopMenuActive)return NavigateSeagallopPointer(point,direction);
         if(SilphElevatorMenuActive)return NavigateSilphPointer(point,direction);
+        if(MoveTutorActive)return NavigateMoveTutorPointer(point,direction);
         if(NameRaterChoosing)return NavigateNameRaterPointer(point,direction);
         if(DepartmentElevatorMenuActive)return NavigateDepartmentPointer(point,direction);
         // Preserve exactly the same top-level owner as the click/drawing routes.

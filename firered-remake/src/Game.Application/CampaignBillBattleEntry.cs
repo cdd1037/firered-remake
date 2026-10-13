@@ -13,6 +13,7 @@ public sealed partial class CampaignSession
         {
             _ when _content.SsAnneEnabled && sourceMap.StartsWith("SSAnne_",StringComparison.Ordinal)=>_content.MapFromSourceSymbol("MAP_"+System.Text.RegularExpressions.Regex.Replace(sourceMap,"([a-z])([A-Z])","$1_$2").ToUpperInvariant()),
             _ when _content.VictoryRoadEnabled&&sourceMap.StartsWith("VictoryRoad_",StringComparison.Ordinal)=>new("map.victory-road-"+sourceMap.Split('_')[1].ToLowerInvariant()),
+            "SevenIsland_TanobyRuins" when _content.SevenIslandEnabled=>new("map.seven-island-tanoby-ruins"),
             "SevenIsland_TrainerTower" when _content.SevenIslandEnabled=>new("map.seven-island-trainer-tower"),
             "SevenIsland_SevaultCanyon_Entrance" when _content.SevenIslandEnabled=>new("map.seven-island-sevault-canyon-entrance"),
             "SevenIsland_SevaultCanyon" when _content.SevenIslandEnabled=>new("map.seven-island-sevault-canyon"),

@@ -68,14 +68,12 @@ public partial class CampaignView
         if (side == WildBattleSide.Player && WildWithdrawing(battle) && WildCurrentEvent(battle) is WildBattlePlayerSwitchedEvent switched)
         {
             var old = switched.Previous.Transform?.CopiedPokemon ?? switched.Previous.Pokemon;
-            return (old.SourceSpeciesId, old.IsShiny);
+            return PresentedAppearance(old);
         }
         var appearance = side == WildBattleSide.Player ? battle.DisplayPlayerAppearance : battle.DisplayOpponentAppearance;
-        if (appearance is null) return (identity.SourceSpeciesId, identity.IsShiny);
+        if (appearance is null) return PresentedAppearance(identity);
         var species = PresentedSpeciesId(appearance.Species);
-        bool shiny = ((appearance.OriginalTrainerId >> 16) ^ (appearance.OriginalTrainerId & 0xffff) ^
-            (appearance.Personality >> 16) ^ (appearance.Personality & 0xffff)) < 8;
-        return (species, shiny);
+        return SevenIslandRenderKeys.Appearance(species, appearance.Personality, appearance.OriginalTrainerId);
     }
 
     private bool IsFuchsiaLedgeStep(CampaignState? before, CampaignState after)

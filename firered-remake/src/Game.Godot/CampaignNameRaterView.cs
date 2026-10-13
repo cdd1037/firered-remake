@@ -112,7 +112,7 @@ public partial class CampaignView
         {
             var owned = _session.State.Party[i]; var mon = owned.Pokemon; var row = NameRaterRow(i); float y = row.Position.Y;
             if (i == _nameRaterCursor) DrawRect(row, new Color("e4e4c8"));
-            if (_storageIcons.TryGetValue(mon.Species, out var icon)) DrawTextureRectRegion(icon, new(18, y, 16, 16), new(0, 0, 32, 32));
+            DrawTextureRectRegion(PresentedPokemonIcon(mon), new(18, y, 16, 16), new(0, 0, 32, 32));
             SourceText(_sourceSmall, new(36, y), owned.Nickname);
             SourceText(_sourceSmall, new(112, y), "Lv" + mon.Level);
             SourceText(_sourceSmall, new(147, y), $"{mon.CurrentHp}/{mon.Stats.MaxHp}");
@@ -139,7 +139,7 @@ public partial class CampaignView
         DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
         _battleSkin.DrawStandardFrame(this, new(8, 16, 224, 136));
         SourceText(_sourceNormal, new(20, 26), target.OriginalName + "'s nickname?");
-        DrawTexture(_storageIcons[mon.Pokemon.Species], new(192, 24));
+        DrawTexture(PresentedPokemonIcon(mon.Pokemon), new(192, 24));
         SourceText(_sourceSmall, new(20, 46), _catalog.PokemonContent!.SpeciesNames[mon.Pokemon.SourceSpeciesId]);
         if (mon.Pokemon.Gender != PokemonGender.Genderless)
             SourceText(mon.Pokemon.Gender == PokemonGender.Female ? _healthFemale : _healthMale, new(168, 46), mon.Pokemon.Gender == PokemonGender.Female ? "♀" : "♂");

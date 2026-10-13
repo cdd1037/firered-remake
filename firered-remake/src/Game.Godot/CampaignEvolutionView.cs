@@ -75,7 +75,7 @@ public partial class CampaignView
         }
         else
         {
-            var portrait = _battleArt[(owned.Pokemon.SourceSpeciesId, "front", owned.Pokemon.IsShiny)];
+            var portrait = _battleArt[(PresentedRenderSpecies(owned.Pokemon), "front", owned.Pokemon.IsShiny)];
             DrawTexture(portrait.Texture, new(88, 24));
         }
         _battleSkin.DrawStandardFrame(this, new(0, 112, 240, 48));

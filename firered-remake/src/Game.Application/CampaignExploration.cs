@@ -111,7 +111,7 @@ public sealed partial class CampaignSession
         if(!Enum.IsDefined(command.Direction))return new(CommandStatus.Rejected,state,"invalid_direction");
         if(TryDottedHoleStep(state,command) is {} dottedStep)return dottedStep;
         if(TryFourIslandFieldStep(state,command) is {} fourIslandStep)return fourIslandStep;
-        var before=state.World.Player;var movementMaps=FiveIslandMovementMaps(SixIslandMovementMaps(FourIslandMovementMaps(SeviiRubyMovementMaps(PokemonLeagueMovementMaps(CinnabarMovementMaps(SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state)),state),state,command),state),state),state),state);var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
+        var before=state.World.Player;var movementMaps=SevenIslandMovementMaps(FiveIslandMovementMaps(SixIslandMovementMaps(FourIslandMovementMaps(SeviiRubyMovementMaps(PokemonLeagueMovementMaps(CinnabarMovementMaps(SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state)),state),state,command),state),state),state),state));var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
         bool turn=command.Kind=="turn";
         if(!turn&&TryStartFieldSurfDismount(state,command) is {} surfDismount)return surfDismount;
         if(!turn&&TryStartFieldStrengthPush(state,command) is {} strengthPush)return strengthPush;

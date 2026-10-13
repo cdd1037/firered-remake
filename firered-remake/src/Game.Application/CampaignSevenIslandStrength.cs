@@ -96,12 +96,4 @@ public sealed partial class CampaignSession
         }
         return null;
     }
-    private IReadOnlyDictionary<MapId, ConnectedFieldMap> SevenIslandWalkingMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps)
-    {
-        if (!_content.SevenIslandEnabled || !maps.TryGetValue(new(TanobyKeyMap), out var key)) return maps;
-        var result = maps.ToDictionary(p => p.Key, p => p.Value);
-        // Keep authenticated MB_STRENGTH_BUTTON for push dispatch; walking may cross an empty switch.
-        result[key.Id] = key with { Cells = key.Cells.Select(c => c.SourceBehavior == 0x20 ? c with { SourceBehavior = 0x08 } : c).ToImmutableArray() };
-        return result;
-    }
 }

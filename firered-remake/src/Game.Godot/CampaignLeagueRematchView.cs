@@ -13,7 +13,7 @@ public partial class CampaignView
         if (!_catalog.LeagueRematchEnabled) return;
         if (!_session.IsCurrentGame || !_catalog.CeruleanCaveEnabled || _battleArt.Count != 652 ||
             _storageIcons.Count != 163 || _route22Footprints.Count != 116 || _leagueTrainers.Count != 7 ||
-            _catalog.PokemonContent?.Catalog.Species.Count != 139 || _catalog.LeagueRematchOpponents?.Catalog.Species.Count != 168)
+            _catalog.LeagueRematchOpponents?.Owned.Catalog.Species.Count != 139 || _catalog.LeagueRematchOpponents?.Catalog.Species.Count != 168)
             throw new InvalidDataException("League rematch requires its complete current Cerulean Cave predecessor.");
         _leagueRematchArt = LeagueRematchPresentationAssets.Load(_root);
         foreach (var row in LeagueRematchManifest.GetProperty("inheritedSprites").EnumerateArray())
@@ -28,7 +28,7 @@ public partial class CampaignView
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
             string id = row.GetProperty("speciesId").GetString()!;
             if (_catalog.LeagueRematchOpponents!.Catalog.Species.GetValueOrDefault(new(id))?.SourceSpeciesId != species ||
-                _catalog.PokemonContent!.Catalog.Species.ContainsKey(new(id)))
+                _catalog.LeagueRematchOpponents!.Owned.Catalog.Species.ContainsKey(new(id)))
                 throw new InvalidDataException("League rematch sprite is not an admitted trainer-only species.");
             string side = row.GetProperty("side").GetString()!;
             bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";

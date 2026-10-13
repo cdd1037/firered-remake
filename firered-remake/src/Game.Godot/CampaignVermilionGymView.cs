@@ -143,6 +143,6 @@ public partial class CampaignView
         if(monAge<0||monAge>=FieldCutSourcePresentation.MonSlideInFrames+FieldCutSourcePresentation.MonHoldFrames+FieldCutSourcePresentation.MonSlideOutFrames)return;
         var mon=_session.State.Party[partyIndex].Pokemon;
         // The source OBJ is not clipped by the BG0 reveal window.
-        DrawTexture(_battleArt[(mon.SourceSpeciesId,"front",mon.IsShiny)].Texture,new(FieldCutMonX-32,FieldCutSourcePresentation.MonY-32));
+        DrawTexture(_battleArt[(PresentedRenderSpecies(mon),"front",mon.IsShiny)].Texture,new(FieldCutMonX-32,FieldCutSourcePresentation.MonY-32));
     }
 }

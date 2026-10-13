@@ -2173,6 +2173,8 @@ public sealed partial class PretCampaignCatalog
                 KeyValuePair.Create(sevenOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[sevenOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
         machines = sevenMachines.Catalog;
         earlyShop = earlyShop with { Catalog = sevenShop.Catalog };
+        var moveTutors = PretMoveTutors.Load(projectRoot, sevenOwned.Catalog);
+        hashes.AddRange(moveTutors.AdditionalSourceHashes);
         ValidateSevenIslandComposition(sevenIsland, maps, sevenPredecessorMaps, sevenOwned, sevenOpponents,
             sevenTrainers, sevenMachines, sevenShop, sevenItems, compiled);
         hashes.Add("seven-island-trainers:" + PretSevenIslandRules.TrainersSha256);
@@ -2353,7 +2355,7 @@ public sealed partial class PretCampaignCatalog
             leagueRematchTrainers: leagueRematchTrainers,
             leagueRematchOpponents: leagueRematchOpponents,
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
-            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems);
+            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors);
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

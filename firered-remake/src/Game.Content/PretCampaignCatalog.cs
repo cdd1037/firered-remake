@@ -289,8 +289,9 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         LeagueRematchOpponentPokemonCatalog leagueRematchOpponents,
         PretSevenIslandRegion sevenIsland, SevenIslandOwnedPokemonCatalog sevenOwned,
         SevenIslandOpponentPokemonCatalog sevenOpponents, SevenIslandTrainerCatalog sevenTrainers,
-        SevenIslandMachineCatalog sevenMachines, SevenIslandShopCatalog sevenShop, SevenIslandItemsDocument sevenItems)
+        SevenIslandMachineCatalog sevenMachines, SevenIslandShopCatalog sevenShop, SevenIslandItemsDocument sevenItems, PretMoveTutors moveTutors)
     {
+        MoveTutors = moveTutors.Catalog;
         SevenIslandRegion = sevenIsland; SevenIslandOwnership = sevenOwned; SevenIslandOpponents = sevenOpponents;
         SevenIslandTrainerParties = sevenTrainers; SevenIslandMachines = sevenMachines; SevenIslandShop = sevenShop; SevenIslandItems = sevenItems;
         LeagueRematchTrainerParties = leagueRematchTrainers;

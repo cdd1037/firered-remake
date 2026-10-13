@@ -50,6 +50,7 @@ public partial class CampaignView
         VerifyCelioMoveGeometry();
         VerifyMewtwoMoveGeometry();
         VerifyLeagueRematchMoveGeometry();
+        VerifySevenIslandMoveGeometry();
         foreach(var row in doc.RootElement.GetProperty("assets").EnumerateArray())
         {
             string path=row.GetProperty("path").GetString()!,id=row.GetProperty("id").GetString()!;
@@ -166,8 +167,8 @@ public partial class CampaignView
             // DisplayedSlots is the event-time snapshot, before this hit/KO is acknowledged.
             // The committed frame may already contain damage and later action results.
             var body=DoubleDisplayedBody(slot);var mon=body.Pokemon;var appearance=body.Transform?.CopiedPokemon??mon;string face=(slot&1)==0?"back":"front";
-            var displayed=_battleArt[(appearance.SourceSpeciesId,face,appearance.IsShiny)];
-            var geometry=_sourceBattlerGeometry[(appearance.SourceSpeciesId,face)] with{Slot=new(slot),Asset="battler-"+slot,Visible=mon.CurrentHp>0};
+            var displayed=_battleArt[(PresentedRenderSpecies(appearance),face,appearance.IsShiny)];
+            var geometry=_sourceBattlerGeometry[(PresentedRenderSpecies(appearance),face)] with{Slot=new(slot),Asset="battler-"+slot,Visible=mon.CurrentHp>0};
             var center=geometry.Center(true);
             if(displayed.Position+DoubleSpriteOffsets[slot]!=new Vector2(center.X-32,center.Y-32))throw new InvalidDataException("Authenticated doubles/source battler geometry differs.");
             bool substitute=body.CalledVolatile?.SubstituteHp>0;

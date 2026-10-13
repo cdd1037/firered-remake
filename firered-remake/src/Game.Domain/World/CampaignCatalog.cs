@@ -173,6 +173,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;
     string? DeferredRegionalServiceReason(MapId map,string script)=>null;
     NameRaterSourceContent? NameRaterSource=>null;
+    MoveTutorCatalog? MoveTutors=>null;
     DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock=>null;
     ImmutableArray<CampaignDepartmentElevatorFloor> DepartmentStoreElevatorFloors=>[];
     ImmutableArray<CampaignDepartmentElevatorEntrance> DepartmentStoreElevatorEntrances=>[];

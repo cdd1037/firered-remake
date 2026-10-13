@@ -289,7 +289,8 @@ public partial class CampaignView
         {
             var owned = _session.State.Party[i]; var mon = owned.Pokemon; int y = 8 + i * 20;
             if (_fieldMenuMode == "switch" && i == _fieldSwapSource) DrawRect(new(14, y, 218, 20), new Color("e4e4c8"));
-            SourceText(_sourceSmall, new(18, y), owned.Nickname);
+            DrawTextureRectRegion(PresentedPokemonIcon(mon),new(18,y,16,16),new(0,0,32,32));
+            SourceText(_sourceSmall, new(36, y), owned.Nickname);
             SourceText(_sourceSmall, new(98, y), "Lv" + mon.Level);
             SourceText(_sourceSmall, new(134, y), $"{mon.CurrentHp}/{mon.Stats.MaxHp}");
             DrawRect(new(134, y + 12, 54, 3), new Color("94948c"));
@@ -342,7 +343,7 @@ public partial class CampaignView
         var lines = FieldSummaryLines();
         if (_fieldSummaryPage == 0)
         {
-            if (_battleArt.TryGetValue((mon.SourceSpeciesId, "front", mon.IsShiny), out var art)) DrawTexture(art.Texture, new(8, 44));
+            if (_battleArt.TryGetValue((PresentedRenderSpecies(mon), "front", mon.IsShiny), out var art)) DrawTexture(art.Texture, new(8, 44));
             SourceText(_sourceSmall, new(82, 46), lines[0]);
             SourceText(_sourceSmall, new(82, 60), lines[1]);
             SourceText(_sourceSmall, new(82, 77), lines[2]);

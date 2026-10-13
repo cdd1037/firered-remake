@@ -220,7 +220,7 @@ public partial class CampaignView
         if (battle.Capture is null)
         {
             var target = battle.State.Target;
-            var sprite = _battleArt[(target.SourceSpeciesId, "front", target.IsShiny)];
+            var sprite = _battleArt[(PresentedRenderSpecies(target), "front", target.IsShiny)];
             DrawTexture(sprite.Texture, sprite.Position);
             _battleSkin.DrawHealthbox(this, false, target.CurrentHp, target.Stats.MaxHp);
             SourceText(_healthFont, LabBattleUiSkin.OpponentName, battle.Origin.DefaultName);

@@ -300,6 +300,7 @@ public partial class CampaignView
         DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
         _battleSkin.DrawStandardFrame(this, new(8, 16, 224, 136));
         var capture = _session.State.SafariBattle?.Capture ?? _session.State.WildBattle!.Capture!;
+        DrawTexture(PresentedPokemonIcon(capture.Pokemon),new(192,48));
         SourceText(_sourceNormal, new(20, 26), capture.Origin.DefaultName + "'s nickname?");
         SourceText(_sourceSmall, new(20, 98), "Type a name, then press Enter.");
         SourceText(_sourceSmall, new(20, 114), "Leave blank to keep " + capture.Origin.DefaultName + ".");
@@ -319,8 +320,9 @@ public partial class CampaignView
             var footprint = document.Assets.Single(x => x.TexturePath == entry.FootprintPath);
             DrawTexture(_captureTextures[footprint.Id], new(footprint.X, footprint.Y));
         }
-        // Original dex rendering uses the ordinary front even when this capture is shiny.
-        DrawTexture(_battleArt[(sourceSpeciesId, "front", false)].Texture, new(layout.FrontX, layout.FrontY));
+        // Source Dex uses the representative Unown PID and fixed trainer ID SHINY_ODDS (8).
+        var appearance=PresentedDexAppearance(sourceSpeciesId);
+        DrawTexture(_battleArt[(appearance.Species, "front", appearance.Shiny)].Texture, new(layout.FrontX, layout.FrontY));
         var titleWidth = _captureDexTitle.Font.GetStringSize(_captureDexTitle.PrepareText(entry.HabitatTitle), fontSize: _captureDexTitle.Size).X;
         SourceText(_captureDexTitle, new((int)((layout.HeaderCenterWidth - titleWidth) / 2), layout.HeaderY), entry.HabitatTitle);
         // The special two-cell NO/A-button glyphs are not in the current shared font atlas.

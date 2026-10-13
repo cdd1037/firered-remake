@@ -80,7 +80,7 @@ public partial class CampaignView:Node2D
             _catalog=PretCampaignCatalog.LoadCurrent(_root);
             _borderSources=PretMapBorders.LoadCatalog(System.IO.Path.Combine(_root,"content/generated/map-borders"));
             _session=CampaignSession.CreateCurrent(_catalog,new(0x11223344));
-            LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadBattlePresentation();if(_catalog.RegionEnabled)LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();_cues=PretPresentationCues.Load(_root);
+            LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadBattlePresentation();if(_catalog.RegionEnabled)LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();_cues=PretPresentationCues.Load(_root);
             _nicknameEdit=new LineEdit{Position=new(20,62),Size=new(200,22),MaxLength=10,Visible=false,PlaceholderText="",CaretBlink=true,KeepEditingOnTextSubmit=true};
             _nicknameEdit.AddThemeFontOverride("font",_font);_nicknameEdit.AddThemeFontSizeOverride("font_size",11);
             _nicknameEdit.TextSubmitted+=SubmitCampaignNickname;_nicknameEdit.GuiInput+=NameRaterNicknameGuiInput;_nicknameEdit.GuiInput+=GiftNicknameGuiInput;AddChild(_nicknameEdit);
@@ -213,7 +213,7 @@ public partial class CampaignView:Node2D
         if(naming&&!_nicknameEdit.Visible){_nicknameEdit.Text="";_nicknameEdit.Visible=true;_nicknameEdit.GrabFocus();_nicknameEdit.Edit();}
         else if(!naming&&_nicknameEdit.Visible){_nicknameEdit.Visible=false;_nicknameEdit.ReleaseFocus();if(after.Nickname?.Submitted==true||before?.WildBattle?.Capture?.Stage==CampaignCaptureStage.Naming||before?.SafariBattle?.Capture?.Stage==CampaignCaptureStage.Naming)_fade=16.0/60;}
         SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
-        SynchronizeOptionFrames();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeNameRaterPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);
+        SynchronizeOptionFrames();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeNameRaterPresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);
         var wait=after.Script.Wait;
         if(wait?.CorrelationId!=_waitId||wait?.Kind!=_waitKind||before?.Dialogue?.Page!=after.Dialogue?.Page)
         {
@@ -245,7 +245,7 @@ public partial class CampaignView:Node2D
         ProcessCenterHealing(delta);
         _fanfareRemaining=Math.Max(0,_fanfareRemaining-delta);
         if(_fade>0){_fade=Math.Max(0,_fade-delta);QueueRedraw();return;}
-        if(NameRaterChoosing||_regionalServiceNotice is not null){QueueRedraw();return;}
+        if(MoveTutorActive||NameRaterChoosing||_regionalServiceNotice is not null){QueueRedraw();return;}
         if(ProcessRocketSpin(delta)){QueueRedraw();return;}
         if(ProcessFishingPresentation(delta)){QueueRedraw();return;}
         if(ProcessRegionalSignWalkaway(delta)){QueueRedraw();return;}
@@ -270,6 +270,7 @@ public partial class CampaignView:Node2D
             if(clip.Action is "disable_anim" or "slide_down" or "restore_anim")pose.Frame=0;
             if(track.Time>=track.Duration||clip.Action is "cycle" or "cycle-stairs"&&track.Time+1e-9>=track.Duration){track.Time=track.Duration;pose.Position=clip.To;pose.Frame=0;pose.DrawYOffset=0;}
         }
+        ProcessSevenIslandFieldPresentation(delta);
         if(ProcessSixIslandPresentation(delta)){QueueRedraw();return;}
         if(ProcessFourIslandPresentation(delta)){QueueRedraw();return;}
         if(ProcessFieldStrengthPresentation(delta)){QueueRedraw();return;}
@@ -319,7 +320,7 @@ public partial class CampaignView:Node2D
     }
     public override void _UnhandledInput(InputEvent input)
     {
-        if(ConsumeNameRaterTransitionInput(input)||TryRegionalServiceNoticeInput(input))return;
+        if(ConsumeMoveTutorTransitionInput(input)||ConsumeNameRaterTransitionInput(input)||TryRegionalServiceNoticeInput(input))return;
         if(_quitRequested)return;
         if(TryPokemonLeagueInput(input)){GetViewport().SetInputAsHandled();return;}
         if((SixIslandFieldLocked||_session?.State.FourIslandMovement is not null||FirstSeviiInputLocked||CinnabarInputLocked||SilphInputLocked||PokemonTowerInputLocked||RocketInputLocked||DepartmentElevatorAnimating||SsAnneDepartureInputLocked||_session?.State.CutEffect is not null||_session?.State.FlashEffect is not null||_session?.State.StrengthEffect is not null||_session?.State.SurfEffect is not null)&&input is not InputEventKey {Keycode:Key.Escape or Key.F12}){_held=null;GetViewport().SetInputAsHandled();return;}
@@ -335,6 +336,7 @@ public partial class CampaignView:Node2D
         if(TryFieldMenuToggle(input))return;
         if(_session is null||input is not InputEventKey key||key.Echo)return;
         if(_fade>0&&key.Pressed&&key.Keycode is not (Key.Escape or Key.F12))return;
+        if(MoveTutorInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(NameRaterInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(GiftNicknameInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(TrySeagallopMenuInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
@@ -438,12 +440,13 @@ public partial class CampaignView:Node2D
         if(DoubleBattleVisible){DrawDoubleBattle();return;}
         if(ForestTrainerCombatVisible||_session.State.WildBattle is not null){DrawWildBattle();return;}
         if(_session.State.Battle is not null){DrawBattle();return;}
+        if(DrawMoveTutor())return;
         if(DrawNameRaterParty())return;
         DrawRect(new(0,0,240,160),Colors.Black);
         var hero=_poses["LOCALID_PLAYER"];
         // Source camera follows the player even in rooms smaller than the viewport. Border
         // blocks fill outside the layout; centering/clamping the whole map shifts the player.
-        var camera=(BillCameraFocus(hero.Position)+new Vector2(8,8)-new Vector2(120,80)).Floor()+RocketCameraOffset+DepartmentCameraOffset+SilphCameraOffset+CinnabarCameraOffset+SixIslandCameraOffset;
+        var camera=(BillCameraFocus(hero.Position)+new Vector2(8,8)-new Vector2(120,80)).Floor()+RocketCameraOffset+DepartmentCameraOffset+SilphCameraOffset+CinnabarCameraOffset+SixIslandCameraOffset+SevenIslandCameraOffset;
         PrepareVisibleMapResources(camera);
         if(_art.Border is {} borderBottom)DrawMapBorder(borderBottom.Bottom,camera);DrawConnectedNeighbors(camera,0);DrawBillMapLayer(_art.Bottom,camera,0);
         if(_art.Border is {} borderMiddle)DrawMapBorder(borderMiddle.Middle,camera);DrawConnectedNeighbors(camera,1);DrawBillMapLayer(_art.Middle,camera,1);

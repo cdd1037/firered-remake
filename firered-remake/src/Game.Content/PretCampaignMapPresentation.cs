@@ -23,6 +23,7 @@ public static class PretCampaignMapPresentation
                 if(localBorder)localBorders.Add(id);
             }
         }
+        Add(catalog.SevenIslandRegion.NewMaps.Keys,catalog.SevenIslandRegion.NpcSourcePath);
         Add(catalog.CeruleanCaveRegion.NewMaps.Keys,catalog.CeruleanCaveRegion.NpcSourcePath);
         if(catalog.FiveIslandRegion is {} fiveIsland) Add(fiveIsland.NewMaps.Keys,fiveIsland.NpcSourcePath);
         if(catalog.SixIslandRegion is {} sixIsland) Add(sixIsland.NewMaps.Keys,sixIsland.NpcSourcePath);

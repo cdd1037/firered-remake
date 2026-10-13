@@ -389,7 +389,7 @@ public partial class CampaignView
             if(entry&&(_doublePage==0||_doublePage==1&&(i&1)==0)||portrait&&(i&1)!=0)continue;
             if(mon.CurrentHp==0&&!(b.CurrentEvent is SourceHpChangedEvent {HpBefore:>0} hit&&hit.Target.Value==i))continue;
             var appearance=body.Transform?.CopiedPokemon??mon;
-            var asset=_battleArt[(appearance.SourceSpeciesId,(i&1)==0?"back":"front",appearance.IsShiny)];
+            var asset=_battleArt[(PresentedRenderSpecies(appearance),(i&1)==0?"back":"front",appearance.IsShiny)];
             if(!SourceAnimationPresented)
             {
                 if(body.CalledVolatile?.SubstituteHp>0)DrawDoubleSubstitute(i);
