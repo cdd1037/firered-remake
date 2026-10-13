@@ -118,3 +118,10 @@ into the PC at generation51140. The resulting strict save is valid; a separate
 process Continue and the new production view batch remain pending at this
 checkpoint. Lower-layer passes are not substitutes for those checks. Native pixels and physical audio remain
 unverified. See [Power Plant scope](power-plant-campaign.md).
+
+The follow-up Power Plant closure has now passed independent process Continue
+at51140, all four separate static-outcome probes (84 public commands), and
+81 production-headless checks/four Draws. The sole startup repair makes the
+Seven Island asset loader inspect its own authenticated predecessor rather
+than the expanded current species count. The exact source and claim limits
+remain in [Power Plant acceptance](power-plant-campaign.md#final-bounded-acceptance-2026-10-13).

@@ -2,7 +2,7 @@
 
 Current fixed source commits:
 
-- `firered-remake/`: `50d4b53d0d4b4cf838bced86e703f5d555e94d65`
+- `firered-remake/`: `6bfbbccdfc4c3ba55ac4b914f25c326d527e6278`
 - `firered-audio-player/`: `70a77d7bcdf1a1ffe3bfd56320083a19299a670f`
 
 Both projects remain adjacent, with unchanged source logic and paths. Start in each project's README; run game commands from `firered-remake/`.
