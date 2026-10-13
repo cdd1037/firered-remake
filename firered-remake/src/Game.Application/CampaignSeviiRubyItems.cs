@@ -8,6 +8,7 @@ public sealed partial class CampaignSession
     private bool TryApplySeviiRubyItemEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
         next = state;
+        if (TryApplySeviiRubyHm06Effect(state, effect, out next)) return true;
         if (state.FieldPickup is not null || !InSeviiRubyScript(state) || effect.Opcode is not
             ("checkitem" or "checkitemspace" or "additem" or "removeitem" or "checkitemtype" or "bufferitemname" or "bufferitemnameplural")) return false;
         bool buffer = effect.Opcode.StartsWith("bufferitem", StringComparison.Ordinal);
@@ -57,5 +58,47 @@ public sealed partial class CampaignSession
             changed = changed with { KeyItems = count == 0 ? keys : keys.Add(new(item.Id, count)) };
         }
         next = Result(result.Succeeded ? 1 : 0) with { Inventory = changed }; return true;
+    }
+
+    private bool TryApplySeviiRubyHm06Effect(CampaignState state, StoryEffect effect, out CampaignState next)
+    {
+        next = state;
+        if (effect.Opcode is not ("checkitemspace" or "additem" or "checkitemtype" or "bufferitemname" or "bufferitemnameplural")) return false;
+        var a = effect.Args;
+        bool buffer = effect.Opcode.StartsWith("bufferitem", StringComparison.Ordinal);
+        if (a.Length < (buffer ? 2 : 1) || SeviiValue(state, a[buffer ? 1 : 0]) != SeviiValue(state, "ITEM_HM06")) return false;
+        const string map = "map.one-island-kindle-road-ember-spa";
+        const string root = "OneIsland_KindleRoad_EmberSpa_EventScript_RockSmashMan";
+        if (!state.Script.Locked || state.World.Player.MapId.Value != map || state.LastTalked is not { } local ||
+            !state.Actors.TryGetValue(local, out var actor) || !actor.Active || actor.ScriptId != root ||
+            !state.Script.Stack.Any(f => f.ProgramId == root) ||
+            effect.Source.Path is not ("data/maps/OneIsland_KindleRoad_EmberSpa/scripts.inc" or "data/scripts/obtain_item.inc" or "data/event_scripts.s"))
+            throw new InvalidDataException("sevii_ruby_hm06_source_context");
+        if (buffer)
+        {
+            if (a[0] != "STR_VAR_2" || a.Length != (effect.Opcode == "bufferitemnameplural" ? 3 : 2) ||
+                a.Length == 3 && SeviiValue(state, a[2]) != 1) throw new InvalidDataException("sevii_ruby_hm06_buffer");
+            next = state with { TextBuffers = state.TextBuffers.SetItem(a[0], "HM06") }; return true;
+        }
+        int result;
+        if (effect.Opcode == "checkitemtype") result = SeviiValue(state, "POCKET_TM_CASE");
+        else
+        {
+            if (a.Length > 2 || a.Length == 2 && SeviiValue(state, a[1]) != 1 || state.Script.Flags.GetValueOrDefault("FLAG_GOT_HM06"))
+                throw new InvalidDataException("sevii_ruby_hm06_reward_context");
+            var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
+            if (ValidateCampaignInventory(inventory) is { } error) throw new InvalidDataException(error);
+            var machine = SeviiRubyMachineCatalog.Hm06Id;
+            if (OpeningInventoryRules.Quantity(inventory.Machines ?? [], machine) != 0) throw new InvalidDataException("sevii_ruby_hm06_duplicate");
+            if (effect.Opcode == "checkitemspace") result = PewterMachineRules.CanAddMachine(_content.PewterMachines!, inventory, machine) ? 1 : 0;
+            else
+            {
+                var added = PewterMachineRules.AddMachine(_content.PewterMachines!, inventory, machine);
+                next = state with { Inventory = added.State }; result = added.Succeeded ? 1 : 0;
+            }
+        }
+        // The original caller sets GOT_HM06 after Std_ObtainItem, including its full-pocket branch.
+        next = next with { Script = next.Script with { Variables = next.Script.Variables.SetItem("VAR_RESULT", result) } };
+        return true;
     }
 }

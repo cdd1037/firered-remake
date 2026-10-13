@@ -101,6 +101,19 @@ public sealed partial class CampaignSession
         if (TryApplyRainbowFerryEffect(state, effect, out next)) return true;
         bool own = SeviiRubySource(effect.Source.Path);
         if (!own) return false;
+        if (effect.Opcode == "goto_if_defeated" && effect.Source.Path == RubyExteriorSource)
+        {
+            var source = _content.FindProgram(effect.Source.Symbol)?.Instructions.SingleOrDefault(i => i.Source == effect.Source);
+            if (!state.Script.Locked || state.World.Player.MapId.Value != RubyExteriorMap || effect.Args.Length != 2 ||
+                effect.Args[0] is not ("TRAINER_TEAM_ROCKET_GRUNT_43" or "TRAINER_TEAM_ROCKET_GRUNT_44") ||
+                source is null || source.Opcode != effect.Opcode || !source.Args.SequenceEqual(effect.Args) ||
+                state.Script.Stack.LastOrDefault()?.ProgramId != effect.Source.Symbol || _content.FindProgram(effect.Args[1]) is null)
+                throw new InvalidDataException("sevii_ruby_defeated_branch_source");
+            // This macro branches on trainer history; it does not write VAR_RESULT.
+            if (state.BattledTrainers.Contains("pret:" + effect.Args[0])) next = state with { Script = state.Script with {
+                Stack = state.Script.Stack.SetItem(state.Script.Stack.Length - 1, new(effect.Args[1], 0)) } };
+            return true;
+        }
         if (effect.Opcode == "setmetatile")
         {
             bool cave = effect.Source.Path == RubyExteriorSource && effect.Source.Symbol == "MtEmber_Exterior_EventScript_OpenCave";

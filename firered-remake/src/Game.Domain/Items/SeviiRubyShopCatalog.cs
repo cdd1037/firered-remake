@@ -78,10 +78,18 @@ public sealed class SeviiRubyShopCatalog
         ImmutableArray<InventoryStack>? Merge(ImmutableArray<InventoryStack>? before, ImmutableArray<InventoryStack>? after)
         {
             if (before is not {} values) return after;
-            var result = after ?? [];
-            for (int i = 0; i < values.Length; i++)
-                if (Additional(values[i].Item)) result = result.Insert(Math.Min(i, result.Length), values[i]);
-            return result.IsEmpty && after is null ? null : result;
+            var changedValues = after ?? [];
+            var remaining = changedValues.ToDictionary(s => s.Item);
+            var result = ImmutableArray.CreateBuilder<InventoryStack>();
+            // Source remove compacts the pocket. Merge surviving original slots in
+            // their original order, rather than inserting extras at stale indexes
+            // after an earlier ordinary stack has disappeared.
+            foreach (var stack in values)
+                if (Additional(stack.Item)) result.Add(stack);
+                else if (remaining.Remove(stack.Item, out var changedStack)) result.Add(changedStack);
+            foreach (var stack in changedValues)
+                if (remaining.ContainsKey(stack.Item)) result.Add(stack);
+            return result.Count == 0 && after is null ? null : result.ToImmutable();
         }
         var restored = changed with {
             KeyItems = Merge(original.KeyItems, changed.KeyItems),

@@ -88,7 +88,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideConnectedField(CampaignState state,CampaignCommand command)
     {
         if(!Enum.IsDefined(command.Direction))return new(CommandStatus.Rejected,state,"invalid_direction");
-        var before=state.World.Player;var movementMaps=PokemonLeagueMovementMaps(CinnabarMovementMaps(SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state)),state),state,command);var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
+        var before=state.World.Player;var movementMaps=SeviiRubyMovementMaps(PokemonLeagueMovementMaps(CinnabarMovementMaps(SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state)),state),state,command),state);var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
         bool turn=command.Kind=="turn";
         if(!turn&&TryStartFieldSurfDismount(state,command) is {} surfDismount)return surfDismount;
         if(!turn&&TryStartFieldStrengthPush(state,command) is {} strengthPush)return strengthPush;
