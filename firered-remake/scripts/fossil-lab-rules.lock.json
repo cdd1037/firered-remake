@@ -1,0 +1,108 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-fossil-lab-rules-v1",
+  "importerSha256": "862ca6de15b94ae5b79d48da5b16500e48ed762cc2016c5eb59811072e4d8d64",
+  "files": [
+    {
+      "path": "content/generated/fossil-lab-rules/machines.json",
+      "byteLength": 77498,
+      "sha256": "e4d88c47202263f022904bda3d8f5144391a7e6d9ccbc80dd507fa7195170c82"
+    },
+    {
+      "path": "content/generated/fossil-lab-rules/pokemon.json",
+      "byteLength": 36210,
+      "sha256": "c73920819f51fd82518103ae1bc38b2d8bd6c8a2aa34eb2409335f9be1ded12c"
+    },
+    {
+      "path": "content/generated/fossil-lab-rules/rules.json",
+      "byteLength": 9836,
+      "sha256": "ff539780bec46809aea06499c14bfde16611d48f973a3947072705109df1d762"
+    },
+    {
+      "path": "content/generated/fossil-lab-rules/source-input-hashes.json",
+      "byteLength": 4520,
+      "sha256": "7d64b4b10a874629c5ab8106aa099e061f9c5501fcdc88156fcc9b5946b9a13a"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/asm/macros/event.inc",
+      "byteLength": 56947,
+      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc",
+      "byteLength": 13755,
+      "sha256": "8afc38f502fd909a1bb220a919ac107ce8b39e98e29731d654f6edef749828ce"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/include/constants/flags.h",
+      "byteLength": 95397,
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/include/constants/items.h",
+      "byteLength": 12436,
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/include/constants/pokemon.h",
+      "byteLength": 10894,
+      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/include/random.h",
+      "byteLength": 669,
+      "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/data/pokemon/evolution.h",
+      "byteLength": 12282,
+      "sha256": "a7d05352fb5b7039b8851049bc9575dc8eaa4450bf9964d03b7857db98c32d3c"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/data/pokemon/level_up_learnset_pointers.h",
+      "byteLength": 20597,
+      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/data/pokemon/level_up_learnsets.h",
+      "byteLength": 182027,
+      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/data/pokemon/pokedex_entries.h",
+      "byteLength": 132235,
+      "sha256": "c4103cfd5ceed94603e60462028970201fedea0faeae68037da9987ac992220b"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/data/pokemon/species_info.h",
+      "byteLength": 342600,
+      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/data/pokemon/tmhm_learnsets.h",
+      "byteLength": 559340,
+      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/data/text/species_names.h",
+      "byteLength": 15851,
+      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/pokemon.c",
+      "byteLength": 221865,
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/script_pokemon_util.c",
+      "byteLength": 5764,
+      "sha256": "cfadee8f8c397485b66fc56a9a6e13fef1bbad47b4c6cd83dd42a9c1f8f9cf30"
+    }
+  ]
+}

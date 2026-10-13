@@ -16,13 +16,30 @@ public sealed partial class CampaignSession
     private int GiftCount(CampaignState state) => (_content.MagikarpEnabled && state.MagikarpGift is not null ? 1 : 0) +
         (_content.RegionalServicesEnabled && state.EeveeGift is not null ? 1 : 0) +
         (_content.SilphEnabled && state.LaprasGift is not null ? 1 : 0) +
-        (_content.FightingDojoEnabled && state.DojoGift is not null ? 1 : 0);
+        (_content.FightingDojoEnabled && state.DojoGift is not null ? 1 : 0) +
+        (_content.FossilLabEnabled ? (state.FossilRevivals ?? []).Length : 0);
     private IEnumerable<int> GiftSourceSpecies(CampaignState state)
     {
         if (_content.MagikarpEnabled && state.MagikarpGift is not null) yield return 129;
         if (_content.RegionalServicesEnabled && state.EeveeGift is not null) yield return 133;
         if (_content.SilphEnabled && state.LaprasGift is not null) yield return 131;
         if (_content.FightingDojoEnabled && state.DojoGift is { } dojo) yield return dojo.SourceSpeciesId;
+        if (_content.FossilLabEnabled)
+            foreach (var fossil in state.FossilRevivals ?? []) yield return fossil.SourceSpeciesId;
+    }
+
+    private string? ValidateGiftIdentityUniqueness(CampaignState state)
+    {
+        var gifts = new List<long>();
+        if (state.MagikarpGift is { } magikarp) gifts.Add(magikarp.InstanceId);
+        if (state.EeveeGift is { } eevee) gifts.Add(eevee.InstanceId);
+        if (state.LaprasGift is { } lapras) gifts.Add(lapras.InstanceId);
+        if (state.DojoGift is { } dojo) gifts.Add(dojo.InstanceId);
+        foreach (var fossil in state.FossilRevivals ?? []) gifts.Add(fossil.InstanceId);
+        if (gifts.Distinct().Count() != gifts.Count || gifts.Contains(1) ||
+            state.Exploration?.Captured is { } captures && !captures.IsDefault &&
+            captures.Any(c => c is not null && gifts.Contains(c.InstanceId))) return "save_gift_identity_conflict";
+        return null;
     }
     private bool InEeveeScript(CampaignState state) => _content.RegionalServicesEnabled && state.World.Player.MapId.Value == EeveeMap &&
         state.LastTalked is { } actor && state.Actors.TryGetValue(actor, out var value) && value.ScriptId == EeveeBallScript;
@@ -93,7 +110,10 @@ public sealed partial class CampaignSession
         return (next, owned);
     }
 
-    private long? PendingScriptGiftInstanceId(CampaignState state) => InDojoGiftScript(state) ? state.DojoGift?.InstanceId : InLaprasScript(state) ? state.LaprasGift?.InstanceId : InEeveeScript(state) ? state.EeveeGift?.InstanceId :
+    /// <summary>The authenticated source gift currently owned by the shared nickname workflow.</summary>
+    public long? PendingGiftInstanceId => State.GiftDelivery is null ? null : PendingScriptGiftInstanceId(State);
+
+    private long? PendingScriptGiftInstanceId(CampaignState state) => InFossilLabScript(state) ? PendingFossilGiftInstanceId(state) : InDojoGiftScript(state) ? state.DojoGift?.InstanceId : InLaprasScript(state) ? state.LaprasGift?.InstanceId : InEeveeScript(state) ? state.EeveeGift?.InstanceId :
         _content.MagikarpEnabled && InMagikarpScript(state) ? state.MagikarpGift?.InstanceId : null;
 
     private bool TryApplySharedScriptGiftEffect(CampaignState state, StoryEffect effect, out CampaignState next)
@@ -102,7 +122,7 @@ public sealed partial class CampaignSession
         bool handles = effect.Opcode is "getpartysize" or "bufferboxname" or "subvar" ||
             effect.Opcode == "special" && a[0] == "ChangeBoxPokemonNickname" ||
             effect.Opcode == "specialvar" && a[1] is "ShouldShowBoxWasFullMessage" or "GetPCBoxToSendMon";
-        if (!handles || !(_content.MagikarpEnabled && InMagikarpScript(state) || InEeveeScript(state) || InLaprasScript(state) || InDojoGiftScript(state))) return false;
+        if (!handles || !(_content.MagikarpEnabled && InMagikarpScript(state) || InEeveeScript(state) || InLaprasScript(state) || InDojoGiftScript(state) || InFossilLabScript(state))) return false;
         if (state.GiftDelivery is null || PendingScriptGiftInstanceId(state) is not { } instanceId)
             throw new InvalidDataException("script_gift_pending_missing");
         int Value(string token) => int.TryParse(token, out int n) ? n : state.Script.Variables.TryGetValue(token, out int v) ? v :

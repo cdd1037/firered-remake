@@ -88,3 +88,5 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /evidence/fighting-dojo-*/**/*.pdb
 /tests/Game.FightingDojoView.Tests/Assets/
 /tests/Game.FightingDojoView.Tests/*.cs.uid
+
+/tests/Game.FossilLabView.Tests/Assets/

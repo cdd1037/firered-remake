@@ -50,7 +50,7 @@ public partial class CampaignView
         VerifyCelioMoveGeometry();
         VerifyMewtwoMoveGeometry();
         VerifyLeagueRematchMoveGeometry();
-        VerifySevenIslandMoveGeometry();VerifyEventIslandMoveGeometry();VerifyPowerPlantMoveGeometry();AddTrainerTowerMoveGeometry();
+        VerifySevenIslandMoveGeometry();VerifyEventIslandMoveGeometry();VerifyPowerPlantMoveGeometry();AddTrainerTowerMoveGeometry();VerifyFossilLabMoveGeometry();
         foreach(var row in doc.RootElement.GetProperty("assets").EnumerateArray())
         {
             string path=row.GetProperty("path").GetString()!,id=row.GetProperty("id").GetString()!;

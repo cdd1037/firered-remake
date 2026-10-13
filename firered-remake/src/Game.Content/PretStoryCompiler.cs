@@ -147,6 +147,9 @@ public static partial class PretStoryCompiler
                 if (FirstSeviiSource(file, "data/maps/SaffronCity_Dojo/scripts.inc", "a7e406b6355b31c2853206ba66a0fb00cfd1575b5a3a92d69e9237bffdac9098") &&
                     label == "SaffronCity_Dojo_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
+                if (FirstSeviiSource(file, "data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc", "8afc38f502fd909a1bb220a919ac107ce8b39e98e29731d654f6edef749828ce") &&
+                    label == "CinnabarIsland_PokemonLab_ExperimentRoom_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
+                { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
                 if(includeTrainerTower&&IsTrainerTowerAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
                 {assemblyData.Add(label,body.Where(b=>b.Text.StartsWith(".",StringComparison.Ordinal)).Select(b=>b.Text).ToImmutableArray());continue;}
                 if(body[0].Text.StartsWith(".string",StringComparison.Ordinal))continue;

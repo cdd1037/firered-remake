@@ -127,6 +127,20 @@ public static class PretCelioMapNumbers
         return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
     }
 
+    internal static ImmutableDictionary<MapId, RoamerMap> ExtendFossilLab(string root,
+        IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
+        IReadOnlyDictionary<MapId, PretWorldMap> additions)
+    {
+        if (predecessor.Count != 312 || maps.Count != 314 || additions.Count != 2 ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
+            predecessor.Keys.Any(id => !maps.ContainsKey(id)) || additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
+            additions.Values.Any(m => !m.SourceMapSymbol.StartsWith("MAP_CINNABAR_ISLAND_POKEMON_LAB_", StringComparison.Ordinal)))
+            throw new InvalidDataException("fossil_lab_map_numbers_scope");
+        var current = ProjectSource(root, maps);
+        if (predecessor.Any(p => current[p.Key] != p.Value)) throw new InvalidDataException("fossil_lab_map_numbers_predecessor");
+        return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
+    }
+
     private static ImmutableDictionary<MapId, RoamerMap> ProjectSource(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)
     {
         var source = LoadSourceTable(root);

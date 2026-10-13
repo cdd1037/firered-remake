@@ -24,6 +24,7 @@ public static class PretCampaignMapPresentation
             }
         }
         Add(catalog.FightingDojoRegion.NewMaps.Keys,catalog.FightingDojoRegion.NpcSourcePath);
+        Add(catalog.FossilLabRegion.NewMaps.Keys,catalog.FossilLabRegion.NpcSourcePath);
         Add(catalog.TrainerTowerRegion.Maps.Keys,catalog.TrainerTowerRegion.NpcSourcePath);
         Add(catalog.PowerPlantRegion.NewMaps.Keys,catalog.PowerPlantRegion.NpcSourcePath);
         Add(catalog.EventIslandRegion.NewMaps.Keys,catalog.EventIslandRegion.NpcSourcePath);

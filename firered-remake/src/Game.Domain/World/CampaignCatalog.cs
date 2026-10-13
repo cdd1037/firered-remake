@@ -82,6 +82,10 @@ public interface ICampaignCatalog:IStoryCatalog
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
+    bool FossilLabEnabled=>false;
+    FossilLabOwnedPokemonCatalog? FossilLabOwnership=>null;
+    FossilLabOpponentPokemonCatalog? FossilLabOpponents=>null;
+    FossilLabMachineCatalog? FossilLabMachines=>null;
     bool FightingDojoEnabled=>false;
     FightingDojoOwnedPokemonCatalog? FightingDojoOwnership=>null;
     FightingDojoOpponentPokemonCatalog? FightingDojoOpponents=>null;

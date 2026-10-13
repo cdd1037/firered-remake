@@ -133,3 +133,8 @@ Current composition adds eleven original map IDs with 27 format-selected layouts
 uses four pinned Tower importers. Factory/Domain and loader checks pass; the
 initial real lobby entry is saved at 51141. Full four-course application and
 presentation acceptance remain pending. See [current Tower scope](trainer-tower-campaign.md).
+
+
+## Fossil laboratory successor, 2026-10-13
+
+The single current composition adds the original Entrance and Experiment Room after Dojo: 314 maps, 158 owned species and 190 ordinary opponents (Tower roster204 separately). Two source level40 evolution edges and164 compatibility cells extend the existing41 machines. No predecessor runtime is revived. Content fingerprint `67397acae6d36ea1b7beeaa98c7bc57c6a17b6abc3de141ebf8a9bd530838ed2`. Public route and strict receipt boundaries are documented in [fossil lab acceptance](fossil-lab-campaign.md).

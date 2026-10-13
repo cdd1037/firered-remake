@@ -69,7 +69,9 @@ public sealed partial class CampaignSession
         if(scene is <0 or >1||won!=(scene==1))return "save_mtmoon_miguel_scene_invalid";
         bool dome=state.Script.Flags.GetValueOrDefault("FLAG_GOT_DOME_FOSSIL"),helix=state.Script.Flags.GetValueOrDefault("FLAG_GOT_HELIX_FOSSIL"),got=state.Script.Flags.GetValueOrDefault("FLAG_GOT_FOSSIL_FROM_MT_MOON");
         var keys=state.Inventory?.KeyItems??[];
-        if(dome&&helix||got!=(dome||helix)||got&&!won||OpeningInventoryRules.Quantity(keys,MtMoonItemRules.DomeFossilId)!=(dome?1:0)||OpeningInventoryRules.Quantity(keys,MtMoonItemRules.HelixFossilId)!=(helix?1:0))return "save_mtmoon_fossil_reward_invalid";
+        if(dome&&helix||got!=(dome||helix)||got&&!won||
+            OpeningInventoryRules.Quantity(keys,MtMoonItemRules.DomeFossilId)+DepositedOrRevivedFossils(state,2)!=(dome?1:0)||
+            OpeningInventoryRules.Quantity(keys,MtMoonItemRules.HelixFossilId)+DepositedOrRevivedFossils(state,1)!=(helix?1:0))return "save_mtmoon_fossil_reward_invalid";
         if(got&&(!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_DOME_FOSSIL")||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_HELIX_FOSSIL")))return "save_mtmoon_fossil_hide_invalid";
         if(state.World.Player.MapId.Value=="map.mt-moon-b2f")
         {

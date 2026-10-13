@@ -23,14 +23,14 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var owned = content.FightingDojoOwnership!;
+        var owned = content.FossilLabOwnership!;
         var battle = OwnedBattlePokemonCatalog.For(owned.Catalog);
         if (battle is null || !ReferenceEquals(battle.Catalog, content.PokemonContent!.Catalog) ||
             !ReferenceEquals(battle.Mechanics, owned.Mechanics) ||
-            !ReferenceEquals(FightingDojoOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned.Predecessor, content.PowerPlantOwnership) ||
-            !ReferenceEquals(FightingDojoOpponentPokemonCatalog.For(owned), content.FightingDojoOpponents) ||
-            !ReferenceEquals(content.FightingDojoOpponents!.Predecessor, content.PowerPlantOpponents))
+            !ReferenceEquals(FossilLabOwnedPokemonCatalog.For(owned.Catalog), owned) ||
+            !ReferenceEquals(owned.Predecessor, content.FightingDojoOwnership) ||
+            !ReferenceEquals(FossilLabOpponentPokemonCatalog.For(owned), content.FossilLabOpponents) ||
+            !ReferenceEquals(content.FossilLabOpponents!.Predecessor, content.FightingDojoOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, owned.Catalog, battle);
     }
@@ -55,10 +55,10 @@ public sealed partial class CampaignSession
             content.CinnabarEnabled && content.FirstSeviiEnabled && content.ViridianGymEnabled &&
             content.LeagueRivalEnabled && content.VictoryRoadEnabled && content.PokemonLeagueEnabled &&
             content.NationalDexEnabled && content.SeviiRubyEnabled && content.FourIslandEnabled &&
-            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled) ||
+            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled) ||
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
-        ValidateFightingDojoCatalog(content);ValidatePowerPlantCatalog(content);ValidateEventIslandCatalog(content);ValidateSevenIslandCatalog(content);ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
+        ValidateFossilLabCatalog(content);ValidateFightingDojoCatalog(content);ValidatePowerPlantCatalog(content);ValidateEventIslandCatalog(content);ValidateSevenIslandCatalog(content);ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
         if(content.CinnabarOwnership is null||content.CinnabarOpponents is null||content.CinnabarTrainerParties is null||
             !ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned))
             throw new InvalidDataException("cinnabar_source_profile_missing");
@@ -75,7 +75,7 @@ public sealed partial class CampaignSession
         if(content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
-        if(!FightingDojoMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
+        if(!FossilLabMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
         if(TrainerTowerShopCatalog.For(content.EarlyShop) is null)throw new InvalidDataException("current_shop_proof_missing");
         if(content.QuestItems?.Profile!=QuestItemRules.TownMapProfile)throw new InvalidDataException("current_quest_item_profile_missing");
         if(content.FieldPickups.IsDefaultOrEmpty||content.EarlyShop is null)throw new InvalidDataException("current_field_pickup_profile_missing");

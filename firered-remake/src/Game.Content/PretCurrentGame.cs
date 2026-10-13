@@ -23,6 +23,7 @@ public sealed partial class PretCampaignCatalog
         var powerPlant = PretPowerPlantRegion.Load(projectRoot);
         var trainerTower = PretTrainerTowerRegion.Load(projectRoot);
         var fightingDojo = PretFightingDojoRegion.Load(projectRoot);
+        var fossilLab = PretFossilLabRegion.Load(projectRoot);
         var itemfinder = PretItemfinderSource.Load(projectRoot);
         var sevenIsland = PretSevenIslandRegion.Load(projectRoot);
         var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
@@ -1001,6 +1002,7 @@ public sealed partial class PretCampaignCatalog
         AppendPowerPlantSources(powerPlant, sources, textFiles, constants, hashes);
         AppendTrainerTowerSources(trainerTower, sources, textFiles, constants, hashes);
         AppendFightingDojoSources(fightingDojo, sources, textFiles, constants, hashes);
+        AppendFossilLabSources(fossilLab, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -2251,8 +2253,7 @@ public sealed partial class PretCampaignCatalog
             SpeciesNames = pokemonContent.SpeciesNames.AddRange(FightingDojoOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
                 KeyValuePair.Create(dojoOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[dojoOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
         machines = dojoMachines.Catalog;
-        var moveTutors = PretMoveTutors.Load(projectRoot, dojoOwned.Catalog);
-        hashes.AddRange(moveTutors.AdditionalSourceHashes);
+
         hashes.Add("fighting-dojo-rules:" + PretFightingDojoRules.CatalogSha256);
         hashes.Add("fighting-dojo-source-lock:" + PretFightingDojoRules.LockSha256);
         hashes.Add("fighting-dojo-trainers:" + PretFightingDojoRules.TrainersSha256);
@@ -2260,6 +2261,28 @@ public sealed partial class PretCampaignCatalog
         hashes.Add("fighting-dojo-rule-contract:" + PretFightingDojoRules.RulesSha256);
         hashes.Add("fighting-dojo-inputs:" + PretFightingDojoRules.SourceInputsSha256);
         ValidateFightingDojoComposition(fightingDojo, maps, dojoPreviousMaps, compiled);
+
+        var fossilLabPreviousMaps = maps;
+        maps = maps.AddRange(fossilLab.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendFossilLab(projectRoot, maps, celioRoamerMaps, fossilLab.NewMaps);
+        PretFossilLabRules.ValidateSourceEvidence(projectRoot);
+        var fossilOwned = PretFossilLabRules.LoadOwned(projectRoot, dojoOwned);
+        var fossilOpponents = PretFossilLabRules.LoadOpponents(projectRoot, dojoOpponents, fossilOwned);
+        var fossilMachines = PretFossilLabRules.LoadMachines(projectRoot, dojoMachines, fossilOwned);
+        pokemonContent = pokemonContent with { Catalog = fossilOwned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.AddRange(FossilLabOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
+                KeyValuePair.Create(fossilOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[fossilOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
+        machines = fossilMachines.Catalog;
+        var moveTutors = PretMoveTutors.Load(projectRoot, fossilOwned.Catalog);
+        hashes.AddRange(moveTutors.AdditionalSourceHashes);
+        hashes.Add("fossil-lab-rules:" + PretFossilLabRules.CatalogSha256);
+        hashes.Add("fossil-lab-source-lock:" + PretFossilLabRules.LockSha256);
+        hashes.Add("fossil-lab-machines:" + PretFossilLabRules.MachinesSha256);
+        hashes.Add("fossil-lab-rule-contract:" + PretFossilLabRules.RulesSha256);
+        hashes.Add("fossil-lab-inputs:" + PretFossilLabRules.SourceInputsSha256);
+        ValidateFossilLabComposition(fossilLab, maps, fossilLabPreviousMaps, compiled);
+        hashes.Add("fossil-lab-presentation:" + PretFossilLabPresentation.ManifestSha256);
+        hashes.Add("fossil-lab-presentation-source-lock:" + PretFossilLabPresentation.LockSha256);
 
         // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
@@ -2434,7 +2457,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

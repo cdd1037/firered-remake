@@ -42,6 +42,8 @@ public sealed partial class PretCampaignCatalog
     }
     public string? DeferredRegionalServiceReason(MapId map,string script)
     {
+        if(FossilLabEnabled && map.Value == "map.cinnabar-island-pokemon-lab-experiment-room" && script == "CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_Garett")
+            return "fossil_lab_service_unavailable: The Seel trade is not available yet.";
         if(FourIslandEnabled&&map.Value=="map.four-island"&&script=="FourIsland_EventScript_DaycareMan")
             return "four_island_service_unavailable: Day Care and breeding are not available yet.";
         if(!RegionalInteriorServicesEnabled)return null;

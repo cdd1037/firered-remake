@@ -37,10 +37,10 @@ public sealed partial class CampaignSession
             content.FightingDojoTrainers is not { } trainers ||
             !ReferenceEquals(FightingDojoOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             !ReferenceEquals(owned.Predecessor, content.PowerPlantOwnership) ||
-            !ReferenceEquals(owned.Catalog, content.PokemonContent?.Catalog) ||
+            !ReferenceEquals(owned, content.FossilLabOwnership?.Predecessor) ||
             !ReferenceEquals(FightingDojoOpponentPokemonCatalog.For(owned), opponents) ||
             !ReferenceEquals(opponents.Predecessor, content.PowerPlantOpponents) ||
-            !ReferenceEquals(FightingDojoMachineCatalog.For(content.PewterMachines), machines) ||
+            !ReferenceEquals(FightingDojoMachineCatalog.For(machines.Catalog), machines) ||
             !ReferenceEquals(machines.Predecessor, content.PowerPlantMachines) || !ReferenceEquals(machines.Pokemon, owned))
             throw new InvalidDataException("fighting_dojo_current_binding");
         FightingDojoTrainerPartyFactory.ValidateCatalog(trainers);
