@@ -54,6 +54,8 @@ public sealed partial class PretCampaignCatalog
     }
     public string? DeferredRegionalServiceReason(MapId map,string script)
     {
+        if(FourIslandEnabled&&map.Value=="map.four-island"&&script=="FourIsland_EventScript_DaycareMan")
+            return "four_island_service_unavailable: Day Care and breeding are not available yet.";
         if(!RegionalInteriorServicesEnabled)return null;
         if(map.Value=="map.celadon-city-restaurant"&&script=="CeladonCity_Restaurant_EventScript_CoinCaseMan")
             return "regional_service_unavailable: Coin Case service\nis not available yet.";

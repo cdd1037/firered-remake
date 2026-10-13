@@ -37,6 +37,7 @@ public sealed partial class CampaignSession
         {
             0=>("MAP_VERMILION_CITY",23,32),1=>("MAP_ONE_ISLAND_HARBOR",8,5),
             2=>("MAP_TWO_ISLAND_HARBOR",8,5),3=>("MAP_THREE_ISLAND_HARBOR",8,5),
+            4 when _content.FourIslandEnabled=>("MAP_FOUR_ISLAND_HARBOR",8,5),
             8=>("MAP_CINNABAR_ISLAND",21,7),_=>throw new InvalidDataException("seagallop_destination_not_admitted")
         };
         var map=_content.MapFromSourceSymbol(symbol);var cell=_content.Maps[map].GetTile(x,y)??throw new InvalidDataException("seagallop_landing_missing");
@@ -66,7 +67,7 @@ public sealed partial class CampaignSession
         {
             // StoryEffects already resolves the VAR_RESULT read operand to its value.
             int number=SeviiValue(state,a[1]);
-            if(number is not (1 or 2 or 7))throw new InvalidDataException("seagallop_number_invalid");
+            if(number is not (1 or 2 or 7) && !(number==6&&_content.FourIslandEnabled))throw new InvalidDataException("seagallop_number_invalid");
             next=state with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",number.ToString(System.Globalization.CultureInfo.InvariantCulture))};return true;
         }
         if(effect.Opcode=="multichoice"&&(ferry||effect.Source.Path=="data/maps/VermilionCity/scripts.inc")&&
@@ -82,7 +83,7 @@ public sealed partial class CampaignSession
             {
                 int origin=SeviiValue(state,"VAR_0x8004"),destination=SeviiValue(state,"VAR_0x8006");
                 _=SeagallopDestination(origin);_=SeagallopDestination(destination);
-                next=Result(a[0],origin==8||destination==8?1:origin==0||destination==0?7:2);return true;
+                next=Result(a[0],origin==8||destination==8?1:origin==0||destination==0?7:origin==4||destination==4?6:2);return true;
             }
             if(ferry&&a[1]=="IsPlayerLeftOfVermilionSailor")
             {next=Result(a[0],state.World.Player.MapId.Value=="map.vermilion-city"&&state.World.Player.X<24?1:0);return true;}
@@ -96,9 +97,10 @@ public sealed partial class CampaignSession
                 int origin=SeviiValue(state,"VAR_0x8004"),destination=SeviiValue(state,"VAR_0x8006");
                 bool first=origin==8&&destination==1&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ONE_ISLAND_HARBOR")==1;
                 bool returning=origin==1&&destination==8&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F")==3;
-                bool ordinary=origin is >=0 and <=3&&destination is >=0 and <=3&&origin!=destination&&
+                bool ordinary=origin>=0&&origin<=(_content.FourIslandEnabled?4:3)&&destination>=0&&destination<=(_content.FourIslandEnabled?4:3)&&origin!=destination&&
                     (OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],FirstSeviiShopCatalog.TriPassId)==1||
                         _content.SeviiRubyEnabled&&OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],RainbowPassItem)==1)&&
+                    (origin!=4&&destination!=4||_content.FourIslandEnabled&&OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],RainbowPassItem)==1)&&
                     (origin!=0&&destination!=0||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND")>=4);
                 if(!(first||returning||ordinary)||state.Seagallop is not null||!state.Script.Locked||!state.ScreenIsBlack)
                     throw new InvalidDataException("seagallop_departure_context");
@@ -133,6 +135,7 @@ public sealed partial class CampaignSession
     {
         "HEAL_LOCATION_ONE_ISLAND"=>"MAP_ONE_ISLAND_POKEMON_CENTER_1F",
         "HEAL_LOCATION_TWO_ISLAND"=>"MAP_TWO_ISLAND_POKEMON_CENTER_1F",
-        "HEAL_LOCATION_THREE_ISLAND"=>"MAP_THREE_ISLAND_POKEMON_CENTER_1F",_=>null
+        "HEAL_LOCATION_THREE_ISLAND"=>"MAP_THREE_ISLAND_POKEMON_CENTER_1F",
+        "HEAL_LOCATION_FOUR_ISLAND" when _content.FourIslandEnabled=>"MAP_FOUR_ISLAND_POKEMON_CENTER_1F",_=>null
     };
 }

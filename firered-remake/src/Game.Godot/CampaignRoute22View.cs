@@ -38,11 +38,12 @@ public partial class CampaignView
     }
 
     private CaptureDexEntry CaptureDexEntry(int species) =>
-        SeviiRubyCaptureDexEntry(species)??_catalog.CinnabarArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SaffronGymArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SilphArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SurfArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SafariArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.FuchsiaRouteArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.EeveeArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SnorlaxArt?.CaptureDexEntries.GetValueOrDefault(species)??TowerCaptureDexEntry(species)??_catalog.RocketHideoutPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.CeladonGymPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.CeladonApproachPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.RockTunnelPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route11Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SsAnnePokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.VermilionPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.BillPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.CeruleanPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.MtMoonPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route3Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route22Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_captureDex!.Entries[species];
+        FourIslandCaptureDexEntry(species)??SeviiRubyCaptureDexEntry(species)??_catalog.CinnabarArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SaffronGymArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SilphArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SurfArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SafariArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.FuchsiaRouteArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.EeveeArt?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SnorlaxArt?.CaptureDexEntries.GetValueOrDefault(species)??TowerCaptureDexEntry(species)??_catalog.RocketHideoutPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.CeladonGymPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.CeladonApproachPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.RockTunnelPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route11Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.SsAnnePokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.VermilionPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.BillPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.CeruleanPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.MtMoonPokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route3Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_catalog.Route22Pokemon?.CaptureDexEntries.GetValueOrDefault(species)??_captureDex!.Entries[species];
 
     private PokedexMenuPage PresentedPokedexPage(int species)
     {
         var page=_pokedexMenu!.BuildPage(species,_session.State.SeenSpecies,_session.State.CaughtSpecies,PokedexAccess);
+        if(_fourIslandDex.TryGetValue(species,out var fourEntry))return page with{Portrait=fourEntry.Portrait,Footprint=page.Caught?fourEntry.Footprint:null};
         if(_seviiRubyDex.TryGetValue(species,out var rubyEntry))return page with{Portrait=rubyEntry.Portrait,Footprint=page.Caught?rubyEntry.Footprint:null};
         if(PokemonLeagueDexPortrait(species) is {} leaguePortrait)return page with{Portrait=leaguePortrait};
         if(VictoryRoadDexPortrait(species) is {} victoryPortrait)return page with{Portrait=victoryPortrait};
@@ -56,6 +57,7 @@ public partial class CampaignView
 
     private byte[] ReadPokedexTexture(PokedexMenuTexture texture)
     {
+        if(ReadFourIslandDexTexture(texture) is {} fourPixels)return fourPixels;
         if(ReadSeviiRubyDexTexture(texture) is {} rubyPixels)return rubyPixels;
         if(ReadPokemonLeagueDexTexture(texture) is {} leaguePixels)return leaguePixels;
         if(ReadVictoryRoadDexTexture(texture) is {} victoryPixels)return victoryPixels;

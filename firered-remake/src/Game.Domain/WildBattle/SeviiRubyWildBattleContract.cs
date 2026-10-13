@@ -47,21 +47,24 @@ public static partial class WildBattleRules
     /// <summary>The field owner must first prove the source walk/Surf/cast has completed.
     /// This entry validates every origin and exact natural move set; it grants no new rod or map access.</summary>
     public static WildBattleResult StartSeviiRubyWild(SeviiRubyOwnedPokemonCatalog owned,SeviiRubyWildOrigin origin,
-        ImmutableArray<WildBattleCombatant> playerParty,int activeIndex,WildBattleCombatant opponent,RngState rng, WildBattleTerrain terrain)
+        ImmutableArray<WildBattleCombatant> playerParty,int activeIndex,WildBattleCombatant opponent,RngState rng, WildBattleTerrain terrain, OwnedBattlePokemonCatalog? successorOwned = null)
     {
         if (owned is null || !ReferenceEquals(SeviiRubyOwnedPokemonCatalog.For(owned.Catalog),owned)) return Fail(null,"sevii_ruby_wild_owned_proof");
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(owned, successorOwned))
+            return Fail(null,"source_wild_successor_owned");
+        OwnedBattlePokemonCatalog actualOwned = successorOwned ?? OwnedBattlePokemonCatalog.For(owned.Catalog)!;
         if (origin is null) return Fail(null,"sevii_ruby_wild_origin_missing");
         if (origin.Kind==SeviiRubyEncounterKind.RockSmash) return Fail(null,"sevii_ruby_rock_smash_field_unavailable");
         if (opponent?.Pokemon is not {} mon || opponent.Status!=WildBattleStatus.None || opponent.HeldItem!="ITEM_NONE" ||
             !SeviiRubyWildPokemonFactory.SourceInitialInstance(owned,origin,mon)) return Fail(null,"sevii_ruby_wild_source_instance");
-        if (SourceBattleAdmission.ValidateOwnedEntry(owned,playerParty,activeIndex) is {} ownedError) return Fail(null,ownedError);
+        if (SourceBattleAdmission.ValidateOwnedEntry(actualOwned,playerParty,activeIndex) is {} ownedError) return Fail(null,ownedError);
         if (SourceBattleAdmission.ValidateEntry(owned.Mechanics,BattleRulesProfile.CanonicalSourceSingles,playerParty,activeIndex,opponent) is {} sourceError)
             return Fail(null,sourceError);
         // BattleSetup_GetTerrainId reads the player destination tile, including shore fishing.
         // The authoritative field caller supplies that source-derived terrain.
         if (!Enum.IsDefined(terrain)) return Fail(null,"sevii_ruby_wild_terrain");
         return StartSourceWildCore(owned.Mechanics.Catalog,playerParty,activeIndex,opponent,rng,terrain,
-            origin.Kind==SeviiRubyEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,owned,seviiRuby:origin);
+            origin.Kind==SeviiRubyEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,actualOwned,seviiRuby:origin);
     }
 }
 
@@ -73,10 +76,13 @@ public static partial class WildBattleRules
         MapId map, FirstSeviiEncounterKind kind, ImmutableArray<WildBattleCombatant> playerParty,
         int activeIndex, WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain,
         VictoryRoadWildOrigin? victoryRoad = null, bool lostelleHypno = false,
-        PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false)
+        PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false, OwnedBattlePokemonCatalog? successorOwned = null)
     {
         if (owned is null || !ReferenceEquals(SeviiRubyOwnedPokemonCatalog.For(owned.Catalog),owned))
             return Fail(null,"sevii_ruby_inherited_owned_proof");
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(owned, successorOwned))
+            return Fail(null,"source_wild_successor_owned");
+        OwnedBattlePokemonCatalog actualOwned = successorOwned ?? OwnedBattlePokemonCatalog.For(owned.Catalog)!;
         if (!Enum.IsDefined(kind) || !Enum.IsDefined(terrain) || opponent?.Pokemon is not {} mon)
             return Fail(null,"sevii_ruby_inherited_context");
         if (SeviiRubyEncounterTables.Land.Any(t=>t.Map==map) || SeviiRubyEncounterTables.Water.Any(t=>t.Map==map))
@@ -111,13 +117,13 @@ public static partial class WildBattleRules
                 _=>false};
             if (!admitted || scriptedSnorlax || towerKind is not null) return Fail(null,"sevii_ruby_inherited_first_sevii_origin");
         }
-        else return StartSafariOwnedWild(OwnedBattlePokemonCatalog.For(owned.Catalog)!,playerParty,activeIndex,
+        else return StartSafariOwnedWild(actualOwned,playerParty,activeIndex,
             opponent,rng,terrain,kind==FirstSeviiEncounterKind.OldRod,towerKind,scriptedSnorlax);
-        if (SourceBattleAdmission.ValidateOwnedEntry(owned,playerParty,activeIndex) is {} error) return Fail(null,error);
+        if (SourceBattleAdmission.ValidateOwnedEntry(actualOwned,playerParty,activeIndex) is {} error) return Fail(null,error);
         if (SourceBattleAdmission.ValidateEntry(owned.Mechanics,BattleRulesProfile.CanonicalSourceSingles,playerParty,activeIndex,opponent) is {} sourceError)
             return Fail(null,sourceError);
         return StartSourceWildCore(owned.Mechanics.Catalog,playerParty,activeIndex,opponent,rng,terrain,
-            kind==FirstSeviiEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,owned,
+            kind==FirstSeviiEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,actualOwned,
             firstSeviiWild:firstSevii,victoryRoad:victoryRoad);
     }
 }

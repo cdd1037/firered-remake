@@ -26,7 +26,7 @@ public static class VictoryRoadDoubleTrainerEncounter
         if (!trainers.BattlesByScript.TryGetValue(battleScript, out var battle) || battle.Trainer != TrainerId || battle.Mode != 4)
             return Fail("victory_road_double_script");
         OwnedBattlePokemonCatalog predecessorOwned = opponents.Owned;
-        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsSeviiRubySuccessorOf(predecessorOwned, successorOwned))
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(predecessorOwned, successorOwned))
             return Fail("source_double_successor_owned");
         var owned = successorOwned ?? predecessorOwned;
         var proof = opponents.Mechanics; var catalog = proof.Catalog;
@@ -55,7 +55,7 @@ public static class VictoryRoadDoubleTrainerEncounter
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned is null ? CinnabarOpponentPokemonCatalog.Profile : SeviiRubyOpponentPokemonCatalog.Profile, BattleKind = WildBattleCalledBattleKind.Trainer,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned is null ? CinnabarOpponentPokemonCatalog.Profile : successorOwned.TrainerOpponentProfile, BattleKind = WildBattleCalledBattleKind.Trainer,
                 Rng = generated.Rng, Field = new() { Terrain = terrain }, Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)],
                 Slots = Enumerable.Range(0, 4).Select(i => {
                     var side = (BattleSide)(i & 1); int index = side == BattleSide.Player ? active[i / 2] : i / 2;
@@ -97,11 +97,14 @@ public static class VictoryRoadDoubleTrainerEncounter
             return "victory_road_double_catalog";
         try { VictoryRoadTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "victory_road_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion is not (CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile) ||
+        if (frame is null || frame.SourceCampaignRulesVersion is not (CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile) ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "victory_road_double_frame";
         if (frame.SourceCampaignRulesVersion == SeviiRubyOpponentPokemonCatalog.Profile &&
             (SeviiRubyOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } successor ||
              !ReferenceEquals(successor.Owned.Predecessor, opponents.Owned))) return "source_double_successor_owned";
+        if (frame.SourceCampaignRulesVersion == FourIslandOpponentPokemonCatalog.Profile &&
+            (FourIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } fourSuccessor ||
+             !ReferenceEquals(fourSuccessor.Owned.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
         if (frame.Parties.SelectMany(p => p.Members).Any(m =>
             SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "victory_road_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;

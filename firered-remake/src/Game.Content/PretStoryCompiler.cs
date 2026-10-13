@@ -26,7 +26,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -120,6 +120,11 @@ public static partial class PretStoryCompiler
                 {assemblyData.Add(label,body.Take(8).Select(b=>b.Text).ToImmutableArray());continue;}
                 if(includeSeviiRuby&&IsSeviiRubyAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
+                if(includeFourIsland&&IsFourIslandAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
+                {
+                    if(body.Count==1&&body[0].Text==".byte 0")headers.Add(label,[]);
+                    assemblyData.Add(label,body.Where(b=>b.Text.StartsWith(".",StringComparison.Ordinal)).Select(b=>b.Text).ToImmutableArray());continue;
+                }
                 if(body[0].Text.StartsWith(".string",StringComparison.Ordinal))continue;
                 if(body.Any(x=>x.Text.StartsWith("map_script ",StringComparison.Ordinal)))
                 {
@@ -195,6 +200,13 @@ public static partial class PretStoryCompiler
                         if(includeSeviiRuby)
                         {
                             var admitted=SeviiRubyInstructionShape(file,label,opcode,operands);
+                            if(admitted is {} shape)(kind,min,max)=shape;
+                        }
+                        if(file.Path=="data/maps/FourIsland_IcefallCave_Back/scripts.inc"&&opcode=="trainerbattle_no_intro")
+                            (kind,min,max)=(StoryOp.Unsupported,0,int.MaxValue);
+                        if(includeFourIsland)
+                        {
+                            var admitted=FourIslandInstructionShape(file,label,opcode,operands);
                             if(admitted is {} shape)(kind,min,max)=shape;
                         }
                         if(kind!=StoryOp.Unsupported&&(operands.Length<min||operands.Length>max))throw ContentJson.Error("story_opcode_arity",$"{file.Path}:{lineNumber}",$"{opcode} requires {min}..{max} arguments.");

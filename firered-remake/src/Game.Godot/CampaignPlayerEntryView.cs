@@ -323,7 +323,7 @@ public partial class CampaignView
     {
         DisposeSourceMoveAnimation();
         _saffronGymTrainerPortraits.Clear(); _saffronGymTrainerClasses.Clear();
-        DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
+        DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
         DisposeMapResources();
         _entryHeadingFont?.Dispose();foreach(var font in _entryGenderFonts.Values)font.Dispose();_entryGenderFonts.Clear();
         _femalePlayer?.Texture.Dispose();DisposeTownMapPresentation();DisposeCityServicesPresentation();

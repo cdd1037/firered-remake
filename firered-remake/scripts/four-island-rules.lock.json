@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-four-island-rules-v1",
+  "files": [
+    {
+      "path": "content/generated/four-island-rules/pokemon.json",
+      "byteLength": 2118,
+      "sha256": "8b99b80f0b53518468ca6bf863b5e00b4983f250fc7051dc8d84ab67b17db054"
+    },
+    {
+      "path": "content/generated/four-island-rules/rules.json",
+      "byteLength": 26443,
+      "sha256": "28231ab8ef38f510bc0f3de0d4bfa4e7019a5e54255258fcf3ccb4a3162a76b6"
+    },
+    {
+      "path": "content/generated/four-island-rules/source-input-hashes.json",
+      "byteLength": 5262,
+      "sha256": "2ed0f1914c50b16202e68b20bfd291d675667296fb62d4dbdfe56c84f73618e6"
+    },
+    {
+      "path": "content/generated/four-island-rules/trainers.json",
+      "byteLength": 6249,
+      "sha256": "ab42c255dbbfa274f9755564003fe30f9a2b86b7d36076d2aea458f444fd0ff5"
+    }
+  ]
+}

@@ -34,6 +34,8 @@ public sealed class OwnedBattlePokemonCatalog
             proof = new(catalog, silph.Predecessor.Predecessor.Predecessor, silph.Mechanics, SilphOwnedPokemonCatalog.Profile);
         else if (CinnabarOwnedPokemonCatalog.For(catalog) is { } cinnabar)
             proof = new(catalog, cinnabar.Predecessor.Predecessor.Predecessor.Predecessor, cinnabar.Mechanics, CinnabarOwnedPokemonCatalog.Profile);
+        else if (FourIslandOwnedPokemonCatalog.For(catalog) is { } four)
+            proof = new(catalog, For(four.Predecessor.Catalog)!.Predecessor, four.Mechanics, FourIslandOwnedPokemonCatalog.Profile);
         else if (SeviiRubyOwnedPokemonCatalog.For(catalog) is { } ruby)
             proof = new(catalog, For(ruby.Predecessor.Catalog)!.Predecessor, ruby.Mechanics, SeviiRubyOwnedPokemonCatalog.Profile);
         else return null;
@@ -61,12 +63,29 @@ public sealed class OwnedBattlePokemonCatalog
     public static implicit operator OwnedBattlePokemonCatalog?(SeviiRubyOwnedPokemonCatalog? owned) =>
         owned is null ? null : For(owned.Catalog)!;
 
+    [return: NotNullIfNotNull(nameof(owned))]
+    public static implicit operator OwnedBattlePokemonCatalog?(FourIslandOwnedPokemonCatalog? owned) =>
+        owned is null ? null : For(owned.Catalog)!;
+
+    internal string TrainerOpponentProfile => RulesVersion == FourIslandOwnedPokemonCatalog.Profile
+        ? FourIslandOpponentPokemonCatalog.Profile : SeviiRubyOpponentPokemonCatalog.Profile;
+
+    internal static bool IsCampaignSuccessorOf(OwnedBattlePokemonCatalog predecessor, OwnedBattlePokemonCatalog successor) =>
+        IsSeviiRubySuccessorOf(predecessor, successor) ||
+        ReferenceEquals(For(successor.Catalog), successor) && FourIslandOwnedPokemonCatalog.For(successor.Catalog) is { } four &&
+        ReferenceEquals(four.Mechanics, predecessor.Mechanics) && FourIslandOpponentPokemonCatalog.For(four) is not null &&
+        (ReferenceEquals(four.Predecessor.Catalog, predecessor.Catalog) ||
+         IsSeviiRubySuccessorOf(predecessor, For(four.Predecessor.Catalog)!));
+
     internal static bool IsSeviiRubySuccessorOf(OwnedBattlePokemonCatalog predecessor, OwnedBattlePokemonCatalog successor) =>
         ReferenceEquals(For(successor.Catalog), successor) && SeviiRubyOwnedPokemonCatalog.For(successor.Catalog) is { } ruby &&
         ReferenceEquals(ruby.Predecessor.Catalog, predecessor.Catalog) &&
         ReferenceEquals(ruby.Mechanics, predecessor.Mechanics) && SeviiRubyOpponentPokemonCatalog.For(ruby) is not null;
 
     internal bool AdmitsTrainerOpponent(SpeciesId species, string? trainerProfile = null) => Catalog.Species.ContainsKey(species) ||
+        trainerProfile == FourIslandOpponentPokemonCatalog.Profile &&
+        FourIslandOwnedPokemonCatalog.For(Catalog) is { } fourOwned &&
+        FourIslandOpponentPokemonCatalog.For(fourOwned) is { } four && four.Catalog.Species.ContainsKey(species) ||
         trainerProfile == SeviiRubyOpponentPokemonCatalog.Profile &&
         SeviiRubyOwnedPokemonCatalog.For(Catalog) is { } rubyOwned &&
         SeviiRubyOpponentPokemonCatalog.For(rubyOwned) is { } ruby && ruby.Catalog.Species.ContainsKey(species) ||
@@ -88,6 +107,8 @@ public sealed class OwnedBattlePokemonCatalog
     internal static OwnedBattlePokemonCatalog? ForMechanics(PokemonCatalog? catalog, string? rulesVersion)
     {
         if (catalog is null || rulesVersion is null) return null;
+        if (rulesVersion == FourIslandOpponentPokemonCatalog.Profile &&
+            FourIslandOpponentPokemonCatalog.ForMechanics(catalog) is { } four) return For(four.Owned.Catalog);
         if (rulesVersion == SeviiRubyOpponentPokemonCatalog.Profile &&
             SeviiRubyOpponentPokemonCatalog.ForMechanics(catalog) is { } ruby) return For(ruby.Owned.Catalog);
         if (rulesVersion == PokemonLeagueOpponentPokemonCatalog.Profile &&
@@ -104,22 +125,23 @@ public sealed class OwnedBattlePokemonCatalog
     }
 
     internal static bool IsKnownProfile(string profile) =>
-        profile is SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile;
+        profile is SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile;
     internal static bool ProfileAdmits(string profile, SpeciesId species) => IsKnownProfile(profile) &&
         (Battle.CampaignAdmissionPolicy.CurrentFuchsia.Admits(species) || SafariOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile && SurfOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile && SilphOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile && CinnabarOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
-         profile is SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile && SeviiRubyOwnedPokemonCatalog.AdditionalSpecies.Contains(species));
+         profile is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile && SurfOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile && SilphOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile && CinnabarOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile && SeviiRubyOwnedPokemonCatalog.AdditionalSpecies.Contains(species) ||
+         profile is FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile && FourIslandOwnedPokemonCatalog.AdditionalSpecies.Contains(species));
 
     // Surf adds only Psyduck to historical wild membership. Golduck is an owned
     // evolution; Safari's three extra catches still use their separate encounter owner.
     internal bool AdmitsWildOpponent(PokemonInstance pokemon) =>
-        Predecessor.Species.ContainsKey(pokemon.Species) || RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile &&
+        Predecessor.Species.ContainsKey(pokemon.Species) || RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile &&
         pokemon.Species == SurfOwnedPokemonCatalog.AdditionalSpecies[0] ||
-        RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species);
+        RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species);
 
     internal bool SupportsOrdinaryWildOpponent(PokemonInstance pokemon) => AdmitsWildOpponent(pokemon) &&
         (FuchsiaBattleScope.SupportsWildOpponent(pokemon.SourceSpeciesId) ||
-         RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile && pokemon.SourceSpeciesId is 54 or 72 or 109 || RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species));
+         RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile && pokemon.SourceSpeciesId is 54 or 72 or 109 || RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species));
 }

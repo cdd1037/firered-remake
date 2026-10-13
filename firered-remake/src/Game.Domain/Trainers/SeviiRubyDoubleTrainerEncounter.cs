@@ -16,7 +16,7 @@ public static class SeviiRubyDoubleTrainerEncounter
     public const int VictoryMoney = 1872;
     public static SourceTwinsEncounterResult Begin(SeviiRubyTrainerCatalog trainers, SeviiRubyOpponentPokemonCatalog opponents, string battleScript,
         ImmutableArray<WildBattleCalledPartyMember> playerParty, RngState rng,
-        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Grass)
+        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Grass, OwnedBattlePokemonCatalog? successorOwned = null)
     {
         SourceTwinsEncounterResult Fail(string code) => new(null, rng, [], [], code);
         if (opponents is null || !ReferenceEquals(SeviiRubyOpponentPokemonCatalog.For(opponents.Catalog), opponents))
@@ -25,7 +25,10 @@ public static class SeviiRubyDoubleTrainerEncounter
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return Fail("sevii_ruby_double_source"); }
         if (!trainers.BattlesByScript.TryGetValue(battleScript, out var battle) || battle.Trainer != TrainerId || battle.Mode != 4)
             return Fail("sevii_ruby_double_script");
-        OwnedBattlePokemonCatalog owned = opponents.Owned;
+        OwnedBattlePokemonCatalog predecessorOwned = opponents.Owned;
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(predecessorOwned,successorOwned))
+            return Fail("source_trainer_successor_owned");
+        var owned = successorOwned ?? predecessorOwned;
         var proof = opponents.Mechanics; var catalog = proof.Catalog;
         if (!Enum.IsDefined(terrain)) return Fail("sevii_ruby_double_terrain");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("sevii_ruby_double_rng");
@@ -52,7 +55,7 @@ public static class SeviiRubyDoubleTrainerEncounter
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = SeviiRubyOpponentPokemonCatalog.Profile, BattleKind = WildBattleCalledBattleKind.Trainer,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned is null ? SeviiRubyOpponentPokemonCatalog.Profile : successorOwned.TrainerOpponentProfile, BattleKind = WildBattleCalledBattleKind.Trainer,
                 Rng = generated.Rng, Field = new() { Terrain = terrain }, Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)],
                 Slots = Enumerable.Range(0, 4).Select(i => {
                     var side = (BattleSide)(i & 1); int index = side == BattleSide.Player ? active[i / 2] : i / 2;
@@ -94,8 +97,11 @@ public static class SeviiRubyDoubleTrainerEncounter
             return "sevii_ruby_double_catalog";
         try { SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "sevii_ruby_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion != SeviiRubyOpponentPokemonCatalog.Profile ||
+        if (frame is null || frame.SourceCampaignRulesVersion != SeviiRubyOpponentPokemonCatalog.Profile && frame.SourceCampaignRulesVersion != FourIslandOpponentPokemonCatalog.Profile ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "sevii_ruby_double_frame";
+        if (frame.SourceCampaignRulesVersion == FourIslandOpponentPokemonCatalog.Profile &&
+            (FourIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } successor ||
+             !ReferenceEquals(successor.Owned.Predecessor,opponents.Owned))) return "source_double_successor_owned";
         if (frame.Parties.SelectMany(p => p.Members).Any(m =>
             SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "sevii_ruby_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;

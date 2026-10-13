@@ -16,7 +16,7 @@ public partial class CampaignView
     private void LoadVictoryRoadPresentation()
     {
         if (!_catalog.VictoryRoadEnabled) return;
-        if (!_catalog.LeagueRivalEnabled || _session.RulesVersion != CampaignSession.VictoryRoadRulesVersion && !(_catalog.PokemonLeagueEnabled && _session.RulesVersion == CampaignSession.PokemonLeagueRulesVersion) && !(_catalog.NationalDexEnabled && _catalog.PokemonLeagueEnabled && _session.RulesVersion == CampaignSession.NationalDexRulesVersion) && !SeviiRubyPresentationProfile)
+        if (!_catalog.LeagueRivalEnabled || _session.RulesVersion != CampaignSession.VictoryRoadRulesVersion && !(_catalog.PokemonLeagueEnabled && _session.RulesVersion == CampaignSession.PokemonLeagueRulesVersion) && !(_catalog.NationalDexEnabled && _catalog.PokemonLeagueEnabled && _session.RulesVersion == CampaignSession.NationalDexRulesVersion) && !SeviiRubyPresentationProfile && !FourIslandPresentationProfile)
             throw new InvalidDataException("Victory Road presentation requires its authenticated successor profile.");
         var art = VictoryRoadPresentationAssets.Load(_root);
         var source = _catalog.VictoryRoadTrainerParties ?? throw new InvalidDataException("Victory Road trainers missing.");

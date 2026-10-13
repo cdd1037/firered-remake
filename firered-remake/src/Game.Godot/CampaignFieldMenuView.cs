@@ -137,6 +137,7 @@ public partial class CampaignView
             else if(actions[_fieldPartyAction] == "FLASH") UseFieldPartyFlash();
             else if(actions[_fieldPartyAction] == "STRENGTH") UseFieldPartyStrength();
             else if(actions[_fieldPartyAction] == "SURF") UseFieldPartySurf();
+            else if(actions[_fieldPartyAction] == "WATERFALL") UseFieldPartyWaterfall();
             else _fieldMenuMode = "party";
             return true;
         }
@@ -172,6 +173,7 @@ public partial class CampaignView
                 else if(_catalog.RockTunnelEnabled&&move.Move.Value=="pret:MOVE_FLASH")actions.Add("FLASH");
                 else if(_catalog.SafariEnabled&&move.Move.Value=="pret:MOVE_STRENGTH")actions.Add("STRENGTH");
                 else if(_catalog.SurfEnabled&&move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");
+                else if(_catalog.FourIslandEnabled&&move.Move.Value=="pret:MOVE_WATERFALL")actions.Add("WATERFALL");
         actions.Add("SWITCH");actions.Add("CANCEL");return actions.ToArray();
     }
     private int FieldPartyActionTop => 152-FieldPartyActions().Length*16;

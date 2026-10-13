@@ -23,7 +23,7 @@ public sealed partial class PretCampaignCatalog
         string? pokemonLeagueContentRoot=null,string? pokemonLeagueRulesRoot=null,
         string? victoryRoadContentRoot=null,string? victoryRoadRulesRoot=null,string? leagueRivalRulesRoot=null,string? viridianGymContentRoot=null,string? viridianGymRulesRoot=null,
         string? firstSeviiContentRoot=null,string? firstSeviiRulesRoot=null,string? firstSeviiPresentationRoot=null,
-        bool includeNationalDex=false,string? nationalDexSourceRoot=null,bool includeSeviiRuby=false,string? seviiRubyContentRoot=null,string? seviiRubyRulesRoot=null)=>Load(root,
+        bool includeNationalDex=false,string? nationalDexSourceRoot=null,bool includeSeviiRuby=false,string? seviiRubyContentRoot=null,string? seviiRubyRulesRoot=null,bool includeFourIsland=false,string? fourIslandContentRoot=null,string? fourIslandRulesRoot=null)=>Load(root,
         includeStarterEvents:true,includeFirstBattle:true,includeOpeningItems:true,
         includeViridianRegion:true,includeParcelQuest:true,includeCapture:true,includeViridianCenter:true,
         includeOldManTutorial:true,includePartyTraining:true,includeForest:true,includeForestTrainers:true,
@@ -43,7 +43,7 @@ public sealed partial class PretCampaignCatalog
         includeLeagueRival:true,leagueRivalRulesRoot:leagueRivalRulesRoot,includeVictoryRoad:true,
         victoryRoadContentRoot:victoryRoadContentRoot,victoryRoadRulesRoot:victoryRoadRulesRoot,
         includePokemonLeague:true,pokemonLeagueContentRoot:pokemonLeagueContentRoot,pokemonLeagueRulesRoot:pokemonLeagueRulesRoot,
-        includeNationalDex:includeNationalDex,nationalDexSourceRoot:nationalDexSourceRoot,includeSeviiRuby:includeSeviiRuby,seviiRubyContentRoot:seviiRubyContentRoot,seviiRubyRulesRoot:seviiRubyRulesRoot);
+        includeNationalDex:includeNationalDex,nationalDexSourceRoot:nationalDexSourceRoot,includeSeviiRuby:includeSeviiRuby,seviiRubyContentRoot:seviiRubyContentRoot,seviiRubyRulesRoot:seviiRubyRulesRoot,includeFourIsland:includeFourIsland,fourIslandContentRoot:fourIslandContentRoot,fourIslandRulesRoot:fourIslandRulesRoot);
 
     private static void AppendPokemonLeagueSources(PretPokemonLeagueRegion region,List<PretSourceScriptFile> sources,
         List<string> texts,Dictionary<string,int> constants,List<string> hashes)

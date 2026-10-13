@@ -76,16 +76,17 @@ public static class SourceTwinsTrainerEncounter
         SourceTwinsEncounterResult Fail(string code) => new(null, rng, [], [], code);
         if (ValidateDefinition(definition) is { } error) return Fail(error);
         if (SourceMechanicsCatalog.For(catalog) is not { } proof) return Fail("source_twins_catalog_proof");
-        if (successorOwned is not null && (!ReferenceEquals(OwnedBattlePokemonCatalog.For(successorOwned.Catalog), successorOwned) ||
-            SeviiRubyOwnedPokemonCatalog.For(successorOwned.Catalog) is not { } ruby ||
-            !ReferenceEquals(ruby.Mechanics, proof) || SeviiRubyOpponentPokemonCatalog.For(ruby) is null))
+        if (successorOwned is not null && (!ReferenceEquals(OwnedBattlePokemonCatalog.For(successorOwned.Catalog),successorOwned) ||
+            !ReferenceEquals(successorOwned.Mechanics,proof) ||
+            !(SeviiRubyOwnedPokemonCatalog.For(successorOwned.Catalog) is {} ruby && SeviiRubyOpponentPokemonCatalog.For(ruby) is not null ||
+              FourIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} four && FourIslandOpponentPokemonCatalog.For(four) is not null)))
             return Fail("source_twins_successor_owned");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("source_twins_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("source_twins_player_party");
         foreach (var member in playerParty)
             if (member?.Pokemon is null || successorOwned is not null && !successorOwned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePermanent(proof, member.Pokemon) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
-                !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem) ||
+                !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
                 !WildBattleStatus.IsSleeping(member.Status) && !WildBattleSourceFieldEffects.IsValidToxic(member.Status))
                 return Fail("source_twins_player_member");
@@ -105,7 +106,7 @@ public static class SourceTwinsTrainerEncounter
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned is null ? null : SeviiRubyOpponentPokemonCatalog.Profile, BattleKind = WildBattleCalledBattleKind.Trainer,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned?.TrainerOpponentProfile, BattleKind = WildBattleCalledBattleKind.Trainer,
                 Rng = generated.Rng, Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)],
                 Slots = Enumerable.Range(0, 4).Select(i => {
                     var side = (BattleSide)(i & 1); int index = side == BattleSide.Player ? active[i / 2] : i / 2;
