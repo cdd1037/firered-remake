@@ -57,6 +57,7 @@ public partial class CampaignView
     private static string CaptureBallName(CaptureBall ball)=>ball switch
     {
         CaptureBall.Poke=>"POKé BALL", CaptureBall.Great=>"GREAT BALL",
+        CaptureBall.Ultra=>"ULTRA BALL", CaptureBall.Master=>"MASTER BALL",
         CaptureBall.Net=>"NET BALL", CaptureBall.Nest=>"NEST BALL",
         _=>throw new InvalidDataException("Unsupported visible capture ball: "+ball)
     };

@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
             if (state.BattledTrainers.Contains(twins?DoubleTrainerId(actor.ScriptId).Value:battle!.Trainer.Value)) continue;
             int distance = ForestTrainerApproachDistance(state, actor, definition.TrainerSight);
             if (distance == 0) continue;
-            if(twins)_=PrepareDoubleBattle(state,actor.ScriptId);else _ = PrepareForestTrainerBattle(state, battle!.Trainer);
+            if(twins)_=PrepareDoubleBattle(state,actor.ScriptId);else ValidateForestTrainerEntryContext(state, battle!.Trainer);
             var path = ImmutableArray.CreateBuilder<TilePosition>();
             var actions = ImmutableArray.CreateBuilder<string>(); actions.Add("emote_exclamation_mark");
             var (dx, dy) = Delta(actor.Facing);

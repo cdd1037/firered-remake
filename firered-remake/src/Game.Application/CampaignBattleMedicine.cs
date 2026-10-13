@@ -1,4 +1,5 @@
 using Game.Domain;
+using Game.Domain.Battle;
 using Game.Domain.Ids;
 using Game.Domain.Items;
 using Game.Domain.Trainers;
@@ -28,35 +29,28 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideWildMedicine(CampaignState state,CampaignCommand command)
     {
         var error=ValidateBattleMedicineCommand(state,command);if(error is not null)return new(CommandStatus.Rejected,state,error);
-        var battle=state.WildBattle!;
-        var result=FullBattleItemsEnabled
-            ?WildBattleRules.ResolveCampaignItem(_content.PresetDoubleItems!,_content.PresetDoubleMechanics!,BattlePokemon,
-                battle.State,state.Inventory!,state.Party,new(new ItemId(command.Text!),command.TargetInstanceId!.Value,
-                    command.MoveSlot<0?null:command.MoveSlot),_content.MapDefinition(state.World.Player.MapId).RegionMapSection)
-            :WildBattleRules.ResolveMedicine(ShopCatalog,Items,_content.PokemonContent!,battle.State,
-            ShopInventoryView(state.Inventory!),state.Party,battle.ActivePartyIndex,new(new ItemId(command.Text!),command.TargetInstanceId!.Value));
+        var battle=state.WildBattle!;var frame=battle.Frame??throw new InvalidDataException("canonical_wild_frame_required");
+        var result=SourceFourMedicineRules.Select(_content.PresetDoubleItems!,_content.PresetDoubleMechanics!,
+            frame,frame.Revision,frame.Get(new(0)).Occupant!.Value,state.Inventory!,state.Party,
+            new(new ItemId(command.Text!),command.TargetInstanceId!.Value,command.MoveSlot<0?null:command.MoveSlot),
+            _content.MapDefinition(state.World.Player.MapId).RegionMapSection);
         if(!result.Succeeded)return new(CommandStatus.Rejected,state,result.Fault);
-        var turn=result.Battle;
-        battle=RememberKnockedOff(battle,state.Party[battle.ActivePartyIndex].InstanceId,turn.State!.Player);
-        var next=state with{Inventory=FullBattleItemsEnabled?result.Inventory:MergeShopInventory(state.Inventory!,result.Inventory),Party=result.Party,
-            WildBattle=battle with{State=turn.State!,Events=turn.Events,EventIndex=0,Phase=CampaignBattlePhase.Events,RandomTrace=turn.Trace},
-            World=state.World with{Rng=turn.State!.Rng}};
-        return new(CommandStatus.Accepted,PrepareWildPresentation(PenalizeWildFaint(next)));
+        var begun=SourceWildBattlePolicy.BeginAction(CanonicalWildPokemon,result.Battle.State,result.Battle.State.Revision,result.Selection!);
+        if(!begun.Succeeded)return new(CommandStatus.Rejected,state,begun.Fault);
+        return CommitCanonicalWildResult(state with{Inventory=result.Inventory},begun with{
+            Events=result.Battle.Events.AddRange(begun.Events),Trace=result.Battle.Trace.AddRange(begun.Trace)},resetTrace:true);
     }
 
     private Decision<CampaignState> DecideTrainerMedicine(CampaignState state,CampaignCommand command)
     {
         var error=ValidateBattleMedicineCommand(state,command);if(error is not null)return new(CommandStatus.Rejected,state,error);
-        var trainer=state.ForestTrainerBattle!;
-        trainer=WithSsAnnePartyContext(state,trainer);
-        var result=FullBattleItemsEnabled
-            ?ForestTrainerCombatRules.ResolveCampaignItem(_content.PresetDoubleItems!,_content.PresetDoubleMechanics!,BattlePokemon,
-                trainer.Combat,state.Inventory!,state.Party,new(new ItemId(command.Text!),command.TargetInstanceId!.Value,
-                    command.MoveSlot<0?null:command.MoveSlot),_content.MapDefinition(state.World.Player.MapId).RegionMapSection)
-            :ForestTrainerCombatRules.ResolveMedicine(ShopCatalog,Items,_content.PokemonContent!,trainer.Combat,
-            ShopInventoryView(state.Inventory!),state.Party,trainer.Presentation.ActivePartyIndex,new(new ItemId(command.Text!),command.TargetInstanceId!.Value));
-        if(!result.Succeeded)return new(CommandStatus.Rejected,state,result.Fault);
-        return new(CommandStatus.Accepted,CommitForestTrainerTurn(state with
-            {Inventory=FullBattleItemsEnabled?result.Inventory:MergeShopInventory(state.Inventory!,result.Inventory),Party=result.Party},result.Battle));
+        var trainer = state.ForestTrainerBattle!; var frame = trainer.Frame;
+        var selected = SourceFourMedicineRules.Select(_content.PresetDoubleItems!, SafariOrdinaryOwnership!.Mechanics,
+            frame, frame.Revision, frame.Get(new(0)).Occupant!.Value, state.Inventory!, state.Party,
+            new(new ItemId(command.Text!), command.TargetInstanceId!.Value, command.MoveSlot < 0 ? null : command.MoveSlot),
+            _content.MapDefinition(state.World.Player.MapId).RegionMapSection);
+        if (!selected.Succeeded) return new(CommandStatus.Rejected, state, selected.Fault);
+        var result = BeginCanonicalTrainerAction(state with { Inventory = selected.Inventory, Party = selected.Party }, selected.Selection!, selected.Battle);
+        return result.Status == CommandStatus.Accepted ? result : new(result.Status, state, result.Error);
     }
 }

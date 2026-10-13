@@ -93,6 +93,11 @@ public partial class CampaignView
     private bool SingleMedicinePages(WildBattleMedicineAppliedEvent item,Action<string,(string Key,string Value)[]> source)
     {
         if(item.Actor is null)return false;
+        if (item.Actor == WildBattleSide.Opponent)
+        {
+            source("sText_Trainer1UsedItem", [("B_LAST_ITEM", SingleBattleItemName(item.Item))]);
+            return true;
+        }
         source("sText_PlayerUsedItem",[("B_LAST_ITEM",SingleBattleItemName(item.Item))]);
         string name=_session.State.Party.Single(p=>p.InstanceId==item.TargetInstanceId).Nickname;
         if(item.HpAfter>item.HpBefore)source("gText_PkmnHPRestoredByVar2",[("STR_VAR_1",name),("STR_VAR_2",(item.HpAfter-item.HpBefore).ToString())]);

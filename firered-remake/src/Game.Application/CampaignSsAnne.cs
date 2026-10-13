@@ -30,19 +30,6 @@ public static class SsAnneSourceDeparture
 
 public sealed partial class CampaignSession
 {
-    private CampaignForestTrainerBattle WithSsAnnePartyContext(CampaignState state, CampaignForestTrainerBattle trainer)
-    {
-        if(trainer.Combat.SourceMoveRulesVersion is not null)
-            return ValidateSourceTrainerOwnedParty(state,trainer);
-        if (!_content.CeruleanEnabled) return trainer;
-        int index = trainer.Presentation.ActivePartyIndex;
-        var combat = trainer.Combat with { CeruleanPlayerPartyIndex = index };
-        if (_content.SsAnneEnabled)
-            combat = combat with { SsAnnePlayerParty = state.Party.Select((p, i) => p.IsEgg ? null : i == index ? combat.Battle.Player :
-                OwnedBattleMember(state,trainer.Presentation,p)).ToImmutableArray() };
-        return trainer with { Combat = combat };
-    }
-
     private const string SsAnneCaptainSource = "data/maps/SSAnne_CaptainsOffice/scripts.inc";
     private const string SsAnneExteriorSource = "data/maps/SSAnne_Exterior/scripts.inc";
     private const string SsAnneCaptainEntry = "SSAnne_CaptainsOffice_EventScript_Captain";

@@ -56,23 +56,23 @@ public sealed partial class CampaignSession
             effect.Source.Path!=source.Source.Path||effect.Source.Symbol!=source.ScriptEntry||effect.Source.Line!=source.Source.StartLine+1||
             state.Script.Variables.GetValueOrDefault("VAR_STARTER_MON")!=source.PlayerStarterVar||state.BattledTrainers.Contains(trainer.Value))
             throw new InvalidDataException("route22_rival_source_mismatch");
-        var prepared=PrepareForestTrainerBattle(state,trainer);var combat=prepared.State!;
+        var prepared=PrepareForestTrainerBattle(state,trainer);var frame=prepared.State!;var combat=CampaignTrainerReadProjection.From(frame);
         int active=Enumerable.Range(0,state.Party.Length).First(i=>!state.Party[i].IsEgg&&state.Party[i].Pokemon.CurrentHp>0);
         var owned=state.Party[active];string id="forest-trainer-battle:"+((state.ForestTrainerHistory?.Length??0)+1);
-        var presentation=new CampaignWildBattle(id,owned,combat.Battle,prepared.Events,0,combat.Battle.Player.Pokemon,combat.Battle.Opponent.Pokemon,
-            CampaignBattlePhase.Events,null,[],0,prepared.Trace,[])
-        {ActivePartyIndex=active,ParticipatingMembers=ImmutableSortedSet<long>.Empty.Add(owned.InstanceId),FaintedMembers=ImmutableSortedSet<long>.Empty,
+        var presentation=new CampaignWildBattle(id,owned,frame,ProjectTrainerWildEvents(prepared.Events),0,combat.Battle.Player.Pokemon,combat.Battle.Opponent.Pokemon,
+            CampaignBattlePhase.Events,[],0,prepared.Trace)
+        {SourceEvents=prepared.Events,ActivePartyIndex=active,FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),
             OpponentHpAtLastSwitch=combat.Battle.Opponent.Pokemon.CurrentHp};
-        var battle=new CampaignForestTrainerBattle(id,trainer,Route22RivalActor,combat,presentation,CampaignForestTrainerStage.Combat,
-            state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),prepared.TrainerEvents,0,0,[0]);
-        return PrepareForestTrainerPresentation(ResetFieldPoisonCounterForBattle(state) with{ForestTrainerBattle=battle,Dialogue=null,Motions=[],PresentationTicks=0,
-            World=state.World with{Rng=combat.Battle.Rng},SeenSpecies=state.SeenSpecies.Add(combat.Battle.Opponent.Pokemon.SourceSpeciesId),Music="MUS_VS_TRAINER"});
+        var battle=new CampaignForestTrainerBattle(id,trainer,Route22RivalActor,presentation,CampaignForestTrainerStage.Combat,
+            state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),ProjectTrainerEvents(frame,prepared.Events),0,0,[0]);
+        return PrepareForestTrainerPresentation(ProjectSourceTrainerOwnedParty(ResetFieldPoisonCounterForBattle(state) with{ForestTrainerBattle=battle,Dialogue=null,Motions=[],PresentationTicks=0,
+            World=state.World with{Rng=combat.Battle.Rng},SeenSpecies=state.SeenSpecies.Add(combat.Battle.Opponent.Pokemon.SourceSpeciesId),Music="MUS_VS_TRAINER"}));
     }
 
     private CampaignState ReturnFromRoute22Rival(CampaignState state)
     {
         var trainer=state.ForestTrainerBattle!;
-        if(trainer.Combat.Battle.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw)
+        if(trainer.Frame.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw)
         {
             var lost=state with{ForestTrainerBattle=null,Dialogue=null,Motions=[],PresentationTicks=0,
                 Script=state.Script with{Stack=[],Wait=null,Completed=true,Locked=false,Variables=state.Script.Variables.SetItem("VAR_RESULT",1)}};

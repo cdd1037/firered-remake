@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain;
+using Game.Domain.Battle;
 using Game.Domain.Encounters;
 using Game.Domain.Capture;
 using Game.Domain.Events;
@@ -13,12 +14,23 @@ using Game.Domain.WildBattle;
 namespace Game.Application;
 
 public sealed record CampaignWildAppearance(SpeciesId Species,uint Personality,uint OriginalTrainerId);
-public sealed record CampaignWildPage(string Text,WildRewardEvent? Reward=null);
-public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,WildBattleState State,
+public sealed record CampaignWildPage(string Text,WildRewardEvent? Reward=null,int? PartyIndex=null);
+public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,SourceBattleFrame Frame,
     ImmutableArray<WildBattleEvent> Events,int EventIndex,PokemonInstance DisplayPlayer,PokemonInstance DisplayOpponent,
-    CampaignBattlePhase Phase,WildVictoryRewardResult? Reward,ImmutableArray<CampaignWildPage> Pages,int PageIndex,
-    ImmutableArray<RandomTrace> RandomTrace,ImmutableArray<WildPendingMove> PendingMoves)
+    CampaignBattlePhase Phase,ImmutableArray<CampaignWildPage> Pages,int PageIndex,
+    ImmutableArray<RandomTrace> RandomTrace)
 {
+    private SourceBattleFrame _frame=Frame??throw new InvalidDataException("canonical_battle_frame_required");
+    public SourceBattleFrame Frame
+    {
+        get=>_frame;
+        init=>_frame=value??throw new InvalidDataException("canonical_battle_frame_required");
+    }
+    [JsonIgnore] public WildBattleState State=>CampaignWildReadProjection.From(Frame);
+    [JsonIgnore] public ImmutableArray<WildPendingMove> PendingMoves=>Frame.Rewards?.Pending?.Moves??[];
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<int> EntryLevels{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int ExperienceGained{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public ImmutableArray<SourceBattleEvent> SourceEvents{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignWildAppearance? DisplayPlayerAppearance{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignWildAppearance? DisplayOpponentAppearance{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int ActivePartyIndex{get;init;}
@@ -26,25 +38,20 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,WildB
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignPendingCapture? Capture{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignReplacementStage? Replacement{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableSortedSet<long>? FaintedMembers{get;init;}
-    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableSortedSet<long>? ParticipatingMembers{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? OpponentHpAtLastSwitch{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignVoluntarySwitch? LastSwitch{get;init;}
-    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignWildRewardReceiver>? RewardReceivers{get;init;}
-    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int RewardReceiverIndex{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool PostBattleItemsSettled{get;init;}
-    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableSortedDictionary<long,string>? KnockedOffHeldItems{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool ScriptedMarowak{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int ScriptedSnorlaxRoute{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignLostelleHypnoReceipt? LostelleHypno{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerEncounter? CelioRoamer{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerSettlement? CelioRoamerSettlement{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<EncounterRandomTrace>? CelioRoamerEncounterTrace{get;init;}
-    [JsonIgnore] public int RewardPartyIndex=>RewardReceivers is {} receivers&&RewardReceiverIndex<receivers.Length?receivers[RewardReceiverIndex].PartyIndex:ActivePartyIndex;
+    [JsonIgnore] public int RewardPartyIndex=>(PageIndex<Pages.Length?Pages[PageIndex].PartyIndex:null)??Frame.Rewards?.Pending?.Recipient.Index??ActivePartyIndex;
 }
 
 public sealed partial class CampaignSession
 {
-    private string CampaignWildRulesVersion=>_binding.WildRulesVersion;
     private CampaignState BeginWildBattle(CampaignState state,Route1WildPokemonResult? fishingPokemon=null,bool scriptedMarowak=false,int scriptedSnorlaxRoute=0,Route1WildPokemonResult? surfPokemon=null,CampaignLostelleHypnoReceipt? lostelleHypno=null,VictoryRoadWildOrigin? victoryRoadOrigin=null,SeviiRubyWildOrigin? seviiRubyOrigin=null,FourIslandWildOrigin? fourIslandOrigin=null,SixIslandWildOrigin? sixIslandOrigin=null,FiveIslandWildOrigin? fiveIslandOrigin=null)
     {
         if(_content.ForestEnabled&&long.MaxValue-Revision<4096)throw new InvalidDataException("wild_battle_command_headroom_required");
@@ -78,24 +85,19 @@ public sealed partial class CampaignSession
         if(victoryRoadOrigin is not null&&(!_content.VictoryRoadEnabled||victoryRoadOrigin.Map!=state.World.Player.MapId||victoryRoadOrigin.Kind is VictoryRoadEncounterKind.GoodRod or VictoryRoadEncounterKind.SuperRod||
             victoryRoadOrigin.Kind!=(surfPokemon is not null?VictoryRoadEncounterKind.Surf:fishingPokemon is not null?VictoryRoadEncounterKind.OldRod:VictoryRoadEncounterKind.Land)))
             throw new InvalidDataException("victory_road_wild_field_origin");
-        // Start owns source AI-init -> held-item -> order/turn-number RNG sequencing.
-        var player=new WildBattleCombatant(owned.Pokemon,HeldItem:owned.HeldItem,Status:owned.Status){AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),DefenseBadgeBoost=_content.FuchsiaGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET")};
         bool towerBattle=_content.PokemonTowerEnabled&&TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
         var kind=PokemonTowerBattleContract.Classify(scriptedMarowak,HasSilphScope(state));
-        var started=_content.FiveIslandEnabled?StartFiveIslandCampaignWild(state,active,generated,surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land,victoryRoadOrigin,seviiRubyOrigin,fourIslandOrigin,sixIslandOrigin,fiveIslandOrigin,lostelleHypno,towerBattle?kind:null,scriptedSnorlaxRoute!=0):_content.SixIslandEnabled?StartSixIslandCampaignWild(state,active,generated,surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land,victoryRoadOrigin,seviiRubyOrigin,fourIslandOrigin,sixIslandOrigin,lostelleHypno,towerBattle?kind:null,scriptedSnorlaxRoute!=0):_content.FourIslandEnabled?StartFourIslandCampaignWild(state,active,generated,surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land,victoryRoadOrigin,seviiRubyOrigin,fourIslandOrigin,lostelleHypno,towerBattle?kind:null,scriptedSnorlaxRoute!=0):_content.SeviiRubyEnabled?StartSeviiRubyCampaignWild(state,active,generated,surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land,victoryRoadOrigin,seviiRubyOrigin,lostelleHypno,towerBattle?kind:null,scriptedSnorlaxRoute!=0):victoryRoadOrigin is not null?WildBattleRules.StartVictoryRoadWild(_content.CinnabarOwnership!,victoryRoadOrigin,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state)):
-            lostelleHypno is not null?WildBattleRules.StartLostelleHypno(_content.CinnabarOwnership!,FirstSeviiHypnoBattleContract.ScriptEntry,FirstSeviiHypnoBattleContract.SourceLine,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng):
-            IsFirstSeviiWildMap(state.World.Player.MapId)?WildBattleRules.StartFirstSeviiWild(_content.CinnabarOwnership!,state.World.Player.MapId,surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state)):
-            SafariOrdinaryOwnership is {} safari?WildBattleRules.StartSafariOwnedWild(safari,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,
-            CampaignBattleTerrain(state),fishingPokemon is not null,towerBattle?kind:null,scriptedSnorlaxRoute!=0):_content.FuchsiaGymEnabled?WildBattleRules.StartSourceWild(BattlePokemon,SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,
-            CampaignBattleTerrain(state),fishingPokemon is not null,towerBattle?kind:null,scriptedSnorlaxRoute!=0):scriptedSnorlaxRoute!=0?WildBattleRules.StartSnorlax(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state),fuchsiaRules:_content.FuchsiaRouteEnabled):towerBattle?WildBattleRules.StartPokemonTower(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,kind,snorlaxRules:_content.SnorlaxEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled):
-            WildBattleRules.Start(BattlePokemon,player,new(generated.Pokemon),generated.GlobalRng,CampaignWildRulesVersion,terrain:CampaignBattleTerrain(state),oldRodFishing:fishingPokemon is not null);
-
+        var encounterKind=surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land;
+        if(lostelleHypno is not null||scriptedSnorlaxRoute!=0||scriptedMarowak)encounterKind=FirstSeviiEncounterKind.Land;
+        var encounter=CanonicalWildEncounter(state,generated.Pokemon,encounterKind,victoryRoadOrigin,seviiRubyOrigin,
+            fourIslandOrigin,sixIslandOrigin,fiveIslandOrigin,lostelleHypno,towerBattle?kind:null,scriptedSnorlaxRoute!=0);
+        var started=SourceWildBattlePolicy.StartOwned(SafariOrdinaryOwnership??throw new InvalidDataException("canonical_wild_owned_catalog"),
+            SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,encounter,CampaignBattleTerrain(state),encounterKind==FirstSeviiEncounterKind.OldRod);
         if(!started.Succeeded)throw new InvalidDataException(started.Fault);
-        var battle=started.State!;
-        if(battle.SourceCampaignRulesVersion is not null)battle=battle with{Obedience=CampaignObedienceContext(state)};
-        var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,battle,started.Events,0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,null,[],0,[..generated.RandomTrace,..started.Trace],[])
-        {LostelleHypno=lostelleHypno,ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=_content.CaptureEnabled?new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]):null,FaintedMembers=_content.CaptureEnabled?state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet():null};
-        if(_content.PartyTrainingEnabled)b=b with{ParticipatingMembers=ImmutableSortedSet<long>.Empty.Add(owned.InstanceId),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
+        var frame=PrepareCanonicalWildFrame(state,started.State!);
+        var battle=CampaignWildReadProjection.From(frame);
+        var b=new CampaignWildBattle("wild-battle:"+exploration.NextWildBattleId,owned,frame,ProjectCanonicalWildEvents(started.Events),0,battle.Player.Pokemon,battle.Opponent.Pokemon,CampaignBattlePhase.Events,[],0,[..generated.RandomTrace,..started.Trace])
+        {SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),LostelleHypno=lostelleHypno,ScriptedSnorlaxRoute=scriptedSnorlaxRoute,ScriptedMarowak=scriptedMarowak,ActivePartyIndex=active,Origin=_content.CaptureEnabled?new(_content.MapDefinition(state.World.Player.MapId).RegionMapSection,generated.Pokemon.Level,_content.PokemonContent!.SpeciesNames[generated.Pokemon.SourceSpeciesId]):null,FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),OpponentHpAtLastSwitch=battle.Opponent.Pokemon.CurrentHp};
         if(fishingPokemon is null&&surfPokemon is null)exploration=_content.ForestEnabled?exploration with{EarlyEncounter=EarlyLandEncounterRules.CompleteCandidate(exploration.EarlyEncounter!,_content.LandEncounters![state.World.Player.MapId])}:exploration with{Encounter=Route1EncounterRules.CompleteCandidate(exploration.Encounter!)};
         return PrepareWildPresentation(state with{WildBattle=b,Exploration=exploration with{NextWildBattleId=checked(exploration.NextWildBattleId+1)},World=state.World with{Rng=battle.Rng},SeenSpecies=towerBattle&&!PokemonTowerBattleContract.Policy(kind).RegisterSeen?state.SeenSpecies:state.SeenSpecies.Add(battle.Opponent.Pokemon.SourceSpeciesId),Motions=[],PresentationTicks=0});
     }
@@ -103,7 +105,7 @@ public sealed partial class CampaignSession
     {
         var b=state.WildBattle!;
         if(b.Capture is not null)return DecideCapture(state,command);
-        if(b.Phase==CampaignBattlePhase.ChooseMove&&WildBattleRules.IsSourceWild(b.State)&&b.State.CalledParty?.PendingSwitch is{Kind:WildBattleCalledSwitchKind.BatonPass})return DecideSourceWildPartyChoice(state,command);
+        if(b.Phase==CampaignBattlePhase.ChooseMove&&b.Frame?.PendingSwitches.Any(p=>p.Kind==WildBattleCalledSwitchKind.BatonPass)==true)return DecideSourceWildPartyChoice(state,command);
         if(b.Replacement is not null&&b.Phase==CampaignBattlePhase.ChooseMove)return DecideWildReplacement(state,command);
         if(command.Kind=="ack")
         {
@@ -123,34 +125,29 @@ public sealed partial class CampaignSession
         if(command.Kind=="wild_learn")
         {
             if(b.Phase!=CampaignBattlePhase.Results||b.PageIndex+1<b.Pages.Length||b.PendingMoves.IsEmpty)return new(CommandStatus.Rejected,state,"wild_learning_not_pending");
-            var move=b.PendingMoves[0];var owned=state.Party[b.RewardPartyIndex];
+            var learningFrame=b.Frame??throw new InvalidDataException("canonical_wild_learningFrame_required");
+            var pending=learningFrame.Rewards?.Pending??throw new InvalidDataException("canonical_wild_learning_required");
+            var move=pending.Moves[0];var owned=state.Party[pending.Recipient.Index];
             if(command.MoveSlot is < -1 or >3)return new(CommandStatus.Rejected,state,"wild_learning_slot_invalid");
-            if (_content.SsAnneEnabled && command.MoveSlot >= 0 && command.MoveSlot < owned.Pokemon.Moves.Length && PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
-                return new(CommandStatus.Rejected, state, "hm_move_cannot_be_forgotten");
-            if(command.MoveSlot>=0 && !PokemonMoveRules.IsLearningSupported(BattlePokemon,move.Move))
-                return new(CommandStatus.Rejected,state,"pokemon_learning_effect_unsupported");
-            if(command.MoveSlot>=0)
-            {
-                var learned=PokemonMoveRules.Replace(BattlePokemon,owned.Pokemon.Moves,command.MoveSlot,move.Move);
-                owned=owned with{Pokemon=owned.Pokemon with{Moves=learned}};
-            }
-            var next=state with{Party=state.Party.SetItem(b.RewardPartyIndex,owned),WildBattle=b with{PendingMoves=b.PendingMoves.RemoveAt(0),DisplayPlayer=b.RewardPartyIndex==b.ActivePartyIndex?owned.Pokemon:b.DisplayPlayer}};
-            return new(CommandStatus.Accepted,next.WildBattle!.PendingMoves.IsEmpty?CompleteWildRewardReceiver(next):next);
+            if(command.MoveSlot>=0&&command.MoveSlot<owned.Pokemon.Moves.Length&&PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
+                return new(CommandStatus.Rejected,state,"hm_move_cannot_be_forgotten");
+            var learned=SourceFourRewards.Learn(CanonicalWildPokemon,learningFrame,WildContinuation(learningFrame),new(pending.Recipient,move.Level,move.Move,command.MoveSlot<0?null:command.MoveSlot));
+            return CommitCanonicalWildResult(state with{WildBattle=b with{Pages=[],PageIndex=0}},learned);
         }
         if(b.Phase!=CampaignBattlePhase.ChooseMove)return new(CommandStatus.Rejected,state,"battle_presentation_pending");
         if(command.Kind=="battle_switch"&&_content.PartyTrainingEnabled)return DecideVoluntaryWildSwitch(state,command);
         if(command.Kind=="battle_poke_flute")return DecideWildPokeFlute(state,command);
         if(command.Kind=="battle_medicine")return DecideWildMedicine(state,command);
         if(command.Kind=="battle_menu"&&command.Text is "bag" or "party")return new(CommandStatus.Accepted,state);
-        WildBattleResult turn;PotionUseResult? potion=null;InventoryState? capturedInventory=null;bool reserves=HasWildReserves(state,b);
-        if(command.Kind=="battle_move")turn=WildBattleRules.ResolveMove(OrdinaryExecutionPokemon(b.State),b.State,command.MoveSlot,reserves);
-        else if(command.Kind=="battle_menu"&&command.Text=="run")turn=WildBattleRules.Run(OrdinaryExecutionPokemon(b.State),b.State,reserves);
+        var frame=b.Frame??throw new InvalidDataException("canonical_wild_frame_required");
+        var actor=frame.Get(new(0)).Occupant!.Value;
+        SourceActionSelection selection;InventoryState? capturedInventory=null;
+        if(command.Kind=="battle_move")selection=new(actor,SourceActionKind.Move,command.MoveSlot,new(1));
+        else if(command.Kind=="battle_menu"&&command.Text=="run")selection=new(actor,SourceActionKind.Run);
         else if(command.Kind=="battle_potion")
         {
-            if(_content.OpeningItems is null||state.Inventory is null||command.PartyIndex!=b.ActivePartyIndex)return new(CommandStatus.Rejected,state,"wild_item_context_invalid");
-            potion=UseCampaignPotion(state.Inventory,WildBattleTransformationRules.PersistentPokemon(b.State.Player),PotionUseContext.Battle);
-            if(!potion.Succeeded)return new(CommandStatus.Rejected,state,potion.Error);
-            turn=WildBattleRules.ResolvePotion(OrdinaryExecutionPokemon(b.State),b.State,potion.Pokemon,reserves);
+            if(command.PartyIndex!=b.ActivePartyIndex)return new(CommandStatus.Rejected,state,"wild_item_context_invalid");
+            return DecideWildMedicine(state,command with{Kind="battle_medicine",Text="pret:ITEM_POTION",TargetInstanceId=state.Party[command.PartyIndex].InstanceId,MoveSlot=-1});
         }
         else if(command.Kind=="battle_ball")
         {
@@ -183,13 +180,12 @@ public sealed partial class CampaignSession
                 if(!spend.Succeeded)return new(CommandStatus.Rejected,state,"capture_no_poke_ball");
                 capturedInventory=spend.State;
             }
-            turn=WildBattleRules.ResolveBall(OrdinaryExecutionPokemon(b.State),b.State,ball,reserves);
+            selection=new(actor,SourceActionKind.Capture){Capture=new(ball,new(false,CanonicalWildPokemon.Species.Values.Where(p=>state.CaughtSpecies.Contains(p.SourceSpeciesId)).Select(p=>p.Id).ToImmutableHashSet(),frame.WildEncounter?.CelioRoamer is not null?CaptureEncounterKind.Roamer:CaptureEncounterKind.OrdinaryWild))};
         }
         else return new(CommandStatus.Rejected,state,"wild_battle_active");
+        var turn=SourceWildBattlePolicy.BeginAction(CanonicalWildPokemon,frame,frame.Revision,selection);
         if(!turn.Succeeded)return new(CommandStatus.Rejected,state,turn.Fault);
-        b=RememberKnockedOff(b,state.Party[b.ActivePartyIndex].InstanceId,turn.State!.Player);
-        var nextBattle=b with{State=turn.State!,Events=turn.Events,EventIndex=0,Phase=CampaignBattlePhase.Events,RandomTrace=turn.Trace};
-        return new(CommandStatus.Accepted,PrepareWildPresentation(PenalizeWildFaint(state with{WildBattle=nextBattle,Inventory=capturedInventory??potion?.Inventory??state.Inventory,Party=state.Party.SetItem(b.ActivePartyIndex,state.Party[b.ActivePartyIndex] with{Pokemon=WildBattleTransformationRules.PersistentPokemon(turn.State!.Player),Status=WildBattleTransformationRules.PersistentStatus(turn.State.Player),HeldItem=OwnedBattleHeldItem(turn.State.Player)}),World=state.World with{Rng=turn.State!.Rng}})));
+        return CommitCanonicalWildResult(state with{Inventory=capturedInventory??state.Inventory},turn,resetTrace:true);
     }
     private CampaignState PrepareWildPresentation(CampaignState state)
     {
@@ -210,6 +206,7 @@ public sealed partial class CampaignSession
                 case WildBattleDrainEvent drain:Update(drain.Actor,p=>p with{CurrentHp=drain.HpAfter});break;
                 case WildBattleMoveCopiedEvent copied:Update(copied.Actor,p=>p with{Moves=p.Moves.SetItem(copied.MoveSlot,copied.Replacement)});break;
                 case WildBattleTransformedEvent transformed:b=ApplyTransformDisplay(b,transformed);break;
+                case WildBattlePlayerReplacedEvent replaced:b=b with{DisplayPlayer=BattleDisplayPokemon(replaced.Replacement),DisplayPlayerAppearance=null};break;
                 case WildBattlePlayerSwitchedEvent changed:b=b with{DisplayPlayer=BattleDisplayPokemon(changed.Replacement),DisplayPlayerAppearance=null};break;
                 case WildBattleMoveUsedEvent used when used.Slot>=0:Update(used.Actor,p=>p with{Moves=p.Moves.SetItem(used.Slot,p.Moves[used.Slot] with{CurrentPp=used.PpAfter})});break;
                 case WildBattleTowerHpEvent towerHp:Update(towerHp.Side,p=>p with{CurrentHp=towerHp.HpAfter});break;
@@ -229,52 +226,30 @@ public sealed partial class CampaignSession
             }
             return state with{WildBattle=b};
         }
-        if(b.State.Outcome==WildBattleOutcome.Ongoing)return state with{WildBattle=b with{Phase=CampaignBattlePhase.ChooseMove,Replacement=b.State.CalledParty?.PendingSwitch is{Kind:WildBattleCalledSwitchKind.BatonPass}?CampaignReplacementStage.Select:b.State.AwaitingReplacement?b.Replacement??CampaignReplacementStage.UseNext:null,DisplayPlayer=BattleDisplayPokemon(b.State.Player),DisplayOpponent=BattleDisplayPokemon(b.State.Opponent),DisplayPlayerAppearance=BattleAppearance(b.State.Player),DisplayOpponentAppearance=BattleAppearance(b.State.Opponent)}};
-        state=SettleCelioRoamer(state with{WildBattle=b});b=state.WildBattle!;
-        if(b.State.Outcome==WildBattleOutcome.Caught)return BeginCapturePresentation(state with{WildBattle=b});
-        return SettleWildBattle(state with{WildBattle=b});
+        return ContinueCanonicalWild(state with{WildBattle=b});
     }
     private CampaignState SettleWildBattle(CampaignState state)
     {
         var b=state.WildBattle!;var exploration=state.Exploration!;
         if(exploration.Battles.Any(x=>x.Id==b.Id))throw new InvalidDataException("wild_settlement_duplicate");
-        if(_content.PartyTrainingEnabled&&b.State.Outcome==WildBattleOutcome.Won)return SettleWildTrainingVictory(state);
-        WildVictoryRewardResult? reward=null;var party=state.Party;var pages=ImmutableArray.CreateBuilder<CampaignWildPage>();
-        // AdjustFriendshipOnBattleFaint: Route 1 opponents are at most level 5, so the
-        // imported local starter always uses FAINT_SMALL (-1 at every friendship tier).
-        // This shares the settlement ledger: presentation ACK retries cannot debit twice.
-        if(!_content.CaptureEnabled&&b.State.Player.Pokemon.CurrentHp==0)
-        {
-            var owned=party[0];party=party.SetItem(0,owned with{Pokemon=owned.Pokemon with{Friendship=Math.Max(0,owned.Pokemon.Friendship-1)}});
-        }
-        if(b.State.Outcome==WildBattleOutcome.Won)
-        {
-            reward=SafariOrdinaryOwnership is {} rewardOwned?WildVictoryRewards.ApplySafariOwned(rewardOwned,party[b.ActivePartyIndex],b.State.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection,defeatedBattleView:b.State.Opponent):WildVictoryRewards.Apply(BattlePokemon,party[b.ActivePartyIndex],b.State.Opponent.Pokemon,_content.MapDefinition(state.World.Player.MapId).RegionMapSection);
-            party=party.SetItem(b.ActivePartyIndex,reward.Pokemon);
-            foreach(var e in reward.Events)
-            {
-                if(e is WildRewardExperienceEvent xp)pages.Add(new($"{reward.Pokemon.Nickname} gained\n{xp.Gained} EXP. Points!",e));
-                if(e is WildRewardLevelEvent level){pages.Add(new($"{reward.Pokemon.Nickname} grew to\nlevel {level.After}!",e));pages.Add(new("",e));}
-                if(e is WildRewardMoveLearnedEvent learned)pages.Add(new($"{reward.Pokemon.Nickname} learned\n{BattleContent.MoveNames[learned.Move.Value]}!",e));
-            }
-        }
-        else if(b.State.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw)
+        var party=state.Party;var pages=ImmutableArray.CreateBuilder<CampaignWildPage>();
+        if(b.Frame!.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw)
         {
             pages.Add(new($"{state.PlayerName} is out of usable\nPOKéMON!"));
             int lost=WhiteOutLoss(state);
             pages.Add(new(state.Money==0?$"{state.PlayerName} whited out!":$"{state.PlayerName} panicked and lost\n{lost}...\n{state.PlayerName} whited out!"));
             foreach(var page in _content.TextPages(HasCenterRespawn(state)?"gText_PlayerScurriedToCenter":"gText_PlayerScurriedBackHome"))pages.Add(new(page.Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal)));
         }
-        var history=new CampaignWildHistory(b.Id,WildBattleTransformationRules.PersistentPokemon(b.State.Opponent).SourceSpeciesId,b.State.Opponent.Pokemon.Level,b.State.Outcome,reward?.ExperienceGained??0){CelioRoamer=b.CelioRoamerSettlement,FiveIsland=b.State.SourceWild?.FiveIsland,SixIsland=b.State.SourceWild?.SixIsland,FourIsland=b.State.SourceWild?.FourIsland,SeviiRuby=b.State.SourceWild?.SeviiRuby,VictoryRoad=b.State.SourceWild?.VictoryRoad,LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute,ScriptedMarowak=b.ScriptedMarowak};
-        var next=state with{Party=party,Exploration=exploration with{Battles=exploration.Battles.Add(history)},WildBattle=b with{Reward=reward,Phase=CampaignBattlePhase.Results,Pages=pages.ToImmutable(),PageIndex=0,PendingMoves=reward?.PendingMoves??[]}};
-        return pages.Count==0&&next.WildBattle!.PendingMoves.IsEmpty?ReturnFromWildBattle(next):next;
+        var history=new CampaignWildHistory(b.Id,b.Frame!.Party(BattleSide.Opponent).Members[0].Pokemon.SourceSpeciesId,b.Frame.Party(BattleSide.Opponent).Members[0].Pokemon.Level,b.Frame!.Outcome,b.ExperienceGained){CelioRoamer=b.CelioRoamerSettlement,FiveIsland=b.Frame!.WildEncounter?.FiveIsland,SixIsland=b.Frame!.WildEncounter?.SixIsland,FourIsland=b.Frame!.WildEncounter?.FourIsland,SeviiRuby=b.Frame!.WildEncounter?.SeviiRuby,VictoryRoad=b.Frame!.WildEncounter?.VictoryRoad,LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute,ScriptedMarowak=b.ScriptedMarowak};
+        var next=state with{Party=party,Exploration=exploration with{Battles=exploration.Battles.Add(history)},WildBattle=b with{Phase=CampaignBattlePhase.Results,Pages=pages.ToImmutable(),PageIndex=0}};
+        return pages.Count==0?CompleteWildRewardReceiver(next):next;
     }
     private CampaignState ReturnFromWildBattle(CampaignState state)
     {
         var b=state.WildBattle!;
         if(!state.Exploration!.Battles.Any(x=>x.Id==b.Id))throw new InvalidDataException("wild_not_settled");
         if(!b.PendingMoves.IsEmpty)throw new InvalidDataException("wild_learning_pending");
-        if(b.State.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw)
+        if(b.Frame!.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw)
         {
             // CB2_EndMarowakBattle sends defeat directly to CB2_WhiteOut. Its
             // suspended map script is abandoned, not resumed as a non-victory.
@@ -289,7 +264,7 @@ public sealed partial class CampaignSession
         if(b.ScriptedMarowak)
         {
             if(state.Script.Wait is not {Kind:StoryWaitKind.Battle} wait)throw new InvalidDataException("tower_marowak_return_wait");
-            var script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",b.State.Outcome==WildBattleOutcome.Won?0:1)};
+            var script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",b.Frame!.Outcome==WildBattleOutcome.Won?0:1)};
             var next=state with{WildBattle=null,Dialogue=null,Music=FieldTravelMusic(state),Exploration=ResetEncounterModifiers(state.Exploration),Script=script};
             return Pump(Advance(next,StoryRules.Continue(script,wait.CorrelationId,_content)));
         }

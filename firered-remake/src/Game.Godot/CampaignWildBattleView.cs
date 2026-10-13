@@ -185,7 +185,7 @@ public partial class CampaignView
             _wildCursor = 0; _wildLastMoveCursor = 0; _wildPages = []; ResetCaptureBag(); return;
         }
         _held = null;
-        var key = $"{b.Id}:{b.Phase}:{b.State.EventSequence}:{b.EventIndex}:{b.PageIndex}:{b.PendingMoves.Length}:{b.Capture?.Stage}:{b.Replacement}:{b.ActivePartyIndex}:{b.RewardReceiverIndex}:{b.RewardPartyIndex}:{_session.State.ForestTrainerBattle?.Stage}:{_session.State.ForestTrainerBattle?.TrainerEventIndex}";
+        var key = $"{b.Id}:{b.Phase}:{b.State.EventSequence}:{b.EventIndex}:{b.PageIndex}:{b.PendingMoves.Length}:{b.Capture?.Stage}:{b.Replacement}:{b.ActivePartyIndex}:{b.RewardPartyIndex}:{_session.State.ForestTrainerBattle?.Stage}:{_session.State.ForestTrainerBattle?.TrainerEventIndex}";
         if (_wildPresentationKey == key) return;
         _wildPresentationKey = key; _wildElapsed = 0; _wildPage = 0; _wildPages = []; _wildArrowPages.Clear();
         _wildNotice = null; _wildNoticeReturn = null; _wildStatsTotals = false; _wildMenu = "actions"; _wildCursor = 0;_wildMedicineItem=null;
@@ -398,7 +398,7 @@ public partial class CampaignView
             if (ApplyWildChoice(new("wild_learn", MoveSlot: _wildLearningSlot)))
             {
                 if (PresentedWildBattle is { PendingMoves.IsEmpty: false } next &&
-                    (next.RewardReceiverIndex == b.RewardReceiverIndex || next.Pages.IsEmpty)) BeginWildMoveLearning();
+                    next.Pages.IsEmpty) BeginWildMoveLearning();
             }
             else if (_status == "hm_move_cannot_be_forgotten")
             { _wildMenu = "learn-moves"; _wildCursor = Math.Max(0, _wildLearningSlot); _wildNoticeReturn = null; }

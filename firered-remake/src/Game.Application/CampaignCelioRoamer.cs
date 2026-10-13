@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain;
+using Game.Domain.Battle;
 using Game.Domain.Encounters;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
@@ -44,20 +45,21 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("wild_battle_context_invalid");
         int active = Enumerable.Range(0, state.Party.Length).First(i => !state.Party[i].IsEgg && state.Party[i].Pokemon.CurrentHp > 0);
         var owned = state.Party[active];
-        var started = WildBattleRules.StartCelioRoamer(_content.CelioOwnership!, candidate.Individual,
+        var started = SourceWildBattlePolicy.StartCelioRoamer(_content.CelioOwnership!, candidate.Individual,
             state.TrainerId, SourceTrainerEntryParty(state), active, state.World.Rng, CampaignBattleTerrain(state));
         if (!started.Succeeded) throw new InvalidDataException(started.Fault);
-        var battle = started.State! with { Obedience = CampaignObedienceContext(state) };
+        var frame = PrepareCanonicalWildFrame(state,started.State!);
+        var battle = CampaignWildReadProjection.From(frame);
         var origin = new CampaignCelioRoamerEncounter(state.World.Player.MapId, method, candidate.Individual, state.TrainerId);
         var presentation = new CampaignWildBattle("wild-battle:" + exploration.NextWildBattleId, owned,
-            battle, started.Events, 0, battle.Player.Pokemon, battle.Opponent.Pokemon,
-            CampaignBattlePhase.Events, null, [], 0, started.Trace, [])
+            frame, ProjectCanonicalWildEvents(started.Events), 0, battle.Player.Pokemon, battle.Opponent.Pokemon,
+            CampaignBattlePhase.Events, [], 0, started.Trace)
         {
+            SourceEvents=started.Events,EntryLevels=state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
             CelioRoamer = origin, CelioRoamerEncounterTrace = gateTrace, ActivePartyIndex = active,
             Origin = new(_content.MapDefinition(origin.Map).RegionMapSection, SourceRoamerRules.Level,
                 _content.PokemonContent!.SpeciesNames[battle.Opponent.Pokemon.SourceSpeciesId]),
             FaintedMembers = state.Party.Where(p => p.Pokemon.CurrentHp == 0).Select(p => p.InstanceId).ToImmutableSortedSet(),
-            ParticipatingMembers = ImmutableSortedSet<long>.Empty.Add(owned.InstanceId),
             OpponentHpAtLastSwitch = battle.Opponent.Pokemon.CurrentHp
         };
         return PrepareWildPresentation(state with { WildBattle = presentation,
@@ -73,11 +75,11 @@ public sealed partial class CampaignSession
         var battle = state.WildBattle!;
         if (battle.CelioRoamer is not {} origin) return state;
         if (battle.CelioRoamerSettlement is not null) return state;
-        if (!_content.CelioEnabled || state.Roamer is not {} before || state.World.Rng != battle.State.Rng ||
+        if (!_content.CelioEnabled || state.Roamer is not {} before || state.World.Rng != battle.Frame!.Rng ||
             origin.Map != state.World.Player.MapId || origin.Individual != before.Individual ||
-            battle.State.SourceWild?.CelioRoamer?.Individual != origin.Individual)
+            battle.Frame!.WildEncounter?.CelioRoamer?.Individual != origin.Individual)
             throw new InvalidDataException("celio_roamer_settlement_context");
-        var result = CelioRoamerBattleContract.Settlement(OrdinaryExecutionPokemon(battle.State), battle.State);
+        var result = SourceWildBattlePolicy.SettlementRoamer(CanonicalWildPokemon,battle.Frame!);
         var settled = SourceRoamerRules.Settle(before, result, state.World.Rng);
         var receipt = new CampaignCelioRoamerSettlement(origin, result, before, settled.State,
             state.World.Rng, settled.Rng, settled.Trace);

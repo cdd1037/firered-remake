@@ -7,14 +7,12 @@ using Game.Domain.WildBattle;
 
 public partial class CampaignView
 {
-    private bool SourceTrainerPresentationActive(CampaignWildBattle battle) =>
-        _session.State.ForestTrainerBattle?.Combat.SourceMoveRulesVersion == ForestTrainerCombatRules.SourceTrainerContractVersion ||
-        battle.State.SourceWild?.RulesVersion is WildBattleRules.SourceWildRulesVersion or VictoryRoadWildBattleContract.Version or SeviiRubyWildBattleContract.Version or FourIslandWildBattleContract.Version or SixIslandWildBattleContract.Version or FiveIslandWildBattleContract.Version;
+    private static bool SourceTrainerPresentationActive(CampaignWildBattle battle) => battle.Frame is not null;
 
     private bool SourceBatonSwitchBefore(CampaignWildBattle battle, WildBattleSide side, long sequence) =>
-        SourceTrainerPresentationActive(battle) && battle.Events.LastOrDefault(e => e.Sequence < sequence) is
+        SourceTrainerPresentationActive(battle) && battle.Events.LastOrDefault(e => e.Sequence <= sequence && e is WildBattleCalledPartySwitchedEvent) is
             WildBattleCalledPartySwitchedEvent { Kind: WildBattleCalledSwitchKind.BatonPass } switched &&
-        switched.Side == side && switched.Sequence + 1 == sequence;
+        switched.Side == side && (switched.Sequence == sequence || switched.Sequence + 1 == sequence);
 
     private bool SourcePlayerBatonSwitch(CampaignWildBattle battle) =>
         WildCurrentEvent(battle) is WildBattlePlayerSwitchedEvent switched &&
@@ -29,33 +27,33 @@ public partial class CampaignView
             percentage >= 10 ? "sText_GoForItPkmn" : "sText_YourFoesWeakGetEmPkmn";
     }
 
-    private int? SourceBattleForcedMoveSlot(CampaignWildBattle battle) =>
-        (SourceTrainerPresentationActive(battle) ? battle.State.Player.CalledTurnState?.Lock?.PpSlot : null) ??
-        WildBattleRules.ForcedMoveSlot(battle.State.Player);
+    private static SourceBattleFrame PresentedCanonicalFrame(CampaignWildBattle battle) =>
+        battle.Frame ?? throw new InvalidDataException("canonical_battle_presentation_frame_missing");
+
+    private static int? SourceBattleForcedMoveSlot(CampaignWildBattle battle) =>
+        PresentedCanonicalFrame(battle).Get(new(0)).Registers.Turn?.Lock?.PpSlot;
 
     private PokemonCatalog SourceBattlePresentationCatalog(CampaignWildBattle battle)
     {
-        var catalog = _catalog.PokemonContent!.Catalog;
-        if (battle.State.SourceCampaignRulesVersion is null) return catalog;
-        if (OwnedBattlePokemonCatalog.For(catalog) is { } owned &&
-            SourceBattleAdmission.IsOwnedCampaign(owned, battle.State))
-            return owned.Mechanics.Catalog;
-        throw new InvalidDataException("source_battle_presentation_campaign_admission");
+        var frame = PresentedCanonicalFrame(battle);
+        var owned = OwnedBattlePokemonCatalog.For(_catalog.PokemonContent!.Catalog);
+        return owned is not null && (frame.TrainerEncounter is null
+            ? frame.SourceCampaignRulesVersion == owned.RulesVersion
+            : SourceTrainerEncounterPolicy.Validate(owned.Mechanics.Catalog, frame) is null)
+            ? owned.Mechanics.Catalog
+            : throw new InvalidDataException("canonical_battle_presentation_catalog");
     }
 
     private bool SourceBattleRequiresStruggle(CampaignWildBattle battle) =>
-        SourceBattleForcedMoveSlot(battle) is null && (SourceTrainerPresentationActive(battle)
-            ? WildBattleRules.ValidateSourceMoveSelection(SourceBattlePresentationCatalog(battle), battle.State, WildBattleSide.Player, WildBattleRules.StruggleSlot) is null
-            : WildBattleRules.RequiresStruggle(battle.State, WildBattleSide.Player));
+        SourceFourActionTurns.RequiresStruggle(SourceBattlePresentationCatalog(battle), PresentedCanonicalFrame(battle), new(0));
 
-    private bool SourceBattleMoveSelectable(CampaignWildBattle battle, int slot) => SourceTrainerPresentationActive(battle)
-        ? WildBattleRules.ValidateSourceMoveSelection(SourceBattlePresentationCatalog(battle), battle.State, WildBattleSide.Player, slot) is null
-        : WildBattleRules.IsMoveSelectable(battle.State, WildBattleSide.Player, slot);
+    private bool SourceBattleMoveSelectable(CampaignWildBattle battle, int slot) =>
+        SourceWildBattlePolicy.ValidateMoveSelection(SourceBattlePresentationCatalog(battle), PresentedCanonicalFrame(battle), slot) is null;
 
     private SourceTrainerText? SourceBattleSelectionNotice(CampaignWildBattle battle, int slot)
     {
         if (!SourceTrainerPresentationActive(battle)) return null;
-        var reason = WildBattleRules.ValidateSourceMoveSelection(SourceBattlePresentationCatalog(battle), battle.State, WildBattleSide.Player, slot);
+        var reason = SourceWildBattlePolicy.ValidateMoveSelection(SourceBattlePresentationCatalog(battle), PresentedCanonicalFrame(battle), slot);
         if (reason is null) return null;
         string symbol = reason switch {
             "called_move_tormented" => "sText_PkmnCantUseMoveTorment",

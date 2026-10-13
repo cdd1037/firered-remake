@@ -140,7 +140,7 @@ public partial class CampaignView
                 if (forced is null || battle.Events[i].Sequence < forced.Sequence) switch (battle.Events[i])
                 {
                     case WildBattleStatusChangedEvent change when change.Side == side: status = change.Before; break;
-                    case WildBattleMedicineAppliedEvent {ActiveTarget:true} medicine when side==WildBattleSide.Player:status=medicine.StatusBefore;break;
+                    case WildBattleMedicineAppliedEvent {ActiveTarget:true} medicine when side==(medicine.TargetSide??WildBattleSide.Player):status=medicine.StatusBefore;break;
                     case WildBattlePlayerSwitchedEvent change when side == WildBattleSide.Player: status = change.Previous.Status; break;
                     case WildBattlePlayerReplacedEvent change when side == WildBattleSide.Player: status = change.Previous.Status; break;
                 }
@@ -161,7 +161,7 @@ public partial class CampaignView
             WildBattleRecoveredEvent recovered when recovered.Side == side => (recovered.HpBefore, recovered.HpAfter),
             WildBattlePotionRecoveredEvent potion when potion.Side == side => (potion.HpBefore, potion.HpAfter),
             WildBattleHeldItemConsumedEvent item when item.Side == side => (item.HpBefore, item.HpAfter),
-            WildBattleMedicineAppliedEvent {ActiveTarget:true} medicine when side==WildBattleSide.Player=>(medicine.HpBefore,medicine.HpAfter),
+            WildBattleMedicineAppliedEvent {ActiveTarget:true} medicine when side==(medicine.TargetSide??WildBattleSide.Player)=>(medicine.HpBefore,medicine.HpAfter),
             WildBattleRecoilEvent recoil when recoil.Actor == side => (recoil.HpBefore, recoil.HpAfter),
             WildBattleAbilityDamageEvent ability when ability.Target == side => (ability.HpBefore, ability.HpAfter),
             WildBattleConfusionSelfHitEvent self when self.Side == side => (self.HpBefore, self.HpAfter),

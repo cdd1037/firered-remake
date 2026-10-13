@@ -85,30 +85,17 @@ public sealed partial class CampaignSession
     {
         var error = ValidatePokeFluteCommand(state, command);
         if (error is not null) return new(CommandStatus.Rejected, state, error);
-        var battle = state.WildBattle!;
-        var use = WildBattleRules.ResolvePokeFlute(ShopCatalog, _content.PokemonContent!, battle.State,
-            ShopInventoryView(state.Inventory!), state.Party, battle.ActivePartyIndex);
-        if (!use.Succeeded) return new(CommandStatus.Rejected, state, use.Fault);
-        var turn = use.Battle;
-        battle = RememberKnockedOff(battle, state.Party[battle.ActivePartyIndex].InstanceId, turn.State!.Player);
-        var next = state with
-        {
-            Party = use.Party,
-            WildBattle = battle with { State = turn.State, Events = turn.Events, EventIndex = 0,
-                Phase = CampaignBattlePhase.Events, RandomTrace = turn.Trace },
-            World = state.World with { Rng = turn.State.Rng }
-        };
-        return new(CommandStatus.Accepted, PrepareWildPresentation(PenalizeWildFaint(next)));
+        var active=state.WildBattle!.ActivePartyIndex;
+        return DecideWildMedicine(state,command with{Kind="battle_medicine",PartyIndex=active,
+            TargetInstanceId=state.Party[active].InstanceId,MoveSlot=-1});
     }
 
     private Decision<CampaignState> DecideTrainerPokeFlute(CampaignState state, CampaignCommand command)
     {
         var error = ValidatePokeFluteCommand(state, command);
         if (error is not null) return new(CommandStatus.Rejected, state, error);
-        var trainer = WithSsAnnePartyContext(state, state.ForestTrainerBattle!);
-        var use = ForestTrainerCombatRules.ResolvePokeFlute(ShopCatalog, _content.PokemonContent!, trainer.Combat,
-            ShopInventoryView(state.Inventory!), state.Party, trainer.Presentation.ActivePartyIndex);
-        if (!use.Succeeded) return new(CommandStatus.Rejected, state, use.Fault);
-        return new(CommandStatus.Accepted, CommitForestTrainerTurn(state with { Party = use.Party }, use.Battle));
+        var trainer = state.ForestTrainerBattle!;
+        return DecideTrainerMedicine(state, command with { Kind = "battle_medicine", Text = "pret:ITEM_POKE_FLUTE",
+            PartyIndex = trainer.Presentation.ActivePartyIndex, TargetInstanceId = state.Party[trainer.Presentation.ActivePartyIndex].InstanceId });
     }
 }

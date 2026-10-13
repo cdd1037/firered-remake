@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Game.Domain;
+using Game.Domain.Battle;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Trainers;
@@ -7,152 +8,114 @@ using Game.Domain.WildBattle;
 
 namespace Game.Application;
 
-/// <summary>Adapter between stable owned slots and the complete source battle party.</summary>
 public sealed partial class CampaignSession
 {
-    private static bool SourceTrainerBatonPassPending(ForestTrainerCombatState combat)=>
-        combat.SourceMoveRulesVersion==ForestTrainerCombatRules.SourceTrainerContractVersion&&combat.SourceTurn is not null&&
-        combat.Battle.CalledParty?.PendingSwitch is{Side:WildBattleSide.Player,Kind:WildBattleCalledSwitchKind.BatonPass};
+    private PokemonCatalog CanonicalTrainerPokemon => SafariOrdinaryOwnership?.Mechanics.Catalog ??
+        throw new InvalidDataException("canonical_trainer_owned_catalog");
+    private static bool SourceTrainerBatonPassPending(SourceBattleFrame frame) =>
+        frame.FourTurn?.Phase == SourceFourActionPhase.ActionSwitchPending &&
+        frame.PendingSwitches.Any(p => p.Slot.Value == 0 && p.Kind == WildBattleCalledSwitchKind.BatonPass);
+    public bool SourceTrainerPartyChoicePending => State.ForestTrainerBattle is { } trainer && SourceTrainerBatonPassPending(trainer.Frame);
+    private static SourceTurnContinuation TrainerContinuation(SourceBattleFrame frame) =>
+        new(frame.Revision, frame.EventSequence, frame.NextAction, frame.FourTurn?.Phase ?? throw new InvalidDataException("canonical_trainer_continuation"));
 
-    public bool SourceTrainerPartyChoicePending=>State.ForestTrainerBattle is {} trainer&&SourceTrainerBatonPassPending(trainer.Combat);
-
-    private Decision<CampaignState> DecideSourceTrainerPartyChoice(CampaignState state,CampaignCommand command)
+    private Decision<CampaignState> DecideSourceTrainerPartyChoice(CampaignState state, CampaignCommand command)
     {
-        var trainer=state.ForestTrainerBattle!;var presentation=trainer.Presentation;
-        if(!SourceTrainerBatonPassPending(trainer.Combat))throw new InvalidDataException("source_trainer_party_choice_context");
-        if(command.Kind!="battle_switch")return new(CommandStatus.Rejected,state,"source_trainer_party_choice_required");
-        int index=command.PartyIndex;
-        if(!trainer.Combat.Battle.CalledParty!.PendingSwitch!.LegalPartyIndices.Contains(index)||
-            index<0||index>=state.Party.Length||state.Party[index].IsEgg||state.Party[index].Pokemon.CurrentHp==0)
-            return new(CommandStatus.Rejected,state,"source_trainer_party_choice_invalid");
-        var result=ForestTrainerCombatRules.ChooseSourceParty(OrdinaryExecutionPokemon(trainer.Combat.Battle),trainer.Combat,index);
-        if(!result.Succeeded)return new(CommandStatus.Rejected,state,result.Fault);
-        var incoming=state.Party[index];
-        // A living Baton Pass user has requested a mandatory selection; this is neither
-        // a fainted replacement nor a new ordinary switch turn. The Domain resumes its queue.
-        return new(CommandStatus.Accepted,CommitForestTrainerTurn(state with{ForestTrainerBattle=trainer with
-        {Presentation=presentation with{ActivePartyIndex=index,OwnedBefore=incoming,Replacement=null,LastSwitch=null,
-            ParticipatingMembers=presentation.ParticipatingMembers!.Add(incoming.InstanceId),
-            OpponentHpAtLastSwitch=trainer.Combat.Battle.Opponent.Pokemon.CurrentHp}}},result));
+        var trainer = state.ForestTrainerBattle!; var frame = trainer.Frame;
+        if (command.Kind != "battle_switch") return new(CommandStatus.Rejected, state, "source_trainer_party_choice_required");
+        return CommitCanonicalTrainerResult(state, SourceFourActionTurns.ChooseActionSwitch(CanonicalTrainerPokemon, frame,
+            TrainerContinuation(frame), new(0), new(BattleSide.Player, command.PartyIndex)));
     }
 
     private ImmutableArray<WildBattleCombatant> SourceTrainerEntryParty(CampaignState state)
     {
-        if(state.Party.IsDefaultOrEmpty||state.Party.Length>6||state.Party.Any(p=>p.IsEgg||
-            p.Pokemon.OriginalTrainerId!=state.TrainerId||p.OriginalTrainerName!=state.PlayerName||p.OriginalTrainerGender!=state.PlayerGender))
+        if (state.Party.IsDefaultOrEmpty || state.Party.Length > 6 || state.Party.Any(p => p.IsEgg ||
+            p.Pokemon.OriginalTrainerId != state.TrainerId || p.OriginalTrainerName != state.PlayerName || p.OriginalTrainerGender != state.PlayerGender))
             throw new InvalidDataException("source_trainer_owned_entry_identity");
-        return state.Party.Select(p=>new WildBattleCombatant(p.Pokemon,HeldItem:p.HeldItem,Status:p.Status)
+        return state.Party.Select(p => new WildBattleCombatant(p.Pokemon, HeldItem: p.HeldItem, Status: p.Status)
         {
-            AttackBadgeBoost=_content.PewterEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),
-            SpeedBadgeBoost=_content.VermilionGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),
-            DefenseBadgeBoost=_content.FuchsiaGymEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-            SpecialBadgeBoost=_content.CinnabarEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET")
+            AttackBadgeBoost = state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),
+            SpeedBadgeBoost = state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),
+            DefenseBadgeBoost = state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
+            SpecialBadgeBoost = state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET")
         }).ToImmutableArray();
     }
 
-    private ForestTrainerCombatResult PrepareFuchsiaSourceTrainerBattle(CampaignState state,TrainerId trainer)
+    private SourceTrainerEncounterEntryResult PrepareCanonicalTrainerBattle(CampaignState state, TrainerId trainer)
     {
-        var party=SourceTrainerEntryParty(state);
-        int active=Enumerable.Range(0,party.Length).First(i=>party[i].Pokemon.CurrentHp>0);
-        var style=EffectiveBattleStyle(state);var terrain=CampaignBattleTerrain(state);
-        var owned=SafariOrdinaryOwnership;var catalog=owned?.Predecessor??BattlePokemon;
-        var successor=_content.SeviiRubyEnabled?owned:null;
-        var result=OrdinaryBinding(trainer).Start(new(party,active,state.World.Rng,style,terrain,catalog,owned,successor),trainer);
-        if(!result.Succeeded)throw new InvalidDataException(result.Fault);
-        if(result.State!.SourceMoveRulesVersion!=ForestTrainerCombatRules.SourceTrainerContractVersion)
-            throw new InvalidDataException("source_trainer_entry_protocol");
-        if(owned is not null)result=result with{State=result.State with{Battle=result.State.Battle with{Obedience=CampaignObedienceContext(state)}}};
-        return result;
+        var party = SourceTrainerEntryParty(state);
+        int active = Enumerable.Range(0, party.Length).First(i => party[i].Pokemon.CurrentHp > 0);
+        var binding = OrdinaryBinding(trainer);
+        var setup = SourceTrainerEncounterEntry.Prepare(state.World.Rng, binding.TracePrefix);
+        if (!setup.Succeeded) throw new InvalidDataException(setup.Fault);
+        var made = binding.Factory(trainer, setup.Rng);
+        var rewards = new SourceFourRewardState {
+            Context = new(SourceRewardBattleKind.OrdinaryTrainer, state.TrainerId, state.PlayerName,
+                _content.MapDefinition(state.World.Player.MapId).RegionMapSection),
+            Metadata = state.Party.Select((p, i) => new SourceRewardMetadata(new(BattleSide.Player, i),
+                p.OriginalTrainerName, p.MetLocation, p.Ball, SourceRewardPokerusHistory.NeverInfected)).ToImmutableArray()
+        };
+        var result = SourceTrainerEncounterEntry.Begin(CanonicalTrainerPokemon, setup, made, party, active,
+            EffectiveBattleStyle(state), CampaignBattleTerrain(state), SafariOrdinaryOwnership, rewards);
+        if (!result.Succeeded) throw new InvalidDataException(result.Fault);
+        return result with { State = result.State! with { Obedience = CampaignObedienceContext(state) } };
     }
 
-    private static bool SourceOwnedIdentity(PokemonInstance current,PokemonInstance owned)=>
-        current.Species==owned.Species&&current.SourceSpeciesId==owned.SourceSpeciesId&&
-        current.OriginalTrainerId==owned.OriginalTrainerId&&current.Personality==owned.Personality&&
-        current.Nature==owned.Nature&&current.Ivs==owned.Ivs&&current.Gender==owned.Gender&&
-        current.AbilitySlot==owned.AbilitySlot&&current.AbilityId==owned.AbilityId;
+    private static bool SourceOwnedIdentity(PokemonInstance current, PokemonInstance owned) =>
+        current.Species == owned.Species && current.SourceSpeciesId == owned.SourceSpeciesId &&
+        current.OriginalTrainerId == owned.OriginalTrainerId && current.Personality == owned.Personality &&
+        current.Nature == owned.Nature && current.Ivs == owned.Ivs && current.Gender == owned.Gender &&
+        current.AbilitySlot == owned.AbilitySlot && current.AbilityId == owned.AbilityId;
 
-    private static bool SameSourceOwnedPokemon(PokemonInstance a,PokemonInstance b)=>
-        a with{Moves=b.Moves}==b&&!a.Moves.IsDefault&&!b.Moves.IsDefault&&a.Moves.SequenceEqual(b.Moves);
+    private static bool SameSourceOwnedPokemon(PokemonInstance a, PokemonInstance b) =>
+        a with { Moves = b.Moves } == b && !a.Moves.IsDefault && !b.Moves.IsDefault && a.Moves.SequenceEqual(b.Moves);
 
-    private CampaignForestTrainerBattle ValidateSourceTrainerOwnedParty(CampaignState state,CampaignForestTrainerBattle trainer)
+    private static CampaignState ProjectSourceTrainerOwnedParty(CampaignState state)
     {
-        var combat=trainer.Combat;
-        if(combat.SourceMoveRulesVersion!=ForestTrainerCombatRules.SourceTrainerContractVersion||
-            combat.Battle.CalledParty is not {} party||party.Player.Length!=state.Party.Length||
-            combat.SsAnnePlayerParty is not {} members||members.Length!=state.Party.Length||
-            party.PlayerActiveIndex!=trainer.Presentation.ActivePartyIndex||combat.CeruleanPlayerPartyIndex!=party.PlayerActiveIndex)
-            throw new InvalidDataException("source_trainer_owned_party_context");
-        for(int i=0;i<state.Party.Length;i++)
+        var trainer = state.ForestTrainerBattle!; var b = trainer.Presentation; var frame = trainer.Frame;
+        var actual = frame.Party(BattleSide.Player);
+        if (actual.Members.Length != state.Party.Length) throw new InvalidDataException("source_trainer_owned_count");
+        var owned = state.Party.ToBuilder(); var members = actual.Members;
+        var fainted = b.FaintedMembers ?? ImmutableSortedSet<long>.Empty;
+        for (int i = 0; i < owned.Count; i++)
         {
-            var owned=state.Party[i];var member=party.Player[i];
-            if(owned.IsEgg||member.IsEgg||members[i] is null||!SourceOwnedIdentity(member.Pokemon,owned.Pokemon)||
-                !SameSourceOwnedPokemon(member.Pokemon,owned.Pokemon)||member.Status!=owned.Status||
-                WildBattleSourcePartyEffects.PersistentHeldItem(member)!=owned.HeldItem)
-                throw new InvalidDataException("source_trainer_owned_party_mismatch");
-        }
-        return trainer;
-    }
-
-    private static CampaignState ProjectSourceTrainerOwnedParty(CampaignState state,ForestTrainerCombatState combat)
-    {
-        if(combat.SourceMoveRulesVersion!=ForestTrainerCombatRules.SourceTrainerContractVersion||
-            combat.Battle.CalledParty is not {} party||party.Player.Length!=state.Party.Length)
-            throw new InvalidDataException("source_trainer_owned_result_context");
-        var owned=state.Party.ToBuilder();
-        for(int i=0;i<owned.Count;i++)
-        {
-            var member=party.Player[i];
-            if(owned[i].IsEgg||member.IsEgg||!SourceOwnedIdentity(member.Pokemon,owned[i].Pokemon))
+            var member = members[i];
+            if (member.IsEgg != owned[i].IsEgg || !SourceOwnedIdentity(member.Pokemon, owned[i].Pokemon))
                 throw new InvalidDataException("source_trainer_owned_result_identity");
-            // CalledParty records contain persistent originals, including Transform originals.
-            // Identity, nickname, met data and every other ownership property remain untouched.
-            owned[i]=owned[i] with{Pokemon=member.Pokemon,Status=member.Status,
-                HeldItem=WildBattleSourcePartyEffects.PersistentHeldItem(member)};
+            var pokemon = member.Pokemon;
+            if (pokemon.CurrentHp == 0 && !fainted.Contains(owned[i].InstanceId))
+            {
+                pokemon = pokemon with { Friendship = Math.Max(0, pokemon.Friendship - 1) };
+                fainted = fainted.Add(owned[i].InstanceId); member = member with { Pokemon = pokemon }; members = members.SetItem(i, member);
+                frame = frame with { Slots = frame.Slots.Select(c => c.Member == new PartyMemberKey(BattleSide.Player, i) ? c with {
+                    Body = WildBattleTransformationRules.ApplyPersistentPokemon(c.Body!, pokemon) } : c).ToImmutableArray() };
+            }
+            owned[i] = owned[i] with { Pokemon = pokemon, Status = member.Status, HeldItem = WildBattleSourcePartyEffects.PersistentHeldItem(member) };
         }
-        return state with{Party=owned.ToImmutable()};
+        frame = frame with { Parties = frame.Parties.SetItem(0, actual with { Members = members }) };
+        int active = frame.Get(new(0)).Member!.Value.Index;
+        b = b with { Frame = frame, ActivePartyIndex = active, OwnedBefore = owned[active], FaintedMembers = fainted };
+        return state with { Party = owned.ToImmutable(), ForestTrainerBattle = trainer with { Presentation = b } };
     }
 
-    private static ForestTrainerCombatState SyncSourceTrainerOwnedPokemon(ForestTrainerCombatState combat,int index,PartyPokemon owned)
+    private static SourceBattleFrame SyncSourceTrainerPickup(SourceBattleFrame frame, ImmutableArray<PartyPokemon> owned)
     {
-        if(combat.SourceMoveRulesVersion!=ForestTrainerCombatRules.SourceTrainerContractVersion||
-            combat.Battle.CalledParty is not {} party||combat.SsAnnePlayerParty is not {} members||
-            index<0||index>=party.Player.Length||members.Length!=party.Player.Length||members[index] is not {} mon)
-            throw new InvalidDataException("source_trainer_owned_reward_context");
-        var member=party.Player[index];
-        if(owned.IsEgg||!SourceOwnedIdentity(member.Pokemon,owned.Pokemon)||member.Status!=owned.Status||
-            WildBattleSourcePartyEffects.PersistentHeldItem(member)!=owned.HeldItem)
-            throw new InvalidDataException("source_trainer_owned_reward_identity");
-        mon=WildBattleTransformationRules.ApplyPersistentPokemon(mon,owned.Pokemon);
-        party=party with{Player=party.Player.SetItem(index,member with{Pokemon=owned.Pokemon})};
-        var battle=combat.Battle with{CalledParty=party};
-        if(index==party.PlayerActiveIndex)battle=battle with{Player=mon};
-        return combat with{Battle=battle,SsAnnePlayerParty=members.SetItem(index,mon)};
-    }
-
-    private static ForestTrainerCombatState SyncSourceTrainerPickup(ForestTrainerCombatState combat,ImmutableArray<PartyPokemon> owned)
-    {
-        if(combat.SourceMoveRulesVersion!=ForestTrainerCombatRules.SourceTrainerContractVersion||combat.Battle.Outcome!=WildBattleOutcome.Won||
-            combat.Battle.CalledParty is not {} party||combat.SsAnnePlayerParty is not {} members||
-            party.Player.Length!=owned.Length||members.Length!=owned.Length)
+        if (frame.Outcome != WildBattleOutcome.Won || frame.Party(BattleSide.Player).Members.Length != owned.Length)
             throw new InvalidDataException("source_trainer_pickup_context");
-        var battle=combat.Battle;
-        for(int i=0;i<owned.Length;i++)
+        var party = frame.Party(BattleSide.Player);
+        for (int i = 0; i < owned.Length; i++)
         {
-            var member=party.Player[i];var mon=members[i]??throw new InvalidDataException("source_trainer_pickup_member");
-            if(!SameSourceOwnedPokemon(member.Pokemon,owned[i].Pokemon)||member.Status!=owned[i].Status)
+            var member = party.Members[i];
+            if (!SameSourceOwnedPokemon(member.Pokemon, owned[i].Pokemon) || member.Status != owned[i].Status)
                 throw new InvalidDataException("source_trainer_pickup_identity");
-            string previous=WildBattleSourcePartyEffects.PersistentHeldItem(member);
-            if(previous==owned[i].HeldItem)continue;
-            // The caller has just applied the authenticated Pickup settlement. It can only
-            // fill an empty persistent held-item slot after a won battle.
-            if(previous!="ITEM_NONE"||owned[i].HeldItem=="ITEM_NONE")
-                throw new InvalidDataException("source_trainer_pickup_item");
-            member=member with{HeldItem=owned[i].HeldItem,KnockedOffItem=null,PersistentHeldItemOverride=null};
-            mon=mon with{HeldItem=owned[i].HeldItem,KnockedOffItem=null};
-            party=party with{Player=party.Player.SetItem(i,member)};
-            members=members.SetItem(i,mon);
-            if(i==party.PlayerActiveIndex)battle=battle with{Player=mon};
+            string previous = WildBattleSourcePartyEffects.PersistentHeldItem(member);
+            if (previous == owned[i].HeldItem) continue;
+            if (previous != "ITEM_NONE" || owned[i].HeldItem == "ITEM_NONE") throw new InvalidDataException("source_trainer_pickup_item");
+            member = member with { HeldItem = owned[i].HeldItem, KnockedOffItem = null, PersistentHeldItemOverride = null };
+            party = party with { Members = party.Members.SetItem(i, member) };
+            frame = frame with { Slots = frame.Slots.Select(c => c.Member == new PartyMemberKey(BattleSide.Player, i) ? c with {
+                Body = c.Body! with { HeldItem = owned[i].HeldItem, KnockedOffItem = null } } : c).ToImmutableArray() };
         }
-        return combat with{Battle=battle with{CalledParty=party},SsAnnePlayerParty=members};
+        return frame with { Parties = frame.Parties.SetItem(0, party) };
     }
 }

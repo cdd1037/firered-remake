@@ -152,7 +152,7 @@ public sealed partial class CampaignSession
 
     private CampaignState ReturnFromLostelleHypnoBattle(CampaignState state,CampaignWildBattle battle)
     {
-        var outcome=FirstSeviiHypnoBattleContract.Resolve(battle.State.Outcome);
+        var outcome=FirstSeviiHypnoBattleContract.Resolve(battle.Frame!.Outcome);
         if(!outcome.ContinueRescue||outcome.WhiteOut||state.World.Player.MapId.Value!=LostelleMap||
             state.Script.Wait is not {Kind:StoryWaitKind.Battle} wait||
             !state.Exploration!.Battles.Any(h=>h.Id==battle.Id&&IsLostelleHypnoHistory(state,h)))

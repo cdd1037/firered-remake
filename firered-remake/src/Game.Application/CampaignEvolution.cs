@@ -91,14 +91,10 @@ public sealed partial class CampaignSession
     {
         if (!_content.ForestEnabled) return ReturnFromWildBattle(state);
         var battle = state.WildBattle!;
-        if (battle.State.Outcome != WildBattleOutcome.Won || battle.RewardReceivers is not { } receivers ||
-            battle.RewardReceiverIndex != receivers.Length || !battle.PendingMoves.IsEmpty || state.Evolution is not null)
+        if (battle.Frame is not {Outcome:WildBattleOutcome.Won,Rewards.Pending:null} ||
+            battle.EntryLevels.IsDefault||battle.EntryLevels.Length!=state.Party.Length||!battle.PendingMoves.IsEmpty||state.Evolution is not null)
             throw new InvalidDataException("evolution_reward_context_invalid");
-        // This single-opponent battle awards no EXP before settlement. Recover entry levels from
-        // the immutable preflighted rewards only after all receiver and original move decisions.
-        var levels = state.Party.Select(p => p.Pokemon.Level).ToImmutableArray();
-        foreach (var receiver in receivers)
-            levels = levels.SetItem(receiver.PartyIndex, receiver.Result.Pokemon.Pokemon.Level - receiver.Result.LevelsGained);
+        var levels=battle.EntryLevels;
         var proposals = EligibleLevelEvolutions(state, levels);
         return proposals.IsEmpty ? ReturnFromWildBattle(state) : state with
         {
