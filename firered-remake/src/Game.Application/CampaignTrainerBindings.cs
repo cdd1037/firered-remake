@@ -27,6 +27,9 @@ public sealed partial class CampaignSession
         _ordinaryTrainerBindings ??= BindOrdinaryTrainers();
     private OrdinaryTrainerBinding OrdinaryBinding(TrainerId trainer) => OrdinaryTrainerBindings[trainer];
 
+    /// <summary>Read-only source definition from the same authenticated registry used for battle entry.</summary>
+    public TrainerDefinition GetOrdinaryTrainerDefinition(TrainerId trainer) => OrdinaryBinding(trainer).Definition;
+
     private Dictionary<TrainerId, OrdinaryTrainerBinding> BindOrdinaryTrainers()
     {
         var bindings = new Dictionary<TrainerId, OrdinaryTrainerBinding>();
@@ -172,6 +175,11 @@ public sealed partial class CampaignSession
         {
             Add(TrainerRegion.PokemonLeague, pokemonLeague.Trainers.Values, pokemonLeague.Battles.Values.Select(ProjectTrainerScript),
                 (trainer, rng) => PokemonLeagueTrainerPartyFactory.Create(pokemonLeague, _content.PokemonLeagueOpponents!, trainer, rng), "pokemon-league-trainer");
+        }
+        if (_content.LeagueRematchEnabled && _content.LeagueRematchTrainerParties is { } rematch)
+        {
+            Add(TrainerRegion.PokemonLeague, rematch.Trainers.Values, rematch.Battles.Values.Select(ProjectTrainerScript),
+                (trainer, rng) => LeagueRematchTrainerPartyFactory.Create(rematch, _content.LeagueRematchOpponents!, trainer, rng), "league-rematch-trainer");
         }
         if (_content.SeviiRubyEnabled && _content.SeviiRubyTrainers is { } seviiRuby)
         {

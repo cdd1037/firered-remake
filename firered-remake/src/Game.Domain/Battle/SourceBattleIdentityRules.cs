@@ -28,8 +28,8 @@ public static class SourceBattleIdentityRules
             (mechanicsVersion != BattleRulesProfile.CanonicalSourceSinglesVersion || frame.Layout != SourceBattleLayout.Singles) &&
             mechanicsVersion != SourceBattleKernel.Version)
             return "source_frame_mechanics_profile_layout";
-        // Cave inherits all Celio trainer admissions; its owned species remain checked under the exact current proof.
-        string? trainerMembershipProfile = frame.SourceCampaignRulesVersion == CeruleanCaveOpponentPokemonCatalog.Profile
+        // Current successors inherit Celio trainer admissions; owned species and new trainer-only additions remain separate.
+        string? trainerMembershipProfile = frame.SourceCampaignRulesVersion is CeruleanCaveOpponentPokemonCatalog.Profile or LeagueRematchOpponentPokemonCatalog.Profile
             ? CelioOpponentPokemonCatalog.Profile : frame.SourceCampaignRulesVersion;
         if (frame.SourceCampaignRulesVersion is { } campaign &&
             (!OwnedBattlePokemonCatalog.IsKnownProfile(campaign) ||
@@ -62,7 +62,8 @@ public static class SourceBattleIdentityRules
         if (frame.SourceCampaignRulesVersion is not null && frame.Parties.Any(p => p.Members.Any(m =>
             !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species) &&
             !(p.Side == BattleSide.Opponent && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
-              (trainerMembershipProfile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
+              (frame.SourceCampaignRulesVersion == LeagueRematchOpponentPokemonCatalog.Profile && LeagueRematchOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
+               trainerMembershipProfile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                SilphOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
                trainerMembershipProfile is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                SaffronGymOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||

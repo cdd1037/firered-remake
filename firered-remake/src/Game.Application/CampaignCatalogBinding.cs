@@ -21,13 +21,15 @@ public sealed partial class CampaignSession
     private static CampaignCatalogBinding BindCurrentCatalog(ICampaignCatalog content)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if(!content.CeruleanCaveEnabled)throw new InvalidDataException("current_requires_cerulean_cave_catalog");
+        if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
         var owned=content.CeruleanCaveOwnership!;
         var battle=OwnedBattlePokemonCatalog.For(owned.Catalog);
         if(battle is null || !ReferenceEquals(battle.Catalog,content.PokemonContent!.Catalog) ||
             !ReferenceEquals(battle.Mechanics,owned.Mechanics) ||
             !ReferenceEquals(CeruleanCaveOpponentPokemonCatalog.For(owned),content.CeruleanCaveOpponents) ||
+            !ReferenceEquals(LeagueRematchOpponentPokemonCatalog.For(owned),content.LeagueRematchOpponents) ||
+            !ReferenceEquals(content.LeagueRematchOpponents?.Predecessor,content.CeruleanCaveOpponents) ||
             ReferenceEquals(content.CeruleanCaveOpponents!.Catalog,owned.Catalog))
             throw new InvalidDataException("current_battle_catalog_identity");
         return new(CurrentGameProfile.RulesVersion,EarlyLandEncounterRules.FiveIslandRulesVersion,owned.Catalog,battle);
@@ -53,7 +55,7 @@ public sealed partial class CampaignSession
             content.CinnabarEnabled && content.FirstSeviiEnabled && content.ViridianGymEnabled &&
             content.LeagueRivalEnabled && content.VictoryRoadEnabled && content.PokemonLeagueEnabled &&
             content.NationalDexEnabled && content.SeviiRubyEnabled && content.FourIslandEnabled &&
-            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled) ||
+            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled) ||
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
         ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);

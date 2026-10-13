@@ -82,6 +82,9 @@ public interface ICampaignCatalog:IStoryCatalog
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
+    bool LeagueRematchEnabled=>false;
+    LeagueRematchTrainerCatalog? LeagueRematchTrainerParties=>null;
+    LeagueRematchOpponentPokemonCatalog? LeagueRematchOpponents=>null;
     bool NationalDexEnabled=>false;
     bool CeruleanCaveEnabled=>false;
     CeruleanCaveOwnedPokemonCatalog? CeruleanCaveOwnership=>null;

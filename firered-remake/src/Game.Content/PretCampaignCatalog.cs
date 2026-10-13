@@ -284,8 +284,12 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         CelioPokemonContent celioPokemon,
         ImmutableDictionary<MapId, RoamerMap> celioRoamerMaps,
         PretCeruleanCaveRegion ceruleanCave,
-        CeruleanCavePokemonContent ceruleanCavePokemon)
+        CeruleanCavePokemonContent ceruleanCavePokemon,
+        LeagueRematchTrainerCatalog leagueRematchTrainers,
+        LeagueRematchOpponentPokemonCatalog leagueRematchOpponents)
     {
+        LeagueRematchTrainerParties = leagueRematchTrainers;
+        LeagueRematchOpponents = leagueRematchOpponents;
         CeruleanCaveRegion = ceruleanCave;
         CeruleanCavePokemon = ceruleanCavePokemon;
         CelioPokemon = celioPokemon;

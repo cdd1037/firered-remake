@@ -2146,6 +2146,16 @@ public sealed partial class PretCampaignCatalog
         hashes.Add("cerulean-cave-machines:" + PretCeruleanCavePokemon.MachinesSha256);
         hashes.Add("cerulean-cave-source-inputs:" + PretCeruleanCavePokemon.SourceInputsSha256);
 
+        // The same current game retains original League teams and activates the source rematches after Celio.
+        PretLeagueRematchRules.ValidateSourceEvidence(projectRoot);
+        var leagueRematchTrainers = PretLeagueRematchRules.LoadTrainers(projectRoot);
+        var leagueRematchOpponents = PretLeagueRematchRules.LoadOpponents(projectRoot, ceruleanCavePokemon.Opponents);
+        ValidateLeagueRematchComposition(leagueRematchTrainers, leagueRematchOpponents, ceruleanCavePokemon, compiled, bank);
+        hashes.Add("league-rematch-trainers:" + PretLeagueRematchRules.TrainersSha256);
+        hashes.Add("league-rematch-opponents:" + PretLeagueRematchRules.PokemonSha256);
+        hashes.Add("league-rematch-rules:" + PretLeagueRematchRules.RulesSha256);
+        hashes.Add("league-rematch-source-inputs:" + PretLeagueRematchRules.SourceInputsSha256);
+
         // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
         return new(
@@ -2313,7 +2323,9 @@ public sealed partial class PretCampaignCatalog
             celioPokemon: celioPokemon,
             celioRoamerMaps: celioRoamerMaps,
             ceruleanCave: ceruleanCave,
-            ceruleanCavePokemon: ceruleanCavePokemon);
+            ceruleanCavePokemon: ceruleanCavePokemon,
+            leagueRematchTrainers: leagueRematchTrainers,
+            leagueRematchOpponents: leagueRematchOpponents);
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

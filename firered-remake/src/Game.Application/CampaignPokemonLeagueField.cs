@@ -97,6 +97,8 @@ public sealed partial class CampaignSession
             if(!labels.Contains(symbol)||a.Length!=4)throw new InvalidDataException("pokemon_league_patch_label");
             var patch=PokemonLeaguePatch(state.World.Player.MapId,symbol);string key=a[0]+":"+a[1];
             if(!patch.TryGetValue(key,out var tile)||tile.SourceMetatileId!=PokemonLeagueValue(a[2])||tile.Collision!=(PokemonLeagueValue(a[3])==0?0:3))throw new InvalidDataException("pokemon_league_patch_arguments");
+            if(room==0&&symbol=="PokemonLeague_EventScript_CloseEntry"&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_POKEMON_LEAGUE")==0)
+                state=BeginPokemonLeagueChallenge(state);
             next=state with{MapEdits=(state.MapEdits??ImmutableSortedDictionary<string,FieldMetatileEdit>.Empty).SetItem(key,tile)};return true;
         }
         if(effect.Opcode=="goto_if_defeated"&&room==4)
@@ -115,7 +117,9 @@ public sealed partial class CampaignSession
         if(effect.Opcode=="dofieldeffect"&&symbol==PokemonLeagueHallEntry)
         {
             Source();if(state.World.Player.MapId.Value!=PokemonLeagueHallMap||!a.SequenceEqual(new[]{"FLDEFF_HALL_OF_FAME_RECORD"})||
-                state.PokemonLeagueCompletion is not null||state.HallOfFame is not null||!state.Script.Flags.GetValueOrDefault("FLAG_DEFEATED_CHAMP")||state.Party.Length is <1 or >6)
+                state.PokemonLeagueCompletion is not null||PokemonLeagueDefeatedFlags.Any(f=>!state.Script.Flags.GetValueOrDefault(f))||state.Party.Length is <1 or >6||
+                (state.HallOfFame?.Teams??[]).Any(t=>t.ChallengeNumber==PokemonLeagueChallenge(state))||
+                !(state.ForestTrainerHistory??[]).Any(h=>h.PokemonLeagueChallenge==PokemonLeagueChallenge(state)&&h.TrainerId==PokemonLeagueTrainerAt(state,4).Value&&h.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Won))
                 throw new InvalidDataException("pokemon_league_record_effect_context");
             int challenge=PokemonLeagueChallenge(state);
             next=state with{PokemonLeagueCompletion=new(CampaignPokemonLeagueCompletionStage.RecordingFieldEffect,"hall-of-fame:"+challenge,challenge,state.Party.Length,false,false)};return true;

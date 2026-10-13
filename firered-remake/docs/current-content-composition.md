@@ -82,3 +82,17 @@ expanded current contract passed 102 checks without rewriting that baseline or
 the named original checkpoint payloads. Current field items passed their 396-check
 contract against the explicitly converted checkpoint. See [composition test
 scope](current-composition-test-scope.md) and [Cave acceptance](cerulean-cave-implementation.md).
+
+## Upgraded League successor, 2026-10-13
+
+The sole current composition now includes all seven authenticated upgraded
+trainer teams and five new opponent-only species. Counts are 257 maps,139 owned,
+168 opponents,244 pickups; the previous Cave proof remains an authenticated
+predecessor. The current fingerprint is
+`ec57b1b5a50c8e9f49dd6ef5d1090a03888dc9915ff0880afa0f658aca42ec96`.
+The final133 current-composition checks passed, including unchanged seeded New Game
+payload, independent deterministic loading, strict Continue and malformed
+rematch binding rejection. No historical baseline was rewritten. The source
+flag selects upgraded parties within the one current trainer registry and
+shared execution path; there is no new selectable regional runtime profile.
+See [rematch acceptance](league-rematch-campaign.md).

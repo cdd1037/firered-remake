@@ -1,0 +1,338 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 600,
+      "gitBlobSha1": "d14ecec7b6d08f50d746c7529e1dbfa04b953802",
+      "path": "graphics/pokemon/crobat/back.png",
+      "sha256": "b4ddc9a36af0993bf1a59a878030acd99bf6b1fcd62cc8f9019d47554112d159"
+    },
+    {
+      "byteLength": 780,
+      "gitBlobSha1": "b61cdebe760af184883f44626f30da9e495e97e0",
+      "path": "graphics/pokemon/crobat/front.png",
+      "sha256": "533b6c81788b5eb3be8f1a95e68b8fa09e0de798591e757b859e5f0b7212b0d6"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "9c466e9e82b8c57741eb5799e88ef79012bf8fa8",
+      "path": "graphics/pokemon/crobat/normal.pal",
+      "sha256": "89c0cb5818e843fcabffe6fd3fc58320b7ab670958c90f1e3b8fdf50adc2552f"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "8f22fd4b0558663b7d11f80782499f77d5b4a87a",
+      "path": "graphics/pokemon/crobat/shiny.pal",
+      "sha256": "faaae77326c44311e8f7b7b769990e2f1115f9fe0ca4d0edd5384dfe86006761"
+    },
+    {
+      "byteLength": 690,
+      "gitBlobSha1": "df820217924951b0354983367f27fc57570cd7bd",
+      "path": "graphics/pokemon/heracross/back.png",
+      "sha256": "f3ef6f4495cd9e58b686166e7a79183bb193c2d4df4a94551474c2ff85919bf3"
+    },
+    {
+      "byteLength": 811,
+      "gitBlobSha1": "f693a4c4694ce6613752ba2b54e4d58ee6479954",
+      "path": "graphics/pokemon/heracross/front.png",
+      "sha256": "2b4b2cf113946d7b68b6bd26f41f374844983dc7f2f9e87f1635b828fe9e6d1a"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "06fe289a5c20964ef2c96daaddcb06c0e004b27a",
+      "path": "graphics/pokemon/heracross/normal.pal",
+      "sha256": "d331766e10df02102147ca51a8c3097e6bbd098facb365b987671739979b972c"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "c85ace38b9675ca41b3a76d666cfc946e720e7e1",
+      "path": "graphics/pokemon/heracross/shiny.pal",
+      "sha256": "2a94125a6d8b2cf481cb018e55c86e616ea17422d371709db6e509198a239823"
+    },
+    {
+      "byteLength": 743,
+      "gitBlobSha1": "3e6ec7789ad2f29c286a5ce9f745584251d20795",
+      "path": "graphics/pokemon/kingdra/back.png",
+      "sha256": "cd03c1d089e1116e1bfea51e7eb3b4025f7b0ad5ab580ca5d8cc4f8473367812"
+    },
+    {
+      "byteLength": 858,
+      "gitBlobSha1": "86fecb91467f341f65467847b6fba203592943f2",
+      "path": "graphics/pokemon/kingdra/front.png",
+      "sha256": "ee6c3698fa272d0586c7865406a781cadb1e00d6869d761c3072dee51b8ef7e7"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "9dcb7ab8516fc5ca34cfeefe487bf6af1b00a261",
+      "path": "graphics/pokemon/kingdra/normal.pal",
+      "sha256": "a3fc035d622a98f2db9b9caeda056da4e2ab43902340b052116096d00d0d4c6b"
+    },
+    {
+      "byteLength": 196,
+      "gitBlobSha1": "c458692836224154faeddc6e56f66023bbefc50a",
+      "path": "graphics/pokemon/kingdra/shiny.pal",
+      "sha256": "92e878486e2cb2ce5465d8eb2f276e7eaa52d0b16c037ff98e5b6b375c751b1f"
+    },
+    {
+      "byteLength": 618,
+      "gitBlobSha1": "44b44a3ffd1fc874b48a46d289a1ca1573fd5e08",
+      "path": "graphics/pokemon/misdreavus/back.png",
+      "sha256": "45f68be088630f8f0e2db1569b878f02015029cbd95efc4894fbbba05c06b8aa"
+    },
+    {
+      "byteLength": 590,
+      "gitBlobSha1": "135f6969b53a8248d2c534733afc6d431dfbd76d",
+      "path": "graphics/pokemon/misdreavus/front.png",
+      "sha256": "4ab302ccc18db11150c038946e8b887c2337611bb32dd96020c0ca5fd6da3f5a"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "c57ab5ea74e902d67f4c022a990f6df6f4730364",
+      "path": "graphics/pokemon/misdreavus/normal.pal",
+      "sha256": "88167e14e3dfdd445debdc314075d9b61a9eae117e61522e3e414789763b2f46"
+    },
+    {
+      "byteLength": 186,
+      "gitBlobSha1": "8814515be27f8b385cbd4a958f239a27a12b074e",
+      "path": "graphics/pokemon/misdreavus/shiny.pal",
+      "sha256": "37767092ce725082c206f45e56f1e43b6bbe888551cc86c77b86f5c65c1f3a79"
+    },
+    {
+      "byteLength": 819,
+      "gitBlobSha1": "74cb256d0f97a6748cf1c3375af55d8a909d04e7",
+      "path": "graphics/pokemon/steelix/back.png",
+      "sha256": "a5fab7182a4903a098b61db332cd9221c813d224e03e7fb91fbf19fd1042e547"
+    },
+    {
+      "byteLength": 943,
+      "gitBlobSha1": "e5b3a35d62391d6ba0158d9f50b144d92f2a0519",
+      "path": "graphics/pokemon/steelix/front.png",
+      "sha256": "89520d2a805d68b40c0f27f45959b748487764fb4d1fd7e621627100617ed006"
+    },
+    {
+      "byteLength": 185,
+      "gitBlobSha1": "e18ae398c54d131649f8a5fa8918eea8859882ba",
+      "path": "graphics/pokemon/steelix/normal.pal",
+      "sha256": "813be1289337da84acdb2753d410760af4cf56520b099181b46285e644e696df"
+    },
+    {
+      "byteLength": 185,
+      "gitBlobSha1": "02b21c7ac341dadca528318fa80873a1d7721836",
+      "path": "graphics/pokemon/steelix/shiny.pal",
+      "sha256": "2f59700cd822fc9ec5bcc164c98aed20120869622e94254b8bd5b80da0086603"
+    },
+    {
+      "byteLength": 776,
+      "gitBlobSha1": "273318be0cea8c7677b8fc8fc89aae43ed40e1f4",
+      "path": "graphics/pokemon/tyranitar/back.png",
+      "sha256": "2df551c2db67570e09e4e43e8a115dabb9a57fca931c4cc084b668a2b1a4ce07"
+    },
+    {
+      "byteLength": 1095,
+      "gitBlobSha1": "a1035064b415711c588c2e9564c3bd14422a6a5d",
+      "path": "graphics/pokemon/tyranitar/front.png",
+      "sha256": "a6bf6feacf8234c94664bb1937f1a1270b0500a022916c18ff400105befaf76b"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "6c5e2941c3bce4b8f4ec0fa275e843026811b28b",
+      "path": "graphics/pokemon/tyranitar/normal.pal",
+      "sha256": "09bb7329f4bff6848975c0933e9eb045a31facc19e3f966f072c5e3e8788ca99"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "3090536a94ac4e0ee8578b85f9264dfe4c86aca0",
+      "path": "graphics/pokemon/tyranitar/shiny.pal",
+      "sha256": "9343b6f486858eb2497d53becc6df1ac9593fff609482e13ed3bcee7af256044"
+    },
+    {
+      "byteLength": 39946,
+      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
+      "path": "include/constants/opponents.h",
+      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+    },
+    {
+      "byteLength": 17891,
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
+      "path": "include/constants/songs.h",
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "byteLength": 2051,
+      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee",
+      "path": "include/constants/sound.h",
+      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2"
+    },
+    {
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "path": "include/constants/species.h",
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "byteLength": 16533,
+      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9",
+      "path": "sound/cry_tables.inc",
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a"
+    },
+    {
+      "byteLength": 11592,
+      "gitBlobSha1": "9000b8c299b428b923395fa00c985ae449ab7c4b",
+      "path": "sound/direct_sound_samples/cries/crobat.wav",
+      "sha256": "4d26e744520469906d6a063a932093a903ebf1b75813d7be7e6fd1f0dc583da6"
+    },
+    {
+      "byteLength": 9174,
+      "gitBlobSha1": "14824990853f71b83ec2c20da2d15ee7f596a06d",
+      "path": "sound/direct_sound_samples/cries/heracross.wav",
+      "sha256": "f9b174752a9555cc0ccde5cfeca452f7ecaa93c445b486adf688ac2283c130a1"
+    },
+    {
+      "byteLength": 6954,
+      "gitBlobSha1": "2263e72cbdfb80fc5e7b45f246c1e4a1ae85d32a",
+      "path": "sound/direct_sound_samples/cries/kingdra.wav",
+      "sha256": "6a0d4488b3e749f58cbad31fc679cb23928fca675c2834470f68d63b77d37aa4"
+    },
+    {
+      "byteLength": 5848,
+      "gitBlobSha1": "cce18c27bbbca51972cba4b0fd15fa0dfe0fc374",
+      "path": "sound/direct_sound_samples/cries/misdreavus.wav",
+      "sha256": "d6cc2e45fe70a78ee7becc2213fede094bb3f72b1ead242095a080f4cfad251e"
+    },
+    {
+      "byteLength": 19020,
+      "gitBlobSha1": "85de343abe7fe7b1ca8c1d57f9c737ae1006e55f",
+      "path": "sound/direct_sound_samples/cries/steelix.wav",
+      "sha256": "6c5017343561b62479507eb1f702fadff54f577a0cca0226e600a4588a6f80e6"
+    },
+    {
+      "byteLength": 11686,
+      "gitBlobSha1": "f2b76821067e77bb95fa0a609fb1339750389017",
+      "path": "sound/direct_sound_samples/cries/tyranitar.wav",
+      "sha256": "fbdee85451a5ccd2e33be5ad8fe7cebd902212b74acfa69da6d933c64e28e3ee"
+    },
+    {
+      "byteLength": 9204,
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57",
+      "path": "sound/song_table.inc",
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+    },
+    {
+      "byteLength": 214609,
+      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
+      "path": "src/data/graphics/pokemon.h",
+      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+    },
+    {
+      "byteLength": 44872,
+      "gitBlobSha1": "17f818f458434bc6c35cb7f10acd7776a36e9c22",
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h",
+      "sha256": "a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab"
+    },
+    {
+      "byteLength": 1834,
+      "gitBlobSha1": "dccd063dae2a1ab421c9a990c891ac2eabadf820",
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
+      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1"
+    },
+    {
+      "byteLength": 44879,
+      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036",
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
+      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f"
+    },
+    {
+      "byteLength": 15851,
+      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
+      "path": "src/data/text/species_names.h",
+      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+    },
+    {
+      "byteLength": 302118,
+      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
+      "path": "src/data/trainers.h",
+      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+    }
+  ],
+  "inheritedInputs": [
+    {
+      "byteLength": 132335,
+      "path": "content/generated/campaign-hit-art/manifest.json",
+      "sha256": "f65895babddf0327ad6884ba4d86d2c582e780c17bf91064599a657361acc94c"
+    },
+    {
+      "byteLength": 172148,
+      "path": "content/generated/pewter-pokemon/battle-art.json",
+      "sha256": "3543357d9cc9d2f25e0fe389da3ac8f88f18df1ab9afd782ea91b01f0f625fdb"
+    },
+    {
+      "byteLength": 16516,
+      "path": "content/generated/pewter-pokemon/steelix-back-normal.png",
+      "sha256": "c3391ee011d9333eab34935f488361ea20be8f4fe4b733cf3b55f802bef1f281"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pewter-pokemon/steelix-back-normal.rgba",
+      "sha256": "10f52dc779a39ec53db52ad8b16af219892e7f253c8a9fd97baee09ca3e4203c"
+    },
+    {
+      "byteLength": 16516,
+      "path": "content/generated/pewter-pokemon/steelix-back-shiny.png",
+      "sha256": "f77c43b263f4b483cc759208df86f979dbdcc55d5be8c9e58b1a8570dd3448d3"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pewter-pokemon/steelix-back-shiny.rgba",
+      "sha256": "82f040fcb809f02f90e2f964b4de49ace3d87baad569cef45affbe3e5c9ce715"
+    },
+    {
+      "byteLength": 16516,
+      "path": "content/generated/pewter-pokemon/steelix-front-normal.png",
+      "sha256": "154c875dea588a4a74f49872c4b92535fa748e8b96c399d7674589a250f9e7ea"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pewter-pokemon/steelix-front-normal.rgba",
+      "sha256": "c8ecc50ebb27875d060d6e8aa5943aa455d748632f0ef2571c09761f9cbf692d"
+    },
+    {
+      "byteLength": 16516,
+      "path": "content/generated/pewter-pokemon/steelix-front-shiny.png",
+      "sha256": "dd6910bdfd539c5b742f3393fefce1cd19ef5b2f557a0efd0f8ee2449fde6c68"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pewter-pokemon/steelix-front-shiny.rgba",
+      "sha256": "0d32bfa845b9d460b80b436db8a4083ef09be536d9cdab8077118f3f2b8d4284"
+    },
+    {
+      "byteLength": 106948,
+      "path": "content/generated/pokemon-league-presentation/manifest.json",
+      "sha256": "211d6c3c6377699241beb9ac00645c4181d0aab08e46b96f5f02070b5fb76b1c"
+    },
+    {
+      "byteLength": 6631,
+      "path": "content/generated/pokemon-league-presentation/synth-manifest.json",
+      "sha256": "fc6b8faf25cd3ec914e0667d0d01739af2cdde949f7eec4dc63dcae655c017aa"
+    },
+    {
+      "byteLength": 2565436,
+      "path": "content/generated/synth-audio/firered.pack",
+      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+    },
+    {
+      "byteLength": 88374,
+      "path": "content/generated/synth-audio/manifest.json",
+      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
+    },
+    {
+      "byteLength": 6188,
+      "path": "content/generated/synth-audio/normal-cries.bin",
+      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+    }
+  ],
+  "profile": "firered-league-rematch-presentation-v1",
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

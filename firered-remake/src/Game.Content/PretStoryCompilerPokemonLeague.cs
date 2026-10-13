@@ -46,6 +46,13 @@ public static partial class PretStoryCompiler
                 ("data/maps/PokemonLeague_ChampionsRoom/scripts.inc","41d2f054b4569798cd3e11e848f3ac3da62781db22320241ef18efb6604f72f3","PokemonLeague_ChampionsRoom_EventScript_BattleSquirtle")=>"TRAINER_CHAMPION_FIRST_SQUIRTLE",
                 ("data/maps/PokemonLeague_ChampionsRoom/scripts.inc","41d2f054b4569798cd3e11e848f3ac3da62781db22320241ef18efb6604f72f3","PokemonLeague_ChampionsRoom_EventScript_BattleBulbasaur")=>"TRAINER_CHAMPION_FIRST_BULBASAUR",
                 ("data/maps/PokemonLeague_ChampionsRoom/scripts.inc","41d2f054b4569798cd3e11e848f3ac3da62781db22320241ef18efb6604f72f3","PokemonLeague_ChampionsRoom_EventScript_BattleCharmander")=>"TRAINER_CHAMPION_FIRST_CHARMANDER",
+                ("data/maps/PokemonLeague_LoreleisRoom/scripts.inc","62206bd5b51860c75293bf53021a845ee1495cae5ea28703c78ca142b7c32e15","PokemonLeague_LoreleisRoom_EventScript_Rematch")=>"TRAINER_ELITE_FOUR_LORELEI_2",
+                ("data/maps/PokemonLeague_BrunosRoom/scripts.inc","d1de5447c4968e608082afedb1512319f11287555f92ce92cd3cc2229c76009a","PokemonLeague_BrunosRoom_EventScript_Rematch")=>"TRAINER_ELITE_FOUR_BRUNO_2",
+                ("data/maps/PokemonLeague_AgathasRoom/scripts.inc","3d3af744133659ca0644bbdb1aefcb04d2c0e1255f65a18904fd6e59b7452e4f","PokemonLeague_AgathasRoom_EventScript_Rematch")=>"TRAINER_ELITE_FOUR_AGATHA_2",
+                ("data/maps/PokemonLeague_LancesRoom/scripts.inc","796a87867040647f4f0cf22eb516455b296f5a1b967378797528421421f55830","PokemonLeague_LancesRoom_EventScript_Rematch")=>"TRAINER_ELITE_FOUR_LANCE_2",
+                ("data/maps/PokemonLeague_ChampionsRoom/scripts.inc","41d2f054b4569798cd3e11e848f3ac3da62781db22320241ef18efb6604f72f3","PokemonLeague_ChampionsRoom_EventScript_RematchSquirtle")=>"TRAINER_CHAMPION_REMATCH_SQUIRTLE",
+                ("data/maps/PokemonLeague_ChampionsRoom/scripts.inc","41d2f054b4569798cd3e11e848f3ac3da62781db22320241ef18efb6604f72f3","PokemonLeague_ChampionsRoom_EventScript_RematchBulbasaur")=>"TRAINER_CHAMPION_REMATCH_BULBASAUR",
+                ("data/maps/PokemonLeague_ChampionsRoom/scripts.inc","41d2f054b4569798cd3e11e848f3ac3da62781db22320241ef18efb6604f72f3","PokemonLeague_ChampionsRoom_EventScript_RematchCharmander")=>"TRAINER_CHAMPION_REMATCH_CHARMANDER",
                 _=>null
             };
             if(expected is null||!PokemonLeagueSource(file,file.Path,file.SourceRef.Sha256!))return(StoryOp.Unsupported,0,int.MaxValue);

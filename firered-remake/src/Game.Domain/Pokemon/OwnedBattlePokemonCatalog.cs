@@ -92,7 +92,8 @@ public sealed class OwnedBattlePokemonCatalog
         owned is null ? null : For(owned.Catalog)!;
 
     internal string TrainerOpponentProfile => RulesVersion == CeruleanCaveOwnedPokemonCatalog.Profile
-        ? CeruleanCaveOpponentPokemonCatalog.Profile : RulesVersion == CelioOwnedPokemonCatalog.Profile
+        ? (CeruleanCaveOwnedPokemonCatalog.For(Catalog) is { } cave && LeagueRematchOpponentPokemonCatalog.For(cave) is not null
+            ? LeagueRematchOpponentPokemonCatalog.Profile : CeruleanCaveOpponentPokemonCatalog.Profile) : RulesVersion == CelioOwnedPokemonCatalog.Profile
         ? CelioOpponentPokemonCatalog.Profile : RulesVersion == FiveIslandOwnedPokemonCatalog.Profile
         ? FiveIslandOpponentPokemonCatalog.Profile : RulesVersion == SixIslandOwnedPokemonCatalog.Profile
         ? SixIslandOpponentPokemonCatalog.Profile : RulesVersion == FourIslandOwnedPokemonCatalog.Profile
@@ -123,6 +124,9 @@ public sealed class OwnedBattlePokemonCatalog
         ReferenceEquals(ruby.Mechanics, predecessor.Mechanics) && SeviiRubyOpponentPokemonCatalog.For(ruby) is not null;
 
     internal bool AdmitsTrainerOpponent(SpeciesId species, string? trainerProfile = null) => Catalog.Species.ContainsKey(species) ||
+        trainerProfile == LeagueRematchOpponentPokemonCatalog.Profile &&
+        CeruleanCaveOwnedPokemonCatalog.For(Catalog) is { } rematchOwned &&
+        LeagueRematchOpponentPokemonCatalog.For(rematchOwned) is { } rematch && rematch.Catalog.Species.ContainsKey(species) ||
         trainerProfile == CeruleanCaveOpponentPokemonCatalog.Profile &&
         CeruleanCaveOwnedPokemonCatalog.For(Catalog) is { } caveOwned &&
         CeruleanCaveOpponentPokemonCatalog.For(caveOwned) is { } cave && cave.Catalog.Species.ContainsKey(species) ||
@@ -159,6 +163,8 @@ public sealed class OwnedBattlePokemonCatalog
     internal static OwnedBattlePokemonCatalog? ForMechanics(PokemonCatalog? catalog, string? rulesVersion)
     {
         if (catalog is null || rulesVersion is null) return null;
+        if (rulesVersion == LeagueRematchOpponentPokemonCatalog.Profile &&
+            LeagueRematchOpponentPokemonCatalog.ForMechanics(catalog) is { } rematch) return rematch.Owned.SharedBattle;
         if (rulesVersion == CeruleanCaveOpponentPokemonCatalog.Profile &&
             CeruleanCaveOpponentPokemonCatalog.ForMechanics(catalog) is { } cave) return cave.Owned.SharedBattle;
         if (rulesVersion == CelioOpponentPokemonCatalog.Profile &&
@@ -185,8 +191,9 @@ public sealed class OwnedBattlePokemonCatalog
     }
 
     internal static bool IsKnownProfile(string profile) =>
-        profile is CeruleanCaveOwnedPokemonCatalog.Profile or CeruleanCaveOpponentPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile;
+        profile is LeagueRematchOpponentPokemonCatalog.Profile or CeruleanCaveOwnedPokemonCatalog.Profile or CeruleanCaveOpponentPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile;
     internal static bool ProfileAdmits(string profile, SpeciesId species) =>
+        profile == LeagueRematchOpponentPokemonCatalog.Profile && ProfileAdmits(CeruleanCaveOwnedPokemonCatalog.Profile, species) ||
         (profile is CeruleanCaveOwnedPokemonCatalog.Profile or CeruleanCaveOpponentPokemonCatalog.Profile) &&
         (ProfileAdmits(CelioOwnedPokemonCatalog.Profile, species) || CeruleanCaveOwnedPokemonCatalog.AdditionalSpecies.Contains(species)) ||
         (profile is CelioOwnedPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile) &&

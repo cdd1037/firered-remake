@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 using Game.Domain;
 using Game.Domain.Events;
 using Game.Domain.Ids;
@@ -17,7 +18,14 @@ public sealed record CampaignPokemonLeagueCompletion(CampaignPokemonLeagueComple
 public sealed record CampaignHallOfFamePokemon(int PartySlot,long InstanceId,int SpeciesOrEgg,uint OriginalTrainerId,
     uint Personality,int Level,string Nickname,ImmutableArray<byte> NicknameBytes);
 public sealed record CampaignHallOfFameTeam(int ChallengeNumber,string TrainerBattleId,ImmutableArray<CampaignHallOfFamePokemon> Members);
-public sealed record CampaignHallOfFameArchive(ImmutableArray<CampaignHallOfFameTeam> Teams,int? FirstHallOfFamePlayTime,bool FanClubUpdateDeferred);
+public sealed record CampaignHallOfFameRibbonRecipient(long InstanceId,int ChallengeNumber);
+public sealed record CampaignHallOfFameArchive(ImmutableArray<CampaignHallOfFameTeam> Teams,int? FirstHallOfFamePlayTime,bool FanClubUpdateDeferred)
+{
+    // Display teams roll over after fifty entries. Ribbon provenance must survive
+    // that rollover, so retain each recipient's first award independently.
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
+    public ImmutableArray<CampaignHallOfFameRibbonRecipient>? RibbonRecipients { get; init; }
+}
 public sealed record CampaignHallOfFameSaveRequest(string RequestId,CampaignState ContinueState,long Generation,string PayloadHash);
 
 /// <summary>Hall-of-Fame gameplay commits are independent from file I/O. The save
@@ -54,12 +62,15 @@ public sealed partial class CampaignSession
     private CampaignState EnterPokemonLeagueHallOfFame(CampaignState state)
     {
         if(state.PokemonLeagueCompletion is not{Stage:CampaignPokemonLeagueCompletionStage.RecordingFieldEffect,FieldEffectCompleted:true} pending||
-            state.HallOfFame is not null||state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||!state.ScreenIsBlack||
-            state.Script.Variables.GetValueOrDefault("VAR_TEMP_1")!=1||state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")||
-            state.PokemonLeague?.Resets.LastOrDefault() is not{Reason:"hall-of-fame"} reset||reset.ChallengeNumber!=pending.ChallengeNumber)
+            state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||!state.ScreenIsBlack||pending.PartyCount!=state.Party.Length||
+            state.Script.Variables.GetValueOrDefault("VAR_TEMP_1")!=1||state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")!=(state.HallOfFame is not null)||
+            state.PokemonLeague?.Resets.LastOrDefault() is not{Reason:"hall-of-fame"} reset||reset.ChallengeNumber!=pending.ChallengeNumber||
+            state.PokemonLeague.ChallengeNumber!=pending.ChallengeNumber+1||(state.HallOfFame?.Teams??[]).Any(t=>t.ChallengeNumber==pending.ChallengeNumber))
             throw new InvalidDataException("pokemon_league_hof_entry_context");
         var champion=(state.ForestTrainerHistory??[]).LastOrDefault(h=>h.PokemonLeagueChallenge==pending.ChallengeNumber&&IsPokemonLeagueChampion(new(h.TrainerId))&&h.Outcome==WildBattleOutcome.Won)
             ??throw new InvalidDataException("pokemon_league_champion_receipt_missing");
+        var recipients=PokemonLeagueRibbonRecipients(state.HallOfFame).AddRange(state.Party.Where(p=>!p.IsEgg&&!p.ChampionRibbon)
+            .Select(p=>new CampaignHallOfFameRibbonRecipient(p.InstanceId,pending.ChallengeNumber)));
         bool ribbon=state.Party.Any(p=>!p.IsEgg&&!p.ChampionRibbon);
         var party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(BattlePokemon,p) with{ChampionRibbon=p.ChampionRibbon||!p.IsEgg}).ToImmutableArray();
         var members=party.Select((p,i)=>new CampaignHallOfFamePokemon(i,p.InstanceId,NameRaterRules.SpeciesOrEgg(p),p.Pokemon.OriginalTrainerId,
@@ -71,7 +82,8 @@ public sealed partial class CampaignSession
         stats=stats.SetItem("GAME_STAT_ENTERED_HOF",Math.Min(999,stats.GetValueOrDefault("GAME_STAT_ENTERED_HOF")+1));
         if(ribbon){flags=flags.SetItem("FLAG_SYS_RIBBON_GET",true);stats=stats.SetItem("GAME_STAT_RECEIVED_RIBBONS",Math.Min(0xffffff,stats.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")+1));}
         return state with{Party=party,GameStats=stats,Script=state.Script with{Flags=flags},
-            HallOfFame=new([new(pending.ChallengeNumber,champion.Id,members)],null,true),
+            HallOfFame=new((state.HallOfFame?.Teams??[]).Add(new(pending.ChallengeNumber,champion.Id,members)).TakeLast(50).ToImmutableArray(),
+                state.HallOfFame?.FirstHallOfFamePlayTime,true){RibbonRecipients=recipients},
             PokemonLeagueCompletion=pending with{Stage=CampaignPokemonLeagueCompletionStage.AwaitingSave}};
     }
     private CampaignState PokemonLeagueContinueSnapshot(CampaignState state)
@@ -84,9 +96,8 @@ public sealed partial class CampaignSession
             Dialogue=null,Motions=[],PresentationTicks=0,PresentationEffects=[],ScreenIsBlack=false,ScreenIsWhite=false,PlayerVisible=true,
             LastTalked=null,Music=_content.MapDefinition(map).Music,SavedMusic="MUS_DUMMY",HelpContext="map",IsCycling=false,IsSurfing=false,HealingEffect=null,FieldEffectArguments=null,
             Exploration=ResetEncounterModifiers(state.Exploration!),MapEdits=null,SelectedObjectSlot=0};
-        // The source Continue warp uses Pallet (6,8). Preserve Oak's original scene2,
-        // but this first-clear profile deliberately stops before its postgame trigger.
-        // Build the source object pool without running OnFrame/postgame scripts.
+        // The source Continue warp uses Pallet (6,8). Rebuild the object pool
+        // without advancing Oak's postgame scene until the next field command.
         next=EnterMap(next,Direction.South) with{EntryPrograms=[],ArrivalFacing=null};
         return RefreshActors(next);
     }
@@ -140,35 +151,62 @@ public sealed partial class CampaignSession
             default:decision=new(CommandStatus.Rejected,state,"pokemon_league_soft_reset_required");return true;
         }
     }
+    private static ImmutableArray<CampaignHallOfFameRibbonRecipient> PokemonLeagueRibbonRecipients(CampaignHallOfFameArchive? archive)
+    {
+        if(archive is null)return [];
+        if(archive.RibbonRecipients is {} recorded)return recorded;
+        // The pre-extension archive contained exactly the first complete team.
+        // Recover its awards from those immutable snapshots, never today's party.
+        return archive.Teams.SelectMany(t=>t.Members.Where(m=>m.SpeciesOrEgg!=412)
+            .Select(m=>new CampaignHallOfFameRibbonRecipient(m.InstanceId,t.ChallengeNumber)))
+            .DistinctBy(r=>r.InstanceId).ToImmutableArray();
+    }
     private string? ValidatePokemonLeagueHallOfFame(CampaignState state)
     {
+        var completions=(state.PokemonLeague?.Resets??[]).Where(r=>r.Reason=="hall-of-fame").ToArray();
         if(state.HallOfFame is not {} archive)
-            return state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")||OwnedPokemon(state).Any(p=>p.ChampionRibbon)||
+            return state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")||OwnedPokemon(state).Any(p=>p.ChampionRibbon)||completions.Length!=0||
                 state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")>0?"save_pokemon_league_hof_missing":null;
-        if(!PokemonLeagueCompletedContinue(state)||archive.Teams.IsDefault||archive.Teams.Length!=1||archive.FirstHallOfFamePlayTime is not null||
+        if(!PokemonLeagueCompletedContinue(state)||archive.Teams.IsDefault||archive.Teams.Length is <1 or >50||
+            archive.Teams.Length!=Math.Min(50,completions.Length)||archive.Teams.Any(t=>t is null)||archive.FirstHallOfFamePlayTime is not null||
             !archive.FanClubUpdateDeferred||!_content.NationalDexEnabled&&(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_OAK")!=2)||state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POSTGAME_GOSSIPERS")||
             new[]{"FLAG_LUGIA_FLEW_AWAY","FLAG_HO_OH_FLEW_AWAY","FLAG_DEOXYS_FLEW_AWAY"}.Any(f=>state.Script.Flags.GetValueOrDefault(f))||
-            state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")!=1||!state.Script.Flags.GetValueOrDefault("FLAG_SYS_RIBBON_GET")||
-            state.GameStats.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")!=1)return "save_pokemon_league_hof_state";
-        var team=archive.Teams[0];
-        if(team is null||team.Members.IsDefault||team.Members.Any(m=>m is null))return "save_pokemon_league_hof_team";
-        var histories=(state.ForestTrainerHistory??[]).Where(h=>h is not null&&h.Id==team.TrainerBattleId).ToArray();
-        var history=histories.Length==1?histories[0]:null;
-        if(history is null||!IsPokemonLeagueChampion(new(history.TrainerId))||history.Outcome!=WildBattleOutcome.Won||history.PokemonLeagueChallenge!=team.ChallengeNumber||
-            state.PokemonLeague is null||!state.PokemonLeague.Resets.Any(r=>r.Reason=="hall-of-fame"&&r.ChallengeNumber==team.ChallengeNumber)||
-            team.Members.IsDefault||team.Members.Length is <1 or >6||team.Members.Select(m=>m.InstanceId).Distinct().Count()!=team.Members.Length)return "save_pokemon_league_hof_receipt";
-        for(int i=0;i<team.Members.Length;i++)
+            state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")!=Math.Min(999,completions.Length)||
+            archive.RibbonRecipients is null&&completions.Length!=1)return "save_pokemon_league_hof_state";
+        if(!archive.Teams.Select(t=>t.ChallengeNumber).SequenceEqual(completions.TakeLast(50).Select(r=>r.ChallengeNumber)))return "save_pokemon_league_hof_receipt";
+        foreach(var team in archive.Teams)
         {
-            var m=team.Members[i];var p=m is null?null:OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==m.InstanceId);
-            if(m is null||p is null||m.PartySlot!=i||m.SpeciesOrEgg is <1 or >412||m.OriginalTrainerId!=p.Pokemon.OriginalTrainerId||
-                m.Personality!=p.Pokemon.Personality||m.Level is <1 or >100||m.Level>p.Pokemon.Level||m.Nickname is null||m.NicknameBytes.IsDefault||
-                m.SpeciesOrEgg!=NameRaterRules.SpeciesOrEgg(p)&&!(state.EvolutionHistory??[]).Any(e=>e.InstanceId==p.InstanceId&&e.PreviousSpeciesId==m.SpeciesOrEgg&&e.Level>=m.Level)||
-                !m.NicknameBytes.SequenceEqual(PokemonLeagueNicknameBytes(m.Nickname))||!p.IsEgg&&!p.ChampionRibbon)
-                return "save_pokemon_league_hof_member";
+            if(team.Members.IsDefault||team.Members.Any(m=>m is null))return "save_pokemon_league_hof_team";
+            var histories=(state.ForestTrainerHistory??[]).Where(h=>h is not null&&h.Id==team.TrainerBattleId).ToArray();
+            var history=histories.Length==1?histories[0]:null;
+            if(history is null||!IsPokemonLeagueChampion(new(history.TrainerId))||history.Outcome!=WildBattleOutcome.Won||history.PokemonLeagueChallenge!=team.ChallengeNumber||
+                team.Members.Length is <1 or >6||team.Members.Select(m=>m.InstanceId).Distinct().Count()!=team.Members.Length)return "save_pokemon_league_hof_receipt";
+            for(int i=0;i<team.Members.Length;i++)
+            {
+                var m=team.Members[i];var p=OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==m.InstanceId);
+                if(p is null||m.PartySlot!=i||m.SpeciesOrEgg is <1 or >412||m.OriginalTrainerId!=p.Pokemon.OriginalTrainerId||
+                    m.Personality!=p.Pokemon.Personality||m.Level is <1 or >100||m.Level>p.Pokemon.Level||m.Nickname is null||
+                    m.Nickname.Length is <1 or >10||m.Nickname.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c))||m.NicknameBytes.IsDefault||
+                    m.SpeciesOrEgg!=NameRaterRules.SpeciesOrEgg(p)&&!(state.EvolutionHistory??[]).Any(e=>e.InstanceId==p.InstanceId&&e.PreviousSpeciesId==m.SpeciesOrEgg&&e.Level>=m.Level)||
+                    !m.NicknameBytes.SequenceEqual(PokemonLeagueNicknameBytes(m.Nickname))||m.SpeciesOrEgg!=412&&!p.ChampionRibbon)
+                    return "save_pokemon_league_hof_member";
+            }
         }
-        var ribbonIds=team.Members.Select(m=>m.InstanceId).ToHashSet();
-        if(OwnedPokemon(state).Any(p=>p.ChampionRibbon&&!ribbonIds.Contains(p.InstanceId)))return "save_pokemon_league_hof_ribbon";
+        var recipients=PokemonLeagueRibbonRecipients(archive);
+        if(recipients.IsDefault||recipients.Any(r=>r is null)||recipients.Select(r=>r.InstanceId).Distinct().Count()!=recipients.Length||
+            recipients.Any(r=>!completions.Any(c=>c.ChallengeNumber==r.ChallengeNumber)||!OwnedPokemon(state).Any(p=>p.InstanceId==r.InstanceId&&!p.IsEgg&&p.ChampionRibbon)))
+            return "save_pokemon_league_hof_ribbon";
+        foreach(var team in archive.Teams)
+        {
+            if(team.Members.Any(m=>m.SpeciesOrEgg!=412&&!recipients.Any(r=>r.InstanceId==m.InstanceId&&r.ChallengeNumber<=team.ChallengeNumber))||
+                recipients.Any(r=>r.ChallengeNumber==team.ChallengeNumber&&!team.Members.Any(m=>m.InstanceId==r.InstanceId&&m.SpeciesOrEgg!=412)))
+                return "save_pokemon_league_hof_ribbon";
+        }
+        if(OwnedPokemon(state).Any(p=>p.ChampionRibbon&&!recipients.Any(r=>r.InstanceId==p.InstanceId))||
+            state.Script.Flags.GetValueOrDefault("FLAG_SYS_RIBBON_GET")!=(recipients.Length>0)||
+            state.GameStats!.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")!=Math.Min(0xffffff,recipients.Select(r=>r.ChallengeNumber).Distinct().Count()))
+            return "save_pokemon_league_hof_ribbon";
         return null;
     }
 }

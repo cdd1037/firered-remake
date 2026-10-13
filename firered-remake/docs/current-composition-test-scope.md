@@ -1,9 +1,9 @@
-# Current composition test scope after Cerulean Cave
+# Current composition test scope after the League rematch
 
 `tests/Game.CurrentComposition.Tests` tests the expanded current game: 257 maps,
-139 player-owned species, 163 opponent species and 244 field pickups. It verifies
+139 player-owned species, 168 opponent species and 244 field pickups. It verifies
 the three authenticated Cave source maps, the final ownership/opponent/machine
-proofs and their Celio predecessors, deterministic independent source loads,
+proofs and their Celio predecessors, the seven upgraded teams and five additional opponent-only species, deterministic independent source loads,
 current-only startup, strict saves/Continue, and refusal of malformed bindings.
 New Game and Restore must reject the same tampered composition.
 
@@ -46,3 +46,5 @@ and `bill-fact.json` from
 root and output directory. Use a fresh output directory for each run. Historical
 regional suites, complete route replays, native presentation and audio acceptance
 are outside this focused test.
+
+The rematch increment passed the 80-check two-argument mode, then the final133-check mode with53 original/rematch/early/Silph registry identity comparisons against the frozen current dependencies. This batch did not repeat the optional original-checkpoint conversion exercise; the actual rematch route independently converted the exact Cave generation48713 checkpoint, completed the fights and tested a new-process strict Continue.

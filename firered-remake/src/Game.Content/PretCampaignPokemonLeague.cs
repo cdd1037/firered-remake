@@ -108,8 +108,8 @@ public sealed partial class PretCampaignCatalog
         int flagIndex=Array.FindIndex(champion.Instructions.ToArray(),i=>i.Opcode=="setflag"&&i.Args.SequenceEqual(new[]{"FLAG_DEFEATED_CHAMP"}));
         if(battleIndex<0||flagIndex<=battleIndex)throw new InvalidDataException("pokemon_league_champion_reward_order");
         var leagueBattles=scripts.Programs.Values.SelectMany(p=>p.Instructions).Where(i=>i.Source.Path.StartsWith("data/maps/PokemonLeague_",StringComparison.Ordinal)&&i.Opcode=="trainerbattle_no_intro").ToArray();
-        if(leagueBattles.Count(i=>i.Op==StoryOp.TrainerBattle)!=7||leagueBattles.Count(i=>i.Op==StoryOp.Unsupported)!=7)
-            throw new InvalidDataException("pokemon_league_rematch_boundary");
+        if(leagueBattles.Length!=14||leagueBattles.Any(i=>i.Op!=StoryOp.TrainerBattle))
+            throw new InvalidDataException("pokemon_league_battle_instruction_scope");
         var reset=scripts.FindProgram("EventScript_ResetEliteFour")!;
         if(reset.Instructions.Count(i=>i.Opcode=="cleartrainerflag"&&i.Op==StoryOp.Special)!=6||
             !Has("EventScript_ResetEliteFour","setvar","VAR_MAP_SCENE_POKEMON_LEAGUE","0")||
