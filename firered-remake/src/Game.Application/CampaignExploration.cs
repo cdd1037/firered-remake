@@ -11,7 +11,9 @@ namespace Game.Application;
 public sealed record CampaignWildHistory(string Id,int SourceSpeciesId,int Level,Game.Domain.WildBattle.WildBattleOutcome Outcome,int ExperienceGained)
 {[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerSettlement? CelioRoamer{get;init;}
 [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CeruleanCaveWildOrigin? CeruleanCaveOrigin{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public SevenIslandWildOrigin? SevenIsland { get; init; }
 [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignMewtwoReceipt? MewtwoReceipt{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignSevenIslandWildReceipt? SevenIslandReceipt { get; init; }
 [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.WildBattle.SixIslandWildOrigin? SixIsland{get;init;}
 [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.WildBattle.FiveIslandWildOrigin? FiveIsland{get;init;}
  [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.WildBattle.FourIslandWildOrigin? FourIsland{get;init;}
@@ -60,19 +62,19 @@ public sealed partial class CampaignSession
             try{Route1EncounterRules.ValidateState(exploration.Encounter);}catch(Exception ex) when(ex is ArgumentException or NotSupportedException){return "save_encounter_invalid";}
             if(exploration.Encounter.Pending is not null)return "save_encounter_pending";
         }
-        if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||b.MewtwoReceipt is not null&&b.CeruleanCaveOrigin?.Kind!=CeruleanCaveEncounterKind.Mewtwo||!(b.CeruleanCaveOrigin is not null?IsCeruleanCaveWildHistory(b):b.CelioRoamer is not null?IsCelioRoamerHistory(state,b):b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
+        if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||b.SevenIslandReceipt is not null&&b.SevenIsland is null||b.MewtwoReceipt is not null&&b.CeruleanCaveOrigin?.Kind!=CeruleanCaveEncounterKind.Mewtwo||!(b.SevenIsland is not null?IsSevenIslandWildHistory(b):b.CeruleanCaveOrigin is not null?IsCeruleanCaveWildHistory(b):b.CelioRoamer is not null?IsCelioRoamerHistory(state,b):b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
         if(ValidateCelioRoamerLedger(state) is {} roamerError)return roamerError;
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
         if(_content.SupportsTeleportPads(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
         if(here is >=0x60 and <=0x71)return (_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map))?.Code;
-        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(EditedFieldMaps(state)))))),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
+        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SevenIslandWalkingMaps(SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(EditedFieldMaps(state))))))),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
         return check.Status==TransitionStatus.Accepted?null:check.Diagnostic?.Code??"save_connected_invalid";
     }
     private bool IsCeruleanCaveWildHistory(CampaignWildHistory history)
     {
         if(_content.CeruleanCaveOwnership is not {} owned||history.CeruleanCaveOrigin is not {} origin||
-            history.CelioRoamer is not null||history.FiveIsland is not null||history.SixIsland is not null||history.FourIsland is not null||
+            history.SevenIsland is not null||history.CelioRoamer is not null||history.FiveIsland is not null||history.SixIsland is not null||history.FourIsland is not null||
             history.SeviiRuby is not null||history.VictoryRoad is not null||history.Safari||history.ScriptedMarowak||
             history.ScriptedSnorlaxRoute!=0||history.LostelleHypno is not null||!CeruleanCaveWildBattleContract.IsRuntimeKind(origin.Kind)||
             CeruleanCaveWildBattleContract.SourceSlot(origin) is not {} slot||
@@ -102,7 +104,7 @@ public sealed partial class CampaignSession
             }
             maps[pair.Key]=pair.Value with{Cells=cells.ToImmutable()};
         }
-        return SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(CinnabarWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(maps))))));
+        return SevenIslandWalkingMaps(SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(CinnabarWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(maps)))))));
     }
     private Decision<CampaignState> DecideConnectedField(CampaignState state,CampaignCommand command)
     {
@@ -113,6 +115,7 @@ public sealed partial class CampaignSession
         bool turn=command.Kind=="turn";
         if(!turn&&TryStartFieldSurfDismount(state,command) is {} surfDismount)return surfDismount;
         if(!turn&&TryStartFieldStrengthPush(state,command) is {} strengthPush)return strengthPush;
+        if(!turn&&SevenIslandBoundary(before.MapId,x,y,before.X,before.Y) is {} boundary)return new(CommandStatus.Rejected,state,boundary);
         if(!turn&&_content.FuchsiaRouteEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsFuchsiaRouteWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"fuchsia_route_warp_not_open");
         if(!turn&&_content.SnorlaxEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
         if(TrySilphPadStep(state,command) is {} silphPad)return silphPad;

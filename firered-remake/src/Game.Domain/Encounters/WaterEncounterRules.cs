@@ -25,11 +25,13 @@ public static class WaterEncounterRules
     public static void ValidateState(WaterEncounterState state, WaterEncounterTable table)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (!CinnabarWaterEncounterCatalog.IsAuthenticated(table) && !FirstSeviiWaterEncounterCatalog.IsAuthenticated(table) && !VictoryRoadWaterEncounterCatalog.IsAuthenticated(table) && !SeviiRubyWaterEncounterCatalog.IsAuthenticated(table) && !FourIslandWaterEncounterCatalog.IsAuthenticated(table) && !SixIslandWaterEncounterCatalog.IsAuthenticated(table) && !FiveIslandWaterEncounterCatalog.IsAuthenticated(table) && !CeruleanCaveWaterEncounterCatalog.IsAuthenticated(table)) WaterEncounterCatalog.ValidateTable(table);
+        if (!CinnabarWaterEncounterCatalog.IsAuthenticated(table) && !FirstSeviiWaterEncounterCatalog.IsAuthenticated(table) && !VictoryRoadWaterEncounterCatalog.IsAuthenticated(table) && !SeviiRubyWaterEncounterCatalog.IsAuthenticated(table) && !FourIslandWaterEncounterCatalog.IsAuthenticated(table) && !SixIslandWaterEncounterCatalog.IsAuthenticated(table) && !FiveIslandWaterEncounterCatalog.IsAuthenticated(table) && !CeruleanCaveWaterEncounterCatalog.IsAuthenticated(table) && !SevenIslandWaterEncounterCatalog.IsAuthenticated(table)) WaterEncounterCatalog.ValidateTable(table);
         if (VictoryRoadWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion is not (VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))
             throw new ArgumentException("victory_road_water_profile");
         if (SeviiRubyWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion is not (SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion))
             throw new ArgumentException("sevii_ruby_water_profile");
+        if (SevenIslandWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion != FiveIslandRulesVersion)
+            throw new ArgumentException("seven_island_water_profile");
         if (CeruleanCaveWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion != FiveIslandRulesVersion)
             throw new ArgumentException("cerulean_cave_water_profile");
         if (FiveIslandWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion != FiveIslandRulesVersion)
@@ -149,6 +151,18 @@ public static class WaterEncounterRules
     {
         var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop);
         if (state.RulesVersion != FiveIslandRulesVersion) throw new ArgumentException("cerulean_cave_water_profile");
+        return CheckOwned(owned.Catalog, owned.Mechanics, state, table, check, party, repelSteps,
+            globalRng, wildEncountersDisabled, movement, gate);
+    }
+
+    public static WaterEncounterResult Check(SevenIslandOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
+        ushort repelSteps, RngState globalRng, RoamerState roamer, RoamerMap playerMap,
+        bool wildEncountersDisabled = false, EncounterMovementMode movement = EncounterMovementMode.Surfing,
+        SaffronGymShopCatalog? saffronShop = null)
+    {
+        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop);
+        if (state.RulesVersion != FiveIslandRulesVersion) throw new ArgumentException("seven_island_water_profile");
         return CheckOwned(owned.Catalog, owned.Mechanics, state, table, check, party, repelSteps,
             globalRng, wildEncountersDisabled, movement, gate);
     }
@@ -279,6 +293,18 @@ public static class WaterEncounterRules
         if (owned is null || !ReferenceEquals(CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             state.RulesVersion != FiveIslandRulesVersion || !owned.Catalog.Species.ContainsKey(pending.Candidate.Species))
             throw new ArgumentException("cerulean_cave_water_generation_scope");
+        return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog, pending.Candidate.Species,
+            pending.Candidate.Level, globalRng, playerTrainerId);
+    }
+
+    public static Route1WildPokemonResult Generate(SevenIslandOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, RngState globalRng, uint playerTrainerId)
+    {
+        ValidateState(state, table);
+        var pending = state.Pending ?? throw new InvalidOperationException("water_pending_missing");
+        if (owned is null || !ReferenceEquals(SevenIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
+            state.RulesVersion != FiveIslandRulesVersion || !owned.Catalog.Species.ContainsKey(pending.Candidate.Species))
+            throw new ArgumentException("seven_island_water_generation_scope");
         return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog, pending.Candidate.Species,
             pending.Candidate.Level, globalRng, playerTrainerId);
     }

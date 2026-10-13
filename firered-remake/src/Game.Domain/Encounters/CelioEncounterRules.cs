@@ -31,6 +31,14 @@ public static class CelioEncounterRules
         return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
     }
 
+    internal static CelioRoamerEncounterGate Validate(SevenIslandOwnedPokemonCatalog owned,
+        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
+        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
+    {
+        SevenIslandWildPokemonFactory.ValidateOwned(owned);
+        return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
+    }
+
     private static CelioRoamerEncounterGate ValidateParty(PokemonCatalog catalog, SourceMechanicsCatalog mechanics,
         ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
         RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)

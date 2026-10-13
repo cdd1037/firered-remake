@@ -27,13 +27,13 @@ public sealed partial class CampaignSession
 
     private static void ValidateCeruleanCaveCatalog(ICampaignCatalog content)
     {
-        if(!content.CeruleanCaveEnabled||content.Maps.Count!=257||content.CeruleanCaveOwnership is not{} owned||
+        if(!content.CeruleanCaveEnabled||content.Maps.Count!=275||content.CeruleanCaveOwnership is not{} owned||
             content.CeruleanCaveOpponents is not{} opponents||content.CeruleanCaveMachines is not{} machines||
             !ReferenceEquals(CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog),owned)||
-            !ReferenceEquals(owned.Predecessor,content.CelioOwnership)||!ReferenceEquals(content.PokemonContent?.Catalog,owned.Catalog)||
+            !ReferenceEquals(owned.Predecessor,content.CelioOwnership)||!ReferenceEquals(content.SevenIslandOwnership?.Predecessor,owned)||
             !ReferenceEquals(CeruleanCaveOpponentPokemonCatalog.For(owned),opponents)||
             !ReferenceEquals(opponents.Predecessor,content.CelioOpponents)||
-            !ReferenceEquals(CeruleanCaveMachineCatalog.For(content.PewterMachines),machines)||
+            !ReferenceEquals(CeruleanCaveMachineCatalog.For(machines.Catalog),machines)||
             !ReferenceEquals(machines.Pokemon,owned)||!ReferenceEquals(machines.Predecessor,content.CelioMachines))
             throw new InvalidDataException("cerulean_cave_source_binding");
         var program=content.FindProgram(MewtwoScript);

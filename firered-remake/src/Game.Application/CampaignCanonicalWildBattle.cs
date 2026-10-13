@@ -119,14 +119,17 @@ public sealed partial class CampaignSession
     }
 
     private SourceWildEncounterContext CanonicalWildEncounter(CampaignState state,PokemonInstance pokemon,FirstSeviiEncounterKind kind,
-        VictoryRoadWildOrigin? victory,SeviiRubyWildOrigin? ruby,FourIslandWildOrigin? four,SixIslandWildOrigin? six,FiveIslandWildOrigin? five,CeruleanCaveWildOrigin? cave,
+        VictoryRoadWildOrigin? victory,SeviiRubyWildOrigin? ruby,FourIslandWildOrigin? four,SixIslandWildOrigin? six,FiveIslandWildOrigin? five,CeruleanCaveWildOrigin? cave,SevenIslandWildOrigin? seven,
         CampaignLostelleHypnoReceipt? hypno,PokemonTowerBattleKind? tower,bool snorlax)
     {
         var map=state.World.Player.MapId;
         int origins=(victory is null?0:1)+(ruby is null?0:1)+(four is null?0:1)+(six is null?0:1)+(five is null?0:1)+
-            (cave is null?0:1)+(hypno is null?0:1)+(tower is null?0:1)+(snorlax?1:0);
+            (seven is null?0:1)+(cave is null?0:1)+(hypno is null?0:1)+(tower is null?0:1)+(snorlax?1:0);
         if(origins>1)throw new InvalidDataException("canonical_wild_conflicting_origins");
         bool MatchKind(int value)=>value==(kind switch{FirstSeviiEncounterKind.Land=>0,FirstSeviiEncounterKind.Surf=>1,_=>2});
+        if(seven is not null&&(!_content.SevenIslandEnabled||seven.Map!=map||!MatchKind((int)seven.Kind)||
+            SevenIslandEncounterTables.IsChamber(map)&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_UNLOCKED_TANOBY_RUINS")))throw new InvalidDataException("seven_island_wild_field_origin");
+        if(seven is null&&SevenIslandMap(map))throw new InvalidDataException("seven_island_wild_missing_field_origin");
         if(cave is not null&&(!_content.CeruleanCaveEnabled||cave.Map!=map||cave.Kind!=CeruleanCaveEncounterKind.Mewtwo&&!MatchKind((int)cave.Kind)))throw new InvalidDataException("cerulean_cave_wild_field_origin");
         if(cave is null&&CeruleanCaveEncounterTables.Land.Any(t=>t.Map==map))throw new InvalidDataException("cerulean_cave_wild_missing_field_origin");
         if(five is not null&&(!_content.FiveIslandEnabled||five.Map!=map||!MatchKind((int)five.Kind)))throw new InvalidDataException("five_island_wild_field_origin");
@@ -148,6 +151,6 @@ public sealed partial class CampaignSession
                 FirstSeviiEncounterKind.OldRod=>FirstSeviiOldRodEncounterRules.SourceAdditions.FirstOrDefault(t=>t.Map==map)?.Slots.Any(s=>Match(s.Species,s.MinimumLevel,s.MaximumLevel))==true,_=>false};
             if(!admitted)throw new InvalidDataException("first_sevii_wild_source_slot");
         }
-        return new(){CeruleanCave=cave,VictoryRoad=victory,SeviiRuby=ruby,FourIsland=four,SixIsland=six,FiveIsland=five,TowerBattleKind=tower,ScriptedSnorlax=snorlax,FirstSeviiWild=hypno is not null||IsFirstSeviiWildMap(map),LostelleHypno=hypno is not null};
+        return new(){SevenIsland=seven,CeruleanCave=cave,VictoryRoad=victory,SeviiRuby=ruby,FourIsland=four,SixIsland=six,FiveIsland=five,TowerBattleKind=tower,ScriptedSnorlax=snorlax,FirstSeviiWild=hypno is not null||IsFirstSeviiWildMap(map),LostelleHypno=hypno is not null};
     }
 }

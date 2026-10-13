@@ -7,7 +7,7 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     private static bool RainbowFerryMenu(CampaignState state) => state.SeagallopMenu?.SourceMenu is "SEVII_PAGE_0" or "SEVII_PAGE_1";
-    private bool RainbowIslandAvailable(int id) => id is >= 0 and <= 3 || id == 4 && _content.FourIslandEnabled || id == 6 && _content.SixIslandEnabled || id == 5 && _content.FiveIslandEnabled;
+    private bool RainbowIslandAvailable(int id) => id == 7 && _content.SevenIslandEnabled || id is >= 0 and <= 3 || id == 4 && _content.FourIslandEnabled || id == 6 && _content.SixIslandEnabled || id == 5 && _content.FiveIslandEnabled;
     private static ImmutableArray<int> RainbowPageDestinations(int origin, int page)
     {
         // script_menu.c DrawSeagallopDestinationMenu: page2 starts at Four
@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
         if (effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "DrawSeagallopDestinationMenu" }))
         {
             string[] labels = ["VERMILION", "ONE ISLAND", "TWO ISLAND", "THREE ISLAND", _content.FourIslandEnabled ? "FOUR ISLAND" : "FOUR ISLAND (unavailable)",
-                _content.FiveIslandEnabled ? "FIVE ISLAND" : "FIVE ISLAND (unavailable)", _content.SixIslandEnabled ? "SIX ISLAND" : "SIX ISLAND (unavailable)", "SEVEN ISLAND (unavailable)"];
+                _content.FiveIslandEnabled ? "FIVE ISLAND" : "FIVE ISLAND (unavailable)", _content.SixIslandEnabled ? "SIX ISLAND" : "SIX ISLAND (unavailable)", _content.SevenIslandEnabled ? "SEVEN ISLAND" : "SEVEN ISLAND (unavailable)"];
             var destinations = RainbowPageDestinations(origin, page);
             next = state with { SeagallopMenu = new("SEVII_PAGE_" + page, destinations.Select(d => labels[d]).Concat(["OTHER", "EXIT"]).ToImmutableArray()),
                 Dialogue = null, Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", 255) } }; return true;

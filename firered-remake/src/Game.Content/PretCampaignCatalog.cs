@@ -77,7 +77,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretCityServices? CityServices { get; }
     public bool CityServicesEnabled => CityServices is not null;
     public PretOldRod? OldRod { get; }
-    public IReadOnlyDictionary<MapId, OldRodEncounterTable> OldRodEncounters => CeruleanCaveOldRodEncounterRules.Tables.ToImmutableDictionary(t => t.Map);
+    public IReadOnlyDictionary<MapId, OldRodEncounterTable> OldRodEncounters => SevenIslandOldRodEncounterRules.Tables.ToImmutableDictionary(t => t.Map);
     public ImmutableArray<PewterMachineItem> CityServiceItems => CityServices?.Items ?? [];
     public PretVermilionGymRegion? VermilionGymRegion { get; }
     public VermilionGymTrainerCatalog? VermilionGymTrainers { get; }
@@ -286,8 +286,13 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretCeruleanCaveRegion ceruleanCave,
         CeruleanCavePokemonContent ceruleanCavePokemon,
         LeagueRematchTrainerCatalog leagueRematchTrainers,
-        LeagueRematchOpponentPokemonCatalog leagueRematchOpponents)
+        LeagueRematchOpponentPokemonCatalog leagueRematchOpponents,
+        PretSevenIslandRegion sevenIsland, SevenIslandOwnedPokemonCatalog sevenOwned,
+        SevenIslandOpponentPokemonCatalog sevenOpponents, SevenIslandTrainerCatalog sevenTrainers,
+        SevenIslandMachineCatalog sevenMachines, SevenIslandShopCatalog sevenShop, SevenIslandItemsDocument sevenItems)
     {
+        SevenIslandRegion = sevenIsland; SevenIslandOwnership = sevenOwned; SevenIslandOpponents = sevenOpponents;
+        SevenIslandTrainerParties = sevenTrainers; SevenIslandMachines = sevenMachines; SevenIslandShop = sevenShop; SevenIslandItems = sevenItems;
         LeagueRematchTrainerParties = leagueRematchTrainers;
         LeagueRematchOpponents = leagueRematchOpponents;
         CeruleanCaveRegion = ceruleanCave;
@@ -547,6 +552,12 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         if (FieldPickups.Length != 244 || FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != 244)
             throw new InvalidDataException("cerulean_cave_pickup_composition");
 
+        FieldPickups = FieldPickups.AddRange(sevenItems.Pickups);
+        LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(SevenIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
+        SevenIslandWaterEncounters = SevenIslandWaterEncounterCatalog.Authenticate(CeruleanCaveWaterEncounters, SevenIslandEncounterTables.Water);
+        if (FieldPickups.Length != 257 || FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != 257)
+            throw new InvalidDataException("seven_island_pickup_composition");
+
         var metatileDefinitions = metatiles.Definitions.ToDictionary(x => x.Key, x => new FieldMetatileDefinition(x.Key, x.Value.Behavior, x.Value.Terrain, x.Value.EncounterType, x.Value.LayerType));
         {
             // Source metatile IDs are local to a tileset. Preserve the Mart's 0x2BF
@@ -557,7 +568,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
         MetatileDefinitions = metatileDefinitions;
         Maps = Maps.ToImmutableDictionary().SetItem(new("map.viridian-city"), new ViridianGymCityFieldMap(maps[new("map.viridian-city")]));
-        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => ceruleanCave.NewMaps.ContainsKey(x.Key) ? CeruleanCaveConnectedMap(x.Value) : fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : (RegionalServiceMapIds.Contains(x.Key) || RegionalInteriorMapIds.Contains(x.Key)) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
+        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => sevenIsland.NewMaps.ContainsKey(x.Key) ? PretSevenIslandRegion.ConnectedMap(x.Value) : ceruleanCave.NewMaps.ContainsKey(x.Key) ? CeruleanCaveConnectedMap(x.Value) : fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : (RegionalServiceMapIds.Contains(x.Key) || RegionalInteriorMapIds.Contains(x.Key)) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
         _definitions = maps.ToImmutableDictionary(x => x.Key, x => Definition(x.Value));
     }
 
@@ -643,6 +654,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
     public FieldMetatileDefinition? MetatileDefinition(MapId map, int id)
     {
+        if (SevenIslandRegion.NewMaps.ContainsKey(map)) return SevenIslandRegion.MetatileDefinition(map, id);
         if (CeruleanCaveRegion.NewMaps.TryGetValue(map, out var cave))
         {
             var cell = cave.Cells.Concat(cave.BorderCells).FirstOrDefault(c => c.MetatileId == id);
@@ -683,6 +695,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         var loaded = SourceMaps.Values.FirstOrDefault(map => map.SourceMapSymbol == symbol);
         if (loaded is not null) return loaded.Id;
         // Region factories own authenticated identities for the current world's unloaded boundaries.
+        if (symbol.StartsWith("MAP_SEVEN_ISLAND", StringComparison.Ordinal) || symbol == "MAP_TRAINER_TOWER_LOBBY") return PretSevenIslandRegion.MapIdFromSourceSymbol(symbol);
         if (symbol.StartsWith("MAP_FIVE_ISLAND", StringComparison.Ordinal)) return PretFiveIslandRegion.MapIdFromSourceSymbol(symbol);
         if (symbol.StartsWith("MAP_SIX_ISLAND", StringComparison.Ordinal)) return PretSixIslandRegion.MapIdFromSourceSymbol(symbol);
         if (symbol.StartsWith("MAP_FOUR_ISLAND", StringComparison.Ordinal)) return PretFourIslandRegion.MapIdFromSourceSymbol(symbol);

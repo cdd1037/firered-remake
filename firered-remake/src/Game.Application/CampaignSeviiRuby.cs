@@ -41,7 +41,7 @@ public sealed partial class CampaignSession
             !ReferenceEquals(owned.Predecessor, content.CinnabarOwnership) || !ReferenceEquals(content.FourIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.PokemonLeagueOpponents) ||
             (((CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? SeviiRubyMachineCatalog.For(content.PewterMachines)) is not { } machines || !ReferenceEquals(machines.Pokemon, owned) ||
-            (((FiveIslandShopCatalog.For(content.EarlyShop)?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? SeviiRubyShopCatalog.For(content.EarlyShop)) is null) throw new InvalidDataException("sevii_ruby_source_profile_missing");
+            (((SevenIslandShopCatalog.For(content.EarlyShop)?.Predecessor?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? SeviiRubyShopCatalog.For(content.EarlyShop)) is null) throw new InvalidDataException("sevii_ruby_source_profile_missing");
         SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers);
     }
 

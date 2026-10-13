@@ -15,7 +15,7 @@ public sealed partial class CampaignSession
     // The Domain overloads retain catalog identity, owned/opponent and party checks.
     private enum TrainerRegion
     {
-        Forest, Pewter, Route22, Route3, MtMoon, Cerulean, Bill, Vermilion, SsAnne, VermilionGym, Route11, RockTunnel, CeladonApproach, CeladonGym, RocketHideout, PokemonTower, FuchsiaRoute, FuchsiaGym, Silph, SaffronGym, Cinnabar, FirstSevii, ViridianGym, LeagueRival, VictoryRoad, PokemonLeague, SeviiRuby, FourIsland, FiveIsland, SixIsland
+        Forest, Pewter, Route22, Route3, MtMoon, Cerulean, Bill, Vermilion, SsAnne, VermilionGym, Route11, RockTunnel, CeladonApproach, CeladonGym, RocketHideout, PokemonTower, FuchsiaRoute, FuchsiaGym, Silph, SaffronGym, Cinnabar, FirstSevii, ViridianGym, LeagueRival, VictoryRoad, PokemonLeague, SeviiRuby, FourIsland, FiveIsland, SixIsland, SevenIsland
     }
 
     private sealed record TrainerScriptBinding(TrainerRegion Region, ImmutableArray<ForestTrainerBattleDefinition> Sources,
@@ -201,6 +201,11 @@ public sealed partial class CampaignSession
             Add(TrainerRegion.SixIsland, sixIsland.Trainers.Values, sixIsland.BattlesByScript.Values.Select(ProjectTrainerScript),
                 (trainer, rng) => SixIslandTrainerPartyFactory.Create(sixIsland, _content.SixIslandOpponents!, trainer, rng), "six-island-trainer", sixIsland.BattlesByScript.Values);
         }
+        if (_content.SevenIslandEnabled && _content.SevenIslandTrainers is { } sevenIsland)
+        {
+            Add(TrainerRegion.SevenIsland, sevenIsland.Trainers.Values, sevenIsland.BattlesByScript.Values.Select(ProjectTrainerScript),
+                (trainer, rng) => SevenIslandTrainerPartyFactory.Create(sevenIsland, _content.SevenIslandOpponents!, trainer, rng), "seven-island-trainer", sevenIsland.BattlesByScript.Values);
+        }
         return bindings;
     }
 
@@ -231,7 +236,7 @@ public sealed partial class CampaignSession
         }
         string? prefix = region switch
         {
-            TrainerRegion.FiveIsland => "five_island", TrainerRegion.SixIsland => "six_island",
+            TrainerRegion.SevenIsland => "seven_island", TrainerRegion.FiveIsland => "five_island", TrainerRegion.SixIsland => "six_island",
             TrainerRegion.FourIsland => "four_island", TrainerRegion.SeviiRuby => "sevii_ruby",
             TrainerRegion.VictoryRoad => "victory_road", TrainerRegion.ViridianGym => "viridian_gym",
             TrainerRegion.Cinnabar => "cinnabar", _ => null
@@ -251,7 +256,7 @@ public sealed partial class CampaignSession
         var selected = script is null
             ? sources.Single(b => b.Trainer == trainer && (region switch
             {
-                TrainerRegion.SixIsland or TrainerRegion.VictoryRoad => b.Mode == 0,
+                TrainerRegion.SevenIsland or TrainerRegion.SixIsland or TrainerRegion.VictoryRoad => b.Mode == 0,
                 TrainerRegion.Cinnabar => b.Mode is 0 or 1 or 2,
                 TrainerRegion.SeviiRuby => b.Mode != 4,
                 _ => true
@@ -259,7 +264,7 @@ public sealed partial class CampaignSession
             : sources.SingleOrDefault(b => b.ScriptEntry == script) ?? throw new InvalidDataException(prefix + "_trainer_script_missing");
         bool accepted = region switch
         {
-            TrainerRegion.FiveIsland or TrainerRegion.SixIsland => selected.Mode == 0 && selected.BattleTypeFlags == 8,
+            TrainerRegion.SevenIsland or TrainerRegion.FiveIsland or TrainerRegion.SixIsland => selected.Mode == 0 && selected.BattleTypeFlags == 8,
             TrainerRegion.FourIsland => selected.Mode == 3 && selected.BattleTypeFlags == 8 && selected.Source.Path == FourIslandBackSource,
             TrainerRegion.SeviiRuby => selected.Mode is 0 or 3,
             TrainerRegion.VictoryRoad => selected.Mode == 0,
@@ -271,6 +276,7 @@ public sealed partial class CampaignSession
         // battle record, including Five's callback and Six's double parameters.
         if (region == TrainerRegion.FiveIsland) FiveIslandTrainerPartyFactory.ValidateBattle(binding.Scripts.AuthenticatedSources[selected.ScriptEntry]);
         if (region == TrainerRegion.SixIsland) SixIslandTrainerPartyFactory.ValidateBattle(binding.Scripts.AuthenticatedSources[selected.ScriptEntry]);
+        if (region == TrainerRegion.SevenIsland) SevenIslandTrainerPartyFactory.ValidateBattle(binding.Scripts.AuthenticatedSources[selected.ScriptEntry]);
         if (region == TrainerRegion.FourIsland) FourIslandTrainerPartyFactory.ValidateBattle(binding.Scripts.AuthenticatedSources[selected.ScriptEntry]);
         if (selected.Trainer != trainer || !accepted)
             throw new InvalidDataException(prefix + "_single_script_mismatch");
@@ -297,6 +303,7 @@ public sealed partial class CampaignSession
         {
             TrainerRegion.FiveIsland => FiveIslandTrainerSourceLine(script),
             TrainerRegion.SixIsland => SixIslandTrainerSourceLine(script),
+            TrainerRegion.SevenIsland => SevenIslandTrainerSourceLine(script),
             _ => throw new InvalidDataException("ordinary_trainer_history_policy")
         };
         return history.SourceScriptLine == line;

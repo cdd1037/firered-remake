@@ -33,6 +33,9 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int FlashLevel{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFlashEffect? FlashEffect{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignStrengthEffect? StrengthEffect{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignTanobyKeyVisit? TanobyKeyVisit{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignTanobyCompletion? TanobyCompletion{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? FieldWeather{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool IsCycling{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool IsSurfing{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSurfEffect? SurfEffect{get;init;}
@@ -83,6 +86,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public string? OakRatingHelpContextBackup{get;init;}
     public ImmutableSortedSet<int> SeenSpecies{get;init;}=ImmutableSortedSet<int>.Empty;
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public uint? UnownPokedexPersonality { get; init; }
     public ImmutableSortedSet<int> CaughtSpecies{get;init;}=ImmutableSortedSet<int>.Empty;
     public ImmutableSortedDictionary<string,string> TextBuffers{get;init;}=ImmutableSortedDictionary<string,string>.Empty.WithComparers(StringComparer.Ordinal);
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
@@ -283,6 +287,7 @@ public sealed partial class CampaignSession
         if(!_content.Maps.TryGetValue(s.World.Player.MapId,out var map))return "save_map_missing";
         var surfError=ValidateFieldSurfState(s);if(surfError is not null)return surfError;
         var victoryRoadFieldError=ValidateVictoryRoadFieldProgress(s);if(victoryRoadFieldError is not null)return victoryRoadFieldError;
+        var sevenFieldError=ValidateSevenIslandField(s);if(sevenFieldError is not null)return sevenFieldError;
         var strengthError=ValidateFieldStrengthState(s);if(strengthError is not null)return strengthError;
         var flashError=ValidateFieldFlashState(s);if(flashError is not null)return flashError;
         var pickupError=ValidateFieldPickupState(s);if(pickupError is not null)return pickupError;
@@ -318,7 +323,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -545,6 +550,7 @@ public sealed partial class CampaignSession
         if(arrival is not null)state=ApplyCelioRoamerTransition(state,roamerTransition);
         state=FourIslandMapEntry(state);
         state=ApplyFieldStrengthMapEntry(state);
+        state=ApplySevenIslandMapEntry(state);
         state=ApplyFieldFlashMapEntry(state);
         var definition=_content.MapDefinition(state.World.Player.MapId);
         var variables=state.Script.Variables.RemoveRange(state.Script.Variables.Keys.Where(k=>k.StartsWith("VAR_TEMP_",StringComparison.Ordinal)));
@@ -616,6 +622,7 @@ public sealed partial class CampaignSession
             if(TryApplyCelioEffect(state,effect,out var celioState)){state=celioState;continue;}
             if(TryApplyFiveIslandFieldEffect(state,effect,out var fiveFieldState)){state=fiveFieldState;continue;}
             if(TryApplyFiveIslandItemEffect(state,effect,out var fiveItemState)){state=fiveItemState;continue;}
+            if(TryApplySevenIslandFieldEffect(state,effect,out var sevenFieldState)){state=sevenFieldState;continue;}
             if(TryApplySixIslandEffect(state,effect,out var sixIslandState)){state=sixIslandState;continue;}
             if(TryApplyFourIslandEffect(state,effect,out var fourIslandState)){state=fourIslandState;continue;}
             if(TryApplySeviiRubyEffect(state,effect,out var rubyState)){state=rubyState;continue;}

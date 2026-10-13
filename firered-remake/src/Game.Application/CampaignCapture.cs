@@ -20,6 +20,7 @@ public sealed record CampaignPendingCapture(PokemonInstance Pokemon,string HeldI
 public sealed record CampaignCapturedPokemon(long InstanceId,string BattleId,int SourceSpeciesId,uint Personality,SixStats Ivs,int MetLevel,string MetLocation)
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CeruleanCaveWildOrigin? CeruleanCaveOrigin{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public SevenIslandWildOrigin? SevenIsland { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerEncounter? CelioRoamer{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public SixIslandWildOrigin? SixIsland{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public FiveIslandWildOrigin? FiveIsland{get;init;}
@@ -49,7 +50,7 @@ public sealed partial class CampaignSession
         var ball=b.Events.OfType<WildBattleCaptureResultEvent>().Single(e=>e.Outcome==CaptureOutcome.Caught).Ball;
         if(ball!=CaptureBall.Poke&&!AdditionalCaptureBallSupported(CaptureBallReceipt(ball)))throw new InvalidDataException("capture_ball_unsupported");
         var pending=new CampaignPendingCapture(capturedPokemon,WildBattleSourcePartyEffects.PersistentHeldItem(captured),captured.Status,b.Origin,first,first?CampaignCaptureStage.DexNotice:CampaignCaptureStage.NicknameChoice){Ball=CaptureBallReceipt(ball)};
-        return state with{CaughtSpecies=state.CaughtSpecies.Add(capturedPokemon.SourceSpeciesId),WildBattle=b with{Capture=pending,Phase=CampaignBattlePhase.Results,Pages=[],PageIndex=0}};
+        return state with{UnownPokedexPersonality=first&&capturedPokemon.SourceSpeciesId==201?capturedPokemon.Personality:state.UnownPokedexPersonality,CaughtSpecies=state.CaughtSpecies.Add(capturedPokemon.SourceSpeciesId),WildBattle=b with{Capture=pending,Phase=CampaignBattlePhase.Results,Pages=[],PageIndex=0}};
     }
     private Decision<CampaignState> DecideCapture(CampaignState state,CampaignCommand command)
     {
@@ -85,8 +86,8 @@ public sealed partial class CampaignSession
         var pokemon=c.Pokemon with{OriginalTrainerId=state.TrainerId};
         var owned=new PartyPokemon(state.NextPokemonId,pokemon,nickname,state.PlayerName,state.PlayerGender,2,c.Origin.MetLocation,c.Origin.MetLevel,4,c.Ball??"ITEM_POKE_BALL",c.HeldItem){Status=c.Status};
         var error=PokemonStateValidator.ValidateParty(_content.PokemonContent,owned);if(error is not null)throw new InvalidDataException(error);
-        var record=new CampaignCapturedPokemon(owned.InstanceId,b.Id,pokemon.SourceSpeciesId,pokemon.Personality,pokemon.Ivs,c.Origin.MetLevel,c.Origin.MetLocation){CeruleanCaveOrigin=b.Frame!.WildEncounter?.CeruleanCave,CelioRoamer=b.CelioRoamer,Ball=c.Ball,FiveIsland=b.Frame!.WildEncounter?.FiveIsland,SixIsland=b.Frame!.WildEncounter?.SixIsland,FourIsland=b.Frame!.WildEncounter?.FourIsland};
-        var history=new CampaignWildHistory(b.Id,pokemon.SourceSpeciesId,pokemon.Level,WildBattleOutcome.Caught,0){CeruleanCaveOrigin=b.Frame!.WildEncounter?.CeruleanCave,MewtwoReceipt=b.MewtwoReceipt,CelioRoamer=b.CelioRoamerSettlement,FiveIsland=b.Frame!.WildEncounter?.FiveIsland,SixIsland=b.Frame!.WildEncounter?.SixIsland,FourIsland=b.Frame!.WildEncounter?.FourIsland,SeviiRuby=b.Frame!.WildEncounter?.SeviiRuby,VictoryRoad=b.Frame!.WildEncounter?.VictoryRoad,LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute};
+        var record=new CampaignCapturedPokemon(owned.InstanceId,b.Id,pokemon.SourceSpeciesId,pokemon.Personality,pokemon.Ivs,c.Origin.MetLevel,c.Origin.MetLocation){SevenIsland=b.Frame!.WildEncounter?.SevenIsland,CeruleanCaveOrigin=b.Frame!.WildEncounter?.CeruleanCave,CelioRoamer=b.CelioRoamer,Ball=c.Ball,FiveIsland=b.Frame!.WildEncounter?.FiveIsland,SixIsland=b.Frame!.WildEncounter?.SixIsland,FourIsland=b.Frame!.WildEncounter?.FourIsland};
+        var history=new CampaignWildHistory(b.Id,pokemon.SourceSpeciesId,pokemon.Level,WildBattleOutcome.Caught,0){SevenIsland=b.Frame!.WildEncounter?.SevenIsland,CeruleanCaveOrigin=b.Frame!.WildEncounter?.CeruleanCave,SevenIslandReceipt=b.SevenIslandReceipt,MewtwoReceipt=b.MewtwoReceipt,CelioRoamer=b.CelioRoamerSettlement,FiveIsland=b.Frame!.WildEncounter?.FiveIsland,SixIsland=b.Frame!.WildEncounter?.SixIsland,FourIsland=b.Frame!.WildEncounter?.FourIsland,SeviiRuby=b.Frame!.WildEncounter?.SeviiRuby,VictoryRoad=b.Frame!.WildEncounter?.VictoryRoad,LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute};
         var received=_content.PokemonStorageEnabled?PokemonStorageRules.Receive(_content.PokemonContent,state.Party,state.Storage!,owned):null;
         if(received is {Succeeded:false})throw new InvalidDataException(received.Diagnostic!.Code);
         var next=state with{Party=received?.Party??state.Party.Add(owned),Storage=received?.Storage??state.Storage,NextPokemonId=checked(state.NextPokemonId+1),Exploration=state.Exploration with{Captured=captures.Add(record),Battles=state.Exploration.Battles.Add(history)},WildBattle=b with{Capture=null}};
@@ -139,7 +140,7 @@ public sealed partial class CampaignSession
         {
             if(capture is null||capture.InstanceId<2||!ids.Add(capture.InstanceId)||!battles.Add(capture.BattleId))return "save_capture_provenance_invalid";
             bool safari=capture.Ball=="ITEM_SAFARI_BALL"||capture.MetLocation=="MAPSEC_KANTO_SAFARI_ZONE"||state.Exploration.Battles.Any(b=>b.Id==capture.BattleId&&b.Safari);
-            bool provenance=capture.CeruleanCaveOrigin is not null?IsCeruleanCaveCapture(state,capture):safari?IsSafariCapture(state,capture):
+            bool provenance=capture.SevenIsland is not null?IsSevenIslandCapture(state,capture):capture.CeruleanCaveOrigin is not null?IsCeruleanCaveCapture(state,capture):safari?IsSafariCapture(state,capture):
                 capture.CelioRoamer is not null?IsCelioRoamerCapture(state,capture):capture.FiveIsland is not null?IsFiveIslandCapture(state,capture):
                 capture.SixIsland is not null?IsSixIslandCapture(state,capture):capture.FourIsland is not null?IsFourIslandCapture(state,capture):
                 IsSeviiRubyCapture(state,capture)||IsLostelleHypnoCapture(state,capture)||IsSnorlaxCapture(state,capture)||WildOriginSupported(capture.SourceSpeciesId,capture.MetLevel,capture.MetLocation);
@@ -147,7 +148,7 @@ public sealed partial class CampaignSession
             if(!provenance||!ballSupported)return "save_capture_provenance_invalid";
             var owned=allOwned.SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
             if(owned is null||!EvolutionSpeciesMatchesOrigin(state,owned,capture.SourceSpeciesId)||owned.Pokemon.Personality!=capture.Personality||owned.Pokemon.Ivs!=capture.Ivs||owned.MetLevel!=capture.MetLevel||owned.MetLocation!=capture.MetLocation||owned.Ball!=(capture.Ball??"ITEM_POKE_BALL"))return "save_capture_instance_mismatch";
-            if(!state.Exploration.Battles.Any(b=>b.Id==capture.BattleId&&b.SourceSpeciesId==capture.SourceSpeciesId&&b.Level==capture.MetLevel&&b.Outcome==WildBattleOutcome.Caught&&b.ExperienceGained==0&&b.CeruleanCaveOrigin==capture.CeruleanCaveOrigin&&(b.CelioRoamer is null?capture.CelioRoamer is null:IsCelioRoamerCapture(state,capture))&&(b.FiveIsland is null?capture.FiveIsland is null:IsFiveIslandCapture(state,capture))&&(b.SixIsland is null?capture.SixIsland is null:IsSixIslandCapture(state,capture))&&(b.FourIsland is null?capture.FourIsland is null:IsFourIslandCapture(state,capture))&&(b.SeviiRuby is null||IsSeviiRubyCapture(state,capture))&&(b.VictoryRoad is null||_content.MapDefinition(b.VictoryRoad.Map).RegionMapSection==capture.MetLocation)))return "save_capture_history_missing";
+            if(!state.Exploration.Battles.Any(b=>b.Id==capture.BattleId&&b.SourceSpeciesId==capture.SourceSpeciesId&&b.Level==capture.MetLevel&&b.Outcome==WildBattleOutcome.Caught&&b.ExperienceGained==0&&b.CeruleanCaveOrigin==capture.CeruleanCaveOrigin&&(b.SevenIsland is null?capture.SevenIsland is null:IsSevenIslandCapture(state,capture))&&(b.CelioRoamer is null?capture.CelioRoamer is null:IsCelioRoamerCapture(state,capture))&&(b.FiveIsland is null?capture.FiveIsland is null:IsFiveIslandCapture(state,capture))&&(b.SixIsland is null?capture.SixIsland is null:IsSixIslandCapture(state,capture))&&(b.FourIsland is null?capture.FourIsland is null:IsFourIslandCapture(state,capture))&&(b.SeviiRuby is null||IsSeviiRubyCapture(state,capture))&&(b.VictoryRoad is null||_content.MapDefinition(b.VictoryRoad.Map).RegionMapSection==capture.MetLocation)))return "save_capture_history_missing";
         }
         if(state.Exploration.Battles.Any(b=>b.Outcome==WildBattleOutcome.Caught&&!battles.Contains(b.Id)))return "save_capture_delivery_missing";
         return null;
@@ -156,7 +157,7 @@ public sealed partial class CampaignSession
     private bool IsCeruleanCaveCapture(CampaignState state,CampaignCapturedPokemon capture)
     {
         var history=state.Exploration?.Battles.SingleOrDefault(h=>h.Id==capture.BattleId);
-        if(capture.CeruleanCaveOrigin is not {} origin||capture.CelioRoamer is not null||capture.FiveIsland is not null||
+        if(capture.CeruleanCaveOrigin is not {} origin||capture.SevenIsland is not null||capture.CelioRoamer is not null||capture.FiveIsland is not null||
             capture.SixIsland is not null||capture.FourIsland is not null||history is null||origin!=history.CeruleanCaveOrigin||
             !IsCeruleanCaveWildHistory(history)||history.Outcome!=WildBattleOutcome.Caught||history.ExperienceGained!=0||
             history.SourceSpeciesId!=capture.SourceSpeciesId||history.Level!=capture.MetLevel||

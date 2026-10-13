@@ -10,7 +10,7 @@ public sealed partial class CampaignSession
 
     private bool IsSixIslandWildHistory(CampaignWildHistory history)
     {
-        if (!_content.SixIslandEnabled || history.SixIsland is not {} origin || history.FiveIsland is not null || history.SeviiRuby is not null || history.FourIsland is not null || history.VictoryRoad is not null ||
+        if (!_content.SixIslandEnabled || history.SixIsland is not {} origin || history.SevenIsland is not null || history.FiveIsland is not null || history.SeviiRuby is not null || history.FourIsland is not null || history.VictoryRoad is not null ||
             history.Safari || history.ScriptedMarowak || history.ScriptedSnorlaxRoute!=0 || history.LostelleHypno is not null ||
             origin.Kind is not (SixIslandEncounterKind.Land or SixIslandEncounterKind.Surf or SixIslandEncounterKind.OldRod) ||
             SixIslandWildBattleContract.SourceSlot(origin) is not {} slot) return false;

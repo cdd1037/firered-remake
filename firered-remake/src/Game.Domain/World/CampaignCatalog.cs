@@ -82,6 +82,15 @@ public interface ICampaignCatalog:IStoryCatalog
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
+    bool SevenIslandEnabled=>false;
+    SevenIslandFieldData? SevenIslandField=>null;
+    SevenIslandOwnedPokemonCatalog? SevenIslandOwnership=>null;
+    SevenIslandOpponentPokemonCatalog? SevenIslandOpponents=>null;
+    SevenIslandTrainerCatalog? SevenIslandTrainerParties=>null;
+    SevenIslandTrainerCatalog? SevenIslandTrainers=>SevenIslandTrainerParties;
+    SevenIslandMachineCatalog? SevenIslandMachines=>null;
+    SevenIslandShopCatalog? SevenIslandShop=>null;
+    SevenIslandWaterEncounterCatalog? SevenIslandWaterEncounters=>null;
     bool LeagueRematchEnabled=>false;
     LeagueRematchTrainerCatalog? LeagueRematchTrainerParties=>null;
     LeagueRematchOpponentPokemonCatalog? LeagueRematchOpponents=>null;

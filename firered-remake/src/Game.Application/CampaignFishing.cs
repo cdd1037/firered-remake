@@ -50,9 +50,9 @@ public sealed partial class CampaignSession
         var context = new OldRodCastContext(position.MapId, true, position.Elevation, terrain.Value,
             front.SourceBehavior, collision);
         if (!OldRodFishingRules.CanCast(context)) return No("fishing_invalid_shore");
-        if (!_content.OldRodEncounters.ContainsKey(position.MapId) && !CeruleanCaveOldRodEncounterRules.IsAdmittedMap(position.MapId))
+        if (!_content.OldRodEncounters.ContainsKey(position.MapId) && !SevenIslandOldRodEncounterRules.IsAdmittedMap(position.MapId))
             return No("fishing_map_not_admitted");
-        var result = CeruleanCaveOldRodEncounterRules.Start(_content.CeruleanCaveOwnership!,context,state.World.Rng);
+        var result = SevenIslandOldRodEncounterRules.Start(_content.SevenIslandOwnership!,context,state.World.Rng);
         long sequence = checked(state.Script.EffectSequence + 1);
         return new(CommandStatus.Accepted, state with
         {
@@ -66,7 +66,7 @@ public sealed partial class CampaignSession
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         var fishing = state.Fishing ?? throw new InvalidDataException("fishing_state_missing");
-        CeruleanCaveOldRodEncounterRules.ValidateState(_content.CeruleanCaveOwnership!,fishing.State);
+        SevenIslandOldRodEncounterRules.ValidateState(_content.SevenIslandOwnership!,fishing.State);
         if (!_content.CityServicesEnabled || fishing.State.Map != state.World.Player.MapId ||
             fishing.State.Status != OldRodFishingStatus.Running || state.ItemMenu is not null ||
             state.Battle is not null || state.WildBattle is not null || state.ForestTrainerBattle is not null)
@@ -92,7 +92,7 @@ public sealed partial class CampaignSession
             return new(CommandStatus.Accepted, state with { Fishing = fishing with { MessageFinished = true } });
         }
         if (command.Kind != "fishing_tick") return No("fishing_active");
-        var result = CeruleanCaveOldRodEncounterRules.Advance(_content.CeruleanCaveOwnership!,fishing.State,
+        var result = SevenIslandOldRodEncounterRules.Advance(_content.SevenIslandOwnership!,fishing.State,
             new(MessageFinished:fishing.MessageFinished,NoCatchAnimationFinished:fishing.NoCatchAnimationFinished),state.World.Rng);
         var next = state with
         {

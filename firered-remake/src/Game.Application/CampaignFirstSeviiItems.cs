@@ -9,14 +9,16 @@ public sealed partial class CampaignSession
 {
     // Current construction authenticates the latest shop. These predecessors remain
     // typed source proofs and preserve each later key-item extension when narrowing.
-    private FiveIslandShopCatalog FiveIslandShopProof => FiveIslandShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("five_island_shop_proof_missing");
+    private SevenIslandShopCatalog SevenIslandShopProof => SevenIslandShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("seven_island_shop_proof_missing");
+    private FiveIslandShopCatalog FiveIslandShopProof => SevenIslandShopProof.Predecessor;
+    private InventoryState SevenIslandPredecessorInventory(InventoryState inventory) => SevenIslandShopProof.InventoryForPredecessor(inventory);
     private SixIslandShopCatalog SixIslandShopProof => FiveIslandShopProof.Predecessor;
     private FourIslandShopCatalog FourIslandShopProof => SixIslandShopProof.Predecessor;
     private SeviiRubyShopCatalog SeviiRubyShopProof => FourIslandShopProof.Predecessor;
     private VictoryRoadShopCatalog VictoryRoadShopProof => SeviiRubyShopProof.Predecessor;
     private FirstSeviiShopCatalog FirstSeviiShopProof => VictoryRoadShopProof.Predecessor;
 
-    private InventoryState FiveIslandPredecessorInventory(InventoryState inventory) => FiveIslandShopProof.InventoryForPredecessor(inventory);
+    private InventoryState FiveIslandPredecessorInventory(InventoryState inventory) => FiveIslandShopProof.InventoryForPredecessor(SevenIslandPredecessorInventory(inventory));
     private InventoryState SixIslandPredecessorInventory(InventoryState inventory) => SixIslandShopProof.InventoryForPredecessor(FiveIslandPredecessorInventory(inventory));
     private InventoryState FourIslandPredecessorInventory(InventoryState inventory) => FourIslandShopProof.InventoryForPredecessor(SixIslandPredecessorInventory(inventory));
     private InventoryState VictoryRoadPredecessorInventory(InventoryState inventory) => VictoryRoadShopProof.InventoryForPredecessor(SeviiRubyShopProof.InventoryForPredecessor(FourIslandPredecessorInventory(inventory)));
@@ -30,7 +32,8 @@ public sealed partial class CampaignSession
         changed = SeviiRubyShopProof.RestoreFromPredecessor(FourIslandPredecessorInventory(view), changed);
         changed = FourIslandShopProof.RestoreFromPredecessor(SixIslandPredecessorInventory(view), changed);
         changed = SixIslandShopProof.RestoreFromPredecessor(FiveIslandPredecessorInventory(view), changed);
-        changed = FiveIslandShopProof.RestoreFromPredecessor(view, changed);
+        changed = FiveIslandShopProof.RestoreFromPredecessor(SevenIslandPredecessorInventory(view), changed);
+        changed = SevenIslandShopProof.RestoreFromPredecessor(view, changed);
         return MergeShopInventory(original, changed);
     }
     private bool TryApplyFirstSeviiItemEffect(CampaignState state,StoryEffect effect,out CampaignState next)

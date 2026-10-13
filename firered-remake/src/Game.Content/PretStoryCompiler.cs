@@ -26,7 +26,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -66,7 +66,8 @@ public static partial class PretStoryCompiler
             {
                 var line=sourceText.Trim();if(line.StartsWith(".string",StringComparison.Ordinal)) {current?.Add((sourceLine,line));continue;}
                 line=line.Split('@')[0].Trim();if(line.Length==0)continue;
-                var equ=Equ().Match(line);if(equ.Success){aliases[equ.Groups[1].Value]=equ.Groups[2].Value;continue;}
+                var equ=Equ().Match(line);
+                if(!equ.Success&&includeSevenIsland&&IsSevenIslandDanceAlias(file,line))equ=Equ().Match(".equ DID_CHANSEY_DANCE, FLAG_TEMP_2");if(equ.Success){aliases[equ.Groups[1].Value]=equ.Groups[2].Value;continue;}
                 var label=Label().Match(line);if(label.Success){current=[];if(!blocks.TryAdd(label.Groups[1].Value,current))throw ContentJson.Error("duplicate_label",file.Path,label.Groups[1].Value);continue;}
                 if(line.StartsWith(".include",StringComparison.Ordinal)||line.StartsWith(".align",StringComparison.Ordinal))continue;
                 current?.Add((sourceLine,line));
@@ -126,6 +127,11 @@ public static partial class PretStoryCompiler
                     assemblyData.Add(label,body.Where(b=>b.Text.StartsWith(".",StringComparison.Ordinal)).Select(b=>b.Text).ToImmutableArray());continue;
                 }
                 if(includeSixIsland&&IsSixIslandAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
+                {
+                    if(body.Count==1&&body[0].Text==".byte 0")headers.Add(label,[]);
+                    assemblyData.Add(label,body.Where(b=>b.Text.StartsWith(".",StringComparison.Ordinal)).Select(b=>b.Text).ToImmutableArray());continue;
+                }
+                if(includeSevenIsland&&IsSevenIslandAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
                 {
                     if(body.Count==1&&body[0].Text==".byte 0")headers.Add(label,[]);
                     assemblyData.Add(label,body.Where(b=>b.Text.StartsWith(".",StringComparison.Ordinal)).Select(b=>b.Text).ToImmutableArray());continue;
@@ -231,6 +237,8 @@ public static partial class PretStoryCompiler
                             var admitted=FiveIslandInstructionShape(file,label,opcode,operands);
                             if(admitted is {} shape)(kind,min,max)=shape;
                         }
+                        if(includeSevenIsland&&SevenIslandInstructionShape(file,label,opcode,operands) is {} sevenShape)
+                            (kind,min,max)=sevenShape;
                         if(includeCelio)
                         {
                             var admitted=CelioInstructionShape(file,label,opcode,operands);

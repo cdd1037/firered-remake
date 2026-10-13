@@ -57,28 +57,30 @@ var current=CampaignSession.CreateCurrent(catalog,new(0x11223344));
 // a52074b records the pre-Cave payload/refactor evidence. It is not the source fingerprint of this expanded game.
 Check(catalog.ContentVersion.Length==64&&catalog.ContentVersion.All(c=>char.IsAsciiHexDigitLower(c)),"current content fingerprint is SHA256");
 Check(catalog.ContentVersion!=predecessorContentVersion,"Cave source extension has a distinct content/save fingerprint");
-Check(catalog.CeruleanCaveEnabled&&catalog.Maps.Count==257&&catalog.FieldPickups.Length==244,"current composition includes 257 maps and 244 field pickups");
+Check(catalog.SevenIslandEnabled&&catalog.Maps.Count==275&&catalog.FieldPickups.Length==257,"current composition includes 275 maps and 257 field pickups");
 Check(catalog.CeruleanCaveRegion.NewMaps.Keys.Select(id=>id.Value).ToHashSet(StringComparer.Ordinal).SetEquals(
     new[]{"map.cerulean-cave-1f","map.cerulean-cave-2f","map.cerulean-cave-b1f"})&&
     catalog.CeruleanCaveRegion.NewMaps.All(pair=>ReferenceEquals(catalog.SourceMaps[pair.Key],pair.Value)),"three authenticated Cave source maps belong to the current composition");
-Check(catalog.PokemonContent!.Catalog.Species.Count==139&&catalog.CeruleanCaveOpponents.Catalog.Species.Count==163&&
-    ReferenceEquals(catalog.PokemonContent.Catalog,catalog.CeruleanCaveOwnership.Catalog)&&
-    ReferenceEquals(CeruleanCaveOwnedPokemonCatalog.For(catalog.PokemonContent.Catalog),catalog.CeruleanCaveOwnership)&&
-    ReferenceEquals(catalog.CeruleanCaveOwnership.Predecessor,catalog.CelioOwnership),"current player catalog has the authenticated 139-species Cave ownership proof");
+Check(catalog.PokemonContent!.Catalog.Species.Count==146&&catalog.CeruleanCaveOpponents.Catalog.Species.Count==163&&
+    ReferenceEquals(catalog.PokemonContent.Catalog,catalog.SevenIslandOwnership.Catalog)&&
+    ReferenceEquals(SevenIslandOwnedPokemonCatalog.For(catalog.PokemonContent.Catalog),catalog.SevenIslandOwnership)&&
+    ReferenceEquals(catalog.SevenIslandOwnership.Predecessor,catalog.CeruleanCaveOwnership)&&
+    ReferenceEquals(catalog.CeruleanCaveOwnership.Predecessor,catalog.CelioOwnership),"current player catalog has authenticated Seven146 over Cave139");
 Check(ReferenceEquals(CeruleanCaveOpponentPokemonCatalog.For(catalog.CeruleanCaveOwnership),catalog.CeruleanCaveOpponents)&&
     ReferenceEquals(catalog.CeruleanCaveOpponents.Predecessor,catalog.CelioOpponents)&&
     !ReferenceEquals(catalog.CeruleanCaveOpponents.Catalog,catalog.PokemonContent.Catalog),"Cave predecessor opponent catalog remains distinct and authenticated");
-Check(ReferenceEquals(CeruleanCaveMachineCatalog.For(catalog.PewterMachines),catalog.CeruleanCaveMachines)&&
+Check(ReferenceEquals(SevenIslandMachineCatalog.For(catalog.PewterMachines),catalog.SevenIslandMachines)&&
+    ReferenceEquals(catalog.SevenIslandMachines.Predecessor,catalog.CeruleanCaveMachines)&&
     ReferenceEquals(catalog.CeruleanCaveMachines.Pokemon,catalog.CeruleanCaveOwnership)&&
     ReferenceEquals(catalog.CeruleanCaveMachines.Predecessor,catalog.CelioMachines),"current machines share the Cave ownership and Celio predecessor proofs");
 Check(catalog.LeagueRematchEnabled&&catalog.LeagueRematchOpponents!.Catalog.Species.Count==168&&
     ReferenceEquals(LeagueRematchOpponentPokemonCatalog.For(catalog.CeruleanCaveOwnership),catalog.LeagueRematchOpponents)&&
     ReferenceEquals(catalog.LeagueRematchOpponents.Predecessor,catalog.CeruleanCaveOpponents)&&
-    ReferenceEquals(catalog.LeagueRematchOpponents.Owned,catalog.CeruleanCaveOwnership),"current rematch opponents extend Cave163 to authenticated168 without changing owned139");
+    ReferenceEquals(catalog.LeagueRematchOpponents.Owned,catalog.CeruleanCaveOwnership),"current rematch opponents extend Cave163 to authenticated168 and retains its owned139 predecessor");
 Check(catalog.LeagueRematchTrainerParties!.Trainers.Count==7&&catalog.PokemonLeagueTrainerParties!.Trainers.Count==7,
     "current composition retains both seven-team source rosters");
 foreach(var definition in catalog.PokemonLeagueTrainerParties!.Trainers.Values.Concat(catalog.LeagueRematchTrainerParties!.Trainers.Values)
-    .Concat(catalog.ForestTrainers!.Trainers.Values).Concat(catalog.SilphTrainers!.Trainers.Values).Where(t=>!t.DoubleBattle))
+    .Concat(catalog.SevenIslandTrainerParties.Trainers.Values).Concat(catalog.ForestTrainers!.Trainers.Values).Concat(catalog.SilphTrainers!.Trainers.Values).Where(t=>!t.DoubleBattle))
     Check(ReferenceEquals(current.GetOrdinaryTrainerDefinition(definition.Id),definition),"read-only trainer lookup shares authenticated entry definition: "+definition.Id.Value);
 var reloaded=PretCampaignCatalog.LoadCurrent(args[0]);
 Check(!ReferenceEquals(catalog,reloaded)&&catalog.ContentVersion==reloaded.ContentVersion,"independent authenticated source loads produce the same current fingerprint");
@@ -93,7 +95,7 @@ string CompositionHash(PretCampaignCatalog value)=>CanonicalJson.Hash(new{
     }).ToArray(),
     scripts=value.ScriptCompilation,
     owned=PokemonSnapshot(value.PokemonContent!.Catalog),
-    opponents=PokemonSnapshot(value.LeagueRematchOpponents!.Catalog),
+    opponents=PokemonSnapshot(value.SevenIslandOpponents.Catalog),
     machines=value.PewterMachines,
     pickups=value.FieldPickups
 });
@@ -167,20 +169,24 @@ ICampaignCatalog Tamper(string member,object? value)
 foreach(var tamper in new (string Member,object? Value,string Fault)[]{
     ("LeagueRematchEnabled",false,"current_requires_league_rematch_catalog"),
     ("LeagueRematchTrainerParties",null,"pokemon_league_rematch_catalog_scope"),
-    ("LeagueRematchOpponents",null,"pokemon_league_rematch_catalog_scope"),
+    ("LeagueRematchOpponents",null,"seven_island_source_binding"),
+    ("SevenIslandEnabled",false,"current_capabilities_missing"),
+    ("SevenIslandOwnership",null,"seven_island_source_binding"),
+    ("SevenIslandOpponents",null,"seven_island_source_binding"),
+    ("SevenIslandMachines",null,"seven_island_source_binding"),
     ("CeruleanCaveEnabled",false,"current_capabilities_missing"),
     ("CelioEnabled",false,"current_capabilities_missing"),
     ("Route11Enabled",false,"current_capabilities_missing"),
-    ("PokemonContent",catalog.PokemonContent! with{Catalog=catalog.CeruleanCaveOpponents.Catalog},"cerulean_cave_source_binding"),
-    ("PokemonContent",catalog.PokemonContent! with{Catalog=catalog.CeruleanCaveOwnership.Catalog with{}},"cerulean_cave_source_binding"),
-    ("PokemonContent",catalog.PokemonContent! with{Catalog=catalog.CelioOwnership!.Catalog},"cerulean_cave_source_binding"),
-    ("CeruleanCaveOwnership",null,"cerulean_cave_source_binding"),
+    ("PokemonContent",catalog.PokemonContent! with{Catalog=catalog.CeruleanCaveOpponents.Catalog},"seven_island_source_binding"),
+    ("PokemonContent",catalog.PokemonContent! with{Catalog=catalog.CeruleanCaveOwnership.Catalog with{}},"seven_island_source_binding"),
+    ("PokemonContent",catalog.PokemonContent! with{Catalog=catalog.CelioOwnership!.Catalog},"seven_island_source_binding"),
+    ("CeruleanCaveOwnership",null,"seven_island_source_binding"),
     ("CeruleanCaveOpponents",null,"cerulean_cave_source_binding"),
-    ("CeruleanCaveMachines",null,"cerulean_cave_source_binding"),
+    ("CeruleanCaveMachines",null,"seven_island_source_binding"),
     ("CelioOpponents",null,"cerulean_cave_source_binding"),
     ("CelioRoamerMaps",null,"celio_source_profile_missing"),
-    ("PewterMachines",catalog.CelioMachines!.Catalog,"cerulean_cave_source_binding"),
-    ("EarlyShop",catalog.SixIslandShop!.Catalog,"five_island_source_profile_missing")})
+    ("PewterMachines",catalog.CelioMachines!.Catalog,"seven_island_source_binding"),
+    ("EarlyShop",catalog.SixIslandShop!.Catalog,"seven_island_source_binding")})
 {
     var bad=Tamper(tamper.Member,tamper.Value);
     Refuse(()=>CampaignSession.CreateCurrent(bad),tamper.Fault,"New Game rejects tampered "+tamper.Member);
@@ -191,7 +197,7 @@ Refuse(()=>new CampaignSession(unsupported),"current_requires_league_rematch_cat
 Refuse(()=>CampaignSession.Restore(unsupported,current.State,0),"current_requires_league_rematch_catalog","Restore convenience refuses predecessor-only composition");
 Check(checks.Count>=(args.Length==4?100:70),"nonempty focused composition suite");
 Console.WriteLine(JsonSerializer.Serialize(new{passed=checks.Count,runtime=Environment.Version.ToString(),rules=current.RulesVersion,catalog.ContentVersion,
-    currentComposition=new{maps=catalog.Maps.Count,ownedSpecies=catalog.PokemonContent!.Catalog.Species.Count,opponentSpecies=catalog.LeagueRematchOpponents!.Catalog.Species.Count,fieldPickups=catalog.FieldPickups.Length,compositionHash},
+    currentComposition=new{maps=catalog.Maps.Count,ownedSpecies=catalog.PokemonContent!.Catalog.Species.Count,opponentSpecies=catalog.SevenIslandOpponents.Catalog.Species.Count,fieldPickups=catalog.FieldPickups.Length,compositionHash},
     baselineCommit=reference.GetProperty("sourceCommit").GetString(),predecessorContentVersion,
     baselineScope="Immutable pre-Cave evidence: New Game payload and the named checkpoint payloads/commands only; the expanded source fingerprint is tested independently.",
     conversionScope="Test-local explicit conversion of the two byte-pinned Celio checkpoints; not a product CLI conversion or automatic save migration.",

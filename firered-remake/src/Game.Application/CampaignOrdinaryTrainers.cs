@@ -54,6 +54,7 @@ public sealed partial class CampaignSession
     private IEnumerable<TrainerId> OrdinaryTrainerIds => OrdinaryTrainerBindings.Keys;
     private string OrdinaryTrainerClass(TrainerId id)=>OrdinaryTrainer(id).TrainerClass switch
     {
+        "TRAINER_CLASS_PAINTER"=>"PAINTER",
         "TRAINER_CLASS_ELITE_FOUR"=>"ELITE FOUR","TRAINER_CLASS_CHAMPION"=>"CHAMPION",
         "TRAINER_CLASS_CRUSH_GIRL"=>"CRUSH GIRL","TRAINER_CLASS_PKMN_RANGER"=>"POKéMON RANGER",
         "TRAINER_CLASS_BLACK_BELT"=>"BLACK BELT","TRAINER_CLASS_RUIN_MANIAC"=>"RUIN MANIAC",
