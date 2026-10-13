@@ -100,16 +100,3 @@ public sealed partial class CampaignSession
         return true;
     }
 }
-
-public static partial class CampaignSaveUpgrade
-{
-    public static CampaignSaveUpgradeResult PokemonLeagueToNationalDex(byte[] bytes, ICampaignCatalog source, ICampaignCatalog target)
-    {
-        ArgumentNullException.ThrowIfNull(bytes);
-        var before = new CampaignSession(source); var after = new CampaignSession(target);
-        if (!source.PokemonLeagueEnabled || source.NationalDexEnabled || !target.NationalDexEnabled ||
-            before.RulesVersion != CampaignSession.PokemonLeagueRulesVersion || after.RulesVersion != CampaignSession.NationalDexRulesVersion)
-            throw new InvalidDataException("save_upgrade_profile_pair_unsupported");
-        return PreservePayload(bytes, source, target, before, after);
-    }
-}

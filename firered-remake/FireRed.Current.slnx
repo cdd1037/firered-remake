@@ -1,0 +1,15 @@
+<Solution>
+  <Project Path="src/Game.Domain/Game.Domain.csproj" />
+  <Project Path="src/Game.Application/Game.Application.csproj" />
+  <Project Path="src/Game.Content/Game.Content.csproj" />
+  <Project Path="src/Game.Godot/Game.Godot.csproj" />
+  <Project Path="src/Game.Tooling/Game.Tooling.csproj" />
+  <Project Path="tests/Game.CurrentComposition.Tests/Game.CurrentComposition.Tests.csproj" />
+  <Project Path="tests/Game.SourceLifecycle.Tests/Game.SourceLifecycle.Tests.csproj" />
+  <Project Path="tests/Game.Domain.Tests/Game.Domain.Tests.csproj" />
+  <Project Path="tests/Game.Integration.Tests/Game.Integration.Tests.csproj" />
+  <Project Path="tests/Game.GrowthCapture.Tests/Game.GrowthCapture.Tests.csproj" />
+  <Project Path="tests/Game.Audit.Tests/Game.Audit.Tests.csproj" />
+  <Project Path="tests/Game.Story.Tests/Game.Story.Tests.csproj" />
+  <Project Path="tests/fixtures/content/ContentFixtureVerifier.csproj" />
+</Solution>

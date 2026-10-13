@@ -15,23 +15,11 @@ if (args.Length > 0 && args[0] == "convert-current-checkpoint")
     return CurrentCheckpointConversion.Run(Directory.GetCurrentDirectory(), args[1], args[2]);
 }
 
-if (SaveUpgradeProfiles.TryResolve(args, out var upgrade))
+if (args.Length >= 2 && args[0] == "save" && args[1].StartsWith("upgrade-", StringComparison.Ordinal))
 {
-    string input=Path.GetFullPath(args[2]),output=Path.GetFullPath(args[3]);
-    if(input==output||File.Exists(output)||Directory.Exists(output))throw new InvalidDataException("save_upgrade_requires_new_destination");
-    string root=Directory.GetCurrentDirectory();
-    var source=upgrade.LoadSource(root);
-    var target=upgrade.LoadTarget(root,args.Length==5?Path.GetFullPath(args[4]):null);
-    var bytes=File.ReadAllBytes(input);
-    var result=upgrade.Upgrade(bytes,source,target);
-    // Publish only a complete flushed file. Both creation and final move refuse
-    // replacement; a write failure cannot leave a partial file at the new slot.
-    NewCheckpointFile.Publish(output,result.Bytes);
-    Console.WriteLine(JsonSerializer.Serialize(new{passed=true,input,output,result.Generation,result.PayloadHash,result.SourceRules,result.SourceContent,result.TargetRules,result.TargetContent},new JsonSerializerOptions{WriteIndented=true}));return 0;
+    Console.Error.WriteLine("save_upgrade_retired: only explicit convert-current-checkpoint SOURCE NEW_DESTINATION is supported.");
+    return 2;
 }
-
-if (args.Length == 3 && args[0] == "scenario" && args[1] == "replay-campaign-window")
-    return CampaignWindowReplay.Run(Directory.GetCurrentDirectory(),Path.GetFullPath(args[2]));
 
 if (args.Length == 4 && args[0] == "content" && args[1] == "inspect-pinned-map")
 {

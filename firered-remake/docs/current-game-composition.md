@@ -1,4 +1,4 @@
-# Current-game composition: R1 slice
+# Current-game composition and retired runtime profiles
 
 The normal game is the accepted Celio composition, with one save rules ID:
 `firered-current-campaign-v1`. This does not claim that unfinished optional content,
@@ -44,9 +44,10 @@ cannot be combined with each other or a current profile request/checkpoint.
 These modes are not historical campaign launch profiles. Non-profile runtime
 settings, such as audio, player entry and evidence output, keep their own owners.
 
-The launcher sets one profile and no predecessor feature flags. Old regional
-launcher scripts no longer select a playable historical campaign: the resolver
-refuses their retired flags. Their source/evidence retirement belongs to R4.
+The launcher sets one profile and no predecessor feature flags. The 46 historical
+regional/feature launch scripts and their shared fall-through dispatcher have
+been removed. Current, probe, harness, Pallet and exported-host launchers remain.
+`launch-probe.sh` now explicitly selects the engineering probe.
 
 ## Save boundary and offline checkpoint contract
 
@@ -58,7 +59,7 @@ backed up and byte-identical.
 
 The one-time offline converter may accept only the selected original Celio
 checkpoints. Strictly decode using `CampaignSession.CelioRulesVersion` and the
-original authenticated ContentVersion/diagnostic validator. Encode the same full
+original authenticated ContentVersion and the current semantic validator. Encode the same full
 payload and generation with `CurrentGameProfile.RulesVersion` into a new path,
 refusing an existing destination. Strictly decode and `RestoreCurrent` the output.
 Record both file hashes and verify full canonical payload equality, including
@@ -72,18 +73,27 @@ Current APIs:
 - `CampaignSession.RestoreCurrent(ICampaignCatalog, CampaignState, long revision)`
 - `CampaignSession.IsCurrentGame`
 
-## Explicit remaining R1 scope and removal conditions
+## Historical runtime retirement
 
-`CreateDiagnostic`/`RestoreDiagnostic` isolate historical resolution. The old
-public constructor and `Restore` are temporary aliases, not normal-game entrypoints.
-Their concrete remaining consumers are `CampaignSaveUpgrade` and its regional
-partial classes, `Game.Tooling.SaveUpgradeProfiles`, `CampaignWindowReplay`, and
-archived regional test fixtures that instantiate `CampaignSession` directly.
-The aliases and `CampaignDiagnosticProfiles` must be removed when the upgrade
-router is retired, replay is current-only or archived, and the retained fixtures
-are ported to a standalone diagnostic harness. Historical saves alone do not
-justify retaining them. R4 is assigned the old upgrade/replay retirement; this
-slice does not add a new historical runtime commitment or claim R1 is complete.
+`CreateDiagnostic`, `RestoreDiagnostic`, `CampaignDiagnosticProfiles`, diagnostic
+catalog binding and all historical rules/machine/shop selectors are removed.
+The public constructor and `Restore` remain current-only conveniences; both
+reject a catalog without authenticated Celio composition. There is no runtime
+path from a historical save's rules ID to a historical session.
+
+The 43-entry Tooling upgrade router, 13 standalone Application upgrade files,
+six trailing upgrade blocks in mixed gameplay files, and the early-lab
+`CampaignWindowReplay` implementation/command are removed. The mixed files keep
+their current story, source validation, battle and progress logic. The sole
+checkpoint conversion is the explicit offline Celio-to-current command; it
+strictly decodes the named old envelope and validates using current rules.
+
+The original 57-check report remains historical evidence unchanged. The retained
+current suite now checks absence of diagnostic factories, current-only alias
+rejection, strict saves, selected conversion and immutable source/state/movement
+hashes captured from commit `a52074b3e30834ccf477447b4847113ffbc58c8d` before
+retirement. It never recreates a historical runtime to compute expected results.
+See [retirement inventory and command scope](runtime-retirement.md).
 
 Domain's `OwnedBattlePokemonCatalog` still proves predecessor relationships for
 current encounter/trainer factories. Removing its historical branches requires
@@ -94,8 +104,8 @@ they no longer decide startup. Their consolidation should follow their real
 consumers, separately from R2 trainer wiring and R3 battle ownership.
 
 No historical full-route or full-solution suite is required for this slice.
-`Game.CurrentComposition.Tests` covers startup conflicts, current/diagnostic
-separation, strict saves, the exact generation-47785/47819 source payloads,
+`Game.CurrentComposition.Tests` covers startup conflicts, current-only API
+rejection, strict saves, the exact generation-47785/47819 source payloads,
 side-effect-free Restore, short public movement parity and malformed ownership,
 opponent, machine and shop bindings. A normal Godot build and short headless
 startup additionally exercise the real composition host. Headless checks do not

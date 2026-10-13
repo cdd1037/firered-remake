@@ -1,0 +1,364 @@
+{
+  "stableId": "fixture.original-two-rooms",
+  "sourceRef": {
+    "kind": "originalFixture",
+    "path": "tests/fixtures/content/original-two-rooms.json",
+    "symbol": "fixture.original-two-rooms"
+  },
+  "schemaVersion": 1,
+  "rulesVersion": "fr-grid-v0",
+  "isOriginalFixture": true,
+  "tiles": [
+    {
+      "stableId": "tile.wall",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "tile.wall"
+      },
+      "kind": "wall",
+      "blocked": true,
+      "elevation": 0
+    },
+    {
+      "stableId": "tile.floor",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "tile.floor"
+      },
+      "kind": "floor",
+      "blocked": false,
+      "elevation": 0
+    },
+    {
+      "stableId": "tile.door",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "tile.door"
+      },
+      "kind": "door",
+      "blocked": false,
+      "elevation": 0
+    }
+  ],
+  "maps": [
+    {
+      "stableId": "map.workshop",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "map.workshop"
+      },
+      "width": 5,
+      "height": 5,
+      "tiles": [
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.floor",
+        "tile.floor",
+        "tile.floor",
+        "tile.wall",
+        "tile.wall",
+        "tile.floor",
+        "tile.floor",
+        "tile.floor",
+        "tile.door",
+        "tile.wall",
+        "tile.floor",
+        "tile.floor",
+        "tile.floor",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall"
+      ],
+      "warps": [
+        {
+          "stableId": "warp.workshop-to-hall",
+          "sourceRef": {
+            "kind": "originalFixture",
+            "path": "tests/fixtures/content/original-two-rooms.json",
+            "symbol": "warp.workshop-to-hall"
+          },
+          "x": 4,
+          "y": 2,
+          "destinationMapId": "map.hall",
+          "destinationX": 1,
+          "destinationY": 2
+        }
+      ],
+      "npcs": [
+        {
+          "stableId": "npc.host",
+          "sourceRef": {
+            "kind": "originalFixture",
+            "path": "tests/fixtures/content/original-two-rooms.json",
+            "symbol": "npc.host"
+          },
+          "x": 2,
+          "y": 1,
+          "scriptId": "script.gift"
+        }
+      ]
+    },
+    {
+      "stableId": "map.hall",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "map.hall"
+      },
+      "width": 5,
+      "height": 5,
+      "tiles": [
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.floor",
+        "tile.floor",
+        "tile.floor",
+        "tile.wall",
+        "tile.door",
+        "tile.floor",
+        "tile.floor",
+        "tile.floor",
+        "tile.wall",
+        "tile.wall",
+        "tile.floor",
+        "tile.floor",
+        "tile.floor",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall",
+        "tile.wall"
+      ],
+      "warps": [
+        {
+          "stableId": "warp.hall-to-workshop",
+          "sourceRef": {
+            "kind": "originalFixture",
+            "path": "tests/fixtures/content/original-two-rooms.json",
+            "symbol": "warp.hall-to-workshop"
+          },
+          "x": 0,
+          "y": 2,
+          "destinationMapId": "map.workshop",
+          "destinationX": 3,
+          "destinationY": 2
+        }
+      ],
+      "npcs": [
+        {
+          "stableId": "npc.helper",
+          "sourceRef": {
+            "kind": "originalFixture",
+            "path": "tests/fixtures/content/original-two-rooms.json",
+            "symbol": "npc.helper"
+          },
+          "x": 2,
+          "y": 1,
+          "scriptId": "script.about"
+        }
+      ]
+    }
+  ],
+  "scripts": [
+    {
+      "stableId": "script.gift",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "script.gift"
+      },
+      "instructions": [
+        {
+          "op": "branchFlag",
+          "label": "entry",
+          "flagId": "flag.gift-claimed",
+          "ifTrue": "already",
+          "ifFalse": "intro"
+        },
+        {
+          "op": "say",
+          "label": "intro",
+          "textId": "text.welcome"
+        },
+        {
+          "op": "giveReward",
+          "label": "gift",
+          "rewardId": "reward.welcome"
+        },
+        {
+          "op": "say",
+          "label": "thanks",
+          "textId": "text.after-gift"
+        },
+        {
+          "op": "end",
+          "label": "finish"
+        },
+        {
+          "op": "say",
+          "label": "already",
+          "textId": "text.repeat"
+        },
+        {
+          "op": "end",
+          "label": "finish-again"
+        }
+      ]
+    },
+    {
+      "stableId": "script.about",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "script.about"
+      },
+      "instructions": [
+        {
+          "op": "say",
+          "label": "entry",
+          "textId": "text.about"
+        },
+        {
+          "op": "end",
+          "label": "finish"
+        }
+      ]
+    }
+  ],
+  "texts": [
+    {
+      "stableId": "text.welcome",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "text.welcome"
+      },
+      "language": "zh-Hans",
+      "value": "欢迎来到手作间。这枚铜环送给你。"
+    },
+    {
+      "stableId": "text.after-gift",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "text.after-gift"
+      },
+      "language": "zh-Hans",
+      "value": "右侧的门通向长廊。你可以再回来。"
+    },
+    {
+      "stableId": "text.repeat",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "text.repeat"
+      },
+      "language": "zh-Hans",
+      "value": "铜环已经交给你了。祝探索愉快。"
+    },
+    {
+      "stableId": "text.about",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "text.about"
+      },
+      "language": "zh-Hans",
+      "value": "这是原创工程测试房间，不是火红地图或剧情。"
+    },
+    {
+      "stableId": "text.token-name",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "text.token-name"
+      },
+      "language": "zh-Hans",
+      "value": "铜环"
+    },
+    {
+      "stableId": "text.creature-name",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "text.creature-name"
+      },
+      "language": "zh-Hans",
+      "value": "豆灯"
+    }
+  ],
+  "flags": [
+    {
+      "stableId": "flag.gift-claimed",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "flag.gift-claimed"
+      },
+      "initialValue": false
+    }
+  ],
+  "items": [
+    {
+      "stableId": "item.copper-ring",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "item.copper-ring"
+      },
+      "nameTextId": "text.token-name",
+      "stackLimit": 20
+    }
+  ],
+  "species": [
+    {
+      "stableId": "species.bean-lamp",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "species.bean-lamp"
+      },
+      "nameTextId": "text.creature-name",
+      "baseHp": 20,
+      "baseAttack": 20,
+      "baseDefense": 20,
+      "baseSpeed": 20,
+      "baseSpecialAttack": 20,
+      "baseSpecialDefense": 20
+    }
+  ],
+  "rewards": [
+    {
+      "stableId": "reward.welcome",
+      "sourceRef": {
+        "kind": "originalFixture",
+        "path": "tests/fixtures/content/original-two-rooms.json",
+        "symbol": "reward.welcome"
+      },
+      "claimFlagId": "flag.gift-claimed",
+      "money": 5,
+      "items": [
+        {
+          "itemId": "item.copper-ring",
+          "quantity": 1
+        }
+      ]
+    }
+  ]
+}

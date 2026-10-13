@@ -5,7 +5,10 @@ using Game.Application;
 using Game.Content;
 using Game.Domain.World;
 
-if(args.Length!=4)throw new ArgumentException("ROOT HANDOFF_SAVE BILL_SAVE OUTPUT_DIRECTORY");
+if(args.Length is not (2 or 4))throw new ArgumentException("ROOT [HANDOFF_SAVE BILL_SAVE] OUTPUT_DIRECTORY");
+using var baseline=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"baseline-a52074b.json")));
+var reference=baseline.RootElement;
+string output=args[^1];
 var checks=new List<string>();
 void Check(bool ok,string name){if(!ok)throw new InvalidDataException(name);checks.Add(name);}
 void Refuse(Action action,string fault,string name)
@@ -48,13 +51,15 @@ Check(Resolve([], ("FIRERED_CAMPAIGN_CHECKPOINT","checkpoint.json")).Checkpoint=
 
 var catalog=PretCampaignCatalog.LoadCurrent(args[0]);
 var current=CampaignSession.CreateCurrent(catalog,new(0x11223344));
-var diagnostic=CampaignSession.CreateDiagnostic(catalog,new(0x11223344));
+Check(catalog.ContentVersion==reference.GetProperty("ContentVersion").GetString(),"authenticated content matches fixed baseline");
 Check(current.IsCurrentGame&&current.RulesVersion==CurrentGameProfile.RulesVersion,"normal factory uses current rules");
-Check(!diagnostic.IsCurrentGame&&diagnostic.RulesVersion==CampaignSession.CelioRulesVersion,"diagnostic factory remains explicit");
-Check(CanonicalJson.Hash(current.State)==CanonicalJson.Hash(diagnostic.State),"new game payload and both RNG streams unchanged");
+Check(typeof(CampaignSession).GetMethod("CreateDiagnostic") is null&&typeof(CampaignSession).GetMethod("RestoreDiagnostic") is null,"historical factories removed from Application API");
+Check(CanonicalJson.Hash(current.State)==reference.GetProperty("newGameHash").GetString(),"new game payload and both RNG streams match fixed a52074b baseline");
+var convenience=new CampaignSession(catalog,new(0x11223344));
+Check(convenience.IsCurrentGame&&convenience.RulesVersion==current.RulesVersion&&CanonicalJson.Hash(convenience.State)==CanonicalJson.Hash(current.State),"constructor has current-only semantics");
 Check(current.ValidatePlayerSave(current.State) is null,"current New Game is strictly saveable");
-Directory.CreateDirectory(args[3]);
-var savePath=Path.Combine(args[3],"new-current.json");
+Directory.CreateDirectory(output);
+var savePath=Path.Combine(output,"new-current.json");
 var storage=new TestFileStorage();
 new SaveService(storage).Save(savePath,current.State,current.Revision,current.RulesVersion,catalog.ContentVersion,current.ValidatePlayerSave);
 var saved=new SaveService(storage).Load<CampaignState>(savePath,current.RulesVersion,catalog.ContentVersion,current.ValidatePlayerSave);
@@ -66,23 +71,24 @@ foreach(string oldRules in new[]{CampaignSession.CelioRulesVersion,CampaignSessi
     Refuse(()=>SaveCodec.Decode<CampaignState>(bytes,current.RulesVersion,catalog.ContentVersion,validate:current.ValidatePlayerSave),"save_version_mismatch","obsolete rules rejected: "+oldRules);
 }
 var converted=new List<object>();
-foreach(string path in args.Skip(1).Take(2))
+foreach(string path in args.Length==4?args.Skip(1).Take(2):[])
 {
     var original=File.ReadAllBytes(path);var sha=Convert.ToHexStringLower(SHA256.HashData(original));
-    var before=SaveCodec.Decode<CampaignState>(original,CampaignSession.CelioRulesVersion,catalog.ContentVersion,validate:diagnostic.ValidatePlayerSave);
+    var before=SaveCodec.Decode<CampaignState>(original,CampaignSession.CelioRulesVersion,catalog.ContentVersion,validate:current.ValidatePlayerSave);
+    var frozen=reference.GetProperty("checkpoints").EnumerateArray().Single(x=>x.GetProperty("generation").GetInt64()==before.Generation);
+    Check(sha==frozen.GetProperty("sourceSha256").GetString(),"selected source bytes match fixed baseline: "+before.Generation);
+    Check(CanonicalJson.Hash(before.State)==frozen.GetProperty("payloadHash").GetString(),"source payload matches fixed baseline: "+before.Generation);
     Refuse(()=>SaveCodec.Decode<CampaignState>(original,current.RulesVersion,catalog.ContentVersion,validate:current.ValidatePlayerSave),"save_version_mismatch","original checkpoint rejected as current: "+before.Generation);
     var encoded=SaveCodec.Encode(before.State,before.Generation,current.RulesVersion,catalog.ContentVersion);
     var after=SaveCodec.Decode<CampaignState>(encoded,current.RulesVersion,catalog.ContentVersion,validate:current.ValidatePlayerSave);
-    File.WriteAllBytes(Path.Combine(args[3],"converted-"+before.Generation+".json"),encoded);
+    File.WriteAllBytes(Path.Combine(output,"converted-"+before.Generation+".json"),encoded);
     var restored=CampaignSession.RestoreCurrent(catalog,after.State,after.Generation);
     using var oldJson=JsonDocument.Parse(original);using var newJson=JsonDocument.Parse(encoded);
     Check(CanonicalJson.Hash(oldJson.RootElement.GetProperty("Payload"))==CanonicalJson.Hash(newJson.RootElement.GetProperty("Payload")),"entire checkpoint payload unchanged: "+before.Generation);
     Check(restored.Revision==before.Generation&&CanonicalJson.Hash(restored.State)==CanonicalJson.Hash(before.State),"Restore has no entry or RNG side effect: "+before.Generation);
-    var oldSession=CampaignSession.RestoreDiagnostic(catalog,before.State,before.Generation);
-    var oldStep=oldSession.Execute("composition-smoke",oldSession.Revision,new("move",Direction.East));
     var newStep=restored.Execute("composition-smoke",restored.Revision,new("move",Direction.East));
-    Check(oldStep.Status==CommandStatus.Accepted&&newStep.Status==CommandStatus.Accepted,"public field move accepted: "+before.Generation);
-    Check(CanonicalJson.Hash(oldStep)==CanonicalJson.Hash(newStep),"complete command result, state, events and RNG unchanged: "+before.Generation);
+    Check(newStep.Status==CommandStatus.Accepted,"public field move accepted: "+before.Generation);
+    Check(CanonicalJson.Hash(newStep)==frozen.GetProperty("moveOutcomeHash").GetString(),"complete command result, state, events and RNG match fixed baseline: "+before.Generation);
     Check(Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(path)))==sha,"original checkpoint bytes preserved: "+before.Generation);
     converted.Add(new{path,generation=before.Generation,sourceSha256=sha,payloadHash=CanonicalJson.Hash(before.State),currentSha256=Convert.ToHexStringLower(SHA256.HashData(encoded))});
 }
@@ -94,6 +100,7 @@ ICampaignCatalog Tamper(string member,object? value)
 }
 foreach(var tamper in new (string Member,object? Value,string Fault)[]{
     ("CelioEnabled",false,"current_requires_celio_catalog"),
+    ("Route11Enabled",false,"current_capabilities_missing"),
     ("PokemonContent",catalog.PokemonContent! with{Catalog=catalog.CelioOpponents!.Catalog},"celio_source_profile_missing"),
     ("PokemonContent",catalog.PokemonContent! with{Catalog=catalog.CelioOwnership!.Catalog with{}},"celio_source_profile_missing"),
     ("CelioOpponents",null,"celio_source_profile_missing"),
@@ -104,8 +111,11 @@ foreach(var tamper in new (string Member,object? Value,string Fault)[]{
     Refuse(()=>CampaignSession.CreateCurrent(bad),tamper.Fault,"New Game rejects tampered "+tamper.Member);
     Refuse(()=>CampaignSession.RestoreCurrent(bad,current.State,0),tamper.Fault,"Restore rejects tampered "+tamper.Member);
 }
-Check(checks.Count>=55,"nonempty focused composition suite");
-Console.WriteLine(JsonSerializer.Serialize(new{passed=checks.Count,runtime=Environment.Version.ToString(),rules=current.RulesVersion,catalog.ContentVersion,converted,checks},new JsonSerializerOptions{WriteIndented=true}));
+var unsupported=Tamper("CelioEnabled",false);
+Refuse(()=>new CampaignSession(unsupported),"current_requires_celio_catalog","constructor refuses historical composition");
+Refuse(()=>CampaignSession.Restore(unsupported,current.State,0),"current_requires_celio_catalog","Restore convenience refuses historical composition");
+Check(checks.Count>=(args.Length==4?60:45),"nonempty focused composition suite");
+Console.WriteLine(JsonSerializer.Serialize(new{passed=checks.Count,runtime=Environment.Version.ToString(),rules=current.RulesVersion,catalog.ContentVersion,baselineCommit=reference.GetProperty("sourceCommit").GetString(),converted,checks},new JsonSerializerOptions{WriteIndented=true}));
 
 public class CatalogProxy:DispatchProxy
 {

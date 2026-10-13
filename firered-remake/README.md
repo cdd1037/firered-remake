@@ -29,6 +29,8 @@ the complete gameplay payload and generation are preserved. See
 [current composition](docs/current-game-composition.md). The launcher checks
 the official Godot resource import before startup.
 
+`./dev build` and `./dev test` use the maintained `FireRed.Current.slnx` product/current-contract set. The larger `FireRed.sln` is a source-test index, with 52 obsolete upgrade-API projects removed. Historical test sources and evidence remain preserved; old regional routes are not supported runnable profiles.
+
 The ordinary shared battle core and preset doubles are available within their
 documented admission contracts. Dedicated move animation coverage is separate
 (20/354), and native screen/physical audio acceptance remains open in this
@@ -55,7 +57,7 @@ The earlier first-badge profile reaches Pewter/Brock from the original opening w
 
 The earlier Route22 profile includes Daisy's Town Map, Oak/PC rating, the early Route22 rival and new wild species, and the bounded Boulder/Cascade guards in Route23. Four actual native processes verified the rival, guards, Continue and captured-Mankey menus; see [Route22 integration](docs/route22-application.md) and [retained native summary](evidence/route22-native-review.md). This does not open the later badge gates or northern Route23.
 
-Historical profile checkpoints retain their original rules. Use `dotnet run --project src/Game.Tooling -- save upgrade-route22 OLD-OAK-RATING-SAVE NEW-SAVE` for the explicit full-payload-preserving upgrade to a new file. Earlier `upgrade-oak-rating`, `upgrade-town-map`, `upgrade-repel` and `upgrade-field-pickups` commands remain available for their exact source profiles. Saves are never silently relabeled.
+Historical checkpoints and their evidence retain their original rules. Regional runtime profiles, launchers and the 43-entry `save upgrade-*` chain are retired. Only selected original Celio milestones have the explicit offline `convert-current-checkpoint` path; normal loading rejects every old rules ID. See [runtime retirement](docs/runtime-retirement.md).
 
 The launcher enables [compact map data](docs/runtime-map-data.md) and [bounded shared textures](docs/map-resource-cache.md). The original 24-map measurement reduced descriptions to 449,579 B including the registry from 16,100,416 B of rich development JSON; it is not the size of today's 153-map composition. Original source evidence remains available for rebuilding. Map textures use a three-map/24 MiB soft budget, with active/last-frame pins preserved; source regions and source pixels remain unchanged.
 

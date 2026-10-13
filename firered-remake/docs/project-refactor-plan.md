@@ -41,7 +41,7 @@ The target is one maintained current-game composition and one authoritative ordi
 
 ### R1 — Consolidate profile, capability and catalog selection
 
-**Status: first current-composition slice accepted; historical diagnostic/runtime-construction retirement remains open. Benefit: high. Risk: medium; current admission and selected checkpoint conversion require care.**
+**Status: current composition and historical diagnostic/upgrade runtime retirement implemented. Remaining R1 work is source-proof regional construction and current presentation capability consolidation, coordinated with R2/R3. Benefit: high. Risk: medium.**
 
 Evidence of remaining duplication:
 
@@ -99,12 +99,14 @@ Acceptance: selected complete current singles and real doubles flows retain orde
 
 ### R4 — Retire one-off tooling and compact delivery evidence
 
+The runtime-retirement slice removes the 43-entry old save router, diagnostic campaign constructors/factories, 46 historical launch scripts and obsolete early-lab window replay. The selected Celio offline converter, current imports and engineering diagnostics remain. Historical test source and evidence remain archived; 52 projects that reference removed APIs leave the larger solution. `dev build/test` now has a bounded current product/contract solution. See [the exact inventory and validation](runtime-retirement.md). This does not claim that all source preparation/import tooling has been audited.
+
 **Status: open. Benefit: medium. Risk: low for proven duplicates; high if a reconstruction dependency is removed.**
 
 Evidence and limits:
 
 - Only the two `package-victory-road-*` assemblers were removed in the accepted slice. This is not an audit of all remaining tooling.
-- [prepare-victory-road-hooks.py](../scripts/prepare-victory-road-hooks.py) stages predecessor-specific before/after files and hashes. It is a candidate for retirement when the current reconstruction contract no longer uses those staged hooks, not an automatically deletable file.
+- The completed `prepare-victory-road-hooks.py` predecessor patch assembler was retired after its only verifier consumer was changed to current source/data contracts. Its original script remains in Git at `9188078`; no runtime importer or resource was removed. See [retirement evidence](../evidence/refactor-tool-retirement-20261013/retirement.json).
 - [generate-victory-road-domain.py](../scripts/generate-victory-road-domain.py) authenticates predecessor templates and emits deterministic declarations. [generate-sevii-ruby-trainer-factory.py](../scripts/generate-sevii-ruby-trainer-factory.py) and [generate-six-island-trainer-factory.py](../scripts/generate-six-island-trainer-factory.py) provide `--check` reproduction described by the Ruby and Six catalog documents. Their names do not make them disposable one-off tools.
 - [candidate-proof-index.json](../evidence/project-refactor-20261012/candidate-proof-index.json), [final-result.json](../evidence/project-refactor-20261012/final-result.json) and [final-pack-file-index.json](../evidence/project-refactor-20261012/final-pack-file-index.json) already distinguish summaries, evidence and package inventories. Use such indices instead of retaining repeated product assembly cohorts in every active delivery.
 
@@ -139,3 +141,13 @@ R2 ordinary trainer selection now has one private typed binding index for defini
 R3 now supports two actual occupied positions in the existing four-position identity container and one action queue/cursor. It preserves immediate singles KO replacement and approved end-turn doubles KO replacement. The focused candidate passed 12 groups/607 checks; normal and forced-Struggle singles match prior current state/RNG, and four selected doubles flows match complete state, ordered events and RNG byte-for-byte. See [the core contract](r3-two-position-lifecycle-core.md). This is a prerequisite: current Application wild/trainer callers still use their old owners. Typed encounter policies and Application cutover are in progress; the legacy executors have not yet been retired.
 
 After combining R2 and R3 with the accepted current composition, the normal Godot target built with zero warnings/errors and the focused current composition/strict-checkpoint checks passed. Candidate proofs were reused; no historical campaign or backup runtime replay was added. See [combined results](../evidence/refactor-combination-20261013/result.json).
+
+## 2026-10-13 historical runtime retirement
+
+The next slice deletes the diagnostic campaign constructors/selectors, 43 upgrade routes (13 standalone implementations and six mixed-file tails), the old window-replay path and 46 historical launchers. Current construction has one complete-capability contract and current machine/shop/pickup authentication. The selected offline Celio converter still preserves source bytes and the full lawful payload; normal loading never enters an old profile.
+
+The default `FireRed.Current.slnx` now names the maintained product and small current contract set, including the shared lifecycle test. Fifty-two tests that call deleted stage APIs leave the optional historical solution index; their source/proof remain, and the sole project with a dangling source include is explicitly archived. This removes obsolete runtime dependencies rather than keeping stubs to make historical tests compile. See [the exact retirement scope](runtime-retirement.md).
+
+The one-off Victory Road shared-hook assembler is also removed. Its current source verifier keeps pinned data/source checks and deterministic data regeneration; historical C# template reconstruction is explicit and optional, with original strict template hashes. The current integrated source check passes 424 checks. Its initial refusal of a changed historical template is retained and explained; no hash or source guarantee was weakened.
+
+R3 canonical wild/trainer Application migration and deletion of the competing legacy executors remain in progress. The full deep refactor is still incomplete.

@@ -48,6 +48,18 @@ assert not bad_target.exists()
 double_target = output / "double-converted.json"
 run("refuse-current-as-legacy", target, double_target, False)
 assert not double_target.exists()
+for name, arguments in [
+    ("refuse-retired-upgrade-router", ["save", "upgrade-celio", str(source), str(output / "retired-upgrade.json")]),
+    ("refuse-retired-lab-replay", ["scenario", "replay-campaign-window", str(output / "retired-replay.json")]),
+]:
+    result = subprocess.run([str(a.dotnet.resolve()), str(a.tooling_dll.resolve()), *arguments],
+                            cwd=root, capture_output=True, text=True)
+    (output / (name + ".log")).write_text(result.stdout + result.stderr)
+    assert result.returncode == 2, (name, result.returncode)
+    assert not Path(arguments[-1]).exists(), "retired command published an output"
+    assert source.read_bytes() == original, "original milestone was modified"
+    observations.append({"case": name, "exitCode": result.returncode,
+                         "sourceSha256Unchanged": original_sha})
 assert not list(output.glob(".firered-checkpoint-*.tmp"))
 report = {"passed": True, "cases": observations, "source": str(source),
           "target": str(target), "sourceSha256": original_sha,

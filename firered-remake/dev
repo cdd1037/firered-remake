@@ -64,10 +64,12 @@ def setup():
  return doctor()
 
 def build():
- run([DOTNET,'restore','FireRed.sln','--locked-mode','--disable-parallel','-m:1','-nr:false'],'restore.log')
- run([DOTNET,'build','FireRed.sln','--no-restore','-m:1','-nr:false'],'build.log');return 0
+ run([DOTNET,'restore','FireRed.Current.slnx','--locked-mode','--disable-parallel','--source',GODOT.parent/'GodotSharp/Tools/nupkgs','-p:NuGetAudit=false','-m:1','-nr:false'],'restore.log')
+ run([DOTNET,'build','FireRed.Current.slnx','--no-restore','-m:1','-nr:false'],'build.log');return 0
 
 def test():
+ run([DOTNET,'run','--project','tests/Game.CurrentComposition.Tests','--no-build','--',ROOT,ROOT/'evidence/current-default'],'Game.CurrentComposition.Tests.json')
+ run([DOTNET,'run','--project','tests/Game.SourceLifecycle.Tests','--no-build','--',ROOT],'Game.SourceLifecycle.Tests.json')
  for name in ['Game.Domain.Tests','Game.Integration.Tests','Game.GrowthCapture.Tests','Game.Audit.Tests','Game.Story.Tests']:
   run([DOTNET,'run','--project',f'tests/{name}','--no-build'],name+'.json')
  run([DOTNET,'run','--project','tests/fixtures/content/ContentFixtureVerifier.csproj','--no-build','--','tests/fixtures/content'],'Game.Content.Tests.json')
@@ -203,11 +205,13 @@ def test_regional_campaign(name,checkpoint=None,region='Route11'):
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-fuchsia-route <new-run-name> [stable-resume next-stage]','test-fuchsia-modules','test-fuchsia-native-evidence','test-called-move-modules','test-source-rewards <new-run-name>','test-four-rewards <new-run-name>','test-four-entry <new-run-name>','test-ally-support <new-run-name>','test-source-immunity <new-run-name>','test-source-hit-items <new-run-name>','test-route8-twins <new-output> [pc-party]','test-route8-twins-ui <new-output>','test-four-contact <new-output>','test-four-turn-moves <new-output>','test-four-berries <new-output>','test-four-struggle <new-output>','test-four-protection <new-output>','test-shared-spikes <new-output>','test-contact-lifecycle <new-output>','test-fixed-damage <new-output>','test-basic-stat-status <new-output>','test-retaliation <new-output>','test-volatile-targets <new-output>','test-four-switching <new-output>','test-four-weather-screens <new-run-name>','test-source-choice <new-run-name>','test-source-focus <new-run-name>','test-four-focus <new-run-name>','test-focus-messages <new-run-name>','test-shared-charge <new-output>','test-residual-status <new-output>','test-shared-substitute <new-output>','test-sleep-residual <new-output>','test-target-marks <new-output>','test-dynamic-power <new-output>','test-freeze-hit <new-output>','test-recharge-rampage <new-output>','test-shared-copy <new-output>','test-shared-hit-items <new-output>','test-fixed-two <new-output>','test-ground-spread <new-output>','test-encore-imprison <new-output>','test-dynamic-type <new-output>','test-shared-recoil <new-output>','test-critical-status <new-output>','test-weather-hit <new-output>','test-common-abilities <new-output>','test-serene-grace <new-output>','test-wonder-guard <new-output>','test-item-transfer <new-output>','test-selected-volatiles <new-output>','test-four-callers <new-output>','test-late-turn <new-output>','test-conditional-hit <new-output>','test-prepared-moves <new-output>','test-terrain-sports <new-output>','test-party-healing <new-output>','test-delayed-attacks <new-output>','test-utility-hp <new-output>','test-fire-thaw <new-output>','test-sleep-attacks <new-output>','test-ohko <new-run-name>','test-source-cancellers <new-run-name>','test-source-hit <new-run-name>','test-source-hit-view <new-run-name>','test-source-identity','test-source-kernel','test-four-action-turns <new-run-name>','test-weather-abilities','test-turn-cycle-abilities','test-trapping-abilities <new-run-name>','test-copy-moves <new-run-name>','test-damage-abilities <new-output-directory>','test-fuchsia-ui <new-output-path>','test-regional-interiors <new-run-name> [stable-resume next-stage]','test-regional-interiors-native-evidence','test-regional-interiors-modules <new-run-name>','test-regional-interiors-ui <new-output-path>','test-regional-services <new-run-name> [legal-checkpoint]','test-regional-services-modules','test-regional-services-native-evidence','test-regional-services-ui <new-output-path>','test-regional-services-boundaries <new-run-name>','test-regional-services-catalog <new-run-name>','test-snorlax <new-run-name> [legal-checkpoint|--route12|--boundaries]','test-snorlax-modules','test-snorlax-ui [--only awake|sleep|audio|wiring]','test-pokemon-tower <new-run-name> [legal-checkpoint|--boundaries]','test-pokemon-tower-modules','test-pokemon-tower-ui [--only assets|intro|flute-awake|flute-sleep]','test-route11 <new-run-name> [legal-continuation]','test-route11-modules','test-rocktunnel <new-run-name> [legal-continuation]','test-rocktunnel-modules','test-celadon-approach <new-run-name>','test-rocket-hideout <new-run-name> [legal-checkpoint|--boundaries]','test-rocket-hideout-modules <source-preparation>','test-rocket-hideout-ui','test-rocket-hideout-synth','test-rocket-hideout-audit <unique-name>','test-rocket-hideout-native-evidence','test-celadon-gym <new-run-name> [pre-erika-checkpoint]','test-celadon-gym-modules','test-celadon-gym-ui','test-celadon-gym-synth','test-celadon-gym-audit <unique-name>','test-celadon-gym-native-evidence','test-celadon-approach-modules','test-city-services <new-run-name>','test-fishing <new-run-name> [legal-old-rod-save]','test-city-services-modules','test-city-services-source','test-city-services-ui [legal-completed legal-cycling]','test-city-services-audit <new-output-path>','test-city-services-native-evidence','test-vermilion-gym-modules','test-vermilion-gym-source','test-field-cut','test-vermilion-gym <new-run-name> [legal-gym-checkpoint]','test-vermilion-gym-audit <new-run-name>','test-vermilion-gym-ui [legal-before-cut legal-gym-entry]','probe','export linux','verify p0','content validate <path>','content import-pret-map-fixture <path>','scenario smoke']})
+ if not args:return output({'commands':['doctor','setup','build','test','test-current-checkpoints HANDOFF_SAVE BILL_SAVE OUTPUT_DIRECTORY','probe','export linux','verify p0','content validate FILE','scenario smoke'],'scope':'build/test use FireRed.Current.slnx and current contracts. Other named runners retain historical evidence workflows; obsolete campaign routes are unsupported. See docs/runtime-retirement.md.'})
  if args==['doctor']:return doctor()
  if args==['setup']:return setup()
  if args==['build']:return build()
  if args==['test']:return test()
+ if len(args)==4 and args[0]=='test-current-checkpoints':
+  run([DOTNET,'run','--project','tests/Game.CurrentComposition.Tests','--no-build','--',ROOT,*args[1:]],'current-checkpoint-tests.log');return 0
  if len(args) in (2,4) and args[0]=='test-fuchsia-route':
   if not re.fullmatch(r'[A-Za-z0-9_-]+',args[1]):raise RuntimeError('A unique campaign run name is required.')
   destination=ROOT/'tests/Game.FuchsiaCampaign.Tests/evidence'/args[1]
@@ -995,7 +999,7 @@ def main():
  if args==['probe']:return probe()
  if args==['export','linux']:return export()
  if args==['verify','p0']:return verify_p0()
- if args[0] in ['content','scenario','save']:run([DOTNET,'run','--project','src/Game.Tooling','--no-build','--',*args],'tooling-last.log');return 0
+ if args[0] in ['content','scenario','save','convert-current-checkpoint']:run([DOTNET,'run','--project','src/Game.Tooling','--no-build','--',*args],'tooling-last.log');return 0
  return output({'error':'unknown_command','arguments':args},2)
 try:sys.exit(main())
 except Exception as ex:sys.exit(output({'error':str(ex)},1))

@@ -16,10 +16,10 @@ internal static class CurrentCheckpointConversion
             throw new InvalidDataException("checkpoint_conversion_requires_new_destination");
 
         var catalog = PretCampaignCatalog.LoadCurrent(root);
-        var diagnostic = CampaignSession.CreateDiagnostic(catalog);
+        var validator = CampaignSession.CreateCurrent(catalog);
         byte[] original = File.ReadAllBytes(input);
         var prior = SaveCodec.Decode<CampaignState>(original, CampaignSession.CelioRulesVersion,
-            catalog.ContentVersion, input, diagnostic.ValidatePlayerSave);
+            catalog.ContentVersion, input, validator.ValidatePlayerSave);
         var current = CampaignSession.RestoreCurrent(catalog, prior.State, prior.Generation);
         byte[] converted = SaveCodec.Encode(current.State, current.Revision,
             CurrentGameProfile.RulesVersion, catalog.ContentVersion);

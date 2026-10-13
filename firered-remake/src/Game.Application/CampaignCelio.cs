@@ -123,23 +123,3 @@ public sealed partial class CampaignSession
         { return "save_celio_roamer_invalid"; }
     }
 }
-
-public static partial class CampaignSaveUpgrade
-{
-    public static CampaignSaveUpgradeResult FiveIslandToCelio(byte[] bytes, ICampaignCatalog source, ICampaignCatalog target)
-    {
-        ArgumentNullException.ThrowIfNull(bytes);
-        var before = new CampaignSession(source); var after = new CampaignSession(target);
-        if (!source.FiveIslandEnabled || source.CelioEnabled || !target.CelioEnabled ||
-            before.RulesVersion != CampaignSession.FiveIslandRulesVersion || after.RulesVersion != CampaignSession.CelioRulesVersion)
-            throw new InvalidDataException("save_upgrade_profile_pair_unsupported");
-        var loaded = SaveCodec.Decode<CampaignState>(bytes, before.RulesVersion, source.ContentVersion, validate: before.ValidatePlayerSave);
-        var envelope = JsonSerializer.Deserialize<SaveEnvelope>(bytes)!;
-        if (CanonicalJson.Hash(loaded.State) != envelope.PayloadHash) throw new InvalidDataException("save_upgrade_payload_would_change");
-        // The unchanged Five encounter tag, generation, party, RNG and runtime payload remain exact.
-        // Celio and the roamer are created only by the original script and subsequent world transitions.
-        if (after.ValidatePlayerSave(loaded.State) is {} error) throw new InvalidDataException("save_upgrade_target_invalid: " + error);
-        return new(SaveCodec.Encode(loaded.State, loaded.Generation, after.RulesVersion, target.ContentVersion), loaded.Generation,
-            envelope.PayloadHash, before.RulesVersion, source.ContentVersion, after.RulesVersion, target.ContentVersion);
-    }
-}

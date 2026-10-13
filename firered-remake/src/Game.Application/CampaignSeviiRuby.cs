@@ -148,25 +148,3 @@ public sealed partial class CampaignSession
         return false;
     }
 }
-
-public static partial class CampaignSaveUpgrade
-{
-    public static CampaignSaveUpgradeResult NationalDexToSeviiRuby(byte[] bytes, ICampaignCatalog source, ICampaignCatalog target)
-    {
-        ArgumentNullException.ThrowIfNull(bytes);
-        var before = new CampaignSession(source); var after = new CampaignSession(target);
-        if (!source.NationalDexEnabled || source.SeviiRubyEnabled || !target.SeviiRubyEnabled ||
-            before.RulesVersion != CampaignSession.NationalDexRulesVersion || after.RulesVersion != CampaignSession.SeviiRubyRulesVersion)
-            throw new InvalidDataException("save_upgrade_profile_pair_unsupported");
-        var loaded = SaveCodec.Decode<CampaignState>(bytes, before.RulesVersion, source.ContentVersion, validate: before.ValidatePlayerSave);
-        var envelope = JsonSerializer.Deserialize<SaveEnvelope>(bytes)!;
-        if (CanonicalJson.Hash(loaded.State) != envelope.PayloadHash) throw new InvalidDataException("save_upgrade_payload_would_change");
-        var old = loaded.State; var exploration = old.Exploration ?? throw new InvalidDataException("save_exploration_missing");
-        var encounter = exploration.EarlyEncounter ?? throw new InvalidDataException("save_encounter_missing");
-        var changed = old with { Exploration = exploration with { EarlyEncounter = encounter with { RulesVersion = EarlyLandEncounterRules.SeviiRubyRulesVersion } } };
-        if (CanonicalJson.Hash(changed with { Exploration = exploration }) != envelope.PayloadHash) throw new InvalidDataException("save_upgrade_changed_unapproved_payload");
-        if (after.ValidatePlayerSave(changed) is { } error) throw new InvalidDataException("save_upgrade_target_invalid: " + error);
-        var output = SaveCodec.Encode(changed, loaded.Generation, after.RulesVersion, target.ContentVersion);
-        return new(output, loaded.Generation, CanonicalJson.Hash(changed), before.RulesVersion, source.ContentVersion, after.RulesVersion, target.ContentVersion);
-    }
-}

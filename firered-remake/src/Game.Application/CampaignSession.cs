@@ -209,7 +209,7 @@ public sealed partial class CampaignSession
     public const string SilphRulesVersion="fr-silph-campaign-v1";
     public const string SurfRulesVersion="fr-surf-campaign-v1";
     public string RulesVersion=>_binding.RulesVersion;
-    public bool IsCurrentGame=>_binding.IsCurrent;
+    public bool IsCurrentGame=>true;
     private readonly CampaignCatalogBinding _binding;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
@@ -227,10 +227,9 @@ public sealed partial class CampaignSession
             return text;
         }
     }
-    // Temporary diagnostic alias. Normal gameplay must enter through CreateCurrent.
-    // Remaining callers and the removal condition are listed in docs/current-game-composition.md.
+    // Convenience entrypoint with the same current-only contract as CreateCurrent.
     public CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options=null)
-        : this(content,options,BindDiagnosticCatalog(content)) { }
+        : this(content,options,BindCurrentCatalog(content)) { }
     private CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options,CampaignCatalogBinding binding)
     {
         _content=content;_binding=binding;options??=new();
@@ -253,10 +252,8 @@ public sealed partial class CampaignSession
         _content=content;_binding=binding;var error=ValidatePlayerSave(state);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
         _commands=new(state,RulesVersion,content.ContentVersion,revision);
     }
-    // Temporary diagnostic alias, retained for archived fixtures and offline upgrades.
-    public static CampaignSession Restore(ICampaignCatalog content,CampaignState state,long revision)=>RestoreDiagnostic(content,state,revision);
-    public static CampaignSession CreateDiagnostic(ICampaignCatalog content,CampaignNewGameOptions? options=null)=>new(content,options,BindDiagnosticCatalog(content));
-    public static CampaignSession RestoreDiagnostic(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision,BindDiagnosticCatalog(content));
+    // Restoration never chooses a historical composition.
+    public static CampaignSession Restore(ICampaignCatalog content,CampaignState state,long revision)=>RestoreCurrent(content,state,revision);
     public static CampaignSession CreateCurrent(ICampaignCatalog content,CampaignNewGameOptions? options=null)=>new(content,options,BindCurrentCatalog(content));
     public static CampaignSession RestoreCurrent(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision,BindCurrentCatalog(content));
     public CommandOutcome<CampaignState> Execute(string id,long revision,CampaignCommand command)=>

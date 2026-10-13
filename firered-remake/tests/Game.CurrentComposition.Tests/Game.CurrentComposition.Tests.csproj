@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><None Include="baseline-a52074b.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Game.Application/Game.Application.csproj" />
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
