@@ -58,7 +58,7 @@ public static partial class SourceFourTrainerAi
     internal static SourceTrainerMoveResult ChooseCore(PokemonCatalog catalog, SourceBattleFrame frame,
         long expectedRevision, uint aiFlags, string? knownPlayerAbility, string tracePrefix, string? knownPlayerHoldEffect = null, BattlerSlot? onlyActor = null, MoveId? staleCurrentMove = null)
     {
-        var currentMove = staleCurrentMove ?? ForestTrainerCombatRules.NoMove;
+        var currentMove = staleCurrentMove ?? SourceTrainerEncounterPolicy.NoMove;
         SourceTrainerMoveResult Fail(string code) => new(frame, [], [], code) { SourceCurrentMove = staleCurrentMove };
         if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } capability) return Fail(capability);
         if (frame.Layout == SourceBattleLayout.Singles && SourceTrainerEncounterPolicy.Validate(catalog, frame) is { } encounter) return Fail(encounter);

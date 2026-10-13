@@ -42,23 +42,3 @@ public static class VictoryRoadWildBattleContract
     public static bool Matches(VictoryRoadWildOrigin origin,PokemonInstance mon) => mon is not null && SourceSlot(origin) is {} slot &&
         slot.Species==mon.Species && mon.Level>=slot.MinimumLevel && mon.Level<=slot.MaximumLevel;
 }
-public static partial class WildBattleRules
-{
-    /// <summary>The field owner must first prove the source walk/Surf/cast has completed.
-    /// This entry validates every origin and exact natural move set; it grants no new rod or map access.</summary>
-    public static WildBattleResult StartVictoryRoadWild(CinnabarOwnedPokemonCatalog owned,VictoryRoadWildOrigin origin,
-        ImmutableArray<WildBattleCombatant> playerParty,int activeIndex,WildBattleCombatant opponent,RngState rng, WildBattleTerrain terrain)
-    {
-        if (owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned)) return Fail(null,"victory_road_wild_owned_proof");
-        if (opponent?.Pokemon is not {} mon || opponent.Status!=WildBattleStatus.None || opponent.HeldItem!="ITEM_NONE" ||
-            !VictoryRoadWildPokemonFactory.SourceInitialInstance(owned,origin,mon)) return Fail(null,"victory_road_wild_source_instance");
-        if (SourceBattleAdmission.ValidateOwnedEntry(owned,playerParty,activeIndex) is {} ownedError) return Fail(null,ownedError);
-        if (SourceBattleAdmission.ValidateEntry(owned.Mechanics,BattleRulesProfile.CanonicalSourceSingles,playerParty,activeIndex,opponent) is {} sourceError)
-            return Fail(null,sourceError);
-        // BattleSetup_GetTerrainId reads the player destination tile, including shore fishing.
-        // The authoritative field caller supplies that source-derived terrain.
-        if (!Enum.IsDefined(terrain)) return Fail(null,"victory_road_wild_terrain");
-        return StartSourceWildCore(owned.Mechanics.Catalog,playerParty,activeIndex,opponent,rng,terrain,
-            origin.Kind==VictoryRoadEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,owned,victoryRoad:origin);
-    }
-}

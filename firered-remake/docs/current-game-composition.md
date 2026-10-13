@@ -12,14 +12,19 @@ owned/opponent admission limits remain unchanged.
 - Godot `Bootstrap` chooses either Current or one explicitly requested engineering
   diagnostic and passes the resolved selection to `CampaignView`. The view loads
   `PretCampaignCatalog.LoadCurrent`, then creates/restores only current sessions.
-- Content `LoadCurrent` binds the authenticated Celio resources. Its regional
-  construction dependencies remain source-proof construction, not launch choices.
+- Content `LoadCurrent` is the sole public catalog factory and directly builds
+  the authenticated current resource set. The generic `Load` API and all 22
+  regional public profile wrappers are removed. Typed regional construction
+  dependencies remain source proofs, not launch choices. See
+  [Content specialization](current-content-composition.md).
 - Application `CampaignCatalogBinding` validates once per session construction and
   fixes campaign, wild and encounter rules plus the owned battle catalog. Current
   binds directly; New Game and Restore use the same catalog validation. Restore
   validates state and creates a command session without entering a map or drawing RNG.
-- Domain stays BCL-only. No Content or Godot references, battle executors, admission
-  factories or ownership/opponent authentication rules are changed by this slice.
+- Domain stays BCL-only, with no Content or Godot references. Content specialization
+  preserves admission factories and ownership/opponent authentication. The separate
+  [R3 retirement](r3-battle-owner-retirement.md) removes the old battle executors
+  after current Application callers move to the canonical frame.
 
 The normal path no longer calls the latest-to-earliest catalog loader chain,
 regional `ProfileRequested` properties, the old constructors or diagnostic binding.
@@ -98,10 +103,12 @@ See [retirement inventory and command scope](runtime-retirement.md).
 Domain's `OwnedBattlePokemonCatalog` still proves predecessor relationships for
 current encounter/trainer factories. Removing its historical branches requires
 moving those actual current consumers and is not done by weakening authentication.
-Regional Content loaders still construct authenticated predecessors. The current
+The sole current Content builder still constructs authenticated predecessors. The current
 presentation's regional capability checks and machine-art proof chain remain;
-they no longer decide startup. Their consolidation should follow their real
-consumers, separately from R2 trainer wiring and R3 battle ownership.
+they no longer decide startup. Removing a predecessor requires moving its actual
+current consumers without weakening source authentication. Current trainer wiring
+and ordinary battle ownership have their own completed implementation boundaries;
+see [the latest integration status](project-refactor-plan.md#2026-10-13-content-specialization-and-battle-owner-retirement).
 
 No historical full-route or full-solution suite is required for this slice.
 `Game.CurrentComposition.Tests` covers startup conflicts, current-only API

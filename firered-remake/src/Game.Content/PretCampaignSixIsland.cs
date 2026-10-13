@@ -30,16 +30,6 @@ public sealed partial class PretCampaignCatalog
         ["SixIsland_House", "SixIsland_WaterPath_House1", "SixIsland_WaterPath_House2", "SixIsland_PokemonCenter_2F",
          "SixIsland_GreenPath", "FiveIsland", "SevenIsland", "DreamMail.ComposeAttachSend", "VsSeeker.Rematch"];
 
-    public static PretCampaignCatalog LoadSixIslandProfile(string root, bool useCompactMapData = true,
-        string? sixIslandContentRoot = null, string? sixIslandRulesRoot = null,
-        string? fourIslandContentRoot = null, string? fourIslandRulesRoot = null,
-        string? seviiRubyContentRoot = null, string? seviiRubyRulesRoot = null, string? nationalDexSourceRoot = null) =>
-        LoadPokemonLeagueProfile(root, useCompactMapData, includeNationalDex: true,
-            nationalDexSourceRoot: nationalDexSourceRoot, includeSeviiRuby: true,
-            seviiRubyContentRoot: seviiRubyContentRoot, seviiRubyRulesRoot: seviiRubyRulesRoot,
-            includeFourIsland: true, fourIslandContentRoot: fourIslandContentRoot, fourIslandRulesRoot: fourIslandRulesRoot,
-            includeSixIsland: true, sixIslandContentRoot: sixIslandContentRoot, sixIslandRulesRoot: sixIslandRulesRoot);
-
     private static void AppendSixIslandSources(PretSixIslandRegion region, List<PretSourceScriptFile> sources,
         List<string> texts, Dictionary<string, int> constants, List<string> hashes)
     {

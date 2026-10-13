@@ -13,7 +13,7 @@ namespace Game.Domain.Trainers;
 /// even when no switch results. Opt-in source overlays include copied Natural Cure and Perish Song.</summary>
 public static class CeruleanTrainerActionAi
 {
-    public static CeruleanTrainerSwitchDecision DecideSwitch(PokemonCatalog catalog, CeruleanTrainerSwitchInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false, SourceTrainerAiContext? source = null, SourceTrainerAiSlotContext? slots = null)
+    public static CeruleanTrainerSwitchDecision DecideSwitch(PokemonCatalog catalog, CeruleanTrainerSwitchInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rockTunnelRules = false, bool celadonGymRules = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false, SourceTrainerAiSlotContext? slots = null)
     {
         towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
@@ -22,15 +22,13 @@ public static class CeruleanTrainerActionAi
         route11Rules |= rockTunnelRules;
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules; vermilionRules |= ssAnneRules; billRules |= vermilionRules;
         CeruleanTrainerSwitchDecision Fault(string code) => new(TransitionStatus.Fault,null,rng,[],new(code,"Invalid Cerulean trainer switch context."));
-        if (catalog is null || slots is null && source is null && ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules)) return Fault("celadon_gym_trainer_ai_catalog_scope");
-        if (input is null || slots is null && source is null && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input.Party.IsDefaultOrEmpty || input.Party.Length > 6 ||
+        if (catalog is null || slots is null && ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules)) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        if (input is null || slots is null && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (rockTunnelRules ? CeladonApproachBattleScope.SharedCatalogCount(catalog) : route11Rules ? 79 : ssAnneRules ? 73 : vermilionRules ? 70 : billRules ? 68 : 65) || input.Party.IsDefaultOrEmpty || input.Party.Length > 6 ||
             input.ActiveIndex < 0 || input.ActiveIndex >= input.Party.Length || input.PlayerPartyIndex is < 0 or > 5 ||
             input.Party.Any(m => m is null || m.Pokemon is null)) return Fault("cerulean_switch_party");
-        if (source is not null && (!source.Matches(catalog,input.User,input.Target) || input.Trainer != source.State.Trainer ||
-            input.ActiveIndex != source.State.OpponentIndex || !input.Party.SequenceEqual(source.Party))) return Fault("source_trainer_switch_context_mismatch");
         if (slots is not null && (!slots.Matches(catalog, input.User, input.Target) || !slots.ActualParty.SequenceEqual(input.Party)))
             return Fault("source_four_trainer_switch_context");
-        if (source is null && slots is null)
+        if (slots is null)
         {
             if (CeruleanTrainerAi.ValidateCombatant(catalog,input.User,billRules,vermilionRules,ssAnneRules,vermilionGymRules, route11Rules, rockTunnelRules) is not null || CeruleanTrainerAi.ValidateCombatant(catalog,input.Target,billRules,vermilionRules,ssAnneRules,vermilionGymRules, route11Rules, rockTunnelRules) is not null ||
                 input.User.Pokemon.CurrentHp == 0 || input.Target.Pokemon.CurrentHp == 0 || input.User.SpeedBadgeBoost || input.User.AttackBadgeBoost || input.User.HeldItem != "ITEM_NONE")
@@ -46,7 +44,7 @@ public static class CeruleanTrainerActionAi
         var last = input.LastLandedMove is null || input.LastLandedMove.Value.Value is "pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" || slots?.Doubles != true && input.LastLandedMove.Value.Value == "pret:MOVE_STRUGGLE" ? null :
             catalog.Moves.GetValueOrDefault(input.LastLandedMove.Value);
         if (input.LastLandedMove is { } lastId && lastId.Value is not ("pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" or "pret:MOVE_STRUGGLE") &&
-            (last is null || !(source is not null || slots is not null ? MetronomeSourceMoveDefinition.Matches(last) : rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, last) : route11Rules ? Route11BattleScope.ValidDefinition(last) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(last) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(last) : vermilionRules ? VermilionBattleScope.ValidDefinition(last) : billRules ? BillBattleScope.ValidDefinition(last) : CeruleanBattleScope.ValidDefinition(last)))) return Fault("cerulean_switch_last_move");
+            (last is null || !(slots is not null ? MetronomeSourceMoveDefinition.Matches(last) : rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, last) : route11Rules ? Route11BattleScope.ValidDefinition(last) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(last) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(last) : vermilionRules ? VermilionBattleScope.ValidDefinition(last) : billRules ? BillBattleScope.ValidDefinition(last) : CeruleanBattleScope.ValidDefinition(last)))) return Fault("cerulean_switch_last_move");
         var current = rng; var trace = ImmutableArray.CreateBuilder<RandomTrace>();
         int Draw(string purpose,int bound)
         {
@@ -56,8 +54,8 @@ public static class CeruleanTrainerActionAi
         bool Living(int index) => slots?.SwitchEligible(index) ?? (index != input.ActiveIndex && input.Party[index].Pokemon.CurrentHp > 0);
         int? Replacement()
         {
-            if (slots is null) return SourceTrainerAi.Replacement(source!).PartyIndex;
-            var result = SourceFourTrainerAi.ReplacementCore(slots.WithTarget(slots.Target, current), forced: false);
+            var context = slots ?? throw new ArgumentException("Actual source positions are required for replacement.");
+            var result = SourceFourTrainerAi.ReplacementCore(context.WithTarget(context.Target, current), forced: false);
             if (!result.Succeeded) throw new ArgumentException(result.Fault);
             current = result.Rng; trace.AddRange(result.Trace); return result.PartyIndex;
         }
@@ -103,9 +101,9 @@ public static class CeruleanTrainerActionAi
                 celadonGymRules && input.User.Rooted || input.User.BindTurnsRemaining>0 || OtherSide("ABILITY_SHADOW_TAG") || OtherSide("ABILITY_ARENA_TRAP") ||
                 MagnetPull() && (species.Type1=="TYPE_STEEL" || species.Type2=="TYPE_STEEL")) return Done();
             if (!Enumerable.Range(0,input.Party.Length).Any(Living)) return Done();
-            if ((source is not null || slots is not null) && input.User.CalledVolatile?.PerishSongTimer == 0)
+            if (slots is not null && input.User.CalledVolatile?.PerishSongTimer == 0)
                 return Done(Replacement());
-            if ((source is not null || slots is not null) && slots?.Doubles != true && WildBattleEffective.Ability(input.Target) == "ABILITY_WONDER_GUARD" && !HasSuperEffective(true))
+            if (slots is not null && !slots.Doubles && WildBattleEffective.Ability(input.Target) == "ABILITY_WONDER_GUARD" && !HasSuperEffective(true))
                 for (int i=0;i<input.Party.Length;i++) {
                     if (!Living(i)) continue;
                     for (int slot=0;slot<input.Party[i].Pokemon.Moves.Length;slot++)
@@ -125,7 +123,7 @@ public static class CeruleanTrainerActionAi
                             return Done(i);
             }
             // Source overlays make Natural Cure reachable after Skill Swap/Role Play.
-            if ((source is not null || slots is not null) && WildBattleStatus.IsSleeping(input.User.Status) &&
+            if (slots is not null && WildBattleStatus.IsSleeping(input.User.Status) &&
                 WildBattleEffective.Ability(input.User)=="ABILITY_NATURAL_CURE" && input.User.Pokemon.CurrentHp>=input.User.Pokemon.Stats.MaxHp/2)
             {
                 if (last is null && Draw("natural-cure-no-last-move",2)!=0)

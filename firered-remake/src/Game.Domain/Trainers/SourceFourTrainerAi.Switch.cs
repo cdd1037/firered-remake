@@ -101,7 +101,7 @@ public static partial class SourceFourTrainerAi
         if (frame.Layout == SourceBattleLayout.Singles && SourceTrainerEncounterPolicy.Validate(catalog, frame) is { } encounter) return encounter;
         if (actor.Value >= frame.BattlerCount || actor.Side != BattleSide.Opponent || frame.Get(actor).Body is null || frame.Get(actor).Member is null)
             return "source_four_trainer_switch_actor";
-        if (stale != ForestTrainerCombatRules.NoMove && stale != WildBattleRules.StruggleMove &&
+        if (stale != SourceTrainerEncounterPolicy.NoMove && stale != WildBattleRules.StruggleMove &&
             (!catalog.Moves.TryGetValue(stale, out var move) || !MetronomeSourceMoveDefinition.Matches(move)))
             return "source_four_trainer_switch_stale_move";
         if (prepared.IsDefault) return null;

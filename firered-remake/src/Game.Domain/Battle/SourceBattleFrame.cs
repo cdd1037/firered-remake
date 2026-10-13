@@ -121,29 +121,6 @@ public sealed record SourcePendingSwitch(BattlerSlot Slot, WildBattleCalledSwitc
 public sealed record SourceEndTurnCursor(int Turn, ImmutableArray<BattlerSlot> Order,
     WildBattleSourceEndTurnStage Stage, int NextBattler, long MinimumRevision, long MinimumEventSequence,
     string RulesVersion);
-public sealed record SourceWildTurnCursor(ImmutableArray<BattlerSlot> Order, int PlayerMoveSlot,
-    int OpponentMoveSlot, int NextAction, SourceEndTurnCursor? EndTurn);
-
-/// <summary>Boundary encoding metadata only. No duplicate combatant, party, field or RNG authority.</summary>
-public sealed record SinglesBoundaryEncoding
-{
-    public bool HasPartyExtension { get; init; }
-    public string? PartyRulesVersion { get; init; }
-    public string? FieldRulesVersion { get; init; }
-    public string? DelayedRulesVersion { get; init; }
-    public string? SourceWildRulesVersion { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public CelioRoamerBattleOrigin? CelioRoamerBattleOrigin { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public VictoryRoadWildOrigin? VictoryRoadWildOrigin { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SixIslandWildOrigin? SixIslandWildOrigin { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public FiveIslandWildOrigin? FiveIslandWildOrigin { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public FourIslandWildOrigin? FourIslandWildOrigin { get; init; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SeviiRubyWildOrigin? SeviiRubyWildOrigin { get; init; }
-    public bool AwaitingReplacement { get; init; }
-    public bool ForestResidualsFinished { get; init; }
-    public bool ScriptedSnorlax { get; init; }
-    public PokemonTowerBattleKind? TowerBattleKind { get; init; }
-}
-
 /// <summary>Canonical identity/state substrate. This type alone admits no executable doubles recipes.</summary>
 public sealed record SourceBattleFrame
 {
@@ -176,13 +153,11 @@ public sealed record SourceBattleFrame
     public ImmutableArray<SourceSwitchReservation> Reservations { get; init; } = [];
     public ImmutableArray<SourcePendingSwitch> PendingSwitches { get; init; } = [];
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<SourcePreparedMedicine>? PreparedMedicines { get; init; }
-    public SourceWildTurnCursor? WildTurn { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceWildEncounterContext? WildEncounter { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.Trainers.SourceTrainerEncounterContext? TrainerEncounter { get; init; }
     public SourceFourActionCursor? FourTurn { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceFourRewardState? Rewards { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceEntryAbilityState? EntryAbilities { get; init; }
-    public SinglesBoundaryEncoding? SinglesEncoding { get; init; }
     [JsonIgnore] public int BattlerCount => Layout == SourceBattleLayout.Singles ? 2 : 4;
     public SourceBattleSlot Get(BattlerSlot slot) => Slots[slot.Value];
     public SourceBattleParty Party(BattleSide side) => Parties[(int)side];

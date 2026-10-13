@@ -8,10 +8,6 @@ public sealed partial class PretCampaignCatalog
     public PretNationalDexSource? NationalDexSource { get; }
     public bool NationalDexEnabled => NationalDexSource is not null;
 
-    public static PretCampaignCatalog LoadNationalDexProfile(string root, bool useCompactMapData = true,
-        string? nationalDexSourceRoot = null) => LoadPokemonLeagueProfile(root, useCompactMapData,
-            includeNationalDex: true, nationalDexSourceRoot: nationalDexSourceRoot);
-
     public CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies, IEnumerable<int> caughtSpecies)
     {
         if (!NationalDexEnabled) throw new InvalidDataException("national_dex_not_enabled");

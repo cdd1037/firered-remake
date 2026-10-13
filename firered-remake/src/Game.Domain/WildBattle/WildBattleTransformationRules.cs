@@ -106,17 +106,3 @@ public static class WildBattleTransformationRules
         return mon.Pokemon != expected ? "transform_view" : null;
     }
 }
-
-public static partial class WildBattleRules
-{
-    internal sealed partial class Execution
-    {
-        private bool TransformScript(PokemonCatalog catalog, WildBattleSide side, int slot, PokemonMoveDefinition move)
-        {
-            if (move.Effect != "EFFECT_TRANSFORM") return false;
-            new SinglesRecipeBridge(this).ExecuteCopyState(catalog, SinglesBattleAdapter.Slot(side),
-                SinglesBattleAdapter.Slot(Other(side)), slot, move);
-            return true;
-        }
-    }
-}

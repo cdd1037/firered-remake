@@ -47,8 +47,7 @@ internal static partial class SourceBattleItemRules
         if (items.Find(selection.Item) is not { } item) return "source_item_effect_unsupported";
         if (!(item.IsFixedEffect || item.IsPokeFlute || item.IsEscapeItem)) return item.Symbol == "ITEM_ENIGMA_BERRY" ? "source_item_enigma_data_required" : "source_item_effect_unsupported";
         if (item.IsEscapeItem && frame.BattleKind != WildBattleCalledBattleKind.Wild) return "source_item_escape_trainer";
-        if (item.IsEscapeItem && frame.SinglesEncoding is not { ScriptedSnorlax: false, TowerBattleKind: null } &&
-            frame.WildEncounter is not { ScriptedSnorlax: false, TowerBattleKind: null or PokemonTowerBattleKind.OrdinaryWild }) return "source_item_escape_special_scope";
+        if (item.IsEscapeItem && frame.WildEncounter is not { ScriptedSnorlax: false, TowerBattleKind: null or PokemonTowerBattleKind.OrdinaryWild }) return "source_item_escape_special_scope";
         if (SourceBattleInventoryRules.Quantity(inventory,item) == 0) return "source_item_not_in_bag";
         int index = Enumerable.Range(0,party.Length).FirstOrDefault(i => party[i].InstanceId == selection.TargetInstanceId,-1);
         if (index < 0) return "battle_medicine_target_identity";

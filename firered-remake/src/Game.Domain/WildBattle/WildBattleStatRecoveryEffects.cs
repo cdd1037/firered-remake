@@ -22,21 +22,3 @@ public static class WildBattleSourceRecovery
         return attackStage < 12 && currentHp > half ? half : 0;
     }
 }
-
-public static partial class WildBattleRules
-{
-    private static bool HasStatRecoveryRecipe(string effect) => SourceRecipeContext.HasStatRecoveryRecipe(effect);
-    static partial void AddCalledStatRecoverySupport(PokemonMoveDefinition move, ref bool supported)
-    {
-        if (MetronomeSourceMoveDefinition.Matches(move) && HasStatRecoveryRecipe(move.Effect)) supported = true;
-    }
-    internal sealed partial class Execution
-    {
-        partial void ExecuteCalledStatRecoveryEffect(PokemonCatalog catalog, WildBattleSide side, int slot,
-            PokemonMoveDefinition move, string purpose, ref bool handled) => Recipes.ExecuteStatRecovery(catalog, S(side), slot, move, purpose, ref handled);
-        private void SourceStatRecoveryHeal(WildBattleSide side, PokemonMoveDefinition move, int amount) => Recipes.SourceStatRecoveryHeal(S(side), move, amount);
-        private void SourceChangeStat(WildBattleSide side, WildBattleSide target, WildBattleStat stat, int amount, MoveId move,
-            ref bool preventionShown, bool secondary = false, bool certain = false) =>
-            Recipes.SourceChangeStat(S(side), S(target), stat, amount, move, ref preventionShown, secondary, certain);
-    }
-}

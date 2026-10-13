@@ -10,18 +10,6 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    /// <summary>Current regional-interaction profile; false selects its exact Snorlax predecessor.</summary>
-    public static PretCampaignCatalog LoadRegionalProfile(string root, bool includeFlavor = true) => Load(root,
-        includeStarterEvents:true, includeFirstBattle:true, includeOpeningItems:true,
-        includeViridianRegion:true, includeParcelQuest:true, includeCapture:true, includeViridianCenter:true,
-        includeOldManTutorial:true, includePartyTraining:true, includeForest:true, includeForestTrainers:true,
-        includePewter:true, includeEarlyShop:true, includeEarlyStarter:true, includeEarlyParty:true,
-        includePokemonStorage:true, includeFieldPickups:true, includeRepel:true, includeTownMap:true,
-        includeOakRating:true, includeRoute22:true, useCompactMapData:true, includeRoute3:true,
-        includeMagikarp:true, includeMtMoon:true, includeCerulean:true, includeBill:true, includeVermilion:true,
-        includeSsAnne:true, includeVermilionGym:true, includeCityServices:true, includeRoute11:true,
-        includeRockTunnel:true, includeCeladonApproach:true, includeCeladonGym:true,
-        includeRocketHideout:true, includePokemonTower:true, includeSnorlax:true, includeRegionalFlavor:includeFlavor);
 
     public bool RegionalFlavorEnabled { get; }
     public bool SupportsRegionalFlavor(MapId map) => RegionalFlavorEnabled &&

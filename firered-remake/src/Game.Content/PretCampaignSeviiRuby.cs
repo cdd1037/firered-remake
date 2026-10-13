@@ -22,12 +22,6 @@ public sealed partial class PretCampaignCatalog
     public SeviiRubyItemContent? SeviiRubyItems { get; }
     public bool SeviiRubyEnabled => SeviiRubyRegion is not null;
 
-    public static PretCampaignCatalog LoadSeviiRubyProfile(string root, bool useCompactMapData = true,
-        string? seviiRubyContentRoot = null, string? seviiRubyRulesRoot = null, string? nationalDexSourceRoot = null) =>
-        LoadPokemonLeagueProfile(root, useCompactMapData, includeNationalDex: true,
-            nationalDexSourceRoot: nationalDexSourceRoot, includeSeviiRuby: true,
-            seviiRubyContentRoot: seviiRubyContentRoot, seviiRubyRulesRoot: seviiRubyRulesRoot);
-
     private static void AppendSeviiRubySources(PretSeviiRubyRegion region, List<PretSourceScriptFile> sources,
         List<string> texts, Dictionary<string, int> constants, List<string> hashes)
     {

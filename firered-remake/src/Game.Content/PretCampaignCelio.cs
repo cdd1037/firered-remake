@@ -24,19 +24,6 @@ public sealed partial class PretCampaignCatalog
             .Concat(new[] { "PokemonLeague.Rematch", "CeruleanCave", "Mewtwo", "FourIsland_LoreleisHouse", "HoennLink.Multiplayer" })
             .ToImmutableArray();
 
-    public static PretCampaignCatalog LoadCelioProfile(string root, bool useCompactMapData = true,
-        string? celioContentRoot = null, string? fiveIslandContentRoot = null, string? fiveIslandRulesRoot = null,
-        string? sixIslandContentRoot = null, string? sixIslandRulesRoot = null,
-        string? fourIslandContentRoot = null, string? fourIslandRulesRoot = null,
-        string? seviiRubyContentRoot = null, string? seviiRubyRulesRoot = null, string? nationalDexSourceRoot = null) =>
-        LoadPokemonLeagueProfile(root, useCompactMapData, includeNationalDex: true,
-            nationalDexSourceRoot: nationalDexSourceRoot, includeSeviiRuby: true,
-            seviiRubyContentRoot: seviiRubyContentRoot, seviiRubyRulesRoot: seviiRubyRulesRoot,
-            includeFourIsland: true, fourIslandContentRoot: fourIslandContentRoot, fourIslandRulesRoot: fourIslandRulesRoot,
-            includeSixIsland: true, sixIslandContentRoot: sixIslandContentRoot, sixIslandRulesRoot: sixIslandRulesRoot,
-            includeFiveIsland: true, fiveIslandContentRoot: fiveIslandContentRoot, fiveIslandRulesRoot: fiveIslandRulesRoot,
-            includeCelio: true, celioContentRoot: celioContentRoot);
-
     private static void ValidateCelioComposition(ImmutableDictionary<MapId, PretWorldMap> maps, PretStoryCompilation scripts,
         CampaignPokemonContent pokemon, CelioPokemonContent celio, FiveIslandOwnedPokemonCatalog owned,
         FiveIslandOpponentPokemonCatalog opponents, FiveIslandMachineCatalog machines)

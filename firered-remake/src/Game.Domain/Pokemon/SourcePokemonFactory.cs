@@ -26,12 +26,10 @@ public static class SourcePokemonValidator
 
     /// <summary>Validates the actual source frame, including Transform originals and donor snapshots,
     /// copied-move slots and ability overlay provenance; never replace permanent identity with live data.</summary>
-    public static string? ValidateLive(SourceMechanicsCatalog catalog, WildBattleState state)
+    public static string? ValidateLive(SourceMechanicsCatalog catalog, SourceBattleFrame frame)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (!SourceBattleAdmission.IsCanonicalSourceState(catalog.Catalog, state)) return "source_mechanics_rules_profile";
-        return WildBattleRules.IsSourceWild(state) ? WildBattleRules.Validate(catalog.Catalog, state) :
-            WildBattleRules.ValidateCalledMoveActionState(catalog.Catalog, state);
+        return SourceFourActionTurns.ValidateCapability(catalog.Catalog, frame);
     }
 
     internal static string? ValidateForBattle(PokemonCatalog? catalog, PokemonInstance? pokemon) =>

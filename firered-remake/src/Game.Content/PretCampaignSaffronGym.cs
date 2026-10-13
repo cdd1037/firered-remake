@@ -21,8 +21,6 @@ public sealed partial class PretCampaignCatalog
     SaffronGymTrainerCatalog? ICampaignCatalog.SaffronGymTrainerParties=>SaffronGymTrainers is {} t?new(t.SourceCommit,t.Profile,t.CompleteSourceRoster,t.Trainers,t.Battles):null;
     public bool SupportsTeleportPads(MapId map)=>SilphEnabled&&SilphRegion!.NewMaps.ContainsKey(map)&&map.Value.StartsWith("map.silph-co-",StringComparison.Ordinal)||
         SaffronGymEnabled&&map.Value=="map.saffron-city-gym"&&SaffronGymRegion!.NewMaps.ContainsKey(map);
-    public static PretCampaignCatalog LoadSaffronGymProfile(string root,bool useCompactMapData=true,string? saffronGymContentRoot=null)=>
-        LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,includeSilph:true,includeSaffronGym:true,saffronGymContentRoot:saffronGymContentRoot);
 
     private static void AppendSaffronGymSources(PretSaffronGymRegion region,PretSaffronGymItemsDocument items,List<PretSourceScriptFile> sources,List<string> texts,
         Dictionary<string,int> constants,List<string> hashes)

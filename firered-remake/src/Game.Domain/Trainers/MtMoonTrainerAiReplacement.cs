@@ -47,7 +47,7 @@ public static class MtMoonTrainerAiReplacement
             }
             invalid[best] = true;
         }
-        bool none = input.StaleCurrentMove == ForestTrainerCombatRules.NoMove;
+        bool none = input.StaleCurrentMove == SourceTrainerEncounterPolicy.NoMove;
         bool struggle = input.StaleCurrentMove == WildBattleRules.StruggleMove;
         var stale = none || struggle ? null : catalog.Moves[input.StaleCurrentMove];
         int power = none ? 0 : struggle ? 50 : stale!.Power;

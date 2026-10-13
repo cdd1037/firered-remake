@@ -30,9 +30,6 @@ public sealed partial class PretCampaignCatalog
         ??SaffronGymSpeciesNames.GetValueOrDefault(species)
         ??CinnabarSpeciesName(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
-    public static PretCampaignCatalog LoadSilphProfile(string root,bool useCompactMapData=true,string? silphContentRoot=null)=>
-        LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,
-            includeSilph:true,silphContentRoot:silphContentRoot);
 
     private static void AppendSilphSources(PretSilphRegion region,PretSilphItemsDocument items,
         List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants,List<string> hashes)

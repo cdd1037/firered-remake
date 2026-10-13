@@ -22,32 +22,3 @@ public static class SnorlaxBattleContract
         mon.Moves.Select(x => (x.Move.Value,x.CurrentPp,x.MaximumPp,x.PpUps)).SequenceEqual(new[] {
             ("pret:MOVE_HEADBUTT",15,15,0),("pret:MOVE_YAWN",10,10,0),("pret:MOVE_REST",10,10,0),("pret:MOVE_SNORE",15,15,0) });
 }
-public static partial class WildBattleRules
-{
-    public static WildBattleResult StartSnorlax(PokemonCatalog catalog, WildBattleCombatant player,
-        WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain = WildBattleTerrain.Plain, bool fuchsiaRules = false)
-    {
-        if (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) != (fuchsiaRules ? 107 : 102)) return Fail(null,"snorlax_catalog_required");
-        if (opponent?.Pokemon is not {} mon || !SnorlaxBattleContract.SourceInitialInstance(mon) || opponent.Status != 0 || opponent.HeldItem != "ITEM_NONE" || opponent.KnockedOffItem is not null)
-            return Fail(null,"snorlax_scripted_identity");
-        return StartCore(catalog,player,opponent,rng,fuchsiaRules ? FuchsiaRulesVersion : SnorlaxRulesVersion,terrain,false,null,true);
-    }
-    internal static bool SnorlaxSleepTalkCandidate(PokemonCatalog catalog, WildBattleCombatant mon, WildBattleCombatant? foe, int slot)
-    {
-        if (slot < 0 || slot >= mon.Pokemon.Moves.Length) return false;
-        var id = mon.Pokemon.Moves[slot].Move; var move = catalog.Moves[id];
-        if (id.Value is "pret:MOVE_NONE" or "pret:MOVE_SLEEP_TALK" or "pret:MOVE_ASSIST" or "pret:MOVE_MIRROR_MOVE" or "pret:MOVE_METRONOME" or "pret:MOVE_FOCUS_PUNCH" or "pret:MOVE_UPROAR") return false;
-        if (move.Effect is "EFFECT_SKULL_BASH" or "EFFECT_RAZOR_WIND" or "EFFECT_SKY_ATTACK" or "EFFECT_SOLAR_BEAM" or "EFFECT_SEMI_INVULNERABLE" or "EFFECT_BIDE") return false;
-        if (mon.DisabledMove == id && mon.DisableTurnsRemaining > 0) return false;
-        if (foe?.Imprison == true && foe.Pokemon.Moves.Any(m => m.Move == id)) return false;
-        if (mon.EncoreTurnsRemaining > 0 && mon.EncoreMoveSlot is {} encore && mon.Pokemon.Moves[encore].Move != id) return false;
-        return true;
-    }
-    private static string? ValidateSnorlaxKind(WildBattleState state)
-    {
-        if (state.RulesVersion is not (SnorlaxRulesVersion or FuchsiaRulesVersion) && (state.ScriptedSnorlax || state.Player.YawnTurnsRemaining != 0 || state.Opponent.YawnTurnsRemaining != 0)) return "snorlax_state_profile";
-        if (!state.ScriptedSnorlax) return null;
-        if (state.TowerBattleKind is not null || state.Opponent.Pokemon.SourceSpeciesId != 143 || state.Opponent.Pokemon.Level != 30) return "snorlax_scripted_identity";
-        return null;
-    }
-}

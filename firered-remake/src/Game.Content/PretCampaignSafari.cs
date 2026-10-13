@@ -16,9 +16,6 @@ public sealed partial class PretCampaignCatalog
     public PretSafariEncounters? SafariEncounters { get; }
     public bool SafariEnabled => SafariRegion is not null;
 
-    public static PretCampaignCatalog LoadSafariProfile(string root, bool useCompactMapData = true) =>
-        LoadFuchsiaGymProfile(root, useCompactMapData, includePresetDoubles: true, includeSafari: true);
-
     private static void AppendSafariSources(PretSafariRegion region, PretSafariItems items,
         List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants, List<string> hashes)
     {

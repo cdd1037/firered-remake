@@ -157,7 +157,7 @@ public static partial class SourceWildBattlePolicy
         if (frame.WildEncounter is not { } context) return null;
         if (context.RulesVersion != SourceWildEncounterContext.Version || frame.Layout != SourceBattleLayout.Singles ||
             frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version || frame.BattleKind != WildBattleCalledBattleKind.Wild ||
-            frame.Party(BattleSide.Opponent).Members.Length != 1 || frame.SinglesEncoding is not null || frame.WildTurn is not null)
+            frame.Party(BattleSide.Opponent).Members.Length != 1)
             return "source_wild_policy_identity";
         int origins = new object?[] { context.CelioRoamer, context.VictoryRoad, context.SeviiRuby, context.FourIsland,
             context.SixIsland, context.FiveIsland, context.TowerBattleKind }.Count(x => x is not null) +
@@ -168,7 +168,7 @@ public static partial class SourceWildBattlePolicy
         if (context.ScriptedSnorlax && (mon.SourceSpeciesId != 143 || mon.Level != 30)) return "snorlax_scripted_identity";
         if (ValidateTower(context, mon, frame.Outcome) is { } tower) return tower;
         if (context.CelioRoamer is { } roamer && (frame.SourceCampaignRulesVersion != CelioOwnedPokemonCatalog.Profile ||
-            roamer.OpponentRunSelected || !CelioRoamerBattleContract.MatchesIdentity(roamer, mon) || !CelioRoamerBattleContract.MatchesOutcome(roamer, frame.Outcome)))
+            !CelioRoamerBattleContract.MatchesIdentity(roamer, mon) || !CelioRoamerBattleContract.MatchesOutcome(roamer, frame.Outcome)))
             return "source_wild_roamer_origin";
         if (context.VictoryRoad is { } victory && !VictoryRoadWildBattleContract.Matches(victory, mon) ||
             context.SeviiRuby is { } ruby && (ruby.Kind == SeviiRubyEncounterKind.RockSmash || !SeviiRubyWildBattleContract.Matches(ruby, mon)) ||

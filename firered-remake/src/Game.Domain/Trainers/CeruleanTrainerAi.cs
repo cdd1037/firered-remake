@@ -14,7 +14,7 @@ public static class CeruleanTrainerAi
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-cerulean-trainer-ai-semantic-v1";
 
-    public static CeruleanTrainerAiDecision Choose(PokemonCatalog catalog, CeruleanTrainerAiInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool userReflect = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false, SourceTrainerAiContext? source = null, SourceTrainerAiSlotContext? slots = null)
+    public static CeruleanTrainerAiDecision Choose(PokemonCatalog catalog, CeruleanTrainerAiInput input, RngState rng, bool billRules = false, bool vermilionRules = false, bool ssAnneRules = false, bool vermilionGymRules = false, bool route11Rules = false, bool rain = false, bool rockTunnelRules = false, bool reflect = false, bool celadonGymRules = false, bool userReflect = false, bool rocketHideoutRules = false, bool towerRules = false, bool fuchsiaRules = false, SourceTrainerAiSlotContext? slots = null)
     {
         towerRules |= fuchsiaRules;
         rocketHideoutRules |= towerRules;
@@ -26,12 +26,11 @@ public static class CeruleanTrainerAi
         vermilionGymRules |= route11Rules; ssAnneRules |= vermilionGymRules;
         vermilionRules |= ssAnneRules;
         billRules |= vermilionRules;
-        if (catalog is null || slots is null && source is null && ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules)) return Fault("celadon_gym_trainer_ai_catalog_scope");
-        string? error = slots is not null ? slots.Validate(catalog, input, rng) : source is null ? Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules) :
-            !source.Matches(catalog, input.User, input.Target) || input.AiFlags != SourceTrainerAi.Flags(source.State.Trainer) ? "source_trainer_ai_context_mismatch" : null;
+        if (catalog is null || slots is null && ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 98) != (celadonGymRules && !rocketHideoutRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) == 99) != (rocketHideoutRules && !towerRules) || (Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(catalog) is 101 or 102) != (towerRules && !fuchsiaRules) || (catalog.Species.Count == 107) != fuchsiaRules)) return Fault("celadon_gym_trainer_ai_catalog_scope");
+        string? error = slots is not null ? slots.Validate(catalog, input, rng) : Validate(catalog, input, billRules, vermilionRules, ssAnneRules, vermilionGymRules, route11Rules, rockTunnelRules);
         if (error is not null) return Fault(error);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("cerulean_trainer_ai_rng_algorithm");
-        bool Usable(int slot) => slots is not null ? slots.IsUsable(slot) : (source is null ? WildBattleRules.IsMoveSelectable(input.User, slot) : WildBattleRules.IsCalledMoveSelectable(catalog, input.User, slot)) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move));
+        bool Usable(int slot) => slots is not null ? slots.IsUsable(slot) : WildBattleRules.IsMoveSelectable(input.User, slot) && (!route11Rules || !input.Target.Imprison || slot >= input.User.Pokemon.Moves.Length || !input.Target.Pokemon.Moves.Any(m => m.Move == input.User.Pokemon.Moves[slot].Move));
         if (!Enumerable.Range(0, 4).Any(Usable)) return Fault("cerulean_trainer_ai_struggle_required");
         var current = rng;
         var trace = ImmutableArray.CreateBuilder<RandomTrace>();
@@ -42,8 +41,8 @@ public static class CeruleanTrainerAi
             current = next.State; trace.Add(next.Trace); return next.Trace.Result;
         }
         var targetSpecies = catalog.Species[input.Target.Pokemon.Species];
-        bool sourceTypes = source is not null || slots is not null;
-        var facts = sourceTypes ? new SourceTrainerAiFacts(source, slots) : null;
+        bool sourceTypes = slots is not null;
+        var facts = slots is not null ? new SourceTrainerAiFacts(slots) : null;
         var targetTypes = !sourceTypes ? (targetSpecies.Type1, targetSpecies.Type2) : WildBattleEffective.Types(catalog, input.Target);
         string Ability(int slot, string reason)
         {
@@ -70,7 +69,7 @@ public static class CeruleanTrainerAi
             for (int slot = 0; slot < input.User.Pokemon.Moves.Length; slot++)
             {
                 var move = catalog.Moves[input.User.Pokemon.Moves[slot].Move];
-                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain, reflect: rockTunnelRules && reflect, source: source, slots: slots);
+                if (move.Power > 1) prediction[slot] = Predict(catalog, input.User, input.Target, move, simulated[slot], rain: route11Rules && rain, reflect: rockTunnelRules && reflect, slots: slots);
             }
             void Score(int slot, int change) => scores[slot] = Math.Max(0, scores[slot] + change);
             if (facts is not null)
@@ -511,16 +510,16 @@ public static class CeruleanTrainerAi
     // AI_CalcDmg uses base power, without execution's variable-power preprocessing. TypeCalc
     // applies STAB but Levitate only sets a discarded local flag, leaving damage nonzero.
     internal static int Predict(PokemonCatalog catalog, WildBattleCombatant user, WildBattleCombatant target,
-        PokemonMoveDefinition move, int percent, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiContext? source = null, SourceTrainerAiSlotContext? slots = null)
+        PokemonMoveDefinition move, int percent, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiSlotContext? slots = null)
     {
-        int value = BasePrediction(user, target, move.Power, ParseType(move.Type), move.Effect, clearUserAbility, rain, reflect, source, slots, move.Target);
-        value = TypePrediction(catalog, user, target, move, value, source is not null || slots is not null);
+        int value = BasePrediction(user, target, move.Power, ParseType(move.Type), move.Effect, clearUserAbility, rain, reflect, slots, move.Target);
+        value = TypePrediction(catalog, user, target, move, value, slots is not null);
         return Math.Max(1, value * percent / 100);
     }
     internal static int BasePrediction(WildBattleCombatant user, WildBattleCombatant target, int power, ElementType type,
-        string? effect, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiContext? source = null, SourceTrainerAiSlotContext? slots = null, string? moveTarget = null)
+        string? effect, bool clearUserAbility = false, bool rain = false, bool reflect = false, SourceTrainerAiSlotContext? slots = null, string? moveTarget = null)
     {
-        var facts = source is not null || slots is not null ? new SourceTrainerAiFacts(source, slots) : null;
+        var facts = slots is not null ? new SourceTrainerAiFacts(slots) : null;
         bool physical = TypeRules.Category(type) == DamageCategory.Physical;
         int attack = physical ? user.Pokemon.Stats.Attack : user.Pokemon.Stats.SpecialAttack;
         int defense = physical ? target.Pokemon.Stats.Defense : target.Pokemon.Stats.SpecialDefense;

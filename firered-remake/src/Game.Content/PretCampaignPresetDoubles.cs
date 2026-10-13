@@ -10,6 +10,4 @@ public sealed partial class PretCampaignCatalog
     public PokemonCatalog? PresetDoublePokemon { get; }
     public SourceMechanicsCatalog? PresetDoubleMechanics { get; }
     public SourceBattleItemCatalog? PresetDoubleItems { get; }
-    public static PretCampaignCatalog LoadPresetDoublesProfile(string root, bool useCompactMapData = true) =>
-        LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true);
 }

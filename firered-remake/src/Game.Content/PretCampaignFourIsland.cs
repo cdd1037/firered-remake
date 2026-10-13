@@ -25,14 +25,6 @@ public sealed partial class PretCampaignCatalog
     public FourIslandWaterEncounterCatalog? FourIslandWaterEncounters { get; }
     public bool FourIslandEnabled => FourIslandRegion is not null;
 
-    public static PretCampaignCatalog LoadFourIslandProfile(string root, bool useCompactMapData = true,
-        string? fourIslandContentRoot = null, string? fourIslandRulesRoot = null,
-        string? seviiRubyContentRoot = null, string? seviiRubyRulesRoot = null, string? nationalDexSourceRoot = null) =>
-        LoadPokemonLeagueProfile(root, useCompactMapData, includeNationalDex: true,
-            nationalDexSourceRoot: nationalDexSourceRoot, includeSeviiRuby: true,
-            seviiRubyContentRoot: seviiRubyContentRoot, seviiRubyRulesRoot: seviiRubyRulesRoot,
-            includeFourIsland: true, fourIslandContentRoot: fourIslandContentRoot, fourIslandRulesRoot: fourIslandRulesRoot);
-
     private static void AppendFourIslandSources(PretFourIslandRegion region, List<PretSourceScriptFile> sources,
         List<string> texts, Dictionary<string, int> constants, List<string> hashes)
     {

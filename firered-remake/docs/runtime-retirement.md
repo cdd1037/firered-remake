@@ -1,8 +1,10 @@
 # Current runtime retirement
 
 The maintained game is `firered-current-campaign-v1`. This slice deletes
-historical runtime selection; unsupported saves fail explicitly. It does not
-change Domain battle executors, source catalog factories or trainer wiring.
+historical runtime selection; unsupported saves fail explicitly. The original
+runtime-retirement slice left Domain battle executors, source catalog factories
+and trainer wiring unchanged. Their later canonical cutover and retirement are
+recorded in [the current integration status](project-refactor-plan.md#2026-10-13-content-specialization-and-battle-owner-retirement).
 
 ## Removed runtime and tools
 
@@ -19,6 +21,12 @@ change Domain battle executors, source catalog factories or trainer wiring.
   retired replay commands return usage/exit 2 without publishing files.
 - 46 historical regional/feature `scripts/launch-*.sh` scripts and the
   historical `launch_campaign` dispatcher. Git retains their source history.
+- Historical per-region `dev` runner branches. The maintained dispatcher shrinks
+  from 1,014 to 140 lines and exposes only current product/contracts, current
+  checkpoint/battle checks, toolchain setup/doctor, probe/export/P0 and supported
+  Tooling commands. For example, `./dev test-forest` returns exit 2 with
+  `unknown_or_retired_command` without running gameplay. Original runners remain
+  reproducible from their historical Git revision.
 
 ## Remaining current consumers
 
@@ -38,12 +46,29 @@ change Domain battle executors, source catalog factories or trainer wiring.
 
 ## Default build/test and historical source
 
-`./dev build` restores/builds `FireRed.Current.slnx`: the five product assemblies,
-current composition and shared lifecycle contracts, five foundational Domain/transaction/story suites
-and original content fixture verifier. Current locked restore uses the installed, toolchain-hash-verified official Godot package directory; it does not perform a network vulnerability lookup for this offline-only package set. `./dev test` runs those seven contract
-suites plus the content verifier. `./dev test-current-checkpoints HANDOFF BILL
-NEW_OUTPUT` adds the two selected real checkpoint checks. Source content must
-be available under the project root, as for current gameplay.
+`./dev build` restores/builds all 16 projects in `FireRed.Current.slnx`: the five
+product assemblies, current composition, shared lifecycle and trainer-policy
+contracts, canonical wild/trainer Application suites, five foundational
+Domain/transaction/story suites and the original content fixture verifier.
+Current locked restore uses the installed, toolchain-hash-verified official
+Godot package directory; it does not perform a network vulnerability lookup for
+this offline-only package set.
+
+`./dev test` runs eight contract suites: CurrentComposition, SourceLifecycle,
+SourceTrainerPolicy and the five foundation suites, plus the content verifier.
+The two canonical Application suites compile by default but run only through
+`./dev test-current-battles CURRENT_CHECKPOINT OUTPUT_DIRECTORY`, which requires
+a strict current checkpoint and a new output directory. The trainer suite also
+requires its two exact private proof inputs documented in
+[its README](../tests/Game.CanonicalTrainerApplication.Tests/README.md); passing
+an unrelated current checkpoint does not replace those inputs. The dispatcher
+checks their presence and refuses an existing output directory before either
+Application suite runs.
+
+`./dev test-current-checkpoints HANDOFF BILL NEW_OUTPUT` adds the two selected
+real checkpoint checks. Authenticated source content must be available under
+the project root, as for current gameplay. Missing fixtures are prerequisite
+failures, not skipped passes.
 
 The larger `FireRed.sln` remains an optional source-test index. Exactly 52 test
 projects that compile against deleted campaign APIs are removed from it. Their
@@ -53,10 +78,15 @@ descriptor with an explicit include of deleted `SaveUpgradeProfiles.cs` is kept
 as `Game.ToolingUpgrade.Tests.csproj.archived`; there is no dangling active
 Compile include or runtime stub. Other historical
 fixtures may still compile but cannot demand an old runtime from the current-only
-constructor. Existing named historical `dev` runners remain evidence workflows,
-are omitted from current help, and are not promised runnable against current
-assemblies. Use the historical source revision to reproduce historical results.
+constructor. Named historical `dev` runners have been deleted from the current
+dispatcher. Use the historical source revision to reproduce historical results.
 No full historical solution or journey replay is an acceptance gate here.
+
+After physical battle-owner retirement, the two source-wild migration comparison
+suites preserve their original program/project/runner/lock files under `archive/`
+with `.txt` suffixes and retain all existing evidence. Their prior passes are
+historical; they are no longer current executable gates. See
+[battle-owner retirement](r3-battle-owner-retirement.md).
 
 ## Fixed baseline and verification
 
@@ -76,3 +106,12 @@ cover conversion, destination/source collision, malformed envelope, double
 conversion and both retired command refusals. The report in
 `evidence/runtime-retirement/verification.json` records final commands and scope.
 Headless startup does not establish native visual or audible-output acceptance.
+
+These are the original runtime-retirement candidate results. The subsequent
+combined 16-project build with Content specialization, both canonical Application
+cutovers and Domain retirement passed with zero warnings/errors in 57.52 seconds.
+Default current tests and the content verifier passed, as did 67 real-checkpoint
+checks, 53 ordinary-wild checks/11 public commands and 524 trainer checks/494
+public commands. These were actual combined-tree runs. See
+[build evidence](../evidence/refactor-final-20261013/build.log) and
+[the latest integration result and remaining field-dispatch cleanup](project-refactor-plan.md#2026-10-13-content-specialization-and-battle-owner-retirement).

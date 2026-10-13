@@ -1,0 +1,160 @@
+{
+  "PlayerSha256": "acea37c6dbbb137b06d1352c62ff1b7b74788df6419d8eedd467eab6023d517e",
+  "OpponentSha256": "af679c1e9671dd4fbb128edf6f943f10e96fe0b78e206c5964b2f24df1c5284d",
+  "PlayerStatus": 0,
+  "OpponentStatus": 0,
+  "Rng": {
+    "Seed": 639010170,
+    "Cursor": 21,
+    "AlgorithmId": "gen3-lcg32-hi16-v1"
+  },
+  "RandomTurnNumber": 9750,
+  "Turn": 1,
+  "Outcome": 0,
+  "Trace": [
+    {
+      "Cursor": 6,
+      "Purpose": "wild-battle.opponent.struggle-target",
+      "Before": 382341610,
+      "After": 2323336469,
+      "Raw": 35451,
+      "Bound": 2,
+      "Result": 1
+    },
+    {
+      "Cursor": 7,
+      "Purpose": "wild-battle.opponent.struggle-target",
+      "Before": 2323336469,
+      "After": 2067437668,
+      "Raw": 31546,
+      "Bound": 2,
+      "Result": 0
+    },
+    {
+      "Cursor": 8,
+      "Purpose": "wild-battle.opponent.accuracy",
+      "Before": 2067437668,
+      "After": 2478422791,
+      "Raw": 37817,
+      "Bound": 100,
+      "Result": 17
+    },
+    {
+      "Cursor": 9,
+      "Purpose": "wild-battle.opponent.critical",
+      "Before": 2478422791,
+      "After": 3950716014,
+      "Raw": 60283,
+      "Bound": 16,
+      "Result": 11
+    },
+    {
+      "Cursor": 10,
+      "Purpose": "wild-battle.opponent.damage",
+      "Before": 3950716014,
+      "After": 3818678089,
+      "Raw": 58268,
+      "Bound": 16,
+      "Result": 12
+    },
+    {
+      "Cursor": 11,
+      "Purpose": "wild-battle.player.struggle-target",
+      "Before": 3818678089,
+      "After": 4236679304,
+      "Raw": 64646,
+      "Bound": 2,
+      "Result": 0
+    },
+    {
+      "Cursor": 12,
+      "Purpose": "wild-battle.player.struggle-target",
+      "Before": 4236679304,
+      "After": 150520411,
+      "Raw": 2296,
+      "Bound": 2,
+      "Result": 0
+    },
+    {
+      "Cursor": 13,
+      "Purpose": "wild-battle.player.struggle-target",
+      "Before": 150520411,
+      "After": 176479026,
+      "Raw": 2692,
+      "Bound": 2,
+      "Result": 0
+    },
+    {
+      "Cursor": 14,
+      "Purpose": "wild-battle.player.struggle-target",
+      "Before": 176479026,
+      "After": 805761213,
+      "Raw": 12294,
+      "Bound": 2,
+      "Result": 0
+    },
+    {
+      "Cursor": 15,
+      "Purpose": "wild-battle.player.struggle-target",
+      "Before": 805761213,
+      "After": 3212605164,
+      "Raw": 49020,
+      "Bound": 2,
+      "Result": 0
+    },
+    {
+      "Cursor": 16,
+      "Purpose": "wild-battle.player.struggle-target",
+      "Before": 3212605164,
+      "After": 1522723567,
+      "Raw": 23234,
+      "Bound": 2,
+      "Result": 0
+    },
+    {
+      "Cursor": 17,
+      "Purpose": "wild-battle.player.struggle-target",
+      "Before": 1522723567,
+      "After": 1819097654,
+      "Raw": 27757,
+      "Bound": 2,
+      "Result": 1
+    },
+    {
+      "Cursor": 18,
+      "Purpose": "wild-battle.player.accuracy",
+      "Before": 1819097654,
+      "After": 771923313,
+      "Raw": 11778,
+      "Bound": 100,
+      "Result": 78
+    },
+    {
+      "Cursor": 19,
+      "Purpose": "wild-battle.player.critical",
+      "Before": 771923313,
+      "After": 3648771984,
+      "Raw": 55675,
+      "Bound": 16,
+      "Result": 11
+    },
+    {
+      "Cursor": 20,
+      "Purpose": "wild-battle.player.damage",
+      "Before": 3648771984,
+      "After": 2663975107,
+      "Raw": 40649,
+      "Bound": 16,
+      "Result": 9
+    },
+    {
+      "Cursor": 21,
+      "Purpose": "wild-battle.turn-end.random-turn-number",
+      "Before": 2663975107,
+      "After": 639010170,
+      "Raw": 9750,
+      "Bound": 65536,
+      "Result": 9750
+    }
+  ]
+}

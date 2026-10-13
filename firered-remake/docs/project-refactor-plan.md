@@ -1,6 +1,8 @@
-# Project refactor: completed slice and remaining work
+# Project refactor: current integration and historical evidence
 
-**Status, 2026-10-13: the project-level refactor is incomplete.** Commit `8940b9b` completed the four bounded changes listed below, source synchronization and the stage10 backup. Those results do not establish that regional composition, Application wiring or battle execution have been consolidated. Earlier wording describing the overall refactor as completed was too broad.
+**Status, 2026-10-13: current composition and battle-owner retirement passed combined validation; bounded field-encounter cleanup and final delivery remain.** The validated tree has the sole public Content loader, shared trainer bindings, canonical wild/trainer Application ownership and physical retirement of the competing Domain executors. The 16-project build and focused current contracts passed. This does not establish that every historical capability branch is gone: current-always-true profile branches in field encounter/fishing dispatch remain a separate bounded cleanup. See [the latest integration snapshot](#2026-10-13-content-specialization-and-battle-owner-retirement).
+
+Commit `8940b9b` completed only the four bounded changes listed below, source synchronization and the stage10 backup. Earlier wording describing the overall refactor as completed at that commit was too broad. Preserve those results as evidence of their original slice.
 
 The original first-clear instruction included project cleanup and a pause. Development resumed on the user's explicit 2026-10-12 23:42 UTC instruction. The latest 2026-10-13 direction explicitly requests deeper refactoring afterward, prioritizes project quality over historical baggage, and permits invalidating old saves; useful milestone saves may be converted manually. The Five Island / Celio and Ruby/Sapphire delivery and full Drive package are complete at `687d0c9`; the remaining refactor below is now executing. This correction does not stop the current product work or reinstate the old pause.
 
@@ -37,11 +39,11 @@ The target is one maintained current-game composition and one authoritative ordi
 - Preserve authenticated content provenance, ownership versus opponent admission, command transactions, event order and RNG behavior. These are correctness boundaries. Removing an old regional feature gate must not grant unsupported story content or silently change active mechanics.
 - Consolidate in reviewable slices. No framework migration, arbitrary line-count target, generic plug-in system or wholesale battle rewrite is required.
 
-## Remaining execution list, ordered by benefit and risk
+## Execution requirements and latest status
 
 ### R1 — Consolidate profile, capability and catalog selection
 
-**Status: current composition, historical diagnostic/upgrade runtime retirement and current map-presentation selection implemented. Regional source-proof construction remains explicit because current authenticated content still depends on it; it is not a selectable historical game runtime. Current battle admission is coordinated with R3. Benefit: high. Risk: medium.**
+**Status: current composition/loader retirement passed combined validation. `LoadCurrent` is the sole public catalog factory. The generic loader, its 60 booleans/24 alternate roots and 22 regional public profile wrappers are removed. Current startup, saves, diagnostic/upgrade runtime retirement and map-presentation bindings are implemented. Field encounter/fishing dispatch still has redundant current-profile branches awaiting bounded cleanup; typed regional source proofs remain required authenticated construction inputs. Benefit: high. Risk: medium.**
 
 Original inventory (the startup and session selectors below have since been removed; retained source-proof/catalog and battle ownership work is distinguished in the dated results):
 
@@ -61,9 +63,9 @@ Acceptance: current startup selects exactly one profile; new saves strictly Cont
 
 ### R2 — Consolidate repeated Application wiring
 
-**Status: open. Benefit: high. Risk: medium.**
+**Status: shared current trainer bindings and canonical entry passed combined validation. The pre-Fuchsia executor matrix and discarded-party sight preflight are removed. Explicit scene, callback and double/rematch policies remain. This does not claim that every field-content selector has been consolidated. Benefit: high. Risk: medium.**
 
-Evidence:
+Original inventory, before the binding and Application cutovers:
 
 - [CampaignOrdinaryTrainers.cs](../src/Game.Application/CampaignOrdinaryTrainers.cs), `OrdinaryTrainer` and `OrdinaryTrainerScript`, manually route each region through repeated selections.
 - [CampaignFiveIslandTrainers.cs](../src/Game.Application/CampaignFiveIslandTrainers.cs) and [CampaignSixIslandTrainers.cs](../src/Game.Application/CampaignSixIslandTrainers.cs) repeat trainer lookup, source-script projection, ordinary actor/wait validation and history-origin checks.
@@ -79,9 +81,9 @@ Acceptance: current ordinary trainer, Five callback, Six double/rematch refusal 
 
 ### R3 — Unify battle execution and retire transitional bridges
 
-**Status: open. Benefit: high. Risk: high; perform after R1/R2 establish the current boundaries.**
+**Status: canonical current Application ownership and physical Domain executor retirement passed combined validation. Actual two-slot singles and four-slot doubles share one frame, queue and lifecycle. Read-only presentation DTOs, pure shared algorithms and the explicit FirstBattle/OldMan modes remain intentional boundaries. Benefit: high. Risk: high.**
 
-What is already shared, and what remains distinct:
+Original inventory, before the canonical cutover and retirement:
 
 - [SourceBattleRecipes.Primitives.cs](../src/Game.Domain/Battle/SourceBattleRecipes.Primitives.cs) and the other `SourceBattleRecipes.*` files implement shared `SourceRecipeContext` commands. [WildBattleSinglesRecipeBridge.cs](../src/Game.Domain/WildBattle/WildBattleSinglesRecipeBridge.cs) and [SourceFrameRecipeContext.cs](../src/Game.Domain/Battle/SourceFrameRecipeContext.cs) both implement that context. These are not two independent copies of every move recipe.
 - The singles bridge still selects historical behavior through gates such as `EarlyParty`, `Route11`, `RocketHideout` and canonical rules versions. Some methods only translate state/events; others select old mechanics. This is where historical baggage must be classified and removed after current callers migrate.
@@ -101,7 +103,7 @@ Acceptance: selected complete current singles and real doubles flows retain orde
 
 The runtime-retirement slice removes the 43-entry old save router, diagnostic campaign constructors/factories, 46 historical launch scripts and obsolete early-lab window replay. The selected Celio offline converter, current imports and engineering diagnostics remain. Historical test source and evidence remain archived; 52 projects that reference removed APIs leave the larger solution. `dev build/test` now has a bounded current product/contract solution. See [the exact inventory and validation](runtime-retirement.md). This does not claim that all source preparation/import tooling has been audited.
 
-**Status: open. Benefit: medium. Risk: low for proven duplicates; high if a reconstruction dependency is removed.**
+**Status: documented runtime/tooling retirement and maintained-solution checks passed; final delivery verification remains. Historical test source and unique proof remain archived. This bounded result is not an audit of every retained importer or generator. Benefit: medium. Risk: low for proven duplicates; high if a reconstruction dependency is removed.**
 
 Evidence and limits:
 
@@ -128,7 +130,7 @@ Acceptance: the current package can be reconstructed from documented retained in
 4. At the final current commit, run focused startup, new-save/Continue, selected converted-checkpoint, field and current single/double battle checks. Old-version rejection is expected where documented; no historical full-chain replay is required. Record the actual compiler/runtime. Native visual and physical audio limits stay explicit; source or headless evidence does not close them.
 5. Synchronize the refactored source and verified Drive delivery, and update README/roadmap/status wording together. Historical reports stay labeled historical. The plan is complete only when R1–R4 have concrete accepted results and no unexplained remaining duplicate current path; writing this document or passing the earlier four changes does not close it.
 
-No completion claim is made for the remaining refactor in this revision.
+Final project-refactor completion is withheld until the remaining bounded cleanup and delivery satisfy these gates. The chronological updates below retain their original checkpoint scope; later entries supersede their then-pending work.
 
 ## 2026-10-13 current composition slice
 
@@ -154,7 +156,7 @@ R3 canonical wild/trainer Application migration and deletion of the competing le
 
 ## 2026-10-13 current encounter policies and presentation bindings
 
-The shared owner now accepts authentic ordinary trainer singles, canonical wild actions and the explicit Tower, Snorlax, Lostelle and regional policies. Trainer entry uses one authenticated source factory, retains its original RNG chain and supplies AI/Shift/item metadata to the same queue. There is no new encounter-specific turn loop. Selected trainer KO/EXP/Shift and terminal/residual combinations passed 6 groups/225 checks; special wild policy passed 12 groups/1,013 checks. Exact candidate source and assembly identities remain with those reports. A final narrow Shift/Spikes ordering change is source-inspected and is not represented as runtime-covered. See [current encounter hooks](r3-current-encounter-hooks.md) and [trainer policy](r3-trainer-encounter-policy.md).
+The shared owner now accepts authentic ordinary trainer singles, canonical wild actions and the explicit Tower, Snorlax, Lostelle and regional policies. Trainer entry uses one authenticated source factory, retains its original RNG chain and supplies AI/Shift/item metadata to the same queue. There is no new encounter-specific turn loop. Selected trainer KO/EXP/Shift and terminal/residual combinations passed 6 groups/225 checks; special wild policy passed 12 groups/1,013 checks. Exact candidate source and assembly identities remain with those reports. At this checkpoint, a final narrow Shift/Spikes ordering change was source-inspected only. The later 6-group/258-check retirement run below adds actual runtime coverage without changing this earlier result. See [current encounter hooks](r3-current-encounter-hooks.md) and [trainer policy](r3-trainer-encounter-policy.md).
 
 The normal integrated Godot target built with zero warnings/errors in 39.86 seconds. Current Application wild/trainer migration is still a separate pending acceptance point in this checkpoint, and the competing legacy executors still exist until that cutover.
 
@@ -167,3 +169,18 @@ Both current ordinary trainer and wild encounters now store one non-null canonic
 The combined normal Godot target passed with zero warnings/errors in 19.21 seconds. The owned candidate gates passed 12 wild groups/691 checks/177 public commands, plus 524 trainer checks/494 public commands and actual current save/Continue. The bounded source scenes include Lostelle, Snorlax, Marowak and Gideon's Sapphire callback. A short headless host exercised four actual drawing boundaries and real input, exposing and closing missing Ultra/Master Ball display names. Its 11 checks are not native framebuffer or audible-output acceptance. After the independent Domain retirement and final shared record change, the existing ordinary wild smoke passed another 53 checks/11 commands; these candidate results are reused, not represented as a repeated main campaign.
 
 The legacy Domain code is now uncalled by current ordinary Application paths but remains in this commit pending the separate physical retirement patch. The Content loader still contains historical composition inputs pending its isolated simplification. Those two changes and the final maintained-contract build/check remain required before the deep-refactor exit.
+
+## 2026-10-13 Content specialization and battle owner retirement
+
+This is the latest integration snapshot after Application cutover commit `870f3fb`. The Content and Domain retirement patches have passed the combined product build and maintained-contract checks described below. Their individual candidate evidence remains separately identified. Final synchronized delivery and bounded field-encounter dispatcher cleanup remain open.
+
+- **R1:** `PretCampaignCatalog.LoadCurrent` directly builds the fixed current resources. The generic `Load` and 22 public regional profile wrappers are gone, together with 60 feature booleans and 24 alternate roots. The private constructor requires 163 typed resource inputs with no optional defaults. Typed schemas, factories, source hashes and owned/opponent/shop/machine predecessor proofs remain authoritative. The isolated candidate passed 67 current checks, exact equality of 22 characterization fields across 254 maps, and all 322 source-map-symbol cases. These are Content candidate results, not a combined-tree pass. See [current Content composition](current-content-composition.md).
+- **R2:** the typed trainer binding index supplies definition, source script and authentic party factory once. Current trainer commands use canonical entry and lifecycle; the old pre-Fuchsia executor selection and party rebuilding are removed. Occurrence/history plumbing is shared where semantics match; Four Island's no-intro scene, Five Island's callback and Six Island's double/rematch refusals stay explicit. The earlier 357-definition/30-entry comparison and later 524-check Application evidence retain their original identities.
+- **R3:** current ordinary/special wild and ordinary trainer battles own a non-null `SourceBattleFrame`; actual singles and doubles use the common queue, entry, residual, reward and modal continuations. Physical retirement removes `WildBattleRules.Execution`, `ForestTrainerCombatRules`, singles entry/recipe/residual bridges, `SinglesBattleAdapter`, mirror state and old reward orchestration: 15,744 lines removed and 517 added, a net 15,227-line reduction. Presentation DTOs and one-way read/event projections have no gameplay authority or state import. Pure shared move/RNG algorithms remain shared; FirstBattle and OldMan remain explicit special modes, not ordinary fallback executors. Player saves still reject active battles.
+- **R4:** the 16-project current solution is the maintained product/contract boundary. Default `dev test` runs eight current/foundation suites plus the content verifier; both canonical Application suites compile by default and run through the explicit fixture-dependent `test-current-battles` command. Historical regional `dev` runner branches are removed, reducing the dispatcher from 1,014 to 140 lines; retired commands fail explicitly. Historical regional tests remain source/evidence records rather than runnable current profiles. The old-owner wild policy/special comparisons now preserve their original program/project/runner/lock files under `archive/` and keep their evidence; their 12/1,407 and 12/1,013 results are historical. Removed runtime selectors, upgrade routes, launchers and proven one-off tools do not return merely to compile those tests. Required source inputs, authentic importers and selected offline checkpoint conversion remain. See [current commands and fixture requirements](runtime-retirement.md).
+
+The Domain retirement candidate passed 14 lifecycle groups/690 checks and 6 trainer-policy groups/258 checks on runtime 10.0.12. The latter now executes the 1-HP Shift reserve fainting to Spikes: the already chosen opposing reserve enters before another player replacement prompt, with no opponent-reselection RNG. This closes the earlier source-only hazard-ordering caveat. See [retirement scope and exact evidence](r3-battle-owner-retirement.md).
+
+The actual combined 16-project build passed with zero warnings/errors in 57.52 seconds. `./dev test` passed all eight current/foundation suites and the content verifier, including the actual single/double lifecycle and trainer-policy contracts. The two real converted checkpoint checks passed all 67 assertions. The bounded ordinary-wild Application smoke passed 53 checks/11 public commands, and the trainer Application suite passed 524 checks/494 public commands. These Application and checkpoint runs were executed again against this combined tree; they are not relabeled candidate passes. Evidence: [build](../evidence/refactor-final-20261013/build.log), [current contracts](../evidence/refactor-final-20261013/current-tests.log), [checkpoints](../evidence/refactor-final-20261013/checkpoints.log), [Application run](../evidence/refactor-final-20261013/application.log), [wild result](../evidence/refactor-final-20261013/application/wild.json) and [trainer result](../evidence/refactor-final-20261013/application/trainer.json).
+
+Remaining work is a separate bounded cleanup of field-encounter dispatch, including redundant fishing/current-profile branches, followed by its affected checks and final source/package synchronization. Do not describe every historical branch as retired before that work is accepted. Native framebuffer, animation and physical audio acceptance remain outside these checks; no historical route replay, active-battle save support or new region is claimed.

@@ -16,15 +16,6 @@ public sealed partial class PretCampaignCatalog
     public ViridianGymTrainerCatalog? ViridianGymTrainerParties { get; }
     public bool ViridianGymEnabled=>ViridianGymRegion is not null;
 
-    public static PretCampaignCatalog LoadViridianGymProfile(string root,bool useCompactMapData=true,
-        string? viridianGymContentRoot=null,string? viridianGymRulesRoot=null,
-        string? firstSeviiContentRoot=null,string? firstSeviiRulesRoot=null,string? firstSeviiPresentationRoot=null)=>
-        LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,
-            includeSilph:true,includeSaffronGym:true,includeCinnabar:true,includeFirstSevii:true,
-            firstSeviiContentRoot:firstSeviiContentRoot,firstSeviiRulesRoot:firstSeviiRulesRoot,
-            firstSeviiPresentationRoot:firstSeviiPresentationRoot,includeViridianGym:true,
-            viridianGymContentRoot:viridianGymContentRoot,viridianGymRulesRoot:viridianGymRulesRoot);
-
     private static void AppendViridianGymSources(PretViridianGymRegion region,List<PretSourceScriptFile> sources,
         List<string> texts,Dictionary<string,int> constants,List<string> hashes)
     {

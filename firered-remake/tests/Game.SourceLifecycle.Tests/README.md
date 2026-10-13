@@ -1,46 +1,47 @@
 # Current source battle lifecycle probes
 
-This focused domain harness targets the R3 candidate derived from `687d0c9`.
-It exercises the existing `SourceFourActionTurns` owner with two real positions,
-current `SourceBattleKernel.Version`, `SourceImmediate` KO timing and ordinary-wild
-EXP, plus representative real four-position regressions. The remaining two
-storage positions stay null, unbound and source-absent throughout every single
-battle. Primary canonical fixtures are constructed directly. Two explicit parity probes
-use the old current singles owner only as a reference and import its entry fixture
-before shared execution. No game resources are copied.
+This focused Domain harness executes only `SourceBattleFrame` and its existing
+`SourceFourActionTurns` owner. Singles use two real positions with
+`SourceImmediate` KO timing; unused storage positions stay null, unbound and
+source-absent. Real four-position battles retain their existing end-turn KO
+replacement contract. No game resources are copied.
 
-Twelve groups cover authenticated fixtures, a normal turn, terminal KO/EXP,
-action-time player replacement, poison and delayed-attack interruptions,
-voluntary switch/Pursuit, a real four-actor turn, and deferred doubles replacement. Two source-owner parity probes compare normal
-moves and forced Struggle, and one checks actual Intimidate entry, Protect and
-Leftovers with null unused positions.
+Fourteen groups cover normal moves, terminal wild KO/EXP, action-time player
+replacement, interrupted poison and delayed attacks, voluntary switch/Pursuit,
+real four-actor turns and deferred replacement, source normal/Struggle behavior,
+Intimidate/Protect/Leftovers, ghost Master Ball dodge before capture RNG and
+slower-player guaranteed escape before the foe/Ready continuation. The two ghost
+cases directly construct a canonical policy fixture; Application tests cover
+special story entry authorization and callbacks.
+
 Every accepted continuation validates canonical identity. Interrupted state is
-serialized and resumed with exact state/event/RNG equality; stale calls must
-return the identical input with empty events and trace. The tests inspect actual
-party HP/PP, identity serials, exactly-once EXP via the existing reward calculator,
-event order, trace accounting and residual/Ready counts.
+serialized and resumed with exact state/event/RNG equality; stale calls return
+the same input with empty events and trace. Tests inspect HP/PP, identity serials,
+once-only EXP, event order, source LCG accounting and residual/Ready counts.
+The source comparisons use two small frozen vectors with party hashes captured
+from the old source owner before its removal, plus full action RNG traces.
+See [vector provenance](fixtures/README.md). No old owner or state adapter is
+compiled or invoked by this executable.
 
-This is domain prerequisite evidence only. It does not establish Application
-cutover, capture/escape policy, current campaign completion, old save conversion,
-Godot rendering or physical audio acceptance.
-
-Run with a fresh evidence destination, after the coordinated core build is ready:
+Run from a checkout using an authenticated content checkout and fresh output:
 
 ```sh
 bash tests/Game.SourceLifecycle.Tests/run.sh \
   /workspace/scratch/18c02ed4ed0d/firered-restored-20261013/firered-remake \
-  /workspace/scratch/18c02ed4ed0d/firered-r3-lifecycle-candidate-20261013/tests/Game.SourceLifecycle.Tests/evidence/run-1 \
+  /tmp/firered-current-lifecycle-result \
   /workspace/scratch/18c02ed4ed0d/firered-toolchain-20261013/NuGet.OfficialLocal.Config
 ```
 
-The script reads the accepted checkout's official environment setup, uses the
-shared build lock, and builds against candidate Domain/Content projects. It never
-builds or changes the accepted checkout. Failed runs remain evidence; no golden
-expectation is regenerated from implementation output.
+The runner sources the official toolchain, uses the shared short build lock,
+and does not build or change the content checkout. The retirement gate passed
+14 groups / 690 checks on runtime 10.0.12 with zero build warnings/errors;
+see [exact current result](evidence/retirement/result.json).
 
-The optional `--four-parity` argument emits four complete deterministic results
-(clean turn, deferred player KO, opponent KO/EXP and poison/replacement). Running
-the same harness binary with the accepted baseline Domain/Content DLLs in an
-isolated folder and with candidate DLLs permits an exact byte comparison of full
-final state, events and RNG trace, without rebuilding the accepted checkout.
-See [the result and limitations](evidence/REPORT.md).
+The optional `--four-parity` mode emits four deterministic complete canonical
+results. The previously captured accepted-baseline comparison remains in
+`evidence/four-parity/`; its full byte parity describes that earlier snapshot.
+Historical failed and intermediate runs remain under `evidence/`.
+
+This suite does not claim full campaign, active-save support, Godot rendering,
+or physical audio acceptance. Current Application wild/trainer suites establish
+the public command and story continuation boundary separately.

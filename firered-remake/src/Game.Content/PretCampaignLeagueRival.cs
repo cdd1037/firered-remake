@@ -12,29 +12,6 @@ public sealed partial class PretCampaignCatalog
     public LeagueRivalTrainerCatalog? LeagueRivalTrainerParties { get; }
     public bool LeagueRivalEnabled=>LeagueRivalTrainerParties is not null;
 
-    // The exact eighth-gym composition gains only its three existing Route22 battle
-    // definitions. Its maps, scripts, ownership, items and encounters are inherited.
-    public static PretCampaignCatalog LoadLeagueRivalProfile(string root,bool useCompactMapData=true,
-        string? leagueRivalRulesRoot=null,string? viridianGymContentRoot=null,string? viridianGymRulesRoot=null,
-        string? firstSeviiContentRoot=null,string? firstSeviiRulesRoot=null,string? firstSeviiPresentationRoot=null)=>Load(root,
-        includeStarterEvents:true,includeFirstBattle:true,includeOpeningItems:true,
-        includeViridianRegion:true,includeParcelQuest:true,includeCapture:true,includeViridianCenter:true,
-        includeOldManTutorial:true,includePartyTraining:true,includeForest:true,includeForestTrainers:true,
-        includePewter:true,includeEarlyShop:true,includeEarlyStarter:true,includeEarlyParty:true,
-        includePokemonStorage:true,includeFieldPickups:true,includeRepel:true,includeTownMap:true,
-        includeOakRating:true,includeRoute22:true,useCompactMapData:useCompactMapData,includeRoute3:true,
-        includeMagikarp:true,includeMtMoon:true,includeCerulean:true,includeBill:true,includeVermilion:true,
-        includeSsAnne:true,includeVermilionGym:true,includeCityServices:true,includeRoute11:true,
-        includeRockTunnel:true,includeCeladonApproach:true,includeCeladonGym:true,
-        includeRocketHideout:true,includePokemonTower:true,includeSnorlax:true,
-        includeRegionalFlavor:true,includeRegionalServices:true,includeRegionalInteriorServices:true,
-        includeFuchsiaRoute:true,includeFuchsiaGym:true,includePresetDoubles:true,includeSafari:true,
-        includeSurf:true,includeSilph:true,includeSaffronGym:true,includeCinnabar:true,includeFirstSevii:true,
-        firstSeviiContentRoot:firstSeviiContentRoot,firstSeviiRulesRoot:firstSeviiRulesRoot,
-        firstSeviiPresentationRoot:firstSeviiPresentationRoot,includeViridianGym:true,
-        viridianGymContentRoot:viridianGymContentRoot,viridianGymRulesRoot:viridianGymRulesRoot,
-        includeLeagueRival:true,leagueRivalRulesRoot:leagueRivalRulesRoot);
-
     private static void ValidateLeagueRivalComposition(ImmutableDictionary<MapId,PretWorldMap> maps,
         LeagueRivalTrainerCatalog trainers,PretStoryCompilation scripts,IEnumerable<PretSourceScriptFile> sources,
         ImmutableDictionary<string,string>.Builder text,CampaignPokemonContent pokemon,

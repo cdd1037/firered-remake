@@ -44,6 +44,7 @@ public sealed record SourceTrainerContextResult(SourceTrainerEncounterContext? C
 /// Regional factories authenticate content before their common generator mints the private receipt.</summary>
 public static class SourceTrainerEncounterPolicy
 {
+    public static MoveId NoMove { get; } = new("pret:MOVE_NONE");
     public static SourceTrainerContextResult CreateContext(PokemonCatalog catalog,
         TrainerPartyCreationResult created, ForestTrainerBattleStyle style = ForestTrainerBattleStyle.Shift)
     {
@@ -55,7 +56,7 @@ public static class SourceTrainerEncounterPolicy
             return new(null, "source_trainer_creation_catalog");
         SourceTrainerPartyReceipt.Register(proof);
         return new(new(proof.Key, style, SourceTrainerItemInventory.Create(created.Trainer),
-            ForestTrainerCombatRules.NoMove), null);
+            SourceTrainerEncounterPolicy.NoMove), null);
     }
 
     internal static bool MatchesTrainer(SourceBattleFrame frame, TrainerDefinition trainer) =>
@@ -72,7 +73,7 @@ public static class SourceTrainerEncounterPolicy
             !Enum.IsDefined(encounter.BattleStyle) || encounter.Inventory is null ||
             encounter.Inventory.Trainer != proof.Trainer.Id || encounter.StaleCurrentMove.Value is null)
             return "source_trainer_encounter_context";
-        if (encounter.StaleCurrentMove != ForestTrainerCombatRules.NoMove && encounter.StaleCurrentMove != WildBattleRules.StruggleMove &&
+        if (encounter.StaleCurrentMove != SourceTrainerEncounterPolicy.NoMove && encounter.StaleCurrentMove != WildBattleRules.StruggleMove &&
             (!catalog.Moves.TryGetValue(encounter.StaleCurrentMove, out var move) || !MetronomeSourceMoveDefinition.Matches(move)))
             return "source_trainer_encounter_stale_move";
         if (encounter.KnownPlayerAbility is { } ability &&
@@ -124,7 +125,7 @@ public static class SourceTrainerEncounterPolicy
         foreach (var e in events)
             context = e switch {
                 SourceFaintedEvent { Side.Side: BattleSide.Player } => context with { PlayerFaintedThisTurn = true },
-                SourceCalledPartySwitchedEvent => context with { StaleCurrentMove = ForestTrainerCombatRules.NoMove },
+                SourceCalledPartySwitchedEvent => context with { StaleCurrentMove = SourceTrainerEncounterPolicy.NoMove },
                 _ => context
             };
         return frame with { TrainerEncounter = context };

@@ -57,7 +57,6 @@ public static partial class SourceFourActionTurns
                 frame.BattleKind == WildBattleCalledBattleKind.Wild && frame.Party(BattleSide.Opponent).Members.Length != 1) return "source_four_action_battle_kind";
         if (frame.Layout == SourceBattleLayout.Singles && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
             SourceTrainerEncounterPolicy.Validate(catalog, frame) is { } trainerError) return trainerError;
-        if (frame.WildTurn is not null) return "source_four_action_competing_owner";
         if (new[] { frame.Field.RainTurnsRemaining, frame.Field.SandstormTurnsRemaining, frame.Field.SunTurnsRemaining, frame.Field.HailTurnsRemaining }.Count(t => t > 0) > 1)
             return "source_four_action_weather_conflict";
         if (frame.Slots.Take(frame.BattlerCount).Any(c => c.Body is null)) return "source_four_action_body_required";
@@ -447,7 +446,7 @@ public static partial class SourceFourActionTurns
         if (frame.NextAction != frame.Queue.Length || frame.Outcome != WildBattleOutcome.Ongoing || frame.FourTurn!.EndTurn?.Stage == WildBattleSourceEndTurnStage.Complete)
             return Fail(frame, "source_four_action_end_turn_phase");
         var next = frame.TrainerEncounter is { } trainer ? frame with {
-            TrainerEncounter = trainer with { StaleCurrentMove = ForestTrainerCombatRules.NoMove } } : frame;
+            TrainerEncounter = trainer with { StaleCurrentMove = SourceTrainerEncounterPolicy.NoMove } } : frame;
         var events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
         var trace = ImmutableArray.CreateBuilder<RandomTrace>();
         var cursor = frame.FourTurn!.EndTurn;
@@ -513,7 +512,7 @@ public static partial class SourceFourActionTurns
         next = next with { Rng = draw.State, Turn = Math.Min(255, next.Turn + 1), RandomTurnNumber = draw.Value,
             Queue = [], NextAction = 0, FourTurn = null, Revision = checked(frame.Revision + 1), TurnStartAbsentMask = next.SourceAbsentMask,
             TrainerEncounter = next.TrainerEncounter is { } complete ? complete with {
-                StaleCurrentMove = ForestTrainerCombatRules.NoMove, PlayerFaintedThisTurn = false } : null };
+                StaleCurrentMove = SourceTrainerEncounterPolicy.NoMove, PlayerFaintedThisTurn = false } : null };
         var ready = SourceBattleEventHooks.Publish(next, (n, t) => new SourceTurnReadyEvent(n, t, draw.Value));
         events.Add(ready.Event); trace.Add(draw.Trace);
         return new(ready.State, events.ToImmutable(), trace.ToImmutable(), null);

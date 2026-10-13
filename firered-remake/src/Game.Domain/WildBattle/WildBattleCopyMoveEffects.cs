@@ -36,28 +36,3 @@ public static class WildBattleCopyMoveRules
         return SourceBattleHeldItems.ReconcileChoice(mon with { Pokemon = pokemon with { Moves = moves }, CopyMoves = copies with { Slots = slots } });
     }
 }
-
-public static partial class WildBattleRules
-{
-    private static string? ValidateCopiedMoveState(PokemonCatalog catalog, WildBattleState state)
-    {
-        foreach (var mon in new[] { state.Player, state.Opponent })
-        {
-            if (mon.CopyMoves is not { } copies) continue;
-            if (copies.RulesVersion != CalledMoveKernelRulesVersion) return "copy_move_version";
-            if (mon.Transform is not null || copies.Slots.IsDefaultOrEmpty || copies.Slots.Length > 4 ||
-                copies.Slots.Any(copy => copy is null || copy.Slot < 0 || copy.Slot >= mon.Pokemon.Moves.Length || copy.PersistentSlot is null) ||
-                copies.Slots.Select(copy => copy.Slot).Distinct().Count() != copies.Slots.Length) return "copy_move_slots";
-            if (SourcePokemonValidator.ValidateForBattle(catalog, WildBattleCopyMoveRules.PersistentPokemon(mon)) is { } error)
-                return "copy_move_persistent_" + error;
-        }
-        return null;
-    }
-
-    internal sealed partial class Execution
-    {
-        private void CalledCopyMove(PokemonCatalog catalog, WildBattleSide side, PokemonMoveDefinition move) =>
-            new SinglesRecipeBridge(this).ExecuteCopyState(catalog, SinglesBattleAdapter.Slot(side),
-                SinglesBattleAdapter.Slot(activeInvocation!.Target), activeInvocation.PpSlot, move);
-    }
-}

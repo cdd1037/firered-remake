@@ -4,4 +4,5 @@
     <ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj" />
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
   </ItemGroup>
+  <ItemGroup><None Update="fixtures/*.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
 </Project>

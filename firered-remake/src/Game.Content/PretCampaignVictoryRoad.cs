@@ -20,28 +20,6 @@ public sealed partial class PretCampaignCatalog
     public VictoryRoadWaterEncounterCatalog? VictoryRoadWaterEncounters { get; }
     public bool VictoryRoadEnabled=>VictoryRoadRegion is not null;
 
-    public static PretCampaignCatalog LoadVictoryRoadProfile(string root,bool useCompactMapData=true,
-        string? victoryRoadContentRoot=null,string? victoryRoadRulesRoot=null,string? leagueRivalRulesRoot=null,string? viridianGymContentRoot=null,string? viridianGymRulesRoot=null,
-        string? firstSeviiContentRoot=null,string? firstSeviiRulesRoot=null,string? firstSeviiPresentationRoot=null)=>Load(root,
-        includeStarterEvents:true,includeFirstBattle:true,includeOpeningItems:true,
-        includeViridianRegion:true,includeParcelQuest:true,includeCapture:true,includeViridianCenter:true,
-        includeOldManTutorial:true,includePartyTraining:true,includeForest:true,includeForestTrainers:true,
-        includePewter:true,includeEarlyShop:true,includeEarlyStarter:true,includeEarlyParty:true,
-        includePokemonStorage:true,includeFieldPickups:true,includeRepel:true,includeTownMap:true,
-        includeOakRating:true,includeRoute22:true,useCompactMapData:useCompactMapData,includeRoute3:true,
-        includeMagikarp:true,includeMtMoon:true,includeCerulean:true,includeBill:true,includeVermilion:true,
-        includeSsAnne:true,includeVermilionGym:true,includeCityServices:true,includeRoute11:true,
-        includeRockTunnel:true,includeCeladonApproach:true,includeCeladonGym:true,
-        includeRocketHideout:true,includePokemonTower:true,includeSnorlax:true,
-        includeRegionalFlavor:true,includeRegionalServices:true,includeRegionalInteriorServices:true,
-        includeFuchsiaRoute:true,includeFuchsiaGym:true,includePresetDoubles:true,includeSafari:true,
-        includeSurf:true,includeSilph:true,includeSaffronGym:true,includeCinnabar:true,includeFirstSevii:true,
-        firstSeviiContentRoot:firstSeviiContentRoot,firstSeviiRulesRoot:firstSeviiRulesRoot,
-        firstSeviiPresentationRoot:firstSeviiPresentationRoot,includeViridianGym:true,
-        viridianGymContentRoot:viridianGymContentRoot,viridianGymRulesRoot:viridianGymRulesRoot,
-        includeLeagueRival:true,leagueRivalRulesRoot:leagueRivalRulesRoot,includeVictoryRoad:true,
-        victoryRoadContentRoot:victoryRoadContentRoot,victoryRoadRulesRoot:victoryRoadRulesRoot);
-
     private static void AppendVictoryRoadSources(PretVictoryRoadRegion region,List<PretSourceScriptFile> sources,
         List<string> texts,Dictionary<string,int> constants,List<string> hashes)
     {

@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Game.Content;
 using Game.Domain.Battle;
+using Game.Domain.Capture;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
@@ -72,7 +73,7 @@ void Valid(SourceBattleFrame state)
 {
     Check(SourceBattleIdentityRules.Validate(state) is null, "canonical output: " + SourceBattleIdentityRules.Validate(state));
     if (state.Layout != SourceBattleLayout.Singles) return;
-    Check(state.WildTurn is null && state.DeferredKoVacancyMask == 0, "one current owner and no doubles KO vacancy in singles");
+    Check(typeof(SourceBattleFrame).GetProperty("WildTurn") is null && typeof(SourceBattleFrame).GetProperty("SinglesEncoding") is null && state.DeferredKoVacancyMask == 0, "retired owner and encoding absent; no doubles KO vacancy in singles");
     Check((state.SourceAbsentMask & 12) == 12 && (state.TurnStartAbsentMask & 12) == 12, "unused singles positions remain source absent");
     Check(state.Slots.Skip(2).All(s => s.Body is null && s.Member is null && s.EntrySerial == 0 && s.Registers == new SourceSlotRegisters() && s.Position == new SourcePositionRegisters()), "no phantom battlers, identities or registers");
     Check(state.Queue.IsEmpty || state.Queue.Length == 2 && state.Queue.All(a => a.Slot.Value < 2 && a.Target?.Value is not (>= 2)), "exact two-position queue");
@@ -326,40 +327,32 @@ Test("real four-position KO still defers reserve entry until end turn", () =>
 });
 
 foreach (bool struggle in new[] { false, true })
-Test(struggle ? "single forced Struggle matches current singles party and exact RNG trace" : "single normal turn matches current singles party and exact RNG trace", () =>
+Test(struggle ? "single forced Struggle matches frozen source party and exact RNG trace" : "single normal turn matches frozen source party and exact RNG trace", () =>
 {
     WildBattleCombatant Exhaust(WildBattleCombatant body) => body with
     { Pokemon = body.Pokemon with { Moves = body.Pokemon.Moves.Select(m => m with { CurrentPp = 0 }).ToImmutableArray() } };
     var player = Mon(); var opponent = Mon("RATTATA");
     if (struggle) { player = Exhaust(player); opponent = Exhaust(opponent); }
-    var entry = WildBattleRules.StartSourceWild(proof, BattleRulesProfile.CanonicalSourceSingles, [player], 0, opponent, new(31));
-    Check(entry.Succeeded, "reference mechanics entry " + entry.Fault);
-    var before = entry.State!;
-    var reference = WildBattleRules.ResolveMove(catalog, before, struggle ? WildBattleRules.StruggleSlot : 0);
-    Check(reference.Succeeded && reference.State!.Outcome == WildBattleOutcome.Ongoing, "reference current singles owner " + reference.Fault);
-    var imported = SinglesBattleAdapter.Import(catalog, before);
-    Check(imported.Succeeded, "reference fixture imports " + imported.Fault);
-    var start = imported.Frame! with { SourceMechanicsRulesVersion = SourceBattleKernel.Version, WildTurn = null,
-        Rewards = Rewards(1, SourceRewardBattleKind.OrdinaryWild) };
-    var trace = new List<RandomTrace>(); var rng = start.Rng;
-    if (!struggle)
-    {
-        // Existing ordinary wild selection has a four-position rejection loop. It
-        // happens once before the shared lifecycle commits the selected action.
-        int selected;
-        do { var draw = Gen3Rng.Next(rng, "wild-battle.opponent.choose-slot", 4); rng = draw.State; trace.Add(draw.Trace); selected = draw.Value & 3; }
-        while (selected != 0);
-    }
-    var prepared = start with { Rng = rng };
-    var choices = struggle ? prepared.Slots.Take(2).Select(s => SourceActionSelection.Struggle(s.Occupant!.Value)).ToImmutableArray() : Choices(prepared);
-    var result = Begin(prepared, choices); var events = result.Events.ToList(); trace.AddRange(result.Trace);
+    var entry = SourceWildBattlePolicy.Start(proof, [player], 0, opponent, new(31));
+    Check(entry.Succeeded, "canonical mechanics entry " + entry.Fault);
+    var start = entry.State! with { Rewards = Rewards(1, SourceRewardBattleKind.OrdinaryWild) };
+    var choice = struggle ? SourceActionSelection.Struggle(start.Get(new(0)).Occupant!.Value)
+        : new SourceActionSelection(start.Get(new(0)).Occupant!.Value, SourceActionKind.Move, 0, new(1));
+    var result = Ok(SourceWildBattlePolicy.BeginAction(catalog, start, start.Revision, choice));
+    var events = result.Events.ToList(); var trace = result.Trace.ToList();
     result = Drain(result, events, trace);
-    Check(result.CompletedCleanTurn && result.State.Turn == reference.State!.Turn && result.State.Outcome == reference.State.Outcome, "same complete ongoing turn");
-    Check(Json(result.State.Party(BattleSide.Player).Members) == Json(reference.State!.CalledParty!.Player) &&
-        Json(result.State.Party(BattleSide.Opponent).Members) == Json(reference.State.CalledParty.Opponent), "exact permanent party including HP PP status and identity");
-    Check(result.State.Get(new(0)).Body!.Status == reference.State.Player.Status && result.State.Get(new(1)).Body!.Status == reference.State.Opponent.Status, "same active battle statuses");
-    Check(result.State.Rng == reference.State.Rng && result.State.RandomTurnNumber == reference.State.RandomTurnNumber, "same terminal RNG state and ready number");
-    Check(Json(trace) == Json(reference.Trace), "exact source RNG trace including draw order and purpose: current=" + Json(trace) + " reference=" + Json(reference.Trace));
+    // Frozen before owner retirement, using the exact same authenticated fixture and source
+    // assembly recorded beside these files. The old executor is never linked by this test.
+    using var golden = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "fixtures",
+        struggle ? "source-singles-struggle.json" : "source-singles-normal.json")));
+    string Expected(string field) => Json(golden.RootElement.GetProperty(field));
+    Check(result.CompletedCleanTurn && Json(result.State.Turn) == Expected("Turn") && Json(result.State.Outcome) == Expected("Outcome"), "same complete ongoing turn as fixed source oracle");
+    string PartyHash(BattleSide side) => Convert.ToHexStringLower(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(Json(result.State.Party(side).Members))));
+    Check(Json(PartyHash(BattleSide.Player)) == Expected("PlayerSha256") &&
+        Json(PartyHash(BattleSide.Opponent)) == Expected("OpponentSha256"), "exact fixed permanent party including HP PP status and identity");
+    Check(Json(result.State.Get(new(0)).Body!.Status) == Expected("PlayerStatus") && Json(result.State.Get(new(1)).Body!.Status) == Expected("OpponentStatus"), "same fixed active battle statuses");
+    Check(Json(result.State.Rng) == Expected("Rng") && Json(result.State.RandomTurnNumber) == Expected("RandomTurnNumber"), "same fixed terminal RNG state and ready number");
+    Check(Json(trace) == Expected("Trace"), "exact fixed source RNG trace including draw order and purpose");
     TraceAndEvents(start, result.State, events, trace);
 });
 
@@ -378,6 +371,39 @@ Test("single entry Intimidate Protect and Leftovers respect null unused position
     TraceAndEvents(entry.State, result.State, events, trace);
 });
 
+Test("disguised ghost Master Ball dodge precedes capture RNG", () =>
+{
+    var start = Single(Mon(move: "SPLASH"), Mon("GASTLY", 30, "LICK")) with
+        { WildEncounter = new() { TowerBattleKind = PokemonTowerBattleKind.DisguisedWild } };
+    var ball = new SourceActionSelection(start.Get(new(0)).Occupant!.Value, SourceActionKind.Capture)
+        { Capture = new(CaptureBall.Master, new(false, [])) };
+    var result = Ok(SourceWildBattlePolicy.BeginAction(catalog, start, start.Revision, ball));
+    var events = result.Events.ToList(); var trace = result.Trace.ToList();
+    result = Drain(result, events, trace);
+    Check(events.OfType<SourceBallThrownEvent>().Count() == 1 && events.OfType<SourceTowerBallDodgedEvent>().Count() == 1,
+        "one spent ball and one ghost dodge");
+    Check(!events.OfType<SourceCaptureResultEvent>().Any() && result.State.Outcome == WildBattleOutcome.Ongoing,
+        "Master Ball does not override ghost policy");
+    Check(!trace.Any(t => t.Purpose.StartsWith("capture:", StringComparison.Ordinal)), "ghost dodge consumes zero capture draws");
+    TraceAndEvents(start, result.State, events, trace);
+});
+
+Test("disguised ghost run guarantees escape before foe and Ready", () =>
+{
+    var start = Single(Mon("MAGIKARP", 5, "SPLASH"), Mon("GASTLY", 30, "LICK")) with
+        { WildEncounter = new() { TowerBattleKind = PokemonTowerBattleKind.DisguisedWild } };
+    Check(start.Get(new(0)).Body!.Pokemon.Stats.Speed < start.Get(new(1)).Body!.Pokemon.Stats.Speed, "player is slower");
+    var run = new SourceActionSelection(start.Get(new(0)).Occupant!.Value, SourceActionKind.Run);
+    var result = Ok(SourceWildBattlePolicy.BeginAction(catalog, start, start.Revision, run));
+    var events = result.Events.ToList(); var trace = result.Trace.ToList();
+    result = Drain(result, events, trace);
+    Check(result.State.Outcome == WildBattleOutcome.Escaped && result.State.RunAttempts == start.RunAttempts,
+        "guaranteed escape preserves attempts");
+    Check(!trace.Any(t => t.Purpose == "wild-battle.run" || t.Purpose == "wild-battle.turn-end.random-turn-number") &&
+        !events.OfType<SourceTowerGhostActionEvent>().Any(), "escape consumes no run draw and ends before foe and Ready");
+    TraceAndEvents(start, result.State, events, trace);
+});
+
 Console.WriteLine(Json(new
 {
     groups, checks, failures, runtime = Environment.Version.ToString(),
@@ -385,4 +411,4 @@ Console.WriteLine(Json(new
     domainSha256 = Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(SourceBattleFrame).Assembly.Location))),
     observations
 }));
-return groups == 12 && checks > 0 && failures == 0 ? 0 : 1;
+return groups == 14 && checks > 0 && failures == 0 ? 0 : 1;

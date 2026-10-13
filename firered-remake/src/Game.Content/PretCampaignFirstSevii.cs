@@ -20,13 +20,6 @@ public sealed partial class PretCampaignCatalog
     public PretFirstSeviiPresentation? FirstSeviiPresentation { get; }
     public bool FirstSeviiEnabled=>FirstSeviiRegion is not null;
 
-    public static PretCampaignCatalog LoadFirstSeviiProfile(string root,bool useCompactMapData=true,
-        string? firstSeviiContentRoot=null,string? firstSeviiRulesRoot=null,string? firstSeviiPresentationRoot=null)=>
-        LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,
-            includeSilph:true,includeSaffronGym:true,includeCinnabar:true,includeFirstSevii:true,
-            firstSeviiContentRoot:firstSeviiContentRoot,firstSeviiRulesRoot:firstSeviiRulesRoot,
-            firstSeviiPresentationRoot:firstSeviiPresentationRoot);
-
     private static void AppendFirstSeviiSources(PretFirstSeviiRegion region,List<PretSourceScriptFile> sources,
         List<string> texts,Dictionary<string,int> constants,List<string> hashes)
     {

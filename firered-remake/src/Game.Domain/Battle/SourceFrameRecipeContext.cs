@@ -240,7 +240,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         ClearContactReceipts();
         // Party storage stayed synchronized during each mutation; report the same action-end delta
         // once per actual member. Equal species never serve as the identity key.
-        if (Frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version || Frame.SinglesEncoding?.HasPartyExtension == true)
+        if (Frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version)
             foreach (var slot in ActiveSlots)
             {
                 var key = Frame.Get(slot).Member!.Value;

@@ -30,18 +30,6 @@ public sealed partial class PretCampaignCatalog
          "FiveIsland_PokemonCenter_2F", "OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire", "InitRoamer",
          "SevenIsland", "GoodRod", "SuperRod", "Porygon.TradeEvolution", "VsSeeker.Rematch"];
 
-    public static PretCampaignCatalog LoadFiveIslandProfile(string root, bool useCompactMapData = true,
-        string? fiveIslandContentRoot = null, string? fiveIslandRulesRoot = null,
-        string? sixIslandContentRoot = null, string? sixIslandRulesRoot = null,
-        string? fourIslandContentRoot = null, string? fourIslandRulesRoot = null,
-        string? seviiRubyContentRoot = null, string? seviiRubyRulesRoot = null, string? nationalDexSourceRoot = null) =>
-        LoadPokemonLeagueProfile(root, useCompactMapData, includeNationalDex: true,
-            nationalDexSourceRoot: nationalDexSourceRoot, includeSeviiRuby: true,
-            seviiRubyContentRoot: seviiRubyContentRoot, seviiRubyRulesRoot: seviiRubyRulesRoot,
-            includeFourIsland: true, fourIslandContentRoot: fourIslandContentRoot, fourIslandRulesRoot: fourIslandRulesRoot,
-            includeSixIsland: true, sixIslandContentRoot: sixIslandContentRoot, sixIslandRulesRoot: sixIslandRulesRoot,
-            includeFiveIsland: true, fiveIslandContentRoot: fiveIslandContentRoot, fiveIslandRulesRoot: fiveIslandRulesRoot);
-
     private static void AppendFiveIslandSources(PretFiveIslandRegion region, List<PretSourceScriptFile> sources,
         List<string> texts, Dictionary<string, int> constants, List<string> hashes)
     {

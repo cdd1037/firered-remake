@@ -21,9 +21,6 @@ public sealed partial class PretCampaignCatalog
     public CinnabarTrainerCatalog? CinnabarTrainerParties{get;}
     public CinnabarWaterEncounterCatalog? CinnabarWaterEncounters{get;}
     public bool CinnabarEnabled=>CinnabarRegion is not null;
-    public static PretCampaignCatalog LoadCinnabarProfile(string root,bool useCompactMapData=true,string? cinnabarContentRoot=null)=>
-        LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,
-            includeSilph:true,includeSaffronGym:true,includeCinnabar:true,cinnabarContentRoot:cinnabarContentRoot);
 
     private static void AppendCinnabarSources(PretCinnabarRegion region,PretCinnabarItemsDocument items,
         List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants,List<string> hashes)

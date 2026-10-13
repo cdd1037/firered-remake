@@ -13,19 +13,6 @@ public sealed partial class PretCampaignCatalog
     public const string FuchsiaGymContentProfile = "firered-fuchsia-gym-source-content-v1";
     public const string FuchsiaGymMachineContentProfile = FuchsiaGymMachineRules.Profile;
     public const string FuchsiaGymShopContentProfile = FuchsiaGymItemRules.Profile;
-    public static PretCampaignCatalog LoadFuchsiaGymProfile(string root, bool useCompactMapData = true, bool includePresetDoubles = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, string? silphContentRoot = null, bool includeSaffronGym = false, string? saffronGymContentRoot = null, bool includeCinnabar = false, string? cinnabarContentRoot = null, bool includeFirstSevii = false, string? firstSeviiContentRoot = null, string? firstSeviiRulesRoot = null, string? firstSeviiPresentationRoot = null, bool includeViridianGym = false, string? viridianGymContentRoot = null, string? viridianGymRulesRoot = null) => Load(root,
-        includeStarterEvents:true, includeFirstBattle:true, includeOpeningItems:true,
-        includeViridianRegion:true, includeParcelQuest:true, includeCapture:true, includeViridianCenter:true,
-        includeOldManTutorial:true, includePartyTraining:true, includeForest:true, includeForestTrainers:true,
-        includePewter:true, includeEarlyShop:true, includeEarlyStarter:true, includeEarlyParty:true,
-        includePokemonStorage:true, includeFieldPickups:true, includeRepel:true, includeTownMap:true,
-        includeOakRating:true, includeRoute22:true, useCompactMapData:useCompactMapData, includeRoute3:true,
-        includeMagikarp:true, includeMtMoon:true, includeCerulean:true, includeBill:true, includeVermilion:true,
-        includeSsAnne:true, includeVermilionGym:true, includeCityServices:true, includeRoute11:true,
-        includeRockTunnel:true, includeCeladonApproach:true, includeCeladonGym:true,
-        includeRocketHideout:true, includePokemonTower:true, includeSnorlax:true,
-        includeRegionalFlavor:true, includeRegionalServices:true, includeRegionalInteriorServices:true,
-        includeFuchsiaRoute:true, includeFuchsiaGym:true, includePresetDoubles:includePresetDoubles, includeSafari:includeSafari, includeSurf:includeSurf, surfContentRoot:surfContentRoot, includeSilph:includeSilph, silphContentRoot:silphContentRoot,includeSaffronGym:includeSaffronGym,saffronGymContentRoot:saffronGymContentRoot,includeCinnabar:includeCinnabar,cinnabarContentRoot:cinnabarContentRoot,includeFirstSevii:includeFirstSevii,firstSeviiContentRoot:firstSeviiContentRoot,firstSeviiRulesRoot:firstSeviiRulesRoot,firstSeviiPresentationRoot:firstSeviiPresentationRoot,includeViridianGym:includeViridianGym,viridianGymContentRoot:viridianGymContentRoot,viridianGymRulesRoot:viridianGymRulesRoot);
 
     public PretFuchsiaGymRegion? FuchsiaGymRegion { get; }
     public FuchsiaGymTrainerDocument? FuchsiaGymTrainerDocument { get; }

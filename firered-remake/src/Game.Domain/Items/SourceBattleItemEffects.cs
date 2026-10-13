@@ -61,8 +61,7 @@ public static class SourceBattleItemEffects
             SpecialAttackStageDelta = Boost(actorBody.SpecialAttackStageDelta + 6, effect[2] & 15) - 6 };
         if ((effect[3] & 0x80) != 0 && frame.Sides[(int)actor.Slot.Side].MistTurnsRemaining == 0)
         {
-            next = next with { Sides = next.Sides.SetItem((int)actor.Slot.Side, next.Sides[(int)actor.Slot.Side] with { MistTurnsRemaining = 5 }),
-                SinglesEncoding = next.SinglesEncoding is { } encoding ? encoding with { FieldRulesVersion = WildBattleRules.CalledMoveKernelRulesVersion } : null };
+            next = next with { Sides = next.Sides.SetItem((int)actor.Slot.Side, next.Sides[(int)actor.Slot.Side] with { MistTurnsRemaining = 5 }) };
             changed = true;
         }
         if (cell?.Slot == actor.Slot) body = actorBody;
