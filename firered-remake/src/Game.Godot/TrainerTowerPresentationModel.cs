@@ -8,23 +8,25 @@ internal sealed class TrainerTowerMenuPresentation
     internal string SourceSymbol { get; }
     internal IReadOnlyList<string> Options { get; }
     internal int Cursor { get; private set; }
-    internal TrainerTowerMenuPresentation(string sourceSymbol, IEnumerable<string> options)
+    internal TrainerTowerMenuPresentation(string sourceSymbol, IEnumerable<string> options, int defaultCursor = 0)
     {
         string[] expected = sourceSymbol switch
         {
             "MULTICHOICE_YES_NO_INFO" => ["YES", "NO", "INFO"],
             "MULTICHOICE_TRAINER_TOWER_MODE" => ["SINGLE", "DOUBLE", "KNOCKOUT", "MIXED", "EXIT"],
+            "MULTICHOICE_ROOFTOP_B1F" => ["ROOFTOP", "B1F", "EXIT"],
             _ => throw new InvalidDataException("Trainer Tower source menu differs.")
         };
         if (!options.SequenceEqual(expected)) throw new InvalidDataException("Trainer Tower menu rows differ.");
-        SourceSymbol = sourceSymbol; Options = Array.AsReadOnly(expected);
+        if (defaultCursor < 0 || defaultCursor >= expected.Length) throw new ArgumentOutOfRangeException(nameof(defaultCursor));
+        SourceSymbol = sourceSymbol; Options = Array.AsReadOnly(expected); Cursor = defaultCursor;
     }
     internal Layout Frame(int textWidth)
     {
         if (textWidth is <= 0 or > 200) throw new ArgumentOutOfRangeException(nameof(textWidth));
         int width = (textWidth + 9) / 8 + 1;
-        int left = SourceSymbol == "MULTICHOICE_YES_NO_INFO" ? 18 : 13;
-        int top = SourceSymbol == "MULTICHOICE_YES_NO_INFO" ? 6 : 3;
+        int left = SourceSymbol == "MULTICHOICE_ROOFTOP_B1F" ? 0 : SourceSymbol == "MULTICHOICE_YES_NO_INFO" ? 18 : 13;
+        int top = SourceSymbol == "MULTICHOICE_ROOFTOP_B1F" ? 0 : SourceSymbol == "MULTICHOICE_YES_NO_INFO" ? 6 : 3;
         return new(Math.Min(left, 28 - width) * 8, top * 8, (width + 2) * 8, ((Options.Count * 14 + 7) / 8 + 2) * 8);
     }
     internal bool Move(int direction)
@@ -44,6 +46,8 @@ internal sealed class TrainerTowerMenuPresentation
         return x >= f.X + 8 && x < f.X + f.Width - 8 && y >= f.Y + 8 && y < f.Y + 8 + 14 * Options.Count
             ? (int)((y - f.Y - 8) / 14) : -1;
     }
+    internal static string ElevatorFloorLabel(int floor) => floor switch
+    { 3 => "B1F", 15 => "ROOFTOP", _ => throw new InvalidDataException("Trainer Tower elevator floor differs.") };
 }
 
 /// <summary>Only live process deltas enter this counter. A saved game never supplies wall-clock elapsed time.</summary>

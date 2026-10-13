@@ -29,6 +29,8 @@ public sealed partial class PretCampaignCatalog
 
     public ImmutableDictionary<string, int> TrainerTowerNpcGraphics(TrainerTowerBattleFormat format, TrainerTowerFloorTemplate template) =>
         TrainerTowerRegion.NpcGraphicsValues(format, template);
+    public int TrainerTowerTextGender(TrainerTowerFloorTemplate template,int trainerIndex,bool secondDoubleSpeaker)=>
+        TrainerTowerRegion.OpponentTextGender(template,trainerIndex,secondDoubleSpeaker);
     public string TrainerTowerEncounterMusic(TrainerTowerFloorTemplate template, int trainerIndex) =>
         TrainerTowerRegion.EncounterMusic(template, trainerIndex);
 

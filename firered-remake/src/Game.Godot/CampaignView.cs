@@ -213,7 +213,7 @@ public partial class CampaignView:Node2D
         if(naming&&!_nicknameEdit.Visible){_nicknameEdit.Text="";_nicknameEdit.Visible=true;_nicknameEdit.GrabFocus();_nicknameEdit.Edit();}
         else if(!naming&&_nicknameEdit.Visible){_nicknameEdit.Visible=false;_nicknameEdit.ReleaseFocus();if(after.Nickname?.Submitted==true||before?.WildBattle?.Capture?.Stage==CampaignCaptureStage.Naming||before?.SafariBattle?.Capture?.Stage==CampaignCaptureStage.Naming)_fade=16.0/60;}
         SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
-        SynchronizeOptionFrames();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeNameRaterPresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);
+        SynchronizeOptionFrames();SynchronizeTrainerTowerSpeech();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeNameRaterPresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);
         var wait=after.Script.Wait;
         if(wait?.CorrelationId!=_waitId||wait?.Kind!=_waitKind||before?.Dialogue?.Page!=after.Dialogue?.Page)
         {
@@ -361,6 +361,7 @@ public partial class CampaignView:Node2D
         if(_session.State.Evolution is null&&(ForestTrainerCombatVisible||_session.State.WildBattle is not null)&&WildBattleInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.Battle is not null&&BattleInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(FieldTextInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
+        if(TryTrainerTowerSpeechInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(DoubleIntroInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(TrySeviiRubyBrailleInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(TryFourIslandButtonInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
@@ -472,7 +473,7 @@ public partial class CampaignView:Node2D
             var box=new Vector2(picture.X*8,picture.Y*8);DrawRect(new(box,new Vector2(80,80)),new Color("263c48"));DrawRect(new(box+new Vector2(2,2),new Vector2(76,76)),Colors.White);
             if(_portraits.TryGetValue(picture.SourceSpeciesId,out var portrait))DrawTexture(portrait,box+new Vector2(8,8));
         }
-        if(!DrawSeviiRubyBraille()&&FieldDialogueVisible&&_session.VisibleText is {} text)
+        if(!DrawSeviiRubyBraille()&&FieldDialogueVisible&&PresentedFieldText is {} text)
         {
             if(_catalog.PewterEnabled)text=PewterDisplayText(text);
             _battleSkin.DrawDialogue(this);

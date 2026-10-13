@@ -15,7 +15,7 @@ public partial class CampaignView
     private void SynchronizeFieldText()
     {
         if(!FieldTextProgressEnabled)return;
-        var dialogue=_session.State.Dialogue;var text=_session.VisibleText;
+        var dialogue=_session.State.Dialogue;var text=PresentedFieldText;
         if(text is not null&&_catalog.PewterEnabled)text=PewterDisplayText(text);
         if(dialogue==_fieldPrintedDialogue&&text==_fieldPrintedText)return;
         _fieldPrintedDialogue=dialogue;_fieldPrintedText=text;_fieldTextFrameRemainder=0;_fieldTextHeld=false;_fieldTextNewPress=false;

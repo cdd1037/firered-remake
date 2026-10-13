@@ -91,7 +91,7 @@ public partial class CampaignView
 
     private bool VermilionPayDayResultPage(CampaignWildBattle battle, Action<string, (string Key, string Value)[]> source)
     {
-        if (!_catalog.VermilionEnabled || battle.Phase != CampaignBattlePhase.Results || battle.Pages.IsEmpty ||
+        if (battle.Frame?.TrainerTowerEncounter is not null || !_catalog.VermilionEnabled || battle.Phase != CampaignBattlePhase.Results || battle.Pages.IsEmpty ||
             battle.PageIndex != battle.Pages.Length - 1) return false;
         var trainer = _session.State.ForestTrainerBattle;
         bool settled = trainer is null ? battle.PostBattleItemsSettled : trainer.Stage == CampaignForestTrainerStage.Finished;

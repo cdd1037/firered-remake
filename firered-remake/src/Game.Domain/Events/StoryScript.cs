@@ -67,7 +67,7 @@ public static class StoryRules
                 }
                 if(instruction.Op==StoryOp.Multichoice&&instruction.Source.Path=="data/maps/TrainerTower_Elevator/scripts.inc"&&
                     instruction.Args.Length==5&&instruction.Args[2]=="MULTICHOICE_ROOFTOP_B1F"&&instruction.Args[4]=="FALSE")
-                    return choice is 0 or 1 or 127;
+                    return choice is 0 or 1 or 2 or 127;
                 if(instruction.Op==StoryOp.WaitState&&instruction.Opcode=="waitstate"&&instruction.Args.IsEmpty&&
                     instruction.Source.Path=="data/scripts/seagallop.inc"&&instruction.Source.Symbol is "EventScript_SeviiDestinationsPage1" or "EventScript_SeviiDestinationsPage2")
                     return choice==127||choice>=0&&choice<(instruction.Source.Symbol.EndsWith('1')?6:5);

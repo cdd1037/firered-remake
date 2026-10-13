@@ -107,7 +107,7 @@ public partial class CampaignView
         _doubleKey=key;_doublePage=0;_doubleElapsed=0;_doubleNotice=null;_doublePages=[];_doubleCursor=0;
         _doubleMenu=b.LearningPending?"learn-intro":b.ReplacementSlot is not null?"party":"actions";
         if (b.Stage==CampaignDoubleBattleStage.Finished)
-        { if(b.FinishPageIndex<b.FinishPages.Length)_doublePages=ForestTrainerPlainPages(b.FinishPages[b.FinishPageIndex]).ToImmutableArray();return; }
+        { if(b.FinishPageIndex<b.FinishPages.Length)_doublePages=ForestTrainerPlainPages(TrainerTowerBattleSpeech(b.FinishPageIndex) ?? b.FinishPages[b.FinishPageIndex]).ToImmutableArray();return; }
         if(b.LearningPending)
         {
             var pending=b.Frame.Rewards!.Pending!;string name=_session.State.Party[pending.Recipient.Index].Nickname;

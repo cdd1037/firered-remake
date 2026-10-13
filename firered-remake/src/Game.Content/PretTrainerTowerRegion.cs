@@ -82,6 +82,15 @@ public sealed class PretTrainerTowerRegion
         }
         return result.ToImmutable();
     }
+    public int OpponentTextGender(TrainerTowerFloorTemplate template,int trainerIndex,bool secondDoubleSpeaker)
+    {
+        Need(trainerIndex>=0&&trainerIndex<template.Trainers.Length,"Tower text trainer index differs.");
+        var data=Contracts.GetProperty("dynamicGraphics");bool pair=template.Format==TrainerTowerBattleFormat.Double;
+        string facility=template.Trainers[pair?0:trainerIndex].FacilityClass;
+        var row=data.GetProperty(pair?"double":"single").EnumerateArray().FirstOrDefault(r=>r.GetProperty("facilityClass").GetString()==facility);
+        string gender=row.ValueKind==JsonValueKind.Undefined?"MALE":row.GetProperty(pair?(secondDoubleSpeaker?"gender2":"gender1"):"gender").GetString()!;
+        return gender=="FEMALE"?1:0;
+    }
     public int GraphicsIdValue(string symbol) => Constants.TryGetValue(symbol, out int value) && symbol.StartsWith("OBJ_EVENT_GFX_", StringComparison.Ordinal)
         ? value : throw new InvalidDataException("Unknown Tower graphics symbol: " + symbol);
     public ImmutableDictionary<string, int> NpcGraphicsValues(TrainerTowerBattleFormat format, TrainerTowerFloorTemplate template) =>

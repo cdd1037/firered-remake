@@ -19,6 +19,9 @@ public partial class CampaignView
     private readonly TrainerTowerFrameAccumulator _trainerTowerFrames = new();
     private TrainerTowerMenuPresentation? _trainerTowerMenu;
     private string? _trainerTowerMenuWait;
+    private CampaignDialogue? _trainerTowerSpeechDialogue;
+    private string[] _trainerTowerSpeechPages = [];
+    private int _trainerTowerSpeechPage;
     private bool TrainerTowerMenuActive => _session.State.TrainerTowerMenu is not null;
     private bool TrainerTowerMenuVisible => TrainerTowerMenuActive && FieldTextComplete &&
         (_session.State.Dialogue is null || _session.State.Dialogue.Page + 1 == _session.State.Dialogue.Pages.Length);
@@ -113,6 +116,49 @@ public partial class CampaignView
         ? _catalog.TrainerTowerOpponents.Catalog.Species.Values.Any(s => s.SourceSpeciesId == species)
             ? (_pokedexMenu ?? throw new InvalidDataException("Tower species names missing.")).Entries[species].Name : null : null;
 
+    // trainer_tower.c TT_ConvertEasyChatMessageToString keeps Easy Chat words intact,
+    // including words whose source spelling contains spaces; it is not ordinary word wrapping.
+    private string FormatTrainerTowerSpeech(IEnumerable<TrainerTowerWord> source)
+    {
+        var words = source.Select(w => w.Text).ToArray();
+        if (words.Length != 6) throw new InvalidDataException("Tower Easy Chat word count differs.");
+        string[] Rows(int width) => words.Chunk(width).Select(row => string.Join(" ", row)).ToArray();
+        var rows = Rows(3);
+        if (rows.Any(row => _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(row), fontSize: _sourceNormal.Size).X > 196)) rows = Rows(2);
+        return string.Join('\n', rows);
+    }
+    private string? TrainerTowerBattleSpeech(int opponentIndex)
+    {
+        if (VisibleTrainerTowerFrame is not {} frame || frame.TrainerTowerEncounter is not {} tower) return null;
+        var course = _catalog.TrainerTowerCatalog.Course(Enum.Parse<TrainerTowerChallengeKind>(tower.Course));
+        var template = _catalog.TrainerTowerCatalog.Template(course.Floors[tower.FloorIndex].TemplateSymbol);
+        var trainer = template.Trainers[tower.TrainerIndex + (frame.Layout == SourceBattleLayout.PresetDoubles ? opponentIndex : 0)];
+        return FormatTrainerTowerSpeech(frame.Outcome == Game.Domain.WildBattle.WildBattleOutcome.Won ? trainer.SpeechLose : trainer.SpeechWin);
+    }
+    private string? PresentedFieldText => _trainerTowerSpeechPages.Length > 0
+        ? _trainerTowerSpeechPages[_trainerTowerSpeechPage] : _session.VisibleText;
+    private void SynchronizeTrainerTowerSpeech()
+    {
+        var dialogue = _session.State.Dialogue;
+        if (dialogue == _trainerTowerSpeechDialogue) return;
+        _trainerTowerSpeechDialogue = dialogue; _trainerTowerSpeechPages = []; _trainerTowerSpeechPage = 0;
+        if (dialogue?.TextSymbol != "gStringVar4" || !IsTrainerTowerPresentationMap(_session.State.World.Player.MapId)) return;
+        string map = _session.State.World.Player.MapId.Value;
+        if (map.Length != "map.trainer-tower-1f".Length || map[^2] is < '1' or > '8') return;
+        var course = _catalog.TrainerTowerCatalog.Course(_session.State.TrainerTower!.SelectedCourse);
+        var template = _catalog.TrainerTowerCatalog.Template(course.Floors[map[^2] - '1'].TemplateSymbol);
+        var trainer = template.Trainers[_session.State.Script.Variables.GetValueOrDefault("VAR_0x8006")];
+        var words = _session.State.Script.Variables.GetValueOrDefault("VAR_0x8005") switch
+        { 2 => trainer.SpeechBefore, 3 => trainer.SpeechWin, 4 => trainer.SpeechLose, 5 => trainer.SpeechAfter, _ => throw new InvalidDataException("Tower speech kind differs.") };
+        _trainerTowerSpeechPages = ForestTrainerPlainPages(FormatTrainerTowerSpeech(words)).ToArray();
+    }
+    private bool TryTrainerTowerSpeechInput(InputEventKey key)
+    {
+        if (!key.Pressed || key.Keycode is not (Key.Enter or Key.Backspace) || !FieldTextComplete ||
+            _trainerTowerSpeechPage + 1 >= _trainerTowerSpeechPages.Length) return false;
+        _trainerTowerSpeechPage++; _held = null; SynchronizeFieldText(); return true;
+    }
+
     private string? TrainerTowerGraphics(string graphics)
     {
         if (!IsTrainerTowerPresentationMap(_session.State.World.Player.MapId) || !graphics.StartsWith("OBJ_EVENT_GFX_VAR_", StringComparison.Ordinal)) return null;
@@ -166,7 +212,9 @@ public partial class CampaignView
         if (wait is null) throw new InvalidDataException("Tower menu source wait missing.");
         if (_trainerTowerMenuWait == wait) return;
         var menu = _session.State.TrainerTowerMenu!;
-        _trainerTowerMenu = new(menu.SourceSymbol, menu.Options); _trainerTowerMenuWait = wait; _held = null; _repeat = 0;
+        int defaultCursor = menu.SourceSymbol == "MULTICHOICE_ROOFTOP_B1F"
+            ? _session.State.TrainerTowerElevator?.MenuDefault ?? throw new InvalidDataException("Tower elevator menu default missing.") : 0;
+        _trainerTowerMenu = new(menu.SourceSymbol, menu.Options, defaultCursor); _trainerTowerMenuWait = wait; _held = null; _repeat = 0;
     }
     private bool TryTrainerTowerInput(InputEventKey key)
     {
@@ -200,6 +248,18 @@ public partial class CampaignView
     }
     private void DrawTrainerTowerMenu()
     {
+        // Same native current-floor window as the Department Store: top-right 7x4
+        // interior, source floor label aligned to its 56-pixel right edge.
+        if (_session.State.World.Player.MapId.Value == "map.trainer-tower-elevator" &&
+            _session.State.TrainerTowerElevator is { FloorWindowVisible: true } elevator)
+        {
+            _battleSkin.DrawUserFrame(this, new(168, 0, 72, 48));
+            SourceText(_sourceNormal, new(176, 10), "Now on:");
+            int floor = _session.State.Script.Variables.GetValueOrDefault("VAR_0x8005", elevator.Floor);
+            string label = TrainerTowerMenuPresentation.ElevatorFloorLabel(floor);
+            float width = _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(label), fontSize: _sourceNormal.Size).X;
+            SourceText(_sourceNormal, new(232 - width, 24), label);
+        }
         if (!TrainerTowerMenuVisible || _trainerTowerMenu is not {} menu) return;
         var f = menu.Frame(TrainerTowerMenuWidth); _battleSkin.DrawUserFrame(this, new(f.X, f.Y, f.Width, f.Height));
         for (int i = 0; i < menu.Options.Count; i++) SourceText(_sourceNormal, new(f.X + 16, f.Y + 10 + i * 14), menu.Options[i]);

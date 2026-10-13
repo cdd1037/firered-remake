@@ -63,8 +63,8 @@ public sealed partial class CampaignSession
     }
     private string? ValidateTrainerTowerProgress(CampaignState state)
     {
-        if (!_content.TrainerTowerEnabled) return state.TrainerTower is not null || state.TrainerTowerHistory is not null ? "save_trainer_tower_content" : null;
-        if (state.TrainerTowerMenu is not null || state.TrainerTowerRecordsVisible) return "save_trainer_tower_menu_active";
+        if (ValidateTrainerTowerFieldSave(state) is {} fieldError) return fieldError;
+        if (!_content.TrainerTowerEnabled) return null;
         try { if (state.TrainerTower is {} tower) TrainerTowerProgressRules.ValidateStableSave(tower,_content.TrainerTowerCatalog!); }
         catch (Exception ex) when (ex is ArgumentException or InvalidDataException or InvalidOperationException) { return "save_trainer_tower_progress"; }
         if (IsTrainerTowerMap(state.World.Player.MapId) && (!RainbowQuestComplete(state) || state.TrainerTower is null)) return "save_trainer_tower_access";
@@ -101,6 +101,27 @@ public sealed partial class CampaignSession
         int Value(string token)=>DepartmentValue(state,token);
         CampaignState Result(CampaignState s,int value)=>s with{Script=s.Script with{Variables=s.Script.Variables.SetItem("VAR_RESULT",value)}};
         string opcode=effect.Opcode;
+        if(opcode=="warp")
+        {
+            bool loss=effect.Source.Path==TrainerTowerShared&&effect.Source.Symbol is "TrainerTower_EventScript_WarpToLobbyLost" or "TrainerTower_EventScript_WarpToLobby";
+            bool lift=effect.Source.Path=="data/maps/TrainerTower_Elevator/scripts.inc"&&effect.Source.Symbol=="TrainerTower_Elevator_EventScript_SelectLobby";
+            if(!(loss&&a.SequenceEqual(new[]{"MAP_TRAINER_TOWER_LOBBY","9","7"})||lift&&a.SequenceEqual(new[]{"MAP_TRAINER_TOWER_LOBBY","17","8"})))
+                throw new InvalidDataException("trainer_tower_lobby_warp_source");
+            int x=loss?9:17,y=loss?7:9;var lobby=new MapId(TrainerTowerLobby);var landing=_content.Maps[lobby].GetTile(x,y)!;
+            // CB2_LoadMap replaces the old script context. The loss script ends at
+            // waitstate with no end instruction; it must not resume after loading.
+            next=EnterMap(state with{World=state.World with{Player=new(lobby,x,y,landing.Elevation,Direction.South)},
+                Script=state.Script with{Stack=[],Wait=null,Completed=true,Locked=false},Dialogue=null,Motions=[],PresentationEffects=[],PresentationTicks=0},Direction.South);
+            return true;
+        }
+        if(opcode=="addvar")
+        {
+            string expected=effect.Source.Symbol switch{"TrainerTower_EventScript_DoDoubleBattle"=>"VAR_TEMP_3",
+                "TrainerTower_EventScript_DoSecondKnockoutBattle" or "TrainerTower_EventScript_DoThirdKnockoutBattle"=>"VAR_TEMP_1",_=>""};
+            if(effect.Source.Path!=TrainerTowerShared||a.Length!=2||expected.Length==0||a[0]!=expected||Value(a[1])!=1)
+                throw new InvalidDataException("trainer_tower_counter_source");
+            next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem(expected,unchecked((ushort)(Value(expected)+1)))}};return true;
+        }
         if(opcode=="getplayerxy")
         {
             if(!a.SequenceEqual(new[]{"VAR_TEMP_D","VAR_RESULT"})||state.World.Player.MapId.Value!=TrainerTowerLobby)throw new InvalidDataException("trainer_tower_player_coordinates");
@@ -146,14 +167,25 @@ public sealed partial class CampaignSession
             case "ttower_getspeech":
                 int speech=Value(a[0]),trainer=a.Length>1?Value(a[1]):Value("VAR_0x8006");
                 var t=TowerTemplate(state).Trainers[trainer];
-                var words=speech switch{0=>t.SpeechBefore,1=>t.SpeechWin,2=>t.SpeechLose,3=>t.SpeechAfter,_=>throw new InvalidDataException("trainer_tower_speech_kind")};
+                var words=speech switch{2=>t.SpeechBefore,3=>t.SpeechWin,4=>t.SpeechLose,5=>t.SpeechAfter,_=>throw new InvalidDataException("trainer_tower_speech_kind")};
                 // The source Easy Chat formatter starts with a 3x2 grid; exact width-driven
                 // 2x3 fallback remains a presentation concern, never a gameplay branch.
                 string text=string.Join(" ",words.Take(3).Select(w=>w.Text))+"\n"+string.Join(" ",words.Skip(3).Select(w=>w.Text));
-                next=state with{TextBuffers=state.TextBuffers.SetItem("gStringVar4",text),TextColor=speech==3?state.TextColor:t.TextColor==0?"MALE":"FEMALE",
-                    Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_0x8005",speech).SetItem("VAR_0x8006",trainer)}};return true;
+                var speechVariables=state.Script.Variables.SetItem("VAR_0x8005",speech).SetItem("VAR_0x8006",trainer);string speechColor=state.TextColor;
+                if(speech!=5)
+                {
+                    int gender=_content.TrainerTowerTextGender(TowerTemplate(state),trainer,Value("VAR_TEMP_3")!=0);
+                    speechVariables=speechVariables.SetItem("VAR_PREV_TEXT_COLOR",Value("VAR_TEXT_COLOR")).SetItem("VAR_TEXT_COLOR",gender);
+                    speechColor=gender==0?"MALE":"FEMALE";
+                }
+                next=state with{TextBuffers=state.TextBuffers.SetItem("gStringVar4",text),TextColor=speechColor,
+                    Script=state.Script with{Variables=speechVariables}};return true;
             case "ttower_getchallengetype":next=Result(state,(int)TrainerTowerLayout(state,state.World.Player.MapId));return true;
-            case "ttower_clearedfloor":next=state with{TrainerTower=TrainerTowerProgressRules.AddFloorCleared(tower)};return true;
+            case "ttower_clearedfloor":
+                // Source ends without waitmovement after the final doubles/KO actor
+                // motion. Keep its presentation acknowledgement before stable saves.
+                next=state with{TrainerTower=TrainerTowerProgressRules.AddFloorCleared(tower),
+                    Script=state.Motions.IsEmpty?state.Script:state.Script with{Wait=state.Script.Wait! with{Kind=StoryWaitKind.Presentation}}};return true;
             case "ttower_isfloorcleared":
                 int n=TrainerTowerFloorNumber(state.World.Player.MapId);
                 next=Result(state,n==0||TrainerTowerProgressRules.GetFloorAlreadyCleared(tower,n,n==9?8:TowerTemplate(state).EncodedFloorCount)?1:0);return true;
@@ -201,14 +233,14 @@ public sealed partial class CampaignSession
         string actor=format switch{TrainerTowerBattleFormat.Double=>"LOCALID_TOWER_TRAINER_DOUBLES1",TrainerTowerBattleFormat.Knockout=>trainer switch{0=>"LOCALID_TOWER_TRAINER_KNOCKOUT",1=>"LOCALID_TOWER_TRAINER_DOUBLES1",_=>"LOCALID_TOWER_TRAINER_SINGLES"},_=>"LOCALID_TOWER_TRAINER_SINGLES"};
         var next=ResetFieldPoisonCounterForBattle(state) with{TrainerTower=tower,Dialogue=null,Motions=[],PresentationTicks=0,World=state.World with{Rng=frame.Rng},Music="MUS_VS_TRAINER"};
         if(format==TrainerTowerBattleFormat.Double)
-            return next with{DoubleBattle=new(id,made.Trainer.Id,actor,frame,CampaignDoubleBattleStage.Combat,entry.Events,0,[],state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),0,0,
+            return next with{DoubleBattle=new(id,made.Trainer.Id,actor,frame,CampaignDoubleBattleStage.Combat,entry.Events.Where(e=>e is not SourceTrainerStartedEvent).ToImmutableArray(),0,[],state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),0,0,
                 frame.Slots.Select(s=>s.Body!).ToImmutableArray(),frame.Slots.Select(s=>s.Member!.Value).ToImmutableArray(),entry.Trace,[],0),
                 SeenSpecies=state.SeenSpecies.Union(frame.Party(BattleSide.Opponent).Members.Select(m=>m.Pokemon.SourceSpeciesId))};
         int active=frame.Get(new(0)).Member!.Value.Index;
         var view=new CampaignWildBattle(id,state.Party[active],frame,ProjectTrainerWildEvents(entry.Events),0,frame.Get(new(0)).Body!.Pokemon,frame.Get(new(1)).Body!.Pokemon,
             CampaignBattlePhase.Events,[],0,entry.Trace){SourceEvents=entry.Events,ActivePartyIndex=active,FaintedMembers=state.Party.Where(p=>p.Pokemon.CurrentHp==0).Select(p=>p.InstanceId).ToImmutableSortedSet(),OpponentHpAtLastSwitch=frame.Get(new(1)).Body!.Pokemon.CurrentHp};
-        return ProjectSourceTrainerOwnedParty(next with{ForestTrainerBattle=new(id,made.Trainer.Id,actor,view,CampaignForestTrainerStage.Combat,state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
-            ProjectTrainerEvents(frame,entry.Events),0,0,[0]),SeenSpecies=state.SeenSpecies.Add(frame.Get(new(1)).Body!.Pokemon.SourceSpeciesId)});
+        return PrepareForestTrainerPresentation(ProjectSourceTrainerOwnedParty(next with{ForestTrainerBattle=new(id,made.Trainer.Id,actor,view,CampaignForestTrainerStage.Combat,state.Party.Select(p=>p.Pokemon.Level).ToImmutableArray(),
+            ProjectTrainerEvents(frame,entry.Events),0,0,[0]),SeenSpecies=state.SeenSpecies.Add(frame.Get(new(1)).Body!.Pokemon.SourceSpeciesId)}));
     }
 
     private SourceTwinsAiResult TrainerTowerEnemyActions(SourceBattleFrame frame)

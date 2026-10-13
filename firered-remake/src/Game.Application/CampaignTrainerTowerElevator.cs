@@ -22,7 +22,7 @@ public sealed partial class CampaignSession
             next=state with{TrainerTowerElevator=elevator with{DestinationMapId=new(TrainerTowerLobby),DestinationWarpId=255,X=17,Y=8,Elevation=tile.Elevation,Floor=3}};return true;
         }
         if(effect.Opcode=="multichoicedefault")
-        {if(a.Length!=5||a[2]!="MULTICHOICE_ROOFTOP_B1F"||a[4]!="FALSE")throw new InvalidDataException("trainer_tower_elevator_menu");next=state with{TrainerTowerMenu=new(a[2],["ROOFTOP","1F"]),TrainerTowerElevator=elevator with{MenuDefault=Value(a[3])}};return true;}
+        {if(a.Length!=5||a[2]!="MULTICHOICE_ROOFTOP_B1F"||a[4]!="FALSE")throw new InvalidDataException("trainer_tower_elevator_menu");next=state with{TrainerTowerMenu=new(a[2],["ROOFTOP","B1F","EXIT"]),TrainerTowerElevator=elevator with{MenuDefault=Value(a[3])}};return true;}
         if(effect.Opcode is not("special" or "specialvar"))return false;
         var special=a[effect.Opcode=="specialvar"?1:0];
         CampaignState Var(string key,int value)=>state with{Script=state.Script with{Variables=state.Script.Variables.SetItem(key,value)}};
