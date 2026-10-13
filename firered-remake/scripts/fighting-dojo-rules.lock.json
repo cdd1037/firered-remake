@@ -1,0 +1,187 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-fighting-dojo-rules-v1",
+  "files": [
+    {
+      "path": "content/generated/fighting-dojo-rules/machines.json",
+      "byteLength": 41461,
+      "sha256": "c47f335e8091e1f8b2e0cda39819af278a4a4f47140ae762942d95d7b99143d6"
+    },
+    {
+      "path": "content/generated/fighting-dojo-rules/pokemon.json",
+      "byteLength": 18008,
+      "sha256": "4679a195369fe66442a0d4b8f75000efc9714083e52232c40e717e3d4c89cdd1"
+    },
+    {
+      "path": "content/generated/fighting-dojo-rules/rules.json",
+      "byteLength": 15353,
+      "sha256": "fec84f03b6da2aff0d2d4243b1f81b4557b8e787522f7e9a9ca44ac668787ce4"
+    },
+    {
+      "path": "content/generated/fighting-dojo-rules/source-input-hashes.json",
+      "byteLength": 7550,
+      "sha256": "f6f53b2cc4ed81a4c8dbfb0bb6e9c24a8014a100ff72b95b489cefc6a418b340"
+    },
+    {
+      "path": "content/generated/fighting-dojo-rules/trainers.json",
+      "byteLength": 25646,
+      "sha256": "1b91967d81795a37437309205c3834c473a66597fa88a8de8ac384091dfb3762"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/asm/macros/event.inc",
+      "byteLength": 56947,
+      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/charmap.txt",
+      "byteLength": 21853,
+      "sha256": "4da662317b3b5109a52064f9012d85b644d1dbf0f3f24243374aeef4cf25f061"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/data/maps/SaffronCity_Dojo/map.json",
+      "byteLength": 5164,
+      "sha256": "3be8badff9d9389721fb5c488c57210e0037e69c257941f790192035cf98751d"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/data/maps/SaffronCity_Dojo/scripts.inc",
+      "byteLength": 5041,
+      "sha256": "a7e406b6355b31c2853206ba66a0fb00cfd1575b5a3a92d69e9237bffdac9098"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/data/maps/SaffronCity_Dojo/text.inc",
+      "byteLength": 2960,
+      "sha256": "f1dd6d3f989492631d3190301d326cf73512d53b30c131e98daa5a133966c6a9"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/data/scripts/trainer_battle.inc",
+      "byteLength": 3768,
+      "sha256": "409fdc28f13423f602cb2428208693a4c467a1f5785bc487bafb5ab0fce8c96c"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/battle.h",
+      "byteLength": 16440,
+      "sha256": "b9d0493af4629d450050637e9aace63b684b282f841bed2a0d97b1d71e9d55e3"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/battle_ai.h",
+      "byteLength": 1436,
+      "sha256": "b9493a13b76892fea0c5beb43ae4c5da3a02ef0575bbffd02e17fa93f25f5ce5"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/battle_setup.h",
+      "byteLength": 701,
+      "sha256": "0b6b1ca9cc25f88a467790ad1f5af3ea0dcef51852e4c025df63b688414762d1"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/flags.h",
+      "byteLength": 95397,
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/items.h",
+      "byteLength": 12436,
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/opponents.h",
+      "byteLength": 39946,
+      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/pokemon.h",
+      "byteLength": 10894,
+      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/constants/trainers.h",
+      "byteLength": 20887,
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/include/random.h",
+      "byteLength": 669,
+      "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/battle_main.c",
+      "byteLength": 171904,
+      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/battle_script_commands.c",
+      "byteLength": 355862,
+      "sha256": "3b7341db8cd58c54fb0b54b47e6eef89c5c05e8a60ab4e9b45bdc907845c19b3"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/battle_setup.c",
+      "byteLength": 33351,
+      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/pokemon/evolution.h",
+      "byteLength": 12282,
+      "sha256": "a7d05352fb5b7039b8851049bc9575dc8eaa4450bf9964d03b7857db98c32d3c"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/pokemon/level_up_learnset_pointers.h",
+      "byteLength": 20597,
+      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/pokemon/level_up_learnsets.h",
+      "byteLength": 182027,
+      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/pokemon/pokedex_entries.h",
+      "byteLength": 132235,
+      "sha256": "c4103cfd5ceed94603e60462028970201fedea0faeae68037da9987ac992220b"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/pokemon/species_info.h",
+      "byteLength": 342600,
+      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/pokemon/tmhm_learnsets.h",
+      "byteLength": 559340,
+      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/text/species_names.h",
+      "byteLength": 15851,
+      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/trainer_parties.h",
+      "byteLength": 242256,
+      "sha256": "cb135d9cbdfc52c87066374d582506830a8c93561eab2033d847331c2de00299"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/data/trainers.h",
+      "byteLength": 302118,
+      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/pokemon.c",
+      "byteLength": 221865,
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "path": "content/raw/fighting-dojo-rules/src/script_pokemon_util.c",
+      "byteLength": 5764,
+      "sha256": "cfadee8f8c397485b66fc56a9a6e13fef1bbad47b4c6cd83dd42a9c1f8f9cf30"
+    },
+    {
+      "path": "src/Game.Domain/Trainers/FightingDojoTrainerSource.cs",
+      "byteLength": 1737,
+      "sha256": "6f6fa072764df447be400f72b4852b93fb04b456704c2a37a8f4ddc870a22dd2"
+    }
+  ]
+}

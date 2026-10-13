@@ -40,10 +40,10 @@ public sealed partial class CampaignSession
             content.PowerPlantShop is not { } shop ||
             !ReferenceEquals(PowerPlantOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             !ReferenceEquals(owned.Predecessor, content.EventIslandOwnership) ||
-            !ReferenceEquals(owned.Catalog, content.PokemonContent?.Catalog) ||
+            !ReferenceEquals(owned, content.FightingDojoOwnership?.Predecessor) ||
             !ReferenceEquals(PowerPlantOpponentPokemonCatalog.For(owned), opponents) ||
             !ReferenceEquals(opponents.Predecessor, content.EventIslandOpponents) ||
-            !ReferenceEquals(Game.Domain.Items.PowerPlantMachineCatalog.For(content.PewterMachines), machines) ||
+            !ReferenceEquals(Game.Domain.Items.PowerPlantMachineCatalog.For(machines.Catalog), machines) ||
             !ReferenceEquals(machines.Predecessor, content.EventIslandMachines) || !ReferenceEquals(machines.Pokemon, owned) ||
             !ReferenceEquals(Game.Domain.Items.TrainerTowerShopCatalog.For(content.EarlyShop)?.Predecessor ?? Game.Domain.Items.PowerPlantShopCatalog.For(content.EarlyShop), shop) ||
             !ReferenceEquals(shop.Predecessor, content.EventIslandShop)) throw new InvalidDataException("power_plant_current_binding");

@@ -59,10 +59,10 @@ public partial class CampaignView
         }
         catch{replacement.Dispose();throw;}
     }
-    private Dictionary<string,SpriteAsset> LoadRegionNpcs(string manifest,CampaignResourceCache.Owner owner)
+    private Dictionary<string,SpriteAsset> LoadRegionNpcs(string manifest,CampaignResourceCache.Owner owner,bool projectRelative=false)
     {
         // PretViridianRegion authenticated this exact manifest and every PNG before exposing maps.
-        var root=System.IO.Path.GetDirectoryName(manifest)!;using var doc=JsonDocument.Parse(System.IO.File.ReadAllBytes(manifest));var result=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
+        var root=projectRelative?_root:System.IO.Path.GetDirectoryName(manifest)!;using var doc=JsonDocument.Parse(System.IO.File.ReadAllBytes(manifest));var result=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
         foreach(var e in doc.RootElement.GetProperty("graphics").EnumerateArray())
         {
             var path=e.GetProperty("texturePath").GetString()!;

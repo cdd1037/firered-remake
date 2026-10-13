@@ -59,7 +59,7 @@ public sealed partial class CampaignSession
         // The next city chapter owns the rival's Fame Checker and Rocket TM28 continuations.
         // Reject before committing their first lock/battle until those complete reward paths exist.
         if(!_content.BillEnabled&&IsCeruleanTrainer(trainer)&&definition.Mode==3)throw new InvalidDataException("cerulean_north_events_not_implemented");
-        if (definition.Mode != 0 && !(IsFourIslandTrainer(trainer) && definition.Mode==3) && !(IsSeviiRubyTrainer(trainer) && definition.Mode==3) && !(IsPokemonLeagueTrainer(trainer) && definition.Mode==3) && !(IsLeagueRivalTrainer(trainer) && definition.Mode==3) && !(IsViridianGymTrainer(trainer) && definition.Mode==1) && !(IsFirstSeviiTrainer(trainer) && definition.Mode==3) && !(IsCinnabarTrainer(trainer) && definition.Mode is 1 or 2 or 3) && !(IsSilphTrainer(trainer) && definition.Mode is 2 or 3) && !(IsPokemonTowerTrainer(trainer) && definition.Mode is 2 or 3) && !(IsRocketHideoutTrainer(trainer) && definition.Mode is 2 or 3) && !(IsSaffronGymTrainer(trainer) && definition.Mode == 1) && !(IsFuchsiaGymTrainer(trainer) && definition.Mode == 1) && !(IsCeladonGymTrainer(trainer) && definition.Mode == 1) && !(IsPewterTrainer(trainer) && definition.Mode == 1) && !(IsRoute22Trainer(trainer) && definition.Mode == 9) && !(IsMtMoonTrainer(trainer) && definition.Mode == 3) && !(IsCeruleanTrainer(trainer)&&definition.Mode is 1 or 3) && !(IsBillTrainer(trainer)&&definition.Mode==3) && !(IsSsAnneTrainer(trainer)&&definition.Mode==3)) throw new InvalidDataException("forest_trainer_mode_unsupported");
+        if (definition.Mode != 0 && !(IsFightingDojoTrainer(trainer) && definition.Mode==2) && !(IsFourIslandTrainer(trainer) && definition.Mode==3) && !(IsSeviiRubyTrainer(trainer) && definition.Mode==3) && !(IsPokemonLeagueTrainer(trainer) && definition.Mode==3) && !(IsLeagueRivalTrainer(trainer) && definition.Mode==3) && !(IsViridianGymTrainer(trainer) && definition.Mode==1) && !(IsFirstSeviiTrainer(trainer) && definition.Mode==3) && !(IsCinnabarTrainer(trainer) && definition.Mode is 1 or 2 or 3) && !(IsSilphTrainer(trainer) && definition.Mode is 2 or 3) && !(IsPokemonTowerTrainer(trainer) && definition.Mode is 2 or 3) && !(IsRocketHideoutTrainer(trainer) && definition.Mode is 2 or 3) && !(IsSaffronGymTrainer(trainer) && definition.Mode == 1) && !(IsFuchsiaGymTrainer(trainer) && definition.Mode == 1) && !(IsCeladonGymTrainer(trainer) && definition.Mode == 1) && !(IsPewterTrainer(trainer) && definition.Mode == 1) && !(IsRoute22Trainer(trainer) && definition.Mode == 9) && !(IsMtMoonTrainer(trainer) && definition.Mode == 3) && !(IsCeruleanTrainer(trainer)&&definition.Mode is 1 or 3) && !(IsBillTrainer(trainer)&&definition.Mode==3) && !(IsSsAnneTrainer(trainer)&&definition.Mode==3)) throw new InvalidDataException("forest_trainer_mode_unsupported");
         if(!string.IsNullOrEmpty(definition.IntroText))_ = _content.TextPages(definition.IntroText);
         _ = _content.TextPages(definition.DefeatText);
         if(!string.IsNullOrEmpty(definition.PostBattleText))_ = _content.TextPages(definition.PostBattleText);
@@ -72,7 +72,7 @@ public sealed partial class CampaignSession
         if ((noIntro?effect.Args.Length!=2:effect.Args.Length is <3 or >5) || state.Script.Wait?.Kind != StoryWaitKind.Battle)
             throw new InvalidDataException("forest_trainer_source_wait_invalid");
         var trainer = new TrainerId("pret:" + effect.Args[0]);
-        var definition = IsFirstSeviiTrainer(trainer)?OrdinaryTrainerScript(trainer,effect.Source.Symbol,effect.Source.Line):IsSevenIslandTrainer(trainer)||IsFiveIslandTrainer(trainer)||IsSixIslandTrainer(trainer)||IsFourIslandTrainer(trainer)||IsSeviiRubyTrainer(trainer)||IsVictoryRoadTrainer(trainer)||IsViridianGymTrainer(trainer)||IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer,effect.Source.Symbol):OrdinaryTrainerScript(trainer);
+        var definition = IsFirstSeviiTrainer(trainer)?OrdinaryTrainerScript(trainer,effect.Source.Symbol,effect.Source.Line):IsFightingDojoTrainer(trainer)||IsSevenIslandTrainer(trainer)||IsFiveIslandTrainer(trainer)||IsSixIslandTrainer(trainer)||IsFourIslandTrainer(trainer)||IsSeviiRubyTrainer(trainer)||IsVictoryRoadTrainer(trainer)||IsViridianGymTrainer(trainer)||IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer,effect.Source.Symbol):OrdinaryTrainerScript(trainer);
         string? battleActorId = state.LastTalked;
         if(noIntro)
         {
@@ -92,7 +92,7 @@ public sealed partial class CampaignSession
             battleActorId=selected.LocalId;
             if(!IsCinnabarTrainer(trainer)&&!IsPokemonLeagueChampion(trainer))state=SelectInteractedObject(state,selected.LocalId) with{LastTalked=selected.LocalId};
         }
-        var expectedLine=IsSevenIslandTrainer(trainer)?SevenIslandTrainerSourceLine(definition.ScriptEntry):IsFiveIslandTrainer(trainer)?FiveIslandTrainerSourceLine(definition.ScriptEntry):IsSixIslandTrainer(trainer)?SixIslandTrainerSourceLine(definition.ScriptEntry):IsFourIslandTrainer(trainer)?FourIslandTrainerSourceLine(definition.ScriptEntry):IsSeviiRubyTrainer(trainer)?SeviiRubyTrainerSourceLine(definition.ScriptEntry):IsPokemonLeagueTrainer(trainer)?definition.Source.StartLine+1:IsLeagueRivalTrainer(trainer)?definition.Source.StartLine+1:IsFirstSeviiTrainer(trainer)?definition.Source.StartLine:IsVictoryRoadTrainer(trainer)||IsViridianGymTrainer(trainer)||IsCinnabarTrainer(trainer)||IsSaffronGymTrainer(trainer)||IsSilphTrainer(trainer)||IsFuchsiaGymTrainer(trainer)||IsFuchsiaRouteTrainer(trainer)||IsPokemonTowerTrainer(trainer)||IsRocketHideoutTrainer(trainer)||IsCeladonGymTrainer(trainer)||IsCeladonApproachTrainer(trainer)||IsRockTunnelTrainer(trainer)||IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
+        var expectedLine=IsFightingDojoTrainer(trainer)?FightingDojoTrainerSourceLine(definition.ScriptEntry):IsSevenIslandTrainer(trainer)?SevenIslandTrainerSourceLine(definition.ScriptEntry):IsFiveIslandTrainer(trainer)?FiveIslandTrainerSourceLine(definition.ScriptEntry):IsSixIslandTrainer(trainer)?SixIslandTrainerSourceLine(definition.ScriptEntry):IsFourIslandTrainer(trainer)?FourIslandTrainerSourceLine(definition.ScriptEntry):IsSeviiRubyTrainer(trainer)?SeviiRubyTrainerSourceLine(definition.ScriptEntry):IsPokemonLeagueTrainer(trainer)?definition.Source.StartLine+1:IsLeagueRivalTrainer(trainer)?definition.Source.StartLine+1:IsFirstSeviiTrainer(trainer)?definition.Source.StartLine:IsVictoryRoadTrainer(trainer)||IsViridianGymTrainer(trainer)||IsCinnabarTrainer(trainer)||IsSaffronGymTrainer(trainer)||IsSilphTrainer(trainer)||IsFuchsiaGymTrainer(trainer)||IsFuchsiaRouteTrainer(trainer)||IsPokemonTowerTrainer(trainer)||IsRocketHideoutTrainer(trainer)||IsCeladonGymTrainer(trainer)||IsCeladonApproachTrainer(trainer)||IsRockTunnelTrainer(trainer)||IsRoute11Trainer(trainer)||IsVermilionGymTrainer(trainer)||IsMtMoonTrainer(trainer)||IsCeruleanTrainer(trainer)||IsBillTrainer(trainer)||IsSsAnneTrainer(trainer)?_content.FindProgram(definition.ScriptEntry)!.Instructions.Single(i=>i.Op==StoryOp.TrainerBattle).Source.Line:definition.Source.StartLine+(IsPewterTrainer(trainer)&&definition.Mode==1?2:1);
         if (effect.Source.Path != definition.Source.Path || ((effect.Source.Symbol != definition.ScriptEntry || effect.Source.Line != expectedLine) && !IsBillRocketTriggeredBattle(effect,trainer)) ||
             (!noIntro&&(effect.Args[1] != definition.IntroText || effect.Args[2] != definition.DefeatText)) ||
             battleActorId is not { } actorId || !state.Actors.TryGetValue(actorId, out var actor) ||
@@ -117,6 +117,10 @@ public sealed partial class CampaignSession
             int expected=source.PostBattleScript is not null?4:3;
             if(effect.Args.Length!=expected||expected==4&&effect.Args[3]!=source.PostBattleScript)
                 throw new InvalidDataException("rocket_trainer_optional_arguments_mismatch");
+        }
+        else if(IsFightingDojoTrainer(trainer))
+        {
+            RequireFightingDojoTrainerArguments(effect,definition);
         }
         else if(IsFiveIslandTrainer(trainer))
         {
@@ -179,6 +183,7 @@ public sealed partial class CampaignSession
         }
         else if(!noIntro&&effect.Args.Length!=3)throw new InvalidDataException("forest_trainer_source_wait_invalid");
         if (!_forestTrainerApproaching&&!noIntro) state = FaceSelectedObject(state);
+        if(IsFightingDojoTrainer(trainer))RequireFightingDojoTrainerOccurrence(state,trainer,definition,effect);
         if(IsFiveIslandTrainer(trainer))RequireFiveIslandTrainerOccurrence(state,trainer,definition,noIntro);
         if(IsSixIslandTrainer(trainer))RequireSixIslandTrainerOccurrence(state,trainer,definition,noIntro);
         if(IsSevenIslandTrainer(trainer))RequireSevenIslandTrainerOccurrence(state,trainer,definition,noIntro);
@@ -207,7 +212,7 @@ public sealed partial class CampaignSession
             FaintedMembers = state.Party.Where(p => p.Pokemon.CurrentHp == 0).Select(p => p.InstanceId).ToImmutableSortedSet(), OpponentHpAtLastSwitch = combat.Get(new(1)).Body!.Pokemon.CurrentHp };
         var battle = new CampaignForestTrainerBattle(id, trainer, actorId, presentation,
             CampaignForestTrainerStage.Intro, state.Party.Select(p => p.Pokemon.Level).ToImmutableArray(),
-            ProjectTrainerEvents(combat, prepared.Events), 0, 0, [0]){SourceScriptEntry=IsSevenIslandTrainer(trainer)||IsFiveIslandTrainer(trainer)||IsSixIslandTrainer(trainer)||IsFourIslandTrainer(trainer)||IsSeviiRubyTrainer(trainer)||IsPokemonLeagueTrainer(trainer)||IsLeagueRivalTrainer(trainer)||IsViridianGymTrainer(trainer)||IsFirstSeviiTrainer(trainer)||IsCinnabarTrainer(trainer)?definition.ScriptEntry:null,SourceScriptLine=IsSevenIslandTrainer(trainer)||IsFiveIslandTrainer(trainer)||IsSixIslandTrainer(trainer)||IsFourIslandTrainer(trainer)||IsSeviiRubyTrainer(trainer)?effect.Source.Line:IsPokemonLeagueTrainer(trainer)?definition.Source.StartLine+1:IsLeagueRivalTrainer(trainer)?definition.Source.StartLine+1:IsFirstSeviiTrainer(trainer)?definition.Source.StartLine:null};
+            ProjectTrainerEvents(combat, prepared.Events), 0, 0, [0]){SourceScriptEntry=IsFightingDojoTrainer(trainer)||IsSevenIslandTrainer(trainer)||IsFiveIslandTrainer(trainer)||IsSixIslandTrainer(trainer)||IsFourIslandTrainer(trainer)||IsSeviiRubyTrainer(trainer)||IsPokemonLeagueTrainer(trainer)||IsLeagueRivalTrainer(trainer)||IsViridianGymTrainer(trainer)||IsFirstSeviiTrainer(trainer)||IsCinnabarTrainer(trainer)?definition.ScriptEntry:null,SourceScriptLine=IsFightingDojoTrainer(trainer)||IsSevenIslandTrainer(trainer)||IsFiveIslandTrainer(trainer)||IsSixIslandTrainer(trainer)||IsFourIslandTrainer(trainer)||IsSeviiRubyTrainer(trainer)?effect.Source.Line:IsPokemonLeagueTrainer(trainer)?definition.Source.StartLine+1:IsLeagueRivalTrainer(trainer)?definition.Source.StartLine+1:IsFirstSeviiTrainer(trainer)?definition.Source.StartLine:null};
         var fixedActor = state.Actors[actorId];
         state = state with { Actors = state.Actors.SetItem(actorId, fixedActor with { MovementType = ForestTrainerFacingType(fixedActor.Facing) }) };
         var next=ProjectSourceTrainerOwnedParty(state with { ForestTrainerBattle = battle,
@@ -409,7 +414,7 @@ public sealed partial class CampaignSession
                 pages.Add(new(page.Replace("{PLAYER}", state.PlayerName, StringComparison.Ordinal)));
         }
         var history = new CampaignForestTrainerHistory(trainer.Id, trainer.Trainer.Value, trainer.Frame.Outcome,
-            trainer.ExperienceGained, prize.Awarded, trainer.OpponentsSent){MoneyMultiplier=trainer.Frame.Field.MoneyMultiplier,PokemonLeagueChallenge=IsPokemonLeagueTrainer(trainer.Trainer)?PokemonLeagueChallenge(state):null,SourceScriptEntry=IsSevenIslandTrainer(trainer.Trainer)||IsFiveIslandTrainer(trainer.Trainer)||IsSixIslandTrainer(trainer.Trainer)||IsFourIslandTrainer(trainer.Trainer)||IsSeviiRubyTrainer(trainer.Trainer)||IsPokemonLeagueTrainer(trainer.Trainer)||IsLeagueRivalTrainer(trainer.Trainer)||IsFirstSeviiTrainer(trainer.Trainer)?trainer.SourceScriptEntry:null,SourceScriptLine=trainer.SourceScriptLine};
+            trainer.ExperienceGained, prize.Awarded, trainer.OpponentsSent){MoneyMultiplier=trainer.Frame.Field.MoneyMultiplier,PokemonLeagueChallenge=IsPokemonLeagueTrainer(trainer.Trainer)?PokemonLeagueChallenge(state):null,SourceScriptEntry=IsFightingDojoTrainer(trainer.Trainer)||IsSevenIslandTrainer(trainer.Trainer)||IsFiveIslandTrainer(trainer.Trainer)||IsSixIslandTrainer(trainer.Trainer)||IsFourIslandTrainer(trainer.Trainer)||IsSeviiRubyTrainer(trainer.Trainer)||IsPokemonLeagueTrainer(trainer.Trainer)||IsLeagueRivalTrainer(trainer.Trainer)||IsFirstSeviiTrainer(trainer.Trainer)?trainer.SourceScriptEntry:null,SourceScriptLine=trainer.SourceScriptLine};
         if (_content.VermilionEnabled && won)
         {
             var payday = SourceBattleMoneyRules.SettlePayDay(money, trainer.Frame.Field.PayDayMoney, WildBattleOutcome.Won,trainer.Frame.Field.MoneyMultiplier);
@@ -457,6 +462,8 @@ public sealed partial class CampaignSession
             var continuation=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",0)};
             return Pump(Advance(next with{Script=continuation},StoryRules.Continue(continuation,continuation.Wait!.CorrelationId,_content)));
         }
+        if(IsFightingDojoTrainer(trainer.Trainer)&&_content.FightingDojoTrainers!.BattlesByScript[trainer.SourceScriptEntry!].PostBattleScript is {} fightingDojoCallback)
+            return Pump(StartStory(next with{Script=next.Script with{Locked=true}},fightingDojoCallback));
         if(IsFiveIslandTrainer(trainer.Trainer)&&_content.FiveIslandTrainers!.BattlesByScript[trainer.SourceScriptEntry!].PostBattleScript is {} fiveIslandCallback)
             return Pump(StartStory(next with{Script=next.Script with{Locked=true}},fiveIslandCallback));
         if(IsPokemonTowerTrainer(trainer.Trainer)&&_content.PokemonTowerTrainers!.Battles[trainer.Trainer].PostBattleScript is {} towerCallback)

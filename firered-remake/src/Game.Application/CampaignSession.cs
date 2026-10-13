@@ -47,6 +47,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMagikarpGift? MagikarpGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEeveeGift? EeveeGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignLaprasGift? LaprasGift{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignDojoGift? DojoGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSilphElevator? SilphElevator{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCinnabarFall? CinnabarFall{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSeagallopTransition? Seagallop{get;init;}
@@ -295,6 +296,7 @@ public sealed partial class CampaignSession
         var giftError=ValidateMagikarpGift(s);if(giftError is not null)return giftError;
         var eeveeError=ValidateEeveeGift(s);if(eeveeError is not null)return eeveeError;
         var silphGiftError=ValidateSilphGifts(s);if(silphGiftError is not null)return silphGiftError;
+        var dojoGiftError=ValidateFightingDojoGift(s);if(dojoGiftError is not null)return dojoGiftError;
         var teaError=ValidateRegionalTeaProgress(s);if(teaError is not null)return teaError;
         var trainerTowerError=ValidateTrainerTowerProgress(s);if(trainerTowerError is not null)return trainerTowerError;
         var parcelError=ValidateParcelState(s);if(parcelError is not null)return parcelError;
@@ -475,7 +477,7 @@ public sealed partial class CampaignSession
                 if(wait.Kind==StoryWaitKind.ButtonPress)return new(CommandStatus.Rejected,state,"button_press_required");
                 if(wait.Kind==StoryWaitKind.Nickname)return new(CommandStatus.Rejected,state,"nickname_submission_required");
                 if(wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice or StoryWaitKind.MenuChoice or StoryWaitKind.MessagePrinting && state.Dialogue is {} d&&d.Page+1<d.Pages.Length)return new(CommandStatus.Accepted,state with{Dialogue=d with{Page=d.Page+1}});
-                if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&state.MonPicture is not null)
+                if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&state.MonPicture is{SourceSpeciesId:1 or 4 or 7})
                 {var preflight=PreflightStarterAcceptance(state);if(preflight is not null)return new(CommandStatus.Rejected,state,preflight);}
                 if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&!_content.FirstSeviiEnabled&&CinnabarFerryChoice(state))
                     return new(CommandStatus.Rejected,state,"sevii_first_visit_not_yet_available");
@@ -490,7 +492,8 @@ public sealed partial class CampaignSession
                 next=CompleteFieldCutPresentation(state,next);
                 next=CompleteFieldStrengthPresentation(state,next);
                 next=ReleaseForestTrainerPostDialogue(state,next);
-                return new(CommandStatus.Accepted,Pump(Advance(next,StoryRules.Continue(next.Script,wait.CorrelationId,_content,command.Choice))));
+                next=Pump(Advance(next,StoryRules.Continue(next.Script,wait.CorrelationId,_content,command.Choice)));
+                return new(CommandStatus.Accepted,CompleteFightingDojoMasterTurn(state,next));
             }
             if(!state.Script.Completed||state.Script.Wait is not null||state.Dialogue is not null)return new(CommandStatus.Rejected,state,"event_active");
             // ProcessPlayerFieldInput resets the selected physical object to player slot 0
@@ -691,6 +694,7 @@ public sealed partial class CampaignSession
             if(TryApplyBillEffect(state,effect,out var billState)){state=billState;continue;}
             if(TryApplyRegionalDialogueEffect(state,effect,out var regionalDialogueState)){state=regionalDialogueState;continue;}
             if(TryApplyRegionalTeaEffect(state,effect,out var teaState)){state=teaState;continue;}
+            if(TryApplyFightingDojoEffect(state,effect,out var dojoState)){state=dojoState;continue;}
             if(TryApplyRegionalGiftEffect(state,effect,out var regionalGiftState)){state=regionalGiftState;continue;}
             if(TryApplySharedScriptGiftEffect(state,effect,out var scriptGiftState)){state=scriptGiftState;continue;}
             if(TryApplyMagikarpEffect(state,effect,out var magikarpState)){state=magikarpState;continue;}

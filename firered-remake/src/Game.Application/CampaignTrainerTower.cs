@@ -226,7 +226,7 @@ public sealed partial class CampaignSession
         var party=state.Party.Select(p=>new WildBattleCalledPartyMember(p.Pokemon,p.HeldItem,p.Status,IsEgg:p.IsEgg)).ToImmutableArray();
         var entry=SourceTrainerTowerEncounter.Begin(_content.TrainerTowerOpponents!,made,party,EffectiveBattleStyle(state),
             state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-            state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"));
+            state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),currentOwned:_binding.Ownership);
         if(!entry.Succeeded)throw new InvalidDataException(entry.Fault);
         var frame=entry.State! with{Obedience=CampaignObedienceContext(state)};
         string id="trainer-tower-battle:"+((state.TrainerTowerHistory?.Length??0)+1);
@@ -245,14 +245,14 @@ public sealed partial class CampaignSession
 
     private SourceTwinsAiResult TrainerTowerEnemyActions(SourceBattleFrame frame)
     {
-        var chosen=SourceTrainerTowerEncounter.PrepareActions(_content.PresetDoubleItems!,DoubleBattlePokemon,frame,frame.Revision);
+        var chosen=SourceTrainerTowerEncounter.PrepareActions(_content.PresetDoubleItems!,DoubleBattlePokemon,frame,frame.Revision,currentOwned:_binding.Ownership);
         return new(chosen.State,chosen.Actions.Select(a=>new SourceTwinsEnemyChoice(a.Actor,a.Selection.Target??new BattlerSlot(0),a.Selection,[],[],[])).ToImmutableArray(),chosen.Trace,chosen.Fault);
     }
 
     private CampaignState SettleTrainerTowerBattle(CampaignState state,SourceBattleFrame frame,string id,ImmutableArray<int> sent)
     {
         if((state.TrainerTowerHistory??[]).Any(h=>h.Id==id))throw new InvalidDataException("trainer_tower_settlement_duplicate");
-        var settled=SourceTrainerTowerEncounter.Settle(CanonicalTrainerPokemon,frame,state.Money);
+        var settled=SourceTrainerTowerEncounter.Settle(CanonicalTrainerPokemon,frame,state.Money,currentOwned:_binding.Ownership);
         var proof=frame.TrainerTowerEncounter!;
         var course=Enum.Parse<TrainerTowerChallengeKind>(proof.Course);
         if(settled.PerformPickup)

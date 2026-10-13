@@ -183,11 +183,12 @@ public static class WaterEncounterRules
         WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
         ushort repelSteps, RngState globalRng, RoamerState roamer, RoamerMap playerMap,
         bool wildEncountersDisabled = false, EncounterMovementMode movement = EncounterMovementMode.Surfing,
-        SaffronGymShopCatalog? saffronShop = null)
+        SaffronGymShopCatalog? saffronShop = null, OwnedBattlePokemonCatalog? currentOwned = null)
     {
-        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop);
+        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop, currentOwned);
         if (state.RulesVersion != FiveIslandRulesVersion) throw new ArgumentException("power_plant_water_profile");
-        return CheckOwned(owned.Catalog, owned.Mechanics, state, table, check, party, repelSteps,
+        var current = OwnedBattlePokemonCatalog.ResolveCurrent(owned.SharedBattle, currentOwned);
+        return CheckOwned(current.Catalog, current.Mechanics, state, table, check, party, repelSteps,
             globalRng, wildEncountersDisabled, movement, gate);
     }
 

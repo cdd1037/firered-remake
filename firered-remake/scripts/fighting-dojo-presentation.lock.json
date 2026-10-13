@@ -1,0 +1,402 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 2004,
+      "gitBlobSha1": "b719d111f73ad26966817ebb64a72cf0e369a2a5",
+      "path": "graphics/pokedex/kanto_dex_bgpals.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "6592bc9bf2739b97b6a0f97b5163748811709dfdb0ef4987acdc119b6d8355bf"
+    },
+    {
+      "byteLength": 632,
+      "gitBlobSha1": "8d94230719d5089f301aa85647f457480e383696",
+      "path": "graphics/pokemon/hitmonchan/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "506b52f281d36838a23552ea384ba8921cec65dc16b958dd68cdaabbf81a0378"
+    },
+    {
+      "byteLength": 90,
+      "gitBlobSha1": "cfd1efd54a09ddefdf5afadc77a802ebd8f0c9a0",
+      "path": "graphics/pokemon/hitmonchan/footprint.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "107b6ec4cfb81f09bd207bebf5b6adc16942b82c6b93be88d54466dbe8a4e87e"
+    },
+    {
+      "byteLength": 693,
+      "gitBlobSha1": "5a16c407070b741c7584ccdb1b46c17c4343bf60",
+      "path": "graphics/pokemon/hitmonchan/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "f1b661b4a27b79c419d32921ed37f5d8a7a086b92c49e9dc28137d7a4127dcdc"
+    },
+    {
+      "byteLength": 306,
+      "gitBlobSha1": "a657a6d746a5e854e3436a33ef7898a86b2883fa",
+      "path": "graphics/pokemon/hitmonchan/icon.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "9f77f50d4bfb03273d7140f260cbc94a00ff868e91dbd3c35c74f1c0b75eae20"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "77c20d85ad99fd08fef4977dd292fe4d4e54ddb6",
+      "path": "graphics/pokemon/hitmonchan/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0080e517e27f6b95a0628fb4b18940d9c0da1cd35d4984924317b60422bb8290"
+    },
+    {
+      "byteLength": 188,
+      "gitBlobSha1": "2e4a28f0c89c142ba57450fdef0e1f446bc5dbfa",
+      "path": "graphics/pokemon/hitmonchan/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d6f01adbb8d9ee519c45780857ac6775af542a29ca4448e09286a478ab5c4981"
+    },
+    {
+      "byteLength": 534,
+      "gitBlobSha1": "9aa095a6ab85cd6719d9e996c23f9058497a7802",
+      "path": "graphics/pokemon/hitmonlee/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a6f4994bfc6af472dcc36611aabc2cc9f2934f60ce34047f87af6592e4022254"
+    },
+    {
+      "byteLength": 104,
+      "gitBlobSha1": "5051201107050f258430d7bd8fd244df56fc7865",
+      "path": "graphics/pokemon/hitmonlee/footprint.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "af2cd80a52baa66c9ee9dee34d35ebaaae9716ef9a18ff76c9167587e9cd416f"
+    },
+    {
+      "byteLength": 739,
+      "gitBlobSha1": "7cb5e4a2d833ed8b12436f549ac8c860d7901658",
+      "path": "graphics/pokemon/hitmonlee/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5630e8dae1fa64576d01cd2cc8fa0ff6c8b3a8d30c0df88bf8fd174f626051df"
+    },
+    {
+      "byteLength": 335,
+      "gitBlobSha1": "b45c936868bb37cbe4c04c4c5375651a9de1ee44",
+      "path": "graphics/pokemon/hitmonlee/icon.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d9a3b0a433b4734e35d3b7b222b469af4e9fce6558d32d514626344a68da09d7"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "36a7a03a4fc3bdc0652d371ea2b9fdfca1086057",
+      "path": "graphics/pokemon/hitmonlee/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "244917a1a13c3afdc2665ad71e6d9b4f516d543714dce53f959b4dbb2e2db3f6"
+    },
+    {
+      "byteLength": 184,
+      "gitBlobSha1": "74e6c6452490d11dc9d8a16432867b4e91f463ae",
+      "path": "graphics/pokemon/hitmonlee/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e9a0202317152ab9802dfe472906855e1e46f2932867d57e524c296b7c914797"
+    },
+    {
+      "byteLength": 196,
+      "gitBlobSha1": "30463baeb10d395e5c5e41e97373a5619c3c6d27",
+      "path": "graphics/pokemon/icon_palettes/icon_palette_2.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "58079a7948d90d8bba96d0e2642e26e86bc54fc29d1dadaadb1a5f5fd63dd4f0"
+    },
+    {
+      "byteLength": 888,
+      "gitBlobSha1": "a433cb406c8a1393b891ea602cc35c3ad1fd0eb4",
+      "path": "graphics/trainers/front_pics/black_belt_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "dfb5a74143e3cc0a54e0cc6fd39c5e5cf32d1351bf7886d3dda0667309b02b96"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "869e5d8df48b1515755bc7f0c78a6e1eee8a41a2",
+      "path": "graphics/trainers/palettes/black_belt.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "036dcf807ba80c7bef9de157d581479164c81698e1d52e8aa3ab1773820df2b6"
+    },
+    {
+      "byteLength": 39946,
+      "gitBlobSha1": "3b893f217b2b12f29540f0b4db2889e66e98d74a",
+      "path": "include/constants/opponents.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "01ae04c7fd3837c818f1b9ef082313cfeee4c9d3907441b4e192865a626247ee"
+    },
+    {
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "path": "include/constants/species.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "byteLength": 20887,
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
+      "path": "include/constants/trainers.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+    },
+    {
+      "byteLength": 214609,
+      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
+      "path": "src/data/graphics/pokemon.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+    },
+    {
+      "byteLength": 132235,
+      "gitBlobSha1": "1f388e05ea5a4d1c9dcf5f255b6877e4460aeaad",
+      "path": "src/data/pokemon/pokedex_entries.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "c4103cfd5ceed94603e60462028970201fedea0faeae68037da9987ac992220b"
+    },
+    {
+      "byteLength": 81824,
+      "gitBlobSha1": "e2ed936e1d1ff424c851f1781a01b68400a1b29c",
+      "path": "src/data/pokemon/pokedex_text_fr.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "acf5ef5ad9e1f17a0f61151b39b8539c8f51780ee54a2836948ec1fe3f6905ed"
+    },
+    {
+      "byteLength": 44872,
+      "gitBlobSha1": "17f818f458434bc6c35cb7f10acd7776a36e9c22",
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab"
+    },
+    {
+      "byteLength": 1834,
+      "gitBlobSha1": "dccd063dae2a1ab421c9a990c891ac2eabadf820",
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1"
+    },
+    {
+      "byteLength": 19857,
+      "gitBlobSha1": "86ca067901f96aee2b1aed81912bac4f7e84c99b",
+      "path": "src/data/pokemon_graphics/footprint_table.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "90b1bf05b85a00ae2f16a2beacf3316bcf4d313a1197cfb8368728fa39090b70"
+    },
+    {
+      "byteLength": 44879,
+      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036",
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f"
+    },
+    {
+      "byteLength": 6229,
+      "gitBlobSha1": "cedb48b894a27c9f169f563460e2fdb5765bbe63",
+      "path": "src/data/text/trainer_class_names.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "726ed1aa994f23b46872e34ec3fd41810de57f0da2352fc7274068bdc80a4f41"
+    },
+    {
+      "byteLength": 302118,
+      "gitBlobSha1": "02afbfd16d5cef254362577004d0104282eb2538",
+      "path": "src/data/trainers.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b2105a3b1d1baec02d8f6a89f44bcdf6a05cbaac1d6d8872766eec49aa8555bc"
+    },
+    {
+      "byteLength": 45145,
+      "gitBlobSha1": "037b1bfa82189906b205fe1a50a9276a4e2041e6",
+      "path": "src/pokemon_icon.c",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967"
+    }
+  ],
+  "inheritedInputs": [
+    {
+      "byteLength": 693980,
+      "path": "content/generated/pokedex-menu/pokedex-menu.json",
+      "sha256": "7b4b6c54230ebd8e0a588a5a8d7d0fce43c68fa1da7a16a91c08d286bdf29806"
+    },
+    {
+      "byteLength": 1480,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-back-normal.png",
+      "sha256": "e5a059983e0523b9e78951c48d580caaf008b25f06f74b51741c3249bebccab7"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-back-normal.rgba",
+      "sha256": "873b3f0db78a9d58c213e60d72022e3a27aa373c8e226619c7e7afd768c01ee1"
+    },
+    {
+      "byteLength": 1468,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-back-shiny.png",
+      "sha256": "2de60be7dca70f206735acf58accdc715cb597a49afcb174ee795bfea1f07c46"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-back-shiny.rgba",
+      "sha256": "97825131c7202e0a50cc1ac70fbc3320450557038ffe56e9f5db8a9da03cc288"
+    },
+    {
+      "byteLength": 1589,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-front-normal.png",
+      "sha256": "1eca72584c5a71bec5bd1e99b9678986649ca03788e4f4dac1c257a79b063e45"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-front-normal.rgba",
+      "sha256": "f55074217ca6766b9a91b2eb2438f52f7df26d484ec41aa2aaf988d31c0f99f7"
+    },
+    {
+      "byteLength": 1591,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-front-shiny.png",
+      "sha256": "19fef38e9587d232cf16fb6c31b92804d56c60e51cd353d34a8733acb367e68a"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-front-shiny.rgba",
+      "sha256": "cca029a99db742522be366c008318ec80b4d3b1f8fa8b27b244d38be42af38ac"
+    },
+    {
+      "byteLength": 428,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-icon.png",
+      "sha256": "b1f136da2f43b1e1711cb9f880b7871b7603b333921deec72019e210be862648"
+    },
+    {
+      "byteLength": 4096,
+      "path": "content/generated/pokemon-league-presentation/hitmonchan-icon.rgba",
+      "sha256": "b7744541f1142f6568ebdcae742c17dffea50ca8594b514c0b3f0190d91763d3"
+    },
+    {
+      "byteLength": 1082,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-back-normal.png",
+      "sha256": "ad3007fc86da237b0abb9b4c4fb5d221bbbb491b8b239638376a20532f026354"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-back-normal.rgba",
+      "sha256": "91c6a5bdf74c469fc65090fbc18a9533c53f2ca01c3039aa06a2f11d1a53cc9f"
+    },
+    {
+      "byteLength": 1113,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-back-shiny.png",
+      "sha256": "2e5dc43ef9d0e851bff51ebcd16a3c19b687897ba3c17926fff11f719fe25b76"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-back-shiny.rgba",
+      "sha256": "aadddd8c12101d5f403a2358c161d823b30bf347120f5c8b2551cdff83c9a46a"
+    },
+    {
+      "byteLength": 1832,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-front-normal.png",
+      "sha256": "aed888b253c5d63153056096a5921b26d9f2acdabc833753616fa7f9ec3dd16e"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-front-normal.rgba",
+      "sha256": "d1cac2bbd283921757c8693418051f37099b02c816b19920a3a58c87a77c575a"
+    },
+    {
+      "byteLength": 1808,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-front-shiny.png",
+      "sha256": "d9a7e97221dd68717cbd1e965c802d5bb5c1ba2410fcfcd0af5a9ec6c66154a2"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-front-shiny.rgba",
+      "sha256": "b7fdf9e6e3bba41ce15344052770987bbd65a9eb56dea70ff5fc740da8434fa4"
+    },
+    {
+      "byteLength": 532,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-icon.png",
+      "sha256": "c7174a8f8a94767464c749d7c90bede66a378a15a415e278e6cbb64de15ab2ec"
+    },
+    {
+      "byteLength": 4096,
+      "path": "content/generated/pokemon-league-presentation/hitmonlee-icon.rgba",
+      "sha256": "ee2b0a6a2d285a7d435254c3e7e9c13764823fb54072d0804bb617f219b8460e"
+    },
+    {
+      "byteLength": 106948,
+      "path": "content/generated/pokemon-league-presentation/manifest.json",
+      "sha256": "211d6c3c6377699241beb9ac00645c4181d0aab08e46b96f5f02070b5fb76b1c"
+    },
+    {
+      "byteLength": 6631,
+      "path": "content/generated/pokemon-league-presentation/synth-manifest.json",
+      "sha256": "fc6b8faf25cd3ec914e0667d0d01739af2cdde949f7eec4dc63dcae655c017aa"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/viridian-gym-presentation/black-belt-front.rgba",
+      "sha256": "d11cf65657defd0daa7072ff17e260f8dd16b2d158637418e72a592da558ae36"
+    },
+    {
+      "byteLength": 19595,
+      "path": "content/generated/viridian-gym-presentation/manifest.json",
+      "sha256": "830d64f21e660f9aa8fce5365504b5b5cc1959dfb9848e88b3610c24c94635b4"
+    },
+    {
+      "byteLength": 2217,
+      "path": "content/generated/viridian-gym-region/npc/black-belt.png",
+      "sha256": "48c7efcbbbfe327ec26e183801908648775fee335b436e164bf56915926f2154"
+    }
+  ],
+  "profile": "firered-fighting-dojo-presentation-v1",
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

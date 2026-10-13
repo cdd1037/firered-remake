@@ -113,6 +113,20 @@ public static class PretCelioMapNumbers
         return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
     }
 
+    internal static ImmutableDictionary<MapId, RoamerMap> ExtendFightingDojo(string root,
+        IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
+        IReadOnlyDictionary<MapId, PretWorldMap> additions)
+    {
+        if (predecessor.Count != 311 || maps.Count != 312 || additions.Count != 1 ||
+            !additions.ContainsKey(new("map.saffron-city-dojo")) ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
+            predecessor.Keys.Any(id => !maps.ContainsKey(id)) || additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])))
+            throw new InvalidDataException("fighting_dojo_map_numbers_scope");
+        var current = ProjectSource(root, maps);
+        if (predecessor.Any(p => current[p.Key] != p.Value)) throw new InvalidDataException("fighting_dojo_map_numbers_predecessor");
+        return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
+    }
+
     private static ImmutableDictionary<MapId, RoamerMap> ProjectSource(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)
     {
         var source = LoadSourceTable(root);

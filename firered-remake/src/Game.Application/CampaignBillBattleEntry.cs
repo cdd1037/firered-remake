@@ -40,6 +40,7 @@ public sealed partial class CampaignSession
             "Route21_South" when _content.CinnabarEnabled=>new("map.route-21-south"),
             "CinnabarIsland_Gym" when _content.CinnabarEnabled=>new("map.cinnabar-island-gym"),
             "SaffronCity_Gym" when _content.SaffronGymEnabled=>new("map.saffron-city-gym"),
+            "SaffronCity_Dojo" when _content.FightingDojoEnabled=>new(FightingDojoMap),
             "FuchsiaCity_Gym" when _content.FuchsiaGymEnabled=>new("map.fuchsia-city-gym"),
             "CeladonCity_Gym" when _content.CeladonGymEnabled=>new("map.celadon-city-gym"),
             "Route8" when _content.CeladonApproachEnabled=>new("map.route-8"),

@@ -48,18 +48,22 @@ public static class SourceTrainerTowerEncounter
         TrainerPartyCreationResult created, ImmutableArray<WildBattleCalledPartyMember> playerParty,
         ForestTrainerBattleStyle style = ForestTrainerBattleStyle.Shift,
         bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false,
-        bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Building)
+        bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Building,
+        OwnedBattlePokemonCatalog? currentOwned = null)
     {
         var initial = created?.Rng ?? new RngState(0);
         SourceTrainerEncounterEntryResult Fail(string fault) => new(null, initial, [], [], fault);
         if (opponents is null || !ReferenceEquals(TrainerTowerOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
             created?.TowerReceipt is not { } proof || !proof.Matches(created) || !ReferenceEquals(proof.Mechanics, opponents.Mechanics))
             return Fail("source_tower_creation_receipt");
+        OwnedBattlePokemonCatalog current;
+        try { current = OwnedBattlePokemonCatalog.ResolveCurrent(opponents.Owned.SharedBattle, currentOwned); }
+        catch (ArgumentException) { return Fail("source_tower_current_owned"); }
         var catalog = proof.Mechanics.Catalog;
         if (!Enum.IsDefined(style) || !Enum.IsDefined(terrain) || playerParty.IsDefaultOrEmpty || playerParty.Length > 6)
             return Fail("source_tower_player_party");
         foreach (var member in playerParty)
-            if (member?.Pokemon is null || !opponents.Owned.Catalog.Species.ContainsKey(member.Pokemon.Species) ||
+            if (member?.Pokemon is null || !current.Catalog.Species.ContainsKey(member.Pokemon.Species) ||
                 SourcePokemonValidator.ValidatePermanent(proof.Mechanics, member.Pokemon) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
@@ -103,7 +107,7 @@ public static class SourceTrainerTowerEncounter
             }).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 SourceMechanicsRulesVersion = SourceBattleKernel.Version,
-                SourceCampaignRulesVersion = PowerPlantOpponentPokemonCatalog.Profile,
+                SourceCampaignRulesVersion = current.TrainerOpponentProfile,
                 Layout = proof.IsDouble ? SourceBattleLayout.PresetDoubles : SourceBattleLayout.Singles,
                 KoReplacementTiming = proof.IsDouble ? KoReplacementTiming.EndOfTurn : KoReplacementTiming.SourceImmediate,
                 BattleKind = WildBattleCalledBattleKind.Trainer, TrainerEncounter = trainer,
@@ -126,9 +130,9 @@ public static class SourceTrainerTowerEncounter
     }
 
     public static SourceTrainerActionPreparationResult PrepareActions(SourceBattleItemCatalog items, PokemonCatalog catalog,
-        SourceBattleFrame frame, long expectedRevision)
+        SourceBattleFrame frame, long expectedRevision, OwnedBattlePokemonCatalog? currentOwned = null)
     {
-        var error = Validate(catalog, frame);
+        var error = Validate(catalog, frame, currentOwned);
         if (error is not null || frame.TrainerTowerEncounter?.Receipt is not { } proof)
             return new(frame, null!, [], [], [], error ?? "source_tower_encounter_required");
         if (frame.TrainerEncounter is not null) return SourceTrainerEncounterPolicy.PrepareActions(items, catalog, frame, expectedRevision);
@@ -136,9 +140,9 @@ public static class SourceTrainerTowerEncounter
             SourceTrainerItemInventory.Create(proof.Trainer), SourceTrainerEncounterPolicy.NoMove);
     }
 
-    public static SourceTrainerTowerSettlement Settle(PokemonCatalog catalog, SourceBattleFrame frame, int money)
+    public static SourceTrainerTowerSettlement Settle(PokemonCatalog catalog, SourceBattleFrame frame, int money, OwnedBattlePokemonCatalog? currentOwned = null)
     {
-        if (Validate(catalog, frame) is { } error) throw new ArgumentException(error, nameof(frame));
+        if (Validate(catalog, frame, currentOwned) is { } error) throw new ArgumentException(error, nameof(frame));
         if (frame.TrainerTowerEncounter is null || frame.FourTurn is { Phase: not SourceFourActionPhase.BattleEnded } ||
             frame.Outcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) ||
             money is < 0 or > SourceBattleMoneyRules.MaximumMoney) throw new ArgumentException("source_tower_settlement");
@@ -146,13 +150,21 @@ public static class SourceTrainerTowerEncounter
             frame.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw);
     }
 
-    public static string? Validate(PokemonCatalog catalog, SourceBattleFrame frame)
+    public static string? Validate(PokemonCatalog catalog, SourceBattleFrame frame, OwnedBattlePokemonCatalog? currentOwned = null)
     {
         if (frame is null || catalog is null) return "source_tower_missing_input";
         if (frame.TrainerTowerEncounter is not { } tower) return null;
         if (SourceBattleIdentityRules.Validate(frame) is { } error) return error;
         var proof = tower.Receipt!;
         if (!ReferenceEquals(proof.Mechanics.Catalog, catalog)) return "source_tower_catalog";
+        var frameOwner = OwnedBattlePokemonCatalog.ForMechanics(catalog, frame.SourceCampaignRulesVersion);
+        var predecessor = TrainerTowerOpponentPokemonCatalog.ForMechanics(catalog)?.Owned.SharedBattle;
+        if (frameOwner is null || predecessor is null || currentOwned is not null && !ReferenceEquals(currentOwned, frameOwner))
+            return "source_tower_current_owned";
+        try { _ = OwnedBattlePokemonCatalog.ResolveCurrent(predecessor, frameOwner); }
+        catch (ArgumentException) { return "source_tower_current_owned"; }
+        if (frame.Party(BattleSide.Player).Members.Any(m => !frameOwner.Catalog.Species.ContainsKey(m.Pokemon.Species)))
+            return "source_tower_player_member";
         foreach (var party in frame.Parties)
             foreach (var member in party.Members)
                 if (SourcePokemonValidator.ValidateForBattle(catalog, member.Pokemon,

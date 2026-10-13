@@ -82,3 +82,9 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 # Rebuildable Power Plant execution cohorts.
 /evidence/power-plant-integration-20261013/product*/*.dll
 /evidence/power-plant-view-20261013/**/*.dll
+
+# Rebuildable Fighting Dojo execution cohorts and host assets.
+/evidence/fighting-dojo-*/**/*.dll
+/evidence/fighting-dojo-*/**/*.pdb
+/tests/Game.FightingDojoView.Tests/Assets/
+/tests/Game.FightingDojoView.Tests/*.cs.uid

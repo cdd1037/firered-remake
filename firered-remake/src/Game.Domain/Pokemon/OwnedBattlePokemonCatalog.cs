@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Game.Domain.Ids;
@@ -12,6 +13,12 @@ public sealed class OwnedBattlePokemonCatalog
 {
     private static readonly ConditionalWeakTable<PokemonCatalog, OwnedBattlePokemonCatalog> Authenticated = new();
     private static readonly ConditionalWeakTable<PokemonCatalog, ConcurrentDictionary<string, OwnedBattlePokemonCatalog>> MechanicsOwners = new();
+    private static readonly ConcurrentDictionary<string, ImmutableHashSet<SpeciesId>> SuccessorSpecies = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, ImmutableHashSet<SpeciesId>> SuccessorOpponentSpecies = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, string> SuccessorParentProfiles = new(StringComparer.Ordinal);
+    private OwnedBattlePokemonCatalog? CampaignParent { get; init; }
+    private PokemonCatalog? SuccessorOpponents { get; set; }
+    private string? SuccessorOpponentProfile { get; set; }
     public PokemonCatalog Catalog { get; }
     public PokemonCatalog Predecessor { get; }
     public SourceMechanicsCatalog Mechanics { get; }
@@ -56,6 +63,51 @@ public sealed class OwnedBattlePokemonCatalog
         proof = Authenticated.GetValue(catalog, _ => proof);
         MechanicsOwners.GetValue(proof.Mechanics.Catalog, _ => new())[proof.RulesVersion] = proof;
         return proof;
+    }
+
+    // A bounded source owner authenticates its new definitions before registration. Shared execution
+    // follows this ownership link; subsequent additions do not need a new regional profile ladder.
+    internal static void RegisterSuccessor(PokemonCatalog catalog, OwnedBattlePokemonCatalog predecessor, string profile)
+    {
+        if (!ReferenceEquals(For(predecessor.Catalog), predecessor) || catalog.SourceCommit != predecessor.Catalog.SourceCommit ||
+            !ReferenceEquals(catalog.Moves, predecessor.Catalog.Moves) ||
+            predecessor.Catalog.Species.Any(p => !catalog.Species.TryGetValue(p.Key, out var value) || !ReferenceEquals(p.Value, value)))
+            throw new ArgumentException("owned_successor_predecessor");
+        var proof = new OwnedBattlePokemonCatalog(catalog, predecessor.Predecessor, predecessor.Mechanics, profile) { CampaignParent = predecessor };
+        Authenticated.Add(catalog, proof);
+        SuccessorSpecies[profile] = catalog.Species.Keys.ToImmutableHashSet();
+        MechanicsOwners.GetValue(proof.Mechanics.Catalog, _ => new())[profile] = proof;
+    }
+
+    internal static void BindSuccessorOpponents(OwnedBattlePokemonCatalog owner, PokemonCatalog opponents, string profile)
+    {
+        if (!ReferenceEquals(For(owner.Catalog), owner) || owner.CampaignParent is null ||
+            !ReferenceEquals(opponents.Moves, owner.Catalog.Moves) || !owner.Catalog.Species.Keys.All(opponents.Species.ContainsKey))
+            throw new ArgumentException("owned_successor_opponents");
+        owner.SuccessorOpponents = opponents; owner.SuccessorOpponentProfile = profile;
+        SuccessorSpecies[profile] = owner.Catalog.Species.Keys.ToImmutableHashSet();
+        SuccessorOpponentSpecies[profile] = opponents.Species.Keys.ToImmutableHashSet();
+        SuccessorParentProfiles[profile] = owner.CampaignParent.TrainerOpponentProfile;
+        MechanicsOwners.GetValue(owner.Mechanics.Catalog, _ => new())[profile] = owner;
+    }
+
+    internal static OwnedBattlePokemonCatalog ResolveCurrent(OwnedBattlePokemonCatalog predecessor, OwnedBattlePokemonCatalog? current)
+    {
+        current ??= predecessor;
+        if (!ReferenceEquals(For(predecessor.Catalog), predecessor) || !ReferenceEquals(For(current.Catalog), current) ||
+            !ReferenceEquals(current.Mechanics, predecessor.Mechanics) ||
+            !ReferenceEquals(current, predecessor) && !IsCampaignSuccessorOf(predecessor, current))
+            throw new ArgumentException("owned_successor_current");
+        return current;
+    }
+
+    internal static bool RegisteredProfileAdmitsTrainerOpponent(string profile, SpeciesId species) =>
+        SuccessorOpponentSpecies.TryGetValue(profile, out var admitted) && admitted.Contains(species);
+
+    internal static string? InheritedTrainerProfile(string? profile)
+    {
+        while (profile is not null && SuccessorParentProfiles.TryGetValue(profile, out var predecessor)) profile = predecessor;
+        return profile;
     }
 
     [return: NotNullIfNotNull(nameof(owned))]
@@ -109,7 +161,7 @@ public sealed class OwnedBattlePokemonCatalog
     public static implicit operator OwnedBattlePokemonCatalog?(PowerPlantOwnedPokemonCatalog? owned) =>
         owned is null ? null : For(owned.Catalog)!;
 
-    internal string TrainerOpponentProfile => RulesVersion == PowerPlantOwnedPokemonCatalog.Profile
+    internal string TrainerOpponentProfile => SuccessorOpponentProfile ?? (RulesVersion == PowerPlantOwnedPokemonCatalog.Profile
         ? PowerPlantOpponentPokemonCatalog.Profile : RulesVersion == EventIslandOwnedPokemonCatalog.Profile
         ? EventIslandOpponentPokemonCatalog.Profile : RulesVersion == SevenIslandOwnedPokemonCatalog.Profile
         ? SevenIslandOpponentPokemonCatalog.Profile : RulesVersion == CeruleanCaveOwnedPokemonCatalog.Profile
@@ -118,9 +170,12 @@ public sealed class OwnedBattlePokemonCatalog
         ? CelioOpponentPokemonCatalog.Profile : RulesVersion == FiveIslandOwnedPokemonCatalog.Profile
         ? FiveIslandOpponentPokemonCatalog.Profile : RulesVersion == SixIslandOwnedPokemonCatalog.Profile
         ? SixIslandOpponentPokemonCatalog.Profile : RulesVersion == FourIslandOwnedPokemonCatalog.Profile
-        ? FourIslandOpponentPokemonCatalog.Profile : SeviiRubyOpponentPokemonCatalog.Profile;
+        ? FourIslandOpponentPokemonCatalog.Profile : SeviiRubyOpponentPokemonCatalog.Profile);
 
     internal static bool IsCampaignSuccessorOf(OwnedBattlePokemonCatalog predecessor, OwnedBattlePokemonCatalog successor) =>
+        ReferenceEquals(For(successor.Catalog), successor) && successor.CampaignParent is { } parent &&
+        successor.SuccessorOpponents is not null && ReferenceEquals(successor.Mechanics, predecessor.Mechanics) &&
+        (ReferenceEquals(parent, predecessor) || IsCampaignSuccessorOf(predecessor, parent)) ||
         ReferenceEquals(For(successor.Catalog), successor) && PowerPlantOwnedPokemonCatalog.For(successor.Catalog) is { } plant &&
         ReferenceEquals(plant.Mechanics, predecessor.Mechanics) && PowerPlantOpponentPokemonCatalog.For(plant) is not null &&
         (ReferenceEquals(plant.Predecessor.Catalog, predecessor.Catalog) || IsCampaignSuccessorOf(predecessor, plant.Predecessor)) ||
@@ -154,6 +209,7 @@ public sealed class OwnedBattlePokemonCatalog
         ReferenceEquals(ruby.Mechanics, predecessor.Mechanics) && SeviiRubyOpponentPokemonCatalog.For(ruby) is not null;
 
     internal bool AdmitsTrainerOpponent(SpeciesId species, string? trainerProfile = null) => Catalog.Species.ContainsKey(species) ||
+        trainerProfile == SuccessorOpponentProfile && SuccessorOpponents?.Species.ContainsKey(species) == true ||
         trainerProfile == PowerPlantOpponentPokemonCatalog.Profile && PowerPlantOwnedPokemonCatalog.For(Catalog) is { } plantOwned &&
         PowerPlantOpponentPokemonCatalog.For(plantOwned) is { } plant && plant.Catalog.Species.ContainsKey(species) ||
         trainerProfile == EventIslandOpponentPokemonCatalog.Profile && EventIslandOwnedPokemonCatalog.For(Catalog) is { } eventOwned &&
@@ -233,8 +289,10 @@ public sealed class OwnedBattlePokemonCatalog
     }
 
     internal static bool IsKnownProfile(string profile) =>
+        SuccessorSpecies.ContainsKey(profile) ||
         profile is PowerPlantOwnedPokemonCatalog.Profile or PowerPlantOpponentPokemonCatalog.Profile or EventIslandOwnedPokemonCatalog.Profile or EventIslandOpponentPokemonCatalog.Profile or SevenIslandOwnedPokemonCatalog.Profile or SevenIslandOpponentPokemonCatalog.Profile or LeagueRematchOpponentPokemonCatalog.Profile or CeruleanCaveOwnedPokemonCatalog.Profile or CeruleanCaveOpponentPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile;
     internal static bool ProfileAdmits(string profile, SpeciesId species) =>
+        SuccessorSpecies.TryGetValue(profile, out var admitted) && admitted.Contains(species) ||
         (profile is PowerPlantOwnedPokemonCatalog.Profile or PowerPlantOpponentPokemonCatalog.Profile) &&
         (ProfileAdmits(EventIslandOwnedPokemonCatalog.Profile, species) || PowerPlantOwnedPokemonCatalog.AdditionalSpecies.Contains(species)) ||
         (profile is EventIslandOwnedPokemonCatalog.Profile or EventIslandOpponentPokemonCatalog.Profile) &&
@@ -260,6 +318,7 @@ public sealed class OwnedBattlePokemonCatalog
     // Surf adds only Psyduck to historical wild membership. Golduck is an owned
     // evolution; Safari's three extra catches still use their separate encounter owner.
     internal bool AdmitsWildOpponent(PokemonInstance pokemon) =>
+        CampaignParent is { } parent && parent.AdmitsWildOpponent(pokemon) ||
         PowerPlantOwnedPokemonCatalog.For(Catalog) is { } plant && For(plant.Predecessor.Catalog)!.AdmitsWildOpponent(pokemon) ||
         EventIslandOwnedPokemonCatalog.For(Catalog) is { } events && For(events.Predecessor.Catalog)!.AdmitsWildOpponent(pokemon) ||
         SevenIslandOwnedPokemonCatalog.For(Catalog) is { } seven && For(seven.Predecessor.Catalog)!.AdmitsWildOpponent(pokemon) ||
@@ -269,7 +328,8 @@ public sealed class OwnedBattlePokemonCatalog
         RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species);
 
     internal bool SupportsOrdinaryWildOpponent(PokemonInstance pokemon) => AdmitsWildOpponent(pokemon) &&
-        (PowerPlantOwnedPokemonCatalog.For(Catalog) is { } plant && For(plant.Predecessor.Catalog)!.SupportsOrdinaryWildOpponent(pokemon) ||
+        (CampaignParent is { } parent && parent.SupportsOrdinaryWildOpponent(pokemon) ||
+         PowerPlantOwnedPokemonCatalog.For(Catalog) is { } plant && For(plant.Predecessor.Catalog)!.SupportsOrdinaryWildOpponent(pokemon) ||
          EventIslandOwnedPokemonCatalog.For(Catalog) is { } events && For(events.Predecessor.Catalog)!.SupportsOrdinaryWildOpponent(pokemon) ||
          SevenIslandOwnedPokemonCatalog.For(Catalog) is { } seven && For(seven.Predecessor.Catalog)!.SupportsOrdinaryWildOpponent(pokemon) ||
          CeruleanCaveOwnedPokemonCatalog.For(Catalog) is { } cave && For(cave.Predecessor.Catalog)!.SupportsOrdinaryWildOpponent(pokemon) ||

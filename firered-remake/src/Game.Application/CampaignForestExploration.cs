@@ -31,7 +31,7 @@ public sealed partial class CampaignSession
         var check=new EarlyLandEncounterCheck(p.MapId,trigger,(byte)cell.SourceBehavior,(_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==1)?EncounterTileType.Land:EncounterTileType.None);
         var result=EarlyLandEncounterRules.Check(_content.PowerPlantOwnership!,process,table,check,state.Party,
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,
-            state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),saffronShop:SaffronGymShopProof);
+            state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),saffronShop:SaffronGymShopProof,currentOwned:_binding.Ownership);
         var next=state with{Exploration=exploration with{EarlyEncounter=result.State},World=state.World with{Rng=result.GlobalRng}};
         if(result.RoamerCandidate is {} roamer)
         {

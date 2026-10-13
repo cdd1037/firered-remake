@@ -29,8 +29,9 @@ public static class SourceBattleIdentityRules
             mechanicsVersion != SourceBattleKernel.Version)
             return "source_frame_mechanics_profile_layout";
         // Current successors inherit Celio trainer admissions; owned species and new trainer-only additions remain separate.
-        string? trainerMembershipProfile = frame.SourceCampaignRulesVersion is PowerPlantOpponentPokemonCatalog.Profile or EventIslandOpponentPokemonCatalog.Profile or SevenIslandOpponentPokemonCatalog.Profile or CeruleanCaveOpponentPokemonCatalog.Profile or LeagueRematchOpponentPokemonCatalog.Profile
-            ? CelioOpponentPokemonCatalog.Profile : frame.SourceCampaignRulesVersion;
+        var inheritedTrainerProfile = OwnedBattlePokemonCatalog.InheritedTrainerProfile(frame.SourceCampaignRulesVersion);
+        string? trainerMembershipProfile = inheritedTrainerProfile is PowerPlantOpponentPokemonCatalog.Profile or EventIslandOpponentPokemonCatalog.Profile or SevenIslandOpponentPokemonCatalog.Profile or CeruleanCaveOpponentPokemonCatalog.Profile or LeagueRematchOpponentPokemonCatalog.Profile
+            ? CelioOpponentPokemonCatalog.Profile : inheritedTrainerProfile;
         if (frame.SourceCampaignRulesVersion is { } campaign &&
             (!OwnedBattlePokemonCatalog.IsKnownProfile(campaign) ||
              !((frame.Layout == SourceBattleLayout.Singles && frame.SourceMechanicsRulesVersion is BattleRulesProfile.CanonicalSourceSinglesVersion or SourceBattleKernel.Version) ||
@@ -63,7 +64,8 @@ public static class SourceBattleIdentityRules
             !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species) &&
             !(p.Side == BattleSide.Opponent && frame.TrainerTowerEncounter?.Receipt?.MatchesIdentity(m.Pokemon) == true) &&
             !(p.Side == BattleSide.Opponent && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
-              (frame.SourceCampaignRulesVersion is (PowerPlantOpponentPokemonCatalog.Profile or EventIslandOpponentPokemonCatalog.Profile or SevenIslandOpponentPokemonCatalog.Profile) && (SevenIslandOpponentPokemonCatalog.TrainerOnlySpecies.Contains(m.Pokemon.Species) || LeagueRematchOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species)) ||
+              (OwnedBattlePokemonCatalog.RegisteredProfileAdmitsTrainerOpponent(frame.SourceCampaignRulesVersion, m.Pokemon.Species) ||
+               frame.SourceCampaignRulesVersion is (PowerPlantOpponentPokemonCatalog.Profile or EventIslandOpponentPokemonCatalog.Profile or SevenIslandOpponentPokemonCatalog.Profile) && (SevenIslandOpponentPokemonCatalog.TrainerOnlySpecies.Contains(m.Pokemon.Species) || LeagueRematchOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species)) ||
                frame.SourceCampaignRulesVersion == LeagueRematchOpponentPokemonCatalog.Profile && LeagueRematchOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
                trainerMembershipProfile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                SilphOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||

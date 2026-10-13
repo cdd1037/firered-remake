@@ -176,9 +176,9 @@ public static class EarlyLandEncounterRules
         EarlyLandEncounterState state, EarlyLandEncounterTable table, EarlyLandEncounterCheck check,
         ImmutableArray<PartyPokemon> party, ushort repelSteps, RngState globalRng,
         RoamerState roamer, RoamerMap playerMap, bool wildEncountersDisabled = false,
-        SaffronGymShopCatalog? saffronShop = null)
+        SaffronGymShopCatalog? saffronShop = null, OwnedBattlePokemonCatalog? currentOwned = null)
     {
-        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop);
+        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop, currentOwned);
         if (state.RulesVersion != FiveIslandRulesVersion) throw new ArgumentException("power_plant_land_profile");
         var lead = party[0];
         // Only these source field modifiers matter; all real party fields were authenticated above.
