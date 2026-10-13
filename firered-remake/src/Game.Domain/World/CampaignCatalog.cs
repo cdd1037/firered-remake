@@ -83,6 +83,14 @@ public interface ICampaignCatalog:IStoryCatalog
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
     bool NationalDexEnabled=>false;
+    bool FiveIslandEnabled=>false;
+    FiveIslandOwnedPokemonCatalog? FiveIslandOwnership=>null;
+    FiveIslandOpponentPokemonCatalog? FiveIslandOpponents=>null;
+    FiveIslandTrainerCatalog? FiveIslandTrainers=>null;
+    FiveIslandTrainerCatalog? FiveIslandTrainerParties=>FiveIslandTrainers;
+    FiveIslandShopCatalog? FiveIslandShop=>null;
+    FiveIslandMachineCatalog? FiveIslandMachines=>null;
+    FiveIslandWaterEncounterCatalog? FiveIslandWaterEncounters=>null;
     bool SixIslandEnabled=>false;
     SixIslandOwnedPokemonCatalog? SixIslandOwnership=>null;
     SixIslandOpponentPokemonCatalog? SixIslandOpponents=>null;

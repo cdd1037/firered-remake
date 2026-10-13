@@ -7,9 +7,11 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private SixIslandShopCatalog SixIslandShopProof => SixIslandShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("six_island_shop_proof_missing");
+    private FiveIslandShopCatalog FiveIslandShopProof => FiveIslandShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("five_island_shop_proof_missing");
+    private InventoryState FiveIslandPredecessorInventory(InventoryState inventory) => _content.FiveIslandEnabled ? FiveIslandShopProof.InventoryForPredecessor(inventory) : inventory;
+    private SixIslandShopCatalog SixIslandShopProof => (_content.FiveIslandEnabled ? FiveIslandShopProof.Predecessor : SixIslandShopCatalog.For(ShopCatalog)) ?? throw new InvalidDataException("six_island_shop_proof_missing");
     private FourIslandShopCatalog FourIslandShopProof => (_content.SixIslandEnabled ? SixIslandShopProof.Predecessor : FourIslandShopCatalog.For(ShopCatalog)) ?? throw new InvalidDataException("four_island_shop_proof_missing");
-    private InventoryState SixIslandPredecessorInventory(InventoryState inventory) => _content.SixIslandEnabled ? SixIslandShopProof.InventoryForPredecessor(inventory) : inventory;
+    private InventoryState SixIslandPredecessorInventory(InventoryState inventory) => _content.SixIslandEnabled ? SixIslandShopProof.InventoryForPredecessor(FiveIslandPredecessorInventory(inventory)) : inventory;
     private SeviiRubyShopCatalog SeviiRubyShopProof => ((_content.FourIslandEnabled ? FourIslandShopProof : null)?.Predecessor ?? SeviiRubyShopCatalog.For(ShopCatalog)) ?? throw new InvalidDataException("sevii_ruby_shop_proof_missing");
     private InventoryState FourIslandPredecessorInventory(InventoryState inventory) => _content.FourIslandEnabled ? FourIslandShopProof.InventoryForPredecessor(SixIslandPredecessorInventory(inventory)) : inventory;
     private VictoryRoadShopCatalog VictoryRoadShopProof=>((_content.SeviiRubyEnabled?SeviiRubyShopProof:null)?.Predecessor??VictoryRoadShopCatalog.For(ShopCatalog))??throw new InvalidDataException("victory_road_shop_proof_missing");
@@ -23,7 +25,8 @@ public sealed partial class CampaignSession
         if(_content.VictoryRoadEnabled)changed=VictoryRoadShopProof.RestoreFromPredecessor(_content.SeviiRubyEnabled?SeviiRubyShopProof.InventoryForPredecessor(FourIslandPredecessorInventory(view)):view,changed);
         if(_content.SeviiRubyEnabled)changed=SeviiRubyShopProof.RestoreFromPredecessor(FourIslandPredecessorInventory(view),changed);
         if(_content.FourIslandEnabled)changed=FourIslandShopProof.RestoreFromPredecessor(SixIslandPredecessorInventory(view),changed);
-        if(_content.SixIslandEnabled)changed=SixIslandShopProof.RestoreFromPredecessor(view,changed);
+        if(_content.SixIslandEnabled)changed=SixIslandShopProof.RestoreFromPredecessor(FiveIslandPredecessorInventory(view),changed);
+        if(_content.FiveIslandEnabled)changed=FiveIslandShopProof.RestoreFromPredecessor(view,changed);
         return MergeShopInventory(original,changed);
     }
     private bool TryApplyFirstSeviiItemEffect(CampaignState state,StoryEffect effect,out CampaignState next)

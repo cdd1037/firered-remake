@@ -97,7 +97,7 @@ public static class FirstSeviiDoubleTrainerEncounter
             return "first_sevii_double_catalog";
         try { FirstSeviiTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "first_sevii_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion is not (CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile) ||
+        if (frame is null || frame.SourceCampaignRulesVersion is not (CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile) ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "first_sevii_double_frame";
         if (frame.SourceCampaignRulesVersion == SeviiRubyOpponentPokemonCatalog.Profile &&
             (SeviiRubyOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } successor ||
@@ -108,6 +108,9 @@ public static class FirstSeviiDoubleTrainerEncounter
         if (frame.SourceCampaignRulesVersion == SixIslandOpponentPokemonCatalog.Profile &&
             (SixIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } sixSuccessor ||
              !ReferenceEquals(sixSuccessor.Owned.Predecessor.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
+        if (frame.SourceCampaignRulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
+            (FiveIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } fiveSuccessor ||
+             !ReferenceEquals(fiveSuccessor.Owned.Predecessor.Predecessor.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
         if (frame.Parties.SelectMany(p => p.Members).Any(m =>
             SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "first_sevii_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;

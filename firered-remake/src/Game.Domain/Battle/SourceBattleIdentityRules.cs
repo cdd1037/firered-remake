@@ -31,7 +31,7 @@ public static class SourceBattleIdentityRules
         if (frame.SourceCampaignRulesVersion is { } campaign &&
             (!OwnedBattlePokemonCatalog.IsKnownProfile(campaign) ||
              !((frame.Layout == SourceBattleLayout.Singles && frame.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion) ||
-               (campaign is CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile && frame.Layout == SourceBattleLayout.PresetDoubles &&
+               (campaign is CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile && frame.Layout == SourceBattleLayout.PresetDoubles &&
                 frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version && frame.BattleKind == WildBattleCalledBattleKind.Trainer))))
             return "source_frame_campaign_profile";
         if (frame.Turn < 0 || frame.Revision < 0 || frame.EventSequence < 0 || frame.RunAttempts < 0 ||
@@ -59,16 +59,18 @@ public static class SourceBattleIdentityRules
         if (frame.SourceCampaignRulesVersion is not null && frame.Parties.Any(p => p.Members.Any(m =>
             !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species) &&
             !(p.Side == BattleSide.Opponent && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
-              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile &&
+              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile &&
                SilphOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile &&
+               frame.SourceCampaignRulesVersion is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile &&
                SaffronGymOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile &&
+               frame.SourceCampaignRulesVersion is CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile &&
                CinnabarOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile &&
+               frame.SourceCampaignRulesVersion is VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile &&
                VictoryRoadOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile &&
-               PokemonLeagueOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species))))))
+               frame.SourceCampaignRulesVersion is PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile &&
+               PokemonLeagueOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
+               frame.SourceCampaignRulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
+               (FiveIslandOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) || SixIslandOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species)))))))
             return "source_frame_campaign_species";
         if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";
         if (SourceObedienceRules.Validate(frame.Obedience, frame.Parties[0].Members) is { } obedienceError) return obedienceError;
@@ -170,20 +172,20 @@ public static class SourceBattleIdentityRules
             encoding.HasPartyExtension != (encoding.PartyRulesVersion is not null) ||
             new[] { encoding.PartyRulesVersion, encoding.FieldRulesVersion, encoding.DelayedRulesVersion }
                 .Any(v => v is not null && v != WildBattleRules.CalledMoveKernelRulesVersion) ||
-            encoding.SourceWildRulesVersion is not null && encoding.SourceWildRulesVersion is not (WildBattleRules.SourceWildRulesVersion or VictoryRoadWildBattleContract.Version or SeviiRubyWildBattleContract.Version or FourIslandWildBattleContract.Version or SixIslandWildBattleContract.Version) ||
+            encoding.SourceWildRulesVersion is not null && encoding.SourceWildRulesVersion is not (WildBattleRules.SourceWildRulesVersion or VictoryRoadWildBattleContract.Version or SeviiRubyWildBattleContract.Version or FourIslandWildBattleContract.Version or SixIslandWildBattleContract.Version or FiveIslandWildBattleContract.Version) ||
             frame.WildTurn is not null && encoding.SourceWildRulesVersion is null)) return "source_frame_boundary_encoding";
         if ((frame.SinglesEncoding?.SourceWildRulesVersion == VictoryRoadWildBattleContract.Version) != (frame.SinglesEncoding?.VictoryRoadWildOrigin is not null))
             return "source_frame_victory_road_required_origin";
         if (frame.SinglesEncoding?.VictoryRoadWildOrigin is {} victory &&
             (frame.SinglesEncoding.SourceWildRulesVersion != VictoryRoadWildBattleContract.Version ||
-             frame.SourceCampaignRulesVersion is not (Game.Domain.Pokemon.CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile) ||
+             frame.SourceCampaignRulesVersion is not (Game.Domain.Pokemon.CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile) ||
              frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.Party(BattleSide.Opponent).Members.Length != 1 ||
              !VictoryRoadWildBattleContract.Matches(victory,frame.Party(BattleSide.Opponent).Members[0].Pokemon)))
             return "source_frame_victory_road_origin";
         if ((frame.SinglesEncoding?.SourceWildRulesVersion == SeviiRubyWildBattleContract.Version) != (frame.SinglesEncoding?.SeviiRubyWildOrigin is not null))
             return "source_frame_sevii_ruby_required_origin";
         if (frame.SinglesEncoding?.SeviiRubyWildOrigin is { } ruby &&
-            (frame.SourceCampaignRulesVersion is not (SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile) ||
+            (frame.SourceCampaignRulesVersion is not (SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile) ||
              ruby.Kind == SeviiRubyEncounterKind.RockSmash ||
              frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.Party(BattleSide.Opponent).Members.Length != 1 ||
              !SeviiRubyWildBattleContract.Matches(ruby, frame.Party(BattleSide.Opponent).Members[0].Pokemon)))
@@ -191,15 +193,23 @@ public static class SourceBattleIdentityRules
         if ((frame.SinglesEncoding?.SourceWildRulesVersion == FourIslandWildBattleContract.Version) != (frame.SinglesEncoding?.FourIslandWildOrigin is not null))
             return "source_frame_four_island_required_origin";
         if (frame.SinglesEncoding?.FourIslandWildOrigin is { } fourIsland &&
-            (frame.SourceCampaignRulesVersion is not (FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile) ||
+            (frame.SourceCampaignRulesVersion is not (FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile) ||
              frame.SinglesEncoding.VictoryRoadWildOrigin is not null || frame.SinglesEncoding.SeviiRubyWildOrigin is not null ||
              frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.Party(BattleSide.Opponent).Members.Length != 1 ||
              !FourIslandWildBattleContract.Matches(fourIsland, frame.Party(BattleSide.Opponent).Members[0].Pokemon)))
             return "source_frame_four_island_origin";
+        if ((frame.SinglesEncoding?.SourceWildRulesVersion == FiveIslandWildBattleContract.Version) != (frame.SinglesEncoding?.FiveIslandWildOrigin is not null))
+            return "source_frame_five_island_required_origin";
+        if (frame.SinglesEncoding?.FiveIslandWildOrigin is { } fiveIsland &&
+            (frame.SourceCampaignRulesVersion != FiveIslandOwnedPokemonCatalog.Profile || !FiveIslandWildBattleContract.IsRuntimeKind(fiveIsland.Kind) ||
+             frame.SinglesEncoding.FourIslandWildOrigin is not null || frame.SinglesEncoding.SixIslandWildOrigin is not null || frame.SinglesEncoding.VictoryRoadWildOrigin is not null || frame.SinglesEncoding.SeviiRubyWildOrigin is not null ||
+             frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.Party(BattleSide.Opponent).Members.Length != 1 ||
+             !FiveIslandWildBattleContract.Matches(fiveIsland, frame.Party(BattleSide.Opponent).Members[0].Pokemon)))
+            return "source_frame_five_island_origin";
         if ((frame.SinglesEncoding?.SourceWildRulesVersion == SixIslandWildBattleContract.Version) != (frame.SinglesEncoding?.SixIslandWildOrigin is not null))
             return "source_frame_six_island_required_origin";
         if (frame.SinglesEncoding?.SixIslandWildOrigin is { } sixIsland &&
-            (frame.SourceCampaignRulesVersion != SixIslandOwnedPokemonCatalog.Profile || !SixIslandWildBattleContract.IsRuntimeKind(sixIsland.Kind) ||
+            (frame.SourceCampaignRulesVersion is not (SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile) || !SixIslandWildBattleContract.IsRuntimeKind(sixIsland.Kind) ||
              frame.SinglesEncoding.FourIslandWildOrigin is not null || frame.SinglesEncoding.VictoryRoadWildOrigin is not null || frame.SinglesEncoding.SeviiRubyWildOrigin is not null ||
              frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.Party(BattleSide.Opponent).Members.Length != 1 ||
              !SixIslandWildBattleContract.Matches(sixIsland, frame.Party(BattleSide.Opponent).Members[0].Pokemon)))

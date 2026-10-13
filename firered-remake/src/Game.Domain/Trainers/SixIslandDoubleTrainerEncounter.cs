@@ -97,8 +97,11 @@ public static class SixIslandDoubleTrainerEncounter
             return "six_island_double_catalog";
         try { SixIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "six_island_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion != SixIslandOpponentPokemonCatalog.Profile ||
+        if (frame is null || frame.SourceCampaignRulesVersion is not (SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile) ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "six_island_double_frame";
+        if (frame.SourceCampaignRulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
+            (FiveIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } fiveSuccessor ||
+             !ReferenceEquals(fiveSuccessor.Owned.Predecessor, opponents.Owned))) return "source_double_successor_owned";
         if (frame.Parties.SelectMany(p => p.Members).Any(m =>
             SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "six_island_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;

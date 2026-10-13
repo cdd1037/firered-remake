@@ -33,12 +33,12 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("six_island_profile_missing");
             return;
         }
-        if (!content.FourIslandEnabled || content.Maps.Count != 249 || content.SixIslandOwnership is not {} owned ||
+        if (!content.FourIslandEnabled || content.Maps.Count != (content.FiveIslandEnabled ? 254 : 249) || content.SixIslandOwnership is not {} owned ||
             content.SixIslandOpponents is not {} opponents || content.SixIslandTrainers is not {} trainers ||
-            !ReferenceEquals(owned.Predecessor, content.FourIslandOwnership) || !ReferenceEquals(content.PokemonContent?.Catalog, owned.Catalog) ||
+            !ReferenceEquals(owned.Predecessor, content.FourIslandOwnership) || !ReferenceEquals(content.FiveIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.FourIslandOpponents) ||
-            SixIslandMachineCatalog.For(content.PewterMachines) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
-            SixIslandShopCatalog.For(content.EarlyShop) is null)
+            (FiveIslandMachineCatalog.For(content.PewterMachines)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines)) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
+            (FiveIslandShopCatalog.For(content.EarlyShop)?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop)) is null)
             throw new InvalidDataException("six_island_source_profile_missing");
         SixIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }
@@ -59,8 +59,8 @@ public sealed partial class CampaignSession
         if (password != Flag("FLAG_HIDE_SAPPHIRE") || password && (!cut || !Flag("FLAG_HIDE_DOTTED_HOLE_SCIENTIST")) ||
             (cut || DottedHoleMap(state.World.Player.MapId)) && !Flag("FLAG_HIDE_RUIN_VALLEY_SCIENTIST"))
             return "save_six_island_theft_progress";
-        if (Flag("FLAG_UNLOCKED_ROCKET_WAREHOUSE") || Flag("FLAG_DEFEATED_ROCKETS_IN_WAREHOUSE") ||
-            Flag("FLAG_RECOVERED_SAPPHIRE")) return "save_five_island_not_admitted";
+        if (!_content.FiveIslandEnabled && (Flag("FLAG_UNLOCKED_ROCKET_WAREHOUSE") || Flag("FLAG_DEFEATED_ROCKETS_IN_WAREHOUSE") ||
+            Flag("FLAG_RECOVERED_SAPPHIRE"))) return "save_five_island_not_admitted";
         return ValidateSixIslandField(state);
     }
 

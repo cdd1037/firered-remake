@@ -26,7 +26,7 @@ public sealed partial class PretCampaignCatalog
     public bool RegionalFlavorEnabled { get; }
     public bool SupportsRegionalFlavor(MapId map) => RegionalFlavorEnabled &&
         SourceMaps.TryGetValue(map, out var source) && (RegionalFlavorMaps.Contains(source.SourceMapSymbol) ||
-            IsRegionalServiceMap(map) || SafariRegion?.SourceMaps.ContainsKey(map)==true || SilphRegion?.NewMaps.ContainsKey(map)==true || SaffronGymRegion?.NewMaps.ContainsKey(map)==true || ViridianGymRegion?.NewMaps.ContainsKey(map)==true || VictoryRoadRegion?.SourceMaps.ContainsKey(map)==true || PokemonLeagueRegion?.SourceMaps.ContainsKey(map)==true || SeviiRubyRegion?.SourceMaps.ContainsKey(map)==true || FourIslandRegion?.SourceMaps.ContainsKey(map)==true || SixIslandRegion?.SourceMaps.ContainsKey(map)==true);
+            IsRegionalServiceMap(map) || SafariRegion?.SourceMaps.ContainsKey(map)==true || SilphRegion?.NewMaps.ContainsKey(map)==true || SaffronGymRegion?.NewMaps.ContainsKey(map)==true || ViridianGymRegion?.NewMaps.ContainsKey(map)==true || VictoryRoadRegion?.SourceMaps.ContainsKey(map)==true || PokemonLeagueRegion?.SourceMaps.ContainsKey(map)==true || SeviiRubyRegion?.SourceMaps.ContainsKey(map)==true || FourIslandRegion?.SourceMaps.ContainsKey(map)==true || SixIslandRegion?.SourceMaps.ContainsKey(map)==true || FiveIslandRegion?.SourceMaps.ContainsKey(map)==true);
 
     private static readonly ImmutableHashSet<string> RegionalFlavorMaps = new[]
     {

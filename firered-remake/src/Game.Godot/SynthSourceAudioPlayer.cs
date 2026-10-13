@@ -41,7 +41,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false, bool includeSeviiRuby = false, bool includeFourIsland = false, bool includeSixIsland = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false, bool includeSeviiRuby = false, bool includeFourIsland = false, bool includeSixIsland = false, bool includeFiveIsland = false)
     {
         if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
         if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
@@ -296,6 +296,21 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(extension.InheritedCues is not {Length:2}||!extension.InheritedCues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"SE_FALL","SE_M_STRENGTH"})||
                 extension.InheritedCues.Any(c=>cues.SingleOrDefault(old=>old.Id==c.Id)!=c))
                 throw new InvalidDataException("Six Island inherited cues differ.");
+            cues=[..cues,..extension.Cues];
+        }
+        if(includeFiveIsland)
+        {
+            if(!includeSixIsland)throw new InvalidDataException("Five Island audio requires Six Island.");
+            byte[] fiveIslandBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),FiveIslandPresentationAssets.Base+"synth-manifest.json"));
+            if(fiveIslandBytes.Length!=FiveIslandPresentationAssets.SynthBytes||Convert.ToHexStringLower(SHA256.HashData(fiveIslandBytes))!=FiveIslandPresentationAssets.SynthSha256)
+                throw new InvalidDataException("Five Island synth identity differs.");
+            var extension=JsonSerializer.Deserialize<FiveIslandSynthManifest>(fiveIslandBytes,options)??throw new InvalidDataException("Five Island synth missing.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=FiveIslandPresentationAssets.SynthCueCount||
+                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"CRY_HOPPIP_NORMAL","CRY_SKIPLOOM_NORMAL","CRY_JUMPLUFF_NORMAL","CRY_HOUNDOUR_NORMAL","CRY_HOUNDOOM_NORMAL","CRY_PORYGON_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
+                throw new InvalidDataException("Five Island source cue scope differs.");
+            if(extension.InheritedCues is not {Length:5}||!extension.InheritedCues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_45","MUS_SEVII_ROUTE","MUS_ROCKET_HIDEOUT","MUS_POKE_CENTER","SE_PIN"})||
+                extension.InheritedCues.Any(c=>cues.SingleOrDefault(old=>old.Id==c.Id)!=c))
+                throw new InvalidDataException("Five Island inherited cues differ.");
             cues=[..cues,..extension.Cues];
         }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
@@ -628,6 +643,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         public long? EndFrame { get; set; }
     }
     private sealed record SynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues);
+    private sealed record FiveIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
     private sealed record SixIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
     private sealed record FourIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
     private sealed record SynthCue(string Id, string SourceCommit, string SourceSymbol, string SourcePath,

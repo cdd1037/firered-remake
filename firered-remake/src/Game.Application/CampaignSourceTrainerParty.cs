@@ -57,7 +57,8 @@ public sealed partial class CampaignSession
         var style=EffectiveBattleStyle(state);var terrain=CampaignBattleTerrain(state);
         var owned=SafariOrdinaryOwnership;var catalog=owned?.Predecessor??BattlePokemon;
         var successor=_content.SeviiRubyEnabled?owned:null;
-        var result=IsSixIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SixIslandTrainers!,_content.SixIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+        var result=IsFiveIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FiveIslandTrainers!,_content.FiveIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+            : IsSixIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SixIslandTrainers!,_content.SixIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.FiveIslandEnabled?owned:null)
             : IsFourIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FourIslandTrainers!,_content.FourIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.SixIslandEnabled?owned:null)
             : IsSeviiRubyTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SeviiRubyTrainers!,_content.SeviiRubyOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.FourIslandEnabled?owned:null)
             : IsPokemonLeagueTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.PokemonLeagueTrainerParties!,_content.PokemonLeagueOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)

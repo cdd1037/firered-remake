@@ -48,21 +48,24 @@ public static partial class WildBattleRules
     /// <summary>The field owner must first prove the source walk/Surf/cast has completed.
     /// This entry validates every origin and exact natural move set; it grants no new rod or map access.</summary>
     public static WildBattleResult StartSixIslandWild(SixIslandOwnedPokemonCatalog owned,SixIslandWildOrigin origin,
-        ImmutableArray<WildBattleCombatant> playerParty,int activeIndex,WildBattleCombatant opponent,RngState rng, WildBattleTerrain terrain)
+        ImmutableArray<WildBattleCombatant> playerParty,int activeIndex,WildBattleCombatant opponent,RngState rng, WildBattleTerrain terrain, OwnedBattlePokemonCatalog? successorOwned = null)
     {
         if (owned is null || !ReferenceEquals(SixIslandOwnedPokemonCatalog.For(owned.Catalog),owned)) return Fail(null,"six_island_wild_owned_proof");
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(owned, successorOwned))
+            return Fail(null,"source_wild_successor_owned");
+        OwnedBattlePokemonCatalog actualOwned = successorOwned ?? OwnedBattlePokemonCatalog.For(owned.Catalog)!;
         if (origin is null) return Fail(null,"six_island_wild_origin_missing");
         if (!SixIslandWildBattleContract.IsRuntimeKind(origin.Kind)) return Fail(null,"six_island_rod_field_unavailable");
         if (opponent?.Pokemon is not {} mon || opponent.Status!=WildBattleStatus.None || opponent.HeldItem!="ITEM_NONE" ||
             !SixIslandWildPokemonFactory.SourceInitialInstance(owned,origin,mon)) return Fail(null,"six_island_wild_source_instance");
-        if (SourceBattleAdmission.ValidateOwnedEntry(owned,playerParty,activeIndex) is {} ownedError) return Fail(null,ownedError);
+        if (SourceBattleAdmission.ValidateOwnedEntry(actualOwned,playerParty,activeIndex) is {} ownedError) return Fail(null,ownedError);
         if (SourceBattleAdmission.ValidateEntry(owned.Mechanics,BattleRulesProfile.CanonicalSourceSingles,playerParty,activeIndex,opponent) is {} sourceError)
             return Fail(null,sourceError);
         // BattleSetup_GetTerrainId reads the player destination tile, including shore fishing.
         // The authoritative field caller supplies that source-derived terrain.
         if (!Enum.IsDefined(terrain)) return Fail(null,"six_island_wild_terrain");
         return StartSourceWildCore(owned.Mechanics.Catalog,playerParty,activeIndex,opponent,rng,terrain,
-            origin.Kind==SixIslandEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,owned,sixIsland:origin);
+            origin.Kind==SixIslandEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,actualOwned,sixIsland:origin);
     }
 }
 
@@ -73,10 +76,13 @@ public static partial class WildBattleRules
         MapId map, FirstSeviiEncounterKind kind, ImmutableArray<WildBattleCombatant> playerParty,
         int activeIndex, WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain,
         VictoryRoadWildOrigin? victoryRoad = null, SeviiRubyWildOrigin? seviiRuby = null, FourIslandWildOrigin? fourIsland = null,
-        bool lostelleHypno = false, PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false)
+        bool lostelleHypno = false, PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false, OwnedBattlePokemonCatalog? successorOwned = null)
     {
         if (owned is null || !ReferenceEquals(SixIslandOwnedPokemonCatalog.For(owned.Catalog),owned))
             return Fail(null,"six_island_inherited_owned_proof");
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(owned, successorOwned))
+            return Fail(null,"source_wild_successor_owned");
+        OwnedBattlePokemonCatalog actualOwned = successorOwned ?? OwnedBattlePokemonCatalog.For(owned.Catalog)!;
         if (!Enum.IsDefined(kind) || !Enum.IsDefined(terrain) || opponent?.Pokemon is null)
             return Fail(null,"six_island_inherited_context");
         if (map.Value.StartsWith("map.six-island", StringComparison.Ordinal))
@@ -87,9 +93,9 @@ public static partial class WildBattleRules
                 fourIsland.Kind != (kind switch { FirstSeviiEncounterKind.Land=>FourIslandEncounterKind.Land,
                     FirstSeviiEncounterKind.Surf=>FourIslandEncounterKind.Surf, _=>FourIslandEncounterKind.OldRod }))
                 return Fail(null,"six_island_inherited_four_origin");
-            return StartFourIslandWild(owned.Predecessor,fourIsland,playerParty,activeIndex,opponent,rng,terrain,owned);
+            return StartFourIslandWild(owned.Predecessor,fourIsland,playerParty,activeIndex,opponent,rng,terrain,actualOwned);
         }
         return StartFourIslandInheritedWild(owned.Predecessor,map,kind,playerParty,activeIndex,opponent,rng,terrain,
-            victoryRoad,seviiRuby,lostelleHypno,towerKind,scriptedSnorlax,owned);
+            victoryRoad,seviiRuby,lostelleHypno,towerKind,scriptedSnorlax,actualOwned);
     }
 }

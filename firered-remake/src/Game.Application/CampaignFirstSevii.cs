@@ -38,6 +38,7 @@ public sealed partial class CampaignSession
             0=>("MAP_VERMILION_CITY",23,32),1=>("MAP_ONE_ISLAND_HARBOR",8,5),
             2=>("MAP_TWO_ISLAND_HARBOR",8,5),3=>("MAP_THREE_ISLAND_HARBOR",8,5),
             4 when _content.FourIslandEnabled=>("MAP_FOUR_ISLAND_HARBOR",8,5),
+            5 when _content.FiveIslandEnabled=>("MAP_FIVE_ISLAND_HARBOR",8,5),
             6 when _content.SixIslandEnabled=>("MAP_SIX_ISLAND_HARBOR",8,5),
             8=>("MAP_CINNABAR_ISLAND",21,7),_=>throw new InvalidDataException("seagallop_destination_not_admitted")
         };
@@ -138,6 +139,7 @@ public sealed partial class CampaignSession
         "HEAL_LOCATION_TWO_ISLAND"=>"MAP_TWO_ISLAND_POKEMON_CENTER_1F",
         "HEAL_LOCATION_THREE_ISLAND"=>"MAP_THREE_ISLAND_POKEMON_CENTER_1F",
         "HEAL_LOCATION_FOUR_ISLAND" when _content.FourIslandEnabled=>"MAP_FOUR_ISLAND_POKEMON_CENTER_1F",
+        "HEAL_LOCATION_FIVE_ISLAND" when _content.FiveIslandEnabled=>"MAP_FIVE_ISLAND_POKEMON_CENTER_1F",
         "HEAL_LOCATION_SIX_ISLAND" when _content.SixIslandEnabled=>"MAP_SIX_ISLAND_POKEMON_CENTER_1F",_=>null
     };
 }

@@ -47,7 +47,7 @@ public static class PewterMachineRules
     public static void ValidateCatalog(PewterMachineCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        if (SafariMachineCatalog.IsAuthenticated(catalog) || SurfMachineCatalog.IsAuthenticated(catalog) || SilphMachineCatalog.IsAuthenticated(catalog) || SaffronGymMachineCatalog.IsAuthenticated(catalog) || CinnabarMachineCatalog.IsAuthenticated(catalog) || ViridianGymMachineCatalog.IsAuthenticated(catalog) || VictoryRoadMachineCatalog.IsAuthenticated(catalog) || SeviiRubyMachineCatalog.IsAuthenticated(catalog) || FourIslandMachineCatalog.IsAuthenticated(catalog) || SixIslandMachineCatalog.IsAuthenticated(catalog)) return;
+        if (SafariMachineCatalog.IsAuthenticated(catalog) || SurfMachineCatalog.IsAuthenticated(catalog) || SilphMachineCatalog.IsAuthenticated(catalog) || SaffronGymMachineCatalog.IsAuthenticated(catalog) || CinnabarMachineCatalog.IsAuthenticated(catalog) || ViridianGymMachineCatalog.IsAuthenticated(catalog) || VictoryRoadMachineCatalog.IsAuthenticated(catalog) || SeviiRubyMachineCatalog.IsAuthenticated(catalog) || FourIslandMachineCatalog.IsAuthenticated(catalog) || SixIslandMachineCatalog.IsAuthenticated(catalog) || FiveIslandMachineCatalog.IsAuthenticated(catalog)) return;
         if (catalog.Profile == FuchsiaGymMachineRules.Profile) { FuchsiaGymMachineRules.ValidateCatalog(catalog); return; }
         if (catalog.Profile == FuchsiaMachineRules.Profile) { FuchsiaMachineRules.ValidateCatalog(catalog); return; }
         if (catalog.Profile == EeveeMachineRules.Profile) { EeveeMachineRules.ValidateCatalog(catalog); return; }
@@ -283,6 +283,9 @@ public static class PewterMachineRules
         var saffron = SaffronGymMachineCatalog.For(catalog);
         var cinnabar = CinnabarMachineCatalog.For(catalog);
         var viridian = ViridianGymMachineCatalog.For(catalog);
+        var fiveIsland = FiveIslandMachineCatalog.For(catalog);
+        if (fiveIsland is not null && !ReferenceEquals(fiveIsland.Pokemon.Catalog, pokemonCatalog)) return Fail("machine_pokemon_catalog");
+        if (fiveIsland is not null && !PokemonMoveRules.IsLearningSupported(pokemonCatalog, definition.Move)) return Fail("machine_move_execution_unsupported");
         var sixIsland = SixIslandMachineCatalog.For(catalog);
         if (sixIsland is not null && !ReferenceEquals(sixIsland.Pokemon.Catalog, pokemonCatalog)) return Fail("machine_pokemon_catalog");
         if (sixIsland is not null && !PokemonMoveRules.IsLearningSupported(pokemonCatalog, definition.Move)) return Fail("machine_move_execution_unsupported");
