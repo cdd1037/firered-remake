@@ -86,6 +86,7 @@ public interface ICampaignCatalog:IStoryCatalog
     FossilLabOwnedPokemonCatalog? FossilLabOwnership=>null;
     FossilLabOpponentPokemonCatalog? FossilLabOpponents=>null;
     FossilLabMachineCatalog? FossilLabMachines=>null;
+    FossilLabShopCatalog? FossilLabShop=>null;
     bool FightingDojoEnabled=>false;
     FightingDojoOwnedPokemonCatalog? FightingDojoOwnership=>null;
     FightingDojoOpponentPokemonCatalog? FightingDojoOpponents=>null;

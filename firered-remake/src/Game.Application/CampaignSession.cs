@@ -300,6 +300,7 @@ public sealed partial class CampaignSession
         var eeveeError=ValidateEeveeGift(s);if(eeveeError is not null)return eeveeError;
         var silphGiftError=ValidateSilphGifts(s);if(silphGiftError is not null)return silphGiftError;
         var dojoGiftError=ValidateFightingDojoGift(s);if(dojoGiftError is not null)return dojoGiftError;
+        var oldAmberError=ValidateOldAmberProgress(s);if(oldAmberError is not null)return oldAmberError;
         var fossilGiftError=ValidateFossilLabProgress(s);if(fossilGiftError is not null)return fossilGiftError;
         var giftIdentityError=ValidateGiftIdentityUniqueness(s);if(giftIdentityError is not null)return giftIdentityError;
         var teaError=ValidateRegionalTeaProgress(s);if(teaError is not null)return teaError;
@@ -697,6 +698,7 @@ public sealed partial class CampaignSession
             if(TryApplyBillRocketEffect(state,effect,out var billRocketState)){state=billRocketState;continue;}
             if(TryApplyCeladonGymEffect(state,effect,out var celadonGymState)){state=celadonGymState;continue;}
             if(TryApplyCeruleanEffect(state,effect,out var ceruleanState)){state=ceruleanState;continue;}
+            if(TryApplyOldAmberEffect(state,effect,out var oldAmberState)){state=oldAmberState;continue;}
             if(TryApplyFossilLabEffect(state,effect,out var fossilLabState)){state=fossilLabState;continue;}
             if(TryApplyMtMoonEffect(state,effect,out var mtMoonState)){state=mtMoonState;continue;}
             if(TryApplyBillEffect(state,effect,out var billState)){state=billState;continue;}

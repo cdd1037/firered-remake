@@ -301,9 +301,9 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretFightingDojoRegion fightingDojo, FightingDojoOwnedPokemonCatalog dojoOwned,
         FightingDojoOpponentPokemonCatalog dojoOpponents, FightingDojoMachineCatalog dojoMachines, FightingDojoTrainerCatalog dojoTrainers,
         PretFossilLabRegion fossilLab, FossilLabOwnedPokemonCatalog fossilOwned,
-        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines)
+        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines, FossilLabShopCatalog fossilShop)
     {
-        FossilLabRegion = fossilLab; FossilLabOwnership = fossilOwned; FossilLabOpponents = fossilOpponents; FossilLabMachines = fossilMachines;
+        FossilLabRegion = fossilLab; FossilLabOwnership = fossilOwned; FossilLabOpponents = fossilOpponents; FossilLabMachines = fossilMachines; FossilLabShop = fossilShop;
         FightingDojoRegion = fightingDojo; FightingDojoOwnership = dojoOwned; FightingDojoOpponents = dojoOpponents;
         FightingDojoMachines = dojoMachines; FightingDojoTrainers = dojoTrainers;
         TrainerTowerRegion = trainerTower; TrainerTowerCatalog = trainerTowerCatalog;

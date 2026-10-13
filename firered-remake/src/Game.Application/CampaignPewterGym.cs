@@ -64,22 +64,20 @@ public sealed partial class CampaignSession
     private InventoryState LegacyQuestInventory(InventoryState inventory)
     {
         var view=WithoutCityServiceItems(_content.PewterEnabled?PewterMachineRules.WithoutMachines(inventory):inventory);
-        if(ItemfinderEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=ItemfinderRules.Item).ToImmutableArray()};
-        if(_content.EventIslandsEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=EventAuroraTicket&&s.Item!=EventMysticTicket).ToImmutableArray()};
-        if(_content.FiveIslandEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=SapphireItem).ToImmutableArray()};
-        if(_content.SeviiRubyEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=RubyItem&&s.Item!=RainbowPassItem).ToImmutableArray()};
-        if(_content.FirstSeviiEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=FirstSeviiShopCatalog.MeteoriteId&&s.Item!=FirstSeviiShopCatalog.TriPassId).ToImmutableArray()};
-        if(_content.CinnabarEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=CinnabarShopCatalog.SecretKeyId).ToImmutableArray()};
-        if(_content.SilphEnabled)view=view with
+        if(_content.EarlyShop is not {} shop||_content.QuestItems is not {} quests)return view;
+        // Current item admission is authenticated once at construction. Project
+        // known successor keys/balls out of the small Parcel/TV/Map service by
+        // catalog membership, so another acquired key cannot strand this service.
+        // Unknown items remain present and are rejected by its strict validator.
+        var questIds=quests.Items.Select(i=>i.Id).ToHashSet();
+        var additionalKeys=shop.Items.Where(i=>i.Pocket=="POCKET_KEY_ITEMS"&&!questIds.Contains(i.Id)).Select(i=>i.Id).ToHashSet();
+        var additionalBalls=shop.Items.Where(i=>i.Pocket=="POCKET_POKE_BALLS"&&!questIds.Contains(i.Id)).Select(i=>i.Id).ToHashSet();
+        return view with
         {
-            KeyItems=view.KeyItems?.Where(s=>s.Item!=SilphShopCatalog.CardKeyId).ToImmutableArray(),
-            Balls=view.Balls?.Where(s=>s.Item!=SilphShopCatalog.UltraBallId&&s.Item!=SilphShopCatalog.MasterBallId).ToImmutableArray()
+            KeyItems=view.KeyItems?.Where(s=>s is null||!additionalKeys.Contains(s.Item)).ToImmutableArray(),
+            Balls=view.Balls?.Where(s=>s is null||!additionalBalls.Contains(s.Item)).ToImmutableArray(),
+            Berries=_content.SsAnneEnabled?null:view.Berries
         };
-        if(_content.PokemonTowerEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=PokemonTowerItemRules.PokeFluteId).ToImmutableArray()};
-        if(_content.RocketHideoutEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item.Value is not("pret:ITEM_LIFT_KEY" or "pret:ITEM_SILPH_SCOPE")).ToImmutableArray(),Balls=view.Balls?.Where(s=>s.Item.Value is not("pret:ITEM_NET_BALL" or "pret:ITEM_NEST_BALL")).ToImmutableArray()};
-        if(_content.SsAnneEnabled)view=view with{Berries=null,Balls=view.Balls is {} balls?balls.Where(s=>s.Item!=SsAnneItemRules.GreatBallId).ToImmutableArray():null,KeyItems=view.KeyItems is {} shipKeys?shipKeys.Where(s=>s.Item!=SsAnneItemRules.BerryPouchId).ToImmutableArray():null};
-        if(_content.BillEnabled)view=view with{KeyItems=view.KeyItems is {} billKeys?billKeys.Where(s=>s.Item!=BillItemRules.FameCheckerId&&s.Item!=BillItemRules.SsTicketId).ToImmutableArray():null};
-        return _content.MtMoonEnabled?view with{KeyItems=view.KeyItems is {} keys?keys.Where(s=>s.Item!=MtMoonItemRules.HelixFossilId&&s.Item!=MtMoonItemRules.DomeFossilId).ToImmutableArray():null}:view;
     }
     private string? ValidateQuestInventory(QuestItemsCatalog catalog,InventoryState? inventory)=>inventory is null?"inventory_missing":QuestItemRules.Validate(catalog,LegacyQuestInventory(inventory));
     private int QuestQuantity(QuestItemsCatalog catalog,InventoryState inventory,string symbol)=>QuestItemRules.Quantity(catalog,LegacyQuestInventory(inventory),symbol);

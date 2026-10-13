@@ -2,27 +2,32 @@
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-fossil-lab-rules-v1",
-  "importerSha256": "862ca6de15b94ae5b79d48da5b16500e48ed762cc2016c5eb59811072e4d8d64",
+  "importerSha256": "b3ad3ab13f3ae124cd26f91b4b0f04ad744372c78417c3e33bc0fba5310f45da",
   "files": [
     {
       "path": "content/generated/fossil-lab-rules/machines.json",
-      "byteLength": 77498,
-      "sha256": "e4d88c47202263f022904bda3d8f5144391a7e6d9ccbc80dd507fa7195170c82"
+      "byteLength": 95968,
+      "sha256": "c333902b0b61882e21f029ac174f476006259491c6284757726fdc97425f79f3"
     },
     {
       "path": "content/generated/fossil-lab-rules/pokemon.json",
-      "byteLength": 36210,
-      "sha256": "c73920819f51fd82518103ae1bc38b2d8bd6c8a2aa34eb2409335f9be1ded12c"
+      "byteLength": 42981,
+      "sha256": "3b1fd31e40b0f2b87ef92f392a80552e2b3c5e403308903c53a02982106a3940"
     },
     {
       "path": "content/generated/fossil-lab-rules/rules.json",
-      "byteLength": 9836,
-      "sha256": "ff539780bec46809aea06499c14bfde16611d48f973a3947072705109df1d762"
+      "byteLength": 13897,
+      "sha256": "341bf2676f3b42cd6e9cb73288ff498a157ddf43a7c1c59bbf218e9121ffc0bf"
+    },
+    {
+      "path": "content/generated/fossil-lab-rules/shop.json",
+      "byteLength": 2111,
+      "sha256": "3dcbece9abab82ebb607dacd950bbb4ee451bcfea9159c88909d65d241b8840b"
     },
     {
       "path": "content/generated/fossil-lab-rules/source-input-hashes.json",
-      "byteLength": 4520,
-      "sha256": "7d64b4b10a874629c5ab8106aa099e061f9c5501fcdc88156fcc9b5946b9a13a"
+      "byteLength": 5176,
+      "sha256": "c5a502b598b541e15dfc6623de69c55e8ef4bda20b52bbce5c4956b793167477"
     },
     {
       "path": "content/raw/fossil-lab-rules/asm/macros/event.inc",
@@ -60,9 +65,19 @@
       "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9"
     },
     {
+      "path": "content/raw/fossil-lab-rules/src/data/items.json",
+      "byteLength": 194280,
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
       "path": "content/raw/fossil-lab-rules/src/data/pokemon/evolution.h",
       "byteLength": 12282,
       "sha256": "a7d05352fb5b7039b8851049bc9575dc8eaa4450bf9964d03b7857db98c32d3c"
+    },
+    {
+      "path": "content/raw/fossil-lab-rules/src/data/pokemon/experience_tables.h",
+      "byteLength": 22610,
+      "sha256": "9a236761640676e251b76b7950b86e5881ee23dfe920ca27bbe47b4541542731"
     },
     {
       "path": "content/raw/fossil-lab-rules/src/data/pokemon/level_up_learnset_pointers.h",

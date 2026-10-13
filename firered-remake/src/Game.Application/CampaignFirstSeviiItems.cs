@@ -9,8 +9,10 @@ public sealed partial class CampaignSession
 {
     // Current construction authenticates the latest shop. These predecessors remain
     // typed source proofs and preserve each later key-item extension when narrowing.
-    private TrainerTowerShopCatalog? TrainerTowerShopProof => TrainerTowerShopCatalog.For(ShopCatalog);
-    private InventoryState TrainerTowerPredecessorInventory(InventoryState inventory) => TrainerTowerShopProof?.InventoryForPredecessor(inventory)??inventory;
+    private FossilLabShopCatalog? FossilLabShopProof => FossilLabShopCatalog.For(ShopCatalog);
+    private InventoryState FossilLabPredecessorInventory(InventoryState inventory) => FossilLabShopProof?.InventoryForPredecessor(inventory)??inventory;
+    private TrainerTowerShopCatalog? TrainerTowerShopProof => FossilLabShopProof?.Predecessor ?? TrainerTowerShopCatalog.For(ShopCatalog);
+    private InventoryState TrainerTowerPredecessorInventory(InventoryState inventory) => TrainerTowerShopProof?.InventoryForPredecessor(FossilLabPredecessorInventory(inventory))??inventory;
     private PowerPlantShopCatalog PowerPlantShopProof => TrainerTowerShopProof?.Predecessor ?? PowerPlantShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("power_plant_shop_proof_missing");
     private InventoryState PowerPlantPredecessorInventory(InventoryState inventory) => PowerPlantShopProof.InventoryForPredecessor(TrainerTowerPredecessorInventory(inventory));
     private EventIslandShopCatalog EventIslandShopProof => PowerPlantShopProof.Predecessor;
@@ -42,7 +44,8 @@ public sealed partial class CampaignSession
         changed = SevenIslandShopProof.RestoreFromPredecessor(EventIslandPredecessorInventory(view), changed);
         changed = EventIslandShopProof.RestoreFromPredecessor(PowerPlantPredecessorInventory(view), changed);
         changed = PowerPlantShopProof.RestoreFromPredecessor(TrainerTowerPredecessorInventory(view), changed);
-        if(TrainerTowerShopProof is {} tower)changed=tower.RestoreFromPredecessor(view,changed);
+        if(TrainerTowerShopProof is {} tower)changed=tower.RestoreFromPredecessor(FossilLabPredecessorInventory(view),changed);
+        if(FossilLabShopProof is {} fossil)changed=fossil.RestoreFromPredecessor(view,changed);
         return MergeShopInventory(original, changed);
     }
     private bool TryApplyFirstSeviiItemEffect(CampaignState state,StoryEffect effect,out CampaignState next)

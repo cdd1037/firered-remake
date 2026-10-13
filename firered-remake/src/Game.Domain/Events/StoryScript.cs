@@ -87,6 +87,8 @@ public static class StoryRules
                 {
                     int rows=(instruction.Source.Path,instruction.Source.Symbol,instruction.Args[0],instruction.Args[1],instruction.Args[2]) switch
                     {
+                        ("data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc","CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_ChooseFossilHelixAmber","0","0","MULTICHOICE_HELIX_AMBER")=>3,
+                        ("data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc","CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_ChooseFossilDomeAmber","0","0","MULTICHOICE_DOME_AMBER")=>3,
                         ("data/maps/VermilionCity/scripts.inc","VermilionCity_EventScript_HasMysticTicket","17","6","MULTICHOICE_SEVII_NAVEL")=>3,
                         ("data/maps/VermilionCity/scripts.inc","VermilionCity_EventScript_HasAuroraTicket","13","6","MULTICHOICE_SEVII_BIRTH")=>3,
                         ("data/maps/VermilionCity/scripts.inc","VermilionCity_EventScript_HasMysticAndAuroraTickets","13","5","MULTICHOICE_SEVII_NAVEL_BIRTH")=>4,

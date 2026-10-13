@@ -28,7 +28,9 @@ public sealed partial class CampaignSession
         new(1, 357, MtMoonItemRules.HelixFossilId, "ITEM_HELIX_FOSSIL", 138, "SPECIES_OMANYTE",
             "FLAG_GOT_HELIX_FOSSIL", "FLAG_REVIVED_HELIX", "ShowHelixFossil", "GiveOmanyte", "MULTICHOICE_HELIX"),
         new(2, 358, MtMoonItemRules.DomeFossilId, "ITEM_DOME_FOSSIL", 140, "SPECIES_KABUTO",
-            "FLAG_GOT_DOME_FOSSIL", "FLAG_REVIVED_DOME", "ShowDomeFossil", "GiveKabuto", "MULTICHOICE_DOME")
+            "FLAG_GOT_DOME_FOSSIL", "FLAG_REVIVED_DOME", "ShowDomeFossil", "GiveKabuto", "MULTICHOICE_DOME"),
+        new(3, 354, FossilLabShopCatalog.OldAmberId, "ITEM_OLD_AMBER", 142, "SPECIES_AERODACTYL",
+            "FLAG_GOT_OLD_AMBER", "FLAG_REVIVED_AMBER", "ShowOldAmber", "GiveAerodactyl", "MULTICHOICE_AMBER")
     ];
 
     private bool InFossilLabScript(CampaignState state) => _content.FossilLabEnabled &&
@@ -81,16 +83,13 @@ public sealed partial class CampaignSession
         int phase = state.Script.Variables.GetValueOrDefault(FossilLabReviveState);
         int which = state.Script.Variables.GetValueOrDefault(FossilLabWhichFossil);
         var receipts = state.FossilRevivals ?? [];
-        bool amber = state.Script.Flags.GetValueOrDefault("FLAG_GOT_OLD_AMBER") ||
-            state.Script.Flags.GetValueOrDefault("FLAG_REVIVED_AMBER") || which == 3 ||
-            (state.Inventory?.KeyItems ?? []).Any(s => s.Item.Value == "pret:ITEM_OLD_AMBER");
-        if (amber) return "save_fossil_lab_amber_not_admitted";
         if (!_content.FossilLabEnabled)
             return phase != 0 || which != 0 || state.FossilRevivals is not null ||
                 FossilLabDefinitions.Any(f => state.Script.Flags.GetValueOrDefault(f.RevivedFlag))
                 ? "save_fossil_lab_profile_missing" : null;
-        if (receipts.IsDefault || receipts.Length > 1 || receipts.Any(r => r is null)) return "save_fossil_lab_receipts_invalid";
-        if (phase is < 0 or > 2 || which is < 0 or > 2 || phase != 0 && which == 0)
+        if (receipts.IsDefault || receipts.Length > 2 || receipts.Any(r => r is null) ||
+            receipts.Count(r => r.FossilKind is 1 or 2) > 1) return "save_fossil_lab_receipts_invalid";
+        if (phase is < 0 or > 2 || which is < 0 or > 3 || phase != 0 && which == 0)
             return "save_fossil_lab_state_invalid";
         foreach (var fossil in FossilLabDefinitions)
         {
@@ -101,9 +100,10 @@ public sealed partial class CampaignSession
                 return "save_fossil_lab_pending_invalid";
         }
         // WHICH is not cleared by the original success script. Its only valid
-        // idle nonzero value is the fossil for the completed receipt.
-        if (phase == 0 && (receipts.IsEmpty ? which != 0 : which != receipts[0].FossilKind) ||
-            phase != 0 && !receipts.IsEmpty) return "save_fossil_lab_state_receipt";
+        // idle nonzero value is the most recently completed receipt. The other
+        // earned fossil can be deposited while that prior receipt remains.
+        if (phase == 0 && (receipts.IsEmpty ? which != 0 : which != receipts[^1].FossilKind) ||
+            phase != 0 && receipts.Length == 2) return "save_fossil_lab_state_receipt";
         foreach (var receipt in receipts)
         {
             var fossil = FossilLabDefinitions.SingleOrDefault(f => f.Kind == receipt.FossilKind);
@@ -145,23 +145,42 @@ public sealed partial class CampaignSession
         if (effect.Opcode == "lock" && effect.Source.Symbol == FossilLabScientist)
         {
             if (!InFossilLabScript(state)) throw new InvalidDataException("fossil_lab_caller");
-            var error = ValidateFossilLabProgress(state) ?? ValidateMtMoonProgress(state);
+            var error = ValidateFossilLabProgress(state) ?? ValidateMtMoonProgress(state) ?? ValidateOldAmberProgress(state);
             if (error is not null) throw new InvalidDataException(error);
             return true;
         }
         if (effect.Opcode is not ("multichoice" or "bufferitemname" or "removeitem" or "givemon")) return false;
         if (!InFossilLabScript(state)) throw new InvalidDataException("fossil_lab_caller");
         var a = effect.Args;
+        if (effect.Opcode == "multichoice")
+        {
+            var available = FossilLabDefinitions.Where(f => state.Script.Flags.GetValueOrDefault(f.AcquiredFlag) &&
+                !state.Script.Flags.GetValueOrDefault(f.RevivedFlag)).ToImmutableArray();
+            if (state.Script.Variables.GetValueOrDefault(FossilLabReviveState) != 0 || available.IsEmpty || available.Length > 2 ||
+                available.Any(f => OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], f.Item) != 1))
+                throw new InvalidDataException("fossil_lab_menu_context");
+            string branch = available[0].Kind switch { 1 => "Helix", 2 => "Dome", 3 => "Amber", _ => throw new InvalidDataException("fossil_lab_menu_kind") };
+            string menu = available[0].Menu;
+            if (available.Length == 2)
+            {
+                if (available[1].Kind != 3 || available[0].Kind is not (1 or 2)) throw new InvalidDataException("fossil_lab_menu_pair");
+                branch += "Amber"; menu += "_AMBER";
+            }
+            if (effect.Source.Symbol != FossilLabPrefix + "ChooseFossil" + branch ||
+                !a.SequenceEqual(new[] { "0", "0", menu, "FALSE" }) || state.Script.Wait?.Kind != StoryWaitKind.MenuChoice)
+                throw new InvalidDataException("fossil_lab_menu_source");
+            next = state with { FossilMenu = new(menu, available.Select(f => ShopCatalog.Items.Single(i => i.Id == f.Item).Name).Append("EXIT").ToImmutableArray()) };
+            return true;
+        }
         var fossil = effect.Opcode switch
         {
-            "multichoice" => FossilLabDefinitions.SingleOrDefault(f => effect.Source.Symbol == FossilLabPrefix + (f.Kind == 1 ? "ChooseFossilHelix" : "ChooseFossilDome")),
             "givemon" => FossilLabDefinitions.SingleOrDefault(f => effect.Source.Symbol == FossilLabPrefix + f.Give),
             _ => FossilLabDefinitions.SingleOrDefault(f => effect.Source.Symbol == FossilLabPrefix + f.Show)
         };
         if (fossil is null) throw new InvalidDataException("fossil_lab_branch_not_admitted");
         if (!state.Script.Flags.GetValueOrDefault(fossil.AcquiredFlag) || state.Script.Flags.GetValueOrDefault(fossil.RevivedFlag) ||
-            !(state.FossilRevivals ?? []).IsEmpty || state.Script.Flags.GetValueOrDefault("FLAG_GOT_OLD_AMBER") ||
-            state.Script.Flags.GetValueOrDefault("FLAG_REVIVED_AMBER")) throw new InvalidDataException("fossil_lab_reward_context");
+            (state.FossilRevivals ?? []).Length >= 2 || (state.FossilRevivals ?? []).Any(r => r.FossilKind == fossil.Kind))
+            throw new InvalidDataException("fossil_lab_reward_context");
         int phase = state.Script.Variables.GetValueOrDefault(FossilLabReviveState);
         int which = state.Script.Variables.GetValueOrDefault(FossilLabWhichFossil);
         var inventory = state.Inventory ?? throw new InvalidDataException("inventory_missing");
@@ -178,15 +197,10 @@ public sealed partial class CampaignSession
                     fossil.Species, mon.InstanceId, mon.Pokemon.Personality, mon.Pokemon.Ivs)) };
             return true;
         }
-        if (phase != 0 || which != 0 || OpeningInventoryRules.Quantity(inventory.KeyItems ?? [], fossil.Item) != 1)
+        if (phase != 0 || OpeningInventoryRules.Quantity(inventory.KeyItems ?? [], fossil.Item) != 1)
             throw new InvalidDataException("fossil_lab_deposit_context");
         switch (effect.Opcode)
         {
-            case "multichoice":
-                if (!a.SequenceEqual(new[] { "0", "0", fossil.Menu, "FALSE" }) || state.Script.Wait?.Kind != StoryWaitKind.MenuChoice)
-                    throw new InvalidDataException("fossil_lab_menu_source");
-                next = state with { FossilMenu = new(fossil.Menu, [item.Name, "EXIT"]) };
-                break;
             case "bufferitemname":
                 if (!a.SequenceEqual(new[] { "STR_VAR_2", fossil.ItemSymbol })) throw new InvalidDataException("fossil_lab_buffer_source");
                 next = state with { TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", item.Name) };

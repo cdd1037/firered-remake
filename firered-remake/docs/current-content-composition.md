@@ -138,3 +138,8 @@ presentation acceptance remain pending. See [current Tower scope](trainer-tower-
 ## Fossil laboratory successor, 2026-10-13
 
 The single current composition adds the original Entrance and Experiment Room after Dojo: 314 maps, 158 owned species and 190 ordinary opponents (Tower roster204 separately). Two source level40 evolution edges and164 compatibility cells extend the existing41 machines. No predecessor runtime is revived. Content fingerprint `67397acae6d36ea1b7beeaa98c7bc57c6a17b6abc3de141ebf8a9bd530838ed2`. Public route and strict receipt boundaries are documented in [fossil lab acceptance](fossil-lab-campaign.md).
+
+
+## Old Amber successor, 2026-10-13
+
+The same fossil package now adds Aerodactyl to159 owned species and item354 to125 inventory definitions; maps314 and ordinary opponents190 are unchanged. The separate Tower roster remains204. All41 machine rows retain identity, with205 fossil cells. The original Museum map/actor scripts are reused. Content fingerprint `86e36a116df5b2bf16abfa6b918f29c8862da35d551886d51c11a62d0b92fda2`. Museum acquisition and the second fossil receipt are covered by the [Old Amber route](old-amber-campaign.md).

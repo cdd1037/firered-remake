@@ -10,15 +10,15 @@ public sealed record FossilLabDexDocument(int SchemaVersion, string Profile, str
 public sealed record FossilLabPresentationData(JsonElement Manifest, Dictionary<string, byte[]> Files,
     Dictionary<int, PokedexMenuEntry> DexEntries);
 
-/// <summary>Four source fossil species, source dex pages and menus, and authenticated normal cry resources.</summary>
+/// <summary>Five owned fossil species, source dex pages and menus, with inherited Aerodactyl League resources.</summary>
 public static class PretFossilLabPresentation
 {
     public const string Base = "content/generated/fossil-lab-presentation/";
     public const string Profile = "firered-fossil-lab-presentation-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     public const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    public const string LockSha256 = "4784dcbe4b602f56dcc33b72ca4b747d3558e418112be42a0ff52c5bb0db0fd8";
-    public const string ManifestSha256 = "451ba9aed1242c23207bf525168eff03430d6054b866a0c27f4888515a6d0fb1";
+    public const string LockSha256 = "d426152df47fe7cdbc16a8a54b137df22e76e85061d565cfaec1b1fce543bc15";
+    public const string ManifestSha256 = "9b4654fa69d4916c0fd619b67b8bbedb3a08712300b8e5950848f27c1c6de0bc";
 
     public static FossilLabPresentationData Load(string root)
     {
@@ -38,8 +38,8 @@ public static class PretFossilLabPresentation
             return bytes;
         }
 
-        using var locked = JsonDocument.Parse(Read("scripts/fossil-lab-presentation.lock.json", LockSha256, 14542));
-        using var document = JsonDocument.Parse(Read(Base + "manifest.json", ManifestSha256, 45856));
+        using var locked = JsonDocument.Parse(Read("scripts/fossil-lab-presentation.lock.json", LockSha256, 20562));
+        using var document = JsonDocument.Parse(Read(Base + "manifest.json", ManifestSha256, 60343));
         var sourceLock = locked.RootElement;
         var manifest = document.RootElement;
         if (sourceLock.GetProperty("schemaVersion").GetInt32() != 1 || sourceLock.GetProperty("profile").GetString() != Profile ||
@@ -49,8 +49,8 @@ public static class PretFossilLabPresentation
             manifest.GetProperty("sourceTree").GetString() != SourceTree || manifest.GetProperty("lockSha256").GetString() != LockSha256 ||
             !JsonElement.DeepEquals(manifest.GetProperty("inputs"), sourceLock.GetProperty("files")) ||
             !JsonElement.DeepEquals(manifest.GetProperty("inheritedInputs"), sourceLock.GetProperty("inheritedInputs")) ||
-            sourceLock.GetProperty("files").GetArrayLength() != 46 || sourceLock.GetProperty("inheritedInputs").GetArrayLength() != 4 ||
-            manifest.GetProperty("outputs").GetArrayLength() != 50)
+            sourceLock.GetProperty("files").GetArrayLength() != 58 || sourceLock.GetProperty("inheritedInputs").GetArrayLength() != 16 ||
+            manifest.GetProperty("outputs").GetArrayLength() != 54)
             throw new InvalidDataException("Fossil Lab presentation identity differs.");
         foreach (var row in sourceLock.GetProperty("files").EnumerateArray())
         {
@@ -70,8 +70,8 @@ public static class PretFossilLabPresentation
             string path = Base + row.GetProperty("path").GetString()!;
             files.Add(path, Read(path, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32()));
         }
-        foreach (string kind in new[] { "sprites", "pokemonIcons", "footprints" })
-        foreach (var asset in manifest.GetProperty(kind).EnumerateArray())
+        foreach (var asset in new[] { "sprites", "pokemonIcons", "footprints", "inheritedSprites", "inheritedPokemonIcons" }
+            .SelectMany(kind => manifest.GetProperty(kind).EnumerateArray()).Append(manifest.GetProperty("oldAmber").GetProperty("icon")))
         {
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
             string path = asset.GetProperty("rgbaPath").GetString()!;
@@ -85,11 +85,12 @@ public static class PretFossilLabPresentation
             RespectNullableAnnotations = true, RespectRequiredConstructorParameters = true
         }) ?? throw new InvalidDataException("Fossil Lab dex document missing.");
         if (dex.SchemaVersion != 1 || dex.Profile != Profile || dex.SourceCommit != SourceCommit ||
-            !dex.Entries.Select(e => e.SourceSpeciesId).SequenceEqual(new[] { 138, 139, 140, 141 }) ||
+            !dex.Entries.Select(e => e.SourceSpeciesId).SequenceEqual(new[] { 138, 139, 140, 141, 142 }) ||
             dex.Entries.Any(e => e.Portrait is null || e.Footprint is null) ||
-            !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(new[] { 138, 139, 140, 141 }) ||
+            !manifest.GetProperty("newOwnedSpecies").EnumerateArray().Select(e => e.GetInt32()).SequenceEqual(new[] { 138, 139, 140, 141, 142 }) ||
             manifest.GetProperty("sprites").GetArrayLength() != 16 || manifest.GetProperty("pokemonIcons").GetArrayLength() != 4 ||
-            manifest.GetProperty("footprints").GetArrayLength() != 4 || manifest.GetProperty("menus").GetArrayLength() != 2 ||
+            manifest.GetProperty("footprints").GetArrayLength() != 5 || manifest.GetProperty("menus").GetArrayLength() != 5 ||
+            manifest.GetProperty("inheritedSprites").GetArrayLength() != 4 || manifest.GetProperty("inheritedPokemonIcons").GetArrayLength() != 1 ||
             manifest.GetProperty("audio").GetProperty("newCueCount").GetInt32() != 4)
             throw new InvalidDataException("Fossil Lab presentation inventory differs.");
         foreach (var texture in dex.Entries.SelectMany(e => new[] { e.Portrait!, e.Footprint! }))
@@ -98,11 +99,13 @@ public static class PretFossilLabPresentation
         foreach (var menu in manifest.GetProperty("menus").EnumerateArray())
         {
             string id = menu.GetProperty("menuId").GetString()!;
-            string fossil = id switch { "MULTICHOICE_HELIX" => "HELIX FOSSIL", "MULTICHOICE_DOME" => "DOME FOSSIL",
+            string[] rows = id switch { "MULTICHOICE_HELIX" => ["HELIX FOSSIL", "EXIT"], "MULTICHOICE_DOME" => ["DOME FOSSIL", "EXIT"],
+                "MULTICHOICE_AMBER" => ["OLD AMBER", "EXIT"], "MULTICHOICE_HELIX_AMBER" => ["HELIX FOSSIL", "OLD AMBER", "EXIT"],
+                "MULTICHOICE_DOME_AMBER" => ["DOME FOSSIL", "OLD AMBER", "EXIT"],
                 _ => throw new InvalidDataException("Unadmitted fossil menu.") };
-            if (!menu.GetProperty("rows").EnumerateArray().Select(r => r.GetString()).SequenceEqual(new[] { fossil, "EXIT" }) ||
+            if (!menu.GetProperty("rows").EnumerateArray().Select(r => r.GetString()).SequenceEqual(rows) ||
                 menu.GetProperty("left").GetInt32() != 0 || menu.GetProperty("top").GetInt32() != 0 ||
-                menu.GetProperty("rowHeight").GetInt32() != 14 || menu.GetProperty("interiorHeightTiles").GetInt32() != 4 ||
+                menu.GetProperty("rowHeight").GetInt32() != 14 || menu.GetProperty("interiorHeightTiles").GetInt32() != rows.Length * 2 ||
                 menu.GetProperty("ignoreB").GetBoolean() || menu.GetProperty("wrap").GetBoolean() || menu.GetProperty("cancelResult").GetInt32() != 127)
                 throw new InvalidDataException("Fossil source menu differs.");
         }

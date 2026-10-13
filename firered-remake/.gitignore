@@ -90,3 +90,12 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /tests/Game.FightingDojoView.Tests/*.cs.uid
 
 /tests/Game.FossilLabView.Tests/Assets/
+
+# Rebuildable fossil and Old Amber execution cohorts and duplicate host output.
+/evidence/fossil-lab-*/**/*.dll
+/evidence/fossil-lab-*/**/*.pdb
+/evidence/old-amber-*/**/*.dll
+/evidence/old-amber-*/**/*.pdb
+/evidence/old-amber-*/**/product/
+/evidence/old-amber-*/**/userdata/
+/evidence/old-amber-*/**/host.log

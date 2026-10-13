@@ -15,6 +15,7 @@ public sealed partial class PretCampaignCatalog
     public FossilLabOwnedPokemonCatalog FossilLabOwnership { get; }
     public FossilLabOpponentPokemonCatalog FossilLabOpponents { get; }
     public FossilLabMachineCatalog FossilLabMachines { get; }
+    public FossilLabShopCatalog FossilLabShop { get; }
 
     private static void AppendFossilLabSources(PretFossilLabRegion region,
         List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants, List<string> hashes)

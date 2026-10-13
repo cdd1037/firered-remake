@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import the bounded Helix/Dome fossil catalogs from pinned Git blobs.
+"""Import all three original fossil catalogs from pinned Git blobs.
 
 Usage: REFERENCE DEPENDENCY OUTPUT [--check]. Never executes upstream code or
 rewrites the canonical catalog. Generation writes only this package and lock.
@@ -13,11 +13,12 @@ from pathlib import Path
 
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
-SPECIES = ("SPECIES_OMANYTE", "SPECIES_OMASTAR", "SPECIES_KABUTO", "SPECIES_KABUTOPS")
+SPECIES = ("SPECIES_OMANYTE", "SPECIES_OMASTAR", "SPECIES_KABUTO", "SPECIES_KABUTOPS", "SPECIES_AERODACTYL")
 DEPENDENCIES = {
     "content/generated/canonical-pokemon/catalog.json": "c5ef32d4b425c9ce720b0b29305d5855e6c7f5eff8ff05cc36d2cb51584eb9bc",
     "content/generated/fighting-dojo-rules/pokemon.json": "4679a195369fe66442a0d4b8f75000efc9714083e52232c40e717e3d4c89cdd1",
     "content/generated/fighting-dojo-rules/machines.json": "c47f335e8091e1f8b2e0cda39819af278a4a4f47140ae762942d95d7b99143d6",
+    "content/generated/trainer-tower-rules/items.json": "2c2c9bcc8f4bb34fc2505794f07c7baeb3094efd10b1836e055e3bf1c3839129",
 }
 
 
@@ -71,7 +72,7 @@ def generate(reference, dependency):
         dependencies.append(dict(path=path, byteLength=len(data), sha256=sha(data)))
         return json.loads(data)
 
-    canonical, previous, previous_machines = [dependent(p) for p in DEPENDENCIES]
+    canonical, previous, previous_machines, previous_items = [dependent(p) for p in DEPENDENCIES]
     need(previous["ownedSpeciesCount"] == 154 and previous["opponentSpeciesCount"] == 186,
          "Exact Dojo predecessor")
     need(previous_machines["speciesCount"] == 154 and previous_machines["machineCount"] == 41,
@@ -92,7 +93,7 @@ def generate(reference, dependency):
             need(1 <= source["startLine"] <= source["endLine"] <= len(texts[source["path"]].splitlines()),
                  "Canonical source span: " + name)
         need(number("include/constants/species.h", name) == 138 + index, "Source species number")
-        if index % 2 == 0:
+        if index in (0, 2):
             raw_edge = meta["sourceEvolutions"]
             need(len(raw_edge) == 1, "One source evolution")
             edge = raw_edge[0]
@@ -121,7 +122,10 @@ def generate(reference, dependency):
 
     lab_path = "data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc"
     gifts = []
-    for kind, name, suffix in [("HELIX", SPECIES[0], "Omanyte"), ("DOME", SPECIES[2], "Kabuto")]:
+    for kind, name, suffix, item, fossil_value in [
+            ("HELIX", SPECIES[0], "Omanyte", "ITEM_HELIX_FOSSIL", 1),
+            ("DOME", SPECIES[2], "Kabuto", "ITEM_DOME_FOSSIL", 2),
+            ("AMBER", SPECIES[4], "Aerodactyl", "ITEM_OLD_AMBER", 3)]:
         symbol = "CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_Give" + suffix
         match = one(lab_path, r"^" + symbol + r"::\n((?:(?!^\w+::).)*)")
         need(re.search(r"^\tgivemon " + name + r", 5$", match[1], re.M), "Exact level-five source gift")
@@ -131,13 +135,12 @@ def generate(reference, dependency):
         for move in species[name]["levelUpMoves"]:
             if move["level"] <= 5 and move["move"] not in natural:
                 natural = (natural + [move["move"]])[-4:]
-        expected = ("CONSTRICT", "WITHDRAW") if kind == "HELIX" else ("SCRATCH", "HARDEN")
+        expected = {"HELIX": ("CONSTRICT", "WITHDRAW"), "DOME": ("SCRATCH", "HARDEN"), "AMBER": ("WING_ATTACK",)}[kind]
         need(natural == [identity("MOVE_" + move) for move in expected], "Source level-five initial moves")
         names_path = "src/data/text/species_names.h"
         display = one(names_path, r'^    \[' + name + r'\] = _\("([^"]+)"\),$')
-        gifts.append(dict(kind=kind.lower(), fossilValue=1 if kind == "HELIX" else 2,
-                          item=identity("ITEM_" + kind + "_FOSSIL"),
-                          sourceItemId=number("include/constants/items.h", "ITEM_" + kind + "_FOSSIL"),
+        gifts.append(dict(kind=kind.lower(), fossilValue=fossil_value,
+                          item=identity(item), sourceItemId=number("include/constants/items.h", item),
                           species=identity(name), sourceSpeciesId=species[name]["sourceSpeciesId"], name=display[1],
                           level=5, moves=natural, metLocation="MAPSEC_CINNABAR_ISLAND", metLevel=5,
                           metGame=4, language=2, ball="ITEM_POKE_BALL", heldItem="ITEM_NONE",
@@ -146,6 +149,31 @@ def generate(reference, dependency):
                           revivedFlagId=number("include/constants/flags.h", "FLAG_REVIVED_" + kind),
                           source=ref(lab_path, symbol, match), nameSource=ref(names_path, name, display)))
 
+    need(previous_items["itemCount"] == 124, "Exact Trainer Tower inventory predecessor")
+    item_path, item_symbol = "src/data/items.json", "ITEM_OLD_AMBER"
+    item_definition = next(i for i in json.loads(read(item_path))["items"] if i["itemId"] == item_symbol)
+    item_match = one(item_path, r'^    \{\n      "english": "OLD AMBER",.*?^    \}')
+    item_ref = ref(item_path, item_symbol, item_match)
+    need(item_definition == dict(english="OLD AMBER", itemId=item_symbol, price=0,
+         holdEffect="HOLD_EFFECT_NONE", holdEffectParam=0,
+         description_english="A piece of amber that contains\\nthe genes of an ancient POKéMON.\\nIt is clear with a reddish tint.",
+         importance=1, registrability=0, pocket="POCKET_KEY_ITEMS", type="ITEM_TYPE_BAG_MENU",
+         fieldUseFunc="FieldUseFunc_OakStopsYou", battleUsage=0, battleUseFunc="NULL", secondaryId=0),
+         "Exact Old Amber source definition")
+    need(number("include/constants/items.h", item_symbol) == 354, "Old Amber source number")
+    item_metadata = dict(id=identity(item_symbol), sourceItemSymbol=item_symbol, sourceItemId=354,
+        name=item_definition["english"], price=0, importance=1, registrability=0, pocket="POCKET_KEY_ITEMS",
+        type="ITEM_TYPE_BAG_MENU", holdEffect="HOLD_EFFECT_NONE", holdEffectParam=0,
+        fieldUseFunction="FieldUseFunc_OakStopsYou", battleUsage=0, battleUseFunction="NULL", secondaryId=0,
+        canToss=False, canSell=False, canGive=False, source=item_ref)
+    amber_item = {k: item_metadata[k] for k in ("id", "sourceItemSymbol", "sourceItemId", "name", "price", "pocket",
+        "importance", "type", "fieldUseFunction", "battleUsage", "battleUseFunction", "holdEffectParam", "source")}
+    amber_item.update(description=item_definition["description_english"].replace("\\n", "\n"),
+        healHp=0, cureStatus=0, effectBytes=[], useSupport=11, effectSource=None, sourceMetadata=item_metadata)
+
+    exp_path = "src/data/pokemon/experience_tables.h"
+    need("#define EXP_SLOW(n)((5 * CUBE(n)) / 4)" in read(exp_path) and "EXP_SLOW(5)" in read(exp_path),
+         "Source slow level-five experience")
     create_path = "src/script_pokemon_util.c"
     give_match = one(create_path, r"^u8 ScriptGiveMon\([^\n]+\)\n\{\n.*?^\}")
     need("CreateMon(mon, species, level, 32, 0, 0, OT_ID_PLAYER_ID, 0);" in give_match[0], "Player OT and random IV/PID gift")
@@ -188,23 +216,25 @@ def generate(reference, dependency):
                                 ability=source_species["ability2" if pid & 1 else "ability1"],
                                 gender="female" if (pid & 255) < source_species["genderRatio"] else "male",
                                 isShiny=(ot >> 16 ^ ot & 65535 ^ pid >> 16 ^ pid & 65535) < 8,
-                                experience=125, moves=gift["moves"]))
+                                experience=156 if gift["kind"] == "amber" else 125, moves=gift["moves"]))
     docs = {
         "pokemon.json": dict(sourceCommit=COMMIT, sourceTree=TREE, profile="firered-fossil-lab-owned-pokemon-v1",
                              canonicalCatalogSha256=DEPENDENCIES[next(iter(DEPENDENCIES))], previousOwnedSpeciesCount=154,
-                             ownedSpeciesCount=158, previousOpponentSpeciesCount=186, opponentSpeciesCount=190,
-                             ownedSpeciesAdded=list(SPECIES), opponentSpeciesAdded=list(SPECIES), trainerOnlySpeciesAdded=[],
+                             ownedSpeciesCount=159, previousOpponentSpeciesCount=186, opponentSpeciesCount=190,
+                             ownedSpeciesAdded=list(SPECIES), opponentSpeciesAdded=list(SPECIES[:4]), trainerOnlySpeciesAdded=[],
                              species=[dict(definition=species[s], metadata=metadata[s]) for s in SPECIES], evolutions=edges),
         "machines.json": dict(sourceCommit=COMMIT, profile="firered-fossil-lab-teaching-v1", previousSpeciesCount=154,
-                              speciesCount=158, machineCount=41, additions=machine_rows,
+                              speciesCount=159, machineCount=41, additions=machine_rows,
                               additionsSemanticSha256=fingerprint(machine_rows), itemsAdded=[]),
+        "shop.json": dict(sourceCommit=COMMIT, profile="firered-fossil-lab-inventory-v1", previousItemCount=124,
+                          itemCount=125, additions=[amber_item], additionsSemanticSha256=fingerprint([amber_item]), shopsAdded=[]),
         "rules.json": dict(sourceCommit=COMMIT, profile="firered-fossil-lab-rules-v1", gifts=gifts,
                            generationCases=vectors, generationDraws=4,
                            generationOrder="Player OT; random PID low16/high16 then two packed IV draws, also on full storage. No shiny rejection. The engine's explicit Random32 operand order is tested; original target-compiler operand ordering remains unverified.",
                            creationSource=ref(create_path, "ScriptGiveMon", give_match),
                            boxCreationSource=ref(pokemon_path, "CreateBoxMon", box_match),
                            deliverySource=ref(pokemon_path, "GiveMonToPlayer", receive_match),
-                           deferredSpecies=["SPECIES_AERODACTYL"]),
+                           deferredSpecies=[]),
     }
     docs["source-input-hashes.json"] = dict(sourceCommit=COMMIT, sourceTree=TREE,
                                              inputs=[inputs[k] for k in sorted(inputs)], dependencyInputs=dependencies)
@@ -232,8 +262,8 @@ def main():
         else:
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
-    print(json.dumps(dict(checked=args.check, owned=158, opponents=190, evolutionEdges=2, machines=41,
-                         newCells=164, creationVectors=len(docs["rules.json"]["generationCases"]),
+    print(json.dumps(dict(checked=args.check, owned=159, opponents=190, evolutionEdges=2, machines=41,
+                         newCells=205, items=125, creationVectors=len(docs["rules.json"]["generationCases"]),
                          machineFingerprint=docs["machines.json"]["additionsSemanticSha256"],
                          hashes={path: sha(data) for path, data in files.items() if "/raw/" not in path}), indent=2))
 

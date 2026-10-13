@@ -4,12 +4,13 @@ using Game.Domain.Ids;
 
 namespace Game.Domain.Pokemon;
 
-/// <summary>The two Mt. Moon fossil families and their level-40 evolutions over the exact Dojo owner.</summary>
+/// <summary>All three fossils and the two level-40 evolutions over the exact Dojo owner.</summary>
 public sealed class FossilLabOwnedPokemonCatalog
 {
     public const string Profile = "firered-fossil-lab-owned-pokemon-v1";
     public static ImmutableArray<SpeciesId> AdditionalSpecies { get; } =
-        [new("pret:SPECIES_OMANYTE"), new("pret:SPECIES_OMASTAR"), new("pret:SPECIES_KABUTO"), new("pret:SPECIES_KABUTOPS")];
+        [new("pret:SPECIES_OMANYTE"), new("pret:SPECIES_OMASTAR"), new("pret:SPECIES_KABUTO"), new("pret:SPECIES_KABUTOPS"), new("pret:SPECIES_AERODACTYL")];
+    public static SpeciesId AerodactylId => AdditionalSpecies[4];
     private static readonly ConditionalWeakTable<PokemonCatalog, FossilLabOwnedPokemonCatalog> Proofs = new();
     public FightingDojoOwnedPokemonCatalog Predecessor { get; }
     public PokemonCatalog Catalog { get; }
@@ -24,7 +25,7 @@ public sealed class FossilLabOwnedPokemonCatalog
     {
         ArgumentNullException.ThrowIfNull(predecessor); ArgumentNullException.ThrowIfNull(candidate);
         if (!ReferenceEquals(FightingDojoOwnedPokemonCatalog.For(predecessor.Catalog), predecessor) || predecessor.Catalog.Species.Count != 154 ||
-            candidate.SourceCommit != PokemonFactory.SourceCommit || candidate.Species is null || candidate.Species.Count != 158 ||
+            candidate.SourceCommit != PokemonFactory.SourceCommit || candidate.Species is null || candidate.Species.Count != 159 ||
             !ReferenceEquals(candidate.Moves, predecessor.Catalog.Moves) ||
             predecessor.Catalog.Species.Any(p => !candidate.Species.TryGetValue(p.Key, out var value) || !ReferenceEquals(p.Value, value)) ||
             !candidate.Species.Keys.Except(predecessor.Catalog.Species.Keys).ToHashSet().SetEquals(AdditionalSpecies))

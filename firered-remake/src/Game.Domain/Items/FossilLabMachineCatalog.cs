@@ -5,11 +5,11 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.Items;
 
-/// <summary>Forty-one original machines for the exact 158 owned species. All inherited source cells retain identity.</summary>
+/// <summary>Forty-one original machines for the exact 159 owned species. All inherited source cells retain identity.</summary>
 public sealed class FossilLabMachineCatalog
 {
     public const string Profile = "firered-fossil-lab-teaching-v1";
-    public const string InheritedAdditionsSourceSha256 = "b3b5409e17a0d5a468f642fd07dcdcbf1a2450877c3a617aad1945571b86e99a";
+    public const string InheritedAdditionsSourceSha256 = "cfb33733b304a4fd86756535bd405e0324db3634fd1fe0c1e01b74529c1547fb";
     private static readonly ConditionalWeakTable<PewterMachineCatalog, FossilLabMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
     public FightingDojoMachineCatalog Predecessor { get; }
@@ -34,7 +34,7 @@ public sealed class FossilLabMachineCatalog
         var additions = new List<(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility)>();
         void Rows(ItemId item, ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
         {
-            if (before.Length != 154 || rows.IsDefault || rows.Length != 158 || rows.Any(c => c is null) ||
+            if (before.Length != 154 || rows.IsDefault || rows.Length != 159 || rows.Any(c => c is null) ||
                 before.Where((cell, i) => !ReferenceEquals(cell, rows[i])).Any() ||
                 !rows.Select(c => c.Species).ToHashSet().SetEquals(pokemon.Catalog.Species.Keys))
                 throw new ArgumentException("fossil_lab_machine_inherited_rows");

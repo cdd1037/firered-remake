@@ -4,7 +4,7 @@ using Game.Content;
 using Game.Domain.Events;
 using Godot;
 
-/// <summary>Source fossil species art and exact two-row Helix/Dome selection menus.</summary>
+/// <summary>Source fossil species art and exact two/three-row fossil selection menus.</summary>
 public partial class CampaignView
 {
     private FossilLabPresentationData? _fossilLabArt;
@@ -36,16 +36,63 @@ public partial class CampaignView
         }
         foreach (var row in art.Manifest.GetProperty("pokemonIcons").EnumerateArray())
             _storageIcons.Add(new(row.GetProperty("speciesId").GetString()!), Pixels(row));
+        // League already installed the four Aerodactyl battlers, portrait and icon.
+        // Verify those exact textures without registering the same keys twice.
+        void RequireInheritedPixels(Texture2D texture, JsonElement row)
+        {
+            using var image = texture.GetImage(); image.Convert(Image.Format.Rgba8);
+            if (image.GetWidth() != row.GetProperty("width").GetInt32() || image.GetHeight() != row.GetProperty("height").GetInt32() ||
+                !image.GetData().SequenceEqual(art.Files[row.GetProperty("rgbaPath").GetString()!]))
+                throw new InvalidDataException("Inherited Aerodactyl pixels differ.");
+        }
+        foreach (var row in art.Manifest.GetProperty("inheritedSprites").EnumerateArray())
+        {
+            int species = row.GetProperty("sourceSpeciesId").GetInt32();
+            string id = row.GetProperty("speciesId").GetString()!, side = row.GetProperty("side").GetString()!;
+            bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
+            if (_catalog.PokemonContent?.Catalog.Species.GetValueOrDefault(new(id))?.SourceSpeciesId != species ||
+                !_battleArt.TryGetValue((species, side, shiny), out var existing) ||
+                existing.Position != new Vector2(row.GetProperty("x").GetInt32(), row.GetProperty("y").GetInt32()))
+                throw new InvalidDataException("Owned Aerodactyl League binding differs.");
+            RequireInheritedPixels(existing.Texture, row);
+        }
+        foreach (var row in art.Manifest.GetProperty("inheritedPokemonIcons").EnumerateArray())
+            RequireInheritedPixels(_storageIcons[new(row.GetProperty("speciesId").GetString()!)], row);
         foreach (var row in art.Manifest.GetProperty("footprints").EnumerateArray())
             _route22Footprints.Add(row.GetProperty("sourceSpeciesId").GetInt32(), Pixels(row));
         foreach (var entry in art.DexEntries.Values)
             if (_pokedexMenu is null || entry with { Portrait = null, Footprint = null } != _pokedexMenu.Entries[entry.SourceSpeciesId])
                 throw new InvalidDataException("Fossil Lab dex metadata differs from the authenticated source menu.");
         _fossilLabArt = art;
-        if (_route22Footprints.Count != 135) throw new InvalidDataException("Fossil Lab footprint inventory differs.");
+        LoadOldAmberPocket(art);
+        if (_route22Footprints.Count != 136) throw new InvalidDataException("Fossil Lab footprint inventory differs.");
         Write("fossilLabPresentation", new { PretFossilLabPresentation.ManifestSha256,
-            newBattleSprites = 16, newIcons = 4, newFootprints = 4, dexEntries = 4, newAudioCues = 4,
+            newBattleSprites = 16, newIcons = 4, inheritedBattleSprites = 4, inheritedIcons = 1,
+            newFootprints = 5, dexEntries = 5, newAudioCues = 4, inheritedAudioCues = 1, oldAmberPocket = true,
             nativeWindowVerified = false, physicalAudioVerified = false });
+    }
+
+    private void LoadOldAmberPocket(FossilLabPresentationData art)
+    {
+        var source = art.Manifest.GetProperty("oldAmber");
+        var icon = source.GetProperty("icon");
+        string id = source.GetProperty("id").GetString()!, assetId = icon.GetProperty("id").GetString()!;
+        var item = _catalog.FossilLabShop.Catalog.Items.Single(i => i.Id.Value == id);
+        if (item.SourceItemId != 354 || item.SourceItemSymbol != source.GetProperty("sourceSymbol").GetString() ||
+            item.Name != source.GetProperty("name").GetString() || item.Description != source.GetProperty("description").GetString() ||
+            item.FieldUseFunction != source.GetProperty("fieldUseFunction").GetString())
+            throw new InvalidDataException("Old Amber bag presentation differs from its admitted item.");
+        var document = _questPocketUi ?? throw new InvalidDataException("Old Amber requires the current Key Items pocket.");
+        if (document.Items.Any(i => i.Id == id)) throw new InvalidDataException("Old Amber bag presentation is duplicated.");
+        var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
+        using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, art.Files[icon.GetProperty("rgbaPath").GetString()!]);
+        _questPocketTextures.Add(assetId, ImageTexture.CreateFromImage(image));
+        _questPocketUi = document with
+        {
+            Items = document.Items.Add(new(id, item.SourceItemSymbol, item.Name, source.GetProperty("description").GetString()!, assetId, item.FieldUseFunction)),
+            Assets = document.Assets.Add(new(assetId, icon.GetProperty("texturePath").GetString()!, 24, 24, position.X, position.Y,
+                icon.GetProperty("sha256").GetString()!, icon.GetProperty("rgbaSha256").GetString()!))
+        };
     }
 
     private void VerifyFossilLabMoveGeometry()
@@ -78,6 +125,10 @@ public partial class CampaignView
         (_session.State.Dialogue is null || _session.State.Dialogue.Page + 1 == _session.State.Dialogue.Pages.Length);
     private int FossilLabMenuWidth => ((int)_session.State.FossilMenu!.Options.Max(row =>
         _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(row), fontSize: _sourceNormal.Size).X) + 9) / 8 * 8 + 8;
+    private int FossilLabMenuCount => _session.State.FossilMenu!.Options.Length;
+    private int FossilLabMenuHeight => (_fossilLabArt ?? throw new InvalidDataException("Fossil menu source missing.")).Manifest
+        .GetProperty("menus").EnumerateArray().Single(m => m.GetProperty("menuId").GetString() == _session.State.FossilMenu!.MenuId)
+        .GetProperty("interiorHeightTiles").GetInt32() * 8 + 16;
     private void SynchronizeFossilLabPresentation()
     {
         string? wait = FossilLabMenuActive ? _session.State.Script.Wait?.CorrelationId : null;
@@ -96,22 +147,22 @@ public partial class CampaignView
         if (!FossilLabMenuActive || key.Keycode is not (Key.Up or Key.Down or Key.Left or Key.Right or Key.Enter or Key.Backspace)) return false;
         _held = null;
         if (!key.Pressed || !FossilLabMenuVisible || _tracks.Any(t => t.Time < t.Duration) || _waitElapsed < _waitDuration || _fanfareRemaining > 0) return true;
-        // Original Menu_ProcessInputNoWrapAround: the two-option menu clamps at its ends.
+        // Original Menu_ProcessInputNoWrapAround applies to every menu with at most three rows.
         if (key.Keycode == Key.Up) _fossilLabCursor = Math.Max(0, _fossilLabCursor - 1);
-        else if (key.Keycode == Key.Down) _fossilLabCursor = Math.Min(1, _fossilLabCursor + 1);
+        else if (key.Keycode == Key.Down) _fossilLabCursor = Math.Min(FossilLabMenuCount - 1, _fossilLabCursor + 1);
         else if (key.Keycode == Key.Enter) Apply(new("ack", Choice: _fossilLabCursor));
         else if (key.Keycode == Key.Backspace) Apply(new("ack", Choice: 127));
         return true;
     }
     private bool NavigateFossilLabPointer(Vector2 point, int direction) => FossilLabMenuVisible &&
-        PointerRows(point, direction, ref _fossilLabCursor, 2, 8, 8, FossilLabMenuWidth, 14);
+        PointerRows(point, direction, ref _fossilLabCursor, FossilLabMenuCount, 8, 8, FossilLabMenuWidth, 14);
     private bool MouseFossilLab(Vector2 point) => FossilLabMenuVisible &&
-        MouseSelect(point, ref _fossilLabCursor, 2, 8, 8, FossilLabMenuWidth, 14);
+        MouseSelect(point, ref _fossilLabCursor, FossilLabMenuCount, 8, 8, FossilLabMenuWidth, 14);
     private void DrawFossilLabMenu()
     {
         if (!FossilLabMenuVisible) return;
-        _battleSkin.DrawUserFrame(this, new(0, 0, FossilLabMenuWidth + 16, 48));
-        for (int row = 0; row < 2; row++) SourceText(_sourceNormal, new(16, 10 + row * 14), _session.State.FossilMenu!.Options[row]);
+        _battleSkin.DrawUserFrame(this, new(0, 0, FossilLabMenuWidth + 16, FossilLabMenuHeight));
+        for (int row = 0; row < FossilLabMenuCount; row++) SourceText(_sourceNormal, new(16, 10 + row * 14), _session.State.FossilMenu!.Options[row]);
         SourceText(_sourceNormal, new(8, 10 + _fossilLabCursor * 14), "▶");
     }
 }

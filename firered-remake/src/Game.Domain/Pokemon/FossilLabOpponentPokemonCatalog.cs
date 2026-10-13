@@ -25,10 +25,13 @@ public sealed class FossilLabOpponentPokemonCatalog
         if (!ReferenceEquals(FightingDojoOpponentPokemonCatalog.For(predecessor.Catalog), predecessor) ||
             !ReferenceEquals(FossilLabOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             !ReferenceEquals(predecessor.Owned, owned.Predecessor) || predecessor.Catalog.Species.Count != 186 ||
-            owned.Catalog.Species.Count != 158 || FossilLabOwnedPokemonCatalog.AdditionalSpecies.Any(predecessor.Catalog.Species.ContainsKey))
+            owned.Catalog.Species.Count != 159 ||
+            FossilLabOwnedPokemonCatalog.AdditionalSpecies.Take(4).Any(predecessor.Catalog.Species.ContainsKey) ||
+            !predecessor.Catalog.Species.TryGetValue(FossilLabOwnedPokemonCatalog.AerodactylId, out var amber) ||
+            !SilphOwnedPokemonCatalog.MatchesSource(amber, owned.Catalog.Species[FossilLabOwnedPokemonCatalog.AerodactylId]))
             throw new ArgumentException("fossil_lab_opponent_predecessor");
         var species = predecessor.Catalog.Species;
-        foreach (var id in FossilLabOwnedPokemonCatalog.AdditionalSpecies) species = species.Add(id, owned.Catalog.Species[id]);
+        foreach (var id in FossilLabOwnedPokemonCatalog.AdditionalSpecies.Take(4)) species = species.Add(id, owned.Catalog.Species[id]);
         if (species.Count != 190 || !owned.Catalog.Species.Keys.All(species.ContainsKey))
             throw new ArgumentException("fossil_lab_opponent_scope");
         var proof = new FossilLabOpponentPokemonCatalog(predecessor, owned, predecessor.Catalog with { Species = species });

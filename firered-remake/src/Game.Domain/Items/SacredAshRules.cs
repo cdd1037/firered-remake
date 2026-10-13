@@ -9,7 +9,7 @@ public static class SacredAshRules
     public static SacredAshResult Use(EarlyShopCatalog catalog,CampaignPokemonContent pokemonContent,InventoryState inventory,ImmutableArray<PartyPokemon> party)
     {
         SacredAshResult Fail(string error)=>new(inventory,party,0,error);
-        if(EventIslandShopCatalog.For(catalog) is null && PowerPlantShopCatalog.For(catalog) is null && TrainerTowerShopCatalog.For(catalog) is null)return Fail("sacred_ash_catalog_missing");
+        if(EventIslandShopCatalog.For(catalog) is null && PowerPlantShopCatalog.For(catalog) is null && TrainerTowerShopCatalog.For(catalog) is null && FossilLabShopCatalog.For(catalog) is null)return Fail("sacred_ash_catalog_missing");
         if(EarlyShopInventoryRules.Validate(catalog,inventory) is {} error)return Fail(error);
         var item=EarlyShopInventoryRules.Find(catalog,EventIslandShopCatalog.SacredAshId)!;
         if(item.SourceItemId!=45||item.FieldUseFunction!="FieldUseFunc_SacredAsh"||item.BattleUsage!=0)return Fail("sacred_ash_source_mismatch");

@@ -11,6 +11,24 @@
       "sha256": "8afc38f502fd909a1bb220a919ac107ce8b39e98e29731d654f6edef749828ce"
     },
     {
+      "byteLength": 170,
+      "gitBlobSha1": "1738ccfd855a3fbf8b627ed2be46ea0a1a91b986",
+      "path": "graphics/items/icon_palettes/old_amber.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "09df2eb93d064975c87ea50e22c530d4296f7324637dfff738f2c61ec7719b3f"
+    },
+    {
+      "byteLength": 300,
+      "gitBlobSha1": "3e70a4f56bce5727f9094092ce6b758bcd093d5a",
+      "path": "graphics/items/icons/old_amber.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "8da1a0abbb167bcf2efb68e46ffd33afecdfd34b346fdfe778434263ead51930"
+    },
+    {
       "byteLength": 2004,
       "gitBlobSha1": "b719d111f73ad26966817ebb64a72cf0e369a2a5",
       "path": "graphics/pokedex/kanto_dex_bgpals.pal",
@@ -18,6 +36,60 @@
         "source-dependency"
       ],
       "sha256": "6592bc9bf2739b97b6a0f97b5163748811709dfdb0ef4987acdc119b6d8355bf"
+    },
+    {
+      "byteLength": 602,
+      "gitBlobSha1": "8dfa76f5742eae8922646a7946c6257329bb39f9",
+      "path": "graphics/pokemon/aerodactyl/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a4a6225ddf5bbae27600640f46f0f7ec2b2db5349a5b6c8597e03442f0689ad3"
+    },
+    {
+      "byteLength": 92,
+      "gitBlobSha1": "7c5d3e6c19cad818f67914aceb1c0cbc52fac27a",
+      "path": "graphics/pokemon/aerodactyl/footprint.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "086bf05a47a0bfb62b703023f085e0e320c7777c25f31f10e0ae7514516ffe5f"
+    },
+    {
+      "byteLength": 917,
+      "gitBlobSha1": "dc4a521f9fe6f3d55f442e8360008a575504c110",
+      "path": "graphics/pokemon/aerodactyl/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "931cfc4f2ab6e874ccee2d7bef2257578c86881c66a8adc08a792e1a7066b418"
+    },
+    {
+      "byteLength": 369,
+      "gitBlobSha1": "f90e269b07e675464a77abd0376aa80699761c7f",
+      "path": "graphics/pokemon/aerodactyl/icon.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "9c26cabb62163c525cbc4f5437c16fa31f34b5bcd828953591f155cc70f5294e"
+    },
+    {
+      "byteLength": 187,
+      "gitBlobSha1": "9f7de3d61a4cd72cbe1b2b8b8bf0bad8acfdbe45",
+      "path": "graphics/pokemon/aerodactyl/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ab423c2dc80da625445eb5c15cc3c8b01e855b79728ef11416917e2e66b9ce02"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "d661e61541d681e7bdec566e1a9cd98d42adb522",
+      "path": "graphics/pokemon/aerodactyl/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e57c9cc6e4ec9481d15d481ad14a976e441ea6a2b3cc863870c81b2dbffae6d3"
     },
     {
       "byteLength": 195,
@@ -254,6 +326,15 @@
       "sha256": "a3d7625cd87769354ffb7676b4daaaeb2126b3d41e5e7500a02f5402460becf6"
     },
     {
+      "byteLength": 12436,
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3",
+      "path": "include/constants/items.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
       "byteLength": 6143,
       "gitBlobSha1": "7c36f3605918ee455321cade37d7c60877a36dde",
       "path": "include/constants/menu.h",
@@ -326,6 +407,15 @@
       "sha256": "aaf0fa766db59d4d56fa8e28845a1b2852c20086f40878d0618f88b36ff57638"
     },
     {
+      "byteLength": 46353,
+      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
+      "path": "src/data/graphics/items.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+    },
+    {
       "byteLength": 214609,
       "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
       "path": "src/data/graphics/pokemon.h",
@@ -333,6 +423,24 @@
         "source-dependency"
       ],
       "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+    },
+    {
+      "byteLength": 30370,
+      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
+      "path": "src/data/item_icon_table.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    },
+    {
+      "byteLength": 194280,
+      "gitBlobSha1": "0a87abbe8d53b4f0545906e6b679f12863219b8c",
+      "path": "src/data/items.json",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
     },
     {
       "byteLength": 132235,
@@ -426,6 +534,66 @@
       "byteLength": 693980,
       "path": "content/generated/pokedex-menu/pokedex-menu.json",
       "sha256": "7b4b6c54230ebd8e0a588a5a8d7d0fce43c68fa1da7a16a91c08d286bdf29806"
+    },
+    {
+      "byteLength": 1386,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-back-normal.png",
+      "sha256": "60675f16ba3ec72a37f474c8dad720c2fd4728c6455a3be015bbffce651cdbcb"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-back-normal.rgba",
+      "sha256": "ac3138145fa52b259969844daefe6086f5298b8aba597f2ec890276467836b07"
+    },
+    {
+      "byteLength": 1376,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-back-shiny.png",
+      "sha256": "12479978b43bc8eb46986c62577f804f6a746811e7383515a213aea1a642b7ca"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-back-shiny.rgba",
+      "sha256": "6793c2c30ba356697845a24e4b42f9082c418a1a6a47a8c2aff8d03b03e55d40"
+    },
+    {
+      "byteLength": 2297,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-front-normal.png",
+      "sha256": "02db29079db4f9ee6a29f42bc3fa26c532928fd88bf7a77805107064db755767"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-front-normal.rgba",
+      "sha256": "c4dc855972155b0d7fe1eba2a263a04fe7fb4ca22f52a788d32c41c2c8259897"
+    },
+    {
+      "byteLength": 2305,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-front-shiny.png",
+      "sha256": "0de80df5033fce53d9756ea7dde1929d4834d2aa575d93c420f151c33052da51"
+    },
+    {
+      "byteLength": 16384,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-front-shiny.rgba",
+      "sha256": "a5111470f2c054097dc368269c2f8d85e7cdf042d4207f424f9ff866d3134e6b"
+    },
+    {
+      "byteLength": 475,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-icon.png",
+      "sha256": "46919071c918ad397d695b13533d48ce655bb46ae5d99c3567052f53963d50aa"
+    },
+    {
+      "byteLength": 4096,
+      "path": "content/generated/pokemon-league-presentation/aerodactyl-icon.rgba",
+      "sha256": "436385d30ca4c950940d3297bb15a44a86fd1568ea8881235eb260e3a46f1bd4"
+    },
+    {
+      "byteLength": 106948,
+      "path": "content/generated/pokemon-league-presentation/manifest.json",
+      "sha256": "211d6c3c6377699241beb9ac00645c4181d0aab08e46b96f5f02070b5fb76b1c"
+    },
+    {
+      "byteLength": 6631,
+      "path": "content/generated/pokemon-league-presentation/synth-manifest.json",
+      "sha256": "fc6b8faf25cd3ec914e0667d0d01739af2cdde949f7eec4dc63dcae655c017aa"
     },
     {
       "byteLength": 2565436,

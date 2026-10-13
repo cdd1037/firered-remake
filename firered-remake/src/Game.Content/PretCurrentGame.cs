@@ -2269,6 +2269,8 @@ public sealed partial class PretCampaignCatalog
         var fossilOwned = PretFossilLabRules.LoadOwned(projectRoot, dojoOwned);
         var fossilOpponents = PretFossilLabRules.LoadOpponents(projectRoot, dojoOpponents, fossilOwned);
         var fossilMachines = PretFossilLabRules.LoadMachines(projectRoot, dojoMachines, fossilOwned);
+        var fossilShop = PretFossilLabRules.LoadShop(projectRoot, trainerTowerShop);
+        earlyShop = earlyShop with { Catalog = fossilShop.Catalog };
         pokemonContent = pokemonContent with { Catalog = fossilOwned.Catalog,
             SpeciesNames = pokemonContent.SpeciesNames.AddRange(FossilLabOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
                 KeyValuePair.Create(fossilOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[fossilOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
@@ -2278,6 +2280,7 @@ public sealed partial class PretCampaignCatalog
         hashes.Add("fossil-lab-rules:" + PretFossilLabRules.CatalogSha256);
         hashes.Add("fossil-lab-source-lock:" + PretFossilLabRules.LockSha256);
         hashes.Add("fossil-lab-machines:" + PretFossilLabRules.MachinesSha256);
+        hashes.Add("fossil-lab-shop:" + PretFossilLabRules.ShopSha256);
         hashes.Add("fossil-lab-rule-contract:" + PretFossilLabRules.RulesSha256);
         hashes.Add("fossil-lab-inputs:" + PretFossilLabRules.SourceInputsSha256);
         ValidateFossilLabComposition(fossilLab, maps, fossilLabPreviousMaps, compiled);
@@ -2457,7 +2460,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,
