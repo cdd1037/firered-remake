@@ -160,10 +160,10 @@ public partial class CampaignView
             }
             var member = _session.State.Party[i];
             ItemLabel(new(20, 8 + 14 * i), member.Nickname);
-            if (_catalog.SixIslandEnabled && MtMoonTargetActive && _mtMoonTargetItem.Value=="pret:ITEM_SUN_STONE")
+            if (MtMoonTargetActive && EarlyItem(_mtMoonTargetItem)?.UseSupport == EarlyShopUseSupport.SeparateEvolution)
                 ItemLabel(new(142,8+14*i),MachineText(!member.IsEgg && Game.Domain.Pokemon.ItemEvolutionRules.PartyMenuTarget(_catalog.PokemonContent!,
                     Game.Domain.Pokemon.OwnedBattlePokemonCatalog.For(_catalog.PokemonContent!.Catalog)!, member,
-                    Game.Domain.Pokemon.ItemEvolutionRules.SunStone) is not null ? "gText_Able2" : "gText_NotAble"));
+                    _mtMoonTargetItem.Value["pret:".Length..]) is not null ? "gText_Able2" : "gText_NotAble"));
             else ItemLabel(new(112, 8 + 14 * i), member.Pokemon.CurrentHp + "/" + member.Pokemon.Stats.MaxHp);
             DrawForestPartyStatus(member, new(198, 11 + 14 * i));
         }

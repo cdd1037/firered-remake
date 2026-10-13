@@ -17,7 +17,7 @@ public sealed record ItemEvolutionResult(PartyPokemon Pokemon, SpeciesId Previou
     ImmutableArray<ItemEvolutionPendingMove> PendingMoves);
 
 /// <summary>
-/// Pinned FireRed Moon/Sun Stone use in an exact authenticated owned campaign catalog. Pure eligibility/species
+/// Pinned FireRed Moon/Sun/Thunder Stone use in an exact authenticated owned campaign catalog. Pure eligibility/species
 /// changes only: no RNG, inventory consumption, scene state, Pokédex changes, UI or IO.
 /// </summary>
 public static class ItemEvolutionRules
@@ -26,6 +26,7 @@ public static class ItemEvolutionRules
     public const string RulesVersion = "firered-moon-stone-evolution-v1";
     public const string MoonStone = "ITEM_MOON_STONE";
     public const string SunStone = "ITEM_SUN_STONE";
+    public const string ThunderStone = "ITEM_THUNDER_STONE";
 
     /// <summary>
     /// EVO_MODE_ITEM_USE: the first matching item method wins, at any current level and without a
@@ -73,7 +74,7 @@ public static class ItemEvolutionRules
     }
 
     /// <summary>Authenticated source edge shared by use, menu labels and saved lineage checks.
-    /// Only the two exposed stones and targets admitted by the exact owned catalog are eligible.
+    /// Only the three exposed stones and targets admitted by the exact owned catalog are eligible.
     /// The full source table retains branches omitted from earlier regional catalog projections.</summary>
     public static SourceMechanicsEvolution? SourceEvolution(CampaignPokemonContent content,
         OwnedBattlePokemonCatalog ownership, SpeciesId species, string item)
@@ -81,7 +82,7 @@ public static class ItemEvolutionRules
         ValidateCatalog(content, ownership, item);
         if (!content.Catalog.Species.ContainsKey(species))
             throw new ArgumentException("item_evolution_species_not_owned", nameof(species));
-        int sourceItem = item == MoonStone ? 94 : 93;
+        int sourceItem = item switch { MoonStone => 94, SunStone => 93, ThunderStone => 96, _ => throw new NotSupportedException("item_evolution_stone") };
         return ownership.Mechanics.SpeciesMechanics[species].SourceEvolutions.FirstOrDefault(e =>
             e.Method == "EVO_ITEM" && e.SourceMethodId == 7 && e.Parameter == item &&
             e.ParameterValue == sourceItem && content.Catalog.Species.ContainsKey(e.Target));
@@ -101,7 +102,7 @@ public static class ItemEvolutionRules
         if (!ReferenceEquals(ownership.Catalog, content.Catalog) ||
             !ReferenceEquals(OwnedBattlePokemonCatalog.For(content.Catalog), ownership))
             throw new ArgumentException("item_evolution_owned_catalog_identity", nameof(ownership));
-        if (item is not (MoonStone or SunStone))
-            throw new NotSupportedException("Only Moon Stone and Sun Stone item evolution are implemented.");
+        if (item is not (MoonStone or SunStone or ThunderStone))
+            throw new NotSupportedException("Only Moon Stone, Sun Stone and Thunder Stone item evolution are implemented.");
     }
 }

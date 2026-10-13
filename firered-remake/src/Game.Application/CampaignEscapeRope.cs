@@ -50,7 +50,7 @@ public sealed partial class CampaignSession
         // locked continuation, not a second use and not a cancellable inventory choice.
         return new(CommandStatus.Accepted, state with
         {
-            Inventory = MergeShopInventory(state.Inventory!, SevenIslandShopProof.RestoreFromPredecessor(ShopInventoryView(state.Inventory!),use.Inventory)),
+            Inventory = MergeShopInventory(state.Inventory!, PowerPlantShopProof.RestoreFromPredecessor(ShopInventoryView(state.Inventory!),EventIslandShopProof.RestoreFromPredecessor(PowerPlantPredecessorInventory(ShopInventoryView(state.Inventory!)),SevenIslandShopProof.RestoreFromPredecessor(EventIslandPredecessorInventory(ShopInventoryView(state.Inventory!)),use.Inventory)))),
             EscapeRope = new(arrival),
             TextBuffers = state.TextBuffers.SetItem("STR_VAR_2", "ESCAPE ROPE"),
             ItemMenu = menu with { View = "message", MessageSymbol = "gText_PlayerUsedVar2", ReturnView = "bag" }

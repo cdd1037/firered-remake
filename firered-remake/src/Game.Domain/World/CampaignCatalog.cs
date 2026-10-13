@@ -82,6 +82,11 @@ public interface ICampaignCatalog:IStoryCatalog
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
+    bool PowerPlantEnabled=>false;
+    PowerPlantOwnedPokemonCatalog? PowerPlantOwnership=>null;
+    PowerPlantOpponentPokemonCatalog? PowerPlantOpponents=>null;
+    PowerPlantMachineCatalog? PowerPlantMachines=>null;
+    PowerPlantShopCatalog? PowerPlantShop=>null;
     bool EventIslandsEnabled=>false;
     EventIslandFieldData? EventIslandField=>null;
     EventIslandOwnedPokemonCatalog? EventIslandOwnership=>null;

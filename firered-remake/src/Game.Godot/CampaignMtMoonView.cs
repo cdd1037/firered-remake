@@ -117,7 +117,7 @@ public partial class CampaignView
             if (key.Keycode != Key.Enter) return true;
         }
         long revision = _session.Revision;
-        bool evolution = _mtMoonTargetItem == MtMoonItemRules.MoonStoneId || _catalog.SixIslandEnabled && _mtMoonTargetItem.Value == "pret:ITEM_SUN_STONE";
+        bool evolution = EarlyItem(_mtMoonTargetItem)?.UseSupport == EarlyShopUseSupport.SeparateEvolution;
         Apply(new(evolution ? "field_evolution" : _mtMoonTargetItem.Value == "pret:ITEM_RARE_CANDY" ? "field_rare_candy" : "field_medicine", Text: _mtMoonTargetItem.Value,
             PartyIndex: _fieldMedicineTarget, MoveSlot: _mtMoonMoveSlotOpen ? _mtMoonMoveSlot : -1));
         _fieldMedicineTargetOpen = false; _mtMoonMoveSlotOpen = false;

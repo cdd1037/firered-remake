@@ -45,8 +45,9 @@ public sealed partial class CampaignSession
             state.Evolution is not null || state.WildBattle is not null || state.ForestTrainerBattle is not null)
             return No("field_evolution_context_invalid");
         bool sunStone = _content.SixIslandEnabled && command.Text == "pret:ITEM_SUN_STONE";
-        if (!sunStone && command.Text != MtMoonItemRules.MoonStoneId.Value) return No("evolution_item_unsupported");
-        var evolutionItem = sunStone ? new ItemId("pret:ITEM_SUN_STONE") : MtMoonItemRules.MoonStoneId;
+        bool thunderStone = _content.PowerPlantEnabled && command.Text == "pret:ITEM_THUNDER_STONE";
+        if (!sunStone && !thunderStone && command.Text != MtMoonItemRules.MoonStoneId.Value) return No("evolution_item_unsupported");
+        var evolutionItem = thunderStone ? new ItemId("pret:ITEM_THUNDER_STONE") : sunStone ? new ItemId("pret:ITEM_SUN_STONE") : MtMoonItemRules.MoonStoneId;
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length)
             return No("item_party_index_invalid");
         if (command.MoveSlot != -1 || command.Quantity != 1) return No("evolution_item_command_invalid");
@@ -56,7 +57,7 @@ public sealed partial class CampaignSession
         var consumed = EarlyInventoryAddRules.Remove(shop, ShopInventoryView(state.Inventory), evolutionItem, 1);
         if (!consumed.Succeeded) return No(consumed.Error!);
         var owned = state.Party[command.PartyIndex];
-        var stone = sunStone ? ItemEvolutionRules.SunStone : ItemEvolutionRules.MoonStone;
+        var stone = thunderStone ? ItemEvolutionRules.ThunderStone : sunStone ? ItemEvolutionRules.SunStone : ItemEvolutionRules.MoonStone;
         var proposal = ItemEvolutionRules.Eligibility(_content.PokemonContent!, _binding.Ownership, owned, stone);
         if (proposal is null)
             return new(CommandStatus.Accepted, state with { ItemMenu = menu with
@@ -284,7 +285,7 @@ public sealed partial class CampaignSession
                     ? entry.BattleId is not null || (entry.Item == RareCandyItem
                         ? entry.Level != entry.LevelBeforeBattle + 1 || !previous.Evolutions.Any(e =>
                             e.Method == PokemonEvolutionMethod.Level && e.Target == target.Id && e.Level <= entry.Level)
-                        : entry.Level != entry.LevelBeforeBattle || !(entry.Item is "pret:ITEM_MOON_STONE" or "pret:ITEM_SUN_STONE" &&
+                        : entry.Level != entry.LevelBeforeBattle || !(entry.Item is "pret:ITEM_MOON_STONE" or "pret:ITEM_SUN_STONE" or "pret:ITEM_THUNDER_STONE" &&
                             ItemEvolutionRules.SourceEvolution(_content.PokemonContent!, _binding.Ownership, previous.Id,
                                 entry.Item[5..])?.Target == target.Id))
                     : entry.Level <= entry.LevelBeforeBattle || !previous.Evolutions.Any(e =>

@@ -29,7 +29,7 @@ public partial class CampaignView
         {
             try
             {
-                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled,includeSafari:_catalog.SafariEnabled,includeSurf:_catalog.SurfEnabled,includeSilph:_catalog.SilphEnabled,includeSaffronGym:_catalog.SaffronGymEnabled,includeCinnabar:_catalog.CinnabarEnabled,includeFirstSevii:_catalog.FirstSeviiEnabled,includeVictoryRoad:_catalog.VictoryRoadEnabled,includePokemonLeague:_catalog.PokemonLeagueEnabled,includeSeviiRuby:_catalog.SeviiRubyEnabled,includeFourIsland:_catalog.FourIslandEnabled,includeSixIsland:_catalog.SixIslandEnabled,includeFiveIsland:_catalog.FiveIslandEnabled,includeCelio:_catalog.CelioEnabled,includeCeruleanCave:_catalog.CeruleanCaveEnabled,includeLeagueRematch:_catalog.LeagueRematchEnabled,includeSevenIsland:_catalog.SevenIslandEnabled,includeEventIslands:_catalog.EventIslandsEnabled,surfContentRoot:OS.GetEnvironment("FIRERED_SURF_CONTENT_ROOT") is {Length:>0} surfRoot?surfRoot:null);
+                var synthesized=new SynthSourceAudioPlayer(_root,includeRoute11:_catalog.Route11Enabled,includeRockTunnel:_catalog.RockTunnelEnabled,includeCeladonApproach:_catalog.CeladonApproachEnabled,includeCeladonGym:_catalog.CeladonGymEnabled,includeRocketHideout:_catalog.RocketHideoutEnabled,includePokemonTower:_catalog.PokemonTowerEnabled,includeSnorlax:_catalog.SnorlaxEnabled,includeFuchsiaRoute:_catalog.FuchsiaRouteEnabled,includeSafari:_catalog.SafariEnabled,includeSurf:_catalog.SurfEnabled,includeSilph:_catalog.SilphEnabled,includeSaffronGym:_catalog.SaffronGymEnabled,includeCinnabar:_catalog.CinnabarEnabled,includeFirstSevii:_catalog.FirstSeviiEnabled,includeVictoryRoad:_catalog.VictoryRoadEnabled,includePokemonLeague:_catalog.PokemonLeagueEnabled,includeSeviiRuby:_catalog.SeviiRubyEnabled,includeFourIsland:_catalog.FourIslandEnabled,includeSixIsland:_catalog.SixIslandEnabled,includeFiveIsland:_catalog.FiveIslandEnabled,includeCelio:_catalog.CelioEnabled,includeCeruleanCave:_catalog.CeruleanCaveEnabled,includeLeagueRematch:_catalog.LeagueRematchEnabled,includeSevenIsland:_catalog.SevenIslandEnabled,includeEventIslands:_catalog.EventIslandsEnabled,includePowerPlant:_catalog.PowerPlantEnabled,surfContentRoot:OS.GetEnvironment("FIRERED_SURF_CONTENT_ROOT") is {Length:>0} surfRoot?surfRoot:null);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {
@@ -39,6 +39,7 @@ public partial class CampaignView
                 Write("audioCatalog",new{backend=SynthSourceAudioPlayer.BackendId,count=synthesized.RegisteredClipCount,
                     SynthManifestIdentity.Sha256,outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,
                     sourceSampleRate=48000,queueUpperBoundMs=synthesized.QueueBoundMilliseconds,recordedFallback=false});
+                if(_catalog.PowerPlantEnabled)Write("powerPlantAudioCatalog",new{PowerPlantPresentationAssets.SynthSha256,PowerPlantPresentationAssets.SynthCueCount,inheritedCueCount=6,encounterCryMode=2,audibleOutputVerified=false,recordedFallback=false});
                 if(_catalog.SilphEnabled)Write("silphAudioCatalog",new{SilphSynthManifestIdentity.Sha256,SilphSynthManifestIdentity.CueCount,audibleOutputVerified=false});
                 if(_catalog.SurfEnabled)Write("surfAudioCatalog",new{SurfSynthManifestIdentity.Sha256,SurfSynthManifestIdentity.CueCount,audibleOutputVerified=false});
                 if(_catalog.SafariEnabled)Write("safariAudioCatalog",new{SafariSynthManifestIdentity.Sha256,SafariSynthManifestIdentity.CueCount,priorRegionalCueCount=303,audibleOutputVerified=false});
@@ -184,7 +185,7 @@ public partial class CampaignView
         if(_sourceAudio is SynthSourceAudioPlayer synthesized)
         {
             if(int.TryParse(species,out int sourceSpecies))species=synthesized.CrySymbol(sourceSpecies)??species;
-            if(mode!=0&&!(mode==2&&(_catalog.SnorlaxEnabled&&species=="SPECIES_SNORLAX"||_catalog.FourIslandEnabled&&species=="SPECIES_LAPRAS"||_catalog.CeruleanCaveEnabled&&species=="SPECIES_MEWTWO"||_catalog.EventIslandsEnabled&&species is "SPECIES_LUGIA" or "SPECIES_HO_OH" or "SPECIES_DEOXYS"))){_audioFaulted=true;Write("audioFault",new{species,mode,error="Unsupported source cry mode/species",recordedFallback=false});return;}
+            if(mode!=0&&!(mode==2&&(_catalog.SnorlaxEnabled&&species=="SPECIES_SNORLAX"||_catalog.FourIslandEnabled&&species=="SPECIES_LAPRAS"||_catalog.CeruleanCaveEnabled&&species=="SPECIES_MEWTWO"||_catalog.EventIslandsEnabled&&species is "SPECIES_LUGIA" or "SPECIES_HO_OH" or "SPECIES_DEOXYS"||_catalog.PowerPlantEnabled&&(species is "SPECIES_ELECTRODE" or "SPECIES_ZAPDOS")))){_audioFaulted=true;Write("audioFault",new{species,mode,error="Unsupported source cry mode/species",recordedFallback=false});return;}
             string cueId="CRY_"+species.Replace("SPECIES_","",StringComparison.Ordinal)+(mode==2?"_ENCOUNTER":"_NORMAL");
             if(EnsureAudio(cueId))synthesized.PlayCry(cueId);
             return;
@@ -228,6 +229,7 @@ public partial class CampaignView
         }
         if(s.WildBattle is {} wild)
             return wild.Capture is not null?"MUS_CAUGHT":wild.Phase==CampaignBattlePhase.Results&&wild.State.Outcome==WildBattleOutcome.Won?"MUS_VICTORY_WILD":
+                _catalog.PowerPlantEnabled&&wild.Frame?.WildEncounter?.PowerPlant?.Kind==PowerPlantEncounterKind.Zapdos?"MUS_VS_LEGEND":
                 _catalog.EventIslandsEnabled&&wild.EventIslandReceipt is {} eventIsland?(eventIsland.Origin.Kind==EventIslandEncounterKind.Deoxys?"MUS_VS_DEOXYS":"MUS_VS_LEGEND"):
                 _catalog.CeruleanCaveEnabled&&wild.Frame?.WildEncounter?.CeruleanCave?.Kind==CeruleanCaveEncounterKind.Mewtwo?"MUS_VS_MEWTWO":"MUS_VS_WILD";
         if(_catalog.SsAnneEnabled&&s.World.Player.MapId.Value==SsAnneSourceDeparture.Exterior&&s.Music=="MUS_SURF")return s.Music;

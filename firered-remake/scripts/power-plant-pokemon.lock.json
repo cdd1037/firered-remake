@@ -1,0 +1,622 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-power-plant-pokemon-v1",
+  "files": [
+    {
+      "path": "content/generated/power-plant-pokemon/catalog.json",
+      "byteLength": 242880,
+      "sha256": "c62e537a2468299e54ead67ff42cd19293bbafd404688c858fa49c455a1b0232"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-back-normal.png",
+      "byteLength": 16516,
+      "sha256": "cc8485e318f18f26ebedde06e037da4613f83a8a5239e5102349b1a96ad72dba"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-back-normal.rgba",
+      "byteLength": 16384,
+      "sha256": "0906b0b6a64626e661031fdb604d46b5c75f8bc35b7164e2dc9af2228c921ab4"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-back-shiny.png",
+      "byteLength": 16516,
+      "sha256": "33316aa6fd23aae563838c2143bd183c56af0c3b03e6bbce99f6b5b662e7afa6"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-back-shiny.rgba",
+      "byteLength": 16384,
+      "sha256": "00239eee9b91c97e8086ac252f38342dd4e1d383e55364886557dccb5b254dc7"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-footprint.png",
+      "byteLength": 1108,
+      "sha256": "a57ec5b82a65a937349a5091c8eb62de5948662cb1bbf98294e2e1a9f5de3e4e"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-footprint.rgba",
+      "byteLength": 1024,
+      "sha256": "cc039b84b7bef41143fd32faac13cf63f3a6b50a940b971a6ee6f225ceaa6279"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-front-normal.png",
+      "byteLength": 16516,
+      "sha256": "ab91f880694140ba9bed637eafd869a23df4b6f9150bc9e8b496a1edb99522e8"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-front-normal.rgba",
+      "byteLength": 16384,
+      "sha256": "9188b6bc251fa4383b3b493432e2cb5d5315d85c2bdedc6338691fa3c7494fdc"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-front-shiny.png",
+      "byteLength": 16516,
+      "sha256": "cde213bb9e852d78a4a6d438780e3c73c56645797a06ad26ec35983f27f9026f"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/electabuzz-front-shiny.rgba",
+      "byteLength": 16384,
+      "sha256": "9934e2ba572b68013176d2da3ed2bd39551e8a6f13618905fd4a1d1e58eed106"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/icons/electabuzz.png",
+      "byteLength": 4196,
+      "sha256": "130cacfaa542d2dbc25b0b69424524341b529616a2cd32b1f520793f487a4dd4"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/icons/electabuzz.rgba",
+      "byteLength": 4096,
+      "sha256": "15c98e6744afedbfd7092cbb359bc38b9049ca57aa995e7081bb5fcaab35f88c"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/icons/jolteon.png",
+      "byteLength": 4196,
+      "sha256": "5a71b76e0cf34ff11153a4f9b2c139d3aebd9ac87bab6ff5fc5125a5b286f926"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/icons/jolteon.rgba",
+      "byteLength": 4096,
+      "sha256": "f962c040323788445c6ded20c3bb93bf8354b9a74afce0f0ca24758bda5ceab1"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/icons/zapdos.png",
+      "byteLength": 4196,
+      "sha256": "9cf6748b2af4251e82fc2d272087232a14a417f4849b62437734fe2111666f3c"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/icons/zapdos.rgba",
+      "byteLength": 4096,
+      "sha256": "67ca3f0e8bcf7967262dd51f71c74062542cda6740ed6d4a3c3b0ac7bd4afb45"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/items/item_thunder_stone.png",
+      "byteLength": 2396,
+      "sha256": "73004f0e747e09a45f68ffa9888836252cd287b88338b1333f03785ae6d5507e"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/items/item_thunder_stone.rgba",
+      "byteLength": 2304,
+      "sha256": "9c9a161b0ed6daf78fd574dc42a59e0d005f1ab3af86de887caa2048be503a14"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-back-normal.png",
+      "byteLength": 16516,
+      "sha256": "3076a34aa0a1a3926f3ad5de87bd83f08c82ca6e5b7e26cd1250e9b9ca3f6503"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-back-normal.rgba",
+      "byteLength": 16384,
+      "sha256": "011294b55e7d70e840e83b26979c9b00a515a6b709ac735c99d643f182f70708"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-back-shiny.png",
+      "byteLength": 16516,
+      "sha256": "3b981c6561375d7658e4660d2eddc1e77a5ec5055f26879bd86454302676ea41"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-back-shiny.rgba",
+      "byteLength": 16384,
+      "sha256": "6efb5b9f7a1271889d9f08d822d78a94b6e3e99eeafd855725673aa5255ce4a5"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-footprint.png",
+      "byteLength": 1108,
+      "sha256": "fef8623548d30baa1daff4d72bac7dde5c989886e73cd4a103b7a08e2f8247be"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-footprint.rgba",
+      "byteLength": 1024,
+      "sha256": "b928968efb6ed387ca58cb99a1cefce1c0086e4797aedbdc51879b14216b07c9"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-front-normal.png",
+      "byteLength": 16516,
+      "sha256": "b5d48637f976979028b443052ccc93d1635df804368a1cd48ebcf0a85fd3e18a"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-front-normal.rgba",
+      "byteLength": 16384,
+      "sha256": "82834f7e95d84086859336be87709069577f5c38fabdffe68498dd3d6a466cd1"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-front-shiny.png",
+      "byteLength": 16516,
+      "sha256": "657a16cce53cecd3124c664e30a15a13a90b7e505b5e5b103481da47d3b1debb"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/jolteon-front-shiny.rgba",
+      "byteLength": 16384,
+      "sha256": "679e6f1dd77022628e0a54d82aa503c5d4ad3d9799ded45fd2c9e274211d11eb"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/manifest.json",
+      "byteLength": 69105,
+      "sha256": "60981c2d56a7104cbae659daa6110787e7f31005f76fb3dcf17fdefc442cc001"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/synth-manifest.json",
+      "byteLength": 4003,
+      "sha256": "dfc0091de6f44432f3bfeba4afa86048a3201732b5ca00d1f34000048a7669bd"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-back-normal.png",
+      "byteLength": 16516,
+      "sha256": "ee5555c4885ac8c0215d1b471deb3559ce3ec1aad926d7ae465f70d7b5946c1a"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-back-normal.rgba",
+      "byteLength": 16384,
+      "sha256": "473c5405d0dd064477a111f6c9177dc1b8f38593f0300e57715a6e38795ee2cc"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-back-shiny.png",
+      "byteLength": 16516,
+      "sha256": "37bb45dff8a2db82363c4e9c05dc8bb626fb9db138cfe4a2ef3d422d3af806cb"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-back-shiny.rgba",
+      "byteLength": 16384,
+      "sha256": "dc9bfd01d34f3ddfd3805bddc5a63ff7b697b812e3f85b175f9a6defaa8c7eb4"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-footprint.png",
+      "byteLength": 1108,
+      "sha256": "6d17322db3654414060878887d7d343ff0197a51dad5ace273a755b406f8be29"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-footprint.rgba",
+      "byteLength": 1024,
+      "sha256": "cb3814d0bd412c77fb0882b8211d038a373fcf3a391239e9bfe146c4eaa0f8a6"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-front-normal.png",
+      "byteLength": 16516,
+      "sha256": "de62dd3c0e32e56f11b11c35eb5902a29d78d0d1e4b200a03818946787996f94"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-front-normal.rgba",
+      "byteLength": 16384,
+      "sha256": "2000a38832826b13c479a375a1a406d392ef2e4099959e128c2c1ba621db711d"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-front-shiny.png",
+      "byteLength": 16516,
+      "sha256": "9e82db4713025a22e5baac6fe5f2b43e621d2e417ccd4e551aa16abdde1df391"
+    },
+    {
+      "path": "content/generated/power-plant-presentation/zapdos-front-shiny.rgba",
+      "byteLength": 16384,
+      "sha256": "c11969b62fe3bbc616eeab7c1c8d1ba9648198acd024e249eec15b4a8ec59a4a"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/asm/macros/event.inc",
+      "byteLength": 56947,
+      "sha256": "848e5e791adeddbe7ae7fe2717729af666a8d8aa163ab7781c74bfd49ce58671"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/data/maps/PowerPlant/map.json",
+      "byteLength": 5065,
+      "sha256": "2a33bb77406ca5fefc99b9adc48ef640f4143d990e9b02c4ba2e96f17be0a8cb"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/data/maps/PowerPlant/scripts.inc",
+      "byteLength": 3645,
+      "sha256": "7558c5214a97c767aa1840d14fa15521e7f0993657ee19a3bb088b4202f6f192"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/data/scripts/item_ball_scripts.inc",
+      "byteLength": 12171,
+      "sha256": "0a660b0eddcecc31cec1a815f343c7e5aea54ac2fb7a54597c2ae38fbbd5d65c"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/include/constants/flags.h",
+      "byteLength": 95397,
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/include/constants/item_effects.h",
+      "byteLength": 3009,
+      "sha256": "71075ef690c612f81cb68d5fae62874e39d452208cc1e94890c3973f774fd0f9"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/include/constants/items.h",
+      "byteLength": 12436,
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/include/constants/moves.h",
+      "byteLength": 10249,
+      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/include/constants/pokemon.h",
+      "byteLength": 10894,
+      "sha256": "9cabd203100ae7246bc595b7295e7e04145f6292abfab83c3bd0597a2cfbcfb5"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/include/random.h",
+      "byteLength": 669,
+      "sha256": "8a6049183598b2d865b5ff522abdb3d0e94012a127d724af46b9b7b69803f5b9"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/battle_main.c",
+      "byteLength": 171904,
+      "sha256": "c290d325761d68c059f02dc21cc6178d4bbefa0d06ffddc8879341c090d37928"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/battle_setup.c",
+      "byteLength": 33351,
+      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/battle_moves.h",
+      "byteLength": 121457,
+      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/items.json",
+      "byteLength": 194280,
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/pokemon/evolution.h",
+      "byteLength": 12282,
+      "sha256": "a7d05352fb5b7039b8851049bc9575dc8eaa4450bf9964d03b7857db98c32d3c"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/pokemon/item_effects.h",
+      "byteLength": 12207,
+      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/pokemon/level_up_learnset_pointers.h",
+      "byteLength": 20597,
+      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/pokemon/level_up_learnsets.h",
+      "byteLength": 182027,
+      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/pokemon/pokedex_entries.h",
+      "byteLength": 132235,
+      "sha256": "c4103cfd5ceed94603e60462028970201fedea0faeae68037da9987ac992220b"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/pokemon/species_info.h",
+      "byteLength": 342600,
+      "sha256": "9c2da1284f7859700b315abda0499334c422f2c6776d576c788fcd1e4050f71e"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/pokemon/tmhm_learnsets.h",
+      "byteLength": 559340,
+      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/data/wild_encounters.json",
+      "byteLength": 706967,
+      "sha256": "a6399199987e1bdf8502e9bfdcfc9d8ad57d74df206d22ba20f020492bd3bf7c"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/move_descriptions.c",
+      "byteLength": 62085,
+      "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/pokemon.c",
+      "byteLength": 221865,
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/scrcmd.c",
+      "byteLength": 56954,
+      "sha256": "898dad5a07ce0a125731b998654d86808885a8d48163d607478a5e70c1cac553"
+    },
+    {
+      "path": "content/raw/power-plant-pokemon/src/script_pokemon_util.c",
+      "byteLength": 5764,
+      "sha256": "cfadee8f8c397485b66fc56a9a6e13fef1bbad47b4c6cd83dd42a9c1f8f9cf30"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/data/maps/PowerPlant/map.json",
+      "byteLength": 5065,
+      "sha256": "2a33bb77406ca5fefc99b9adc48ef640f4143d990e9b02c4ba2e96f17be0a8cb"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/data/maps/PowerPlant/scripts.inc",
+      "byteLength": 3645,
+      "sha256": "7558c5214a97c767aa1840d14fa15521e7f0993657ee19a3bb088b4202f6f192"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/items/icon_palettes/electric_tm_hm.pal",
+      "byteLength": 193,
+      "sha256": "1f23275340a37d78164095a72a2e9628467992c27f29256369b7d3b4fc193d04"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/items/icon_palettes/normal_tm_hm.pal",
+      "byteLength": 198,
+      "sha256": "6a18911b91817e9b86068c1e485420dd99751da04603f6241ee783339bed69d4"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/items/icon_palettes/thunder_stone.pal",
+      "byteLength": 165,
+      "sha256": "d713cf4a5c9b870049c342e53e0916a08f6b27dfeea2b7c4cd9ccdd070cb7cdf"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/items/icons/thunder_stone.png",
+      "byteLength": 305,
+      "sha256": "5b6280774db99b6a18b5730b6197318557d157db15f0374fcee35fdfb4e267e9"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/items/icons/tm_hm.png",
+      "byteLength": 344,
+      "sha256": "ad43897b481aa49e13dd85f205fe5fe9496212e47266eb3e9359113ad03d77bf"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokedex/kanto_dex_bgpals.pal",
+      "byteLength": 2004,
+      "sha256": "6592bc9bf2739b97b6a0f97b5163748811709dfdb0ef4987acdc119b6d8355bf"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/electabuzz/back.png",
+      "byteLength": 611,
+      "sha256": "cd330920c554b454bc2f22d5f945165dfb98792fa2ba2c534a4306c376d6dce1"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/electabuzz/footprint.png",
+      "byteLength": 93,
+      "sha256": "31a44e4d6633c0ac84de897687713ee278e8077e5f8955610e04e10628b4d514"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/electabuzz/front.png",
+      "byteLength": 882,
+      "sha256": "bcb9e4790b4bdd2cfbcae4dfead5ccb44160646c1eac741d6b4c8fdd6c26f241"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/electabuzz/icon.png",
+      "byteLength": 321,
+      "sha256": "d4ca6dfc30d137ebd31632d3a14f05bcf2de3119ce453495a6b48fffd8ee2b97"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/electabuzz/normal.pal",
+      "byteLength": 190,
+      "sha256": "0d9252e7350566aed3e3294b34f7e40bb251936ba817236356103f89de5022b3"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/electabuzz/shiny.pal",
+      "byteLength": 186,
+      "sha256": "506b5cecd15c7498c3e93dd119c38180247369b904a2624e533dbfbde1d4c828"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/icon_palettes/icon_palette_0.pal",
+      "byteLength": 195,
+      "sha256": "05e68987f3a786c27943a03005221d25fdf35e32b201b1b212f7fa454b35ec7a"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/icon_palettes/icon_palette_1.pal",
+      "byteLength": 195,
+      "sha256": "39bd2dbfe6ddb9d27cc002fbc3764a7b834178a42fde8bf17adef514037112ae"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/jolteon/back.png",
+      "byteLength": 754,
+      "sha256": "8d100871bb0e76541b2e6b6b49ce4df6842f336f7f102a1d98645bc110e79a4d"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/jolteon/footprint.png",
+      "byteLength": 91,
+      "sha256": "e9c7c9399298696f66a4854ff1691f3e1872fc62e5797694b10bae2040bcd882"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/jolteon/front.png",
+      "byteLength": 706,
+      "sha256": "7a795f6e21a720bf8a29a3fca909659708b843c02ea80372a25018a7cf311e2e"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/jolteon/icon.png",
+      "byteLength": 324,
+      "sha256": "1f6935354a6a79f106562f50e830ce5e703507742cb803e82d6720c353658888"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/jolteon/normal.pal",
+      "byteLength": 186,
+      "sha256": "bb29aff839e38e8d00a328a3b47957ac000f6bee753bf58e46e72fb8cfb6b25b"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/jolteon/shiny.pal",
+      "byteLength": 183,
+      "sha256": "0055a8095e5beebc67fd93395a09d354ddf78bb72eb65055d345377c0aa20964"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/zapdos/back.png",
+      "byteLength": 652,
+      "sha256": "0375518a53994ee499ccdd9c51f48cf0ea66140471d408fd35cd2c8d642e9817"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/zapdos/footprint.png",
+      "byteLength": 104,
+      "sha256": "42f30152cdf4ee53bd0d397f8244ae8834c993811a60b8dfd4e2f09147fc0824"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/zapdos/front.png",
+      "byteLength": 904,
+      "sha256": "1eafdea0501cb6cad51f65af39f329f8052c07957f7eb227b48fc60cdd13ba3d"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/zapdos/icon.png",
+      "byteLength": 375,
+      "sha256": "27d6cc54e9e6f1feb5c6a785b7d60f7c6496325b429aa09721be12adab93b2fb"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/zapdos/normal.pal",
+      "byteLength": 189,
+      "sha256": "e1754f4f060392fd0ac61828e6d101339338934d9b73fc8339626d026bbaede5"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/graphics/pokemon/zapdos/shiny.pal",
+      "byteLength": 183,
+      "sha256": "9e98ae65c97a69d293a39e56b865072c921fc21d11c847e93b66c8c7ad4e5f42"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/include/constants/items.h",
+      "byteLength": 12436,
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/include/constants/songs.h",
+      "byteLength": 17891,
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/include/constants/sound.h",
+      "byteLength": 2051,
+      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/include/constants/species.h",
+      "byteLength": 12982,
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/cry_tables.inc",
+      "byteLength": 16533,
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/direct_sound_samples/cries/electabuzz.wav",
+      "byteLength": 15412,
+      "sha256": "d9ff2b21fadff93fd6910487f863d8672d7961b46ce585ad2c887b641aa901e6"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/direct_sound_samples/cries/electrode.wav",
+      "byteLength": 12594,
+      "sha256": "c3fd5834be0997c8fae89fccbd390522fde9418e33139e4b16cb8e003fc1b0bc"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/direct_sound_samples/cries/jolteon.wav",
+      "byteLength": 7934,
+      "sha256": "1a983687bd79a6943a3db345da4ea6f1ef14c5b7fc06b916f3d06338e60fd378"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/direct_sound_samples/cries/zapdos.wav",
+      "byteLength": 7756,
+      "sha256": "f5bdded584f7cfba05822dd6c40f3c9434a210dba104e31c83296566493ef682"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/song_table.inc",
+      "byteLength": 9204,
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/songs/midi/mus_encounter_gym_leader.mid",
+      "byteLength": 2717,
+      "sha256": "4ab1e4aedd52e5cbac57ac43936afd2709e2d0e1be5771674a79b27c42d8a0fe"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/songs/midi/mus_poke_mansion.mid",
+      "byteLength": 18230,
+      "sha256": "f7b6286bba45986a40acfa6385ead26d6af6a6c03bd645299c6b9ef39bdf2420"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/songs/midi/mus_vs_legend.mid",
+      "byteLength": 16522,
+      "sha256": "0b6a1bb1175419e4ef72a5dfb733457a167e3e0494df2a634d68d3608333019d"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/sound/songs/midi/mus_vs_wild.mid",
+      "byteLength": 14879,
+      "sha256": "a1a72f5d1fb313f9b2f03c6edd8cc3a4c79fa7becd75545ee25bc6a9415cd344"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/battle_setup.c",
+      "byteLength": 33351,
+      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/data/graphics/items.h",
+      "byteLength": 46353,
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/data/graphics/pokemon.h",
+      "byteLength": 214609,
+      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/data/item_icon_table.h",
+      "byteLength": 30370,
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/data/pokemon_graphics/back_pic_coordinates.h",
+      "byteLength": 44872,
+      "sha256": "a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/data/pokemon_graphics/enemy_mon_elevation.h",
+      "byteLength": 1834,
+      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/data/pokemon_graphics/footprint_table.h",
+      "byteLength": 19857,
+      "sha256": "90b1bf05b85a00ae2f16a2beacf3316bcf4d313a1197cfb8368728fa39090b70"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/data/pokemon_graphics/front_pic_coordinates.h",
+      "byteLength": 44879,
+      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/data/text/species_names.h",
+      "byteLength": 15851,
+      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/pokemon_icon.c",
+      "byteLength": 45145,
+      "sha256": "2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967"
+    },
+    {
+      "path": "content/raw/power-plant-presentation/src/sound.c",
+      "byteLength": 15232,
+      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958"
+    },
+    {
+      "path": "scripts/power-plant-presentation.lock.json",
+      "byteLength": 14681,
+      "sha256": "3c0e20b5527adcf81bef68f59ffd5e1a167d09314ebb30c4b55792422517b7ff"
+    },
+    {
+      "path": "src/Game.Domain/Encounters/PowerPlantEncounterTables.cs",
+      "byteLength": 1933,
+      "sha256": "cc60fd664e851ef49817d72c272307dc6c27d9cbb58961cccc0382fca46b7295"
+    }
+  ]
+}

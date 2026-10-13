@@ -47,6 +47,7 @@ public static class PewterMachineRules
     public static void ValidateCatalog(PewterMachineCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
+        if (PowerPlantMachineCatalog.IsAuthenticated(catalog)) return;
         if (EventIslandMachineCatalog.IsAuthenticated(catalog)) return;
         if (SevenIslandMachineCatalog.IsAuthenticated(catalog)) return;
         if (CeruleanCaveMachineCatalog.IsAuthenticated(catalog)) return;
@@ -286,8 +287,10 @@ public static class PewterMachineRules
         var saffron = SaffronGymMachineCatalog.For(catalog);
         var cinnabar = CinnabarMachineCatalog.For(catalog);
         var viridian = ViridianGymMachineCatalog.For(catalog);
-        var events = EventIslandMachineCatalog.For(catalog);
-        if (events is not null && !ReferenceEquals(events.Pokemon.Catalog, pokemonCatalog)) return Fail("machine_pokemon_catalog");
+        var plant = PowerPlantMachineCatalog.For(catalog);
+        if (plant is not null && !ReferenceEquals(plant.Pokemon.Catalog, pokemonCatalog)) return Fail("machine_pokemon_catalog");
+        var events = plant?.Predecessor ?? EventIslandMachineCatalog.For(catalog);
+        if (events is not null && !ReferenceEquals(events.Pokemon.Catalog, plant?.Pokemon.Predecessor.Catalog ?? pokemonCatalog)) return Fail("machine_pokemon_catalog");
         var seven = events?.Predecessor ?? SevenIslandMachineCatalog.For(catalog);
         if (seven is not null && !ReferenceEquals(seven.Pokemon.Catalog, events?.Pokemon.Predecessor.Catalog ?? pokemonCatalog)) return Fail("machine_pokemon_catalog");
         var cave = seven?.Predecessor ?? CeruleanCaveMachineCatalog.For(catalog);
@@ -329,7 +332,7 @@ public static class PewterMachineRules
             return Fail("machine_move_execution_unsupported");
         error = PokemonStateValidator.Validate(pokemonCatalog, pokemon.Pokemon);
         if (error is not null) return Fail(error);
-        if (pokemonCatalog.Species.Count != (events is not null ? events.Pokemon.Catalog.Species.Count : seven is not null ? seven.Pokemon.Catalog.Species.Count : cave is not null ? cave.Pokemon.Catalog.Species.Count : celio is not null ? 138 : fiveIsland is not null ? 135 : sixIsland is not null ? 132 : fourIsland is not null ? 125 : ruby is not null ? 118 : victoryRoad is not null || viridian is not null || cinnabar is not null ? 115 : saffron is not null || silph is not null ? 113 : surf is not null ? 112 : safari is not null ? 110 : catalog.Profile is FuchsiaMachineRules.Profile or FuchsiaGymMachineRules.Profile ? 107 : catalog.Profile == EeveeMachineRules.Profile ? 103 : catalog.Profile == SnorlaxMachineRules.Profile ? 102 : catalog.Profile == PokemonTowerMachineRules.Profile ? 101 : catalog.Profile == RocketHideoutMachineRules.Profile ? 99 : catalog.Profile == CeladonGymMachineRules.Profile ? 98 : catalog.Profile == CeladonApproachMachineRules.Profile ? 94 : catalog.Profile == RockTunnelMachineRules.Profile ? 93 : catalog.Profile == Route11Profile ? 79 : catalog.Profile is SsAnneProfile or VermilionGymProfile ? 73 : catalog.Profile == VermilionProfile ? 70 : catalog.Profile == BillProfile ? 68 : catalog.Profile == CeruleanProfile ? 65 : catalog.Profile == MtMoonProfile ? 56 : catalog.Profile == Route3Profile ? 40 : catalog.Profile == Route22Profile ? 32 : 29) || !pokemonCatalog.Moves.TryGetValue(definition.Move, out var move) ||
+        if (pokemonCatalog.Species.Count != (plant is not null ? plant.Pokemon.Catalog.Species.Count : events is not null ? events.Pokemon.Catalog.Species.Count : seven is not null ? seven.Pokemon.Catalog.Species.Count : cave is not null ? cave.Pokemon.Catalog.Species.Count : celio is not null ? 138 : fiveIsland is not null ? 135 : sixIsland is not null ? 132 : fourIsland is not null ? 125 : ruby is not null ? 118 : victoryRoad is not null || viridian is not null || cinnabar is not null ? 115 : saffron is not null || silph is not null ? 113 : surf is not null ? 112 : safari is not null ? 110 : catalog.Profile is FuchsiaMachineRules.Profile or FuchsiaGymMachineRules.Profile ? 107 : catalog.Profile == EeveeMachineRules.Profile ? 103 : catalog.Profile == SnorlaxMachineRules.Profile ? 102 : catalog.Profile == PokemonTowerMachineRules.Profile ? 101 : catalog.Profile == RocketHideoutMachineRules.Profile ? 99 : catalog.Profile == CeladonGymMachineRules.Profile ? 98 : catalog.Profile == CeladonApproachMachineRules.Profile ? 94 : catalog.Profile == RockTunnelMachineRules.Profile ? 93 : catalog.Profile == Route11Profile ? 79 : catalog.Profile is SsAnneProfile or VermilionGymProfile ? 73 : catalog.Profile == VermilionProfile ? 70 : catalog.Profile == BillProfile ? 68 : catalog.Profile == CeruleanProfile ? 65 : catalog.Profile == MtMoonProfile ? 56 : catalog.Profile == Route3Profile ? 40 : catalog.Profile == Route22Profile ? 32 : 29) || !pokemonCatalog.Moves.TryGetValue(definition.Move, out var move) ||
             move.SourceMoveId != definition.SourceMoveId || move.Pp != definition.MovePp)
             return Fail("machine_pokemon_catalog");
         if (string.IsNullOrEmpty(currentMapSection) || !currentMapSection.StartsWith("MAPSEC_", StringComparison.Ordinal))

@@ -12,9 +12,9 @@ public sealed partial class CampaignSession
     private const string ItemfinderAidePath="data/maps/Route11_EastEntrance_2F/scripts.inc";
     private const string ItemfinderAide="Route11_EastEntrance_2F_EventScript_Aide";
     private ItemfinderSourceContract? ItemfinderSource=>(_content as IItemfinderSourceCatalog)?.ItemfinderSource;
-    public bool ItemfinderEnabled=>ItemfinderSource is not null&&EventIslandShopCatalog.For(_content.EarlyShop) is not null;
+    public bool ItemfinderEnabled=>ItemfinderSource is not null&&PowerPlantShopCatalog.For(_content.EarlyShop) is not null;
     public string? VisibleItemfinderMessage=>State.Itemfinder is {} itemfinder?itemfinder.Pages[itemfinder.Page]:null;
-    public bool SacredAshEnabled=>EventIslandShopCatalog.For(_content.EarlyShop) is not null;
+    public bool SacredAshEnabled=>PowerPlantShopCatalog.For(_content.EarlyShop) is not null;
     private string? ValidateItemfinderProgress(CampaignState state)
     {
         bool got=state.Script.Flags.GetValueOrDefault(ItemfinderFlag);

@@ -96,3 +96,25 @@ rematch binding rejection. No historical baseline was rewritten. The source
 flag selects upgraded parties within the one current trainer registry and
 shared execution path; there is no new selectable regional runtime profile.
 See [rematch acceptance](league-rematch-campaign.md).
+
+## Power Plant implementation checkpoint, 2026-10-13
+
+The sole current composition appends the original Power Plant without changing
+Route 10: 300 maps, 152 owned species, 186 opponent species, 354 moves,
+123 items, 41 machines and 264 field pickups. The two Electrode item-ball objects
+remain scripted battles. Zapdos, ordinary walking encounters and Thunder Stone
+use the shared current execution and ownership services. A single authenticated
+regional pickup reader now covers both the existing Cave and Power Plant source
+contracts; it preserves each predecessor's source counts and checks.
+
+This is a recoverable implementation checkpoint. The original map/resource suite
+passed 1,992 checks, catalog/policy passed 457 plus the 460-check rerun that
+adds actual indoor walking→pending→generation→shared battle→completion, and the combined Godot project
+built without warnings or errors. The original-pixel comparisons and 23-check
+audio/loader probe are independent source/PCM evidence. The Application run05 has now completed 1,141 public commands from the
+disclosed Route 10 shoreline setup, including Surf, Pokémaniac Mark, all seven
+pickups, both Electrode outcomes and one existing Ultra Ball capturing Zapdos
+into the PC at generation51140. The resulting strict save is valid; a separate
+process Continue and the new production view batch remain pending at this
+checkpoint. Lower-layer passes are not substitutes for those checks. Native pixels and physical audio remain
+unverified. See [Power Plant scope](power-plant-campaign.md).

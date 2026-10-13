@@ -9,9 +9,11 @@ public sealed partial class CampaignSession
 {
     // Current construction authenticates the latest shop. These predecessors remain
     // typed source proofs and preserve each later key-item extension when narrowing.
-    private EventIslandShopCatalog EventIslandShopProof => EventIslandShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("event_island_shop_proof_missing");
+    private PowerPlantShopCatalog PowerPlantShopProof => PowerPlantShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("power_plant_shop_proof_missing");
+    private InventoryState PowerPlantPredecessorInventory(InventoryState inventory) => PowerPlantShopProof.InventoryForPredecessor(inventory);
+    private EventIslandShopCatalog EventIslandShopProof => PowerPlantShopProof.Predecessor;
     private SevenIslandShopCatalog SevenIslandShopProof => EventIslandShopProof.Predecessor;
-    private InventoryState EventIslandPredecessorInventory(InventoryState inventory) => EventIslandShopProof.InventoryForPredecessor(inventory);
+    private InventoryState EventIslandPredecessorInventory(InventoryState inventory) => EventIslandShopProof.InventoryForPredecessor(PowerPlantPredecessorInventory(inventory));
     private FiveIslandShopCatalog FiveIslandShopProof => SevenIslandShopProof.Predecessor;
     private InventoryState SevenIslandPredecessorInventory(InventoryState inventory) => SevenIslandShopProof.InventoryForPredecessor(EventIslandPredecessorInventory(inventory));
     private SixIslandShopCatalog SixIslandShopProof => FiveIslandShopProof.Predecessor;
@@ -36,7 +38,8 @@ public sealed partial class CampaignSession
         changed = SixIslandShopProof.RestoreFromPredecessor(FiveIslandPredecessorInventory(view), changed);
         changed = FiveIslandShopProof.RestoreFromPredecessor(SevenIslandPredecessorInventory(view), changed);
         changed = SevenIslandShopProof.RestoreFromPredecessor(EventIslandPredecessorInventory(view), changed);
-        changed = EventIslandShopProof.RestoreFromPredecessor(view, changed);
+        changed = EventIslandShopProof.RestoreFromPredecessor(PowerPlantPredecessorInventory(view), changed);
+        changed = PowerPlantShopProof.RestoreFromPredecessor(view, changed);
         return MergeShopInventory(original, changed);
     }
     private bool TryApplyFirstSeviiItemEffect(CampaignState state,StoryEffect effect,out CampaignState next)

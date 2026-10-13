@@ -25,6 +25,7 @@ public static class EarlyShopInventoryRules
     public static void ValidateCatalog(EarlyShopCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.Profile == PowerPlantShopCatalog.Profile) { PowerPlantShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == EventIslandShopCatalog.Profile) { EventIslandShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == SevenIslandShopCatalog.Profile) { SevenIslandShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == FiveIslandShopCatalog.Profile) { FiveIslandShopCatalog.ValidateCatalog(catalog); return; }
@@ -113,6 +114,7 @@ public static class EarlyShopInventoryRules
     public static string? Validate(EarlyShopCatalog catalog, InventoryState? state)
     {
         ValidateCatalog(catalog);
+        if (PowerPlantShopCatalog.For(catalog) is { } plant) return plant.ValidateInventory(state);
         if (EventIslandShopCatalog.For(catalog) is { } events) return events.ValidateInventory(state);
         if (SevenIslandShopCatalog.For(catalog) is { } sevenIsland) return sevenIsland.ValidateInventory(state);
         if (FiveIslandShopCatalog.For(catalog) is { } fiveIsland) return fiveIsland.ValidateInventory(state);

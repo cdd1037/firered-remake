@@ -78,3 +78,7 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /evidence/itemfinder-integration-20261013/**/*.dll
 /evidence/birth-island-campaign-20261013/**/*runner/*.dll
 /evidence/birth-island-campaign-20261013/**/*runner/*.pdb
+
+# Rebuildable Power Plant execution cohorts.
+/evidence/power-plant-integration-20261013/product*/*.dll
+/evidence/power-plant-view-20261013/**/*.dll

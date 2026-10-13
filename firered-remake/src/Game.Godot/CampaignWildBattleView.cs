@@ -27,7 +27,7 @@ public partial class CampaignView
         if (_catalog.SurfEnabled && PresentedWildBattle?.State.Terrain is WildBattleTerrain.Water or WildBattleTerrain.Pond)
             return _cityBattleScenes[PresentedWildBattle.State.Terrain == WildBattleTerrain.Water ? "water" : "pond"];
         if(_catalog.PokemonTowerEnabled&&PokemonTowerPresentationModel.UsesTowerTerrain(mapId.Value))return _towerTerrain??throw new InvalidDataException("Tower terrain missing.");
-        if (_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId)==true&&_catalog.SourceMaps[mapId].Events.GetProperty("battle_scene").GetString()=="MAP_BATTLE_SCENE_INDOOR_2")
+        if ((_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId)==true||_catalog.PowerPlantRegion?.NewMaps.ContainsKey(mapId)==true)&&_catalog.SourceMaps[mapId].Events.GetProperty("battle_scene").GetString()=="MAP_BATTLE_SCENE_INDOOR_2")
             return _rocketIndoorTerrain??throw new InvalidDataException("Rocket Indoor2 terrain was not loaded.");
         if (_catalog.SeviiRubyRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.FuchsiaRouteRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.CeladonApproachRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
         {

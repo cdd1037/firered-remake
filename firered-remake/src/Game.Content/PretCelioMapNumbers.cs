@@ -86,6 +86,19 @@ public static class PretCelioMapNumbers
         return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
     }
 
+    internal static ImmutableDictionary<MapId,RoamerMap> ExtendPowerPlant(string root,
+        IReadOnlyDictionary<MapId,PretWorldMap> maps, ImmutableDictionary<MapId,RoamerMap> predecessor,
+        IReadOnlyDictionary<MapId,PretWorldMap> additions)
+    {
+        if(!additions.Keys.ToHashSet().SetEquals(new[]{new MapId("map.power-plant")}) ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
+            predecessor.Keys.Any(id=>!maps.ContainsKey(id)) || additions.Any(p=>!ReferenceEquals(p.Value,maps[p.Key])))
+            throw new InvalidDataException("power_plant_map_numbers_scope");
+        var current=ProjectSource(root,maps);
+        if(predecessor.Any(p=>current[p.Key]!=p.Value))throw new InvalidDataException("power_plant_map_numbers_predecessor");
+        return predecessor.AddRange(current.Where(p=>!predecessor.ContainsKey(p.Key)));
+    }
+
     private static ImmutableDictionary<MapId, RoamerMap> ProjectSource(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)
     {
         var source = LoadSourceTable(root);

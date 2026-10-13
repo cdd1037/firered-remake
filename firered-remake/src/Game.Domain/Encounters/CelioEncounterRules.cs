@@ -48,6 +48,15 @@ public static class CelioEncounterRules
         return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
     }
 
+    internal static CelioRoamerEncounterGate Validate(PowerPlantOwnedPokemonCatalog owned,
+        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
+        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
+    {
+        if (owned is null || !ReferenceEquals(PowerPlantOwnedPokemonCatalog.For(owned.Catalog), owned))
+            throw new ArgumentException("power_plant_encounter_catalog");
+        return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
+    }
+
     private static CelioRoamerEncounterGate ValidateParty(PokemonCatalog catalog, SourceMechanicsCatalog mechanics,
         ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
         RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
