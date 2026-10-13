@@ -13,11 +13,6 @@ public partial class CampaignView
     private bool NameRaterNaming => _session?.State.NameRater is { ChoosingParty: false, Target: not null } &&
         _session.State.Nickname is { Submitted: false } && _session.State.Script.Wait?.Kind == StoryWaitKind.Nickname;
 
-    // Shared by drawing and hit testing. Unoccupied rows never have an actionable rectangle.
-    private static Rect2 NameRaterPartyRow(int index) => new(8, 6 + index * 18, 224, 18);
-    private static readonly Rect2 NameRaterCancelRow = new(8, 116, 224, 18);
-    private Rect2 NameRaterRow(int index) => index == _session.State.Party.Length ? NameRaterCancelRow : NameRaterPartyRow(index);
-
     private void SynchronizeNameRaterPresentation(CampaignState? before, CampaignState after)
     {
         bool wasChoosing = before?.NameRater is { ChoosingParty: true };
@@ -80,10 +75,7 @@ public partial class CampaignView
     }
 
     private int NameRaterPointerRow(Vector2 point)
-    {
-        for (int i = 0; i <= _session.State.Party.Length; i++) if (NameRaterRow(i).HasPoint(point)) return i;
-        return -1;
-    }
+        => ServicePartyPointerRow(point);
 
     private bool NavigateNameRaterPointer(Vector2 point, int direction)
     {
@@ -106,26 +98,9 @@ public partial class CampaignView
     private bool DrawNameRaterParty()
     {
         if (!NameRaterChoosing) return false;
-        DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));
-        _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
-        for (int i = 0; i < _session.State.Party.Length; i++)
-        {
-            var owned = _session.State.Party[i]; var mon = owned.Pokemon; var row = NameRaterRow(i); float y = row.Position.Y;
-            if (i == _nameRaterCursor) DrawRect(row, new Color("e4e4c8"));
-            DrawTextureRectRegion(PresentedPokemonIcon(mon), new(18, y, 16, 16), new(0, 0, 32, 32));
-            SourceText(_sourceSmall, new(36, y), owned.Nickname);
-            SourceText(_sourceSmall, new(112, y), "Lv" + mon.Level);
-            SourceText(_sourceSmall, new(147, y), $"{mon.CurrentHp}/{mon.Stats.MaxHp}");
-            DrawForestPartyStatus(owned, new(207, y + 2));
-            if (i == _nameRaterCursor) SourceText(_sourceSmall, new(8, y), "▶");
-        }
-        var cancel = NameRaterCancelRow;
-        if (_nameRaterCursor == _session.State.Party.Length) SourceText(_sourceNormal, new(8, cancel.Position.Y), "▶");
-        SourceText(_sourceNormal, new(20, cancel.Position.Y), "CANCEL");
         var source = _catalog.NameRaterSource ?? throw new InvalidDataException("Name Rater text content missing.");
         string prompt = NameRaterRules.ChooserPromptSymbol(_session.State.Party) == "gText_ChoosePokemon" ? source.ChoosePokemonText : source.ChoosePokemonCancelText;
-        SourceText(_sourceSmall, new(8, 140), prompt);
-        if (_fade > 0) DrawRect(new(0, 0, 240, 160), new Color(0, 0, 0, (float)Math.Clamp(_fade / (16.0 / 60), 0, 1)));
+        DrawServicePartyChooser(_nameRaterCursor, prompt);
         return true;
     }
 

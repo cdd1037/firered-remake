@@ -33,8 +33,9 @@ public static class PokemonStateValidator
     /// General ownership invariants in the current English-keyboard, non-egg profile. Source language
     /// and game IDs, and the twelve Gen III balls, are recognized. Poison, burn and paralysis are
     /// represented; explicit content admits sleep counters1–5, freeze and canonical Toxic0x80.
-    /// Toxic battle counters, eggs and attached mail remain unsupported; injury/zero HP are supported. Met-location/held-item symbols get
-    /// syntax validation only: the current content contract has no complete location/item catalog.
+    /// Toxic battle counters, eggs and attached mail remain unsupported; injury/zero HP are supported.
+    /// Geographic met-location/held-item symbols get syntax validation; the real in-game-trade met
+    /// sentinel requires an authenticated fixed origin and its exact immutable ownership metadata.
     /// Call ValidateLocalStarterGift for the exact locally implemented gift checkpoint instead.
     /// </summary>
     public static string? ValidateParty(CampaignPokemonContent? content, PartyPokemon? owned)
@@ -50,7 +51,9 @@ public static class PokemonStateValidator
         if (owned.OriginalTrainerGender is not (0 or 1)) return "party_original_trainer_gender";
         // 6 is explicitly unused in the pinned source language list.
         if (owned.Language is not (1 or 2 or 3 or 4 or 5 or 7)) return "party_language";
-        if (!ValidSymbol(owned.MetLocation, "MAPSEC_")) return "party_met_location";
+        if (!ValidSymbol(owned.MetLocation, "MAPSEC_") && owned.MetLocation != NpcTradePokemonOriginRules.MetLocation)
+            return "party_met_location";
+        if (NpcTradePokemonOriginRules.ValidateParty(content.Catalog, owned) is { } originError) return originError;
         // Zero can describe a previously hatched/traded creature; this does not add an egg mechanic.
         if (owned.MetLevel < 0 || owned.MetLevel > owned.Pokemon.Level) return "party_met_level";
         // These are the named values in pinned include/constants/global.h. No unknown 4-bit IDs.
@@ -140,6 +143,12 @@ public static class PokemonStateValidator
             return "pokemon_experience";
         if (!Enum.IsDefined(p.Nature) || p.Nature != (Nature)(p.Personality % 25)) return "pokemon_nature";
         if (p.Ivs is null || p.Ivs.Values.Any(x => x is < 0 or > 31)) return "pokemon_ivs";
+        if (p.ContestConditions is { } conditions &&
+            new[] { conditions.Cool, conditions.Beauty, conditions.Cute, conditions.Smart, conditions.Tough, conditions.Sheen }
+                .Any(value => value is < 0 or > 255)) return "pokemon_contest_conditions";
+        if (NpcTradePokemonOriginRules.ValidateInstance(catalog, p, out int? tradeAbilitySlot) is { } originError)
+            return originError;
+        if (sourceAbilitySlot is not null && tradeAbilitySlot is not null) return "pokemon_npc_trade_origin";
         if (p.Evs is null || p.Evs.Values.Any(x => x is < 0 or > 255) || p.Evs.Values.Sum() > 510) return "pokemon_evs";
         var statEvs = p.StatCalculationEvs ?? p.Evs;
         if (statEvs.Values.Any(x => x is < 0 or > 255) || statEvs.Values.Sum() > 510 ||
@@ -150,8 +159,9 @@ public static class PokemonStateValidator
         if (p.CurrentHp < 0 || p.CurrentHp > expected.MaxHp) return "pokemon_hp";
         if (!Enum.IsDefined(p.Gender) || p.Gender != PokemonFactory.GenderFromPersonality(species.GenderRatio, p.Personality))
             return "pokemon_gender";
-        // Only the internal source-authenticated Tower roster path supplies this override.
-        int abilitySlot = sourceAbilitySlot ?? (species.Ability2 == "ABILITY_NONE" ? 0 : (int)(p.Personality & 1));
+        // Source trades and Tower enemies must independently authenticate the immutable source
+        // identity before their stored ability bit can differ from the ordinary PID-derived bit.
+        int abilitySlot = tradeAbilitySlot ?? sourceAbilitySlot ?? (species.Ability2 == "ABILITY_NONE" ? 0 : (int)(p.Personality & 1));
         if (abilitySlot is < 0 or > 1 || abilitySlot == 1 && species.Ability2 == "ABILITY_NONE") return "pokemon_ability";
         if (p.AbilitySlot != abilitySlot || p.AbilityId != (abilitySlot == 0 ? species.Ability1 : species.Ability2))
             return "pokemon_ability";

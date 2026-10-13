@@ -99,3 +99,8 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /evidence/old-amber-*/**/product/
 /evidence/old-amber-*/**/userdata/
 /evidence/old-amber-*/**/host.log
+
+/tests/Game.NpcTradeView.Tests/Assets/
+/tests/Game.NpcTradeView.Tests/*.cs.uid
+/evidence/npc-trades-*/**/*.dll
+/evidence/npc-trades-*/**/*.pdb

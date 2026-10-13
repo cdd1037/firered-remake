@@ -38,6 +38,7 @@ public sealed partial class PretCampaignCatalog
         var nationalDexSource = PretNationalDexSource.Load(projectRoot);
         var twins = PretRoute8Twins.Load(projectRoot);
         var doubleMechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(projectRoot);
+        var npcTrades = PretNpcTrades.Load(projectRoot, doubleMechanics);
         var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
         var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName), PretRocketHideoutRuntimeMaps.ManifestSha256);
@@ -1003,6 +1004,7 @@ public sealed partial class PretCampaignCatalog
         AppendTrainerTowerSources(trainerTower, sources, textFiles, constants, hashes);
         AppendFightingDojoSources(fightingDojo, sources, textFiles, constants, hashes);
         AppendFossilLabSources(fossilLab, sources, textFiles, constants, hashes);
+        AppendNpcTradeSources(npcTrades, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -2286,6 +2288,10 @@ public sealed partial class PretCampaignCatalog
         ValidateFossilLabComposition(fossilLab, maps, fossilLabPreviousMaps, compiled);
         hashes.Add("fossil-lab-presentation:" + PretFossilLabPresentation.ManifestSha256);
         hashes.Add("fossil-lab-presentation-source-lock:" + PretFossilLabPresentation.LockSha256);
+        var npcTradePreviousMaps = maps;
+        maps = maps.AddRange(npcTrades.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTrades.NewMaps);
+        ValidateNpcTradeComposition(npcTrades, maps, npcTradePreviousMaps, compiled);
 
         // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
@@ -2460,7 +2466,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

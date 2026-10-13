@@ -141,6 +141,19 @@ public static class PretCelioMapNumbers
         return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
     }
 
+    internal static ImmutableDictionary<MapId, RoamerMap> ExtendAuthenticatedMaps(string root,
+        IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
+        IReadOnlyDictionary<MapId, PretWorldMap> additions)
+    {
+        if (maps.Count != predecessor.Count + additions.Count ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
+            additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])))
+            throw new InvalidDataException("current_map_numbers_additions");
+        var current = ProjectSource(root, maps);
+        if (predecessor.Any(p => current[p.Key] != p.Value)) throw new InvalidDataException("current_map_numbers_predecessor");
+        return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
+    }
+
     private static ImmutableDictionary<MapId, RoamerMap> ProjectSource(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)
     {
         var source = LoadSourceTable(root);

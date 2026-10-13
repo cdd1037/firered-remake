@@ -49,6 +49,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignLaprasGift? LaprasGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignDojoGift? DojoGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignFossilRevival>? FossilRevivals{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignNpcTradeReceipt>? NpcTrades{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFossilMenu? FossilMenu{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSilphElevator? SilphElevator{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCinnabarFall? CinnabarFall{get;init;}
@@ -57,6 +58,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignLostelleHypnoPreparation? LostelleHypnoPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSilphPad? SilphPad{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignNameRater? NameRater{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignNpcTrade? NpcTrade{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMoveTutor? MoveTutor{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignDepartmentElevator? DepartmentElevator{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignGiftDelivery? GiftDelivery{get;init;}
@@ -288,7 +290,7 @@ public sealed partial class CampaignSession
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
-        if(s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NameRater is not null||s.MoveTutor is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
+        if(s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
         if(s.FossilMenu is not null)return "save_event_active";
         if(s.PokemonLeagueCompletion is not null)return "save_pokemon_league_completion_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
@@ -296,6 +298,7 @@ public sealed partial class CampaignSession
         var repelError=ValidateRepelState(s);if(repelError is not null)return repelError;
         var optionsError=ValidateOptionsState(s);if(optionsError is not null)return optionsError;
         var storageError=ValidateStorageState(s);if(storageError is not null)return storageError;
+        var npcTradeError=ValidateNpcTradeHistory(s);if(npcTradeError is not null)return npcTradeError;
         var giftError=ValidateMagikarpGift(s);if(giftError is not null)return giftError;
         var eeveeError=ValidateEeveeGift(s);if(eeveeError is not null)return eeveeError;
         var silphGiftError=ValidateSilphGifts(s);if(silphGiftError is not null)return silphGiftError;
@@ -339,7 +342,7 @@ public sealed partial class CampaignSession
             var partyError=PokemonStateValidator.ValidatePartyCollection(_content.PokemonContent,s.Party,s.NextPokemonId);if(partyError is not null)return partyError;
             if(allOwned.Any(p=>!s.CaughtSpecies.Contains(p.Pokemon.SourceSpeciesId)))return "save_party_dex_invalid";
             // Held items are mutable ownership; the original trainer/met/capture identity remains fixed.
-            if(allOwned.Any(p=>p.Pokemon.OriginalTrainerId!=s.TrainerId||p.OriginalTrainerName!=s.PlayerName||p.OriginalTrainerGender!=s.PlayerGender||p.Language!=2||p.MetGame!=4||((!_content.CaptureEnabled||p.InstanceId==1)&&(p.MetLocation!="MAPSEC_PALLET_TOWN"||p.MetLevel!=5))||(p.Ball!="ITEM_POKE_BALL"&&!(p.InstanceId!=1&&(AdditionalCaptureBallSupported(p.Ball)||p.Ball=="ITEM_SAFARI_BALL"&&_content.SafariEnabled)))||!OwnedHeldItemSupported(s,p)))return "save_party_origin_not_supported";
+            if(allOwned.Any(p=>!HasSupportedCampaignOriginalTrainer(s,p)||p.Language!=2||p.MetGame!=4||((!_content.CaptureEnabled||p.InstanceId==1)&&(p.MetLocation!="MAPSEC_PALLET_TOWN"||p.MetLevel!=5))||(p.Ball!="ITEM_POKE_BALL"&&!(p.InstanceId!=1&&(AdditionalCaptureBallSupported(p.Ball)||p.Ball=="ITEM_SAFARI_BALL"&&_content.SafariEnabled)))||!OwnedHeldItemSupported(s,p)))return "save_party_origin_not_supported";
         }
         else if(s.NextPokemonId<1)return "save_party_serial_invalid";
         if(_content.OpeningItems is {} items){var inventoryError=ValidateCampaignInventory(s.Inventory);if(inventoryError is not null)return inventoryError;}
@@ -368,11 +371,11 @@ public sealed partial class CampaignSession
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
+            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||NpcTradeSourceSpecies(state).Contains(n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
-            var starter=_content.EarlyStarterEnabled?OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
-            if(starter is null||!EvolutionSpeciesMatchesOrigin(state,starter,selected.SourceSpeciesId)||starter.InstanceId!=1||state.NextPokemonId!=(_content.CaptureEnabled?2L+(state.Exploration!.Captured?.Length??0)+GiftCount(state):2)||!seenValid||!state.CaughtSpecies.SetEquals(new[]{selected.SourceSpeciesId}.Concat(_content.CaptureEnabled?state.Exploration!.Captured!.Value.Select(c=>c.SourceSpeciesId):[]).Concat(GiftSourceSpecies(state)).Concat(EvolvedSpecies(state))))return "save_starter_identity_inconsistent";
+            var starter=_content.EarlyStarterEnabled?HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
+            if(starter is null||!EvolutionSpeciesMatchesOrigin(state,starter,selected.SourceSpeciesId)||starter.InstanceId!=1||state.NextPokemonId!=(_content.CaptureEnabled?2L+(state.Exploration!.Captured?.Length??0)+GiftCount(state)+NpcTradeCount(state):2)||!seenValid||!state.CaughtSpecies.SetEquals(new[]{selected.SourceSpeciesId}.Concat(_content.CaptureEnabled?state.Exploration!.Captured!.Value.Select(c=>c.SourceSpeciesId):[]).Concat(GiftSourceSpecies(state)).Concat(NpcTradeSourceSpecies(state)).Concat(EvolvedSpecies(state))))return "save_starter_identity_inconsistent";
             if(scene>=4)
             {
                 var trainer=_content.BattleContent!.Trainers.Trainers.Values.Single(t=>t.Party.Single().SourceSpeciesId==selected.RivalSourceSpeciesId).Id.Value;
@@ -437,6 +440,7 @@ public sealed partial class CampaignSession
             if(command.Kind=="field_strength")return StartFieldStrength(state,command);
             if(state.SafariBattle is not null)return DecideSafariBattle(state,command);
             if(TryDecideMoveTutor(state,command,out var moveTutorDecision))return moveTutorDecision;
+            if(TryDecideNpcTrade(state,command,out var npcTradeDecision))return npcTradeDecision;
             if(TryDecideNameRater(state,command,out var nameRaterDecision))return nameRaterDecision;
             if(command.Kind=="safari_retire")return DecideSafariRetire(state);
             if(state.Itemfinder is not null)return DecideItemfinder(state,command);
@@ -496,6 +500,7 @@ public sealed partial class CampaignSession
                 if(RainbowFerryMenu(state)&&command.Choice is {} rainbowChoice&&RainbowDestination(state,rainbowChoice) is int rainbowDestination&&rainbowDestination is >=0 and <=7&&!RainbowIslandAvailable(rainbowDestination))
                     return new(CommandStatus.Rejected,state,"seagallop_destination_not_yet_available");
                 var next=state with{ScreenIsBlack=state.TrainerTowerRecordsVisible?false:state.ScreenIsBlack,TrainerTowerMenu=null,TrainerTowerRecordsVisible=false,SeagallopMenu=null,FossilMenu=null,HealingEffect=wait.Kind==StoryWaitKind.Presentation&&state.PresentationEffects.Any(e=>e.Opcode=="waitfieldeffect")?null:state.HealingEffect,Nickname=state.Nickname?.Submitted==true?null:state.Nickname,Dialogue=state.Dialogue?.CloseOnCompletion==true&&wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice?null:state.Dialogue,Motions=[],PresentationTicks=0,PresentationEffects=[]};
+                next=CompleteNpcTradePresentation(state,next);
                 next=CompleteEventIslandPresentation(state,next);
                 next=CompleteFieldCutPresentation(state,next);
                 next=CompleteFieldStrengthPresentation(state,next);
@@ -611,6 +616,7 @@ public sealed partial class CampaignSession
             if(state.Script.Wait is not null||!state.Script.Completed)return state;
             if(state.SafariExitPending){state=CompleteSafariExitWarp(state);continue;}
             state=FinishFieldPickup(state);
+            if(state.NpcTrade is not null)state=state with{NpcTrade=null};
             if(state.NameRater is not null)state=state with{NameRater=null};
             if(_content.SupportsRegionalFlavor(state.World.Player.MapId)&&state.Dialogue is null&&!state.Script.Locked)state=state with{SignMessage=null};
             if(!state.EntryPrograms.IsEmpty)
@@ -685,6 +691,7 @@ public sealed partial class CampaignSession
             if(TryApplySnorlaxEffect(state,effect,out var snorlaxState)){state=snorlaxState;continue;}
             if(TryApplyTowerEffect(state,effect,out var towerState)){state=towerState;continue;}
             if(TryApplyMoveTutorEffect(state,effect,out var moveTutorState)){state=moveTutorState;continue;}
+            if(TryApplyNpcTradeEffect(state,effect,out var npcTradeState)){state=npcTradeState;continue;}
             if(TryApplyNameRaterEffect(state,effect,out var nameRaterState)){state=nameRaterState;continue;}
             if(TryApplyDepartmentStoreEffect(state,effect,out var departmentState)){state=departmentState;continue;}
             if(TryApplyRocketHideoutEffect(state,effect,out var rocketState)){state=rocketState;continue;}
@@ -726,7 +733,7 @@ public sealed partial class CampaignSession
             {
                 case "pokemart":state=OpenShop(state,effect);break;
                 case "lock":case "lockall":break;
-                case "release":case "releaseall":state=state with{Dialogue=null,SignMessage=null,MessagePointer=null,GiftDelivery=null,NameRater=null,FossilMenu=null};break;
+                case "release":case "releaseall":state=state with{Dialogue=null,SignMessage=null,MessagePointer=null,GiftDelivery=null,NameRater=null,NpcTrade=null,FossilMenu=null};break;
                 case "signmsg":state=state with{SignMessage=(state.SignMessage??new()) with{SignStyle=true}};break;
                 case "normalmsg":state=state with{SignMessage=state.SignMessage is {} signStyle?signStyle with{SignStyle=false}:null};break;
                 case "setrespawn":state=state with{LastHealingLocation=a[0]};break;

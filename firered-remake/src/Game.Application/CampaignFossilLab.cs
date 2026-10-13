@@ -110,7 +110,7 @@ public sealed partial class CampaignSession
             if (fossil is null || receipt.SourceItemId != fossil.ItemNumber || receipt.SourceSpeciesId != fossil.Species ||
                 receipt.InstanceId < 2 || receipt.InstanceId >= state.NextPokemonId || receipt.Ivs is null ||
                 !state.Script.Flags.GetValueOrDefault(fossil.AcquiredFlag)) return "save_fossil_lab_receipt_origin";
-            var matching = OwnedPokemon(state).Where(p => p.InstanceId == receipt.InstanceId).ToArray();
+            var matching = HistoricalPokemon(state).Where(p => p.InstanceId == receipt.InstanceId).ToArray();
             if (matching.Length != 1) return "save_fossil_lab_receipt_instance";
             var mon = matching[0];
             if (!EvolutionSpeciesMatchesOrigin(state, mon, fossil.Species) || mon.Pokemon.Personality != receipt.Personality ||

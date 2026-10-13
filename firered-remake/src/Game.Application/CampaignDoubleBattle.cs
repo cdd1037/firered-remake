@@ -68,7 +68,7 @@ public sealed partial class CampaignSession
     {
         if(!_content.PresetDoublesEnabled||!(state.World.Player.MapId.Value=="map.route-8"||battleScript is not null&&IsSevenIslandDoubleScript(battleScript)&&SevenIslandTrainerActorMap(state.World.Player.MapId,battleScript)||_content.SixIslandEnabled&&state.World.Player.MapId.Value=="map.six-island-water-path"&&battleScript is not null&&IsSixIslandDoubleScript(battleScript)||_content.SeviiRubyEnabled&&state.World.Player.MapId.Value=="map.one-island-kindle-road"&&battleScript is not null&&IsSeviiRubyDoubleScript(battleScript)||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f"&&battleScript is not null&&IsVictoryRoadDoubleScript(battleScript)||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"&&battleScript is not null&&IsFirstSeviiDoubleScript(battleScript)||_content.CinnabarEnabled&&state.World.Player.MapId.Value=="map.route-21-north"&&battleScript is not null&&IsCinnabarDoubleScript(battleScript))||
             state.DoubleBattle is not null||state.ForestTrainerBattle is not null||state.WildBattle is not null||state.Battle is not null||
-            state.Party.Any(p=>p.IsEgg||p.Pokemon.OriginalTrainerId!=state.TrainerId||p.OriginalTrainerName!=state.PlayerName||p.OriginalTrainerGender!=state.PlayerGender))
+            state.Party.Any(p=>p.IsEgg||!HasSupportedCampaignOriginalTrainer(state,p)))
             throw new InvalidDataException("preset_double_entry_context");
         var party=state.Party.Select(p=>new WildBattleCalledPartyMember(p.Pokemon,p.HeldItem,p.Status,p.IsEgg)).ToImmutableArray();
         var entry=battleScript is not null&&IsSevenIslandDoubleScript(battleScript)?

@@ -103,8 +103,11 @@ public static class LevelEvolutionRules
                 ("pret:SPECIES_GLOOM", "pret:SPECIES_BELLOSSOM") or
                 ("pret:SPECIES_HOPPIP", "pret:SPECIES_SKIPLOOM") or
                 ("pret:SPECIES_SKIPLOOM", "pret:SPECIES_JUMPLUFF");
+        if (NpcTradePokemonOriginRules.ValidateInstance(content.Catalog, before, out int? tradeAbilitySlot) is { } originError)
+            throw new ArgumentException(originError, nameof(afterRewards));
+        int targetAbilitySlot = tradeAbilitySlot ?? (target.Ability2 == "ABILITY_NONE" ? 0 : (int)(before.Personality & 1));
         if (target.GrowthRate != previous.GrowthRate || target.SourceSpeciesId > 151 && !sourceExtendedFamily ||
-            before.AbilitySlot != (target.Ability2 == "ABILITY_NONE" ? 0 : (int)(before.Personality & 1)))
+            before.AbilitySlot != targetAbilitySlot || targetAbilitySlot == 1 && target.Ability2 == "ABILITY_NONE")
             throw new NotSupportedException("Evolution requires a pinned compatible owned family definition.");
         var stats = CalculateStats(target, before);
         int hp = before.CurrentHp == 0 ? 0 : before.CurrentHp + stats.MaxHp - before.Stats.MaxHp;

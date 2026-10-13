@@ -58,6 +58,7 @@ public sealed partial class CampaignSession
             content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled) ||
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
+        if(content.NpcTrades is null||!ReferenceEquals(NpcTradePokemonCatalog.For(content.PokemonContent?.Catalog),content.NpcTrades))throw new InvalidDataException("current_npc_trade_proof_missing");
         ValidateOldAmberCatalog(content);ValidateFossilLabCatalog(content);ValidateFightingDojoCatalog(content);ValidatePowerPlantCatalog(content);ValidateEventIslandCatalog(content);ValidateSevenIslandCatalog(content);ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
         if(content.CinnabarOwnership is null||content.CinnabarOpponents is null||content.CinnabarTrainerParties is null||
             !ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned))

@@ -140,7 +140,7 @@ public sealed partial class CampaignSession
     private string? ValidatePokemonLeagueProgress(CampaignState state)
     {
         if(!_content.PokemonLeagueEnabled)return state.PokemonLeague is not null||state.HallOfFame is not null||state.PokemonLeagueCompletion is not null||
-            OwnedPokemon(state).Any(p=>p.ChampionRibbon)||(state.ForestTrainerHistory??[]).Any(h=>h?.PokemonLeagueChallenge is not null)?"save_pokemon_league_profile_missing":null;
+            HistoricalPokemon(state).Any(p=>p.ChampionRibbon)||(state.ForestTrainerHistory??[]).Any(h=>h?.PokemonLeagueChallenge is not null)?"save_pokemon_league_profile_missing":null;
         if(state.Script.Flags.GetValueOrDefault("FLAG_SYS_CAN_LINK_WITH_RS")&&!CelioCompleted(state)||!_content.NationalDexEnabled&&(state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX")||
             state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX")!=0))return "save_pokemon_league_postgame_not_admitted";
         var progress=state.PokemonLeague??new(1,[]);var history=state.ForestTrainerHistory??[];

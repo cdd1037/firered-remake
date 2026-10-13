@@ -82,6 +82,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
+    NpcTradePokemonCatalog? NpcTrades=>null;
     bool FossilLabEnabled=>false;
     FossilLabOwnedPokemonCatalog? FossilLabOwnership=>null;
     FossilLabOpponentPokemonCatalog? FossilLabOpponents=>null;

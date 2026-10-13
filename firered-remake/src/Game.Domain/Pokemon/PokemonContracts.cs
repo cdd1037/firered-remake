@@ -66,6 +66,15 @@ public sealed record PokemonInstance(SpeciesId Species, int SourceSpeciesId, int
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SixStats? StatCalculationEvs { get; init; }
 
+    // Serialized source identity, not an ownership receipt. The actual authenticated catalog
+    // must resolve this descriptor before it can authorize a fixed in-game-trade ability bit.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NpcTradePokemonOrigin? NpcTradeOrigin { get; init; }
+
+    // The source NPC-trade constructor sets these hidden fields even without contest gameplay.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PokemonContestConditions? ContestConditions { get; init; }
+
     // Source shiny test; does not imply shiny presentation has been implemented.
     public bool IsShiny => ((OriginalTrainerId >> 16) ^ (OriginalTrainerId & 0xffff) ^
         (Personality >> 16) ^ (Personality & 0xffff)) < 8;

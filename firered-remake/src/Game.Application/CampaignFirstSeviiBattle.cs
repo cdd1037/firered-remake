@@ -183,7 +183,7 @@ public sealed partial class CampaignSession
         if(history is null||!IsLostelleHypnoHistory(state,history)||history.Outcome!=WildBattleOutcome.Caught||capture.SourceSpeciesId!=97||
             capture.MetLevel!=30||capture.MetLocation!=LostelleRegion||capture.Personality!=history.LostelleHypno!.Generated.Personality||
             capture.Ivs!=history.LostelleHypno.Generated.Ivs)return false;
-        var owned=OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
+        var owned=HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
         return owned is not null&&SourceOwnedIdentity(owned.Pokemon,history.LostelleHypno.Generated)&&owned.MetLevel==30&&owned.MetLocation==LostelleRegion;
     }
 

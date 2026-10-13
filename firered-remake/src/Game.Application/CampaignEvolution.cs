@@ -262,7 +262,7 @@ public sealed partial class CampaignSession
             return state.Evolution is not null || state.EvolutionHistory is not null ? "save_evolution_profile_missing" : null;
         if (state.Evolution is not null) return "save_event_active";
         var history = state.EvolutionHistory ?? [];
-        var allOwned = OwnedPokemon(state);
+        var allOwned = HistoricalPokemon(state);
         if (history.IsDefault || history.Length > allOwned.Length * 2) return "save_evolution_history_invalid";
         var used = new HashSet<(string?, long)>();
         var latestLevel = new Dictionary<long, int>();

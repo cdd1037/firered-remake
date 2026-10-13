@@ -30,7 +30,7 @@ public sealed partial class CampaignSession
     private ImmutableArray<WildBattleCombatant> SourceTrainerEntryParty(CampaignState state)
     {
         if (state.Party.IsDefaultOrEmpty || state.Party.Length > 6 || state.Party.Any(p => p.IsEgg ||
-            p.Pokemon.OriginalTrainerId != state.TrainerId || p.OriginalTrainerName != state.PlayerName || p.OriginalTrainerGender != state.PlayerGender))
+            !HasSupportedCampaignOriginalTrainer(state, p)))
             throw new InvalidDataException("source_trainer_owned_entry_identity");
         return state.Party.Select(p => new WildBattleCombatant(p.Pokemon, HeldItem: p.HeldItem, Status: p.Status)
         {
@@ -65,7 +65,8 @@ public sealed partial class CampaignSession
         current.Species == owned.Species && current.SourceSpeciesId == owned.SourceSpeciesId &&
         current.OriginalTrainerId == owned.OriginalTrainerId && current.Personality == owned.Personality &&
         current.Nature == owned.Nature && current.Ivs == owned.Ivs && current.Gender == owned.Gender &&
-        current.AbilitySlot == owned.AbilitySlot && current.AbilityId == owned.AbilityId;
+        current.AbilitySlot == owned.AbilitySlot && current.AbilityId == owned.AbilityId &&
+        current.NpcTradeOrigin == owned.NpcTradeOrigin && current.ContestConditions == owned.ContestConditions;
 
     private static bool SameSourceOwnedPokemon(PokemonInstance a, PokemonInstance b) =>
         a with { Moves = b.Moves } == b && !a.Moves.IsDefault && !b.Moves.IsDefault && a.Moves.SequenceEqual(b.Moves);

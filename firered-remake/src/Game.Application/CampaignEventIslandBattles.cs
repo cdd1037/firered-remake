@@ -120,7 +120,7 @@ public sealed partial class CampaignSession
             capture.SourceSpeciesId != history.SourceSpeciesId || capture.MetLevel != history.Level ||
             capture.MetLocation != _content.MapDefinition(origin.Map).RegionMapSection) return false;
         var initial = history.EventIslandReceipt.InitialPokemon;
-        var owned = OwnedPokemon(state).SingleOrDefault(p => p.InstanceId == capture.InstanceId);
+        var owned = HistoricalPokemon(state).SingleOrDefault(p => p.InstanceId == capture.InstanceId);
         return owned is not null && owned.ModernFatefulEncounter && initial.OriginalTrainerId == state.TrainerId &&
             capture.Personality == initial.Personality && capture.Ivs == initial.Ivs && SourceOwnedIdentity(owned.Pokemon, initial);
     }

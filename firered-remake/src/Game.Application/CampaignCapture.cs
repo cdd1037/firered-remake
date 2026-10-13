@@ -137,8 +137,8 @@ public sealed partial class CampaignSession
     private string? ValidateCapturedParty(CampaignState state)
     {
         if(!_content.CaptureEnabled)return state.Exploration?.Captured is null?null:"save_capture_profile_missing";
-        var allOwned=OwnedPokemon(state);int gifts=GiftCount(state);
-        if(state.Exploration?.Captured is not {} captures||captures.IsDefault||captures.Length>(_content.PokemonStorageEnabled?PokemonStorageState.Capacity+5:5)||state.NextPokemonId!=(allOwned.IsEmpty?1:captures.Length+gifts+2L)||allOwned.Length!=(allOwned.IsEmpty?0:captures.Length+gifts+1))return "save_capture_party_count";
+        var allOwned=HistoricalPokemon(state);int gifts=GiftCount(state), trades=NpcTradeCount(state);
+        if(state.Exploration?.Captured is not {} captures||captures.IsDefault||captures.Length>(_content.PokemonStorageEnabled?PokemonStorageState.Capacity+5:5)||state.NextPokemonId!=(allOwned.IsEmpty?1:captures.Length+gifts+trades+2L)||allOwned.Length!=(allOwned.IsEmpty?0:captures.Length+gifts+trades+1))return "save_capture_party_count";
         if(captures.Length>0&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))return "save_capture_before_pokedex";
         var ids=new HashSet<long>();var battles=new HashSet<string>(StringComparer.Ordinal);
         foreach(var capture in captures)
@@ -169,7 +169,7 @@ public sealed partial class CampaignSession
             _content.MapDefinition(origin.Map).RegionMapSection!=capture.MetLocation)return false;
         if(origin.Kind!=CeruleanCaveEncounterKind.Mewtwo)return true;
         var initial=history.MewtwoReceipt!.InitialPokemon;
-        var owned=OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
+        var owned=HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
         return capture.Personality==initial.Personality&&capture.Ivs==initial.Ivs&&initial.OriginalTrainerId==state.TrainerId&&
             owned is not null&&SourceOwnedIdentity(owned.Pokemon,initial);
     }

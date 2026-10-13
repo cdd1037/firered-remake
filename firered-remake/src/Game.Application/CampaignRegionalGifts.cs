@@ -51,7 +51,7 @@ public sealed partial class CampaignSession
         if ((state.EeveeGift is not null) != got || hidden != got) return "save_eevee_flag_inconsistent";
         if (state.EeveeGift is not { } gift) return null;
         if (gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId || gift.Ivs is null) return "save_eevee_origin_invalid";
-        var matching = OwnedPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
+        var matching = HistoricalPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
         if (matching.Length != 1) return "save_eevee_instance_mismatch";
         var mon = matching[0];
         // Evolution validation uses the catalog's admitted evolution ledger; this method opens none itself.

@@ -19,22 +19,28 @@ public sealed partial class PretCampaignCatalog
 
     private static void AppendFossilLabSources(PretFossilLabRegion region,
         List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants, List<string> hashes)
+        => AppendAuthenticatedRegionalSources(region.Scripts, region.TextSources.Values, region.Constants, region.AdditionalSourceHashes,
+            sources, texts, constants, hashes);
+
+    private static void AppendAuthenticatedRegionalSources(IEnumerable<PretSourceScriptFile> scripts, IEnumerable<string> textSources,
+        IReadOnlyDictionary<string, int> sourceConstants, IEnumerable<string> sourceHashes,
+        List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants, List<string> hashes)
     {
         var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in region.Scripts)
+        foreach (var file in scripts)
         {
             if (previous.TryGetValue(file.Path, out var existing))
             {
                 if (existing.SourceRef.Sha256 != file.SourceRef.Sha256 || existing.Text != file.Text)
-                    throw new InvalidDataException("fossil_lab_source_conflict:" + file.Path);
+                    throw new InvalidDataException("current_regional_source_conflict:" + file.Path);
             }
             else { previous.Add(file.Path, file); sources.Add(file); }
             if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
         }
-        foreach (var text in region.TextSources.Values)
+        foreach (var text in textSources)
             if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-        hashes.AddRange(region.AdditionalSourceHashes);
+        MergeRegionalServiceConstants(constants, sourceConstants);
+        hashes.AddRange(sourceHashes);
     }
 
     private static void ValidateFossilLabComposition(PretFossilLabRegion region,

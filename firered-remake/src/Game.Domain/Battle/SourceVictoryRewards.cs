@@ -96,7 +96,10 @@ public static class SourceVictoryRewards
         if (member?.Pokemon is null) throw new ArgumentException("source_reward_pokemon_missing", nameof(member));
         if (SourcePokemonValidator.ValidatePermanent(mechanics, member.Pokemon) is { } error)
             throw new ArgumentException(error, nameof(member));
-        if (!ValidName(facts.OriginalTrainerName) || !ValidRegion(facts.MetLocation) ||
+        if (!ValidName(facts.OriginalTrainerName) ||
+            !ValidRegion(facts.MetLocation) && facts.MetLocation != NpcTradePokemonOriginRules.MetLocation ||
+            !NpcTradePokemonOriginRules.MatchesRewardMetadata(mechanics.Catalog, member.Pokemon,
+                facts.OriginalTrainerName, facts.MetLocation, facts.Ball) ||
             facts.Ball is not ("ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL" or "ITEM_GREAT_BALL" or "ITEM_POKE_BALL" or
                 "ITEM_SAFARI_BALL" or "ITEM_NET_BALL" or "ITEM_DIVE_BALL" or "ITEM_NEST_BALL" or "ITEM_REPEAT_BALL" or
                 "ITEM_TIMER_BALL" or "ITEM_LUXURY_BALL" or "ITEM_PREMIER_BALL"))

@@ -64,7 +64,7 @@ public sealed partial class CampaignSession
         if(exploration.NextWildBattleId is <1 or long.MaxValue||state.WildBattle is not null||state.Battle is not null||state.Party.IsEmpty||state.Party.Length>6||(!_content.CaptureEnabled&&state.Party.Length!=1))throw new InvalidDataException("wild_battle_context_invalid");
         int active=_content.CaptureEnabled?Enumerable.Range(0,state.Party.Length).First(i=>!state.Party[i].IsEgg&&state.Party[i].Pokemon.CurrentHp>0):0;
         var owned=state.Party[active];
-        if(owned.Pokemon.OriginalTrainerId!=state.TrainerId||owned.OriginalTrainerName!=state.PlayerName)throw new InvalidDataException("wild_battle_local_owner_required");
+        if(!HasSupportedCampaignOriginalTrainer(state,owned))throw new InvalidDataException("wild_battle_owned_origin_required");
         Route1WildPokemonResult generated;
         if(scriptedPokemon is not null)generated=scriptedPokemon;
         else if(surfPokemon is not null)generated=surfPokemon;

@@ -55,7 +55,7 @@ public sealed partial class CampaignSession
         if (state.DojoGift is not { } gift) return null;
         if (gift.SourceSpeciesId is not (106 or 107) || gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId ||
             gift.Ivs is null || lee != (gift.SourceSpeciesId == 106)) return "save_dojo_gift_origin";
-        var matching = OwnedPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
+        var matching = HistoricalPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
         if (matching.Length != 1) return "save_dojo_gift_instance";
         var mon = matching[0];
         if (mon.Pokemon.SourceSpeciesId != gift.SourceSpeciesId || mon.Pokemon.Personality != gift.Personality || mon.Pokemon.Ivs != gift.Ivs ||
