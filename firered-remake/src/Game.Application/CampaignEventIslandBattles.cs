@@ -49,7 +49,11 @@ public sealed partial class CampaignSession
         if (!caller || !(effect.Opcode == "seteventmon" || effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "StartLegendaryBattle" }))) return false;
         if (state.World.Player.MapId != origin.Map || !state.Script.Locked ||
             state.Script.Flags.GetValueOrDefault(source.Fought) || state.Script.Flags.GetValueOrDefault(source.FlewAway) ||
-            state.Script.Flags.GetValueOrDefault(source.Hidden) || !state.Actors.Values.Any(a => a.SourceLocalId == source.LocalId && a.Active))
+            // Birth uses addobject while its persistent hide flag remains set; the
+            // awakened source actor, rather than that map-entry flag, owns this event.
+            kind != EventIslandEncounterKind.Deoxys && state.Script.Flags.GetValueOrDefault(source.Hidden) ||
+            kind == EventIslandEncounterKind.Deoxys && !state.Script.Flags.GetValueOrDefault(Game.Domain.World.BirthIslandTriangleRules.AwakenedFlag) ||
+            !state.Actors.Values.Any(a => a.SourceLocalId == source.LocalId && a.Active))
             throw new InvalidDataException("event_island_battle_caller");
         if (effect.Opcode == "seteventmon")
         {

@@ -88,7 +88,7 @@ public sealed partial class CampaignSession
             hidden=Flag("FLAG_HIDE_VIRIDIAN_GIOVANNI"),rockets=Flag("FLAG_HIDE_MISC_KANTO_ROCKETS");
         int quantity=OpeningInventoryRules.Quantity(state.Inventory?.Machines??[],GiovanniMachine);
         if(!_content.ViridianGymEnabled)return badge||defeated||got||hidden||rockets||quantity!=0?"save_viridian_gym_profile_missing":null;
-        if(Flag("FLAG_HIDDEN_ITEM_VIRIDIAN_CITY_GYM_MACHO_BRACE"))return "save_viridian_gym_itemfinder_not_yet_available";
+        if(Flag("FLAG_HIDDEN_ITEM_VIRIDIAN_CITY_GYM_MACHO_BRACE")&&!ItemfinderEnabled)return "save_viridian_gym_itemfinder_profile_missing";
         bool won=ViridianGymVictory(state);
         if(badge!=won||defeated!=won||rockets!=won)return "save_giovanni_badge_history_mismatch";
         if(won&&ViridianGymTrainerPartyFactory.SupportedTrainers.Any(t=>!state.BattledTrainers.Contains(t.Value)))

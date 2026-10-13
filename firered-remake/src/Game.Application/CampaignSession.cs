@@ -26,6 +26,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     ImmutableArray<CampaignMotion> Motions,int PresentationTicks,string LastHealingLocation,string TextColor,string Music,
     string PlayerName,string RivalName,int Money,string SavedMusic,ImmutableArray<CampaignPresentation> PresentationEffects,bool PlayerVisible)
 {
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? RegisteredItem{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignItemfinder? Itemfinder{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignPokeFluteEffect? PokeFlute{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSafariVisit? SafariVisit{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSafariBattle? SafariBattle{get;init;}
@@ -300,7 +302,7 @@ public sealed partial class CampaignSession
         if(!ValidTrainerName(s.PlayerName)||!ValidTrainerName(s.RivalName)||s.Money is <0 or >999999||s.LastHealingLocation is null||s.TextColor is null||s.Music is null||s.SavedMusic is null)return "save_player_invalid";
         if(s.PlayerGender is <0 or >1||s.PresentationTicks!=0||!s.Motions.IsEmpty||s.ArrivalFacing is not null)return "save_unstable_presentation";
         if(s.Script.Variables.Keys.Any(k=>!k.StartsWith("VAR_",StringComparison.Ordinal))||s.Script.Flags.Keys.Any(k=>!k.StartsWith("FLAG_",StringComparison.Ordinal)))return "save_script_identity_invalid";
-        if(s.SeenSpecies.Any(x=>x is <1 or >386)||!s.CaughtSpecies.IsSubsetOf(s.SeenSpecies))return "save_pokedex_invalid";
+        if(s.SeenSpecies.Any(x=>!_content.IsValidPokedexSourceSpecies(x))||!s.CaughtSpecies.IsSubsetOf(s.SeenSpecies))return "save_pokedex_invalid";
         if(s.TextBuffers.Any(k=>k.Key is not ("STR_VAR_1" or "STR_VAR_2" or "STR_VAR_3")||k.Value is null||k.Value.Length>(_content.QuestItems is null?10:k.Key=="STR_VAR_1"?31:19)))return "save_text_buffer_invalid";
         var definitions=_content.MapDefinition(map.Id).Actors;
         if(s.Actors.Count!=definitions.Length)return "save_actor_count_invalid";
@@ -328,7 +330,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateItemfinderProgress(s)??ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -420,6 +422,7 @@ public sealed partial class CampaignSession
             if(TryDecideMoveTutor(state,command,out var moveTutorDecision))return moveTutorDecision;
             if(TryDecideNameRater(state,command,out var nameRaterDecision))return nameRaterDecision;
             if(command.Kind=="safari_retire")return DecideSafariRetire(state);
+            if(state.Itemfinder is not null)return DecideItemfinder(state,command);
             if(state.PokeFlute is not null)return DecidePokeFlute(state,command);
             if(state.RocketSpin is not null)return DecideRocketSpin(state,command);
             if(state.FlashEffect is not null)return DecideFieldFlash(state,command);
@@ -483,6 +486,7 @@ public sealed partial class CampaignSession
             // before choosing a field action. A successful NPC interaction selects its slot below.
             if(state.ObjectSlots is not null&&command.Kind is "move" or "turn" or "interact" or "bag_open")
                 state=state with{SelectedObjectSlot=0};
+            if(command.Kind=="use_registered")return UseItemfinder(state,command,registered:true);
             if(command.Kind=="return_to_field")return new(CommandStatus.Accepted,ReturnToEventIslandField(state));
             if(command.Kind=="bag_open")
                 return _content.OpeningItems is null?new(CommandStatus.Rejected,state,"opening_items_not_enabled"):new(CommandStatus.Accepted,state with{ItemMenu=new("bag","bag")});
@@ -660,6 +664,7 @@ public sealed partial class CampaignSession
             if(TryApplyDepartmentStoreEffect(state,effect,out var departmentState)){state=departmentState;continue;}
             if(TryApplyRocketHideoutEffect(state,effect,out var rocketState)){state=rocketState;continue;}
             if(TryApplyRockTunnelEffect(state,effect,out var rockState)){state=rockState;continue;}
+            if(TryApplyItemfinderAideEffect(state,effect,out var itemfinderAideState)){state=itemfinderAideState;continue;}
             if(TryApplyRoute11Effect(state,effect,out var route11State)){state=route11State;continue;}
             if(TryApplyCityServicesEffect(state,effect,out var cityServiceState)){state=cityServiceState;continue;}
             if(TryApplyVermilionGymEffect(state,effect,out var vermilionGymState)){state=vermilionGymState;continue;}

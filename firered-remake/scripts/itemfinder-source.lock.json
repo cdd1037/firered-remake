@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "documentSha256": "d0a86f8e71a39880239c870d6dcf898ec57e6b8552510ad36baf40e08f36325f",
+  "inputs": [
+    {
+      "path": "data/maps/NavelRock_Summit/map.json",
+      "sha256": "437c0d90ced74c7ce764e8d7e37717fcc05735645838233e9145a98f03a65e2d",
+      "byteLength": 1556
+    },
+    {
+      "path": "data/maps/PokemonTower_7F/map.json",
+      "sha256": "f58f5339a3acf0cafe66162f500093fed33c6a8e395260e3f4580a77f2340a55",
+      "byteLength": 2788
+    },
+    {
+      "path": "data/maps/Route11_EastEntrance_2F/map.json",
+      "sha256": "5a9908abe3b39d46f369e72559bed8deec0689b977452b8ec099d1722df5950e",
+      "byteLength": 1957
+    },
+    {
+      "path": "data/maps/Route11_EastEntrance_2F/scripts.inc",
+      "sha256": "00478c86303a3cf36d1d2d31acd2a1ef18cad83d1ed60f9b3b5bc77aaa281b05",
+      "byteLength": 2897
+    },
+    {
+      "path": "data/maps/Route12/map.json",
+      "sha256": "86372c00db4ef7616d129e41b2ee512764a8b5b4ced4cef19e60453e8813f3a7",
+      "byteLength": 8088
+    },
+    {
+      "path": "data/maps/Route16/map.json",
+      "sha256": "40b6d9e1ce68a55b44dfd91e2915e3a12d2a2582b141556cfb90c71214b014d3",
+      "byteLength": 6022
+    },
+    {
+      "path": "data/maps/ViridianCity_Gym/map.json",
+      "sha256": "dfcf38b622c0f6bdacfbd3ed9f16b995586206e37ee6a9969ae57814e9d505e3",
+      "byteLength": 5712
+    },
+    {
+      "path": "data/scripts/itemfinder.inc",
+      "sha256": "77d2a26829dc39ad5b22a07387363de1eb7ba0cc231c345295f86997b437b345",
+      "byteLength": 570
+    },
+    {
+      "path": "data/scripts/obtain_item.inc",
+      "sha256": "11b0900307e6c83225abd205f0073528921c81c4e101eed14d4515a022b3c30d",
+      "byteLength": 5866
+    },
+    {
+      "path": "data/text/itemfinder.inc",
+      "sha256": "5717c8ea85ae606afa0249cb5bfbeb84d372e0bfab3333150d9bd324d6e56daf",
+      "byteLength": 328
+    },
+    {
+      "path": "data/text/obtain_item.inc",
+      "sha256": "dad5d2666cd24ef854bb1ac7533dd3f53ffdcfee1528a48d436762fe00b2c813",
+      "byteLength": 1065
+    },
+    {
+      "path": "graphics/items/icon_palettes/itemfinder.pal",
+      "sha256": "035d0f3ffbb40b9baca6e2cfca656308ef0d63561c4f824e5f85b03eef1b7c8d",
+      "byteLength": 179
+    },
+    {
+      "path": "graphics/items/icon_palettes/leftovers.pal",
+      "sha256": "e524387e1be819abec01df6d964af92f693178dcc67cebc9dd4f507b27410933",
+      "byteLength": 172
+    },
+    {
+      "path": "graphics/items/icon_palettes/macho_brace.pal",
+      "sha256": "26517a8ea5fd60d7d0403a49abc3db96458fc7bf0c7bc3b54b8bffd9a5010377",
+      "byteLength": 195
+    },
+    {
+      "path": "graphics/items/icon_palettes/sacred_ash.pal",
+      "sha256": "f6c9df22d9acfc3adb748e5189a5a50df5063ceb4736489f8b1fc0715621d72d",
+      "byteLength": 175
+    },
+    {
+      "path": "graphics/items/icons/itemfinder.png",
+      "sha256": "09910e35fd6ce2c49d2405d4ecc220a44801aa22c19c543668193f5e73d2698d",
+      "byteLength": 288
+    },
+    {
+      "path": "graphics/items/icons/leftovers.png",
+      "sha256": "8e23ed4a6f0b6e464e8f99ac04e555ea51dbd9652baa7fae0a3a6225f1e2d5d8",
+      "byteLength": 262
+    },
+    {
+      "path": "graphics/items/icons/macho_brace.png",
+      "sha256": "f783040a8d7839599127c7714651a3829260c8aff9ca249d4c477c759a01793c",
+      "byteLength": 319
+    },
+    {
+      "path": "graphics/items/icons/sacred_ash.png",
+      "sha256": "ae4a3f3a46f93e8214a8e6f8e3332d0b2e64b70dfde523533adb1d4fb321c78f",
+      "byteLength": 288
+    },
+    {
+      "path": "include/constants/flags.h",
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493",
+      "byteLength": 95397
+    },
+    {
+      "path": "include/constants/items.h",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
+      "byteLength": 12436
+    },
+    {
+      "path": "src/data/items.json",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489",
+      "byteLength": 194280
+    },
+    {
+      "path": "src/data/pokemon/item_effects.h",
+      "sha256": "d249420ab4751c60b1ae246895dcee5bdfb5bae18f52a9c37975c6f7fb5d0d25",
+      "byteLength": 12207
+    },
+    {
+      "path": "src/fieldmap.c",
+      "sha256": "bbe15c7af1059a9f796dddaca28bdaaf206b715895029e189fa6ae012272ce68",
+      "byteLength": 28166
+    },
+    {
+      "path": "src/item_menu.c",
+      "sha256": "155bd6b0943e8df179cbc9892e573cee52fd8f67a1d0dd39b962bdbec2e3546a",
+      "byteLength": 79276
+    },
+    {
+      "path": "src/item_use.c",
+      "sha256": "035ca3bdb70f5708dc8771d2bc6cc5450e775e3144278e7683aacba218cb9c98",
+      "byteLength": 28138
+    },
+    {
+      "path": "src/itemfinder.c",
+      "sha256": "7f240eea2f57ac87d922e18fa960be8ec0a7d39c65c3c7cbb9c09222eaed9a30",
+      "byteLength": 18386
+    },
+    {
+      "path": "src/party_menu.c",
+      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b",
+      "byteLength": 211085
+    },
+    {
+      "path": "src/pokemon.c",
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
+      "byteLength": 221865
+    },
+    {
+      "path": "src/prof_pc.c",
+      "sha256": "56a55f3c6c7827dcf599730da9e8877c3c981c820a4be0716cee901a37c20304",
+      "byteLength": 2956
+    },
+    {
+      "path": "src/strings.c",
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1",
+      "byteLength": 96631
+    }
+  ]
+}

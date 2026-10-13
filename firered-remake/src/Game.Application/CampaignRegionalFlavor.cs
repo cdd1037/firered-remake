@@ -12,6 +12,7 @@ public sealed partial class CampaignSession
         bool enabled = _content.SupportsRegionalFlavor(player.MapId);
         var candidate = _content.MapDefinition(player.MapId).BackgroundTriggers.FirstOrDefault(t =>
             t.X == x && t.Y == y && (t.Elevation == 0 || t.Elevation == player.Elevation));
+        if(candidate is not null&&(candidate.Underfoot||ItemfinderSource?.Underfoot.Any(i=>i.Map==_content.MapDefinition(player.MapId).SourceMapSymbol&&i.X==candidate.X&&i.Y==candidate.Y)==true))return null;
         return enabled && candidate is not null && (candidate.Underfoot ||
             candidate.PlayerFacing is { } required && required != facing ||
             candidate.HiddenFlag is { } flag && state.Script.Flags.GetValueOrDefault(flag)) ? null : candidate;

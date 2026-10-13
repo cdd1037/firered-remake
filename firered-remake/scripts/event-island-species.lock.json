@@ -5,8 +5,8 @@
   "files": [
     {
       "path": "content/generated/event-island-species/catalog.json",
-      "byteLength": 94991,
-      "sha256": "7c02d6e44232ae8a76321affd602594f60127d49c7d8ea38fd87e8cebfe9a13f"
+      "byteLength": 98623,
+      "sha256": "ec077629917befe12235c92727590edefe2d752104793e54b923d21f46ddfa2a"
     },
     {
       "path": "content/raw/event-island-species/asm/macros/event.inc",

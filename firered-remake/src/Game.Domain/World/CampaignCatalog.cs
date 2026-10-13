@@ -140,6 +140,8 @@ public interface ICampaignCatalog:IStoryCatalog
     SeviiRubyTrainerCatalog? SeviiRubyTrainers=>null;
     SeviiRubyTrainerCatalog? SeviiRubyTrainerParties=>SeviiRubyTrainers;
     SeviiRubyWaterEncounterCatalog? SeviiRubyWaterEncounters=>null;
+    // Original species IDs include Hoenn entries 277–411 and skip legacy Unown placeholders.
+    bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => sourceSpeciesId is >=1 and <=251 or >=277 and <=411;
     CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("national_dex_not_enabled");
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
     PokemonLeagueOpponentPokemonCatalog? PokemonLeagueOpponents=>null;

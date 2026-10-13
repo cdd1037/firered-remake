@@ -69,7 +69,7 @@ public sealed partial class CampaignSession
         if(_content.SupportsTeleportPads(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
         if(here is >=0x60 and <=0x71)return (_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map))?.Code;
-        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),SevenIslandWalkingMaps(SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(EditedFieldMaps(state))))))),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
+        var check=ConnectedFieldRules.Complete(state.World with{RulesVersion=ConnectedFieldRules.RulesVersion},new(new("validate:connected"),state.World.Revision,ConnectedFieldAction.Idle,p.Facing),PostgameWalkingMaps(SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(EditedFieldMaps(state))))))),_content.MtMoonEnabled,_content.VermilionGymEnabled,enableSpinTiles:_content.RocketHideoutEnabled,surfing:state.IsSurfing,sourceTerrain:_content.TerrainAt);
         return check.Status==TransitionStatus.Accepted?null:check.Diagnostic?.Code??"save_connected_invalid";
     }
     private bool IsCeruleanCaveWildHistory(CampaignWildHistory history)
@@ -105,14 +105,14 @@ public sealed partial class CampaignSession
             }
             maps[pair.Key]=pair.Value with{Cells=cells.ToImmutable()};
         }
-        return SevenIslandWalkingMaps(SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(CinnabarWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(maps)))))));
+        return PostgameWalkingMaps(SixIslandWalkingMaps(FourIslandWalkingMaps(SeviiRubyWalkingMaps(CinnabarWalkingMaps(VictoryRoadWalkingMaps(SafariConnectedMaps(maps)))))));
     }
     private Decision<CampaignState> DecideConnectedField(CampaignState state,CampaignCommand command)
     {
         if(!Enum.IsDefined(command.Direction))return new(CommandStatus.Rejected,state,"invalid_direction");
         if(TryDottedHoleStep(state,command) is {} dottedStep)return dottedStep;
         if(TryFourIslandFieldStep(state,command) is {} fourIslandStep)return fourIslandStep;
-        var before=state.World.Player;var movementMaps=SevenIslandMovementMaps(FiveIslandMovementMaps(SixIslandMovementMaps(FourIslandMovementMaps(SeviiRubyMovementMaps(PokemonLeagueMovementMaps(CinnabarMovementMaps(SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state)),state),state,command),state),state),state),state));var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
+        var before=state.World.Player;var movementMaps=PostgameMovementMaps(FiveIslandMovementMaps(SixIslandMovementMaps(FourIslandMovementMaps(SeviiRubyMovementMaps(PokemonLeagueMovementMaps(CinnabarMovementMaps(SafariMovementMaps(SilphMovementMaps(RocketMovementMaps(state),state)),state),state,command),state),state),state),state));var map=movementMaps[before.MapId];var (dx,dy)=Delta(command.Direction);int x=before.X+dx,y=before.Y+dy;
         bool turn=command.Kind=="turn";
         if(!turn&&TryStartFieldSurfDismount(state,command) is {} surfDismount)return surfDismount;
         if(!turn&&TryStartFieldStrengthPush(state,command) is {} strengthPush)return strengthPush;

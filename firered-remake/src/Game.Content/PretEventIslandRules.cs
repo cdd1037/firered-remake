@@ -18,8 +18,8 @@ public sealed record EventIslandSpeciesDocument(string SourceCommit, string Sour
 public static class PretEventIslandRules
 {
     public const string Profile = "firered-event-island-species-v1";
-    public const string CatalogSha256 = "7c02d6e44232ae8a76321affd602594f60127d49c7d8ea38fd87e8cebfe9a13f";
-    public const string LockSha256 = "541aa73ea9c78ca8097230d4c90235bbb7190cd2fc1b81446e98241c32c55366";
+    public const string CatalogSha256 = "ec077629917befe12235c92727590edefe2d752104793e54b923d21f46ddfa2a";
+    public const string LockSha256 = "244624fafbe1b0143d8b9d36213197f9cac7695b716f315b16183f4ceb9b2522";
     private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
     private static byte[] Read(string root, string path, string hash)
@@ -34,7 +34,7 @@ public static class PretEventIslandRules
             ?? throw new InvalidDataException("event_island_source_missing");
         if (d.SourceCommit != PokemonFactory.SourceCommit || d.SourceTree != PretCanonicalPokemonCatalog.SourceTree || d.Profile != Profile ||
             d.OwnedSpeciesCount != 149 || d.OpponentSpeciesCount != 183 || d.Machines.IsDefault || d.Machines.Length != 39 ||
-            d.MachinesSemanticSha256 != EventIslandMachineCatalog.InheritedAdditionsSourceSha256 || d.Items.IsDefault || d.Items.Length != 4 ||
+            d.MachinesSemanticSha256 != EventIslandMachineCatalog.InheritedAdditionsSourceSha256 || d.Items.IsDefault || d.Items.Length != 6 ||
             d.ItemsSemanticSha256 != EventIslandShopCatalog.AdditionalItemsSourceSha256 || d.Inputs.IsDefault || d.Inputs.Length != 17 ||
             d.DependencyInputs.IsDefault || d.DependencyInputs.Length != 2) throw new InvalidDataException("event_island_source_scope");
         return d;

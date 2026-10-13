@@ -20,6 +20,7 @@ public sealed partial class PretCampaignCatalog
     {
         // Load the fixed resource set through its source-authenticating factories.
         var eventIsland = PretEventIslandRegion.Load(projectRoot);
+        var itemfinder = PretItemfinderSource.Load(projectRoot);
         var sevenIsland = PretSevenIslandRegion.Load(projectRoot);
         var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
         var fiveIsland = PretFiveIslandRegion.Load(projectRoot, compact: true);
@@ -2201,6 +2202,7 @@ public sealed partial class PretCampaignCatalog
         hashes.AddRange(moveTutors.AdditionalSourceHashes);
         hashes.Add("event-island-species:" + PretEventIslandRules.CatalogSha256);
         hashes.Add("event-island-source-lock:" + PretEventIslandRules.LockSha256);
+        hashes.Add("itemfinder-source:" + PretItemfinderSource.DocumentSha256);
 
         // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
@@ -2373,7 +2375,7 @@ public sealed partial class PretCampaignCatalog
             leagueRematchTrainers: leagueRematchTrainers,
             leagueRematchOpponents: leagueRematchOpponents,
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
-            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop);
+            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

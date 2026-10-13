@@ -30,7 +30,7 @@
 | --- | --- | --- |
 | 已经过的城镇和道路 | 仍需逐区补齐普通／条件对白、隐藏物、侧室和剩余训练家；早期常青学校／民居、深灰博物馆购票和展览等回访闭包没有完整交付证明。不能从主线通过推定全部地方服务已完成。 | [逐区交互清单](regional-interaction-coverage.md)、[早期遗留范围](first-badge-followups.md) |
 | 玉虹百货及游戏城 | 百货 2F TM 柜台、3F 双倍奉还教学、4F 娃娃／信件／其他进化石销售及相应进化闭包、5F 维生素／战斗道具销售、楼顶饮料贩卖和饮料换 TM；代币盒、代币余额、老虎机和奖品兑换。现有普通 2F 商店、楼层／电梯、茶、伊布、姓名判定师已经分别接通。 | [分楼层边界](regional-interaction-coverage.md#accepted-bounded-regional-interiors-2026-10-10) |
-| 南路、金黄及可选设施 | 自行车道与另一条南行路线、未覆盖的浅红普通设施／拾取；金黄格斗道场及赠送二选一；道具探测器及专属剩饭／安抚之铃等奖励；好钓竿、厉害钓竿的正常取得和对应钓鱼流程。已有自行车、破旧钓竿、狩猎、Surf／Strength 不能替代这些独立服务。 | [浅红边界](fuchsia-arrival.md)、[金黄边界](saffron-gym-campaign.md)、[红莲边界](cinnabar-campaign.md) |
+| 南路、金黄及可选设施 | 自行车道与另一条南行路线、未覆盖的浅红普通设施／拾取；金黄格斗道场及赠送二选一；道具探测器及五处脚下奖励的逻辑已接通，专属箭头／星光原生表现仍缺；好钓竿、厉害钓竿的正常取得和对应钓鱼流程。已有自行车、破旧钓竿、狩猎、Surf／Strength 不能替代这些独立服务。 | [浅红边界](fuchsia-arrival.md)、[金黄边界](saffron-gym-campaign.md)、[红莲边界](cinnabar-campaign.md) |
 | 海路、红莲和传说支线 | 双子岛／水流推石与急冻鸟、无人发电厂／闪电鸟及伪装道具球等可选闭包；红莲研究所的化石复活、NPC 交换和教学。当前经 21 号道路到红莲的主线不证明另一条海路和这些服务已完成。 | [红莲范围](cinnabar-campaign.md)、[完整地区分母](full-scope-audit.md#4-关都全部地区与主线) |
 | 首次一至三岛支路 | 宝物海滩、灯火山顶和火焰鸟、岬边及终极招式教学、二岛蘑菇回忆招式等仍缺；灯火山道／温泉／红宝石洞窟至彩虹通行证已另行通过本轮11图公共路线，不能把这些已完成内容继续算作缺项。三岛港口城镇地图定位点仍缺；岛间浏览已经接通。 | [首次七岛边界](first-sevii-campaign.md#remaining-regional-boundaries) |
 | 联盟后可用的既有服务 | 初次记录／结尾协议与 PC 的名人堂回看是两项功能；当前 PC 回看仍明确返回未实现。冠军之路舍身冲撞教学也仍缺。 | [PC 实际入口](../src/Game.Application/CampaignPokemonStorage.cs)、[冠军之路边界](victory-road-campaign.md#explicit-remaining-regional-scope) |
@@ -57,7 +57,7 @@
 
 **已有实现，不再列为待开发**：公共副作用概率的标称边界修正、金珠桥金珠一次性奖励、连续 Protect 第五次以后 12.5% 安全夹限、纹理２合法属性候选选择、双打 KO 回合末补位、王者之证读取实际攻击者参数、AI 无效历史招式安全读取，以及梦幻／代欧奇希斯采用普通原训练家／徽章服从规则。它们是明确记录的项目规则差异，不冒称原版逐项相同。[修正记录](research/prioritized-improvements.md)、[金珠桥实装](bill-campaign.md)、[双打实装](preset-doubles-route8.md)
 
-**已批准、仍待对应工作落实／确认**：殿堂后两张活动船票和对应可达内容、剧情解锁的单机通信进化 NPC。游走个体完整 IV 保存／恢复和吼叫退场仍可再遇已在 Celio 节点实施，见其验收及批准修正记录，不再列为未做。NPC 的具体地点和费用尚未定案，已选方向要求保留原持物／消耗、全国图鉴门槛和原个体身份。本轮不会为这些后期项目延长开发。[已选 NPC 方案](research/solo-trade-evolution.md)、[批准清单](research/prioritized-improvements.md)
+**已批准、仍待对应工作落实／确认**：活动双岛已接入精确殿堂授票条件与航线，连续谜题／表现收口按活动双岛文档独立列示；剧情解锁的单机通信进化 NPC 仍待做。游走个体完整 IV 保存／恢复和吼叫退场仍可再遇已在 Celio 节点实施，见其验收及批准修正记录，不再列为未做。NPC 的具体地点和费用尚未定案，已选方向要求保留原持物／消耗、全国图鉴门槛和原个体身份。本轮不会为这些后期项目延长开发。[已选 NPC 方案](research/solo-trade-evolution.md)、[批准清单](research/prioritized-improvements.md)
 
 **AI 两项已批准修正已经集成**：`4394bc769116` 将硬撑评分的状态对象改为实际使用者，并交换原程序中沙暴／冰雹两个错误的条件操作数；原认证 AI 包保持原字节。公开希巴选择入口的七个状态／36 项检查验证了硬撑结果、合法选择和随机消耗。天气分支保留独立源向量证据；正常入口先被另一项原版“目标是否有招式效果”的错误判断挡住，因此不宣称自然路线触发过天气错分支。本次没有扩展修改该目标效果判断。[已批准修正的实现与范围](../tests/Game.ApprovedTrainerAi.Tests/README.md)
 
@@ -69,4 +69,4 @@
 
 原包字节与缺陷证据仍保留，运行时只在认证的三个操作数字节处采用批准修正。原 `89171036` 下 PC6845 的状态对象、PC6691／6697 的天气比较都是修正前证据，不再表示当前未实现。详见 [实现报告](../tests/Game.ApprovedTrainerAi.Tests/README.md) 和 [原作修正记录](research/prioritized-improvements.md)。
 
-活动双岛现已进入当前组合实现检查点，精确 pret Ribbon/Aurora 授票条件、原航线与三事件个体目录已接，连续传说旅程、Itemfinder 服务及生产表现验收仍在执行；详见[活动双岛范围](event-islands-campaign.md)。
+活动双岛现已进入当前组合实现检查点，精确 pret Ribbon/Aurora 授票条件、原航线与三事件个体目录已接，Ho-Oh/Lugia 公共事件和 Itemfinder 服务短集已通过，Birth 连续谜题及生产表现验收仍在执行；详见[活动双岛范围](event-islands-campaign.md)。

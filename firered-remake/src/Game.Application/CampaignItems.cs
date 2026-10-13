@@ -8,6 +8,8 @@ namespace Game.Application;
 
 public sealed record CampaignItemMenu(string Origin,string View,string? MessageSymbol=null,string ReturnView="top",InventoryState? DisplayInventory=null)
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<string>? SourceMessages{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int SourceMessageIndex{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public long? TargetInstanceId{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public int? TargetPartyIndex{get;init;}
 }
@@ -36,7 +38,7 @@ public sealed partial class CampaignSession
     {
         var menu=state.ItemMenu!;
         Decision<CampaignState> No(string error)=>new(CommandStatus.Rejected,state,error);
-        Decision<CampaignState> Menu(string view)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View=view,MessageSymbol=null,DisplayInventory=null}});
+        Decision<CampaignState> Menu(string view)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View=view,MessageSymbol=null,DisplayInventory=null,SourceMessages=null,SourceMessageIndex=0}});
         Decision<CampaignState> Message(string symbol,string returnView)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View="message",MessageSymbol=symbol,ReturnView=returnView}});
         if(command.Kind is "field_give" or "field_take" or "held_bag_open" or "pc_give")return DecideHeldItem(state,command);
         if(menu.Origin=="bag"&&menu.TargetInstanceId is not null&&command.Kind is not ("menu_back" or "berry_open"))return No("held_item_selection_active");
@@ -45,11 +47,15 @@ public sealed partial class CampaignSession
             if(!_content.SsAnneEnabled||menu.Origin!="bag"||menu.View!="bag"||OpeningInventoryRules.Quantity(state.Inventory!.KeyItems??[],SsAnneItemRules.BerryPouchId)!=1)return No("berry_pouch_context_invalid");
             return Menu("berries");
         }
+        if(command.Kind=="field_itemfinder")return UseItemfinder(state,command);
+        if(command.Kind=="item_register")return RegisterItemfinder(state,command);
+        if(command.Kind=="field_sacred_ash"||command.Kind=="field_medicine"&&command.Text=="pret:ITEM_SACRED_ASH")return UseSacredAsh(state,command);
         if(command.Kind=="field_poke_flute")return UseFieldPokeFlute(state,command);
         if(command.Kind=="field_bicycle")return UseFieldBicycle(state,command);
         if(command.Kind=="field_fish")return StartFieldFishing(state,command);
         if(command.Kind=="town_map_open")return OpenTownMap(state,command);
         if(command.Kind is "machine_open" or "machine_teach")return DecideMachine(state,command);
+        if(command.Kind=="menu_ack"&&menu.View=="message"&&menu.SourceMessages is {} messages&&menu.SourceMessageIndex+1<messages.Length)return new(CommandStatus.Accepted,state with{ItemMenu=menu with{SourceMessageIndex=menu.SourceMessageIndex+1}});
         if(command.Kind=="menu_ack")return menu.View=="message"?Menu(menu.ReturnView):No("item_message_not_pending");
         if(command.Kind=="menu_back")
         {
@@ -118,6 +124,7 @@ public sealed partial class CampaignSession
     {
         get
         {
+            if(State.ItemMenu?.SourceMessages is {} messages)return messages[State.ItemMenu.SourceMessageIndex];
             if(State.ItemMenu?.MessageSymbol is not {} symbol)return null;
             var text=string.Join("\n",_content.TextPages(symbol));
             foreach(var buffer in State.TextBuffers)text=text.Replace("{"+buffer.Key+"}",buffer.Value,StringComparison.Ordinal);

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import the three source event species, 117 TM/HM cells and four inventory definitions.
+"""Import the three source event species, 117 TM/HM cells and six inventory definitions.
 Only reads pinned Git blobs. Never builds or executes reference code. --check is byte-exact.
 """
 import argparse, hashlib, json, re, subprocess
@@ -54,7 +54,7 @@ def generate(reference,dependency):
         cells.append(dict(item=ident(item),compatibility=rows))
     text=read('src/data/items.json');source_items=json.loads(text)['items'];items=[]
     constants={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',read('include/constants/items.h'),re.M)}
-    for symbol in ['ITEM_MYSTIC_TICKET','ITEM_AURORA_TICKET','ITEM_SACRED_ASH','ITEM_ITEMFINDER']:
+    for symbol in ['ITEM_MYSTIC_TICKET','ITEM_AURORA_TICKET','ITEM_SACRED_ASH','ITEM_ITEMFINDER','ITEM_MACHO_BRACE','ITEM_LEFTOVERS']:
         i=next(i for i in source_items if i['itemId']==symbol);m=one('src/data/items.json',r'"itemId":\s*"'+symbol+r'"');r=ref('src/data/items.json',symbol,m)
         meta=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=constants[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
         items.append({k:meta[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=i['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=meta))

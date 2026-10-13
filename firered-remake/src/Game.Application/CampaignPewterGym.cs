@@ -3,6 +3,7 @@ using Game.Domain.Items;
 using Game.Domain.Ids;
 using System.Collections.Immutable;
 using Game.Domain.Trainers;
+using Game.Domain.World;
 namespace Game.Application;
 
 public sealed partial class CampaignSession
@@ -63,6 +64,7 @@ public sealed partial class CampaignSession
     private InventoryState LegacyQuestInventory(InventoryState inventory)
     {
         var view=WithoutCityServiceItems(_content.PewterEnabled?PewterMachineRules.WithoutMachines(inventory):inventory);
+        if(ItemfinderEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=ItemfinderRules.Item).ToImmutableArray()};
         if(_content.EventIslandsEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=EventAuroraTicket&&s.Item!=EventMysticTicket).ToImmutableArray()};
         if(_content.FiveIslandEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=SapphireItem).ToImmutableArray()};
         if(_content.SeviiRubyEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=RubyItem&&s.Item!=RainbowPassItem).ToImmutableArray()};

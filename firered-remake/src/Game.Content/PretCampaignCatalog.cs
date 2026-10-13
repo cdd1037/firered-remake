@@ -97,6 +97,8 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public bool BillEnabled => BillRegion is not null;
     public PretMtMoonItemsDocument? MtMoonItems { get; }
 
+    public bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => PokedexMenu?.Entries.ContainsKey(sourceSpeciesId) == true;
+
     public CampaignOakRatingProjection EvaluateOakRating(IEnumerable<int> seenSpecies, IEnumerable<int> caughtSpecies)
     {
         var result = (OakRating ?? throw new InvalidDataException("oak_rating_not_enabled")).EvaluateSpeciesIds(seenSpecies, caughtSpecies, PokedexMenu!, new(HasPokedex: true));
