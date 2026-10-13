@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 # Latest bounded campaign. Each older profile retains its separate save folder.
 set -euo pipefail
-exec bash "$(dirname "$0")/launch-four-island.sh" "$@"
+exec bash "$(dirname "$0")/launch-six-island.sh" "$@"

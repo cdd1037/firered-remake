@@ -974,6 +974,12 @@
       "sha256": "c8d24a81c9b7369878251f26fdc8fe95a9d5d6c27899cbefa837ccdd8db3feb2"
     },
     {
+      "byteLength": 11862,
+      "gitBlobSha1": "d215f0122e8092143c8adb51511823bf1c7583ee",
+      "path": "sound/songs/midi/mus_sevii_route.mid",
+      "sha256": "9e669cb78f8a927297c323fbdf0c5bd16016bf42143d8e81d8589218a4c5b8bb"
+    },
+    {
       "byteLength": 148,
       "gitBlobSha1": "0722a1c366657f70de365aa9e39650fdd988ba91",
       "path": "sound/songs/midi/se_bang.mid",

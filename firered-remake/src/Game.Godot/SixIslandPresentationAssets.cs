@@ -9,13 +9,13 @@ internal static class SixIslandPresentationAssets
     internal const string Base = "content/generated/six-island-presentation/";
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     internal const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    internal const string LockSha256 = "a5c54b34b0be5c2144c9ae436137596ac7e0bb2426f9647ecba32b86622f4c35";
-    internal const string ManifestSha256 = "fa0d64e6517314783ff82f5d2e381ca599dfed9158ea8cedf4e8bd72091b3859";
-    internal const string SynthSha256 = "c49c4c4a0fceb502275bab2414559715da6ed425f1b3bb323922385e6bb838f9";
-    internal const int LockBytes = 51701;
-    internal const int ManifestBytes = 223743;
-    internal const int SynthBytes = 6615;
-    internal const int SynthCueCount = 15;
+    internal const string LockSha256 = "5e2eaee17665a07d6d46c7d2309894c95ad0c6f6389f2ae787eaebf9f49ebffd";
+    internal const string ManifestSha256 = "cefcdca6288a99068ad27621590dc4a8ea36f3fc5a9c957bf707bdd2b4006f84";
+    internal const string SynthSha256 = "1831a1dfe43f9c450d663cd90727e270fa14a4bd95ed787871b744660712a76d";
+    internal const int LockBytes = 51943;
+    internal const int ManifestBytes = 224010;
+    internal const int SynthBytes = 6995;
+    internal const int SynthCueCount = 16;
 
     internal static SixIslandPresentationData Load(string root)
     {
@@ -51,7 +51,7 @@ internal static class SixIslandPresentationAssets
             manifest.GetProperty("sourceTree").GetString() != SourceTree || manifest.GetProperty("lockSha256").GetString() != LockSha256 ||
             !JsonElement.DeepEquals(manifest.GetProperty("inputs"), sourceLock.GetProperty("files")) ||
             !JsonElement.DeepEquals(manifest.GetProperty("inheritedInputs"), sourceLock.GetProperty("inheritedInputs")) ||
-            sourceLock.GetProperty("files").GetArrayLength() != 200 || sourceLock.GetProperty("inheritedInputs").GetArrayLength() != 17 ||
+            sourceLock.GetProperty("files").GetArrayLength() != 201 || sourceLock.GetProperty("inheritedInputs").GetArrayLength() != 17 ||
             manifest.GetProperty("outputs").GetArrayLength() != 155)
             throw new InvalidDataException("Six Island presentation identity differs.");
 

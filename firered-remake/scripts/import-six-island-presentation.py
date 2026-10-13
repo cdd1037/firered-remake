@@ -17,8 +17,8 @@ TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-six-island-presentation-v1'
 BASE = 'content/generated/six-island-presentation/'
 RAW = 'content/raw/six-island-presentation/'
-LOCK_SHA = 'a5c54b34b0be5c2144c9ae436137596ac7e0bb2426f9647ecba32b86622f4c35'
-MANIFEST_SHA = 'fa0d64e6517314783ff82f5d2e381ca599dfed9158ea8cedf4e8bd72091b3859'
+LOCK_SHA = '5e2eaee17665a07d6d46c7d2309894c95ad0c6f6389f2ae787eaebf9f49ebffd'
+MANIFEST_SHA = 'cefcdca6288a99068ad27621590dc4a8ea36f3fc5a9c957bf707bdd2b4006f84'
 OWNED = [('Sentret', 161), ('Furret', 162), ('Natu', 177), ('Xatu', 178), ('Yanma', 193), ('Wobbuffet', 202), ('Bellossom', 182)]
 OPPONENT_ONLY = [('Sunkern', 191), ('Sunflora', 192), ('Chinchou', 170), ('Lanturn', 171), ('Sudowoodo', 185)]
 SPECIES = OWNED + OPPONENT_ONLY
@@ -427,7 +427,7 @@ def build(root, reference, dependency):
     songs = source.text('include/constants/songs.h')
     song_table = re.findall(r'^\s*song (\w+),\s*(\d+),\s*(\d+)', source.text('sound/song_table.inc'), re.M)
     cues = []
-    for symbol in ('MUS_SEVII_67', 'MUS_SEVII_DUNGEON'):
+    for symbol in ('MUS_SEVII_67', 'MUS_SEVII_DUNGEON', 'MUS_SEVII_ROUTE'):
         song_id = int(re.search(r'^#define ' + symbol + r'\s+(\d+)', songs, re.M)[1])
         address, player, second = struct.unpack_from('<IHH', pack, 0x084A32CC + song_id * 8 - 0x08489968)
         need(song_table[song_id] == (symbol.lower(), str(player), str(second)) and player == 0, 'Cave music table binding differs')

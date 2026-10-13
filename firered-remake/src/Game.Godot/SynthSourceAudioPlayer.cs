@@ -290,8 +290,8 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(sixIslandBytes.Length!=SixIslandPresentationAssets.SynthBytes||Convert.ToHexStringLower(SHA256.HashData(sixIslandBytes))!=SixIslandPresentationAssets.SynthSha256)
                 throw new InvalidDataException("Six Island synth identity differs.");
             var extension=JsonSerializer.Deserialize<SixIslandSynthManifest>(sixIslandBytes,options)??throw new InvalidDataException("Six Island synth missing.");
-            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=15||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_67","MUS_SEVII_DUNGEON","SE_BANG","CRY_SENTRET_NORMAL","CRY_FURRET_NORMAL","CRY_NATU_NORMAL","CRY_XATU_NORMAL","CRY_YANMA_NORMAL","CRY_WOBBUFFET_NORMAL","CRY_BELLOSSOM_NORMAL","CRY_SUNKERN_NORMAL","CRY_SUNFLORA_NORMAL","CRY_CHINCHOU_NORMAL","CRY_LANTURN_NORMAL","CRY_SUDOWOODO_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=SixIslandPresentationAssets.SynthCueCount||
+                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_67","MUS_SEVII_DUNGEON","MUS_SEVII_ROUTE","SE_BANG","CRY_SENTRET_NORMAL","CRY_FURRET_NORMAL","CRY_NATU_NORMAL","CRY_XATU_NORMAL","CRY_YANMA_NORMAL","CRY_WOBBUFFET_NORMAL","CRY_BELLOSSOM_NORMAL","CRY_SUNKERN_NORMAL","CRY_SUNFLORA_NORMAL","CRY_CHINCHOU_NORMAL","CRY_LANTURN_NORMAL","CRY_SUDOWOODO_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
                 throw new InvalidDataException("Six Island source cue scope differs.");
             if(extension.InheritedCues is not {Length:2}||!extension.InheritedCues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"SE_FALL","SE_M_STRENGTH"})||
                 extension.InheritedCues.Any(c=>cues.SingleOrDefault(old=>old.Id==c.Id)!=c))
