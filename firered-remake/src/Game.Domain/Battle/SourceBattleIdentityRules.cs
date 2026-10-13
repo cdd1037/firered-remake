@@ -26,11 +26,11 @@ public static class SourceBattleIdentityRules
             return "source_frame_ko_policy";
         if (frame.SourceMechanicsRulesVersion is { } mechanicsVersion &&
             (mechanicsVersion != BattleRulesProfile.CanonicalSourceSinglesVersion || frame.Layout != SourceBattleLayout.Singles) &&
-            (mechanicsVersion != SourceBattleKernel.Version || frame.Layout != SourceBattleLayout.PresetDoubles))
+            mechanicsVersion != SourceBattleKernel.Version)
             return "source_frame_mechanics_profile_layout";
         if (frame.SourceCampaignRulesVersion is { } campaign &&
             (!OwnedBattlePokemonCatalog.IsKnownProfile(campaign) ||
-             !((frame.Layout == SourceBattleLayout.Singles && frame.SourceMechanicsRulesVersion == BattleRulesProfile.CanonicalSourceSinglesVersion) ||
+             !((frame.Layout == SourceBattleLayout.Singles && frame.SourceMechanicsRulesVersion is BattleRulesProfile.CanonicalSourceSinglesVersion or SourceBattleKernel.Version) ||
                (campaign is CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile && frame.Layout == SourceBattleLayout.PresetDoubles &&
                 frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version && frame.BattleKind == WildBattleCalledBattleKind.Trainer))))
             return "source_frame_campaign_profile";
@@ -231,35 +231,39 @@ public static class SourceBattleIdentityRules
                 !Enum.IsDefined(end.Stage) || end.RulesVersion != WildBattleRules.SourceEndTurnRulesVersion ||
                 end.MinimumRevision < 0 || end.MinimumRevision > frame.Revision || end.MinimumEventSequence < 0 ||
                 end.MinimumEventSequence > frame.EventSequence))) return "source_frame_singles_continuation";
-        if (frame.FourTurn is { } four && (frame.Layout != SourceBattleLayout.PresetDoubles ||
+        if (frame.FourTurn is { } four && (frame.WildTurn is not null ||
             frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version || four.Version != SourceFourActionTurns.Version ||
-            four.Turn != frame.Turn || !Enum.IsDefined(four.Phase) || frame.Queue.Length != 4 || four.Defeats.IsDefault ||
+            four.Turn != frame.Turn || !Enum.IsDefined(four.Phase) || frame.Queue.Length != frame.BattlerCount || four.Defeats.IsDefault ||
             frame.Queue.Any(a => a.Kind == SourceActionKind.Move && (a.OriginalChosenMove is null || string.IsNullOrWhiteSpace(a.OriginalChosenMove.Value.Value))) ||
             four.Defeats.Any(d => d is null || !frame.IsCurrent(d.Occupant) || frame.Get(d.Occupant.Slot).Body!.Pokemon.CurrentHp != 0 ||
                 d.FaintEventSequence < 0 || d.FaintEventSequence > frame.EventSequence ||
                 d.RequiresExperience != (d.Occupant.Member.Side == BattleSide.Opponent)) ||
             four.Defeats.Select(d => d.Occupant).Distinct().Count() != four.Defeats.Length ||
-            four.EndTurnOrder.IsDefault || four.EndTurnOrder.Length != 0 && !ValidOrder(four.EndTurnOrder, 4) ||
+            four.EndTurnOrder.IsDefault || four.EndTurnOrder.Length != 0 && !ValidOrder(four.EndTurnOrder, frame.BattlerCount) ||
             (four.EndTurn is null) != four.EndTurnOrder.IsEmpty ||
             four.Phase == SourceFourActionPhase.EndTurn && four.EndTurn is not null ||
-            four.Phase is SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.ReplacementsPending && four.EndTurn is null ||
-            four.EndTurn is { } residual && (!ValidOrder(residual.Order, 4) || !residual.Order.SequenceEqual(four.EndTurnOrder) ||
-                residual.Turn != frame.Turn || residual.NextBattler is < 0 or > 4 || !Enum.IsDefined(residual.Stage) ||
+            (four.Phase == SourceFourActionPhase.EndTurnResume || four.Phase == SourceFourActionPhase.ReplacementsPending && frame.KoReplacementTiming != KoReplacementTiming.SourceImmediate) && four.EndTurn is null ||
+            four.EndTurn is { } residual && (!ValidOrder(residual.Order, frame.BattlerCount) || !residual.Order.SequenceEqual(four.EndTurnOrder) ||
+                residual.Turn != frame.Turn || (residual.NextBattler < 0 || residual.NextBattler > frame.BattlerCount) || !Enum.IsDefined(residual.Stage) ||
                 residual.RulesVersion != WildBattleRules.SourceEndTurnRulesVersion || residual.MinimumRevision < 0 ||
                 residual.MinimumRevision > frame.Revision || residual.MinimumEventSequence < 0 || residual.MinimumEventSequence > frame.EventSequence ||
-                frame.NextAction != 4 || four.Phase is not (SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.RewardsPending or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.BattleEnded) ||
-                residual.Stage == WildBattleSourceEndTurnStage.Complete && (residual.NextBattler != 4 || four.Phase != SourceFourActionPhase.BattleEnded) ||
+                frame.NextAction != frame.BattlerCount || four.Phase is not (SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.RewardsPending or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.BattleEnded) ||
+                residual.Stage == WildBattleSourceEndTurnStage.Complete && (residual.NextBattler != frame.BattlerCount || four.Phase is not (SourceFourActionPhase.BattleEnded or SourceFourActionPhase.RewardsPending)) ||
+                residual.Stage == WildBattleSourceEndTurnStage.Complete && four.Phase == SourceFourActionPhase.RewardsPending &&
+                    (frame.KoReplacementTiming != KoReplacementTiming.SourceImmediate || four.OutcomeAfterRewards is null) ||
                 residual.Stage is not (WildBattleSourceEndTurnStage.FutureAttacks or WildBattleSourceEndTurnStage.PerishSong or WildBattleSourceEndTurnStage.Complete) ||
                 four.Phase == SourceFourActionPhase.BattleEnded && frame.Outcome == WildBattleOutcome.Ongoing) ||
+            four.OutcomeAfterEndTurn is { } terminal && (frame.KoReplacementTiming != KoReplacementTiming.SourceImmediate ||
+                terminal is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) || frame.Outcome != WildBattleOutcome.Ongoing) ||
             four.OutcomeAfterRewards is { } pendingOutcome && (pendingOutcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) ||
                 !four.Defeats.Any(d => d.RequiresExperience)) ||
-            four.Phase == SourceFourActionPhase.Actions && frame.NextAction >= 4 ||
-            four.Phase is SourceFourActionPhase.EndTurn or SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.ReplacementsPending && frame.NextAction != 4 ||
+            four.Phase == SourceFourActionPhase.Actions && frame.NextAction >= frame.BattlerCount ||
+            four.Phase is SourceFourActionPhase.EndTurn or SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.ReplacementsPending && frame.NextAction != frame.BattlerCount ||
             four.Phase == SourceFourActionPhase.RewardsPending && !four.Defeats.Any(d => d.RequiresExperience) ||
             four.Phase == SourceFourActionPhase.ActionSwitchPending && (frame.NextAction < 1 ||
                 frame.PendingSwitches is not [{ Kind: WildBattleCalledSwitchKind.BatonPass, Invocation: { } }])))
             return "source_frame_four_action_continuation";
-        if (frame.Layout == SourceBattleLayout.PresetDoubles && frame.FourTurn is { } actionCursor &&
+        if (frame.FourTurn is { } actionCursor &&
             frame.PendingSwitches.Any(p => p.Kind == WildBattleCalledSwitchKind.BatonPass))
         {
             int index = actionCursor.Phase == SourceFourActionPhase.ActionSwitchPending ? frame.NextAction - 1 : frame.NextAction;

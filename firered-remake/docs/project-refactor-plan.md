@@ -2,9 +2,9 @@
 
 **Status, 2026-10-13: the project-level refactor is incomplete.** Commit `8940b9b` completed the four bounded changes listed below, source synchronization and the stage10 backup. Those results do not establish that regional composition, Application wiring or battle execution have been consolidated. Earlier wording describing the overall refactor as completed was too broad.
 
-The original first-clear instruction included project cleanup and a pause. Development resumed on the user's explicit 2026-10-12 23:42 UTC instruction. The latest 2026-10-13 direction explicitly requests deeper refactoring afterward, prioritizes project quality over historical baggage, and permits invalidating old saves; useful milestone saves may be converted manually. Finish the in-progress Five Island / Celio and Ruby/Sapphire delivery, synchronize its source and complete Drive package, then execute the remaining refactor below. This correction does not stop the current product work or reinstate the old pause.
+The original first-clear instruction included project cleanup and a pause. Development resumed on the user's explicit 2026-10-12 23:42 UTC instruction. The latest 2026-10-13 direction explicitly requests deeper refactoring afterward, prioritizes project quality over historical baggage, and permits invalidating old saves; useful milestone saves may be converted manually. The Five Island / Celio and Ruby/Sapphire delivery and full Drive package are complete at `687d0c9`; the remaining refactor below is now executing. This correction does not stop the current product work or reinstate the old pause.
 
-This plan is based on static inspection of `9fba4616` plus the in-progress Five Island integration. It changes no product code and supplies no new test result. The four historical changes remain accepted within their original scope; all remaining work below is open.
+The original inventory was based on `9fba4616`. Dated execution updates below identify the later implemented slices and their actual checks. The four historical changes remain accepted within their original scope; open work is not counted as complete.
 
 ## First-story exit reached
 
@@ -131,3 +131,11 @@ No completion claim is made for the remaining refactor in this revision.
 ## 2026-10-13 current composition slice
 
 After the Ruby/Sapphire full backup, normal startup resolves one current game, deletes24 regional startup selectors and two competing selection chains, and uses one cached Application binding. New Game and Restore share catalog validation; Restore has no map-entry or RNG side effect. Current saves use an explicit new rules ID; original Celio files are rejected by normal loading and can be copied through the narrow offline converter. The owner normal Godot/Tooling builds and five real CLI conversion cases passed; independent57 focused checks and headless current startup passed. See [current composition](current-game-composition.md). This closes neither R1's remaining diagnostic/predecessor retirement nor R2/R3/R4.
+
+## 2026-10-13 trainer wiring and lifecycle prerequisite
+
+R2 ordinary trainer selection now has one private typed binding index for definitions, source scripts and authenticated Domain entry. It replaces the repeated region chains and shares Five/Six occurrence and history checks while retaining actual callback and no-intro policies. The candidate and original normal product cohorts have identical complete results across 357 trainer definitions/scripts, 30 sampled entries, 482 public commands and three strict saves. See [R2 acceptance](../evidence/r2-trainer-wiring/REPORT.md). Historical pre-Fuchsia branches still need retirement; this does not claim all Application wiring has disappeared.
+
+R3 now supports two actual occupied positions in the existing four-position identity container and one action queue/cursor. It preserves immediate singles KO replacement and approved end-turn doubles KO replacement. The focused candidate passed 12 groups/607 checks; normal and forced-Struggle singles match prior current state/RNG, and four selected doubles flows match complete state, ordered events and RNG byte-for-byte. See [the core contract](r3-two-position-lifecycle-core.md). This is a prerequisite: current Application wild/trainer callers still use their old owners. Typed encounter policies and Application cutover are in progress; the legacy executors have not yet been retired.
+
+After combining R2 and R3 with the accepted current composition, the normal Godot target built with zero warnings/errors and the focused current composition/strict-checkpoint checks passed. Candidate proofs were reused; no historical campaign or backup runtime replay was added. See [combined results](../evidence/refactor-combination-20261013/result.json).

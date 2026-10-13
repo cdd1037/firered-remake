@@ -42,12 +42,6 @@ public sealed partial class CampaignSession
     private string PokemonLeagueTrainerActor(TrainerId id)=>_content.MapDefinition(PokemonLeagueTrainerMap(id)).Actors.Single(a=>a.SourceLocalId==1).LocalId;
     private string PokemonLeagueTrainerActorScript(TrainerId id)=>IsPokemonLeagueChampion(id)?"0x0":
         "PokemonLeague_"+PokemonLeagueNames[PokemonLeagueRoomIndex(PokemonLeagueTrainerMap(id))]+"sRoom_EventScript_"+PokemonLeagueNames[PokemonLeagueRoomIndex(PokemonLeagueTrainerMap(id))];
-    private ForestTrainerBattleDefinition PokemonLeagueTrainerScript(TrainerId id,string? script)
-    {
-        var b=_content.PokemonLeagueTrainerParties!.Battles[id];
-        if(b.Mode!=3||b.BattleTypeFlags!=8||script is not null&&script!=b.ScriptEntry)throw new InvalidDataException("pokemon_league_trainer_script");
-        return new(b.Trainer,b.Mode,b.BattleTypeFlags,b.ScriptEntry,b.IntroText,b.DefeatText,b.PostBattleText,b.EntryScript,b.Callback,b.Source);
-    }
     private bool PokemonLeagueHistoryOriginMatches(CampaignForestTrainerHistory history)=>history.PokemonLeagueChallenge is >0&&
         _content.PokemonLeagueTrainerParties?.Battles.TryGetValue(new(history.TrainerId),out var b)==true&&
         history.SourceScriptEntry==b.ScriptEntry&&history.SourceScriptLine==b.Source.StartLine+1;

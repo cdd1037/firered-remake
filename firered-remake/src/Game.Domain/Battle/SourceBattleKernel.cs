@@ -42,13 +42,13 @@ public static class SourceBattleKernel
             !frame.Slots.IsDefault && frame.Slots.Any(c => c?.Body is { } body && !PokemonShape(body.Pokemon)))
             return "source_kernel_nested_pokemon_shape";
         if (SourceBattleIdentityRules.Validate(frame) is { } shape) return shape;
-        if (frame.Layout == SourceBattleLayout.PresetDoubles && SourceMechanicsCatalog.For(catalog) is null)
+        if (frame.SourceMechanicsRulesVersion == Version && SourceMechanicsCatalog.For(catalog) is null)
             return "source_kernel_authenticated_catalog_required";
         foreach (var party in frame.Parties)
             foreach (var member in party.Members)
                 if (SourcePokemonValidator.ValidateForBattle(catalog, member.Pokemon) is not null)
                     return "source_kernel_party_pokemon";
-        if (frame.Layout == SourceBattleLayout.PresetDoubles && SourceItemTransferRules.Validate(catalog, frame) is { } itemError) return itemError;
+        if (frame.SourceMechanicsRulesVersion == Version && SourceItemTransferRules.Validate(catalog, frame) is { } itemError) return itemError;
         if (frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion) return "source_kernel_profile";
         if (action.Revision != frame.Revision || !frame.IsCurrent(action.Actor)) return "source_kernel_stale_action";
         if (!frame.CanAct(action.Actor.Slot) || action.Target.Value >= frame.BattlerCount || frame.Get(action.Target).Body is null || frame.Outcome != WildBattleOutcome.Ongoing ||
@@ -84,7 +84,7 @@ public static class SourceBattleKernel
         if (move.Effect == "EFFECT_SECRET_POWER" && frame.Field.Terrain is null) return "source_kernel_secret_power_terrain";
         if (move.Effect == "EFFECT_TEETER_DANCE" && frame.Slots.Take(frame.BattlerCount).Any(c => c.Body is null)) return "source_kernel_teeter_dance_body_required";
         if ((SourceRecipeContext.HasProtectionRecipe(move.Effect) || move.Effect is "EFFECT_SNATCH" or "EFFECT_MAGIC_COAT") &&
-            (frame.Layout != SourceBattleLayout.PresetDoubles || frame.Queue.Length != frame.BattlerCount))
+            (frame.SourceMechanicsRulesVersion != Version || frame.Queue.Length != frame.BattlerCount))
             return "source_kernel_protection_order_required";
         if (move.Effect == "EFFECT_HELPING_HAND" && frame.Layout == SourceBattleLayout.PresetDoubles &&
             frame.Get(action.Actor.Slot.Partner).Body is null) return "source_kernel_helping_hand_empty_partner_not_migrated";
@@ -124,10 +124,10 @@ public static class SourceBattleKernel
                 6 + body.SpecialAttackStageDelta, 6 + body.SpecialDefenseStageDelta }.Any(stage => stage is < 0 or > 12))
                 return "source_kernel_stat_stage";
             if (!SourceSubstituteRules.Supported(SourcePreparedMoveRules.WithoutPrepared(body)) || !SourceFourEntryAbilities.OverlaySupported(catalog, body) || body.ChargeTurnsRemaining is < 0 or > 2 || body.SourcePartyStatusOverride is not null &&
-                !(frame.Layout == SourceBattleLayout.PresetDoubles && frame.IsSourceAbsent(cell.Slot) && body.SourcePartyStatusOverride == 0) ||
+                !(frame.SourceMechanicsRulesVersion == Version && frame.IsSourceAbsent(cell.Slot) && body.SourcePartyStatusOverride == 0) ||
                 cell.Registers.Turn?.Lock is { Kind: not (WildBattleCalledLockKind.Recharge or WildBattleCalledLockKind.Rollout or WildBattleCalledLockKind.Charge or WildBattleCalledLockKind.Rampage or WildBattleCalledLockKind.Bide or WildBattleCalledLockKind.Uproar) } ||
                 body.RolloutTurnsRemaining != 0 || body.RampageTurnsRemaining != 0 || body.DigMoveSlot is not null ||
-                (body.HeldItem != "ITEM_NONE" && !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFrameBerryItems.SupportsHeldItem(body.HeldItem, catalog))))
+                (body.HeldItem != "ITEM_NONE" && !(frame.SourceMechanicsRulesVersion == Version && SourceFrameBerryItems.SupportsHeldItem(body.HeldItem, catalog))))
                 return "source_kernel_volatile_not_migrated";
             if ((body.Rage || body.FuryCutterCounter > 0) && body.Pokemon.CurrentHp == 0 || body.FuryCutterCounter is < 0 or > 5 || body.FirstTurnCounter is < 0 or > 2 || body.ConfusionTurnsRemaining is < 0 or > 5 || body.TruantLoafing && body.Pokemon.CurrentHp == 0 ||
                 cell.Registers.Turn is { SureHitTurnsRemaining: > 0 } && body.Pokemon.CurrentHp == 0 ||
@@ -137,11 +137,11 @@ public static class SourceBattleKernel
             if (SourceResidualStatusRules.Validate(frame, cell) is { } residualError) return residualError;
             if (SourceVolatileTargetRules.Validate(catalog, frame, cell) is { } volatileError) return volatileError;
             if (SourceProtectionRules.Validate(body) is { } protectionError) return protectionError;
-            if (frame.Layout == SourceBattleLayout.Singles && (body.Protected || body.Enduring))
+            if (frame.SourceMechanicsRulesVersion != Version && (body.Protected || body.Enduring))
                 return "source_kernel_volatile_not_migrated";
             if (SourceTurnMoveRules.Validate(body, catalog) is { } turnMoveError) return turnMoveError;
             string ability = WildBattleEffective.Ability(body);
-            if (frame.Layout == SourceBattleLayout.PresetDoubles &&
+            if (frame.SourceMechanicsRulesVersion == Version &&
                 (frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(WildBattleTransformationRules.PersistentPokemon(body).AbilityId) ||
                  frame.EntryAbilities is { } entry && entry.AppliedEntries[cell.Slot.Value] != cell.Occupant))
                 return "source_kernel_ability_not_migrated";

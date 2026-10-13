@@ -17,7 +17,8 @@ internal sealed partial class FrameRecipeContext
     {
         BeginScriptTarget(action.Target);
         ExecutePursuitIntercept(catalog, action.Actor.Slot, action.Target, action.ChosenSlot, move,
-            $"source-battle.slot-{action.Actor.Slot.Value}");
+            Frame.Layout == SourceBattleLayout.Singles
+                ? $"wild-battle.{(action.Actor.Slot.Side == BattleSide.Player ? "player" : "opponent")}" : $"source-battle.slot-{action.Actor.Slot.Value}");
         FinishAction();
     }
     internal override void PursuitRecordDamage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, int lost)

@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
     private bool IsPewterTrainer(TrainerId id)=>_content.PewterTrainers?.Trainers.ContainsKey(id)==true;
     private bool IsRoute3Trainer(TrainerId id)=>_content.Route3Trainers?.Trainers.ContainsKey(id)==true;
     private bool IsRoute22Trainer(TrainerId id)=>_content.Route22Trainers?.Trainers.ContainsKey(id)==true;
-    private TrainerDefinition OrdinaryTrainer(TrainerId id)=>IsFiveIslandTrainer(id)?_content.FiveIslandTrainers!.Trainers[id]:IsSixIslandTrainer(id)?_content.SixIslandTrainers!.Trainers[id]:IsFourIslandTrainer(id)?_content.FourIslandTrainers!.Trainers[id]:IsSeviiRubyTrainer(id)?_content.SeviiRubyTrainers!.Trainers[id]:IsPokemonLeagueTrainer(id)?_content.PokemonLeagueTrainerParties!.Trainers[id]:IsVictoryRoadTrainer(id)?_content.VictoryRoadTrainerParties!.Trainers[id]:IsLeagueRivalTrainer(id)?_content.LeagueRivalTrainerParties!.Trainers[id]:IsViridianGymTrainer(id)?_content.ViridianGymTrainerParties!.Trainers[id]:IsFirstSeviiTrainer(id)?_content.FirstSeviiTrainerParties!.Trainers[id]:IsCinnabarTrainer(id)?_content.CinnabarTrainerParties!.Trainers[id]:IsSaffronGymTrainer(id)?_content.SaffronGymTrainerParties!.Trainers[id]:IsSilphTrainer(id)?_content.SilphTrainerParties!.Trainers[id]:IsFuchsiaGymTrainer(id)?_content.FuchsiaGymTrainerParties!.Trainers[id]:IsFuchsiaRouteTrainer(id)?_content.FuchsiaRouteTrainers!.Trainers[id]:IsPokemonTowerTrainer(id)?_content.PokemonTowerTrainers!.Trainers[id]:IsRocketHideoutTrainer(id)?_content.RocketHideoutTrainers!.Trainers[id]:IsCeladonGymTrainer(id)?_content.CeladonGymTrainers!.Trainers[id]:IsCeladonApproachTrainer(id)?_content.CeladonApproachTrainers!.Trainers[id]:IsRockTunnelTrainer(id)?_content.RockTunnelTrainers!.Trainers[id]:IsRoute11Trainer(id)?_content.Route11Trainers!.Trainers[id]:IsVermilionGymTrainer(id)?_content.VermilionGymTrainers!.Trainers[id]:IsSsAnneTrainer(id)?_content.SsAnneTrainers!.Trainers[id]:IsVermilionTrainer(id)?_content.VermilionTrainers!.Trainers[id]:IsBillTrainer(id)?_content.BillTrainers!.Trainers[id]:IsCeruleanTrainer(id)?_content.CeruleanTrainers!.Trainers[id]:IsMtMoonTrainer(id)?_content.MtMoonTrainers!.Trainers[id]:IsRoute3Trainer(id)?_content.Route3Trainers!.Trainers[id]:IsRoute22Trainer(id)?_content.Route22Trainers!.Trainers[id]:IsPewterTrainer(id)?_content.PewterTrainers!.Trainers[id]:ForestTrainers.Trainers[id];
+    private TrainerDefinition OrdinaryTrainer(TrainerId id) => OrdinaryBinding(id).Definition;
     // PlayTrainerEncounterMusic masks F_TRAINER_FEMALE; the remaining source music
     // category selects one of three songs, independent of the sprite's gender.
     private string OrdinaryEncounterMusic(TrainerId id)=>(OrdinaryTrainer(id).EncounterMusicGender & 0x7f) switch
@@ -47,67 +47,11 @@ public sealed partial class CampaignSession
         0 or 4 or 5 or 8 or 10 or 11 or 12 or 13=>"MUS_ENCOUNTER_BOY",
         _=>"MUS_ENCOUNTER_ROCKET"
     };
-    private ForestTrainerBattleDefinition OrdinaryTrainerScript(TrainerId id)=>OrdinaryTrainerScript(id,null);
-    private ForestTrainerBattleDefinition OrdinaryTrainerScript(TrainerId id,string? script,int? sourceLine=null)
-    {
-        if(IsFiveIslandTrainer(id))return FiveIslandTrainerScript(id,script);
-        if(IsSixIslandTrainer(id))return SixIslandTrainerScript(id,script);
-        if(IsFourIslandTrainer(id))return FourIslandTrainerScript(id,script);
-        if(IsSeviiRubyTrainer(id))return SeviiRubyTrainerScript(id,script);
-        if(IsPokemonLeagueTrainer(id))return PokemonLeagueTrainerScript(id,script);
-        if(IsVictoryRoadTrainer(id))
-        {
-            var c=script is null?_content.VictoryRoadTrainerParties!.BattlesByScript.Values.Single(b=>b.Trainer==id&&b.Mode==0):
-                _content.VictoryRoadTrainerParties!.BattlesByScript.GetValueOrDefault(script)??throw new InvalidDataException("victory_road_trainer_script_missing");
-            if(c.Trainer!=id||c.Mode!=0)throw new InvalidDataException("victory_road_single_script_mismatch");
-            return new(c.Trainer,c.Mode,c.BattleTypeFlags,c.ScriptEntry,c.IntroText,c.DefeatText,c.PostBattleText,c.EntryScript,c.Callback,c.Source);
-        }
-        if(IsLeagueRivalTrainer(id))
-        {
-            var c=_content.LeagueRivalTrainerParties!.Battles[id];
-            if(script is not null&&script!=c.ScriptEntry||c.Mode!=3)throw new InvalidDataException("league_rival_script_mismatch");
-            return new(c.Trainer,c.Mode,c.BattleTypeFlags,c.ScriptEntry,c.IntroText,c.DefeatText,c.PostBattleText,c.EntryScript,c.Callback,c.Source);
-        }
-        if(IsViridianGymTrainer(id))
-        {
-            var c=script is null?_content.ViridianGymTrainerParties!.BattlesByScript.Values.Single(b=>b.Trainer==id):
-                _content.ViridianGymTrainerParties!.BattlesByScript.GetValueOrDefault(script)??throw new InvalidDataException("viridian_gym_trainer_script_missing");
-            if(c.Trainer!=id||c.Mode is not(0 or 1))throw new InvalidDataException("viridian_gym_single_script_mismatch");
-            return new(c.Trainer,c.Mode,c.BattleTypeFlags,c.ScriptEntry,c.IntroText,c.DefeatText,c.PostBattleText,c.EntryScript,c.Callback,c.Source);
-        }
-        if(IsFirstSeviiTrainer(id))
-        {
-            var c=sourceLine is {} line&&script is not null?_content.FirstSeviiTrainerParties!.Battle(script,line):
-                _content.FirstSeviiTrainerParties!.BattlesBySource.Values.Single(b=>b.Trainer==id&&(script is null||b.ScriptEntry==script));
-            if(c.Trainer!=id||c.Mode==4)throw new InvalidDataException("first_sevii_single_script_mismatch");
-            return new(c.Trainer,c.Mode,c.BattleTypeFlags,c.ScriptEntry,c.IntroText,c.DefeatText,c.PostBattleText,c.EntryScript,c.Callback,c.Source);
-        }
-        if(IsCinnabarTrainer(id))
-        {
-            var c=script is null?_content.CinnabarTrainerParties!.BattlesByScript.Values.Single(b=>b.Trainer==id&&b.Mode is 0 or 1 or 2):
-                _content.CinnabarTrainerParties!.BattlesByScript.GetValueOrDefault(script)??throw new InvalidDataException("cinnabar_trainer_script_missing");
-            if(c.Trainer!=id||c.Mode==4)throw new InvalidDataException("cinnabar_single_script_mismatch");
-            return new(c.Trainer,c.Mode,c.BattleTypeFlags,c.ScriptEntry,c.IntroText,c.DefeatText,c.PostBattleText,c.EntryScript,c.Callback,c.Source);
-        }
-        if(IsSaffronGymTrainer(id)||IsSilphTrainer(id)||IsFuchsiaGymTrainer(id)||IsFuchsiaRouteTrainer(id)||IsPokemonTowerTrainer(id)||IsRocketHideoutTrainer(id)||IsCeladonGymTrainer(id)||IsCeladonApproachTrainer(id)||IsRockTunnelTrainer(id)||IsRoute11Trainer(id)||IsVermilionGymTrainer(id)||IsSsAnneTrainer(id)||IsVermilionTrainer(id)||IsBillTrainer(id)||IsCeruleanTrainer(id))
-        {
-            var c=IsSaffronGymTrainer(id)?_content.SaffronGymTrainerParties!.Battles[id]:IsSilphTrainer(id)?_content.SilphTrainerParties!.Battles[id]:IsFuchsiaGymTrainer(id)?_content.FuchsiaGymTrainerParties!.Battles[id]:IsFuchsiaRouteTrainer(id)?_content.FuchsiaRouteTrainers!.Battles.Values.Single(b=>b.Trainer==id):IsPokemonTowerTrainer(id)?_content.PokemonTowerTrainers!.Battles[id]:IsRocketHideoutTrainer(id)?_content.RocketHideoutTrainers!.Battles[id]:IsCeladonGymTrainer(id)?_content.CeladonGymTrainers!.Battles[id]:IsCeladonApproachTrainer(id)?_content.CeladonApproachTrainers!.Battles[id]:IsRockTunnelTrainer(id)?_content.RockTunnelTrainers!.Battles[id]:IsRoute11Trainer(id)?_content.Route11Trainers!.Battles[id]:IsVermilionGymTrainer(id)?_content.VermilionGymTrainers!.Battles[id]:IsSsAnneTrainer(id)?_content.SsAnneTrainers!.Battles[id]:IsVermilionTrainer(id)?_content.VermilionTrainers!.Battles[id]:IsBillTrainer(id)?_content.BillTrainers!.Battles[id]:_content.CeruleanTrainers!.Battles[id];
-            return new(c.Trainer,c.Mode,c.BattleTypeFlags,c.ScriptEntry,c.IntroText,c.DefeatText,c.PostBattleText,c.EntryScript,c.Callback,c.Source);
-        }
-        if(IsMtMoonTrainer(id))return _content.MtMoonTrainers!.Battles[id];
-        if(IsRoute3Trainer(id))return _content.Route3Trainers!.Battles[id];
-        if(IsRoute22Trainer(id))
-        {
-            var r=_content.Route22Trainers!.Battles[id];
-            return new(r.Trainer,r.Mode,r.BattleTypeFlags,r.ScriptEntry,"Route22_Text_EarlyRivalIntro",r.DefeatText,"Route22_Text_EarlyRivalPostBattle",r.EntryScript,r.Callback,r.Source);
-        }
-        if(!IsPewterTrainer(id))return ForestTrainers.Battles[id];
-        var d=_content.PewterTrainers!.Battles[id];
-        return new(d.Trainer,d.Mode,d.BattleTypeFlags,d.ScriptEntry,d.IntroText,d.DefeatText,d.PostBattleText,d.EntryScript,d.Callback,d.Source);
-    }
-    private IEnumerable<ForestTrainerBattleDefinition> OrdinaryTrainerScripts=>ForestTrainers.Battles.Values.Concat(
-        _content.PewterTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.Route22Trainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.Route3Trainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.MtMoonTrainers?.Battles.Values??[]).Concat(_content.CeruleanTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.BillTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.VermilionTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.SsAnneTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.VermilionGymTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.Route11Trainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.RockTunnelTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.CeladonApproachTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.CeladonGymTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.RocketHideoutTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.PokemonTowerTrainers?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.FuchsiaRouteEnabled?FuchsiaRouteTrainerPartyFactory.SupportedTrainers.Select(OrdinaryTrainerScript):[]).Concat(_content.FuchsiaGymTrainerParties?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.SilphTrainerParties?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.SaffronGymTrainerParties?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.CinnabarTrainerParties?.Trainers.Values.Where(t=>!t.DoubleBattle).Select(t=>OrdinaryTrainerScript(t.Id))??[]).Concat(_content.FirstSeviiEnabled?FirstSeviiTrainerPartyFactory.SupportedTrainers.Select(OrdinaryTrainerScript):[]).Concat(_content.ViridianGymEnabled?ViridianGymTrainerPartyFactory.SupportedTrainers.Select(OrdinaryTrainerScript):[]).Concat(_content.LeagueRivalTrainerParties?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.VictoryRoadEnabled?VictoryRoadTrainerPartyFactory.SupportedTrainers.Select(OrdinaryTrainerScript):[]).Concat(_content.PokemonLeagueTrainerParties?.Battles.Keys.Select(OrdinaryTrainerScript)??[]).Concat(_content.SeviiRubyEnabled?SeviiRubyTrainerPartyFactory.SupportedTrainers.Select(OrdinaryTrainerScript):[]).Concat(_content.FourIslandEnabled?FourIslandTrainerPartyFactory.SupportedTrainers.Select(OrdinaryTrainerScript):[]).Concat(_content.FiveIslandEnabled?FiveIslandTrainerPartyFactory.SupportedTrainers.Select(OrdinaryTrainerScript):[]).Concat(_content.SixIslandEnabled?SixIslandTrainerPartyFactory.SupportedTrainers.Select(OrdinaryTrainerScript):[]).DistinctBy(x=>x.Trainer);
-    private IEnumerable<TrainerId> OrdinaryTrainerIds=>ForestTrainers.Trainers.Keys.Concat(_content.PewterTrainers?.Trainers.Keys??[]).Concat(_content.Route22Trainers?.Trainers.Keys??[]).Concat(_content.Route3Trainers?.Trainers.Keys??[]).Concat(_content.MtMoonTrainers?.Trainers.Keys??[]).Concat(_content.CeruleanTrainers?.Trainers.Keys??[]).Concat(_content.BillTrainers?.Trainers.Keys??[]).Concat(_content.VermilionTrainers?.Trainers.Keys??[]).Concat(_content.SsAnneTrainers?.Trainers.Keys??[]).Concat(_content.VermilionGymTrainers?.Trainers.Keys??[]).Concat(_content.Route11Trainers?.Trainers.Keys??[]).Concat(_content.RockTunnelTrainers?.Trainers.Keys??[]).Concat(_content.CeladonApproachTrainers?.Trainers.Keys??[]).Concat(_content.CeladonGymTrainers?.Trainers.Keys??[]).Concat(_content.RocketHideoutTrainers?.Trainers.Keys??[]).Concat(_content.PokemonTowerTrainers?.Trainers.Keys??[]).Concat(_content.FuchsiaRouteEnabled?FuchsiaRouteTrainerPartyFactory.SupportedTrainers:[]).Concat(_content.FuchsiaGymTrainerParties?.Trainers.Keys??[]).Concat(_content.SilphTrainerParties?.Trainers.Keys??[]).Concat(_content.SaffronGymTrainerParties?.Trainers.Keys??[]).Concat(_content.CinnabarTrainerParties?.Trainers.Values.Where(t=>!t.DoubleBattle).Select(t=>t.Id)??[]).Concat(_content.FirstSeviiEnabled?FirstSeviiTrainerPartyFactory.SupportedTrainers:[]).Concat(_content.ViridianGymEnabled?ViridianGymTrainerPartyFactory.SupportedTrainers:[]).Concat(_content.LeagueRivalTrainerParties?.Trainers.Keys??[]).Concat(_content.VictoryRoadEnabled?VictoryRoadTrainerPartyFactory.SupportedTrainers:[]).Concat(_content.PokemonLeagueTrainerParties?.Trainers.Keys??[]).Concat(_content.SeviiRubyEnabled?SeviiRubyTrainerPartyFactory.SupportedTrainers:[]).Concat(_content.FourIslandEnabled?FourIslandTrainerPartyFactory.SupportedTrainers:[]).Concat(_content.FiveIslandEnabled?FiveIslandTrainerPartyFactory.SupportedTrainers:[]).Concat(_content.SixIslandEnabled?SixIslandTrainerPartyFactory.SupportedTrainers:[]).Distinct();
+    private ForestTrainerBattleDefinition OrdinaryTrainerScript(TrainerId id) => OrdinaryTrainerScript(id, null);
+    private ForestTrainerBattleDefinition OrdinaryTrainerScript(TrainerId id, string? script, int? sourceLine = null) =>
+        BoundTrainerScript(OrdinaryBinding(id), script, sourceLine);
+    private IEnumerable<ForestTrainerBattleDefinition> OrdinaryTrainerScripts => OrdinaryTrainerIds.Select(OrdinaryTrainerScript);
+    private IEnumerable<TrainerId> OrdinaryTrainerIds => OrdinaryTrainerBindings.Keys;
     private string OrdinaryTrainerClass(TrainerId id)=>OrdinaryTrainer(id).TrainerClass switch
     {
         "TRAINER_CLASS_ELITE_FOUR"=>"ELITE FOUR","TRAINER_CLASS_CHAMPION"=>"CHAMPION",

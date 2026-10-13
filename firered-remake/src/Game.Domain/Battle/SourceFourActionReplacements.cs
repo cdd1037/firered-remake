@@ -6,8 +6,7 @@ namespace Game.Domain.Battle;
 
 public static partial class SourceFourActionTurns
 {
-    // The approved policy moves only KO entry to this boundary. This never implements a
-    // voluntary/Baton Pass/Roar action or grants their timings to a KO request.
+    // KO policy chooses the boundary; both layouts bind actual reserves through this owner.
     internal static SourceBattleFrame PrepareReplacements(SourceBattleFrame frame)
     {
         var pending = ImmutableArray.CreateBuilder<SourcePendingSwitch>();
@@ -15,7 +14,9 @@ public static partial class SourceFourActionTurns
         foreach (var side in new[] { BattleSide.Player, BattleSide.Opponent })
         {
             var legal = SourceBattleIdentityRules.LegalReserveIndices(frame, side);
-            var vacancies = frame.Slots.Where(c => c.Slot.Side == side && frame.IsDeferredKoVacant(c.Slot)).ToArray();
+            var vacancies = frame.Slots.Take(frame.BattlerCount).Where(c => c.Slot.Side == side &&
+                (frame.KoReplacementTiming == KoReplacementTiming.EndOfTurn ? frame.IsDeferredKoVacant(c.Slot)
+                    : !frame.IsSourceAbsent(c.Slot) && c.Body!.Pokemon.CurrentHp == 0)).ToArray();
             for (int i = 0; i < vacancies.Length; i++)
             {
                 var cell = vacancies[i];
@@ -52,34 +53,41 @@ public static partial class SourceFourActionTurns
             var reserved = SourceBattleIdentityRules.Reserve(prepared, prepared.Revision, reservation);
             if (!reserved.Succeeded) return Fail(frame, reserved.Fault!);
             var bound = SourceBattleIdentityRules.BindReservedEntry(reserved.State, reserved.State.Revision, reservation,
-                SourceEntryBoundary.EndOfTurnReplacement, body, new() { Damage = previous.Registers.Damage });
+                cursor.EndTurn is null ? SourceEntryBoundary.Action : SourceEntryBoundary.EndOfTurnReplacement,
+                body, new() { Damage = previous.Registers.Damage });
             if (!bound.Succeeded) return Fail(frame, bound.Fault!);
             var next = PrepareReplacements(bound.State);
-            if (next.PendingSwitches.IsEmpty) next = next with { FourTurn = next.FourTurn! with { Phase = SourceFourActionPhase.EndTurnResume } };
+            if (next.PendingSwitches.IsEmpty) next = next with { FourTurn = next.FourTurn! with {
+                Phase = cursor.EndTurn is null ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.EndTurnResume } };
             var switched = SourceBattleEventHooks.Publish(next, (n, t) => new SourceCalledPartySwitchedEvent(n, t, slot,
                 previous.Member!.Value.Index, incoming.Index, WildBattleCalledSwitchKind.FaintedReplacement) { Replacement = new(body, bound.State.Get(slot).Registers) });
             var entry = SourceFourEntryAbilities.OnReplacement(catalog, switched.State, slot);
             if (!entry.Succeeded) return Fail(frame, entry.Fault!);
             var events = ImmutableArray.CreateBuilder<SourceBattleEvent>(); events.Add(switched.Event); events.AddRange(entry.Events);
             next = entry.State;
-            if (HasPendingRewards(next) || next.Outcome != WildBattleOutcome.Ongoing)
+            if (next.FourTurn!.OutcomeAfterEndTurn is not null)
+                next = next with { PendingSwitches = [], FourTurn = next.FourTurn with {
+                    Phase = cursor.EndTurn is null ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.EndTurnResume } };
+            else if (HasPendingRewards(next) || next.Outcome != WildBattleOutcome.Ongoing)
                 next = next with { PendingSwitches = [], FourTurn = next.FourTurn! with { Phase = HasPendingRewards(next)
                     ? SourceFourActionPhase.RewardsPending : SourceFourActionPhase.BattleEnded } };
             else
             {
                 next = PrepareReplacements(next);
                 next = next with { FourTurn = next.FourTurn! with { Phase = next.PendingSwitches.IsEmpty
-                    ? SourceFourActionPhase.EndTurnResume : SourceFourActionPhase.ReplacementsPending } };
+                    ? cursor.EndTurn is null ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.EndTurnResume
+                    : SourceFourActionPhase.ReplacementsPending } };
                 // A newly entered occupant may faint to the hazard. Its next choice belongs to
                 // the same saved residual cursor, without replaying weather/status/timer work.
-                if (next.IsDeferredKoVacant(slot))
+                if (next.IsDeferredKoVacant(slot) || next.Get(slot).Body!.Pokemon.CurrentHp == 0)
                     foreach (var choice in next.PendingSwitches.Where(p => p.Slot == slot))
                     {
                         var required = SourceBattleEventHooks.Publish(next, (n,t) => new SourceCalledPartySwitchRequiredEvent(n,t,choice));
                         next = required.State; events.Add(required.Event);
                     }
             }
-            var settled = next.PendingSwitches.IsEmpty && next.Outcome == WildBattleOutcome.Ongoing && !HasPendingRewards(next)
+            var settled = next.PendingSwitches.IsEmpty && next.Outcome == WildBattleOutcome.Ongoing &&
+                next.FourTurn!.OutcomeAfterEndTurn is null && !HasPendingRewards(next)
                 ? SourceFourEntryAbilities.Settle(next, catalog) : new SourceFourActionResult(next, [], [], null);
             if (ValidateCapability(catalog, settled.State) is { } nextError) return Fail(frame, nextError);
             return new(settled.State, [.. events, .. settled.Events], [.. entry.Trace, .. settled.Trace], null);

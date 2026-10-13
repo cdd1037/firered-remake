@@ -9,16 +9,6 @@ public sealed partial class CampaignSession
     private bool IsSeviiRubyTrainer(TrainerId trainer) => _content.SeviiRubyEnabled &&
         _content.SeviiRubyTrainers?.Trainers.TryGetValue(trainer, out var source) == true && !source.DoubleBattle;
 
-    private ForestTrainerBattleDefinition SeviiRubyTrainerScript(TrainerId trainer, string? script)
-    {
-        var source = script is null
-            ? _content.SeviiRubyTrainers!.BattlesByScript.Values.Single(b => b.Trainer == trainer && b.Mode != 4)
-            : _content.SeviiRubyTrainers!.BattlesByScript.GetValueOrDefault(script) ?? throw new InvalidDataException("sevii_ruby_trainer_script_missing");
-        if (source.Trainer != trainer || source.Mode is not (0 or 3)) throw new InvalidDataException("sevii_ruby_single_script_mismatch");
-        return new(source.Trainer, source.Mode, source.BattleTypeFlags, source.ScriptEntry, source.IntroText,
-            source.DefeatText, source.PostBattleText, source.EntryScript, source.Callback, source.Source);
-    }
-
     private int SeviiRubyTrainerSourceLine(string script) => _content.FindProgram(script)?.Instructions
         .Single(i => i.Op == StoryOp.TrainerBattle).Source.Line ?? throw new InvalidDataException("sevii_ruby_trainer_program_missing");
 

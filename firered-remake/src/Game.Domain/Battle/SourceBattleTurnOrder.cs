@@ -36,7 +36,7 @@ public static class SourceBattleTurnOrder
         if (frame.Queue.Length != frame.BattlerCount || !Enum.IsDefined(phase)) return Fail("source_order_phase");
         if (frame.Slots.Take(frame.BattlerCount).Any(c => c.Body is null)) return Fail("source_order_body_required");
         if (frame.Slots.Take(frame.BattlerCount).Any(c => c.Body!.HeldItem is not ("ITEM_NONE" or "ITEM_MACHO_BRACE" or "ITEM_QUICK_CLAW") &&
-            !(frame.Layout == SourceBattleLayout.PresetDoubles && SourceFrameBerryItems.SupportsHeldItem(c.Body.HeldItem, catalog))))
+            !SourceFrameBerryItems.SupportsHeldItem(c.Body.HeldItem, catalog)))
             return Fail("source_order_held_effect_unsupported");
         var trace = ImmutableArray.CreateBuilder<RandomTrace>(); var rng = frame.Rng;
         // WEATHER_HAS_EFFECT uses source CHECK_ON_FIELD: hp != 0, with no absent-mask filter.
@@ -73,7 +73,8 @@ public static class SourceBattleTurnOrder
                     {
                         if (a == b)
                         {
-                            var draw = Gen3Rng.Next(rng, $"source-battle.{phase.ToString().ToLowerInvariant()}.speed-tie", 2);
+                            var prefix = frame.Layout == SourceBattleLayout.Singles ? "wild-battle" : "source-battle";
+                            var draw = Gen3Rng.Next(rng, $"{prefix}.{phase.ToString().ToLowerInvariant()}.speed-tie", 2);
                             rng = draw.State; trace.Add(draw.Trace); swap = (draw.Value & 1) != 0;
                         }
                         else swap = a < b;

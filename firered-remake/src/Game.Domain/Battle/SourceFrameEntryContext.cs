@@ -15,6 +15,7 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame, PokemonCatalog?
     internal override int BattlerCount => Frame.BattlerCount;
     internal override SourceFieldRegisters Field { get => Frame.Field; set => Frame = Frame with { Field = value }; }
     internal override bool SuppressIntimidateTrace => false;
+    internal override bool SinglesLivingTargets => Frame.Layout == SourceBattleLayout.Singles;
     internal override bool IsAbsent(BattlerSlot slot) => Frame.IsSourceAbsent(slot);
     internal override WildBattleCombatant Get(BattlerSlot slot) => Frame.Get(slot).Body ?? throw new SourceRecipeUnsupported("source_entry_absent_body");
     internal override void Set(BattlerSlot slot, WildBattleCombatant body)

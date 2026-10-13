@@ -16,7 +16,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
     internal override long Revision => Frame.Revision;
     internal override long EventSequence => Frame.EventSequence;
     internal override int BattlerCount => Frame.BattlerCount;
-    internal override bool Ongoing => Frame.Outcome == WildBattleOutcome.Ongoing && Frame.FourTurn?.OutcomeAfterRewards is null;
+    internal override bool Ongoing => Frame.Outcome == WildBattleOutcome.Ongoing && Frame.FourTurn?.OutcomeAfterRewards is null && Frame.FourTurn?.OutcomeAfterEndTurn is null;
     internal override bool AdvancedAbilitiesEnabled => true;
     internal override bool ToxicEnabled => true;
     internal override bool RainTimerEnabled => true;
@@ -85,7 +85,9 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
     {
         var next = Gen3Rng.Next(Frame.Rng, purpose, bound); Frame = Frame with { Rng = next.State }; Trace.Add(next.Trace); return next.Value;
     }
-    internal override string Purpose(BattlerSlot slot, string effect) => $"source-battle.slot-{slot.Value}.{effect}";
+    internal override string Purpose(BattlerSlot slot, string effect) => Frame.Layout == SourceBattleLayout.Singles
+        ? $"wild-battle.{(slot.Side == BattleSide.Player ? "player" : "opponent")}.{effect}"
+        : $"source-battle.slot-{slot.Value}.{effect}";
     internal override void RecordAbility(BattlerSlot slot, string ability) { } // Events remain available to the future AI owner.
     internal override void ChangeStatus(BattlerSlot slot, uint status, string reason)
     {
@@ -104,8 +106,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
         Set(slot, SourceFaintCommands.ClearCanonicalBody(Get(slot)));
         ChangeStatus(slot, WildBattleStatus.None, "faint");
         Add(n => new SourceFaintedEvent(n, Turn, slot));
-        Frame = Frame with { DeferredKoVacancyMask = (byte)(Frame.DeferredKoVacancyMask | slot.Mask),
-            FourTurn = Frame.FourTurn! with { Defeats = Frame.FourTurn.Defeats.Add(new(occupant, Frame.EventSequence, slot.Side == BattleSide.Opponent)) } };
+        Frame = SourceFourActionTurns.RecordDefeat(Frame, slot, Frame.EventSequence);
     }
     internal override void DamageOutcome() { } // The scheduler checks exhaustion after the complete recipe command.
     private void SynchronizePartyEvents()
@@ -126,7 +127,9 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
         bool o = Frame.Party(BattleSide.Opponent).Members.Any(m => !m.IsEgg && m.Pokemon.CurrentHp > 0);
         if (p && o) return;
         var outcome = !p && !o ? WildBattleOutcome.Draw : p ? WildBattleOutcome.Won : WildBattleOutcome.Lost;
-        if (SourceFourActionTurns.HasPendingRewards(Frame))
+        if (Frame.KoReplacementTiming == KoReplacementTiming.SourceImmediate)
+            Frame = Frame with { FourTurn = Frame.FourTurn! with { OutcomeAfterEndTurn = outcome } };
+        else if (SourceFourActionTurns.HasPendingRewards(Frame))
             Frame = Frame with { FourTurn = Frame.FourTurn! with { OutcomeAfterRewards = outcome } };
         else if (Frame.Outcome != outcome)
         {
@@ -165,7 +168,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
     internal override void ExposeFaintedActions() => CheckTeamsLost();
     internal override void FaintedActionItems()
     {
-        if (Frame.Slots.Any(c => !SourceFrameBerryItems.SupportsHeldItem(c.Body!.HeldItem, catalog)))
+        if (Frame.Slots.Take(BattlerCount).Any(c => !SourceFrameBerryItems.SupportsHeldItem(c.Body!.HeldItem, catalog)))
             throw new SourceRecipeUnsupported("source_four_action_fainted_item_phase_not_migrated");
         var settled = SourceFourEntryAbilities.Settle(Frame, catalog);
         Frame = settled.State; Events.AddRange(settled.Events); Trace.AddRange(settled.Trace);

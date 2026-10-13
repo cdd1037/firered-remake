@@ -82,7 +82,7 @@ public static partial class SourceFourMedicineRules
     internal static string? Validate(SourceBattleFrame frame)
     {
         if (frame.PreparedMedicines is not { } prepared) return null;
-        if (frame.Layout != SourceBattleLayout.PresetDoubles || prepared.IsDefaultOrEmpty || prepared.Length > 4 ||
+        if (frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version || prepared.IsDefaultOrEmpty || prepared.Length > frame.BattlerCount ||
             prepared.Any(p => p is null) ||
             prepared.Select(p => p.Actor.Slot).Distinct().Count() != prepared.Length) return "source_medicine_receipt_shape";
         foreach (var p in prepared)

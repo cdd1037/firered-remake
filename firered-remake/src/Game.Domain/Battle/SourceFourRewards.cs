@@ -26,7 +26,7 @@ public static class SourceFourRewards
 
     internal static SourceBattleFrame ObserveParticipation(SourceBattleFrame frame)
     {
-        if (frame.Layout != SourceBattleLayout.PresetDoubles || frame.Rewards is not { } rewards) return frame;
+        if (frame.Rewards is not { } rewards) return frame;
         byte players = 0;
         foreach (var cell in frame.Slots.Where(c => c.Slot.Side == BattleSide.Player && frame.CanAct(c.Slot)))
             players |= (byte)(1 << cell.Member!.Value.Index);
@@ -44,7 +44,7 @@ public static class SourceFourRewards
         if (frame.Rewards is not { } rewards) return frame.FourTurn is null ? null : "source_four_reward_state";
         int opponentCount = frame.Party(BattleSide.Opponent).Members.Length;
         int playerCount = frame.Party(BattleSide.Player).Members.Length;
-        if (frame.Layout != SourceBattleLayout.PresetDoubles || rewards.Participation.IsDefault || rewards.Participation.Length != 6 ||
+        if (frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version || rewards.Participation.IsDefault || rewards.Participation.Length != 6 ||
             (rewards.CompletedOpponentMask >> opponentCount) != 0 || rewards.Metadata.IsDefault ||
             rewards.Participation.Where((mask, i) => (mask >> playerCount) != 0 || i >= opponentCount && mask != 0).Any() ||
             Enumerable.Range(0, opponentCount).Any(i => (rewards.CompletedOpponentMask & (1 << i)) != 0 && frame.Party(BattleSide.Opponent).Members[i].Pokemon.CurrentHp != 0) ||
@@ -99,7 +99,8 @@ public static class SourceFourRewards
                 !species.LevelUpMoves.Any(entry => entry.Level == m.Level && entry.Move == m.Move)))
                 return "source_four_reward_learning_provenance";
         }
-        if (frame.BattleKind != WildBattleCalledBattleKind.Trainer || frame.Rewards.Context.BattleKind != SourceRewardBattleKind.OrdinaryTrainer)
+        if (frame.Rewards.Context.BattleKind != (frame.BattleKind == WildBattleCalledBattleKind.Trainer
+            ? SourceRewardBattleKind.OrdinaryTrainer : SourceRewardBattleKind.OrdinaryWild))
             return "source_four_reward_context_battle_kind";
         return null;
     }
@@ -178,6 +179,8 @@ public static class SourceFourRewards
             }
             Publish((n, t) => new SourceOpponentRewardCompletedEvent(n, t, defeat.Occupant));
             if (completedOutcome is { } finalOutcome) Publish((n, t) => new SourceEndedEvent(n, t, finalOutcome));
+            else if (!SourceFourActionTurns.HasPendingRewards(next) && SourceFourActionTurns.HasImmediateVacancy(next))
+                next = SourceFourActionTurns.ExposeReplacements(next, events);
             return Commit();
 
             void Publish(Func<long, int, SourceBattleEvent> create)

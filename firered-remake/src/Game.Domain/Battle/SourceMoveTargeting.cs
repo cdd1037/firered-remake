@@ -23,6 +23,11 @@ public static class SourceMoveTargeting
     public static SourceTargetResult ResolveCalled(SourceBattleFrame frame, BattlerSlot actor,
         PokemonMoveDefinition move, string? targetOverride = null) => Resolve(frame, actor, actor.Opposite, move, true, targetOverride);
 
+    internal static SourceTargetResult ResolveForcedStruggle(SourceBattleFrame frame, BattlerSlot actor,
+        PokemonMoveDefinition move) => Resolve(frame, actor, actor.Opposite, move, true,
+            randomPurpose: frame.Layout == SourceBattleLayout.Singles
+                ? $"wild-battle.{(actor.Side == BattleSide.Player ? "player" : "opponent")}.struggle-target" : null);
+
     /// <summary>HandleAction_UseMove: learning changed the selected move, so GetMoveTarget
     /// first rewrites its target, then the ordinary action-time target branches run.</summary>
     public static SourceTargetResult ResolveReplaced(SourceBattleFrame frame, BattlerSlot actor, PokemonMoveDefinition move)
@@ -37,7 +42,8 @@ public static class SourceMoveTargeting
     }
 
     private static SourceTargetResult Resolve(SourceBattleFrame frame, BattlerSlot actor,
-        BattlerSlot selected, PokemonMoveDefinition move, bool called, string? targetOverride = null, bool preserveIntermediateTarget = false)
+        BattlerSlot selected, PokemonMoveDefinition move, bool called, string? targetOverride = null,
+        bool preserveIntermediateTarget = false, string? randomPurpose = null)
     {
         SourceTargetResult Fail(string code) => new(null, frame.Rng, [], false, code);
         if (SourceBattleIdentityRules.Validate(frame) is { } invalid) return Fail(invalid);
@@ -69,7 +75,10 @@ public static class SourceMoveTargeting
         }
         ushort Draw(string kind, int bound)
         {
-            var d = Gen3Rng.Next(rng, $"source-battle.slot-{actor.Value}.target.{(called ? "called" : "learned")}.{kind}", bound);
+            var purpose = randomPurpose ?? (frame.Layout == SourceBattleLayout.Singles
+                ? $"wild-battle.{(actor.Side == BattleSide.Player ? "player" : "opponent")}.called-target"
+                : $"source-battle.slot-{actor.Value}.target.{(called ? "called" : "learned")}.{kind}");
+            var d = Gen3Rng.Next(rng, purpose, bound);
             rng = d.State; trace.Add(d.Trace); return d.Value;
         }
         BattlerSlot RandomOpponent() => new((int)oppositeSide + ((Draw("random-flank", 2) & 1) != 0 ? 0 : 2));

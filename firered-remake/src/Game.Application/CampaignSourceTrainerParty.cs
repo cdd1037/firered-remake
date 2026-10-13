@@ -57,36 +57,7 @@ public sealed partial class CampaignSession
         var style=EffectiveBattleStyle(state);var terrain=CampaignBattleTerrain(state);
         var owned=SafariOrdinaryOwnership;var catalog=owned?.Predecessor??BattlePokemon;
         var successor=_content.SeviiRubyEnabled?owned:null;
-        var result=IsFiveIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FiveIslandTrainers!,_content.FiveIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.CelioEnabled?owned:null)
-            : IsSixIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SixIslandTrainers!,_content.SixIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.FiveIslandEnabled?owned:null)
-            : IsFourIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FourIslandTrainers!,_content.FourIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.SixIslandEnabled?owned:null)
-            : IsSeviiRubyTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SeviiRubyTrainers!,_content.SeviiRubyOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.FourIslandEnabled?owned:null)
-            : IsPokemonLeagueTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.PokemonLeagueTrainerParties!,_content.PokemonLeagueOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)
-            : IsVictoryRoadTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.VictoryRoadTrainerParties!,_content.VictoryRoadOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)
-            : IsLeagueRivalTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.LeagueRivalTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)
-            : IsViridianGymTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.ViridianGymTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)
-            : IsFirstSeviiTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FirstSeviiTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)
-            : IsCinnabarTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.CinnabarTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)
-            : IsSaffronGymTrainer(trainer) ? (_content.CinnabarEnabled ? ForestTrainerCombatRules.StartSource(_content.SaffronGymTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor) : ForestTrainerCombatRules.StartSource(_content.SaffronGymTrainerParties!,_content.SaffronGymOpponents!,trainer,party,active,state.World.Rng,style,terrain))
-            : IsSilphTrainer(trainer) ? (_content.CinnabarEnabled ? ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.CinnabarOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor) : ForestTrainerCombatRules.StartSource(_content.SilphTrainerParties!,_content.SilphOpponents!,trainer,party,active,state.World.Rng,style,terrain))
-            : IsFuchsiaGymTrainer(trainer) ? ForestTrainerCombatRules.Start(_content.FuchsiaGymTrainerParties!,catalog,trainer,party,active,state.World.Rng,style,owned)
-            : IsFuchsiaRouteTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FuchsiaRouteTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsPokemonTowerTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.PokemonTowerTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsRocketHideoutTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.RocketHideoutTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsCeladonGymTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.CeladonGymTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsCeladonApproachTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.CeladonApproachTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsRockTunnelTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.RockTunnelTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsRoute11Trainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.Route11Trainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsVermilionGymTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.VermilionGymTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsSsAnneTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SsAnneTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsVermilionTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.VermilionTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsBillTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.BillTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsCeruleanTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.CeruleanTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsMtMoonTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.MtMoonTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsRoute3Trainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.Route3Trainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsRoute22Trainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.Route22Trainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : IsPewterTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.PewterTrainers!,catalog,trainer,party,active,state.World.Rng,style,terrain,owned)
-            : ForestTrainerCombatRules.StartSource(ForestTrainers,catalog,trainer,party,active,state.World.Rng,style,terrain,owned);
+        var result=OrdinaryBinding(trainer).Start(new(party,active,state.World.Rng,style,terrain,catalog,owned,successor),trainer);
         if(!result.Succeeded)throw new InvalidDataException(result.Fault);
         if(result.State!.SourceMoveRulesVersion!=ForestTrainerCombatRules.SourceTrainerContractVersion)
             throw new InvalidDataException("source_trainer_entry_protocol");

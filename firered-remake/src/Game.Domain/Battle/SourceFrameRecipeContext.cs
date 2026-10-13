@@ -37,7 +37,9 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     // Protection has already expired before delayed work; Focus Band uses the shared adjustment, with the same Substitute boundary as direct damage.
     internal void RunFutureHit(SourceFutureAttack future, BattlerSlot target)
     {
-        string purpose = $"source-battle.slot-{future.Attacker.Value}.future-attack";
+        string purpose = Frame.Layout == SourceBattleLayout.Singles
+            ? $"wild-battle.{(future.Attacker.Side == BattleSide.Player ? "player" : "opponent")}.future-attack"
+            : $"source-battle.slot-{future.Attacker.Value}.future-attack";
         SetHitItemReceipt(target, HitItemReceipt(target) with { Damage = 0xFFFF });
         var hit = PrepareFutureHit(future.Attacker, target, move, future.Damage, purpose);
         if (!hit.Hit) return;
@@ -229,7 +231,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         ClearContactReceipts();
         // Party storage stayed synchronized during each mutation; report the same action-end delta
         // once per actual member. Equal species never serve as the identity key.
-        if (Frame.Layout == SourceBattleLayout.PresetDoubles || Frame.SinglesEncoding?.HasPartyExtension == true)
+        if (Frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version || Frame.SinglesEncoding?.HasPartyExtension == true)
             foreach (var slot in ActiveSlots)
             {
                 var key = Frame.Get(slot).Member!.Value;
@@ -465,9 +467,9 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     }
     internal override void ForestFaint(BattlerSlot slot)
     {
-        // Historical singles preserve their existing cleanup/outcome adapter. Doubles uses
-        // source FaintClearSetData here; only replacement scheduling is deferred by M03.
-        if (Frame.Layout == SourceBattleLayout.Singles) throw new SourceRecipeUnsupported("source_kernel_singles_faint_compatibility");
+        // Both layouts use source FaintClearSetData; the lifecycle owns replacement timing.
+        if (Frame.Layout == SourceBattleLayout.Singles && Frame.FourTurn is null)
+            throw new SourceRecipeUnsupported("source_kernel_faint_owner_required");
         if (Get(slot).Pokemon.CurrentHp != 0) throw new SourceRecipeUnsupported("source_kernel_faint_requires_zero_hp");
         if (Frame.IsSourceAbsent(slot)) return; // Cmd_tryfaintmon tests absence, independently of HP.
         ResolveLateTurnFaint(slot);
@@ -479,7 +481,7 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
     internal override void ForestOutcome(bool allowReplacement) { }
     internal override void MtMoonRageOnDamage(BattlerSlot actor, BattlerSlot target, MoveId move) => BuildRage(actor, target, move);
     internal override void SourceCalledMoveEndSubstitute() => EndSubstitutePass();
-    internal override bool SourceHeldDamageEnabled => Frame.Layout == SourceBattleLayout.PresetDoubles;
+    internal override bool SourceHeldDamageEnabled => Frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version;
     internal override bool Endured(BattlerSlot slot) => HeldDamageEndured(slot);
     internal override void SourceDamageResultMessage(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {

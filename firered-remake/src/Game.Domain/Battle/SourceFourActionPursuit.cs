@@ -16,7 +16,7 @@ public static partial class SourceFourActionTurns
     internal static string? ValidatePursuitSwitch(SourceBattleFrame frame)
     {
         if (frame.FourTurn?.PursuitSwitch is not { } pending) return null;
-        if (pending.NextOpponent is < 0 or > 2 || !frame.IsCurrent(pending.Outgoing) ||
+        if (pending.NextOpponent < 0 || pending.NextOpponent > frame.BattlerCount / 2 || !frame.IsCurrent(pending.Outgoing) ||
             frame.FourTurn.Phase is not (SourceFourActionPhase.Actions or SourceFourActionPhase.RewardsPending) ||
             frame.NextAction >= frame.Queue.Length || frame.Queue[frame.NextAction] is not { Kind: SourceActionKind.Switch } action ||
             action.Token?.Owner != pending.Outgoing || action.Incoming != pending.Incoming ||
@@ -34,9 +34,10 @@ public static partial class SourceFourActionTurns
         var next = frame with { FourTurn = frame.FourTurn with { PursuitSwitch = pending } };
         var events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
         var trace = ImmutableArray.CreateBuilder<Game.Domain.Randomness.RandomTrace>();
-        while (pending.NextOpponent < 2)
+        while (pending.NextOpponent < frame.BattlerCount / 2)
         {
-            var pursuer = new BattlerSlot((action.Slot.Value ^ 1) & 1 | (pending.NextOpponent == 0 ? 2 : 0));
+            var pursuer = new BattlerSlot((action.Slot.Value ^ 1) & 1 |
+                (frame.Layout == SourceBattleLayout.PresetDoubles && pending.NextOpponent == 0 ? 2 : 0));
             pending = pending with { NextOpponent = pending.NextOpponent + 1 };
             next = next with { FourTurn = next.FourTurn! with { PursuitSwitch = pending } };
             int ordinal = Enumerable.Range(0, next.Queue.Length).Single(i => next.Queue[i].Slot == pursuer);
@@ -56,10 +57,7 @@ public static partial class SourceFourActionTurns
             {
                 var defeated = next.Get(faint.Side).Occupant!.Value;
                 if (next.FourTurn!.Defeats.Any(d => d.Occupant == defeated)) continue;
-                next = next with { DeferredKoVacancyMask = (byte)(next.DeferredKoVacancyMask | faint.Side.Mask),
-                    Queue = next.Queue.Select(a => a.Token?.Owner == defeated && a.Kind != SourceActionKind.Switch
-                        ? a with { Kind = SourceActionKind.Cancelled, CancellationReason = "original-occupant-fainted" } : a).ToImmutableArray(),
-                    FourTurn = next.FourTurn with { Defeats = next.FourTurn.Defeats.Add(new(defeated, faint.Sequence, faint.Side.Side == BattleSide.Opponent)) } };
+                next = RecordDefeat(next, faint.Side, faint.Sequence, retainSwitch: true);
             }
             if (HasPendingRewards(next))
                 return new(next with { FourTurn = next.FourTurn! with { Phase = SourceFourActionPhase.RewardsPending } }, events.ToImmutable(), trace.ToImmutable(), null);

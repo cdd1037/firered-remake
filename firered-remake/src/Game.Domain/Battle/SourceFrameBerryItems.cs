@@ -31,7 +31,9 @@ internal static class SourceFrameBerryItems
             if (phase == SourceBerryPhase.SwitchIn && SourceHeldItemCatalog.Find(catalog, before.HeldItem) is { } held)
                 next = next with { Field = SourceBattleMoneyRules.ApplyEntry(next.Field, held.HoldEffect) };
             var effect = SourceHeldBerryRules.ResolveCanonical(catalog, before, phase, cell.Registers.InfatuationSource is not null,
-                Draw, $"source-battle.slot-{slot.Value}.held-item");
+                Draw, next.Layout == SourceBattleLayout.Singles
+                    ? $"wild-battle.{(slot.Side == BattleSide.Player ? "player" : "opponent")}.held-item"
+                    : $"source-battle.slot-{slot.Value}.held-item");
             if (!effect.Activated) continue;
             var after = effect.Body;
             var key = cell.Member!.Value; var party = next.Party(key.Side);

@@ -68,6 +68,7 @@ public static partial class SourceFourMedicineRules
         .Aggregate((int)frame.SourceAbsentMask,(mask,receipt)=>mask|receipt.SourceAbsentMaskBeforeSelection));
     internal static SourceBattleFrame ReconcileRevivedReserves(SourceBattleFrame frame)
     {
+        if (frame.KoReplacementTiming != KoReplacementTiming.EndOfTurn) return frame;
         byte vacated=frame.DeferredKoVacancyMask;
         foreach(var cell in frame.Slots)
             if((frame.TurnStartAbsentMask & cell.Slot.Mask)!=0 && !frame.IsSourceAbsent(cell.Slot) &&

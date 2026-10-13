@@ -15,18 +15,6 @@ public sealed partial class CampaignSession
         trainer == FourIslandTrainerPartyFactory.Grunt45 &&
         _content.FourIslandTrainers?.Trainers.TryGetValue(trainer, out var source) == true && !source.DoubleBattle;
 
-    private ForestTrainerBattleDefinition FourIslandTrainerScript(TrainerId trainer, string? script)
-    {
-        if (!IsFourIslandTrainer(trainer) || script is not null && script != FourIslandTrainerPartyFactory.BattleScript ||
-            !_content.FourIslandTrainers!.BattlesByScript.TryGetValue(FourIslandTrainerPartyFactory.BattleScript, out var source))
-            throw new InvalidDataException("four_island_trainer_script_missing");
-        FourIslandTrainerPartyFactory.ValidateBattle(source);
-        if (source.Trainer != trainer || source.Mode != 3 || source.BattleTypeFlags != 8 || source.Source.Path != FourIslandBackSource)
-            throw new InvalidDataException("four_island_single_script_mismatch");
-        return new(source.Trainer, source.Mode, source.BattleTypeFlags, source.ScriptEntry, source.IntroText,
-            source.DefeatText, source.PostBattleText, source.EntryScript, source.Callback, source.Source);
-    }
-
     private int FourIslandTrainerSourceLine(string script)
     {
         var instruction = script == FourIslandTrainerPartyFactory.BattleScript

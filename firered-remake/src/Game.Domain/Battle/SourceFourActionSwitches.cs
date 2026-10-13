@@ -11,7 +11,7 @@ public static partial class SourceFourActionTurns
         var cell = frame.Get(slot); var body = cell.Body!;
         if (body.Rooted || body.BindTurnsRemaining > 0 || cell.Registers.MeanLookSource is not null ||
             cell.Registers.Turn?.Lock is not null) return "source_four_switch_locked";
-        return SourceSwitchRules.TrappingAbility(catalog, slot, frame.Slots.Select(c => c.Slot), s => frame.Get(s).Body!) is { } ability
+        return SourceSwitchRules.TrappingAbility(catalog, slot, frame.Slots.Take(frame.BattlerCount).Select(c => c.Slot), s => frame.Get(s).Body!) is { } ability
             ? "source_four_switch_trapped_" + ability : null;
     }
 

@@ -22,9 +22,9 @@ public static class SourceFourEntryAbilities
     internal static string? ValidateState(SourceBattleFrame frame)
     {
         if (frame.EntryAbilities is not { } entry) return null;
-        if (frame.Layout != SourceBattleLayout.PresetDoubles || frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version ||
+        if (frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version ||
             entry.RulesVersion != SourceEntryAbilityState.Version || entry.AppliedEntries.IsDefault || entry.AppliedEntries.Length != 4 ||
-            (entry.PendingIntimidateMask & ~15) != 0) return "source_entry_lifecycle_shape";
+            (entry.PendingIntimidateMask >> frame.BattlerCount) != 0 || entry.AppliedEntries.Skip(frame.BattlerCount).Any(t => t is not null)) return "source_entry_lifecycle_shape";
         for (int i = 0; i < 4; i++)
         {
             if (entry.AppliedEntries[i] is { } token && (token.Slot.Value != i || token.Member.Side != token.Slot.Side ||
@@ -64,17 +64,17 @@ public static class SourceFourEntryAbilities
         if (SourceBattleIdentityRules.Validate(frame) is { } invalid) return Fail(frame, invalid);
         if (frame.Revision != expectedRevision || frame.EntryAbilities is not null || frame.Turn != 0 || frame.FourTurn is not null ||
             !frame.Queue.IsEmpty || frame.NextAction != 0 || !frame.PendingSwitches.IsEmpty || !frame.Reservations.IsEmpty ||
-            frame.Sides.Any(s => s.Spikes != 0) || frame.DeferredKoVacancyMask != 0 || frame.Outcome != WildBattleOutcome.Ongoing || frame.Slots.Any(c => c.EntrySerial != 1))
+            frame.Sides.Any(s => s.Spikes != 0) || frame.DeferredKoVacancyMask != 0 || frame.Outcome != WildBattleOutcome.Ongoing || frame.Slots.Take(frame.BattlerCount).Any(c => c.EntrySerial != 1))
             return Fail(frame, "source_entry_initial_phase");
-        if (frame.Layout != SourceBattleLayout.PresetDoubles || frame.Slots.Any(c => c.Body is null)) return Fail(frame, "source_entry_initial_layout");
-        if (frame.Slots.Any(c => c.Body!.CalledOverlay is not null || c.Body.SourceTracePending)) return Fail(frame, "source_entry_initial_overlay");
+        if (frame.Slots.Take(frame.BattlerCount).Any(c => c.Body is null)) return Fail(frame, "source_entry_initial_layout");
+        if (frame.Slots.Take(frame.BattlerCount).Any(c => c.Body!.CalledOverlay is not null || c.Body.SourceTracePending)) return Fail(frame, "source_entry_initial_overlay");
         try
         {
             var next = frame with { EntryAbilities = new(frame.Slots.Select(c => c.Occupant).ToImmutableArray()) };
             if (SourceFourActionTurns.ValidateCapability(catalog, next) is { } capability) return Fail(frame, capability);
             // Sort requires a source-position queue; this temporary queue is never published and
             // represents no move choice, PP owner or action token.
-            var orderInput = next with { Queue = next.Slots.Select(c => new SourceQueuedAction(c.Slot, null, SourceActionKind.Cancelled)).ToImmutableArray() };
+            var orderInput = next with { Queue = next.Slots.Take(next.BattlerCount).Select(c => new SourceQueuedAction(c.Slot, null, SourceActionKind.Cancelled)).ToImmutableArray() };
             var order = SourceBattleTurnOrder.Resolve(catalog, orderInput, WildBattleOrderPhase.Entry);
             if (order.Fault is { } sortError) return Fail(frame, sortError);
             next = next with { Rng = order.Rng };
@@ -86,8 +86,8 @@ public static class SourceFourEntryAbilities
             // Source initial entry finishes with TurnValuesCleanUp(FALSE), before
             // the first selection. Switch-in during a turn remains at 2 until Ready.
             next = execution.Frame with { Revision = checked(frame.Revision + 1),
-                Slots = execution.Frame.Slots.Select(c => c with {
-                    Body = SourceTurnBoundaryRules.ReadyBody(c.Body!, true, false, false) }).ToImmutableArray() };
+                Slots = execution.Frame.Slots.Select(c => c.Body is null ? c : c with {
+                    Body = SourceTurnBoundaryRules.ReadyBody(c.Body, true, false, false) }).ToImmutableArray() };
             if (SourceFourActionTurns.ValidateCapability(catalog, next) is { } error) return Fail(frame, error);
             return new(next, [ordered.Event, .. execution.Events], [.. order.Trace, .. execution.Trace], null);
         }

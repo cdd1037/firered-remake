@@ -12,7 +12,7 @@ internal sealed partial class FrameRecipeContext
     internal override bool ForceSwitchHasReserve(BattlerSlot target) =>
         // Cmd_forcerandomswitch first counts every living non-egg party member, including
         // active positions; non-multi doubles requires at least three even after a partner KO.
-        Frame.Party(target.Side).Members.Count(m => !m.IsEgg && m.Pokemon.CurrentHp > 0) >= 3 &&
+        Frame.Party(target.Side).Members.Count(m => !m.IsEgg && m.Pokemon.CurrentHp > 0) >= (Frame.Layout == SourceBattleLayout.Singles ? 2 : 3) &&
         !SourceBattleIdentityRules.LegalReserveIndices(Frame,target.Side).IsEmpty;
     internal override bool ForceSwitchAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose)
     {
