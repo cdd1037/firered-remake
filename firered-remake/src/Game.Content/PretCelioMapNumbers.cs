@@ -43,6 +43,25 @@ public static class PretCelioMapNumbers
     {
         ArgumentNullException.ThrowIfNull(maps);
         if (maps.Count != 254) throw new InvalidDataException("celio_map_numbers_predecessor_scope");
+        return ProjectSource(root, maps);
+    }
+
+    internal static ImmutableDictionary<MapId, RoamerMap> ExtendCeruleanCave(string root,
+        IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor)
+    {
+        ArgumentNullException.ThrowIfNull(maps); ArgumentNullException.ThrowIfNull(predecessor);
+        if (predecessor.Count != 254 || maps.Count != 257 || predecessor.Keys.Any(id => !maps.ContainsKey(id)) ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(new[] {
+                new MapId("map.cerulean-cave-1f"), new MapId("map.cerulean-cave-2f"), new MapId("map.cerulean-cave-b1f") }))
+            throw new InvalidDataException("cerulean_cave_map_numbers_scope");
+        var current = ProjectSource(root, maps);
+        if (predecessor.Any(p => current[p.Key] != p.Value))
+            throw new InvalidDataException("cerulean_cave_map_numbers_predecessor");
+        return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
+    }
+
+    private static ImmutableDictionary<MapId, RoamerMap> ProjectSource(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)
+    {
         var source = LoadSourceTable(root);
         var result = ImmutableDictionary.CreateBuilder<MapId, RoamerMap>();
         foreach (var (id, map) in maps)

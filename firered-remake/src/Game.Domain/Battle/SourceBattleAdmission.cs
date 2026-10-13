@@ -49,34 +49,10 @@ public static class SourceBattleAdmission
         OwnedBattlePokemonCatalog.ForMechanics(catalog, state.SourceCampaignRulesVersion) is not null;
 
     public static bool IsOwnedCampaign(OwnedBattlePokemonCatalog owned, WildBattleState state) =>
-        (state.SourceCampaignRulesVersion == owned.RulesVersion ||
-         state.SourceCampaignRulesVersion == CelioOpponentPokemonCatalog.Profile &&
-         CelioOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } celio &&
-         ReferenceEquals(celio.Owned.Catalog, owned.Catalog) ||
-         state.SourceCampaignRulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
-         FiveIslandOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } five &&
-         ReferenceEquals(five.Owned.Catalog, owned.Catalog) ||
-         state.SourceCampaignRulesVersion == SixIslandOpponentPokemonCatalog.Profile &&
-         SixIslandOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } six &&
-         ReferenceEquals(six.Owned.Catalog, owned.Catalog) ||
-         state.SourceCampaignRulesVersion == FourIslandOpponentPokemonCatalog.Profile &&
-         FourIslandOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } four &&
-         ReferenceEquals(four.Owned.Catalog, owned.Catalog) ||
-         state.SourceCampaignRulesVersion == SeviiRubyOpponentPokemonCatalog.Profile &&
-         SeviiRubyOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } ruby &&
-         ReferenceEquals(ruby.Owned.Catalog, owned.Catalog) ||
-         state.SourceCampaignRulesVersion == PokemonLeagueOpponentPokemonCatalog.Profile &&
-         PokemonLeagueOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } league &&
-         ReferenceEquals(league.Owned.Catalog, owned.Catalog) ||
-         state.SourceCampaignRulesVersion == VictoryRoadOpponentPokemonCatalog.Profile &&
-         VictoryRoadOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } victory &&
-         ReferenceEquals(victory.Owned.Catalog, owned.Catalog) ||
-         state.SourceCampaignRulesVersion == CinnabarOpponentPokemonCatalog.Profile &&
-         CinnabarOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } cinnabar &&
-         ReferenceEquals(cinnabar.Owned.Catalog, owned.Catalog) ||
-         state.SourceCampaignRulesVersion == SaffronGymOpponentPokemonCatalog.Profile &&
-         SaffronGymOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } saffron &&
-         ReferenceEquals(saffron.Owned.Catalog, owned.Catalog)) && IsOwnedCampaign(owned.Mechanics.Catalog, state);
+        ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned) &&
+        ReferenceEquals(OwnedBattlePokemonCatalog.ForMechanics(owned.Mechanics.Catalog, state.SourceCampaignRulesVersion), owned) &&
+        IsOwnedCampaign(owned.Mechanics.Catalog, state);
+
 
     internal static string? ValidateCampaignMembership(PokemonCatalog? catalog, WildBattleState state)
     {

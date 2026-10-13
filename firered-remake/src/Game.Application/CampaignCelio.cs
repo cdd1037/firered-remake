@@ -33,7 +33,7 @@ public sealed partial class CampaignSession
 
     // Each older profile still validates its own proof; only unwrap the authenticated successor.
     private static FiveIslandMachineCatalog? CelioFiveMachines(ICampaignCatalog content) =>
-        content.CelioEnabled ? CelioMachineCatalog.For(content.PewterMachines)?.Predecessor : FiveIslandMachineCatalog.For(content.PewterMachines);
+        content.CelioEnabled ? content.CelioMachines?.Predecessor : FiveIslandMachineCatalog.For(content.PewterMachines);
 
     private static void ValidateCelioCatalog(ICampaignCatalog content)
     {
@@ -46,14 +46,14 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("celio_profile_missing");
             return;
         }
-        if (!content.FiveIslandEnabled || content.Maps.Count != 254 || content.CelioOwnership is not {} owned ||
+        if (!content.FiveIslandEnabled || content.CelioOwnership is not {} owned ||
             content.CelioOpponents is not {} opponents || content.CelioMachines is not {} machines ||
             !ReferenceEquals(CelioOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             !ReferenceEquals(owned.Predecessor, content.FiveIslandOwnership) ||
-            !ReferenceEquals(content.PokemonContent?.Catalog, owned.Catalog) ||
+            !ReferenceEquals(content.CeruleanCaveOwnership?.Predecessor, owned) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.FiveIslandOpponents) ||
             !ReferenceEquals(CelioOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !ReferenceEquals(CelioMachineCatalog.For(content.PewterMachines), machines) ||
+            !ReferenceEquals(CelioMachineCatalog.For(machines.Catalog), machines) ||
             !ReferenceEquals(machines.Pokemon, owned) || !ReferenceEquals(machines.Predecessor, content.FiveIslandMachines) ||
             content.CelioRoamerMaps is not {} maps || maps.Count != content.Maps.Count ||
             !maps.Keys.ToHashSet().SetEquals(content.Maps.Keys) || maps.Values.Distinct().Count() != maps.Count ||

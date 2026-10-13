@@ -92,18 +92,18 @@ public static class LevelEvolutionRules
         var previous = content.Catalog.Species[before.Species];
         // Source changes species without changing the stored ability bit. These bounded families
         // keep compatible ability slots and growth curves, unlike an arbitrary species replacement.
-        bool rubySlugmaFamily = (SeviiRubyOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || (FourIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || (SixIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || (FiveIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || CelioOwnedPokemonCatalog.IsAuthenticated(content.Catalog))))) &&
-            before.Species == SeviiRubyOwnedPokemonCatalog.AdditionalSpecies[1] &&
-            targetSpecies == SeviiRubyOwnedPokemonCatalog.AdditionalSpecies[2];
-        bool fourIslandFamily = (FourIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || (SixIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || (FiveIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || CelioOwnedPokemonCatalog.IsAuthenticated(content.Catalog)))) &&
-            (before.Species.Value, targetSpecies.Value) is ("pret:SPECIES_WOOPER", "pret:SPECIES_QUAGSIRE") or
-                ("pret:SPECIES_SWINUB", "pret:SPECIES_PILOSWINE");
-        bool sixIslandFamily = (SixIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || (FiveIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || CelioOwnedPokemonCatalog.IsAuthenticated(content.Catalog))) &&
-            (before.Species.Value, targetSpecies.Value) is ("pret:SPECIES_SENTRET", "pret:SPECIES_FURRET") or
-                ("pret:SPECIES_NATU", "pret:SPECIES_XATU") or ("pret:SPECIES_GLOOM", "pret:SPECIES_BELLOSSOM");
-        bool fiveIslandFamily = (FiveIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || CelioOwnedPokemonCatalog.IsAuthenticated(content.Catalog)) &&
-            (before.Species.Value, targetSpecies.Value) is ("pret:SPECIES_HOPPIP", "pret:SPECIES_SKIPLOOM") or ("pret:SPECIES_SKIPLOOM", "pret:SPECIES_JUMPLUFF");
-        if (target.GrowthRate != previous.GrowthRate || target.SourceSpeciesId > 151 && !rubySlugmaFamily && !fourIslandFamily && !fiveIslandFamily && !sixIslandFamily ||
+        bool authenticatedOwned = OwnedBattlePokemonCatalog.For(content.Catalog) is not null;
+        bool sourceExtendedFamily = authenticatedOwned &&
+            (before.Species.Value, targetSpecies.Value) is
+                ("pret:SPECIES_SLUGMA", "pret:SPECIES_MAGCARGO") or
+                ("pret:SPECIES_WOOPER", "pret:SPECIES_QUAGSIRE") or
+                ("pret:SPECIES_SWINUB", "pret:SPECIES_PILOSWINE") or
+                ("pret:SPECIES_SENTRET", "pret:SPECIES_FURRET") or
+                ("pret:SPECIES_NATU", "pret:SPECIES_XATU") or
+                ("pret:SPECIES_GLOOM", "pret:SPECIES_BELLOSSOM") or
+                ("pret:SPECIES_HOPPIP", "pret:SPECIES_SKIPLOOM") or
+                ("pret:SPECIES_SKIPLOOM", "pret:SPECIES_JUMPLUFF");
+        if (target.GrowthRate != previous.GrowthRate || target.SourceSpeciesId > 151 && !sourceExtendedFamily ||
             before.AbilitySlot != (target.Ability2 == "ABILITY_NONE" ? 0 : (int)(before.Personality & 1)))
             throw new NotSupportedException("Evolution requires a pinned compatible owned family definition.");
         var stats = CalculateStats(target, before);
@@ -175,24 +175,8 @@ public static class LevelEvolutionRules
         if (error is not null) throw new ArgumentException(error, nameof(owned));
         // Only Everstone has a prevent-evolution hold effect in this bounded static item profile.
         // In particular, Enigma Berry can obtain that effect from save data not represented here.
-        bool staticHeldItem = CelioOwnedPokemonCatalog.For(content.Catalog) is { } celio
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(celio.Predecessor.Mechanics.Catalog, owned.HeldItem)
-            : FiveIslandOwnedPokemonCatalog.For(content.Catalog) is { } fiveIsland
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(fiveIsland.Mechanics.Catalog, owned.HeldItem)
-            : SixIslandOwnedPokemonCatalog.For(content.Catalog) is { } sixIsland
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(sixIsland.Mechanics.Catalog, owned.HeldItem)
-            : FourIslandOwnedPokemonCatalog.For(content.Catalog) is { } fourIsland
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(fourIsland.Mechanics.Catalog, owned.HeldItem)
-            : SeviiRubyOwnedPokemonCatalog.For(content.Catalog) is { } ruby
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(ruby.Mechanics.Catalog, owned.HeldItem)
-            : CinnabarOwnedPokemonCatalog.For(content.Catalog) is { } cinnabar
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(cinnabar.Mechanics.Catalog, owned.HeldItem)
-            : SilphOwnedPokemonCatalog.For(content.Catalog) is { } silph
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(silph.Mechanics.Catalog, owned.HeldItem)
-            : SurfOwnedPokemonCatalog.For(content.Catalog) is { } surf
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(surf.Mechanics.Catalog, owned.HeldItem)
-            : SafariOwnedPokemonCatalog.For(content.Catalog) is { } safari
-            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(safari.Mechanics.Catalog, owned.HeldItem)
+        bool staticHeldItem = OwnedBattlePokemonCatalog.For(content.Catalog) is { } ownership
+            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(ownership.Mechanics.Catalog, owned.HeldItem)
             : content.Catalog.Species.Count switch
         {
             107 => Game.Domain.WildBattle.FuchsiaBattleScope.SupportsHeldItem(owned.HeldItem),

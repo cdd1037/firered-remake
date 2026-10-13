@@ -96,6 +96,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool ScreenIsWhite{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.Encounters.Route1WildPokemonResult? TowerWildPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSnorlaxPreparation? SnorlaxPreparation{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMewtwoPreparation? MewtwoPreparation{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? MewtwoReturn{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSnorlaxReturn? SnorlaxReturn{get;init;}
     public CampaignLabBattle? Battle{get;init;}
     public InventoryState? Inventory{get;init;}
@@ -316,7 +318,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -338,7 +340,7 @@ public sealed partial class CampaignSession
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
+            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
             var starter=_content.EarlyStarterEnabled?OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
@@ -629,6 +631,7 @@ public sealed partial class CampaignSession
             if(TryApplySaffronGymEffect(state,effect,out var saffronGymState)){state=saffronGymState;continue;}
             if(TryApplyFuchsiaGymEffect(state,effect,out var fuchsiaGymState)){state=fuchsiaGymState;continue;}
             if(TryApplySafariEffect(state,effect,out var safariState)){state=safariState;continue;}
+            if(TryApplyMewtwoEffect(state,effect,out var mewtwoState)){state=mewtwoState;continue;}
             if(TryApplySnorlaxEffect(state,effect,out var snorlaxState)){state=snorlaxState;continue;}
             if(TryApplyTowerEffect(state,effect,out var towerState)){state=towerState;continue;}
             if(TryApplyNameRaterEffect(state,effect,out var nameRaterState)){state=nameRaterState;continue;}

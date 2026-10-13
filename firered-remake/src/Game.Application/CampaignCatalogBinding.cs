@@ -21,14 +21,14 @@ public sealed partial class CampaignSession
     private static CampaignCatalogBinding BindCurrentCatalog(ICampaignCatalog content)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if(!content.CelioEnabled)throw new InvalidDataException("current_requires_celio_catalog");
+        if(!content.CeruleanCaveEnabled)throw new InvalidDataException("current_requires_cerulean_cave_catalog");
         ValidateCampaignCatalog(content);
-        var owned=content.CelioOwnership!;
+        var owned=content.CeruleanCaveOwnership!;
         var battle=OwnedBattlePokemonCatalog.For(owned.Catalog);
         if(battle is null || !ReferenceEquals(battle.Catalog,content.PokemonContent!.Catalog) ||
             !ReferenceEquals(battle.Mechanics,owned.Mechanics) ||
-            !ReferenceEquals(CelioOpponentPokemonCatalog.For(owned),content.CelioOpponents) ||
-            ReferenceEquals(content.CelioOpponents!.Catalog,owned.Catalog))
+            !ReferenceEquals(CeruleanCaveOpponentPokemonCatalog.For(owned),content.CeruleanCaveOpponents) ||
+            ReferenceEquals(content.CeruleanCaveOpponents!.Catalog,owned.Catalog))
             throw new InvalidDataException("current_battle_catalog_identity");
         return new(CurrentGameProfile.RulesVersion,EarlyLandEncounterRules.FiveIslandRulesVersion,owned.Catalog,battle);
     }
@@ -53,10 +53,10 @@ public sealed partial class CampaignSession
             content.CinnabarEnabled && content.FirstSeviiEnabled && content.ViridianGymEnabled &&
             content.LeagueRivalEnabled && content.VictoryRoadEnabled && content.PokemonLeagueEnabled &&
             content.NationalDexEnabled && content.SeviiRubyEnabled && content.FourIslandEnabled &&
-            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled) ||
+            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled) ||
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
-        ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
+        ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
         if(content.CinnabarOwnership is null||content.CinnabarOpponents is null||content.CinnabarTrainerParties is null||
             !ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned))
             throw new InvalidDataException("cinnabar_source_profile_missing");
@@ -73,9 +73,9 @@ public sealed partial class CampaignSession
         if(content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
-        if(!CelioMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
+        if(!CeruleanCaveMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
         if(FiveIslandShopCatalog.For(content.EarlyShop) is null)throw new InvalidDataException("current_shop_proof_missing");
         if(content.QuestItems?.Profile!=QuestItemRules.TownMapProfile)throw new InvalidDataException("current_quest_item_profile_missing");
-        if(content.FieldPickups.Length!=235||content.EarlyShop is null)throw new InvalidDataException("current_field_pickup_profile_missing");
+        if(content.FieldPickups.Length!=244||content.EarlyShop is null)throw new InvalidDataException("current_field_pickup_profile_missing");
     }
 }

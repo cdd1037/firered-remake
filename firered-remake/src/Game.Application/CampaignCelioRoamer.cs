@@ -45,7 +45,7 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("wild_battle_context_invalid");
         int active = Enumerable.Range(0, state.Party.Length).First(i => !state.Party[i].IsEgg && state.Party[i].Pokemon.CurrentHp > 0);
         var owned = state.Party[active];
-        var started = SourceWildBattlePolicy.StartCelioRoamer(_content.CelioOwnership!, candidate.Individual,
+        var started = SourceWildBattlePolicy.StartCelioRoamer(SafariOrdinaryOwnership!, candidate.Individual,
             state.TrainerId, SourceTrainerEntryParty(state), active, state.World.Rng, CampaignBattleTerrain(state));
         if (!started.Succeeded) throw new InvalidDataException(started.Fault);
         var frame = PrepareCanonicalWildFrame(state,started.State!);

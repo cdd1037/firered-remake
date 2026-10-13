@@ -36,7 +36,7 @@ public sealed partial class CampaignSession
     {
         var encounter = state.Exploration?.EarlyEncounter ?? throw new InvalidDataException("safari_encounter_missing");
         var table = _content.LandEncounters![state.World.Player.MapId];
-        var generated = GenerateFiveIslandLand(state,table,encounter);
+        var generated = GenerateCurrentLand(state,table,encounter);
         var rng = generated.GlobalRng;
         var trace = generated.RandomTrace.ToBuilder();
         // CB2_InitBattle: SetUpBattleVars -> BattleAI_HandleItemUseBeforeAISetup (four

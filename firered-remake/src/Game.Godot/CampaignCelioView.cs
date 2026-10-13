@@ -17,10 +17,11 @@ public partial class CampaignView
     private void LoadCelioPresentation()
     {
         if (!_catalog.CelioEnabled) return;
+        var pokemon = _catalog.CeruleanCaveEnabled ? _catalog.CeruleanCaveOwnership.Predecessor.Catalog :
+            _catalog.PokemonContent?.Catalog ?? throw new InvalidDataException("Celio owned Pokemon catalog missing.");
         if (!CelioPresentationProfile || _battleArt.Count != 636 || _storageIcons.Count != 159 || _route22Footprints.Count != 112 ||
-            _catalog.PokemonContent?.Catalog.Species.Count != 138)
+            pokemon.Species.Count != 138)
             throw new InvalidDataException("Celio requires its complete Five Island predecessor and owned beast catalog.");
-        var pokemon = _catalog.PokemonContent ?? throw new InvalidDataException("Celio owned Pokemon catalog missing.");
         _celioArt = CelioPresentationAssets.Load(_root);
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)
         {
@@ -38,7 +39,7 @@ public partial class CampaignView
         foreach (var row in CelioManifest.GetProperty("sprites").EnumerateArray())
         {
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
-            if (pokemon.Catalog.Species.GetValueOrDefault(new(row.GetProperty("speciesId").GetString()!))?.SourceSpeciesId != species)
+            if (pokemon.Species.GetValueOrDefault(new(row.GetProperty("speciesId").GetString()!))?.SourceSpeciesId != species)
                 throw new InvalidDataException("Celio sprite is outside its owned catalog.");
             string side = row.GetProperty("side").GetString()!; bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
             var texture = Pixels(row);

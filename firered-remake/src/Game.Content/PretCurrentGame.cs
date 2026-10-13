@@ -19,6 +19,7 @@ public sealed partial class PretCampaignCatalog
     public static PretCampaignCatalog LoadCurrent(string projectRoot)
     {
         // Load the fixed resource set through its source-authenticating factories.
+        var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
         var fiveIsland = PretFiveIslandRegion.Load(projectRoot, compact: true);
         var fiveIslandTrainers = PretFiveIslandRules.LoadTrainers(projectRoot);
         var sixIsland = PretSixIslandRegion.Load(projectRoot, compact: true);
@@ -987,6 +988,8 @@ public sealed partial class PretCampaignCatalog
             AppendFiveIslandSources(fiveIsland, sources, textFiles, constants, hashes);
             PretFiveIslandRules.ValidateSourceEvidence(projectRoot, projectRoot);
         }
+
+        AppendCeruleanCaveSources(ceruleanCave, sources, textFiles, constants);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -2123,7 +2126,27 @@ public sealed partial class PretCampaignCatalog
             hashes.Add("celio-source-inputs:" + PretCelioPokemon.SourceInputsSha256);
         }
 
-        // This fingerprint remains byte-for-byte compatible with the fixed current content.
+        // Validate the original Celio composition before extending the sole current game.
+        var celioMaps = maps;
+        maps = maps.AddRange(ceruleanCave.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendCeruleanCave(projectRoot, maps, celioRoamerMaps);
+        PretCeruleanCavePokemon.ValidateSourceEvidence(projectRoot, projectRoot);
+        var ceruleanCavePokemon = PretCeruleanCavePokemon.Load(projectRoot, celioPokemon.Owned, celioPokemon.Opponents, celioPokemon.Machines);
+        pokemonContent = pokemonContent with
+        {
+            Catalog = ceruleanCavePokemon.Owned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.AddRange(CeruleanCaveOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
+                KeyValuePair.Create(ceruleanCavePokemon.Owned.Catalog.Species[id].SourceSpeciesId,
+                    oakPokedex.Entries[ceruleanCavePokemon.Owned.Catalog.Species[id].SourceSpeciesId].Name)))
+        };
+        machines = ceruleanCavePokemon.Machines.Catalog;
+        ValidateCeruleanCaveComposition(ceruleanCave, maps, celioMaps, compiled, pokemonContent, ceruleanCavePokemon, celioPokemon);
+        hashes.AddRange(ceruleanCave.AdditionalSourceHashes);
+        hashes.Add("cerulean-cave-pokemon:" + PretCeruleanCavePokemon.PokemonSha256);
+        hashes.Add("cerulean-cave-machines:" + PretCeruleanCavePokemon.MachinesSha256);
+        hashes.Add("cerulean-cave-source-inputs:" + PretCeruleanCavePokemon.SourceInputsSha256);
+
+        // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
         return new(
             maps: maps,
@@ -2288,6 +2311,56 @@ public sealed partial class PretCampaignCatalog
             fiveIslandTrainers: fiveIslandTrainers,
             fiveIslandItems: fiveIslandItems,
             celioPokemon: celioPokemon,
-            celioRoamerMaps: celioRoamerMaps);
+            celioRoamerMaps: celioRoamerMaps,
+            ceruleanCave: ceruleanCave,
+            ceruleanCavePokemon: ceruleanCavePokemon);
+    }
+
+    private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,
+        List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants)
+    {
+        var existing = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
+        foreach (var file in region.Scripts)
+        {
+            if (existing.TryGetValue(file.Path, out var prior))
+            {
+                if (prior.SourceRef.Sha256 != file.SourceRef.Sha256 || prior.Text != file.Text)
+                    throw new InvalidDataException("cerulean_cave_source_conflict:" + file.Path);
+            }
+            else { existing.Add(file.Path, file); sources.Add(file); }
+            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
+        }
+        foreach (var text in region.TextSources.Values)
+            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
+        MergeRegionalServiceConstants(constants, region.Constants);
+    }
+
+    private static void ValidateCeruleanCaveComposition(PretCeruleanCaveRegion region,
+        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
+        PretStoryCompilation scripts, CampaignPokemonContent pokemon, CeruleanCavePokemonContent cave, CelioPokemonContent celio)
+    {
+        if (previous.Count != 254 || maps.Count != 257 || region.NewMaps.Count != 3 ||
+            previous.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
+            region.NewMaps.Any(p => previous.ContainsKey(p.Key) || !ReferenceEquals(p.Value, maps[p.Key])) ||
+            cave.Owned.Catalog.Species.Count != 139 || cave.Opponents.Catalog.Species.Count != 163 ||
+            cave.Machines.Catalog.AdditionalMachines is not { Length: 38 } ||
+            !ReferenceEquals(cave.Owned.Predecessor, celio.Owned) || !ReferenceEquals(cave.Opponents.Predecessor, celio.Opponents) ||
+            !ReferenceEquals(cave.Machines.Predecessor, celio.Machines) || !ReferenceEquals(pokemon.Catalog, cave.Owned.Catalog) ||
+            !ReferenceEquals(cave.Owned.Mechanics, celio.Owned.Mechanics) ||
+            !ReferenceEquals(cave.Owned.Catalog.Moves, celio.Owned.Catalog.Moves) || pokemon.Catalog.Moves.Count != 354)
+            throw new InvalidDataException("cerulean_cave_composition_scope");
+        var entrance = region.Contracts.GetProperty("cityEntrance");
+        var city = previous[new MapId("map.cerulean-city")];
+        var warp = entrance.GetProperty("entranceWarp");
+        var guard = entrance.GetProperty("guard");
+        if (!JsonElement.DeepEquals(city.Events.GetProperty("warp_events")[warp.GetProperty("index").GetInt32()], warp.GetProperty("event")) ||
+            !JsonElement.DeepEquals(city.Events.GetProperty("object_events")[guard.GetProperty("localId").GetInt32() - 1], guard.GetProperty("event")))
+            throw new InvalidDataException("cerulean_cave_city_anchor");
+        foreach (var label in new[] { "CeruleanCave_B1F_OnResume", "CeruleanCave_B1F_EventScript_TryRemoveMewtwo",
+            "CeruleanCave_B1F_OnTransition", "CeruleanCave_B1F_EventScript_ShowMewtwo", "CeruleanCave_B1F_EventScript_Mewtwo",
+            "CeruleanCave_B1F_EventScript_DefeatedMewtwo", "CeruleanCave_B1F_EventScript_RanFromMewtwo" })
+            if (scripts.FindProgram(label) is not { } program || program.Instructions.IsEmpty || program.Instructions.Any(i => i.Op == StoryOp.Unsupported))
+                throw new InvalidDataException("cerulean_cave_story_incomplete:" + label);
+        PokemonFactory.ValidateCatalog(cave.Owned.Catalog);
     }
 }

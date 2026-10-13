@@ -24,8 +24,7 @@ public sealed partial class CampaignSession
             content.CinnabarOwnership is null||content.CinnabarOpponents is null||
             !ReferenceEquals(content.CinnabarOpponents.Owned,content.CinnabarOwnership)||
             (((CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines))?.Predecessor.Predecessor.Predecessor??SeviiRubyMachineCatalog.For(content.PewterMachines)?.Predecessor.Predecessor??VictoryRoadMachineCatalog.For(content.PewterMachines)?.Predecessor??ViridianGymMachineCatalog.For(content.PewterMachines)) is not {} proof||
-            !ReferenceEquals(proof.Pokemon,content.CinnabarOwnership)||content.Maps.Count!=(content.FiveIslandEnabled?254:content.SixIslandEnabled?249:content.FourIslandEnabled?237:content.SeviiRubyEnabled?229:content.PokemonLeagueEnabled?218:content.VictoryRoadEnabled?211:207)||
-            !content.Maps.ContainsKey(new(ViridianGymMap))||content.Maps.ContainsKey(new("map.viridian-gym"))||
+            !ReferenceEquals(proof.Pokemon,content.CinnabarOwnership)||!content.Maps.ContainsKey(new(ViridianGymMap))||content.Maps.ContainsKey(new("map.viridian-gym"))||
             content.MapFromSourceSymbol("MAP_VIRIDIAN_CITY_GYM").Value!=ViridianGymMap||
             content.MapDefinition(new(ViridianGymMap)).Actors.Length!=10||!content.SupportsRegionalFlavor(new(ViridianGymMap)))
             throw new InvalidDataException("viridian_gym_source_profile_missing");

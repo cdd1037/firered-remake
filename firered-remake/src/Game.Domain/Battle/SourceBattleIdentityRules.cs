@@ -28,10 +28,13 @@ public static class SourceBattleIdentityRules
             (mechanicsVersion != BattleRulesProfile.CanonicalSourceSinglesVersion || frame.Layout != SourceBattleLayout.Singles) &&
             mechanicsVersion != SourceBattleKernel.Version)
             return "source_frame_mechanics_profile_layout";
+        // Cave inherits all Celio trainer admissions; its owned species remain checked under the exact current proof.
+        string? trainerMembershipProfile = frame.SourceCampaignRulesVersion == CeruleanCaveOpponentPokemonCatalog.Profile
+            ? CelioOpponentPokemonCatalog.Profile : frame.SourceCampaignRulesVersion;
         if (frame.SourceCampaignRulesVersion is { } campaign &&
             (!OwnedBattlePokemonCatalog.IsKnownProfile(campaign) ||
              !((frame.Layout == SourceBattleLayout.Singles && frame.SourceMechanicsRulesVersion is BattleRulesProfile.CanonicalSourceSinglesVersion or SourceBattleKernel.Version) ||
-               (campaign is CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile && frame.Layout == SourceBattleLayout.PresetDoubles &&
+               (trainerMembershipProfile is CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile && frame.Layout == SourceBattleLayout.PresetDoubles &&
                 frame.SourceMechanicsRulesVersion == SourceBattleKernel.Version && frame.BattleKind == WildBattleCalledBattleKind.Trainer))))
             return "source_frame_campaign_profile";
         if (frame.Turn < 0 || frame.Revision < 0 || frame.EventSequence < 0 || frame.RunAttempts < 0 ||
@@ -59,17 +62,17 @@ public static class SourceBattleIdentityRules
         if (frame.SourceCampaignRulesVersion is not null && frame.Parties.Any(p => p.Members.Any(m =>
             !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species) &&
             !(p.Side == BattleSide.Opponent && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
-              (frame.SourceCampaignRulesVersion is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
+              (trainerMembershipProfile is SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                SilphOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
+               trainerMembershipProfile is SaffronGymOpponentPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                SaffronGymOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
+               trainerMembershipProfile is CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                CinnabarOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
+               trainerMembershipProfile is VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                VictoryRoadOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
+               trainerMembershipProfile is PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                PokemonLeagueOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
-               frame.SourceCampaignRulesVersion is FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
+               trainerMembershipProfile is FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                (FiveIslandOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) || SixIslandOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species)))))))
             return "source_frame_campaign_species";
         if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";

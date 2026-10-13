@@ -28,7 +28,7 @@ public sealed partial class CampaignSession
         }
         if(!content.ViridianGymEnabled||content.LeagueRivalTrainerParties is null||content.CinnabarOwnership is null||
             content.CinnabarOpponents is null||!ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned)||
-            content.CinnabarOwnership.Catalog.Species.Count!=115||content.Maps.Count!=(content.FiveIslandEnabled?254:content.SixIslandEnabled?249:content.FourIslandEnabled?237:content.SeviiRubyEnabled?229:content.PokemonLeagueEnabled?218:content.VictoryRoadEnabled?211:207))
+            content.CinnabarOwnership.Catalog.Species.Count!=115)
             throw new InvalidDataException("league_rival_source_profile_missing");
         LeagueRivalTrainerPartyFactory.ValidateCatalog(content.LeagueRivalTrainerParties);
         var map=content.MapDefinition(LeagueRivalMap);

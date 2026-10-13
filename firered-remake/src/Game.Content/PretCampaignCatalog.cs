@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Game.Domain.Events;
 using Game.Domain.Ids;
@@ -66,10 +67,17 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretCeruleanPokemon? CeruleanPokemon { get; }
     public CeruleanTrainerCatalog? CeruleanTrainers { get; }
     public bool CeruleanEnabled => CeruleanRegion is not null;
+    public PretCeruleanCaveRegion CeruleanCaveRegion { get; }
+    public CeruleanCavePokemonContent CeruleanCavePokemon { get; }
+    public bool CeruleanCaveEnabled => CeruleanCavePokemon is not null;
+    public CeruleanCaveOwnedPokemonCatalog CeruleanCaveOwnership => CeruleanCavePokemon.Owned;
+    public CeruleanCaveOpponentPokemonCatalog CeruleanCaveOpponents => CeruleanCavePokemon.Opponents;
+    public CeruleanCaveMachineCatalog CeruleanCaveMachines => CeruleanCavePokemon.Machines;
+    public CeruleanCaveWaterEncounterCatalog CeruleanCaveWaterEncounters { get; }
     public PretCityServices? CityServices { get; }
     public bool CityServicesEnabled => CityServices is not null;
     public PretOldRod? OldRod { get; }
-    public IReadOnlyDictionary<MapId, OldRodEncounterTable> OldRodEncounters => SixIslandOldRodEncounterRules.Tables.AddRange(FiveIslandEncounterTables.OldRod).ToImmutableDictionary(t => t.Map);
+    public IReadOnlyDictionary<MapId, OldRodEncounterTable> OldRodEncounters => CeruleanCaveOldRodEncounterRules.Tables.ToImmutableDictionary(t => t.Map);
     public ImmutableArray<PewterMachineItem> CityServiceItems => CityServices?.Items ?? [];
     public PretVermilionGymRegion? VermilionGymRegion { get; }
     public VermilionGymTrainerCatalog? VermilionGymTrainers { get; }
@@ -274,8 +282,12 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         FiveIslandTrainerCatalog fiveIslandTrainers,
         FiveIslandItemContent fiveIslandItems,
         CelioPokemonContent celioPokemon,
-        ImmutableDictionary<MapId, RoamerMap> celioRoamerMaps)
+        ImmutableDictionary<MapId, RoamerMap> celioRoamerMaps,
+        PretCeruleanCaveRegion ceruleanCave,
+        CeruleanCavePokemonContent ceruleanCavePokemon)
     {
+        CeruleanCaveRegion = ceruleanCave;
+        CeruleanCavePokemon = ceruleanCavePokemon;
         CelioPokemon = celioPokemon;
         CelioRoamerMaps = celioRoamerMaps;
         FiveIslandRegion = fiveIsland;
@@ -525,6 +537,12 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
                 throw new InvalidDataException("five_island_pickup_composition");
         }
 
+        FieldPickups = FieldPickups.AddRange(CeruleanCavePickupDefinitions(ceruleanCave, earlyShop.Catalog, scripts));
+        LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(CeruleanCaveEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
+        CeruleanCaveWaterEncounters = CeruleanCaveWaterEncounterCatalog.Authenticate(FiveIslandWaterEncounters!, CeruleanCaveEncounterTables.Water);
+        if (FieldPickups.Length != 244 || FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != 244)
+            throw new InvalidDataException("cerulean_cave_pickup_composition");
+
         var metatileDefinitions = metatiles.Definitions.ToDictionary(x => x.Key, x => new FieldMetatileDefinition(x.Key, x.Value.Behavior, x.Value.Terrain, x.Value.EncounterType, x.Value.LayerType));
         {
             // Source metatile IDs are local to a tileset. Preserve the Mart's 0x2BF
@@ -535,8 +553,72 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
         MetatileDefinitions = metatileDefinitions;
         Maps = Maps.ToImmutableDictionary().SetItem(new("map.viridian-city"), new ViridianGymCityFieldMap(maps[new("map.viridian-city")]));
-        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : (RegionalServiceMapIds.Contains(x.Key) || RegionalInteriorMapIds.Contains(x.Key)) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
+        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => ceruleanCave.NewMaps.ContainsKey(x.Key) ? CeruleanCaveConnectedMap(x.Value) : fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : (RegionalServiceMapIds.Contains(x.Key) || RegionalInteriorMapIds.Contains(x.Key)) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
         _definitions = maps.ToImmutableDictionary(x => x.Key, x => Definition(x.Value));
+    }
+
+    private static ConnectedFieldMap CeruleanCaveConnectedMap(PretWorldMap map)
+    {
+        if (map.Events.GetProperty("connections").ValueKind != JsonValueKind.Null)
+            throw new InvalidDataException("cerulean_cave_unexpected_connection");
+        return new(map.Id, map.Width, map.Height,
+            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+    }
+
+    private static ImmutableArray<FieldPickupDefinition> CeruleanCavePickupDefinitions(PretCeruleanCaveRegion region,
+        EarlyShopCatalog shop, PretStoryCompilation scripts)
+    {
+        var definitions = region.Items.GetProperty("declarations").EnumerateArray()
+            .ToDictionary(e => e.GetProperty("itemId").GetString()!, StringComparer.Ordinal);
+        EarlyShopItemDefinition Item(string symbol)
+        {
+            var item = shop.Items.SingleOrDefault(i => i.SourceItemSymbol == symbol)
+                ?? throw new InvalidDataException("cerulean_cave_pickup_item_missing:" + symbol);
+            if (!definitions.TryGetValue(symbol, out var source) || item.Id.Value != "pret:" + symbol ||
+                !scripts.TryConstant(symbol, out var id) || item.SourceItemId != id ||
+                item.Name != source.GetProperty("english").GetString() || item.Pocket != source.GetProperty("pocket").GetString() ||
+                item.Price != source.GetProperty("price").GetInt32())
+                throw new InvalidDataException("cerulean_cave_pickup_item_source:" + symbol);
+            return item;
+        }
+        var pickups = ImmutableArray.CreateBuilder<FieldPickupDefinition>();
+        foreach (var row in region.Contracts.GetProperty("itemPickups").EnumerateArray())
+        {
+            var source = row.GetProperty("event");
+            var map = region.NewMaps[PretCeruleanCaveRegion.MapIdFromSourceSymbol(row.GetProperty("map").GetString()!)];
+            int local = row.GetProperty("localId").GetInt32(), quantity = row.GetProperty("quantity").GetInt32();
+            string label = source.GetProperty("script").GetString()!, symbol = row.GetProperty("item").GetString()!;
+            string flag = source.GetProperty("flag").GetString()!;
+            var item = Item(symbol);
+            var origin = row.GetProperty("sourceRef");
+            if (quantity != 1 || !JsonElement.DeepEquals(source, map.Events.GetProperty("object_events")[local - 1]) ||
+                !scripts.TryConstant(flag, out int flagId) || scripts.FindProgram(label) is not { } program ||
+                program.Instructions.Any(i => i.Op == StoryOp.Unsupported || i.Source.Path != origin.GetProperty("path").GetString()) ||
+                !program.Instructions.Any(i => i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8000", symbol })) ||
+                !program.Instructions.Any(i => i.Opcode == "setorcopyvar" && i.Args.SequenceEqual(new[] { "VAR_0x8001", "1" })))
+                throw new InvalidDataException("cerulean_cave_pickup_source:" + label);
+            pickups.Add(new("cerulean-cave:" + flag, map.SourceMapSymbol, false, local,
+                source.GetProperty("x").GetInt32(), source.GetProperty("y").GetInt32(), source.GetProperty("elevation").GetInt32(),
+                label, symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, quantity, flag, flagId));
+        }
+        foreach (var row in region.Contracts.GetProperty("hiddenItems").EnumerateArray())
+        {
+            var source = row.GetProperty("event");
+            var map = region.NewMaps[PretCeruleanCaveRegion.MapIdFromSourceSymbol(row.GetProperty("map").GetString()!)];
+            string symbol = source.GetProperty("item").GetString()!, flag = source.GetProperty("flag").GetString()!;
+            var item = Item(symbol);
+            if (source.GetProperty("quantity").GetInt32() != 1 || source.GetProperty("underfoot").GetBoolean() ||
+                !map.Events.GetProperty("bg_events").EnumerateArray().Any(e => JsonElement.DeepEquals(e, source)) ||
+                !scripts.TryConstant(flag, out int flagId))
+                throw new InvalidDataException("cerulean_cave_hidden_source:" + flag);
+            pickups.Add(new("cerulean-cave:" + flag, map.SourceMapSymbol, true, null,
+                source.GetProperty("x").GetInt32(), source.GetProperty("y").GetInt32(), source.GetProperty("elevation").GetInt32(),
+                "EventScript_HiddenItemScript", symbol, item.SourceItemId, item.Id, item.Name, item.Pocket, 1, flag, flagId));
+        }
+        if (pickups.Count != 9 || pickups.Count(p => p.Hidden) != 1 ||
+            pickups.Select(p => p.SourceFlagId).Distinct().Count() != 9)
+            throw new InvalidDataException("cerulean_cave_pickup_scope");
+        return pickups.ToImmutable();
     }
 
     private FieldMapDefinition Definition(PretWorldMap map)
@@ -557,6 +639,11 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
     public FieldMetatileDefinition? MetatileDefinition(MapId map, int id)
     {
+        if (CeruleanCaveRegion.NewMaps.TryGetValue(map, out var cave))
+        {
+            var cell = cave.Cells.Concat(cave.BorderCells).FirstOrDefault(c => c.MetatileId == id);
+            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
+        }
         if (FiveIslandRegion?.SourceMaps.ContainsKey(map) == true)
             return FiveIslandRegion.MetatileDefinition(map, id);
         if (SixIslandRegion?.SourceMaps.ContainsKey(map) == true)

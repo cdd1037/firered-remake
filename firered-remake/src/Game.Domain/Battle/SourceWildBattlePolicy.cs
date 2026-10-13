@@ -15,6 +15,7 @@ public sealed record SourceWildEncounterContext
     public const string Version = "firered-current-wild-policy-v1";
     public string RulesVersion { get; init; } = Version;
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public CelioRoamerBattleOrigin? CelioRoamer { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public CeruleanCaveWildOrigin? CeruleanCave { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public VictoryRoadWildOrigin? VictoryRoad { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SeviiRubyWildOrigin? SeviiRuby { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public FourIslandWildOrigin? FourIsland { get; init; }
@@ -54,13 +55,14 @@ public static partial class SourceWildBattlePolicy
         return StartCore(owned.Mechanics, owned, playerParty, activeIndex, opponent, rng, encounter ?? new(), terrain, oldRodFishing);
     }
 
-    public static SourceWildEntryResult StartCelioRoamer(CelioOwnedPokemonCatalog owned, RoamerIndividual individual,
+    public static SourceWildEntryResult StartCelioRoamer(OwnedBattlePokemonCatalog owned, RoamerIndividual individual,
         uint originalTrainerId, ImmutableArray<WildBattleCombatant> playerParty, int activeIndex, RngState rng,
         WildBattleTerrain terrain = WildBattleTerrain.Grass)
     {
         try
         {
-            var opponent = CelioRoamerBattleContract.Restore(owned, individual, originalTrainerId);
+            var celio = CelioSourceOwnership(owned) ?? throw new ArgumentException("celio_roamer_owned_source");
+            var opponent = CelioRoamerBattleContract.Restore(celio, individual, originalTrainerId);
             return StartOwned(owned, playerParty, activeIndex, opponent, rng,
                 new() { CelioRoamer = new(individual, originalTrainerId) }, terrain);
         }
@@ -89,7 +91,7 @@ public static partial class SourceWildBattlePolicy
         if (oldRodFishing && (opponent.Pokemon.SourceSpeciesId != 129 || opponent.Pokemon.Level is < 5 or > 10))
             return EntryFail("wild_battle_old_rod_context_unsupported");
         if (ValidateSpecialEntry(encounter, opponent) is { } special) return EntryFail(special);
-        bool origin = encounter.CelioRoamer is not null || encounter.VictoryRoad is not null || encounter.SeviiRuby is not null ||
+        bool origin = encounter.CeruleanCave is not null || encounter.CelioRoamer is not null || encounter.VictoryRoad is not null || encounter.SeviiRuby is not null ||
             encounter.FourIsland is not null || encounter.SixIsland is not null || encounter.FiveIsland is not null;
         if (owned is not null && !origin && !oldRodFishing && !encounter.ScriptedSnorlax &&
             encounter.TowerBattleKind is not (PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak) && !(encounter.FirstSeviiWild
@@ -112,7 +114,8 @@ public static partial class SourceWildBattlePolicy
             var trace = ImmutableArray.CreateBuilder<RandomTrace>();
             ushort Draw(string purpose, int bound = 65536) { var d = Gen3Rng.Next(frame.Rng, purpose, bound); frame = frame with { Rng = d.State }; trace.Add(d.Trace); return d.Value; }
             for (int i = 0; i < 4; i++) Draw($"wild-battle.entry.ai-setup.slot-{i}", 16);
-            if (owned is not null && encounter.TowerBattleKind != PokemonTowerBattleKind.RevealedMarowak)
+            if (owned is not null && encounter.TowerBattleKind != PokemonTowerBattleKind.RevealedMarowak &&
+                encounter.CeruleanCave?.Kind != CeruleanCaveEncounterKind.Mewtwo)
             {
                 int roll = Draw("wild-battle.held-item", 100) % 100;
                 string item = HeldItem(encounter, opponent.Pokemon, roll, owned);
@@ -134,6 +137,7 @@ public static partial class SourceWildBattlePolicy
     }
 
     private static string HeldItem(SourceWildEncounterContext context, PokemonInstance mon, int roll, OwnedBattlePokemonCatalog owned) => context switch {
+        { CeruleanCave: not null } => CeruleanCaveWildPokemonFactory.HeldItem(mon.Species, roll),
         { ScriptedSnorlax: true } => SnorlaxBattleContract.WildHeldItem(roll),
         { TowerBattleKind: not null } => PokemonTowerBattleContract.WildHeldItem(mon.SourceSpeciesId, roll),
         { FiveIsland: not null } => FiveIslandWildPokemonFactory.HeldItem(mon.Species, roll),
@@ -160,17 +164,18 @@ public static partial class SourceWildBattlePolicy
             frame.Party(BattleSide.Opponent).Members.Length != 1)
             return "source_wild_policy_identity";
         int origins = new object?[] { context.CelioRoamer, context.VictoryRoad, context.SeviiRuby, context.FourIsland,
-            context.SixIsland, context.FiveIsland, context.TowerBattleKind }.Count(x => x is not null) +
+            context.SixIsland, context.FiveIsland, context.CeruleanCave, context.TowerBattleKind }.Count(x => x is not null) +
             (context.ScriptedSnorlax ? 1 : 0) + (context.FirstSeviiWild ? 1 : 0);
         if (origins > 1) return "source_wild_conflicting_origins";
         var mon = frame.Party(BattleSide.Opponent).Members[0].Pokemon;
         if (context.LostelleHypno && (!context.FirstSeviiWild || mon.SourceSpeciesId != 97 || mon.Level != 30)) return "first_sevii_hypno_source_identity";
         if (context.ScriptedSnorlax && (mon.SourceSpeciesId != 143 || mon.Level != 30)) return "snorlax_scripted_identity";
         if (ValidateTower(context, mon, frame.Outcome) is { } tower) return tower;
-        if (context.CelioRoamer is { } roamer && (frame.SourceCampaignRulesVersion != CelioOwnedPokemonCatalog.Profile ||
+        if (context.CelioRoamer is { } roamer && (frame.SourceCampaignRulesVersion is not (CelioOwnedPokemonCatalog.Profile or CeruleanCaveOwnedPokemonCatalog.Profile) ||
             !CelioRoamerBattleContract.MatchesIdentity(roamer, mon) || !CelioRoamerBattleContract.MatchesOutcome(roamer, frame.Outcome)))
             return "source_wild_roamer_origin";
-        if (context.VictoryRoad is { } victory && !VictoryRoadWildBattleContract.Matches(victory, mon) ||
+        if (context.CeruleanCave is { } cave && (frame.SourceCampaignRulesVersion != CeruleanCaveOwnedPokemonCatalog.Profile || !CeruleanCaveWildBattleContract.Matches(cave, mon)) ||
+            context.VictoryRoad is { } victory && !VictoryRoadWildBattleContract.Matches(victory, mon) ||
             context.SeviiRuby is { } ruby && (ruby.Kind == SeviiRubyEncounterKind.RockSmash || !SeviiRubyWildBattleContract.Matches(ruby, mon)) ||
             context.FourIsland is { } four && !FourIslandWildBattleContract.Matches(four, mon) ||
             context.SixIsland is { } six && (!SixIslandWildBattleContract.IsRuntimeKind(six.Kind) || !SixIslandWildBattleContract.Matches(six, mon)) ||

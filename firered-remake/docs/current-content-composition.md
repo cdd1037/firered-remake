@@ -65,8 +65,8 @@ ordinary-wild Application smoke and 524-check trainer Application suite. See
 [combined build evidence](../evidence/refactor-final-20261013/build.log) and
 [the complete refactor status](project-refactor-plan.md#2026-10-13-content-specialization-and-battle-owner-retirement).
 
-Field encounter/fishing dispatch still has redundant current-profile branches
-under separate bounded cleanup; sole-loader retirement is not a claim that every
+The subsequent current field encounter/fishing/item cleanup and Moon/Sun Stone
+closure are complete in [the final bounded result](project-refactor-plan.md#2026-10-13-final-bounded-refactor-result); sole-loader retirement is not a claim that every
 historical branch is gone. No historical full solution or regional route was
 replayed, and no resource importer was run for this Content change. Native visual
 and physical audio acceptance are outside this slice.

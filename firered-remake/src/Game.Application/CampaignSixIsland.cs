@@ -33,7 +33,7 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("six_island_profile_missing");
             return;
         }
-        if (!content.FourIslandEnabled || content.Maps.Count != (content.FiveIslandEnabled ? 254 : 249) || content.SixIslandOwnership is not {} owned ||
+        if (!content.FourIslandEnabled || content.SixIslandOwnership is not {} owned ||
             content.SixIslandOpponents is not {} opponents || content.SixIslandTrainers is not {} trainers ||
             !ReferenceEquals(owned.Predecessor, content.FourIslandOwnership) || !ReferenceEquals(content.FiveIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.FourIslandOpponents) ||

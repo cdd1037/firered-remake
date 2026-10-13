@@ -83,6 +83,10 @@ public interface ICampaignCatalog:IStoryCatalog
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
     bool NationalDexEnabled=>false;
+    bool CeruleanCaveEnabled=>false;
+    CeruleanCaveOwnedPokemonCatalog? CeruleanCaveOwnership=>null;
+    CeruleanCaveOpponentPokemonCatalog? CeruleanCaveOpponents=>null;
+    CeruleanCaveMachineCatalog? CeruleanCaveMachines=>null;
     bool CelioEnabled=>false;
     CelioOwnedPokemonCatalog? CelioOwnership=>null;
     CelioOpponentPokemonCatalog? CelioOpponents=>null;

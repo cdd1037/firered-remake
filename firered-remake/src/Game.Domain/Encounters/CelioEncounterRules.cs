@@ -20,14 +20,29 @@ public static class CelioEncounterRules
     {
         if (owned is null || !ReferenceEquals(CelioOwnedPokemonCatalog.For(owned.Catalog), owned))
             throw new ArgumentException("celio_encounter_catalog");
+        return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
+    }
+
+    internal static CelioRoamerEncounterGate Validate(CeruleanCaveOwnedPokemonCatalog owned,
+        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
+        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
+    {
+        CeruleanCaveWildPokemonFactory.ValidateOwned(owned);
+        return ValidateParty(owned.Catalog, owned.Mechanics, party, repelSteps, roamer, playerMap, saffronShop);
+    }
+
+    private static CelioRoamerEncounterGate ValidateParty(PokemonCatalog catalog, SourceMechanicsCatalog mechanics,
+        ImmutableArray<PartyPokemon> party, ushort repelSteps, RoamerState roamer,
+        RoamerMap playerMap, SaffronGymShopCatalog? saffronShop)
+    {
         if (saffronShop is null) EarlyRepelRules.ValidateSteps(repelSteps, pokemonTowerRules: true);
         else SaffronGymRepelRules.ValidateSteps(saffronShop, repelSteps);
         SourceRoamerRules.Validate(roamer);
         if (playerMap.Group is < 0 or > 255 || playerMap.Number is < 0 or > 255)
             throw new ArgumentOutOfRangeException(nameof(playerMap));
         if (party.IsDefaultOrEmpty || party.Length > 6 || party.Any(member => member is null ||
-            PokemonStateValidator.Validate(owned.Catalog, member.Pokemon) is not null ||
-            !SourceBattleAdmission.SupportsHeldItem(owned.Mechanics.Catalog, member.HeldItem)))
+            PokemonStateValidator.Validate(catalog, member.Pokemon) is not null ||
+            !SourceBattleAdmission.SupportsHeldItem(mechanics.Catalog, member.HeldItem)))
             throw new ArgumentException("celio_encounter_party");
         return new(roamer, playerMap, party.Select(member =>
             new RoamerPartyMember(member.Pokemon.Level, member.Pokemon.CurrentHp, member.IsEgg)).ToImmutableArray());

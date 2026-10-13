@@ -4,9 +4,9 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private EarlyLandWildPokemonResult GenerateFiveIslandLand(CampaignState state,
+    private EarlyLandWildPokemonResult GenerateCurrentLand(CampaignState state,
         EarlyLandEncounterTable table,EarlyLandEncounterState encounter) =>
-        FiveIslandWildPokemonFactory.Generate(_content.FiveIslandOwnership!,table,encounter,state.World.Rng,state.TrainerId);
+        CeruleanCaveWildPokemonFactory.Generate(_content.CeruleanCaveOwnership!,table,encounter,state.World.Rng,state.TrainerId);
 
     private bool IsFiveIslandWildHistory(CampaignWildHistory history)
     {

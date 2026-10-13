@@ -132,6 +132,9 @@ public static partial class PretStoryCompiler
                 }
                 if(includeFiveIsland&&IsFiveIslandAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
+                if (FirstSeviiSource(file, "data/maps/CeruleanCave_2F/scripts.inc", "1ee9c61f02f4624d95e73729d315de26860298d04c4d047c7a889c6c7b432908") &&
+                    label == "CeruleanCave_2F_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
+                { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
                 if(body[0].Text.StartsWith(".string",StringComparison.Ordinal))continue;
                 if(body.Any(x=>x.Text.StartsWith("map_script ",StringComparison.Ordinal)))
                 {
@@ -194,6 +197,8 @@ public static partial class PretStoryCompiler
                             (kind,min,max)=(StoryOp.Unsupported,0,int.MaxValue);
                         if(snorlaxSource&&opcode=="setwildbattle"&&!operands.SequenceEqual(new[]{"SPECIES_SNORLAX","30"}))
                             throw ContentJson.Error("snorlax_scripted_wild_operands",$"{file.Path}:{lineNumber}",opcode);
+                        if (CeruleanCaveInstructionShape(file, label, opcode, operands) is { } caveShape)
+                            (kind, min, max) = caveShape;
                         if(includeFirstSevii)
                         {
                             var admitted=FirstSeviiInstructionShape(file,label,opcode,operands);

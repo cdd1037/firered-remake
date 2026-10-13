@@ -23,7 +23,7 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("five_island_profile_missing");
             return;
         }
-        if (!content.SixIslandEnabled || content.Maps.Count != 254 || content.FiveIslandOwnership is not {} owned ||
+        if (!content.SixIslandEnabled || content.FiveIslandOwnership is not {} owned ||
             content.FiveIslandOpponents is not {} opponents || content.FiveIslandTrainers is not {} trainers ||
             !ReferenceEquals(owned.Predecessor, content.SixIslandOwnership) || !ReferenceEquals(content.CelioOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.SixIslandOpponents) ||

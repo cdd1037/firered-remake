@@ -19,7 +19,7 @@ public sealed partial class CampaignSession
             if(content.VictoryRoadTrainerParties is not null||content.VictoryRoadOpponents is not null)throw new InvalidDataException("victory_road_profile_missing");
             return;
         }
-        if(!content.LeagueRivalEnabled||content.Maps.Count!=(content.FiveIslandEnabled?254:content.SixIslandEnabled?249:content.FourIslandEnabled?237:content.SeviiRubyEnabled?229:content.PokemonLeagueEnabled?218:211)||content.CinnabarOwnership is null||content.CinnabarOpponents is null||
+        if(!content.LeagueRivalEnabled||content.CinnabarOwnership is null||content.CinnabarOpponents is null||
             content.CinnabarOwnership.Catalog.Species.Count!=115||content.VictoryRoadTrainerParties is null||content.VictoryRoadOpponents is null||
             content.VictoryRoadOpponents.Catalog.Species.Count!=124||!ReferenceEquals(content.VictoryRoadOpponents.Predecessor,content.CinnabarOpponents)||
             (((FiveIslandShopCatalog.For(content.EarlyShop)?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop))?.Predecessor.Predecessor??SeviiRubyShopCatalog.For(content.EarlyShop)?.Predecessor??VictoryRoadShopCatalog.For(content.EarlyShop)) is null||(((CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines))?.Predecessor.Predecessor??SeviiRubyMachineCatalog.For(content.PewterMachines)?.Predecessor??VictoryRoadMachineCatalog.For(content.PewterMachines)) is not {} machines||
