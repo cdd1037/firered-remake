@@ -113,11 +113,17 @@ def verify_p0():
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-current-checkpoints HANDOFF_SAVE BILL_SAVE OUTPUT_DIRECTORY','test-current-battles CURRENT_CHECKPOINT OUTPUT_DIRECTORY','probe','export linux','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
+ if not args:return output({'commands':['doctor','setup','build','test','test-current-checkpoints HANDOFF_SAVE BILL_SAVE OUTPUT_DIRECTORY','test-current-battles CURRENT_CHECKPOINT OUTPUT_DIRECTORY','test-current-items CURRENT_CHECKPOINT OUTPUT_JSON','probe','export linux','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
  if args==['doctor']:return doctor()
  if args==['setup']:return setup()
  if args==['build']:return build()
  if args==['test']:return test()
+ if len(args)==3 and args[0]=='test-current-items':
+  checkpoint=pathlib.Path(args[1]).resolve(); destination=pathlib.Path(args[2]).resolve()
+  if not checkpoint.is_file():raise ValueError('A strict current checkpoint is required.')
+  if destination.exists():raise ValueError('Refusing to replace prior evidence.')
+  destination.parent.mkdir(parents=True,exist_ok=True)
+  run([DOTNET,'run','--project','tests/Game.CurrentFieldItems.Tests','--no-build','--',ROOT,checkpoint,destination]);return 0
  if len(args)==3 and args[0]=='test-current-battles':
   checkpoint=pathlib.Path(args[1]).resolve(); destination=pathlib.Path(args[2]).resolve()
   prerequisites=[checkpoint,ROOT/'evidence/current-composition-20261013/conversion-run01/current.json',ROOT/'tests/Game.FiveIslandCampaign.Tests/evidence/recovery-20261013-run02/before-gideon.json']

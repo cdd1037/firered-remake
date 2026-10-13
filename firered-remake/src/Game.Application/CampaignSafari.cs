@@ -36,8 +36,7 @@ public sealed partial class CampaignSession
     {
         var encounter = state.Exploration?.EarlyEncounter ?? throw new InvalidDataException("safari_encounter_missing");
         var table = _content.LandEncounters![state.World.Player.MapId];
-        var generated = _content.FiveIslandEnabled?GenerateFiveIslandLand(state,table,encounter):_content.SixIslandEnabled?GenerateSixIslandLand(state,table,encounter):_content.FourIslandEnabled?GenerateFourIslandLand(state,table,encounter):_content.SeviiRubyEnabled?GenerateSeviiRubyLand(state,table,encounter):_content.CinnabarEnabled?CinnabarWildPokemonFactory.Generate(_content.CinnabarOwnership!,table,encounter,state.World.Rng,state.TrainerId):EarlyLandWildPokemonFactory.Generate(BattlePokemon, table, encounter,
-            state.World.Rng, state.TrainerId, safariRules: true);
+        var generated = GenerateFiveIslandLand(state,table,encounter);
         var rng = generated.GlobalRng;
         var trace = generated.RandomTrace.ToBuilder();
         // CB2_InitBattle: SetUpBattleVars -> BattleAI_HandleItemUseBeforeAISetup (four

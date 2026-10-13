@@ -46,7 +46,7 @@ recorded in [the current integration status](project-refactor-plan.md#2026-10-13
 
 ## Default build/test and historical source
 
-`./dev build` restores/builds all 16 projects in `FireRed.Current.slnx`: the five
+`./dev build` restores/builds all 17 projects in `FireRed.Current.slnx`: the five
 product assemblies, current composition, shared lifecycle and trainer-policy
 contracts, canonical wild/trainer Application suites, five foundational
 Domain/transaction/story suites and the original content fixture verifier.
@@ -115,3 +115,5 @@ checks, 53 ordinary-wild checks/11 public commands and 524 trainer checks/494
 public commands. These were actual combined-tree runs. See
 [build evidence](../evidence/refactor-final-20261013/build.log) and
 [the latest integration result and remaining field-dispatch cleanup](project-refactor-plan.md#2026-10-13-content-specialization-and-battle-owner-retirement).
+
+The current field-item Application project also compiles by default. Run `./dev test-current-items CURRENT_CHECKPOINT OUTPUT_JSON` explicitly using the generation-47819 current checkpoint described in its [README](../tests/Game.CurrentFieldItems.Tests/README.md). This fixture-dependent gate covers current items and the repaired owned-catalog Candy admission; it is not part of the fixture-free default test command.

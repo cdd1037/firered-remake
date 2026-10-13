@@ -11,15 +11,14 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> UseMtMoonFieldMedicine(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (!_content.MtMoonEnabled || _content.EarlyShop is not { } shop ||
-            state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
+        if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
             state.Inventory is null || string.IsNullOrEmpty(command.Text))
             return No("field_medicine_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length)
             return No("item_party_index_invalid");
         var inventoryError = ValidateCampaignInventory(state.Inventory);
         if (inventoryError is not null) return No(inventoryError);
-        var result = MtMoonFieldMedicineRules.Use(shop, _content.PokemonContent!,
+        var result = MtMoonFieldMedicineRules.Use(ShopCatalog, _content.PokemonContent!,
             ShopInventoryView(state.Inventory), state.Party[command.PartyIndex], new ItemId(command.Text),
             command.MoveSlot == -1 ? null : command.MoveSlot);
         if (!result.Succeeded)

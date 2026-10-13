@@ -7,27 +7,31 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
+    // Current construction authenticates the latest shop. These predecessors remain
+    // typed source proofs and preserve each later key-item extension when narrowing.
     private FiveIslandShopCatalog FiveIslandShopProof => FiveIslandShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("five_island_shop_proof_missing");
-    private InventoryState FiveIslandPredecessorInventory(InventoryState inventory) => _content.FiveIslandEnabled ? FiveIslandShopProof.InventoryForPredecessor(inventory) : inventory;
-    private SixIslandShopCatalog SixIslandShopProof => (_content.FiveIslandEnabled ? FiveIslandShopProof.Predecessor : SixIslandShopCatalog.For(ShopCatalog)) ?? throw new InvalidDataException("six_island_shop_proof_missing");
-    private FourIslandShopCatalog FourIslandShopProof => (_content.SixIslandEnabled ? SixIslandShopProof.Predecessor : FourIslandShopCatalog.For(ShopCatalog)) ?? throw new InvalidDataException("four_island_shop_proof_missing");
-    private InventoryState SixIslandPredecessorInventory(InventoryState inventory) => _content.SixIslandEnabled ? SixIslandShopProof.InventoryForPredecessor(FiveIslandPredecessorInventory(inventory)) : inventory;
-    private SeviiRubyShopCatalog SeviiRubyShopProof => ((_content.FourIslandEnabled ? FourIslandShopProof : null)?.Predecessor ?? SeviiRubyShopCatalog.For(ShopCatalog)) ?? throw new InvalidDataException("sevii_ruby_shop_proof_missing");
-    private InventoryState FourIslandPredecessorInventory(InventoryState inventory) => _content.FourIslandEnabled ? FourIslandShopProof.InventoryForPredecessor(SixIslandPredecessorInventory(inventory)) : inventory;
-    private VictoryRoadShopCatalog VictoryRoadShopProof=>((_content.SeviiRubyEnabled?SeviiRubyShopProof:null)?.Predecessor??VictoryRoadShopCatalog.For(ShopCatalog))??throw new InvalidDataException("victory_road_shop_proof_missing");
-    private InventoryState VictoryRoadPredecessorInventory(InventoryState inventory)=>_content.VictoryRoadEnabled?VictoryRoadShopProof.InventoryForPredecessor(_content.SeviiRubyEnabled?SeviiRubyShopProof.InventoryForPredecessor(FourIslandPredecessorInventory(inventory)):inventory):inventory;
-    private FirstSeviiShopCatalog FirstSeviiShopProof=>(_content.VictoryRoadEnabled?VictoryRoadShopProof.Predecessor:FirstSeviiShopCatalog.For(ShopCatalog))??throw new InvalidDataException("first_sevii_shop_proof_missing");
-    private InventoryState FirstSeviiPredecessorInventory(InventoryState inventory)=>_content.FirstSeviiEnabled?FirstSeviiShopProof.InventoryForPredecessor(VictoryRoadPredecessorInventory(inventory)):inventory;
-    private InventoryState MergeFirstSeviiPredecessorInventory(InventoryState original,InventoryState changed)
+    private SixIslandShopCatalog SixIslandShopProof => FiveIslandShopProof.Predecessor;
+    private FourIslandShopCatalog FourIslandShopProof => SixIslandShopProof.Predecessor;
+    private SeviiRubyShopCatalog SeviiRubyShopProof => FourIslandShopProof.Predecessor;
+    private VictoryRoadShopCatalog VictoryRoadShopProof => SeviiRubyShopProof.Predecessor;
+    private FirstSeviiShopCatalog FirstSeviiShopProof => VictoryRoadShopProof.Predecessor;
+
+    private InventoryState FiveIslandPredecessorInventory(InventoryState inventory) => FiveIslandShopProof.InventoryForPredecessor(inventory);
+    private InventoryState SixIslandPredecessorInventory(InventoryState inventory) => SixIslandShopProof.InventoryForPredecessor(FiveIslandPredecessorInventory(inventory));
+    private InventoryState FourIslandPredecessorInventory(InventoryState inventory) => FourIslandShopProof.InventoryForPredecessor(SixIslandPredecessorInventory(inventory));
+    private InventoryState VictoryRoadPredecessorInventory(InventoryState inventory) => VictoryRoadShopProof.InventoryForPredecessor(SeviiRubyShopProof.InventoryForPredecessor(FourIslandPredecessorInventory(inventory)));
+    private InventoryState FirstSeviiPredecessorInventory(InventoryState inventory) => FirstSeviiShopProof.InventoryForPredecessor(VictoryRoadPredecessorInventory(inventory));
+
+    private InventoryState MergeFirstSeviiPredecessorInventory(InventoryState original, InventoryState changed)
     {
-        var view=ShopInventoryView(original);
-        if(_content.FirstSeviiEnabled)changed=FirstSeviiShopProof.RestoreFromPredecessor(VictoryRoadPredecessorInventory(view),changed);
-        if(_content.VictoryRoadEnabled)changed=VictoryRoadShopProof.RestoreFromPredecessor(_content.SeviiRubyEnabled?SeviiRubyShopProof.InventoryForPredecessor(FourIslandPredecessorInventory(view)):view,changed);
-        if(_content.SeviiRubyEnabled)changed=SeviiRubyShopProof.RestoreFromPredecessor(FourIslandPredecessorInventory(view),changed);
-        if(_content.FourIslandEnabled)changed=FourIslandShopProof.RestoreFromPredecessor(SixIslandPredecessorInventory(view),changed);
-        if(_content.SixIslandEnabled)changed=SixIslandShopProof.RestoreFromPredecessor(FiveIslandPredecessorInventory(view),changed);
-        if(_content.FiveIslandEnabled)changed=FiveIslandShopProof.RestoreFromPredecessor(view,changed);
-        return MergeShopInventory(original,changed);
+        var view = ShopInventoryView(original);
+        changed = FirstSeviiShopProof.RestoreFromPredecessor(VictoryRoadPredecessorInventory(view), changed);
+        changed = VictoryRoadShopProof.RestoreFromPredecessor(SeviiRubyShopProof.InventoryForPredecessor(FourIslandPredecessorInventory(view)), changed);
+        changed = SeviiRubyShopProof.RestoreFromPredecessor(FourIslandPredecessorInventory(view), changed);
+        changed = FourIslandShopProof.RestoreFromPredecessor(SixIslandPredecessorInventory(view), changed);
+        changed = SixIslandShopProof.RestoreFromPredecessor(FiveIslandPredecessorInventory(view), changed);
+        changed = FiveIslandShopProof.RestoreFromPredecessor(view, changed);
+        return MergeShopInventory(original, changed);
     }
     private bool TryApplyFirstSeviiItemEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {

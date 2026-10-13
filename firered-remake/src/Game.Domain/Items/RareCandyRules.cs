@@ -25,8 +25,9 @@ public sealed record RareCandyResult(RareCandyOutcome Outcome, PartyPokemon Poke
 }
 
 /// <summary>
-/// Pinned FireRed Rare Candy field effect for the current MtMoon catalog and pre-National-Dex
-/// campaign. Pure and deterministic: no bag, battle, RNG, scene, history, persistence or IO.
+/// Pinned FireRed Rare Candy field effect for an authenticated owned campaign catalog.
+/// National Dex scene gating belongs to the campaign owner. Pure and deterministic: no bag,
+/// battle, RNG, scene, history, persistence or IO.
 /// </summary>
 public static class RareCandyRules
 {
@@ -40,38 +41,17 @@ public static class RareCandyRules
     /// once. Status and existing PP/PP Ups survive. Level 100 has no effect, even when fainted.
     /// Caller must establish field context, bag ownership and exclusive modal state.
     /// </summary>
-    public static RareCandyResult Apply(CampaignPokemonContent content, PartyPokemon owned, string currentRegion, bool snorlaxRules = false, bool fuchsiaRules = false, bool safariRules = false, bool surfRules = false, bool silphRules = false, bool cinnabarRules = false)
+    public static RareCandyResult Apply(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+        PartyPokemon owned, string currentRegion)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (cinnabarRules)
-        {
-            if (!(CinnabarOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || SeviiRubyOwnedPokemonCatalog.IsAuthenticated(content.Catalog)) || snorlaxRules || fuchsiaRules || safariRules || surfRules || silphRules)
-                throw new NotSupportedException("Explicit authenticated Cinnabar Rare Candy profile required.");
-        }
-        else if (silphRules)
-        {
-            if (!SilphOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || snorlaxRules || fuchsiaRules || safariRules || surfRules)
-                throw new NotSupportedException("Explicit authenticated Silph Rare Candy profile required.");
-        }
-        else if (surfRules)
-        {
-            if (!SurfOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || snorlaxRules || fuchsiaRules || safariRules)
-                throw new NotSupportedException("Explicit authenticated Surf Rare Candy profile required.");
-        }
-        else if (safariRules)
-        {
-            if (!SafariOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || snorlaxRules || fuchsiaRules)
-                throw new NotSupportedException("Explicit authenticated Safari Rare Candy profile required.");
-        }
-        else if (fuchsiaRules)
-        {
-            PokemonFactory.ValidateCatalog(content.Catalog);
-            if (content.Catalog.Species.Count != 107) throw new NotSupportedException("Explicit Fuchsia Rare Candy profile required.");
-        }
-        else if ((Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) == 102) != snorlaxRules) throw new NotSupportedException("Explicit Snorlax Rare Candy profile required.");
+        ArgumentNullException.ThrowIfNull(ownership);
+        // The current composition binds the exact owned proof once. Opponent catalogs and
+        // reconstructed copies cannot enter through matching species counts or profile text.
+        if (!ReferenceEquals(ownership.Catalog, content.Catalog) ||
+            !ReferenceEquals(OwnedBattlePokemonCatalog.For(content.Catalog), ownership))
+            throw new ArgumentException("rare_candy_owned_catalog_identity", nameof(ownership));
         LevelEvolutionRules.Validate(content, owned);
-        if (!cinnabarRules && !fuchsiaRules && !safariRules && !surfRules && !silphRules && Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
-            throw new NotSupportedException("Rare Candy requires the verified MtMoon or later Kanto catalog.");
         if (!ValidRegion(currentRegion))
             throw new ArgumentException("A source MAPSEC region is required.", nameof(currentRegion));
 

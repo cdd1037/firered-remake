@@ -14,7 +14,7 @@ public static class CurrentGameProfile
     public const string RulesVersion = "firered-current-campaign-v1";
 }
 
-internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion, PokemonCatalog? Pokemon, OwnedBattlePokemonCatalog? Ownership);
+internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion, PokemonCatalog Pokemon, OwnedBattlePokemonCatalog Ownership);
 
 public sealed partial class CampaignSession
 {

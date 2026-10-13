@@ -17,7 +17,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> UseFieldRareCandy(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (!_content.MtMoonEnabled || state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
+        if (state.ItemMenu is not { Origin: "bag", View: "bag" } menu ||
             command.Text != RareCandyItem || command.Quantity != 1 || command.MoveSlot != -1)
             return No("field_rare_candy_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length)
@@ -25,8 +25,8 @@ public sealed partial class CampaignSession
         if (ValidateCampaignInventory(state.Inventory) is { } error) return No(error);
         var consumed = EarlyInventoryAddRules.Remove(ShopCatalog, ShopInventoryView(state.Inventory!), new(RareCandyItem), 1);
         if (!consumed.Succeeded) return No(consumed.Error!);
-        var result = RareCandyRules.Apply(_content.PokemonContent!, state.Party[command.PartyIndex],
-            _content.MapDefinition(state.World.Player.MapId).RegionMapSection,snorlaxRules:_content.SnorlaxEnabled&&!_content.SafariEnabled,fuchsiaRules:_content.FuchsiaRouteEnabled&&!_content.SafariEnabled,safariRules:_content.SafariEnabled&&!_content.SurfEnabled,surfRules:_content.SurfEnabled&&!_content.SilphEnabled,silphRules:_content.SilphEnabled&&!_content.CinnabarEnabled,cinnabarRules:_content.CinnabarEnabled);
+        var result = RareCandyRules.Apply(_content.PokemonContent!, _binding.Ownership,
+            state.Party[command.PartyIndex], _content.MapDefinition(state.World.Player.MapId).RegionMapSection);
         if (result.Outcome == RareCandyOutcome.UnsupportedEvolutionTarget)
             return No("rare_candy_evolution_target_not_supported");
         if (result.Outcome == RareCandyOutcome.NoEffect)
@@ -44,7 +44,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideRareCandy(CampaignState state, CampaignCommand command)
     {
         var scene = state.RareCandy!;
-        if (!_content.MtMoonEnabled || state.ItemMenu is not null || state.Evolution is not null)
+        if (state.ItemMenu is not null || state.Evolution is not null)
             throw new InvalidDataException("rare_candy_context_invalid");
         int index = RareCandyPartyIndex(state, scene);
         if (command.Kind == "ack" && scene.Stage != CampaignRareCandyStage.LearnMove)
@@ -68,7 +68,7 @@ public sealed partial class CampaignSession
             var owned = state.Party[index];
             if (command.MoveSlot < -1 || command.MoveSlot >= owned.Pokemon.Moves.Length)
                 return new(CommandStatus.Rejected, state, "rare_candy_learning_slot_invalid");
-            if (_content.SsAnneEnabled && command.MoveSlot >= 0 && Game.Domain.Pokemon.PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
+            if (command.MoveSlot >= 0 && Game.Domain.Pokemon.PokemonMoveRules.IsHiddenMachineMove(owned.Pokemon.Moves[command.MoveSlot].Move))
                 return new(CommandStatus.Rejected,state,"hm_move_cannot_be_forgotten");
             var move = scene.PendingMoves[0];
             if (command.MoveSlot >= 0 && !PokemonMoveRules.IsLearningSupported(BattlePokemon, move.Move))

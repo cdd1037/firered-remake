@@ -28,16 +28,10 @@ public sealed partial class CampaignSession
         var process=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");
         if(!_content.LandEncounters!.TryGetValue(p.MapId,out var table))return state with{Exploration=exploration with{EarlyEncounter=process with{PreviousMetatileBehavior=(ushort)cell.SourceBehavior}}};
         if(state.Party.IsEmpty||state.Party.All(p=>p.IsEgg||p.Pokemon.CurrentHp==0))throw new InvalidDataException("wild_encounter_live_party_required");
-        var lead=state.Party[0];
-        var check=new EarlyLandEncounterCheck(p.MapId,trigger,(byte)cell.SourceBehavior,(_content.MtMoonEnabled?_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==1:cell.SourceBehavior==2)?EncounterTileType.Land:EncounterTileType.None);
-        var profile=new EarlyLandEncounterProfile(RulesVersion:_binding.EncounterRulesVersion,LeadAbility:lead.Pokemon.AbilityId,LeadHeldItem:lead.HeldItem);
-        var result=_content.CelioEnabled
-            ?EarlyLandEncounterRules.Check(_content.CelioOwnership!,process,table,check,state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),saffronShop:SaffronGymShopProof)
-            :_content.SaffronGymEnabled
-            ?SaffronGymRepelRules.CheckLandEncounter(SaffronGymShopProof,process,table,check,profile with{RepelSteps=checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable))},state.Party.Select(mon=>new EarlyRepelPartyMember(mon.Pokemon.CurrentHp,mon.Pokemon.Level,mon.IsEgg)).ToImmutableArray(),state.World.Rng)
-            :_content.RepelEnabled
-            ?EarlyRepelRules.CheckLandEncounter(process,table,check,profile with{RepelSteps=checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable))},state.Party.Select(mon=>new EarlyRepelPartyMember(mon.Pokemon.CurrentHp,mon.Pokemon.Level,mon.IsEgg)).ToImmutableArray(),state.World.Rng)
-            :EarlyLandEncounterRules.Check(process,table,check,profile,state.World.Rng);
+        var check=new EarlyLandEncounterCheck(p.MapId,trigger,(byte)cell.SourceBehavior,(_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==1)?EncounterTileType.Land:EncounterTileType.None);
+        var result=EarlyLandEncounterRules.Check(_content.CelioOwnership!,process,table,check,state.Party,
+            checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,
+            state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),saffronShop:SaffronGymShopProof);
         var next=state with{Exploration=exploration with{EarlyEncounter=result.State},World=state.World with{Rng=result.GlobalRng}};
         if(result.RoamerCandidate is {} roamer)
         {

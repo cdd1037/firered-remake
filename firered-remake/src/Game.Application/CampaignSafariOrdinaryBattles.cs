@@ -6,7 +6,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private OwnedBattlePokemonCatalog? SafariOrdinaryOwnership => _binding.Ownership;
+    private OwnedBattlePokemonCatalog SafariOrdinaryOwnership => _binding.Ownership;
     // Encounter tables and original trainer factories retain their historical species scope.
     private PokemonCatalog OrdinaryEncounterPokemon => SafariOrdinaryOwnership?.Predecessor ?? BattlePokemon;
 

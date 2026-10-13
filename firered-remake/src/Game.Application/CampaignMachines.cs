@@ -10,7 +10,7 @@ public sealed partial class CampaignSession
     private Decision<CampaignState> DecideMachine(CampaignState state, CampaignCommand command)
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
-        if (_content.PewterMachines is not { } machines) return No("pewter_machines_not_enabled");
+        var machines = _content.PewterMachines!;
         if (state.ItemMenu is not { Origin: "bag" } menu || state.Inventory is null)
             return No("machine_context_invalid");
         if (command.Kind == "machine_open")

@@ -10,13 +10,13 @@ public sealed partial class CampaignSession
     private WaterEncounterState WaterProcess(EarlyLandEncounterState shared)
     {
         if(shared.Pending is not null)throw new InvalidDataException("surf_land_candidate_pending");
-        return new(shared.RateRng,shared.PreviousMetatileBehavior,shared.EncounterRateBuff,shared.StepsSinceLastEncounter){RulesVersion=_content.FiveIslandEnabled?WaterEncounterRules.FiveIslandRulesVersion:_content.SixIslandEnabled?WaterEncounterRules.SixIslandRulesVersion:_content.FourIslandEnabled?WaterEncounterRules.FourIslandRulesVersion:_content.SeviiRubyEnabled?WaterEncounterRules.SeviiRubyRulesVersion:_content.VictoryRoadEnabled?WaterEncounterRules.VictoryRoadRulesVersion:WaterEncounterRules.RulesVersion};
+        return new(shared.RateRng,shared.PreviousMetatileBehavior,shared.EncounterRateBuff,shared.StepsSinceLastEncounter){RulesVersion=WaterEncounterRules.FiveIslandRulesVersion};
     }
     private static EarlyLandEncounterState SharedWaterProcess(EarlyLandEncounterState shared,WaterEncounterState water)=>
         shared with{RateRng=water.RateRng,PreviousMetatileBehavior=water.PreviousMetatileBehavior,EncounterRateBuff=water.EncounterRateBuff,StepsSinceLastEncounter=water.StepsSinceLastEncounter,Pending=null};
     private CampaignState CheckSurfWaterEncounter(CampaignState state,EncounterCheckTrigger trigger)
     {
-        if(!_content.SurfEnabled||_content.SurfOwnership is not {} owned||_content.WaterEncounters is not {} tables||!state.IsSurfing||!IsSurfWater(state.World.Player))
+        if(!_content.SurfEnabled||_content.SurfOwnership is null||_content.WaterEncounters is not {} tables||!state.IsSurfing||!IsSurfWater(state.World.Player))
             throw new InvalidDataException("surf_water_encounter_context");
         var p=state.World.Player;var exploration=state.Exploration??throw new InvalidDataException("exploration_missing");
         var shared=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");
@@ -25,30 +25,9 @@ public sealed partial class CampaignSession
         // A source map without a water table retains the previous-behavior callback only.
         if(!tables.TryGetValue(p.MapId,out var table))return state with{Exploration=exploration with{EarlyEncounter=shared with{PreviousMetatileBehavior=behavior}}};
         if(state.Party.IsEmpty||state.Party.All(p=>p.IsEgg||p.Pokemon.CurrentHp==0))throw new InvalidDataException("wild_encounter_live_party_required");
-        var result=_content.CelioEnabled?WaterEncounterRules.Check(_content.CelioOwnership!,WaterProcess(shared),table,
+        var result=WaterEncounterRules.Check(_content.CelioOwnership!,WaterProcess(shared),table,
             new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
-            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),saffronShop:SaffronGymShopProof)
-            :_content.FiveIslandEnabled?WaterEncounterRules.Check(_content.FiveIslandOwnership!,WaterProcess(shared),table,
-            new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
-            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,saffronShop:SaffronGymShopProof)
-            :_content.SixIslandEnabled?WaterEncounterRules.Check(_content.SixIslandOwnership!,WaterProcess(shared),table,
-            new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
-            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,saffronShop:SaffronGymShopProof)
-            :_content.FourIslandEnabled?WaterEncounterRules.Check(_content.FourIslandOwnership!,WaterProcess(shared),table,
-            new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
-            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,saffronShop:SaffronGymShopProof)
-            :_content.SeviiRubyEnabled?WaterEncounterRules.Check(_content.SeviiRubyOwnership!,WaterProcess(shared),table,
-            new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
-            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,saffronShop:SaffronGymShopProof)
-            :_content.CinnabarEnabled?WaterEncounterRules.Check(_content.CinnabarOwnership!,WaterProcess(shared),table,
-            new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
-            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,saffronShop:SaffronGymShopProof)
-            :_content.SilphEnabled?WaterEncounterRules.Check(_content.SilphOwnership!,WaterProcess(shared),table,
-            new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
-            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,saffronShop:_content.SaffronGymEnabled?SaffronGymShopProof:null)
-            :WaterEncounterRules.Check(owned,WaterProcess(shared),table,
-            new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
-            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng);
+            state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),saffronShop:SaffronGymShopProof);
         var next=state with{Exploration=exploration with{EarlyEncounter=SharedWaterProcess(shared,result.State)},World=state.World with{Rng=result.GlobalRng}};
         if(result.RoamerCandidate is {} roamer)
         {
@@ -56,7 +35,8 @@ public sealed partial class CampaignSession
             return next with{Exploration=next.Exploration! with{EarlyEncounter=SharedWaterProcess(shared,CelioEncounterRules.CompleteRoamerCandidate(result,table))}};
         }
         if(result.Candidate is null)return next;
-        var generated=_content.CelioEnabled?WaterEncounterRules.Generate(_content.CelioOwnership!,result.State,table,next.World.Rng,next.TrainerId):_content.FiveIslandEnabled?WaterEncounterRules.Generate(_content.FiveIslandOwnership!,result.State,table,next.World.Rng,next.TrainerId):_content.SixIslandEnabled?WaterEncounterRules.Generate(_content.SixIslandOwnership!,result.State,table,next.World.Rng,next.TrainerId):_content.FourIslandEnabled?WaterEncounterRules.Generate(_content.FourIslandOwnership!,result.State,table,next.World.Rng,next.TrainerId):_content.SeviiRubyEnabled?WaterEncounterRules.Generate(_content.SeviiRubyOwnership!,result.State,table,next.World.Rng,next.TrainerId):_content.CinnabarEnabled?WaterEncounterRules.Generate(_content.CinnabarOwnership!,result.State,table,next.World.Rng,next.TrainerId):WaterEncounterRules.Generate(owned,result.State,table,next.World.Rng,next.TrainerId);
+        var generated=WaterEncounterRules.Generate(
+            _content.CelioOwnership!,result.State,table,next.World.Rng,next.TrainerId);
         if(state.SafariVisit is {Active:true})
         {
             var rng=generated.GlobalRng;var trace=generated.RandomTrace.ToBuilder();
