@@ -26,7 +26,7 @@ public partial class CampaignView
         if(_catalog.PokemonTowerEnabled&&PokemonTowerPresentationModel.UsesTowerTerrain(mapId.Value))return _towerTerrain??throw new InvalidDataException("Tower terrain missing.");
         if (_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId)==true&&_catalog.SourceMaps[mapId].Events.GetProperty("battle_scene").GetString()=="MAP_BATTLE_SCENE_INDOOR_2")
             return _rocketIndoorTerrain??throw new InvalidDataException("Rocket Indoor2 terrain was not loaded.");
-        if (_catalog.FuchsiaRouteRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.CeladonApproachRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
+        if (_catalog.SeviiRubyRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.FuchsiaRouteRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RocketHideoutRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.CeladonApproachRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.RockTunnelRegion?.NewMaps.ContainsKey(mapId) == true || _catalog.Route11Region?.NewMaps.ContainsKey(mapId) == true)
         {
             if (mapId.Value is "map.rock-tunnel-1f" or "map.rock-tunnel-b1f" or "map.digletts-cave-south-entrance" or "map.digletts-cave-b1f" or "map.digletts-cave-north-entrance")
                 return _mtMoonTerrain ?? throw new InvalidDataException("Diglett cave terrain was not loaded.");
@@ -35,6 +35,8 @@ public partial class CampaignView
                 return battle.State.Terrain switch
                 {
                     WildBattleTerrain.Grass => _wildTerrain,
+                    WildBattleTerrain.Cave when _catalog.SeviiRubyRegion?.NewMaps.ContainsKey(mapId) == true => _mtMoonTerrain ?? throw new InvalidDataException("Sevii Ruby cave terrain missing."),
+                    WildBattleTerrain.Mountain when _catalog.SeviiRubyRegion?.NewMaps.ContainsKey(mapId) == true => _seviiRubyMountain ?? throw new InvalidDataException("Sevii Ruby mountain terrain missing."),
                     WildBattleTerrain.Plain => _cityBattleScenes["plain"],
                     WildBattleTerrain.Sand => _cityBattleScenes["sand"],
                     WildBattleTerrain.Building => _cityBattleScenes["building"],

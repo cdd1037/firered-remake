@@ -9,7 +9,7 @@ public partial class CampaignView
     private string? _fieldPrintedText;
     private double _fieldTextFrameRemainder;
     private bool _fieldTextHeld,_fieldTextNewPress;
-    private bool FieldTextProgressEnabled=>_catalog.PokemonStorageEnabled;
+    private bool FieldTextProgressEnabled=>_catalog.PokemonStorageEnabled&&!SeviiRubyBrailleVisible;
     private bool FieldTextComplete=>!FieldTextProgressEnabled||_fieldPrintedText is null||_fieldTextProgress.Complete;
     private string FieldRenderedText(string complete)=>FieldTextProgressEnabled&&_fieldPrintedText is not null?_fieldTextProgress.VisibleText:complete;
     private void SynchronizeFieldText()

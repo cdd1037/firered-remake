@@ -80,8 +80,8 @@ public static class ItemEvolutionRules
     private static void Validate(CampaignPokemonContent content, PartyPokemon owned, string item, bool fuchsiaRules)
     {
         LevelEvolutionRules.Validate(content, owned);
-        if (fuchsiaRules ? content.Catalog.Species.Count != 107 :
-            Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102))
+        if (!SeviiRubyOwnedPokemonCatalog.IsAuthenticated(content.Catalog) && (fuchsiaRules ? content.Catalog.Species.Count != 107 :
+            Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102)))
             throw new NotSupportedException("Moon Stone evolution requires the verified MtMoon or Cerulean catalog.");
         if (item != MoonStone)
             throw new NotSupportedException("Only Moon Stone item evolution is implemented by this profile.");

@@ -55,3 +55,6 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 
 # Rebuilt original C oracle, not authored source.
 /tests/Game.SourceCaptureBalls.Tests/evidence/source-c-final/oracle.c
+
+# Frozen Ruby validation binaries are rebuildable; retain only their hashes and source manifests.
+/evidence/sevii-ruby-combination-20261013/product*/*.dll

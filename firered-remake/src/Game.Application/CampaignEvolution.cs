@@ -81,6 +81,10 @@ public sealed partial class CampaignSession
         });
     }
 
+    private ImmutableArray<LevelEvolutionEligibility> EligibleLevelEvolutions(CampaignState state, ImmutableArray<int> levels) =>
+        LevelEvolutionRules.ForParty(_content.PokemonContent!, state.Party, levels)
+            .Where(p => NationalDexEnabledIn(state) || BattlePokemon.Species[p.TargetSpecies].SourceSpeciesId <= 151).ToImmutableArray();
+
     private CampaignState BeginWildEvolution(CampaignState state)
     {
         if (!_content.ForestEnabled) return ReturnFromWildBattle(state);
@@ -93,7 +97,7 @@ public sealed partial class CampaignSession
         var levels = state.Party.Select(p => p.Pokemon.Level).ToImmutableArray();
         foreach (var receiver in receivers)
             levels = levels.SetItem(receiver.PartyIndex, receiver.Result.Pokemon.Pokemon.Level - receiver.Result.LevelsGained);
-        var proposals = LevelEvolutionRules.ForParty(_content.PokemonContent!, state.Party, levels);
+        var proposals = EligibleLevelEvolutions(state, levels);
         return proposals.IsEmpty ? ReturnFromWildBattle(state) : state with
         {
             Evolution = new(battle.Id, proposals, 0, CampaignEvolutionStage.Proposal, [], 0, [])

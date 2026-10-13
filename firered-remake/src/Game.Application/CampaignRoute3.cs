@@ -5,7 +5,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool OwnedHeldItemSupported(CampaignState state,PartyPokemon owned)=>owned.HeldItem=="ITEM_NONE" || _content.VictoryRoadEnabled&&Game.Domain.Encounters.VictoryRoadWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SafariEnabled&&owned.HeldItem is "ITEM_LUCKY_EGG" or "ITEM_QUICK_CLAW" || _content.FuchsiaRouteEnabled&&owned.HeldItem=="ITEM_METAL_POWDER" ||
+    private bool OwnedHeldItemSupported(CampaignState state,PartyPokemon owned)=>owned.HeldItem=="ITEM_NONE" || _content.SeviiRubyEnabled&&Game.Domain.Encounters.SeviiRubyWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.VictoryRoadEnabled&&Game.Domain.Encounters.VictoryRoadWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SafariEnabled&&owned.HeldItem is "ITEM_LUCKY_EGG" or "ITEM_QUICK_CLAW" || _content.FuchsiaRouteEnabled&&owned.HeldItem=="ITEM_METAL_POWDER" ||
         _content.PokemonTowerEnabled&&owned.HeldItem is "ITEM_SPELL_TAG" or "ITEM_THICK_CLUB" or "ITEM_CLEANSE_TAG" or "ITEM_SOOTHE_BELL" ||
         _content.RockTunnelEnabled&&owned.HeldItem is "ITEM_HARD_STONE" or "ITEM_EVERSTONE" ||
         _content.VermilionEnabled&&VermilionPickupRules.IsKnownHeldItem(owned.HeldItem)||
@@ -60,7 +60,7 @@ public sealed partial class CampaignSession
         }
         return false;
     }
-    private bool OrdinaryPostBattleMap(string map)=>map=="map.route-3"||
+    private bool OrdinaryPostBattleMap(string map)=>_content.SeviiRubyEnabled&&map is "map.one-island-kindle-road" or "map.mt-ember-exterior"||map=="map.route-3"||
         _content.VermilionEnabled&&map=="map.route-6"||
         _content.CinnabarEnabled&&map is "map.route-21-north" or "map.route-21-south"||
         _content.FirstSeviiEnabled&&map=="map.three-island-bond-bridge";

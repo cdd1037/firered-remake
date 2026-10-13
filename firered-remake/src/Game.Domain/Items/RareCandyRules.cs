@@ -45,7 +45,7 @@ public static class RareCandyRules
         ArgumentNullException.ThrowIfNull(content);
         if (cinnabarRules)
         {
-            if (!CinnabarOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || snorlaxRules || fuchsiaRules || safariRules || surfRules || silphRules)
+            if (!(CinnabarOwnedPokemonCatalog.IsAuthenticated(content.Catalog) || SeviiRubyOwnedPokemonCatalog.IsAuthenticated(content.Catalog)) || snorlaxRules || fuchsiaRules || safariRules || surfRules || silphRules)
                 throw new NotSupportedException("Explicit authenticated Cinnabar Rare Candy profile required.");
         }
         else if (silphRules)

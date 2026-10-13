@@ -10,7 +10,7 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool NationalDexProfileRequested => OS.GetEnvironment("FIRERED_NATIONAL_DEX")=="1"||OS.GetCmdlineUserArgs().Contains("--story-national-dex");
+    private static bool NationalDexProfileRequested => SeviiRubyProfileRequested||OS.GetEnvironment("FIRERED_NATIONAL_DEX")=="1"||OS.GetCmdlineUserArgs().Contains("--story-national-dex");
     private static bool PokemonLeagueProfileRequested => NationalDexProfileRequested||OS.GetEnvironment("FIRERED_POKEMON_LEAGUE")=="1"||OS.GetCmdlineUserArgs().Contains("--story-pokemon-league");
     private PokemonLeaguePresentationData? _pokemonLeagueArt;
     private readonly Dictionary<string,Texture2D> _leagueTextures=new(StringComparer.Ordinal);
@@ -35,7 +35,7 @@ public partial class CampaignView
     private void LoadPokemonLeaguePresentation()
     {
         if(!_catalog.PokemonLeagueEnabled)return;
-        if(!_catalog.VictoryRoadEnabled||_session.RulesVersion!=CampaignSession.PokemonLeagueRulesVersion&&!(_catalog.NationalDexEnabled&&_session.RulesVersion==CampaignSession.NationalDexRulesVersion))throw new InvalidDataException("Pokemon League presentation profile differs.");
+        if(!_catalog.VictoryRoadEnabled||_session.RulesVersion!=CampaignSession.PokemonLeagueRulesVersion&&!(_catalog.NationalDexEnabled&&_session.RulesVersion==CampaignSession.NationalDexRulesVersion)&&!SeviiRubyPresentationProfile)throw new InvalidDataException("Pokemon League presentation profile differs.");
         _pokemonLeagueArt=PokemonLeaguePresentationAssets.Load(_root);
         if(_battleArt.Count!=496||_storageIcons.Count!=124||_route22Footprints.Count!=93)throw new InvalidDataException("Pokemon League predecessor art differs.");
         foreach(var a in LeagueManifest.GetProperty("assets").EnumerateArray())

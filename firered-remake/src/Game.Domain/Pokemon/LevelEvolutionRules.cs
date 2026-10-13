@@ -27,8 +27,8 @@ public static class LevelEvolutionRules
     /// <summary>
     /// Call after all EXP levels and old-species move decisions. A final level at or above the
     /// threshold suffices, but a new level in this won battle is required. Pikachu's item method
-    /// never becomes a level trigger. All current catalog targets are Kanto species, so the source
-    /// National Dex scene restriction cannot block them; badges and RTC do not gate these rules.
+    /// never becomes a level trigger. The campaign owner applies National Dex scene restrictions
+    /// before presenting any non-Kanto proposal; badges and RTC do not gate these rules.
     /// </summary>
     public static LevelEvolutionEligibility? Eligibility(CampaignPokemonContent content, PartyPokemon afterRewards,
         int levelBeforeBattle, bool battleWon = true)
@@ -92,9 +92,12 @@ public static class LevelEvolutionRules
         var previous = content.Catalog.Species[before.Species];
         // Source changes species without changing the stored ability bit. These bounded families
         // keep compatible ability slots and growth curves, unlike an arbitrary species replacement.
-        if (target.GrowthRate != previous.GrowthRate || target.SourceSpeciesId > 151 ||
+        bool rubySlugmaFamily = SeviiRubyOwnedPokemonCatalog.IsAuthenticated(content.Catalog) &&
+            before.Species == SeviiRubyOwnedPokemonCatalog.AdditionalSpecies[1] &&
+            targetSpecies == SeviiRubyOwnedPokemonCatalog.AdditionalSpecies[2];
+        if (target.GrowthRate != previous.GrowthRate || target.SourceSpeciesId > 151 && !rubySlugmaFamily ||
             before.AbilitySlot != (target.Ability2 == "ABILITY_NONE" ? 0 : (int)(before.Personality & 1)))
-            throw new NotSupportedException("Evolution requires the pinned compatible Kanto family definitions.");
+            throw new NotSupportedException("Evolution requires a pinned compatible owned family definition.");
         var stats = CalculateStats(target, before);
         int hp = before.CurrentHp == 0 ? 0 : before.CurrentHp + stats.MaxHp - before.Stats.MaxHp;
         if (hp < 0 || hp > stats.MaxHp)
@@ -164,7 +167,9 @@ public static class LevelEvolutionRules
         if (error is not null) throw new ArgumentException(error, nameof(owned));
         // Only Everstone has a prevent-evolution hold effect in this bounded static item profile.
         // In particular, Enigma Berry can obtain that effect from save data not represented here.
-        bool staticHeldItem = CinnabarOwnedPokemonCatalog.For(content.Catalog) is { } cinnabar
+        bool staticHeldItem = SeviiRubyOwnedPokemonCatalog.For(content.Catalog) is { } ruby
+            ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(ruby.Mechanics.Catalog, owned.HeldItem)
+            : CinnabarOwnedPokemonCatalog.For(content.Catalog) is { } cinnabar
             ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(cinnabar.Mechanics.Catalog, owned.HeldItem)
             : SilphOwnedPokemonCatalog.For(content.Catalog) is { } silph
             ? Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(silph.Mechanics.Catalog, owned.HeldItem)

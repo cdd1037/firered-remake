@@ -83,6 +83,12 @@ public interface ICampaignCatalog:IStoryCatalog
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
     bool NationalDexEnabled=>false;
+    bool SeviiRubyEnabled=>false;
+    SeviiRubyOwnedPokemonCatalog? SeviiRubyOwnership=>null;
+    SeviiRubyOpponentPokemonCatalog? SeviiRubyOpponents=>null;
+    SeviiRubyTrainerCatalog? SeviiRubyTrainers=>null;
+    SeviiRubyTrainerCatalog? SeviiRubyTrainerParties=>SeviiRubyTrainers;
+    SeviiRubyWaterEncounterCatalog? SeviiRubyWaterEncounters=>null;
     CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("national_dex_not_enabled");
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
     PokemonLeagueOpponentPokemonCatalog? PokemonLeagueOpponents=>null;

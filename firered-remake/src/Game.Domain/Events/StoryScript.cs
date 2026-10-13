@@ -59,6 +59,9 @@ public static class StoryRules
             if(program is not null&&index>=0&&index<program.Instructions.Length)
             {
                 var instruction=program.Instructions[index];
+                if(instruction.Op==StoryOp.WaitState&&instruction.Opcode=="waitstate"&&instruction.Args.IsEmpty&&
+                    instruction.Source.Path=="data/scripts/seagallop.inc"&&instruction.Source.Symbol is "EventScript_SeviiDestinationsPage1" or "EventScript_SeviiDestinationsPage2")
+                    return choice==127||choice>=0&&choice<(instruction.Source.Symbol.EndsWith('1')?6:5);
                 if(instruction.Op==StoryOp.Multichoice&&instruction.Opcode=="multichoice"&&
                     instruction.Source.Path is "data/scripts/seagallop.inc" or "data/maps/VermilionCity/scripts.inc"&&
                     instruction.Args.Length==4&&instruction.Args[0]=="19"&&instruction.Args[3]=="FALSE")

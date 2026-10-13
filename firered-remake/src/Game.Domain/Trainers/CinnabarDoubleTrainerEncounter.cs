@@ -16,7 +16,7 @@ public static class CinnabarDoubleTrainerEncounter
     public const int VictoryMoney = 264;
     public static SourceTwinsEncounterResult Begin(CinnabarTrainerCatalog trainers, CinnabarOpponentPokemonCatalog opponents, string battleScript,
         ImmutableArray<WildBattleCalledPartyMember> playerParty, RngState rng,
-        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Water)
+        bool attackBadgeBoost = false, bool defenseBadgeBoost = false, bool speedBadgeBoost = false, bool specialBadgeBoost = false, WildBattleTerrain terrain = WildBattleTerrain.Water, OwnedBattlePokemonCatalog? successorOwned = null)
     {
         SourceTwinsEncounterResult Fail(string code) => new(null, rng, [], [], code);
         if (opponents is null || !ReferenceEquals(CinnabarOpponentPokemonCatalog.For(opponents.Catalog), opponents))
@@ -25,7 +25,10 @@ public static class CinnabarDoubleTrainerEncounter
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return Fail("cinnabar_double_source"); }
         if (!trainers.BattlesByScript.TryGetValue(battleScript, out var battle) || battle.Trainer != TrainerId || battle.Mode != 4)
             return Fail("cinnabar_double_script");
-        OwnedBattlePokemonCatalog owned = opponents.Owned;
+        OwnedBattlePokemonCatalog predecessorOwned = opponents.Owned;
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsSeviiRubySuccessorOf(predecessorOwned, successorOwned))
+            return Fail("source_double_successor_owned");
+        var owned = successorOwned ?? predecessorOwned;
         var proof = opponents.Mechanics; var catalog = proof.Catalog;
         if (!Enum.IsDefined(terrain)) return Fail("cinnabar_double_terrain");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("cinnabar_double_rng");
@@ -52,7 +55,7 @@ public static class CinnabarDoubleTrainerEncounter
             var enemy = generated.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.PresetDoubles, KoReplacementTiming = KoReplacementTiming.EndOfTurn,
-                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = CinnabarOpponentPokemonCatalog.Profile, BattleKind = WildBattleCalledBattleKind.Trainer,
+                SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = successorOwned is null ? CinnabarOpponentPokemonCatalog.Profile : SeviiRubyOpponentPokemonCatalog.Profile, BattleKind = WildBattleCalledBattleKind.Trainer,
                 Rng = generated.Rng, Field = new() { Terrain = terrain }, Parties = [new(BattleSide.Player, playerParty), new(BattleSide.Opponent, enemy)],
                 Slots = Enumerable.Range(0, 4).Select(i => {
                     var side = (BattleSide)(i & 1); int index = side == BattleSide.Player ? active[i / 2] : i / 2;
@@ -94,8 +97,11 @@ public static class CinnabarDoubleTrainerEncounter
             return "cinnabar_double_catalog";
         try { CinnabarTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "cinnabar_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion != CinnabarOpponentPokemonCatalog.Profile ||
+        if (frame is null || frame.SourceCampaignRulesVersion is not (CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile) ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "cinnabar_double_frame";
+        if (frame.SourceCampaignRulesVersion == SeviiRubyOpponentPokemonCatalog.Profile &&
+            (SeviiRubyOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } successor ||
+             !ReferenceEquals(successor.Owned.Predecessor, opponents.Owned))) return "source_double_successor_owned";
         if (frame.Parties.SelectMany(p => p.Members).Any(m =>
             SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "cinnabar_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;

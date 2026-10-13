@@ -7,15 +7,16 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private VictoryRoadShopCatalog VictoryRoadShopProof=>VictoryRoadShopCatalog.For(ShopCatalog)??throw new InvalidDataException("victory_road_shop_proof_missing");
-    private InventoryState VictoryRoadPredecessorInventory(InventoryState inventory)=>_content.VictoryRoadEnabled?VictoryRoadShopProof.InventoryForPredecessor(inventory):inventory;
+    private VictoryRoadShopCatalog VictoryRoadShopProof=>(SeviiRubyShopCatalog.For(ShopCatalog)?.Predecessor??VictoryRoadShopCatalog.For(ShopCatalog))??throw new InvalidDataException("victory_road_shop_proof_missing");
+    private InventoryState VictoryRoadPredecessorInventory(InventoryState inventory)=>_content.VictoryRoadEnabled?VictoryRoadShopProof.InventoryForPredecessor(_content.SeviiRubyEnabled?SeviiRubyShopCatalog.For(ShopCatalog)!.InventoryForPredecessor(inventory):inventory):inventory;
     private FirstSeviiShopCatalog FirstSeviiShopProof=>(_content.VictoryRoadEnabled?VictoryRoadShopProof.Predecessor:FirstSeviiShopCatalog.For(ShopCatalog))??throw new InvalidDataException("first_sevii_shop_proof_missing");
     private InventoryState FirstSeviiPredecessorInventory(InventoryState inventory)=>_content.FirstSeviiEnabled?FirstSeviiShopProof.InventoryForPredecessor(VictoryRoadPredecessorInventory(inventory)):inventory;
     private InventoryState MergeFirstSeviiPredecessorInventory(InventoryState original,InventoryState changed)
     {
         var view=ShopInventoryView(original);
         if(_content.FirstSeviiEnabled)changed=FirstSeviiShopProof.RestoreFromPredecessor(VictoryRoadPredecessorInventory(view),changed);
-        if(_content.VictoryRoadEnabled)changed=VictoryRoadShopProof.RestoreFromPredecessor(view,changed);
+        if(_content.VictoryRoadEnabled)changed=VictoryRoadShopProof.RestoreFromPredecessor(_content.SeviiRubyEnabled?SeviiRubyShopCatalog.For(ShopCatalog)!.InventoryForPredecessor(view):view,changed);
+        if(_content.SeviiRubyEnabled)changed=SeviiRubyShopCatalog.For(ShopCatalog)!.RestoreFromPredecessor(view,changed);
         return MergeShopInventory(original,changed);
     }
     private bool TryApplyFirstSeviiItemEffect(CampaignState state,StoryEffect effect,out CampaignState next)
@@ -75,18 +76,18 @@ public sealed partial class CampaignSession
         if(!_content.FirstSeviiEnabled)return center!=0||rescued||received||pending||Flag("FLAG_SYS_SEVII_MAP_123")||
             Count(FirstSeviiShopCatalog.TriPassId)!=0||Count(FirstSeviiShopCatalog.MeteoriteId)!=0?"save_first_sevii_profile_missing":null;
         if(state.Seagallop is not null||state.SeagallopMenu is not null)return "save_seagallop_active";
-        if(center is <0 or >3||Var("VAR_MAP_SCENE_ONE_ISLAND_HARBOR") is <0 or >3||
+        if(center<0||center>(_content.SeviiRubyEnabled?5:3)||Var("VAR_MAP_SCENE_ONE_ISLAND_HARBOR") is <0 or >3||
             Var("VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER") is <0 or >4||Var("VAR_MAP_SCENE_THREE_ISLAND") is <0 or >4||
             Var("VAR_MAP_SCENE_TWO_ISLAND") is <0 or >2)return "save_first_sevii_scene";
         if((center>0||FirstSeviiMap(state.World.Player.MapId.Value))&&!Flag("FLAG_BADGE07_GET"))return "save_first_sevii_without_badge";
-        if(Count(FirstSeviiShopCatalog.TriPassId)!=(center>0?1:0)||Count(FirstSeviiShopCatalog.MeteoriteId)!=(center==1?1:0)||
+        if(Count(FirstSeviiShopCatalog.TriPassId)!=(center>0&&center<5?1:0)||Count(FirstSeviiShopCatalog.MeteoriteId)!=(center==1?1:0)||
             Flag("FLAG_SYS_SEVII_MAP_123")!=(center>0))return "save_first_sevii_key_progress";
         if(center>=2&&!rescued||received&&(!rescued||center<2)||pending&&center<2)
             return "save_first_sevii_delivery_progress";
         if(Var("VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER")==4&&!received)return "save_first_sevii_revisit_progress";
         if(rescued!=Flag("FLAG_HIDE_LOSTELLE_IN_BERRY_FOREST"))return "save_first_sevii_lostelle_visibility";
         if(Flag("FLAG_SYS_PC_STORAGE_DISABLED")&&Flag("FLAG_SEVII_DETOUR_FINISHED"))return "save_first_sevii_pc_progress";
-        if(Var("VAR_MAP_SCENE_CINNABAR_ISLAND")>=3&&center!=3)return "save_first_sevii_return_progress";
+        if(Var("VAR_MAP_SCENE_CINNABAR_ISLAND")>=3&&center<3)return "save_first_sevii_return_progress";
         return null;
     }
 }

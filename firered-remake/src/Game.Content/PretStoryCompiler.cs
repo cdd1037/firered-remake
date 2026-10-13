@@ -26,7 +26,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -118,6 +118,8 @@ public static partial class PretStoryCompiler
                 }
                 if(includePokemonLeague&&IsPokemonLeagueAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
                 {assemblyData.Add(label,body.Take(8).Select(b=>b.Text).ToImmutableArray());continue;}
+                if(includeSeviiRuby&&IsSeviiRubyAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
+                {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                 if(body[0].Text.StartsWith(".string",StringComparison.Ordinal))continue;
                 if(body.Any(x=>x.Text.StartsWith("map_script ",StringComparison.Ordinal)))
                 {
@@ -190,13 +192,30 @@ public static partial class PretStoryCompiler
                             var admitted=PokemonLeagueInstructionShape(file,label,opcode,operands);
                             if(admitted is {} shape)(kind,min,max)=shape;
                         }
+                        if(includeSeviiRuby)
+                        {
+                            var admitted=SeviiRubyInstructionShape(file,label,opcode,operands);
+                            if(admitted is {} shape)(kind,min,max)=shape;
+                        }
                         if(kind!=StoryOp.Unsupported&&(operands.Length<min||operands.Length>max))throw ContentJson.Error("story_opcode_arity",$"{file.Path}:{lineNumber}",$"{opcode} requires {min}..{max} arguments.");
                         if(kind==StoryOp.Unsupported)unsupported.Add(new("opcode_unsupported",$"{file.Path}:{lineNumber}",opcode));
                         instructions.Add(new(kind,opcode,operands,new(file.Path,label,lineNumber)));
                     }
                     // Literal expansion of pinned event.inc convenience macros. Original labels,
                     // standard subroutines and call-site provenance remain intact in the IR.
-                    if(op is "giveitem" or "finditem")
+                    if(includeSeviiRuby&&op=="braillemessage_wait"&&
+                        SeviiRubyMapSourceHashes.TryGetValue(file.Path,out var rubyHash)&&FirstSeviiSource(file,file.Path,rubyHash)&&
+                        file.Path=="data/maps/MtEmber_RubyPath_B5F/scripts.inc"&&label=="MtEmber_RubyPath_B5F_EventScript_BrailleMessage")
+                    {
+                        if(args.Length!=1||!args[0].StartsWith("Braille_Text_",StringComparison.Ordinal))
+                            throw ContentJson.Error("sevii_ruby_braille_operands",$"{file.Path}:{lineNumber}",op);
+                        // Literal source macro from asm/macros/event.inc:1845-1850.
+                        Emit("setvar",["VAR_0x8006","0"]);
+                        Emit("braillemessage",args);
+                        Emit("getbraillestringwidth",args);
+                        Emit("call",["EventScript_BrailleCursorWaitButton"]);
+                    }
+                    else if(op is "giveitem" or "finditem")
                     {
                         if(args.Length is <1 or >2)throw ContentJson.Error("story_opcode_arity",$"{file.Path}:{lineNumber}",op);
                         Emit("setorcopyvar",["VAR_0x8000",args[0]]);Emit("setorcopyvar",["VAR_0x8001",args.Length==2?args[1]:"1"]);Emit("call",[op=="finditem"?"Std_FindItem":"Std_ObtainItem"]);

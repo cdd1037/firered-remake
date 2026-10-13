@@ -97,7 +97,8 @@ public sealed partial class CampaignSession
                 bool first=origin==8&&destination==1&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ONE_ISLAND_HARBOR")==1;
                 bool returning=origin==1&&destination==8&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F")==3;
                 bool ordinary=origin is >=0 and <=3&&destination is >=0 and <=3&&origin!=destination&&
-                    OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],FirstSeviiShopCatalog.TriPassId)==1&&
+                    (OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],FirstSeviiShopCatalog.TriPassId)==1||
+                        _content.SeviiRubyEnabled&&OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],RainbowPassItem)==1)&&
                     (origin!=0&&destination!=0||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND")>=4);
                 if(!(first||returning||ordinary)||state.Seagallop is not null||!state.Script.Locked||!state.ScreenIsBlack)
                     throw new InvalidDataException("seagallop_departure_context");

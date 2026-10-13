@@ -26,6 +26,7 @@ public sealed record PokemonLeagueMartStock(string SourceCommit, ImmutableArray<
 
     public override void Validate(EarlyShopCatalog catalog)
     {
+        catalog = SeviiRubyShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
         VictoryRoadShopCatalog.ValidateCatalog(catalog);
         if(SourceCommit!=OpeningInventoryRules.SourceCommit||Source!=ExpectedSource||StockItems.IsDefault||
             !StockItems.SequenceEqual(ExpectedEntries.Select(e=>new ItemId("pret:"+e.Symbol))))

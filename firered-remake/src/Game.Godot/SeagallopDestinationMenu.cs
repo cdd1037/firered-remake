@@ -9,6 +9,8 @@ internal sealed class SeagallopDestinationMenu
     internal int Cursor {get;private set;}
     internal SeagallopDestinationMenu(string sourceMenu,IEnumerable<string> options)
     {
+        var rows=options.ToArray();
+        string[] laterLabels=["VERMILION","ONE ISLAND","TWO ISLAND","THREE ISLAND","FOUR ISLAND (unavailable)"];
         string[] expected=sourceMenu switch
         {
             "MULTICHOICE_ISLAND_23"=>["TWO ISLAND","THREE ISLAND","EXIT"],
@@ -18,16 +20,19 @@ internal sealed class SeagallopDestinationMenu
             "MULTICHOICE_SEAGALLOP_V13"=>["VERMILION","ONE ISLAND","THREE ISLAND","EXIT"],
             "MULTICHOICE_SEAGALLOP_V12"=>["VERMILION","ONE ISLAND","TWO ISLAND","EXIT"],
             "MULTICHOICE_SEAGALLOP_123"=>["ONE ISLAND","TWO ISLAND","THREE ISLAND","EXIT"],
+            "SEVII_PAGE_0"=>Enumerable.Range(0,4).Select(origin=>laterLabels.Where((_,i)=>i!=origin).Concat(new[]{"OTHER","EXIT"}).ToArray())
+                .SingleOrDefault(candidate=>rows.SequenceEqual(candidate))??throw new InvalidDataException("Sevii Ruby source origin menu differs."),
+            "SEVII_PAGE_1"=>["FIVE ISLAND (unavailable)","SIX ISLAND (unavailable)","SEVEN ISLAND (unavailable)","OTHER","EXIT"],
             _=>throw new InvalidDataException("Unsupported first-Sevii source menu.")
         };
-        if(!options.SequenceEqual(expected))throw new InvalidDataException("First-Sevii source menu options differ.");
+        if(!rows.SequenceEqual(expected))throw new InvalidDataException("First-Sevii source menu options differ.");
         SourceMenu=sourceMenu;Options=Array.AsReadOnly(expected);
     }
     internal Layout Frame(int maximumTextWidth)
     {
         if(maximumTextWidth is <=0 or >200)throw new ArgumentOutOfRangeException(nameof(maximumTextWidth));
         int width=(maximumTextWidth+9)/8+1,left=Math.Min(19,28-width),top=Options.Count==3?6:5;
-        return new(left*8,top*8,(width+2)*8,(Options.Count==3?6:7)*8+16);
+        return new(left*8,top*8,(width+2)*8,((Options.Count*14+7)/8+2)*8);
     }
     internal bool Move(int direction)
     {

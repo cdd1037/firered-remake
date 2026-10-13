@@ -9,6 +9,7 @@ namespace Game.Domain.Encounters;
 /// Field ownership, completed-step precedence, movement and battle dispatch belong to the session.</summary>
 public static class WaterEncounterRules
 {
+    public const string SeviiRubyRulesVersion = "firered-sevii-ruby-water-candidates-v1";
     public const string VictoryRoadRulesVersion = "firered-victory-road-water-candidates-v1";
     public const string RulesVersion = "firered-surf-water-candidates-v1";
     public static ImmutableArray<int> SlotWeights { get; } = [60,30,5,4,1];
@@ -20,10 +21,12 @@ public static class WaterEncounterRules
     public static void ValidateState(WaterEncounterState state, WaterEncounterTable table)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (!CinnabarWaterEncounterCatalog.IsAuthenticated(table) && !FirstSeviiWaterEncounterCatalog.IsAuthenticated(table) && !VictoryRoadWaterEncounterCatalog.IsAuthenticated(table)) WaterEncounterCatalog.ValidateTable(table);
-        if (VictoryRoadWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion != VictoryRoadRulesVersion)
+        if (!CinnabarWaterEncounterCatalog.IsAuthenticated(table) && !FirstSeviiWaterEncounterCatalog.IsAuthenticated(table) && !VictoryRoadWaterEncounterCatalog.IsAuthenticated(table) && !SeviiRubyWaterEncounterCatalog.IsAuthenticated(table)) WaterEncounterCatalog.ValidateTable(table);
+        if (VictoryRoadWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion is not (VictoryRoadRulesVersion or SeviiRubyRulesVersion))
             throw new ArgumentException("victory_road_water_profile");
-        if (state.RulesVersion is not (RulesVersion or VictoryRoadRulesVersion) || state.RateRng.AlgorithmId != EncounterRateRng.AlgorithmId ||
+        if (SeviiRubyWaterEncounterCatalog.IsAuthenticated(table) && state.RulesVersion != SeviiRubyRulesVersion)
+            throw new ArgumentException("sevii_ruby_water_profile");
+        if (state.RulesVersion is not (RulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion) || state.RateRng.AlgorithmId != EncounterRateRng.AlgorithmId ||
             state.PreviousMetatileBehavior > 255 || state.StepsSinceLastEncounter > 21)
             throw new ArgumentException("water_state");
         if (state.Pending is not { } pending) return;
@@ -64,6 +67,17 @@ public static class WaterEncounterRules
         EncounterMovementMode movement = EncounterMovementMode.Surfing, SaffronGymShopCatalog? saffronShop = null)
     {
         if (owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned)) throw new ArgumentException("water_check_scope");
+        if (saffronShop is null) EarlyRepelRules.ValidateSteps(repelSteps,pokemonTowerRules:true);
+        else SaffronGymRepelRules.ValidateSteps(saffronShop,repelSteps);
+        return CheckOwned(owned,state,table,check,party,repelSteps,globalRng,wildEncountersDisabled,movement);
+    }
+
+    public static WaterEncounterResult Check(SeviiRubyOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
+        ushort repelSteps, RngState globalRng, bool wildEncountersDisabled = false,
+        EncounterMovementMode movement = EncounterMovementMode.Surfing, SaffronGymShopCatalog? saffronShop = null)
+    {
+        if (owned is null || !ReferenceEquals(SeviiRubyOwnedPokemonCatalog.For(owned.Catalog),owned)) throw new ArgumentException("water_check_scope");
         if (saffronShop is null) EarlyRepelRules.ValidateSteps(repelSteps,pokemonTowerRules:true);
         else SaffronGymRepelRules.ValidateSteps(saffronShop,repelSteps);
         return CheckOwned(owned,state,table,check,party,repelSteps,globalRng,wildEncountersDisabled,movement);
@@ -123,6 +137,16 @@ public static class WaterEncounterRules
         ValidateState(state,table);
         var pending = state.Pending ?? throw new InvalidOperationException("water_pending_missing");
         if (owned is null || !ReferenceEquals(CinnabarOwnedPokemonCatalog.For(owned.Catalog),owned) ||
+            !owned.Catalog.Species.ContainsKey(pending.Candidate.Species)) throw new ArgumentException("water_generation_scope");
+        return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog,pending.Candidate.Species,pending.Candidate.Level,globalRng,playerTrainerId);
+    }
+
+    public static Route1WildPokemonResult Generate(SeviiRubyOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, RngState globalRng, uint playerTrainerId)
+    {
+        ValidateState(state,table);
+        var pending = state.Pending ?? throw new InvalidOperationException("water_pending_missing");
+        if (owned is null || !ReferenceEquals(SeviiRubyOwnedPokemonCatalog.For(owned.Catalog),owned) ||
             !owned.Catalog.Species.ContainsKey(pending.Candidate.Species)) throw new ArgumentException("water_generation_scope");
         return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog,pending.Candidate.Species,pending.Candidate.Level,globalRng,playerTrainerId);
     }

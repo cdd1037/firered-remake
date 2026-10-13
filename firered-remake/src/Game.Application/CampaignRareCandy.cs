@@ -107,7 +107,7 @@ public sealed partial class CampaignSession
                         Pages = [$"{owned.Nickname} learned\n{BattleContent.MoveNames[move.Move.Value]}!"], PageIndex = 0 }
                 });
         }
-        return scene.Result.Evolution is { } proposal
+        return scene.Result.Evolution is { } proposal && (NationalDexEnabledIn(state) || BattlePokemon.Species[proposal.TargetSpecies].SourceSpeciesId <= 151)
             ? state with { RareCandy = null, Evolution = new(null, [proposal], 0,
                 CampaignEvolutionStage.Proposal, [], 0, []) { CandyUse = new(scene.ReturnMenu) } }
             : state with { RareCandy = null, ItemMenu = scene.ReturnMenu };

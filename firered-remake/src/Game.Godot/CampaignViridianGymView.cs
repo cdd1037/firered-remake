@@ -16,7 +16,7 @@ public partial class CampaignView
             _session.RulesVersion != Game.Application.CampaignSession.ViridianGymRulesVersion &&
             !(_catalog.LeagueRivalEnabled && _session.RulesVersion == Game.Application.CampaignSession.LeagueRivalRulesVersion) &&
             !(_catalog.VictoryRoadEnabled && _session.RulesVersion == Game.Application.CampaignSession.VictoryRoadRulesVersion) && !(_catalog.PokemonLeagueEnabled && _session.RulesVersion == Game.Application.CampaignSession.PokemonLeagueRulesVersion) &&
-            !(_catalog.NationalDexEnabled && _catalog.PokemonLeagueEnabled && _session.RulesVersion == Game.Application.CampaignSession.NationalDexRulesVersion))
+            !(_catalog.NationalDexEnabled && _catalog.PokemonLeagueEnabled && _session.RulesVersion == Game.Application.CampaignSession.NationalDexRulesVersion) && !SeviiRubyPresentationProfile)
             throw new InvalidDataException("Viridian Gym presentation requires its authenticated successor profile.");
         var art = ViridianGymPresentationAssets.Load(_root);
         var source = _catalog.ViridianGymTrainerParties ?? throw new InvalidDataException("Viridian Gym trainers missing.");

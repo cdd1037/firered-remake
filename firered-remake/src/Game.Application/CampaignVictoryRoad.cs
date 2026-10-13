@@ -19,10 +19,10 @@ public sealed partial class CampaignSession
             if(content.VictoryRoadTrainerParties is not null||content.VictoryRoadOpponents is not null)throw new InvalidDataException("victory_road_profile_missing");
             return;
         }
-        if(!content.LeagueRivalEnabled||content.Maps.Count!=(content.PokemonLeagueEnabled?218:211)||content.CinnabarOwnership is null||content.CinnabarOpponents is null||
+        if(!content.LeagueRivalEnabled||content.Maps.Count!=(content.SeviiRubyEnabled?229:content.PokemonLeagueEnabled?218:211)||content.CinnabarOwnership is null||content.CinnabarOpponents is null||
             content.CinnabarOwnership.Catalog.Species.Count!=115||content.VictoryRoadTrainerParties is null||content.VictoryRoadOpponents is null||
             content.VictoryRoadOpponents.Catalog.Species.Count!=124||!ReferenceEquals(content.VictoryRoadOpponents.Predecessor,content.CinnabarOpponents)||
-            VictoryRoadShopCatalog.For(content.EarlyShop) is null||VictoryRoadMachineCatalog.For(content.PewterMachines) is not {} machines||
+            (SeviiRubyShopCatalog.For(content.EarlyShop)?.Predecessor??VictoryRoadShopCatalog.For(content.EarlyShop)) is null||(SeviiRubyMachineCatalog.For(content.PewterMachines)?.Predecessor??VictoryRoadMachineCatalog.For(content.PewterMachines)) is not {} machines||
             !ReferenceEquals(machines.Pokemon,content.CinnabarOwnership))throw new InvalidDataException("victory_road_catalog_scope");
         VictoryRoadTrainerPartyFactory.ValidateCatalog(content.VictoryRoadTrainerParties);
         var route=content.MapDefinition(new("map.route-23"));

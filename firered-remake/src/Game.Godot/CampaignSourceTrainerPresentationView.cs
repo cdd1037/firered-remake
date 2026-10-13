@@ -9,7 +9,7 @@ public partial class CampaignView
 {
     private bool SourceTrainerPresentationActive(CampaignWildBattle battle) =>
         _session.State.ForestTrainerBattle?.Combat.SourceMoveRulesVersion == ForestTrainerCombatRules.SourceTrainerContractVersion ||
-        battle.State.SourceWild?.RulesVersion is WildBattleRules.SourceWildRulesVersion or VictoryRoadWildBattleContract.Version;
+        battle.State.SourceWild?.RulesVersion is WildBattleRules.SourceWildRulesVersion or VictoryRoadWildBattleContract.Version or SeviiRubyWildBattleContract.Version;
 
     private bool SourceBatonSwitchBefore(CampaignWildBattle battle, WildBattleSide side, long sequence) =>
         SourceTrainerPresentationActive(battle) && battle.Events.LastOrDefault(e => e.Sequence < sequence) is

@@ -11,7 +11,7 @@ public sealed partial class CampaignSession
     {
         if(_content.ViridianGymEnabled&&!_content.LeagueRivalEnabled&&program.StartsWith("Route22_EventScript_LateRival",StringComparison.Ordinal)&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22")==3)
             throw new InvalidDataException("route22_league_rival_not_yet_available");
-        if(_content.NationalDexEnabled&&NationalDexEnabledIn(state)&&program=="OneIsland_PokemonCenter_1F_EventScript_Celio")
+        if(_content.NationalDexEnabled&&!_content.SeviiRubyEnabled&&NationalDexEnabledIn(state)&&program=="OneIsland_PokemonCenter_1F_EventScript_Celio")
             throw new InvalidDataException("sevii_ruby_campaign_not_yet_available");
         if(_content.DeferredRegionalServiceReason(state.World.Player.MapId,program) is {} unavailable)throw new InvalidDataException(unavailable);
         if(_content.ConnectedFieldMaps is not null&&!_preflightingStory&&_commands is not null)PreflightStoryEntry(state,program);
@@ -39,13 +39,14 @@ public sealed partial class CampaignSession
                 if(probe.Script.Completed&&probe.Script.Wait is null)continue;
                 if(probe.Script.Wait is not {} wait)throw new InvalidDataException("script_preflight_unstable: "+program);
                 bool billMenu=IsBillPreflightMenu(probe);
-                if(billMenu)
+                bool finiteLoop=billMenu||RainbowFerryMenu(probe)||_content.SeviiRubyEnabled&&probe.Dialogue?.TextSymbol=="OneIsland_PokemonCenter_1F_Text_PleaseINeedYourHelp";
+                if(finiteLoop)
                 {
                     // The source returns to this menu after each sighting. Keep every
                     // business field, including the complete seen set, scratch variables,
                     // inventory, actors and caller stack. Only monotonically increasing
                     // interpreter/presentation identifiers are irrelevant to convergence.
-                    budget=8192;
+                    if(billMenu)budget=8192;
                     var semantic=probe with
                     {
                         Script=probe.Script with{Revision=0,EffectSequence=0,Wait=wait with{CorrelationId="preflight"}},
@@ -66,6 +67,7 @@ public sealed partial class CampaignSession
                     // rejects atomically until the first-Sevii workflow is admitted.
                     if(decision.Status==CommandStatus.Rejected&&wait.Kind==StoryWaitKind.Choice&&choice==1&&
                         CinnabarFerryChoice(probe)&&decision.Error=="sevii_first_visit_not_yet_available")continue;
+                    if(decision.Status==CommandStatus.Rejected&&RainbowFerryMenu(probe)&&decision.Error=="seagallop_destination_not_yet_available")continue;
                     if(decision.Status!=CommandStatus.Accepted)throw new InvalidDataException("script_preflight: "+program+": "+decision.Error);
                     pending.Enqueue(decision.State);
                 }

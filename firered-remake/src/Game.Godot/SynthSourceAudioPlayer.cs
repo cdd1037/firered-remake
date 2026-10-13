@@ -41,7 +41,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false, bool includeSeviiRuby = false)
     {
         if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
         if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
@@ -253,6 +253,18 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             if(leagueBytes.Length!=PokemonLeaguePresentationAssets.SynthBytes||Convert.ToHexStringLower(SHA256.HashData(leagueBytes))!=PokemonLeaguePresentationAssets.SynthSha256)throw new InvalidDataException("Pokemon League synth identity differs.");
             var extension=JsonSerializer.Deserialize<SynthManifest>(leagueBytes,options)??throw new InvalidDataException("Pokemon League synth missing.");
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=17||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))throw new InvalidDataException("Pokemon League cue scope differs.");
+            cues=[..cues,..extension.Cues];
+        }
+        if(includeSeviiRuby)
+        {
+            if(!includePokemonLeague)throw new InvalidDataException("Sevii Ruby audio requires Pokemon League.");
+            byte[] rubyBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),SeviiRubyPresentationAssets.Base+"synth-manifest.json"));
+            if(rubyBytes.Length!=SeviiRubyPresentationAssets.SynthBytes||Convert.ToHexStringLower(SHA256.HashData(rubyBytes))!=SeviiRubyPresentationAssets.SynthSha256)
+                throw new InvalidDataException("Sevii Ruby synth identity differs.");
+            var extension=JsonSerializer.Deserialize<SynthManifest>(rubyBytes,options)??throw new InvalidDataException("Sevii Ruby synth missing.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=3||
+                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_CAVE","CRY_SLUGMA_NORMAL","CRY_MAGCARGO_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
+                throw new InvalidDataException("Sevii Ruby source cue scope differs.");
             cues=[..cues,..extension.Cues];
         }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
