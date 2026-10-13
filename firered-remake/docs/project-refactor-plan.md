@@ -111,9 +111,10 @@ Evidence and limits:
 Execution:
 
 1. Classify remaining scripts by actual callers and reconstruction contracts: current importer/generator, current verification, or completed patch assembly. For an obsolete predecessor-based tool, replace its current reconstruction dependency first, then archive or remove it.
-2. List cleanup candidates with path, purpose, reproducibility or identical-byte proof, references and retention destination. Keep the current required source inputs, resource locks, backed-up original/converted milestone saves and concise acceptance evidence. Archive unique historical proof once; avoid copying every old build/cohort into each new backup.
-3. Consolidate duplicated generator scaffolding only where it reduces current maintenance. Preserve each source lock and exact output contract. Remove confirmed unused one-offs and rebuildable/identical duplicates without deleting the only recovery source or evidence of a failure.
-4. Update reconstruction and evidence links alongside retirement. Run relevant `--check`/manifest checks and verify the uploaded package structure and hashes. Packaging does not trigger a full restored runtime or gameplay replay.
+2. Separate fixture provenance from production admission: regenerated checkpoints carry their producer source, strict-save result and exact input identity, without hard-coding every historical stage hash into product rules. Keep only useful milestone converters and do not force a new lawful route to reproduce lost historical bytes.
+3. List cleanup candidates with path, purpose, reproducibility or identical-byte proof, references and retention destination. Keep the current required source inputs, resource locks, backed-up original/converted milestone saves and concise acceptance evidence. Archive unique historical proof once; avoid copying every old build/cohort into each new backup.
+4. Consolidate duplicated generator scaffolding only where it reduces current maintenance. Preserve each source lock and exact output contract. Remove confirmed unused one-offs and rebuildable/identical duplicates without deleting the only recovery source or evidence of a failure.
+5. Update reconstruction and evidence links alongside retirement. Run relevant `--check`/manifest checks and verify the uploaded package structure and hashes. Packaging does not trigger a full restored runtime or gameplay replay.
 
 Acceptance: the current package can be reconstructed from documented retained inputs; no active script/document references a removed dependency; each removal has an explicit reason; unique saves and proof remain locatable. Static inspection alone has not established that any additional particular script is safe to delete.
 
