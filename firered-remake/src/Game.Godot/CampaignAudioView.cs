@@ -184,7 +184,7 @@ public partial class CampaignView
         if(_sourceAudio is SynthSourceAudioPlayer synthesized)
         {
             if(int.TryParse(species,out int sourceSpecies))species=synthesized.CrySymbol(sourceSpecies)??species;
-            if(mode!=0&&!(mode==2&&_catalog.SnorlaxEnabled&&species=="SPECIES_SNORLAX")){_audioFaulted=true;Write("audioFault",new{species,mode,error="Unsupported source cry mode/species",recordedFallback=false});return;}
+            if(mode!=0&&!(mode==2&&(_catalog.SnorlaxEnabled&&species=="SPECIES_SNORLAX"||_catalog.FourIslandEnabled&&species=="SPECIES_LAPRAS"))){_audioFaulted=true;Write("audioFault",new{species,mode,error="Unsupported source cry mode/species",recordedFallback=false});return;}
             string cueId="CRY_"+species.Replace("SPECIES_","",StringComparison.Ordinal)+(mode==2?"_ENCOUNTER":"_NORMAL");
             if(EnsureAudio(cueId))synthesized.PlayCry(cueId);
             return;

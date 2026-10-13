@@ -9,12 +9,12 @@ internal static class FourIslandPresentationAssets
     internal const string Base = "content/generated/four-island-presentation/";
     internal const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     internal const string SourceTree = "7515cd4067ea55f8cdbc73624478afd2736c58b9";
-    internal const string LockSha256 = "0f6017366fd5c621b09961c64d601f960e517f9050e6d2e8aabf3fc51c7cf918";
-    internal const string ManifestSha256 = "bec2d0184e2210091b6cd2ed5089c71fd37c24e8b85c36bea2800a7e5886c555";
-    internal const string SynthSha256 = "d5dd35633355a6394a0b658c6d9c3028a4672fe3277b9907d48a8ea6fb8f68b1";
-    internal const int LockBytes = 28663;
-    internal const int ManifestBytes = 128021;
-    internal const int SynthBytes = 2792;
+    internal const string LockSha256 = "d62ac37ea20b737311bcc5d993912f2cbb4e9f284199ca8f2d2aaa18eb21f664";
+    internal const string ManifestSha256 = "3ff9b3b7532710a88d5a2b3da785a61fcb018c1b9bff7b354dd6936b91619d7a";
+    internal const string SynthSha256 = "04b7c9a2af54636bc76da9806c862fe0026fc975abd6454947ab5b3defb42aa5";
+    internal const int LockBytes = 29566;
+    internal const int ManifestBytes = 128985;
+    internal const int SynthBytes = 3204;
     internal const int SynthCueCount = 7;
 
     internal static FourIslandPresentationData Load(string root)
@@ -51,7 +51,7 @@ internal static class FourIslandPresentationAssets
             manifest.GetProperty("sourceTree").GetString() != SourceTree || manifest.GetProperty("lockSha256").GetString() != LockSha256 ||
             !JsonElement.DeepEquals(manifest.GetProperty("inputs"), sourceLock.GetProperty("files")) ||
             !JsonElement.DeepEquals(manifest.GetProperty("inheritedInputs"), sourceLock.GetProperty("inheritedInputs")) ||
-            sourceLock.GetProperty("files").GetArrayLength() != 111 || sourceLock.GetProperty("inheritedInputs").GetArrayLength() != 8 ||
+            sourceLock.GetProperty("files").GetArrayLength() != 114 || sourceLock.GetProperty("inheritedInputs").GetArrayLength() != 9 ||
             manifest.GetProperty("outputs").GetArrayLength() != 105)
             throw new InvalidDataException("Four Island presentation identity differs.");
 

@@ -221,11 +221,13 @@ public sealed partial class Synth
     }
 
     // This separate entrypoint cannot silently reinterpret historical mode0 calls.
-    public void StartEncounterSnorlaxCry(bool duckBgm = true)
+    public void StartEncounterSnorlaxCry(bool duckBgm = true) => StartEncounterCry(EncounterSnorlaxCry.Species, duckBgm);
+
+    public void StartEncounterCry(int species, bool duckBgm = true)
     {
-        if (cryCatalog is null) throw new NotSupportedException("Encounter Snorlax requires the authenticated cry catalog");
-        var (song, sequence) = EncounterSnorlaxCry.Build(Resources, cryCatalog);
-        PrepareNormalCry(EncounterSnorlaxCry.Species);
+        if (cryCatalog is null) throw new NotSupportedException("Encounter cry requires the authenticated cry catalog");
+        var (song, sequence) = SourceEncounterCry.Build(Resources, cryCatalog, species);
+        PrepareNormalCry(species);
         Stop(2);
         players[2] = new Player(Resources, this, song, 2, sequence);
         if (duckBgm)

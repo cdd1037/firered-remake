@@ -17,8 +17,8 @@ TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-four-island-presentation-v1'
 BASE = 'content/generated/four-island-presentation/'
 RAW = 'content/raw/four-island-presentation/'
-LOCK_SHA = '0f6017366fd5c621b09961c64d601f960e517f9050e6d2e8aabf3fc51c7cf918'
-MANIFEST_SHA = 'bec2d0184e2210091b6cd2ed5089c71fd37c24e8b85c36bea2800a7e5886c555'
+LOCK_SHA = 'd62ac37ea20b737311bcc5d993912f2cbb4e9f284199ca8f2d2aaa18eb21f664'
+MANIFEST_SHA = '3ff9b3b7532710a88d5a2b3da785a61fcb018c1b9bff7b354dd6936b91619d7a'
 SPECIES = [('Seel', 86), ('Dewgong', 87), ('Wooper', 194), ('Quagsire', 195), ('Swinub', 220), ('Piloswine', 221), ('Delibird', 225)]
 TRAINERS = ('TEAM_ROCKET_GRUNT_45',)
 INHERITED = {'ROCKET_GRUNT_M': 'content/generated/silph-trainer-art/rocket-grunt-m-front.rgba'}
@@ -358,7 +358,31 @@ def build(root, reference):
         need(wave_source[:4] == b'RIFF' and wave_source[8:12] == b'WAVE', 'Species source cry framing differs')
         cues.append(dict(id='CRY_' + name + '_NORMAL', sourceCommit=COMMIT, sourceSymbol='SPECIES_' + name,
                          sourcePath=path, sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=species, looping=False, cryMode=0))
-    out['synth-manifest.json'] = encode(dict(schemaVersion=1, sourceCommit=COMMIT, cues=cues))
+    # Lorelei's original script uses Lapras's aggressive encounter cry, mode 2.
+    # Reuse the already authenticated sample pack with the exact sound.c controls.
+    sound = source.text('src/sound.c')
+    encounter = re.search(r'case CRY_MODE_ENCOUNTER:(.*?)break;', sound, re.S)[1]
+    need(all(re.search(r'\b' + name + r'\s*=\s*' + str(value) + r';', encounter) for name, value in
+             [('release', 225), ('pitch', 15600), ('chorus', 20), ('volume', 90)]), 'Encounter cry source parameters differ')
+    need(re.search(r'#define CRY_MODE_ENCOUNTER\s+2\b', source.text('include/constants/sound.h')), 'Encounter cry source mode differs')
+    script = source.text('data/maps/FourIsland_IcefallCave_Back/scripts.inc')
+    need('playmoncry SPECIES_LAPRAS, CRY_MODE_ENCOUNTER' in script and re.search(r'#define SPECIES_LAPRAS\s+131\b', constants), 'Lorelei Lapras cry binding differs')
+    row = cry_rows[131]
+    need(cry_table[130] == 'Lapras' and row[1] == 130, 'Lapras cry table differs')
+    tone = 0x0848c914 + row[1] * 12 - 0x08489968
+    wave = struct.unpack_from('<I', pack, tone + 4)[0] - 0x08489968
+    need(struct.unpack_from('<HHIII', pack, wave) == (1, 0, 10764288, 0, row[2]), 'Lapras packed cry header differs')
+    path = 'sound/direct_sound_samples/cries/lapras.wav'
+    wave_source = source.read(path)
+    need(wave_source[:4] == b'RIFF' and wave_source[8:12] == b'WAVE', 'Lapras source cry framing differs')
+    cues.append(dict(id='CRY_LAPRAS_ENCOUNTER', sourceCommit=COMMIT, sourceSymbol='SPECIES_LAPRAS', sourcePath=path,
+        sourcePlayer=4, priority=priority, sourceCounter=None, songAddress=0, species=131, looping=False, cryMode=2))
+    inherited_seel = next(c for c in cues if c['id'] == 'CRY_SEEL_NORMAL')
+    original_manifest = json.loads(source.reuse('content/generated/synth-audio/manifest.json'))
+    original_seel = next(c for c in original_manifest['cues'] if c['id'] == 'CRY_SEEL_NORMAL')
+    need(dict(original_seel, cryMode=original_seel.get('cryMode', 0)) == inherited_seel, 'Inherited Seel cue differs')
+    cues = [c for c in cues if c['id'] != 'CRY_SEEL_NORMAL']
+    out['synth-manifest.json'] = encode(dict(schemaVersion=1, sourceCommit=COMMIT, cues=cues, inheritedCues=[inherited_seel]))
 
     lock = encode(dict(schemaVersion=1, profile=PROFILE, repository='pret/pokefirered', commit=COMMIT, tree=TREE,
                        files=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)]))
@@ -368,7 +392,7 @@ def build(root, reference):
         inputs=[source.files[p] for p in sorted(source.files)], inheritedInputs=[source.inherited[p] for p in sorted(source.inherited)],
         assets=assets, sprites=sprites, pokemonIcons=icons, footprints=footprints, items=items, trainers=trainers,
         portraits=portraits, tiles=tiles, layers=layers, terrains=terrains, newOwnedSpecies=[number for _, number in SPECIES], inheritedOpponentSprites=[87],
-        audio=dict(additionalCueIds=[c['id'] for c in cues], originalPackUnchanged=True, newAudioAssets=0, physicalAudioVerified=False),
+        audio=dict(additionalCueIds=[c['id'] for c in cues], inheritedCueIds=['CRY_SEEL_NORMAL'], originalPackUnchanged=True, newAudioAssets=0, physicalAudioVerified=False),
         limits=['No runtime rules are created by this presentation package.', 'Party icons use original frame zero shared by normal/shiny variants.'],
         outputs=[dict(path=p, byteLength=len(b), sha256=sha(b)) for p, b in sorted(out.items())]))
     if MANIFEST_SHA:

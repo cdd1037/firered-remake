@@ -273,10 +273,14 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             byte[] fourIslandBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),FourIslandPresentationAssets.Base+"synth-manifest.json"));
             if(fourIslandBytes.Length!=FourIslandPresentationAssets.SynthBytes||Convert.ToHexStringLower(SHA256.HashData(fourIslandBytes))!=FourIslandPresentationAssets.SynthSha256)
                 throw new InvalidDataException("Four Island synth identity differs.");
-            var extension=JsonSerializer.Deserialize<SynthManifest>(fourIslandBytes,options)??throw new InvalidDataException("Four Island synth missing.");
+            var extension=JsonSerializer.Deserialize<FourIslandSynthManifest>(fourIslandBytes,options)??throw new InvalidDataException("Four Island synth missing.");
             if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=7||
-                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_45","CRY_SEEL_NORMAL","CRY_WOOPER_NORMAL","CRY_QUAGSIRE_NORMAL","CRY_SWINUB_NORMAL","CRY_PILOSWINE_NORMAL","CRY_DELIBIRD_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
+                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"CRY_LAPRAS_ENCOUNTER","MUS_SEVII_45","CRY_WOOPER_NORMAL","CRY_QUAGSIRE_NORMAL","CRY_SWINUB_NORMAL","CRY_PILOSWINE_NORMAL","CRY_DELIBIRD_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
                 throw new InvalidDataException("Four Island source cue scope differs.");
+            if(extension.InheritedCues is not {Length:1})throw new InvalidDataException("Four Island inherited cue scope differs.");
+            var inheritedSeel=extension.InheritedCues[0];
+            if(inheritedSeel is null||inheritedSeel.Id!="CRY_SEEL_NORMAL"||cues.SingleOrDefault(c=>c.Id=="CRY_SEEL_NORMAL")!=inheritedSeel)
+                throw new InvalidDataException("Four Island inherited Seel cue differs.");
             cues=[..cues,..extension.Cues];
         }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
@@ -301,7 +305,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             {
                 _cryCatalog.Get(cue.Species);
                 if (cue.SongAddress != 0 || cue.Looping || cue.SourceCounter is not null ||
-                    cue.CryMode != 0 && !(includeSnorlax && cue.CryMode == 2 && cue.Species == 143 && cue.Id == "CRY_SNORLAX_ENCOUNTER"))
+                    cue.CryMode != 0 && !(cue.CryMode == 2 && (includeSnorlax && cue.Species == 143 && cue.Id == "CRY_SNORLAX_ENCOUNTER" || includeFourIsland && cue.Species == 131 && cue.Id == "CRY_LAPRAS_ENCOUNTER")))
                     throw new InvalidDataException("Invalid normal cry cue.");
             }
             else
@@ -365,7 +369,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public long PlayCry(string id)
     {
         if (!TryCue(id, 4, out var cue)) return 0;
-        if (cue!.CryMode == 2) _synth.StartEncounterSnorlaxCry(duckBgm: false);
+        if (cue!.CryMode == 2) _synth.StartEncounterCry(cue.Species, duckBgm: false);
         else _synth.StartNormalCry(cue.Species, duckBgm: false);
         _cry = new ActiveCue(cue, ++_nextToken, _pushedFrames, _synth.GameFrames);
         _cryDucking = _renderCryDucking = true; _cryGrace = 2; ApplyMusicGain();
@@ -609,6 +613,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         public long? EndFrame { get; set; }
     }
     private sealed record SynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues);
+    private sealed record FourIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
     private sealed record SynthCue(string Id, string SourceCommit, string SourceSymbol, string SourcePath,
         int SourcePlayer, int Priority, int? SourceCounter, uint SongAddress, int Species, bool Looping, int CryMode = 0)
     {

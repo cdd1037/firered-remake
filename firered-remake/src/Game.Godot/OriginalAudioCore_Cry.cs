@@ -40,15 +40,16 @@ public static class NormalCharmanderCry
 }
 
 // Derived main-project extension: pret sound.c CRY_MODE_ENCOUNTER, bounded to
-// the two scripted Snorlax encounters. The original normal builder stays intact.
-public static class EncounterSnorlaxCry
+// the admitted Snorlax encounters and Lorelei's Lapras. Normal mode stays intact.
+public static class SourceEncounterCry
 {
-    public const int Species = 143, Mode = 2;
+    public const int Mode = 2;
     public const int Length = 140, Release = 225, Pitch = 15600, Chorus = 20, Volume = 90;
 
-    public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog)
+    public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog, int species)
     {
-        uint tone = catalog.Get(Species).ToneAddress;
+        if (species is not (131 or 143)) throw new NotSupportedException("Encounter cry species is outside the admitted source scenes");
+        uint tone = catalog.Get(species).ToneAddress;
         var (_, bytes) = NormalCharmanderCry.BuildForTone(resources, tone);
         // m4a.c SetPokemonCryPitch adds 0x80, then writes key and fine tune;
         // SetPokemonCryChorus enables part1 and offsets that track's fine tune.
@@ -64,6 +65,15 @@ public static class EncounterSnorlaxCry
         return (new Song(NormalCharmanderCry.SequenceBase, 10, tone,
             new[] { NormalCharmanderCry.SequenceBase + 0x11, NormalCharmanderCry.SequenceBase + 0x18 }), bytes);
     }
+}
+
+// Keep the historical public entrypoint and all parameter constants intact.
+public static class EncounterSnorlaxCry
+{
+    public const int Species = 143, Mode = SourceEncounterCry.Mode;
+    public const int Length = SourceEncounterCry.Length, Release = SourceEncounterCry.Release,
+        Pitch = SourceEncounterCry.Pitch, Chorus = SourceEncounterCry.Chorus, Volume = SourceEncounterCry.Volume;
+    public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog) => SourceEncounterCry.Build(resources, catalog, Species);
 }
 
 public static class DpcmDecoder

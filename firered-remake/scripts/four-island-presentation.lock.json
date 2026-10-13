@@ -14,6 +14,12 @@
       "sha256": "6c9cdcdb338f317e623cad8e45b6a6e2a26fb51168d927bc6a2103e01ca14229"
     },
     {
+      "byteLength": 5731,
+      "gitBlobSha1": "07fa58a3dadf13c7fac43a5bc4e997e5d5b40efe",
+      "path": "data/maps/FourIsland_IcefallCave_Back/scripts.inc",
+      "sha256": "e83b7285e7772152d7ef1c0660868244387be9669ea13c5d51a34d3dd95d5dd6"
+    },
+    {
       "byteLength": 186,
       "gitBlobSha1": "2f3f97d6fdb7167fa0a4945fe320782f43b21e6c",
       "path": "data/tilesets/primary/general/palettes/00.pal",
@@ -506,6 +512,12 @@
       "sha256": "84469184e56630d71fc35ee3d919d35b4b011ff846e026bd20da74307d18a0e7"
     },
     {
+      "byteLength": 7438,
+      "gitBlobSha1": "2c0714995f5e6dd35be32621332c99d22c8ed886",
+      "path": "sound/direct_sound_samples/cries/lapras.wav",
+      "sha256": "b02631374703b56f8d5e29894d27cc5d6ae09a2e6584298f01bc5e932c0e821e"
+    },
+    {
       "byteLength": 6512,
       "gitBlobSha1": "f28be1f9b6de26939be6612a3607ff74d7bf1c2f",
       "path": "sound/direct_sound_samples/cries/piloswine.wav",
@@ -662,6 +674,12 @@
       "sha256": "2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967"
     },
     {
+      "byteLength": 15232,
+      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e",
+      "path": "src/sound.c",
+      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958"
+    },
+    {
       "byteLength": 7240,
       "gitBlobSha1": "a868248cf07750504eec7d87c772e089c60aa211",
       "path": "tileset_rules.mk",
@@ -678,6 +696,11 @@
       "byteLength": 2565436,
       "path": "content/generated/synth-audio/firered.pack",
       "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+    },
+    {
+      "byteLength": 88374,
+      "path": "content/generated/synth-audio/manifest.json",
+      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
     },
     {
       "byteLength": 6188,
