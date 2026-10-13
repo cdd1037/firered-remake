@@ -50,6 +50,8 @@ public partial class CampaignView
             ExtendTownMapQuestPocket(ref document);
             ExtendCityServicesQuestPocket(ref document);
             ExtendRegionalServicesQuestPocket(ref document);
+            ExtendItemfinderQuestPocket(ref document);
+            ExtendEventTicketQuestPocket(ref document);
             _questPocketUi = document;
         }
         catch
@@ -76,7 +78,9 @@ public partial class CampaignView
         => _questPocketUi!.Items.Single(x => x.Id == stack.Item.Value);
 
     private string[] QuestPocketActions() => _questPocket == 1
-        ? [_itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel")]
+        ? _questPocketCursor<QuestPocketStacks.Length&&QuestPocketStacks[_questPocketCursor].Item.Value=="pret:ITEM_ITEMFINDER"
+            ? [_itemSkin.Text("gOtherText_Use"), _session.State.RegisteredItem=="pret:ITEM_ITEMFINDER"?"DESELECT":"REGISTER",_itemSkin.Text("gFameCheckerText_Cancel")]
+            : [_itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel")]
         : _session.State.ItemMenu?.TargetInstanceId is not null ? [_itemSkin.Text("gOtherText_Give"), _itemSkin.Text("gFameCheckerText_Cancel")]
         : [_itemSkin.Text("gOtherText_Give"), _itemSkin.Text("gOtherText_Toss"), _itemSkin.Text("gFameCheckerText_Cancel")];
 
@@ -122,6 +126,12 @@ public partial class CampaignView
                 { _questPocketNotice = "This item can't be held."; return true; }
                 if (_questPocket == 2 && _questPocketAction == 0)
                 { StartGiveItem(QuestPocketStacks[_questPocketCursor].Item); return true; }
+                if (_questPocket == 1 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_ITEMFINDER" && _questPocketAction < 2)
+                {
+                    Apply(new(_questPocketAction == 0 ? "field_itemfinder" : "item_register", Text: "pret:ITEM_ITEMFINDER"));
+                    if (_questPocketAction == 1 && _session.State.RegisteredItem is not null) _questPocketNotice = "Registered. Press R in the field.";
+                    return true;
+                }
                 if (_catalog.PokemonTowerEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POKE_FLUTE")
                 { Apply(new("field_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
                 if (_questPocket == 1 && _questPocketAction == 0 && TryCityServiceItem(QuestPocketStacks[_questPocketCursor].Item.Value)) return true;

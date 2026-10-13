@@ -69,3 +69,12 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /tests/Game.CelioView.Tests/Assets/
 /tests/Game.FiveIslandView.Tests/*.cs.uid
 /tests/Game.CelioView.Tests/*.cs.uid
+
+# Rebuildable event-island hosts and frozen execution binaries.
+/tests/Game.EventIslandView.Tests/Assets/
+/tests/Game.EventIslandView.Tests/*.cs.uid
+/evidence/event-island-integration-20261013/product*/*.dll
+/evidence/event-island-view-20261013/**/*.dll
+/evidence/itemfinder-integration-20261013/**/*.dll
+/evidence/birth-island-campaign-20261013/**/*runner/*.dll
+/evidence/birth-island-campaign-20261013/**/*runner/*.pdb

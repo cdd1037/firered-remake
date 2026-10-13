@@ -241,6 +241,7 @@ public partial class CampaignView:Node2D
         if(ProcessCommittedMoveAnimation(delta))return;
         ProcessPokemonTowerPresentation(delta);ProcessSourceBattleAudio();ProcessBillPresentation(delta);ProcessSsAnnePresentation(delta);
         if(ProcessTownMapPresentation(delta)){QueueRedraw();return;}
+        if(_session.State.Itemfinder is not null){_held=null;QueueRedraw();return;}
         if(FieldMenuOpen){ProcessFieldSurfPresentation(delta);QueueRedraw();return;}
         ProcessCenterHealing(delta);
         _fanfareRemaining=Math.Max(0,_fanfareRemaining-delta);
@@ -320,6 +321,7 @@ public partial class CampaignView:Node2D
     }
     public override void _UnhandledInput(InputEvent input)
     {
+        if(TryItemfinderInput(input))return;
         if(ConsumeMoveTutorTransitionInput(input)||ConsumeNameRaterTransitionInput(input)||TryRegionalServiceNoticeInput(input))return;
         if(_quitRequested)return;
         if(TryPokemonLeagueInput(input)){GetViewport().SetInputAsHandled();return;}
@@ -505,6 +507,7 @@ public partial class CampaignView:Node2D
         if(_session.State.ItemMenu is not null&&!DrawMachines()&&!DrawQuestPocket())DrawItemMenu();
         if(_session.State.Shop is not null){DrawShop();if(_shopNotice is not null)ItemMessageBox(_shopNotice);}
         if(FieldMenuOpen)DrawFieldMenu();
+        DrawItemfinder();
         if(_fade>0)DrawRect(new(0,0,240,160),new Color(0,0,0,(float)(_fade/.16)));
         DrawCinnabarFade();
     }

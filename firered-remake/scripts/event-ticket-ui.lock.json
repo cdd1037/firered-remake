@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "documentSha256": "ad201a87719f21488af94541fecd6c11b68e46f3bb6c8550495fdd3c6420c5b0",
+  "inputs": [
+    {
+      "path": "graphics/items/icon_palettes/aurora_ticket.pal",
+      "sha256": "2a639309159269ceeba723d1aee22ac211550ba651731c6edfd4740d51bb6b58",
+      "byteLength": 167
+    },
+    {
+      "path": "graphics/items/icon_palettes/mystic_ticket.pal",
+      "sha256": "a316528cd3bc8d979c8df56a549bd42fe9114309d9a123dd3f3bc436026ce3ae",
+      "byteLength": 161
+    },
+    {
+      "path": "graphics/items/icons/aurora_ticket.png",
+      "sha256": "ee7c2e5702d8b8009ef66e1131a19c92ddefeb445e297088b0e7bca17086165e",
+      "byteLength": 255
+    },
+    {
+      "path": "graphics/items/icons/mystic_ticket.png",
+      "sha256": "c9e64185d50cb18220d8b2bc875f7c9b354d31ef09d68d71f3ecca693caa052b",
+      "byteLength": 245
+    },
+    {
+      "path": "include/constants/items.h",
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
+      "byteLength": 12436
+    },
+    {
+      "path": "src/data/graphics/items.h",
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202",
+      "byteLength": 46353
+    },
+    {
+      "path": "src/data/item_icon_table.h",
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c",
+      "byteLength": 30370
+    },
+    {
+      "path": "src/data/items.json",
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489",
+      "byteLength": 194280
+    }
+  ],
+  "outputs": [
+    {
+      "path": "aurora_ticket.rgba",
+      "sha256": "842b1f1417cd2fcdbc1010b7d6ca284f4f6e957c627a0bd21fafb19ea400dc17",
+      "byteLength": 2304
+    },
+    {
+      "path": "event-ticket-ui.json",
+      "sha256": "ad201a87719f21488af94541fecd6c11b68e46f3bb6c8550495fdd3c6420c5b0",
+      "byteLength": 2726
+    },
+    {
+      "path": "mystic_ticket.rgba",
+      "sha256": "397fd02dbb6c2f3653681821ba31836ca8b7722a844f1f1aba9edd687527143f",
+      "byteLength": 2304
+    }
+  ]
+}
