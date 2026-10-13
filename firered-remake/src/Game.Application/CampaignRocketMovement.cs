@@ -9,8 +9,8 @@ public sealed partial class CampaignSession
 {
     private IReadOnlyDictionary<MapId,IFieldMap> RocketMovementMaps(CampaignState state)
     {
-        if(!_content.RocketHideoutEnabled||state.MapEdits is not {Count:>0}||!RocketMap(state.World.Player.MapId))return _content.Maps;
-        var maps=_content.Maps.ToDictionary(x=>x.Key,x=>x.Value);
+        if(!_content.RocketHideoutEnabled||state.MapEdits is not {Count:>0}||!RocketMap(state.World.Player.MapId))return TrainerTowerMovementMaps(state);
+        var maps=TrainerTowerMovementMaps(state).ToDictionary(x=>x.Key,x=>x.Value);
         maps[state.World.Player.MapId]=new RocketEditedMap(maps[state.World.Player.MapId],state.MapEdits,_content);
         return maps;
     }

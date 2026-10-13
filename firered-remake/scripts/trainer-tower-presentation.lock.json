@@ -1,0 +1,1823 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "completeGame": false,
+  "files": [
+    {
+      "byteLength": 200,
+      "gitBlobSha1": "87a022102f199020c802e20c91a39c6e3461f929",
+      "path": "data/tilesets/primary/building/palettes/02.pal",
+      "roles": [
+        "elevator-animation-palette"
+      ],
+      "sha256": "220932f7bc7c1a6ef2dfa2efdc47d6b0f238440361400b629c441acd89306bea"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "317213c427fd0b83286dd577a3f23719e5c5ec8f",
+      "path": "data/tilesets/secondary/trainer_tower/palettes/08.pal",
+      "roles": [
+        "elevator-animation-palette"
+      ],
+      "sha256": "4611ed5f5863692b6dcfe69bdcd76431283be4f7a7f4d6b4340ee9aafe2723d8"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "bb88b4d5717991be149378b74457f921e30271e2",
+      "path": "data/tilesets/secondary/trainer_tower/palettes/11.pal",
+      "roles": [
+        "elevator-animation-palette"
+      ],
+      "sha256": "c8a6bba3fcc9d2f260042a79a2d5213797eb05ed1049e9ea117a81e0cbfa0eb2"
+    },
+    {
+      "byteLength": 318,
+      "gitBlobSha1": "23ace6b7588885f5cff6041c0b3b9ab2a9badbd1",
+      "path": "graphics/door_anims/trainer_tower_lobby_elevator.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "7e8eedb636a928177c288c17f292013b867ec01f4485ac23a60adb717405a1cf"
+    },
+    {
+      "byteLength": 316,
+      "gitBlobSha1": "774cedf75fbcc8ab56c94740f254c29606c1700a",
+      "path": "graphics/door_anims/trainer_tower_roof_elevator.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2b7cc033f85a47c811b638f4368d31a3f838c1e105d582ca3909d0f5416df856"
+    },
+    {
+      "byteLength": 165,
+      "gitBlobSha1": "9d09f75fa85e2897ce175ad1b2ee612b306c630e",
+      "path": "graphics/items/icon_palettes/bright_powder.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ee2c7188db932ac563021af2461d9136b923458353739fdf89b7c2cd4491b42d"
+    },
+    {
+      "byteLength": 180,
+      "gitBlobSha1": "0a0100e2df2271095208b336d2c4204c9853883f",
+      "path": "graphics/items/icon_palettes/calcium.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "cf12b15153db4760a8d2f831fa017f20f77d27a1ef1849753f73c620b531c622"
+    },
+    {
+      "byteLength": 182,
+      "gitBlobSha1": "75ea0b5e85615f823a9faf306d95cb6de82cb853",
+      "path": "graphics/items/icon_palettes/carbos.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ee82dc47741604702242fc51e21e1935b0a9f1e37d6b2a0bd69cdb631aa03e0f"
+    },
+    {
+      "byteLength": 200,
+      "gitBlobSha1": "65820988dd91e996a2a238e2b7b348e305d5a65d",
+      "path": "graphics/items/icon_palettes/choice_band.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "513b6069c4c58eb2304844d112fc2b4801f0e18ab256a3c2b912c2304a7993d4"
+    },
+    {
+      "byteLength": 169,
+      "gitBlobSha1": "641925d3ca33d4f1cc122e899f35057466146755",
+      "path": "graphics/items/icon_palettes/dragon_scale.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "50064aac73230d0f90bc5566e87d4038ccf6bd4e3946c6035137e73b2c23f737"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "555e10f719bfed1221e59b2a0943d79587b537a6",
+      "path": "graphics/items/icon_palettes/hp_up.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "013da136bdef5e6652f287528a876a2cd14e0144f5efa89f584e6857a5d62459"
+    },
+    {
+      "byteLength": 180,
+      "gitBlobSha1": "44592f92b2d64c71e12dcf1e7e38b54e5195bf81",
+      "path": "graphics/items/icon_palettes/iron.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5d547186295cf8b54995f450b0114c0fb6c9a2e4d2d694883904c0e0f24ce496"
+    },
+    {
+      "byteLength": 151,
+      "gitBlobSha1": "ba9e92580d434e322e79d661049db6f331d8ca6b",
+      "path": "graphics/items/icon_palettes/kings_rock.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2806c17b2a630af679ca57fe21ed5502c6976fd10bb47d2b6cf965c15d469718"
+    },
+    {
+      "byteLength": 169,
+      "gitBlobSha1": "b488816e5e230d06b2b52f50c55c06930951a217",
+      "path": "graphics/items/icon_palettes/mental_herb.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "c5f765dae35b95f289548efbc23345050b726ec2c9f62ca9fb517ceb72f5452a"
+    },
+    {
+      "byteLength": 151,
+      "gitBlobSha1": "3b81fa802c73f8302fbfdb3da516cf0c69752603",
+      "path": "graphics/items/icon_palettes/metal_coat.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "facd72d8f81b6beb44ea8afbc00198423663cee9116cd684b533f5a11a0eb08a"
+    },
+    {
+      "byteLength": 179,
+      "gitBlobSha1": "913a87ea471bca3abc8dd19f1fd0d4fbfb990b6c",
+      "path": "graphics/items/icon_palettes/protein.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d79cb40bb639f6c2c1ca2dccc50ff012d9c1ad03f465a6a995ab8f912df3fc7b"
+    },
+    {
+      "byteLength": 188,
+      "gitBlobSha1": "8c73e8faae9ddbb0dd387398ce26fec36d31b20f",
+      "path": "graphics/items/icon_palettes/scope_lens.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "06cfae28de78d232380bf7e7cd970e7b39b036aface549b09f2c17e3deecb372"
+    },
+    {
+      "byteLength": 199,
+      "gitBlobSha1": "ee3dfee40f5fa6adf49c2462def96a92209e7c64",
+      "path": "graphics/items/icon_palettes/up_grade.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d713023fead1c794b9bc90eaca1711e95f95e915e94396a2ea584c4797caf4e2"
+    },
+    {
+      "byteLength": 170,
+      "gitBlobSha1": "9869f6495599993710dfbfdd067f2d2bb9633a8d",
+      "path": "graphics/items/icon_palettes/white_herb.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "239a15b50411375ca50107833b61c647857e8d4fa9360644fad6a61726160881"
+    },
+    {
+      "byteLength": 180,
+      "gitBlobSha1": "472936091a2dc3bc1eeff65a57e062cd3dfc094d",
+      "path": "graphics/items/icon_palettes/zinc.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "9c1f6fedfc6cabb8843167416952ddfb1e5891874814f30770e4667df8677a49"
+    },
+    {
+      "byteLength": 282,
+      "gitBlobSha1": "2e7c3b66a9cfb9b31aae7c4b9395a00a3b3e2c43",
+      "path": "graphics/items/icons/bright_powder.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "701e0870ac994c9b936d5ec1fcbfb7abaf69298ccb7d97d15209862bf4cd4d01"
+    },
+    {
+      "byteLength": 330,
+      "gitBlobSha1": "0e5658260612c093de843872274335c83bb5b367",
+      "path": "graphics/items/icons/choice_band.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e0c2861fd6dd13210fdc167718e78939db64a4ac6fe406ea893d46160e08d6e8"
+    },
+    {
+      "byteLength": 255,
+      "gitBlobSha1": "08db6d68d6b3651d84fe60d38d6c9fe4f2f1ecda",
+      "path": "graphics/items/icons/dragon_scale.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "c210346f78c9b09976047175ff332a2b47fb6f603a60751533e7617575cb272e"
+    },
+    {
+      "byteLength": 278,
+      "gitBlobSha1": "0870f82b5b8de2706bba96e896aa09181cb7c973",
+      "path": "graphics/items/icons/hp_up.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5c56a006317f7458eae2c02e9ce17d37d5e91804160b6420abee1e0be901aaff"
+    },
+    {
+      "byteLength": 248,
+      "gitBlobSha1": "1187d35fbceb8cc6ca152a4ac78e9d4a2e8ecb0e",
+      "path": "graphics/items/icons/in_battle_herb.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b6588c9a4dadf2c50e1ac8211bfce5be90eacf0429c63a56175e93a34f79a41f"
+    },
+    {
+      "byteLength": 312,
+      "gitBlobSha1": "a45ada81d719c4f009e3767ba4e9aa1beba5d7c3",
+      "path": "graphics/items/icons/kings_rock.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "dbc7ab0664bba8e6017e797775eb7825ab1e0ee113eef29d2e20a17a7d222a66"
+    },
+    {
+      "byteLength": 250,
+      "gitBlobSha1": "54af148f50db79794d3af64eb52c079cc16c806c",
+      "path": "graphics/items/icons/metal_coat.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0e5d62dd4816dab0e6b8998ce4e59c3b98c98bc0f7e458490d70bfe3548d02bc"
+    },
+    {
+      "byteLength": 348,
+      "gitBlobSha1": "8c613e97128863362fdb256c346df6dbe140fc1e",
+      "path": "graphics/items/icons/scope_lens.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "4f4043942fd01f8ef048ca915a614ccb3de35100862dc52869e0b523ab1055e7"
+    },
+    {
+      "byteLength": 276,
+      "gitBlobSha1": "3b539c60ac9d85474268614e5d752b87e6121ff0",
+      "path": "graphics/items/icons/up_grade.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "afa7e7fb08053c02684cebb7b640eac5f96642cd211ee92bd52d0467c519889e"
+    },
+    {
+      "byteLength": 273,
+      "gitBlobSha1": "2ba89b154cd317ddd3dfdbba9cc24d2dd7adcb6a",
+      "path": "graphics/items/icons/vitamin.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2900e01a302c63dc86dd65e5b669aa3657d8f9f56f56d155ede3c3c55dabf783"
+    },
+    {
+      "byteLength": 714,
+      "gitBlobSha1": "2e7c2399e67403411174e6cb4d8deb595f94c229",
+      "path": "graphics/pokemon/ampharos/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "8de0bd1504d75d8779228e0cc385d3304f06c0ff94c1883612dd5b8eb23f3b88"
+    },
+    {
+      "byteLength": 721,
+      "gitBlobSha1": "cc4956afb69129b9dc92535efb3ea07a76fee66b",
+      "path": "graphics/pokemon/ampharos/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "08bc4ca7549bb23bad35590e3fa450160a9df1fcf22c69227715999fdf5c6754"
+    },
+    {
+      "byteLength": 180,
+      "gitBlobSha1": "f7fdd3683db579a82db1835ce45911a26c93bb4b",
+      "path": "graphics/pokemon/ampharos/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "20752df449d81d4d127b372fd3b4b8431f196b5ad220fe5373db2c44a9016c0c"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "f29dc710fc4239c05130bc094ba7a862697c2f80",
+      "path": "graphics/pokemon/ampharos/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1b81c2d5f3b61e6ed03c8533675e052bb2dbcf063fdedd7a97d7ae1636f9119d"
+    },
+    {
+      "byteLength": 566,
+      "gitBlobSha1": "9823bd9947ff7752212e60ed374abf51b70efee5",
+      "path": "graphics/pokemon/blissey/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ffce46aaea16527fd8fc2323533130443e7a19faa338bda031a37d18ab244564"
+    },
+    {
+      "byteLength": 827,
+      "gitBlobSha1": "3173f820c377cd3a9e3e1c914b2f0b99f6778978",
+      "path": "graphics/pokemon/blissey/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "fa44e57d5c60c044cdb0255bc039475ae60e2bbce5733dcd1645e1e702487a46"
+    },
+    {
+      "byteLength": 186,
+      "gitBlobSha1": "edeacbdaa20163beda5c808dcd7d32ddcf96aa40",
+      "path": "graphics/pokemon/blissey/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1629a17635e84163f7bcaa7361b5ebe47dfdb3fda16fd74f3f6f2669c832096d"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "d6d75db9e2686325e05a74e5579477329b46396c",
+      "path": "graphics/pokemon/blissey/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "97fae7feba4da1795199b184df6350de3343ba3b8309ac2ba90d7b67b180576e"
+    },
+    {
+      "byteLength": 525,
+      "gitBlobSha1": "d15f330fc10f47308553522fd9813a9d6ca8742e",
+      "path": "graphics/pokemon/corsola/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d467407b2b1114b26f9623d82187db9202010abb828ff5da4593aca0e6e026d1"
+    },
+    {
+      "byteLength": 601,
+      "gitBlobSha1": "550ddbbe3820dfb60f2581ea531c92edd7b5d180",
+      "path": "graphics/pokemon/corsola/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "db89d992c8ca2e004994df38566ae0e1c7b58da67a591a81b4930b3d50cc1523"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "95c7616fe4cebdeda15322dca62d0fc9dee921a0",
+      "path": "graphics/pokemon/corsola/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "9fd3053742fdbecf492b79dd3020a816ef8ea8f3481d4cea30a0948d0a25ea5c"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "13daa4e2633c887a397e119728143ca85a40d53d",
+      "path": "graphics/pokemon/corsola/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1027ca64ce5d2b1558f15c1d455eb71fbaa0a067563c636a83367bd05bca4397"
+    },
+    {
+      "byteLength": 593,
+      "gitBlobSha1": "05f700ea720015b7e6e1537e7cbe20a93384d720",
+      "path": "graphics/pokemon/dunsparce/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "254d4ee77651284223d743b63e2cf3c70f10bdeae7b7764e9f3a0bb974390f21"
+    },
+    {
+      "byteLength": 645,
+      "gitBlobSha1": "cf3c421affa714c7fd6ee371503b870e8fcfa2a7",
+      "path": "graphics/pokemon/dunsparce/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "861a44e3de5793baf57cbd40d598ad64c591b4c89e7fd248d3d15c7d223f2203"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "e0440cdc1e88c962bbf29955009a220b3744c697",
+      "path": "graphics/pokemon/dunsparce/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5ecec965658619dd2091d76a4de7cb0c2f3cae46f7f14705da831188152eb36b"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "425dc8b36b25f1a18e916045243b40c32e1ed4fe",
+      "path": "graphics/pokemon/dunsparce/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "80c8e1728fc66246e1ad42efe985e2146a7cbaae8ec5b337706a0145c2872512"
+    },
+    {
+      "byteLength": 554,
+      "gitBlobSha1": "c3e5d96dedf16527adbd16d1702c095ac6d6b362",
+      "path": "graphics/pokemon/espeon/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1e414e580b37e812bd21c5ce512147826072712e7d0713e7eeb1fc7d60ba66ff"
+    },
+    {
+      "byteLength": 659,
+      "gitBlobSha1": "9e66b16265643ebf1a49b1d568ba507e2c4a2433",
+      "path": "graphics/pokemon/espeon/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "3c8d30225ce8e41bf33d7de02dcf6ae1f9f285f47b6642e0500b60de63351264"
+    },
+    {
+      "byteLength": 185,
+      "gitBlobSha1": "b001102c1b9d77db6b3d5844f06d5f90f45a63ac",
+      "path": "graphics/pokemon/espeon/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b7fe6648f95e23653b2f87958fb79c689a4679d02532607739af463fff84cba2"
+    },
+    {
+      "byteLength": 181,
+      "gitBlobSha1": "22222e2c7c2ef2108e678ba8c9f4788b37729331",
+      "path": "graphics/pokemon/espeon/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "44c10ca3b919c8ac44f6b513a0a792b9533e63967204e746c0d7a8e87263abe3"
+    },
+    {
+      "byteLength": 999,
+      "gitBlobSha1": "d996dd8ce0564f66a0e16e524664ca8742eb0bac",
+      "path": "graphics/pokemon/feraligatr/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1febc9ed85fdaad7d1f5731ddbd0fffc6d0b31a8afc39d5196d9ebe3d450aebd"
+    },
+    {
+      "byteLength": 1122,
+      "gitBlobSha1": "c44e7afc27f4f5d36f687e5164fe9ebb8e00424a",
+      "path": "graphics/pokemon/feraligatr/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "55def8eb3a376a4f5d6058ce6b880d50ee29f635eaf613f928b4d3fbc5741f31"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "7fc0a9eb893e258f1d2ba70108759d1f85f764b2",
+      "path": "graphics/pokemon/feraligatr/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "8c18b502056cb679d4fbada0c1294ad78b1e057a433d3b02368824626e6f3710"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "81c5ebc2a21f9a9070d6c292c9f41c90bf0d2a0e",
+      "path": "graphics/pokemon/feraligatr/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d813798d837f4764de4ca993f0eedc2345bfae4dfdcb7a8b397115993fd5a14a"
+    },
+    {
+      "byteLength": 709,
+      "gitBlobSha1": "c1efa1306c508de9d0f17818f6e4cdbc3138d637",
+      "path": "graphics/pokemon/flareon/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "6cd336eaa29b2d1a42611980b695d1818390faeff402c4428e6ae41414c1ea11"
+    },
+    {
+      "byteLength": 717,
+      "gitBlobSha1": "c36448b187e564aec5e655943627e2f18b78f435",
+      "path": "graphics/pokemon/flareon/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "69e7a1faf82f500e2eeec03341822d468e6e662c208119e77dc332a90eedc88e"
+    },
+    {
+      "byteLength": 186,
+      "gitBlobSha1": "a39e1e1f774f7c050afaa3bd6c96df3cad35e009",
+      "path": "graphics/pokemon/flareon/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5f517e3b862ca64734aad1fc2a4ec9f049eba415162f209e6d7278c7c6fc4b91"
+    },
+    {
+      "byteLength": 186,
+      "gitBlobSha1": "60c1b337c0abd3f38d97298e669c1c9e8d4ae29f",
+      "path": "graphics/pokemon/flareon/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "288a8700d82273c3337dbfe9684f739348e94c3a741114b468c41df0e3c19670"
+    },
+    {
+      "byteLength": 627,
+      "gitBlobSha1": "2ac044da63c60ee0a35a15952cfa4c8a61734447",
+      "path": "graphics/pokemon/granbull/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "c67f908825afdc861fe51382ceac3e983c8881507d86c19d35b1155980144146"
+    },
+    {
+      "byteLength": 720,
+      "gitBlobSha1": "ee4c40b25281216af1ed76250818da3c4f6fd23d",
+      "path": "graphics/pokemon/granbull/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "f04c9d7b43b2356c3e513bb63f894717d35c9e0344c5eb07e610a63cde48b997"
+    },
+    {
+      "byteLength": 187,
+      "gitBlobSha1": "b83b14d1695097a9ea92d31f1f401380f4fcc267",
+      "path": "graphics/pokemon/granbull/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0424132cfe8b99376a9e679c8d76980a2d50796d94eebcc1c6def38697855f7f"
+    },
+    {
+      "byteLength": 186,
+      "gitBlobSha1": "a8dfec72896c7d209ef623052dd171782292af9b",
+      "path": "graphics/pokemon/granbull/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5c8ddb349bf6a4a241cd7f47c72d56384697198206d2822e464d214ff383f06f"
+    },
+    {
+      "byteLength": 720,
+      "gitBlobSha1": "577fd2d717f76266143241f9a34efac094c32932",
+      "path": "graphics/pokemon/ledian/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "60538f426e595cd579104cb1ff22ff1a8e273165e1d1128c5b866c95bf98dca3"
+    },
+    {
+      "byteLength": 766,
+      "gitBlobSha1": "ea58651cb56beb3648207e95bec5a6e52884127f",
+      "path": "graphics/pokemon/ledian/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "794955e9977fcfdaf5ee66954bdb30c4c8386e4032fd823dd556dc13f741bd74"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "dc9acc426f65b4db6aa6dc9e108202d3f3c0d63d",
+      "path": "graphics/pokemon/ledian/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ccac0139c518d987622f920eb203845baba2946831cf373b46fdf2fb4c4b251c"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "472f0974dc18ad9bd70c0e4bb74314637edad288",
+      "path": "graphics/pokemon/ledian/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e6b2a027580fc04d20efd0d9f70a1e15e9a4cd03c316a03bec80093f87c68dd5"
+    },
+    {
+      "byteLength": 546,
+      "gitBlobSha1": "f05f62283eb3b981d2c477c5ccf6466a49eb1b8c",
+      "path": "graphics/pokemon/magby/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "c83cac687ceecef9026d0db8695ae0768540c2ad3f7b015ee19a9f1fb8db0e29"
+    },
+    {
+      "byteLength": 506,
+      "gitBlobSha1": "6994953b20e39871c880d50220bf5394333e4cd3",
+      "path": "graphics/pokemon/magby/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "7a77eb7bdab6b3fb222d71a0a80c95cdb326932167d08dbfcba59ec04c9ea303"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "42daceeb8dce723d602ae7c34e320deac1637560",
+      "path": "graphics/pokemon/magby/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "7fe4b8a9b4f13f87fa0572f66ba05285dc3641f40887cfa5f4669eaf95551423"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "97a19115c422364c12403678813db18f121008e6",
+      "path": "graphics/pokemon/magby/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "9efa0cee22249dd5da8decf3e461e7b40d1d487d18de259b95414ce1d14194e1"
+    },
+    {
+      "byteLength": 526,
+      "gitBlobSha1": "186e90e1e29bb08a96304bdd606bd401c38b3944",
+      "path": "graphics/pokemon/mantine/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5c8046682ec3121c80216354fdc1b96fad33ae14a4f3f77ab82abe057aae2138"
+    },
+    {
+      "byteLength": 983,
+      "gitBlobSha1": "b8a292d83d425828a6b6c03e2be1b9e1fe00b98d",
+      "path": "graphics/pokemon/mantine/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "edd204ee5fdb17285178572179c9d166f8013b22bc082d16e489ce6f5b991621"
+    },
+    {
+      "byteLength": 197,
+      "gitBlobSha1": "36e0777c410bc00b73febb8328bf0a6552233799",
+      "path": "graphics/pokemon/mantine/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "72ae09ca4ca4fcc54a5d95aeda81be041ddbc578249b151d99991c8fd9ea44ce"
+    },
+    {
+      "byteLength": 198,
+      "gitBlobSha1": "5427dc275c3e38748ef88fe0d2d00363b0ed528c",
+      "path": "graphics/pokemon/mantine/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "53264a16b3a24d26af8a63c0f978d73356e6187733d42d07a77f05fe2c546463"
+    },
+    {
+      "byteLength": 576,
+      "gitBlobSha1": "d87e7aa145d92b20c6995ad8f7b40f4905bf92d8",
+      "path": "graphics/pokemon/meowth/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d7422f72e3d6b2dd289d2636600b96cb2d83dc9b5ad352c4973fa6e2f980fb26"
+    },
+    {
+      "byteLength": 637,
+      "gitBlobSha1": "76299ea59f341ccaaa6116645e903740cb786251",
+      "path": "graphics/pokemon/meowth/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0a7f87b804c27cbad10b56ec98a976df9b7a713709cfe7416b9636c4186b363b"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "034249ad5366cb91c1ab3dade7f94588c6077a6b",
+      "path": "graphics/pokemon/meowth/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "49d499b1c9cb6bbb488435499a719f5bdb2132310d0f9fbc59175fa2da0a0016"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "68f386ca69f66b0c375f8b1016430abb8815f117",
+      "path": "graphics/pokemon/meowth/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e217bbc05c257392cc1ebb7655ea3d4b4097e81c0400875e78515d37074469ef"
+    },
+    {
+      "byteLength": 565,
+      "gitBlobSha1": "5337b6f27727e25c286eb666341e62e497bffcad",
+      "path": "graphics/pokemon/politoed/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "56210d70a2d14afc2bb0d8cd0280fb0163d0f4943c30460e9745f02368cac6c9"
+    },
+    {
+      "byteLength": 706,
+      "gitBlobSha1": "d07bf401322352377b0adf73561f4657518b6ed7",
+      "path": "graphics/pokemon/politoed/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e79f3bbe26c3b7052ffb5af781908d2eebceaaaf1765dd3404095127a9850f74"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "31177861d69a7add49580ed57b2705c4b63e92b2",
+      "path": "graphics/pokemon/politoed/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b04a00cfae146a89b6fd6225ba06f965c6b924413b98c88ae0204820cd5fe1a1"
+    },
+    {
+      "byteLength": 198,
+      "gitBlobSha1": "1d25291bf4108f97ca09152f2771a558df1c25a3",
+      "path": "graphics/pokemon/politoed/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "60e56664529de03bfa616b53a7f7dfab400302e0f23b137d46e1519be5311a7f"
+    },
+    {
+      "byteLength": 615,
+      "gitBlobSha1": "b38239be7723c59560839919922615e5a2a16856",
+      "path": "graphics/pokemon/poliwrath/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "181c82dea8a767f376dcadf68b522fa5e316b35846e9784bd9aaa300b111d4da"
+    },
+    {
+      "byteLength": 777,
+      "gitBlobSha1": "84210c773e75a57131a05be3f9cb58fa341da86a",
+      "path": "graphics/pokemon/poliwrath/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "f55344f9c4c9fa44885420015b066dee9ed9694705e867f2175fd5207d850ecd"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "0f2a6a88b904e7befc15a2a395eb15c9bcd63cba",
+      "path": "graphics/pokemon/poliwrath/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e14d58e74bc272b00c260cd606fe5b6fe59e0d7570c88798cf15a570b1583626"
+    },
+    {
+      "byteLength": 188,
+      "gitBlobSha1": "64aab4039aaf48c715fd442414a371eef236b332",
+      "path": "graphics/pokemon/poliwrath/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5ed13a16a913b11752c1feffd375844000436579990be9d126b60a0753f73242"
+    },
+    {
+      "byteLength": 656,
+      "gitBlobSha1": "aad400b560f7df859129c2f8045c8905b3ce99f0",
+      "path": "graphics/pokemon/porygon2/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "3cd45f3215dc18c377cb744a71a129a4ea87aeba81d2414b001a0fafacf82d5d"
+    },
+    {
+      "byteLength": 541,
+      "gitBlobSha1": "ef08816d7f3f21aa4abcd179fee1ce1ca6c2a38c",
+      "path": "graphics/pokemon/porygon2/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "c27c1b7d45f7f1889286db2872781a1f8dd59c178225ec336932f06ccca654e0"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "a9de00549688c971f23db43ce4701e861680dbf9",
+      "path": "graphics/pokemon/porygon2/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0c77e19fa675af156352b203e2cde79a63eacfb5e3c2a488f42d8582121b595f"
+    },
+    {
+      "byteLength": 196,
+      "gitBlobSha1": "4c0d2054c50ec88668804a7231c1e5ca909057db",
+      "path": "graphics/pokemon/porygon2/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d98edbc3f1436b30bcc91b32d72fe9471eded8baa74cd1387f52efccebbac9b6"
+    },
+    {
+      "byteLength": 572,
+      "gitBlobSha1": "34fb6e12e63c9ceaa2c4ecd19482563f5cf4ca9b",
+      "path": "graphics/pokemon/qwilfish/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "276481561682aaf46e2a2e1a951fa4f04650dc55647f9f7f6474e560bddd5f0e"
+    },
+    {
+      "byteLength": 566,
+      "gitBlobSha1": "67266d4afeffba1dc80f3d9cf16785408b121d1f",
+      "path": "graphics/pokemon/qwilfish/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b1f9f3039a7831451a3b34adf2c34d90f8f07b9e16ad2483d9b23f6f3e970f4a"
+    },
+    {
+      "byteLength": 187,
+      "gitBlobSha1": "1956e57c43c6805f5403fc88aff62ae93d8c9a8b",
+      "path": "graphics/pokemon/qwilfish/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "6a41d0154ef19b4d73c9faf55306c7a721ff498c4f2beefd3c09290e5d393a37"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "d548d12e9192a8316fb102f6d0e7f48f58fad99e",
+      "path": "graphics/pokemon/qwilfish/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "df250f844418f4b4ad20f0c3017920969b2bc5134937f23c0f5843ed31e2ed60"
+    },
+    {
+      "byteLength": 693,
+      "gitBlobSha1": "eb3fbd661a955eb8779c9777189129987f6d4c42",
+      "path": "graphics/pokemon/seaking/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0d55af5f78b3324403bb3778e156d7a70248eb638211e9810f10d67ea28330bb"
+    },
+    {
+      "byteLength": 944,
+      "gitBlobSha1": "155dc617211f3d6d297354b2c29d901d9a1a05ff",
+      "path": "graphics/pokemon/seaking/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "de03fe27bd09420f3a1035f475f884115faafe25c97dd3edd7a0cc559889d168"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "1ffe314f4972a309d0ec5f066b29dc8a3b9ff058",
+      "path": "graphics/pokemon/seaking/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "199175ce636b108d0cbe575cbebcd19fa0b0d54cf9d40d47c23f60b21f8179e1"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "2a4acb23d63b6dabdb374cbba67f91c1fffbd1d4",
+      "path": "graphics/pokemon/seaking/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b094dc3f45df3cb500e677eb332679c3545eaaba09792b1e03bae4e0911841c1"
+    },
+    {
+      "byteLength": 507,
+      "gitBlobSha1": "bad0422e52dfd4f5a48dab7833806d150a3eda74",
+      "path": "graphics/pokemon/smoochum/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "84c8270b5bd90f54aef0a701bcfa85fb6c148a73b4feac3d2a876b62002b6962"
+    },
+    {
+      "byteLength": 495,
+      "gitBlobSha1": "60884160014b7b6b88de97571d1f695381169e90",
+      "path": "graphics/pokemon/smoochum/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "541f6a4a167560ec1157449631da660118f6f4574059ac761905679ccda136c5"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "722cd42066ca706d033323293fc52e6265a9b4fd",
+      "path": "graphics/pokemon/smoochum/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "24b371ed47a670aac2e20196760e2afd803261e246d0bab24f7849551197f2af"
+    },
+    {
+      "byteLength": 200,
+      "gitBlobSha1": "00a439312c2bdc0f792360a96054a6d126bbfa08",
+      "path": "graphics/pokemon/smoochum/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "375f1864e3609cd4743bc96912535bc41e7480f55de04ec08749e37c090478b9"
+    },
+    {
+      "byteLength": 514,
+      "gitBlobSha1": "24858fc227e9661e8c0176d50b11a43fda265c86",
+      "path": "graphics/pokemon/togepi/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1363a46d94fcafaa8d2b73368c64d69971381c43873b2fa568a1d7244ac8593c"
+    },
+    {
+      "byteLength": 390,
+      "gitBlobSha1": "2fd04df59504a5292c09a12844f2daf2fd6a99c2",
+      "path": "graphics/pokemon/togepi/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "06f106de84eb83e45b461abd01c349fab538f09dc6bdc362b818b8b0857909ba"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "6e9355508dc39fe81fd838893be3785666fa998a",
+      "path": "graphics/pokemon/togepi/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a8646f3d885d50bc90cf1e36df891060acc0201bc1742411d1347f458a64e722"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "6ce2e1be71bc563b52ea4fe31b60c6e7122a5e22",
+      "path": "graphics/pokemon/togepi/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "07b1d1de7a317434377901e4ddb553aee97bf9534fb184df5ad63558163922f3"
+    },
+    {
+      "byteLength": 572,
+      "gitBlobSha1": "5ac5b94fb8e46b48844046af8be3d93ddffde9b4",
+      "path": "graphics/pokemon/vaporeon/back.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "41d98e175d5d3e29fe69094ae39f7c42cdae07d38118b12438e42b0585d4a2c5"
+    },
+    {
+      "byteLength": 802,
+      "gitBlobSha1": "af9a0f99924860c59ef56e6192475e2fc927aa83",
+      "path": "graphics/pokemon/vaporeon/front.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "8ee93ba0bf97942fcdfc0a2d32da8bcd1b41cc9b5026ddcd03cd5707ebdc5896"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "e6a4024f1b5eee122bf4615e5f83a1ff3de0bed0",
+      "path": "graphics/pokemon/vaporeon/normal.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2e61c8b0d4171c6b062328a3476d8dab77df6ef8e4984133e4d9c3a4548d3860"
+    },
+    {
+      "byteLength": 198,
+      "gitBlobSha1": "1cfaae92b4c87845b0ded7bdae007c6909408c5a",
+      "path": "graphics/pokemon/vaporeon/shiny.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "afa3792463204a1934ffd49f47464e199c7b8a7713c00ea17de2e8eeed09ff07"
+    },
+    {
+      "byteLength": 769,
+      "gitBlobSha1": "3bb53e99157cf63eea3c83c82de7748b49c387d1",
+      "path": "graphics/trainers/front_pics/aroma_lady_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "061ef9b7308829ea4646f65c89341688d565c5bd1e16b053e06724793697a895"
+    },
+    {
+      "byteLength": 738,
+      "gitBlobSha1": "595d0bf1ef70cd1536e95e7767547fbfdd34a471",
+      "path": "graphics/trainers/front_pics/beauty_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1c22fa5f9d3b437ba55edec0ed16833c074218488791089e2d8692b72c19a9d6"
+    },
+    {
+      "byteLength": 1179,
+      "gitBlobSha1": "e8c23dfc7f49ba79a8eeaec8345e6f8212685f97",
+      "path": "graphics/trainers/front_pics/biker_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a676b6b30fe7479f52313a95afb1e05c904c34c7ec972c7cf755f2c711ba1644"
+    },
+    {
+      "byteLength": 888,
+      "gitBlobSha1": "a433cb406c8a1393b891ea602cc35c3ad1fd0eb4",
+      "path": "graphics/trainers/front_pics/black_belt_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "dfb5a74143e3cc0a54e0cc6fd39c5e5cf32d1351bf7886d3dda0667309b02b96"
+    },
+    {
+      "byteLength": 747,
+      "gitBlobSha1": "3bb8f8d8aa03e123fd655835b4415f2d35954339",
+      "path": "graphics/trainers/front_pics/bug_catcher_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d4fde22863bf180ae3ab808d1cc1a2680e828b66fa2ce12c55bfe96cad097243"
+    },
+    {
+      "byteLength": 726,
+      "gitBlobSha1": "5b68df0ee08e5ea516362a91afc5639a22ca2644",
+      "path": "graphics/trainers/front_pics/burglar_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "57a067eb9c02f2504e460bd0ad1a2f5b47bf2d4dc477b6aa23e0267b61345cd5"
+    },
+    {
+      "byteLength": 614,
+      "gitBlobSha1": "d150b02f6cb26050c09d432a64a9eda8b01cc7a0",
+      "path": "graphics/trainers/front_pics/camper_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d9897dfb2105df1ebf2d4fdcc250bf4e5380361c1439826e26c201a40738ae9b"
+    },
+    {
+      "byteLength": 1072,
+      "gitBlobSha1": "735d22fc7225ae8e47d11e8ed9259401642772e4",
+      "path": "graphics/trainers/front_pics/cool_couple_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0dc95c07084ea8e6a26c5d0d6187c4ba0cdcab410fc7caba18808bea73dca52b"
+    },
+    {
+      "byteLength": 715,
+      "gitBlobSha1": "ca5d24f60c4856b1d4bb80ce8c9c81fe0cf547e3",
+      "path": "graphics/trainers/front_pics/cool_trainer_f_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "72b166d0fa89fcbcffe36f10c3a4f7cb7793bd03f11a2a55bd745873c1913f80"
+    },
+    {
+      "byteLength": 598,
+      "gitBlobSha1": "509f37fcb1edcbaaf1eb11b964d2203e17dc8c3b",
+      "path": "graphics/trainers/front_pics/cool_trainer_m_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "864f400db9c8fcca461ccb36c705d738975a74be20258aae2fdf342a37ab1e99"
+    },
+    {
+      "byteLength": 669,
+      "gitBlobSha1": "b35dea83d959737f5bc934e10aa2b7f24308eafa",
+      "path": "graphics/trainers/front_pics/crush_girl_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d3495c84d65dca6e9ea8bc8424af1f3d8c433423294ff7e477c18d9de96f2c4a"
+    },
+    {
+      "byteLength": 1227,
+      "gitBlobSha1": "062ac4a7521f31c9d0d4e061289a4674113a72e2",
+      "path": "graphics/trainers/front_pics/crush_kin_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "448c510ccc474d3c4fc3bbeeef825ab69107222fd9686c979733a2c7c725e077"
+    },
+    {
+      "byteLength": 1225,
+      "gitBlobSha1": "98a6eebaa38e9bbe8fc837c2dbfbe06912db0754",
+      "path": "graphics/trainers/front_pics/cue_ball_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b38fa93535f4043e963a429b7cbaaae57c6c50c833df017ecf8b1deaa402bd92"
+    },
+    {
+      "byteLength": 897,
+      "gitBlobSha1": "82e51e00632cd8fd99c6282b3c762bb36d2ad37d",
+      "path": "graphics/trainers/front_pics/engineer_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "dac2b5c785735958af6c96c9687aace57a0255ee13bd4a6ef55c830095eda6de"
+    },
+    {
+      "byteLength": 841,
+      "gitBlobSha1": "5aa6d4aa35dba3eef84347f1a3f5fb062248a733",
+      "path": "graphics/trainers/front_pics/fisherman_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a401f48a32aaf05381ba17530312b985bd6f154709a3a5b8d93c65f2548a4075"
+    },
+    {
+      "byteLength": 691,
+      "gitBlobSha1": "c62aadb164616f0d737ae8bf556fa7eb5c080413",
+      "path": "graphics/trainers/front_pics/gentleman_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "6c293ec4e38bd30711e757db385fd12dcfc27dabc87d8670fb877334385f3821"
+    },
+    {
+      "byteLength": 939,
+      "gitBlobSha1": "41deedf8af974db48715dad4ca9f5105fac62099",
+      "path": "graphics/trainers/front_pics/hiker_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "3d9dd9533f6727cf5616197614276b77d7eac80a859d80852ece15a24298dc7b"
+    },
+    {
+      "byteLength": 921,
+      "gitBlobSha1": "745e76dd4c4aaebeb6546caf61cab55b0d95ecda",
+      "path": "graphics/trainers/front_pics/juggler_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "9e784e92218b9f188a3fc34b340b9d0726f62556aaa94d66c70a528242057ae1"
+    },
+    {
+      "byteLength": 717,
+      "gitBlobSha1": "2f3d2be0377e9839dcfb84c61504bbce5f462290",
+      "path": "graphics/trainers/front_pics/lady_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "acd7a8266395dd33b444e352cdb063d4e1405628c1e7d324b8041be51795fb19"
+    },
+    {
+      "byteLength": 662,
+      "gitBlobSha1": "888d627404af024e98181dedc21107a66d28a080",
+      "path": "graphics/trainers/front_pics/lass_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "69e2ffea592401d14c1b1828a280b1bfff5f01be743a337a9659c6b00d30f342"
+    },
+    {
+      "byteLength": 626,
+      "gitBlobSha1": "7d87be9ad4e56f69e8a706814114bcf8f8682703",
+      "path": "graphics/trainers/front_pics/picnicker_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "14239b7899f3ed92405448ee9b1377d98633d294ea4205f7ac20ca6758fceb0b"
+    },
+    {
+      "byteLength": 699,
+      "gitBlobSha1": "35ff34854634a8e24a016be89b319d6b48e67486",
+      "path": "graphics/trainers/front_pics/pokemon_breeder_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e2e9b86dfce37d0d986c0c36f20c99ddbac777b3348e915318c9ae053091b1e4"
+    },
+    {
+      "byteLength": 709,
+      "gitBlobSha1": "382fb2a1445ad6cda9f5868ffcb555ad39f055e6",
+      "path": "graphics/trainers/front_pics/pokemon_ranger_f_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "285e6c27b03a83a75f05ceb155caa0a9915ad998c946d6f5c717e70b4f4768da"
+    },
+    {
+      "byteLength": 746,
+      "gitBlobSha1": "a85efa3d3db78ccba7e77f47d46c0c1dee34fee2",
+      "path": "graphics/trainers/front_pics/pokemon_ranger_m_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "aaccd299ea90bb223678adc5d2e66e9d5fb92b6e61e4722a124726d386bc858d"
+    },
+    {
+      "byteLength": 811,
+      "gitBlobSha1": "328028ea7e2982db4c0a6c840d4137d27ded3757",
+      "path": "graphics/trainers/front_pics/psychic_f_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ea468752843d4be3df11942c856c4e2710ca48f8f3653c173e6314e895d91f9b"
+    },
+    {
+      "byteLength": 754,
+      "gitBlobSha1": "a0a6b5ad8172c9afaba13c973ef7296c71c7a8fb",
+      "path": "graphics/trainers/front_pics/psychic_m_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "20aab3bb1b95d1f694b82e0926836e1c738a27742e164f511d58042b04d2238a"
+    },
+    {
+      "byteLength": 953,
+      "gitBlobSha1": "9fa7345200c000c2d8c913683763a945ad5a0b67",
+      "path": "graphics/trainers/front_pics/rocker_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2fac2e7a42704b85388d3c30afa159a945888984c6a81891e5391472b1b1fe7f"
+    },
+    {
+      "byteLength": 685,
+      "gitBlobSha1": "2ef90d0a26fc13cd15c0dcf0bc178eea071acfb3",
+      "path": "graphics/trainers/front_pics/sailor_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "975f66fcf50ac654db7cabca35242c3defd65fc9f67ad24b18bca1f6ad3ea3f9"
+    },
+    {
+      "byteLength": 866,
+      "gitBlobSha1": "78f7e6e8267e9b272e06fa6a3286b3d2c4ff68bf",
+      "path": "graphics/trainers/front_pics/scientist_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b4f3a6f097037dce237c3f2b88a473f47404e4705f28020790eadf444214737a"
+    },
+    {
+      "byteLength": 958,
+      "gitBlobSha1": "1477547d33d73a29092161b1d6690087e8d79c69",
+      "path": "graphics/trainers/front_pics/sis_and_bro_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e211b21f2157ed324e08e25c497e654ac30ad4d0c592af49ca6900925f6ae09a"
+    },
+    {
+      "byteLength": 672,
+      "gitBlobSha1": "ed22b6bfa37d0e5e0fdcf756117db916094e650b",
+      "path": "graphics/trainers/front_pics/super_nerd_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "4440978cb7a157aa403cf3f9d10e58238a60b8db3f42829623fdbe39c780f5e8"
+    },
+    {
+      "byteLength": 646,
+      "gitBlobSha1": "a0fdb7d1e7affdf2e5f19079a7542b28ef1a7437",
+      "path": "graphics/trainers/front_pics/swimmer_f_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b0e9c6490586435b3e0df2720f15b480c8a67b283bcea24861f333d11efae887"
+    },
+    {
+      "byteLength": 602,
+      "gitBlobSha1": "af545f09c0e348e06aaed4df355ec851d05131b7",
+      "path": "graphics/trainers/front_pics/swimmer_m_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5ccbf8e4e1c7f8fb9adcfd82b58b50ebb447590c644f134cec31aa5af3857a9e"
+    },
+    {
+      "byteLength": 651,
+      "gitBlobSha1": "3ecd0ced3bea04af9064e97a9331a79efdf43335",
+      "path": "graphics/trainers/front_pics/tuber_f_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "147db3a253719e7a0d15557a8c725fe5961023bf8d1e72edd6b31b0a9f1668c7"
+    },
+    {
+      "byteLength": 726,
+      "gitBlobSha1": "6e513e79a5ab372bac2b1d01ba79ab63ec81ccae",
+      "path": "graphics/trainers/front_pics/twins_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "cd9912d68ab432430e1a11db56c1a059ce9bd329faeb122205c723fa3c8a5a84"
+    },
+    {
+      "byteLength": 959,
+      "gitBlobSha1": "be9fc5d2c16b3589dcdaa04b82f036f7e01912a1",
+      "path": "graphics/trainers/front_pics/young_couple_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "4362f032ada25445aae4f4b1cd257ae1c92caa20c3501b4df6ee88e6810c57d5"
+    },
+    {
+      "byteLength": 579,
+      "gitBlobSha1": "6971259cc3e30899c94aa111416134871a590d9e",
+      "path": "graphics/trainers/front_pics/youngster_front_pic.png",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "60dbe142a269771c9a8926fa04ab9ec96ee0ec1dfba422847563cc776bd466bd"
+    },
+    {
+      "byteLength": 202,
+      "gitBlobSha1": "416c9763f956dcf07468f18d7236f6ba9403853e",
+      "path": "graphics/trainers/palettes/aroma_lady.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "7ff6ce4e01ed13771e2b927ba07a8ccbe37db9f341715ac13fd892e03f2c4afc"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "3578daf5e6276e40fe2371d036176af732637170",
+      "path": "graphics/trainers/palettes/beauty.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "3a297be4a4ed4d256175b1c8e8ebf49fd7b4b23469b2acce971d5aa243f70688"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "90b2a33884d698ceeda827481b2b67b48d7798f6",
+      "path": "graphics/trainers/palettes/biker.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2b4ebb79f479934cee6aed26878d14ed562467ef9cce79140f23449093dd150a"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "869e5d8df48b1515755bc7f0c78a6e1eee8a41a2",
+      "path": "graphics/trainers/palettes/black_belt.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "036dcf807ba80c7bef9de157d581479164c81698e1d52e8aa3ab1773820df2b6"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "5c47db2d6aae02d82f685a5d2e1b2b1b70222ace",
+      "path": "graphics/trainers/palettes/bug_catcher.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "f7ae2d0f81bc2e402b9ff403d097eb47ab6d500d0699c6cb832e317f5aab3255"
+    },
+    {
+      "byteLength": 198,
+      "gitBlobSha1": "9a9a7d8a675a417b2871821bdbccb8f16d3e250b",
+      "path": "graphics/trainers/palettes/burglar.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "90256017f7395220689e3095da1fb44a888c96e0a235ddd06b29488ce66f8095"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "29120f6f793463849672ec10fce4dee6ea9cb0c8",
+      "path": "graphics/trainers/palettes/camper.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "937c7ffb4a68bb30e49398cb568619d8c2711225329af46bdc9f8024b4867226"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "71ec5e47a9a156ea5ec93ad7f372efc83f44cff2",
+      "path": "graphics/trainers/palettes/cool_couple.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0e1f4c98003a3b7fcd6977fcbaedef38207592670c8e004c41ab9b4ba1ada86a"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "71ec5e47a9a156ea5ec93ad7f372efc83f44cff2",
+      "path": "graphics/trainers/palettes/cool_trainer_f.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0e1f4c98003a3b7fcd6977fcbaedef38207592670c8e004c41ab9b4ba1ada86a"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "71ec5e47a9a156ea5ec93ad7f372efc83f44cff2",
+      "path": "graphics/trainers/palettes/cool_trainer_m.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "0e1f4c98003a3b7fcd6977fcbaedef38207592670c8e004c41ab9b4ba1ada86a"
+    },
+    {
+      "byteLength": 188,
+      "gitBlobSha1": "0374dfdda43722c1fc846beae5ea1e3692e8b262",
+      "path": "graphics/trainers/palettes/crush_girl.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "d55d2ffc0d4140cc3f9ec9275256a65d11802fea91b7d08d9b1cffe902beb15d"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "e68e199442604e3ec80fce615e54fa16d5efd988",
+      "path": "graphics/trainers/palettes/crush_kin.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "643bf042836d528b2e54a82c5f65196fea317188a6655264eac03043551d3823"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "ac22488a92b30dbf62d89dd2b816a1f453f67306",
+      "path": "graphics/trainers/palettes/cue_ball.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ba00f3f1a9fa605e35ef9fafd4e8e3efcde868e1a7b61b0fd49af566bfafc262"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "3cfd1a3f060b3a3406fb5a5ed050dd367ed4ef1d",
+      "path": "graphics/trainers/palettes/engineer.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "8b3af845d855784fa33c8e1eb5dc29bab09f86bf7e8162d0540255267f4785a1"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "c3140cabe02eb5d540ccefe97f69841ac7c4175b",
+      "path": "graphics/trainers/palettes/fisherman.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "7947afab019d237a19baf28fc1ba18e66f8222420ec56b87236cb27153da11c8"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "1205b3e2f724eda52fd8dc670895e9e4118c3dcf",
+      "path": "graphics/trainers/palettes/gentleman.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "da1632b0f9da66c182fede0ce237549e41d5643c7a20cfbeda38a44840535eb1"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "a5635888435ceb1e3b8e6283ee70c1c5b2af33ac",
+      "path": "graphics/trainers/palettes/hiker.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "dfd55435ad498ede7143a68109f9bc99c1152e5cc613811a3d3f1dfd70277b6b"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "4e620be6b1e1b99bfe46390f68b7a8c413743483",
+      "path": "graphics/trainers/palettes/juggler.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "e774aa12d2ee767b81257aa99a8d21d593150bb01d15450a899245721d85d69e"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "aebf744e9a20a0ec6ab05c97c4690a3da78601b8",
+      "path": "graphics/trainers/palettes/lady.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a7bdf09c25439187855edbbebd0a8e03593da3cf6e3d48df923760c27e5ae21c"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "8494030c5cf8e922c456563d6eb846a3f8f26a2a",
+      "path": "graphics/trainers/palettes/lass.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a0814071a9bf96e2f5aca12cec50523b3cf113819169a4c32ded7b772564b122"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "476bcfaf6be94745e08e52fbfe8a886e5a446b82",
+      "path": "graphics/trainers/palettes/picnicker.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a2d97904c3de364b3b0c26e69dfe4337be43aa929b16f74364ef307a2265fda1"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "bfc59e3af051b2385039d9706c5614dafe6abf13",
+      "path": "graphics/trainers/palettes/pokemon_breeder.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "7e032aa356a488a01d1176986d3c068b1432453d2ea701bb5f1e1f8869175877"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "4134bfc22c36ed732ff627b9caa53518da598f45",
+      "path": "graphics/trainers/palettes/pokemon_ranger_f.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "4e7a7d5575a19c1209d25ad8f4fa48f0fe18bcfebf7315550359e8b5fc258ff6"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "4134bfc22c36ed732ff627b9caa53518da598f45",
+      "path": "graphics/trainers/palettes/pokemon_ranger_m.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "4e7a7d5575a19c1209d25ad8f4fa48f0fe18bcfebf7315550359e8b5fc258ff6"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "101d2285e4655808e4994b93df0421955f9346fc",
+      "path": "graphics/trainers/palettes/psychic_f.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a0eacb0c3b84aecbe25777be79ab9369e7edc1d54940c355f92e0c401bf03e76"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "101d2285e4655808e4994b93df0421955f9346fc",
+      "path": "graphics/trainers/palettes/psychic_m.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a0eacb0c3b84aecbe25777be79ab9369e7edc1d54940c355f92e0c401bf03e76"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "fa2321fabe973c7147d4a282cacca3c158e452a1",
+      "path": "graphics/trainers/palettes/rocker.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "16f791546f9b25e5b0b9516c66e8bc9dbbf61d8e8d4957550f97f7de0804cab6"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "c0b0b81bd0670c36c72001fced57a9bd49b8c496",
+      "path": "graphics/trainers/palettes/sailor.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5135664674ea297e81c0c1f51a3fb7dbf4501284e90855ac4a1340d11b1a1998"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "46228fb2bdcf5c5e2bf86e9946a04213c21c8002",
+      "path": "graphics/trainers/palettes/scientist.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "deb49f2655fcd90e0f5ca00ac30eb1a92c6c6a7482af20bf5c1fb34a5e14094d"
+    },
+    {
+      "byteLength": 194,
+      "gitBlobSha1": "d44893fb8987926b4e6e6c16d9ff4dfed54fb5fd",
+      "path": "graphics/trainers/palettes/sis_and_bro.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "7016822de912db8de03011a0d39159e3658610026baf750c78e929c016761c98"
+    },
+    {
+      "byteLength": 188,
+      "gitBlobSha1": "7525c047e7f194a4aca8294de73ea1e5df2d16e0",
+      "path": "graphics/trainers/palettes/super_nerd.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "43f928d0ee0024a1037114cc652e068b2e7c58965df956ae1f9470cda9c5a291"
+    },
+    {
+      "byteLength": 196,
+      "gitBlobSha1": "f2693e5c7d867b34e80e3071d9ff2d81753e4fee",
+      "path": "graphics/trainers/palettes/swimmer_f.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "b69ed927e991eb607feab5c9dfe7eb110124aba3564abd0ad371c736a7ef1a81"
+    },
+    {
+      "byteLength": 199,
+      "gitBlobSha1": "206f62692417c384c229984b39e1b644ab2d0025",
+      "path": "graphics/trainers/palettes/swimmer_m.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "3967683a213c315c99bf3091b99fc4203d10a0f7037f019a66516ff677c3f163"
+    },
+    {
+      "byteLength": 192,
+      "gitBlobSha1": "1c1c1e3c291841a711b75eb7e66e155ced40446d",
+      "path": "graphics/trainers/palettes/tuber_f.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "3f7e616a6a955b0706c98282f17d53a36e53a8e26c48bb2b8501e60b3a9575b6"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "6e2ff8846d3c4266250e8fccc7a4a5cd9a630886",
+      "path": "graphics/trainers/palettes/twins.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "c09849be666575639971da1183486b0b0cb6c1188206f503908b3b5910f25478"
+    },
+    {
+      "byteLength": 190,
+      "gitBlobSha1": "c31ab3b4fbdb6169cbaa52772b6cdbfa00813cd5",
+      "path": "graphics/trainers/palettes/young_couple.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "bdf2c36df8fb14921e1764085b6a31b8b0c314aa43cade3cc376e4203692565a"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "e4e1c5c20f19f9164fb42744ece2c23bdd0d8f25",
+      "path": "graphics/trainers/palettes/youngster.pal",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "f14e42009ab7327502e659c9e882edab8ebbeb828040c3f9ec79e54d6c19d8db"
+    },
+    {
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "path": "include/constants/species.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "byteLength": 2516,
+      "gitBlobSha1": "ea0039ea1408c06b8c968cfde8e2628213b2a0dc",
+      "path": "include/constants/trainer_tower.h",
+      "roles": [
+        "presentation-metadata"
+      ],
+      "sha256": "e18de9c79b5c4a384f546e29437fe46efaf711166a7345045530afffbfc68e05"
+    },
+    {
+      "byteLength": 20887,
+      "gitBlobSha1": "70e8b4bc79e9a38c41d6526921053dd4e7ef7c2e",
+      "path": "include/constants/trainers.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "5f6e6585ba511fcf11f970f60132f45db35caf6cec9f6ae56b6bc57b979366c9"
+    },
+    {
+      "byteLength": 46353,
+      "gitBlobSha1": "b5a5a6bb78cd9058ec81a23c142178f3c9e140c8",
+      "path": "src/data/graphics/items.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "2d735d48189bddbd4289d6c3fa0c15b7838794fee4d2fb1a468428455b015202"
+    },
+    {
+      "byteLength": 214609,
+      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
+      "path": "src/data/graphics/pokemon.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+    },
+    {
+      "byteLength": 34300,
+      "gitBlobSha1": "0b4a21e75d585b8a0daf867a326715f73cb39088",
+      "path": "src/data/graphics/trainers.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "6072ecfe16b3523d21de735be9eda9054f6b3750341136154099fbe96d584dc9"
+    },
+    {
+      "byteLength": 30370,
+      "gitBlobSha1": "a9dd7f0b2e0c7906de145286ac41b78905ea448b",
+      "path": "src/data/item_icon_table.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    },
+    {
+      "byteLength": 21759,
+      "gitBlobSha1": "e7611d7582dd9d6f1bf1ea64821300d24bcd9af8",
+      "path": "src/data/pokemon/trainer_class_lookups.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "c3b212c2d454f60cf196052159d6862303da16fc4e22c3d8cbf3fcb89e60e6a6"
+    },
+    {
+      "byteLength": 44872,
+      "gitBlobSha1": "17f818f458434bc6c35cb7f10acd7776a36e9c22",
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab"
+    },
+    {
+      "byteLength": 1834,
+      "gitBlobSha1": "dccd063dae2a1ab421c9a990c891ac2eabadf820",
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1"
+    },
+    {
+      "byteLength": 44879,
+      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036",
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f"
+    },
+    {
+      "byteLength": 6229,
+      "gitBlobSha1": "cedb48b894a27c9f169f563460e2fdb5765bbe63",
+      "path": "src/data/text/trainer_class_names.h",
+      "roles": [
+        "presentation-metadata",
+        "source-dependency"
+      ],
+      "sha256": "726ed1aa994f23b46872e34ec3fd41810de57f0da2352fc7274068bdc80a4f41"
+    },
+    {
+      "byteLength": 24042,
+      "gitBlobSha1": "c2ad6ac9eda0a365890203a36bba5726a4cc0fda",
+      "path": "src/data/trainer_graphics/front_pic_tables.h",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "1ffaa5e924b09aa0c2741c1ba8b4fafe51f3cd8b3348a0b6202902e8724e970f"
+    },
+    {
+      "byteLength": 24940,
+      "gitBlobSha1": "c3be102da4310e1923cc2e7b0379550e196f3dac",
+      "path": "src/field_door.c",
+      "roles": [
+        "presentation-metadata",
+        "source-dependency"
+      ],
+      "sha256": "04dddc75cebd2c4f864a25dd97ee7baea045b5d4ba471cf6ba8dffee97f553db"
+    },
+    {
+      "byteLength": 44041,
+      "gitBlobSha1": "41eebd86e76e195f6dd14157994ee10c9fa3ce0a",
+      "path": "src/script_menu.c",
+      "roles": [
+        "presentation-metadata"
+      ],
+      "sha256": "7b4771c440fd45f4c7c375308d45cc1bc88eba30c6c7ff9c634f838cf2bebad8"
+    },
+    {
+      "byteLength": 45318,
+      "gitBlobSha1": "732b3f2ed31ed95d6476b9e111d53f759c448d81",
+      "path": "src/trainer_tower.c",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "7ab95e0e8c5722a0d92fe02a9078463c7bae70b822b2983ea040d96b2876e7cb"
+    },
+    {
+      "byteLength": 246105,
+      "gitBlobSha1": "a79580e10e5014c916e2f622cae24ef868381fa9",
+      "path": "src/trainer_tower_sets.c",
+      "roles": [
+        "source-dependency"
+      ],
+      "sha256": "967c0e51db5d41af4ab1a640fa6d9469a38c8e850c718a80d9b28e88c2492590"
+    }
+  ],
+  "gameVersion": "FIRERED",
+  "profile": "firered-trainer-tower-presentation-v1",
+  "repository": "pret/pokefirered",
+  "revision": 0,
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

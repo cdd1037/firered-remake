@@ -19,7 +19,9 @@ public sealed partial class CampaignSession
         var catalog = ShopCatalog;
         string map = state.World.Player.MapId.Value;
         string stockId, sourcePath, clerkScript;
-        if (_content.PokemonLeagueEnabled && map == PokemonLeagueMartStock.ExpectedMapId)
+        if(_content.TrainerTowerEnabled && map==TrainerTowerLobby)
+        { stockId=TrainerTowerShopCatalog.LobbyShopId;sourcePath="data/maps/TrainerTower_Lobby/scripts.inc";clerkScript="TrainerTower_Lobby_EventScript_MartClerk"; }
+        else if (_content.PokemonLeagueEnabled && map == PokemonLeagueMartStock.ExpectedMapId)
         {
             var stock=PokemonLeagueStock(PokemonLeagueMartStock.ExpectedStockId)!;
             stockId=stock.Id;sourcePath=PokemonLeagueMartStock.ExpectedSourcePath;clerkScript=PokemonLeagueMartStock.ExpectedClerkScript;

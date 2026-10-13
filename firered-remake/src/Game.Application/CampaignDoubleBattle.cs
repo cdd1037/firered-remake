@@ -260,7 +260,9 @@ public sealed partial class CampaignSession
             if(unselected.Length>1)return new(CommandStatus.Accepted,state with{DoubleBattle=b with{PlayerSelections=selections}});
         }
         else if(command.Kind!="ack")return No("preset_double_forced_turn_ready");
-        var ai=IsSevenIslandDoubleTrainer(b.Trainer)
+        var ai=frame.TrainerTowerEncounter is not null
+            ?TrainerTowerEnemyActions(frame)
+            :IsSevenIslandDoubleTrainer(b.Trainer)
             ?SevenIslandDoubleTrainerEncounter.ChooseEnemyActions(_content.SevenIslandTrainers!,_content.SevenIslandOpponents!,b.Trainer,frame,frame.Revision)
             :b.Trainer==SixIslandDoubleTrainerEncounter.TrainerId
             ?SixIslandDoubleTrainerEncounter.ChooseEnemyActions(_content.SixIslandTrainers!,_content.SixIslandOpponents!,frame,frame.Revision)
@@ -407,6 +409,7 @@ public sealed partial class CampaignSession
     private CampaignState SettleDoubleBattle(CampaignState state)
     {
         var b=state.DoubleBattle!;
+        if(b.Frame.TrainerTowerEncounter is not null)return SettleTrainerTowerBattle(state,b.Frame,b.Id,[0,1]);
         if(b.Frame.Outcome==WildBattleOutcome.Ongoing||b.Frame.Rewards?.Pending is not null||
             (state.DoubleBattleHistory??[]).Any(h=>h.Id==b.Id))throw new InvalidDataException("preset_double_settlement_context");
         bool won=b.Frame.Outcome==WildBattleOutcome.Won;
@@ -449,6 +452,7 @@ public sealed partial class CampaignSession
     private CampaignState ReturnFromDoubleBattle(CampaignState state)
     {
         var b=state.DoubleBattle!;
+        if(b.Frame.TrainerTowerEncounter is not null)return ReturnFromTrainerTowerBattle(state,b.Frame,b.Id);
         if(!(state.DoubleBattleHistory??[]).Any(h=>h.Id==b.Id))throw new InvalidDataException("preset_double_history_missing");
         var next=state with{DoubleBattle=null,Dialogue=null,Motions=[],PresentationTicks=0,
             Script=state.Script with{Stack=[],Wait=null,Completed=true,Locked=false}};

@@ -125,3 +125,11 @@ at51140, all four separate static-outcome probes (84 public commands), and
 Seven Island asset loader inspect its own authenticated predecessor rather
 than the expanded current species count. The exact source and claim limits
 remain in [Power Plant acceptance](power-plant-campaign.md#final-bounded-acceptance-2026-10-13).
+
+## Trainer Tower implementation, 2026-10-13
+
+Current composition adds eleven original map IDs with 27 format-selected layouts:
+311 maps, 152 owned species, 204 enemy species and 124 items. Source-only recovery
+uses four pinned Tower importers. Factory/Domain and loader checks pass; the
+initial real lobby entry is saved at 51141. Full four-course application and
+presentation acceptance remain pending. See [current Tower scope](trainer-tower-campaign.md).

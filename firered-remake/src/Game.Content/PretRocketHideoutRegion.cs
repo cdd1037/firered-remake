@@ -114,7 +114,8 @@ public sealed class PretRocketHideoutRegion
         {
             Need((sourceHash == FullSourceHash && sourceMap == "MAP_ROCKET_HIDEOUT_ELEVATOR" ||
                   sourceHash == PretRegionalServiceMaps.FullSourceHash && sourceMap == "MAP_CELADON_CITY_DEPARTMENT_STORE_ELEVATOR" ||
-                  sourceHash == PretSilphRegion.FullSourceHash && sourceMap == "MAP_SILPH_CO_ELEVATOR") &&
+                  sourceHash == PretSilphRegion.FullSourceHash && sourceMap == "MAP_SILPH_CO_ELEVATOR" ||
+                  sourceHash == PretTrainerTowerRegion.FullSourceHash && sourceMap == "MAP_TRAINER_TOWER_ELEVATOR") &&
                  value == "WARP_ID_DYNAMIC" && destination == "MAP_DYNAMIC",
                 "Dynamic warp is outside the authenticated elevator contract.");
             return DynamicWarpId;

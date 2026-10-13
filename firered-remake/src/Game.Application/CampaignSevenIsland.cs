@@ -51,7 +51,7 @@ public sealed partial class CampaignSession
         foreach (var warp in _content.Maps[map].FieldWarps)
         {
             if (!((warp.X == x && warp.Y == y) || (warp.X == oldX && warp.Y == oldY))) continue;
-            if (map.Value == "map.seven-island-trainer-tower" && warp.Index == 0) return "seven_island_trainer_tower_challenge_not_admitted";
+            if (!_content.TrainerTowerEnabled && map.Value == "map.seven-island-trainer-tower" && warp.Index == 0) return "seven_island_trainer_tower_challenge_not_admitted";
             if (map.Value == "map.seven-island-pokemon-center-1f" && warp.X == 1 && warp.Y == 6) return "seven_island_multiplayer_not_admitted";
             if (map.Value == "map.seven-island-house-room1" && warp.X == 4 && warp.Y == 1) return "seven_island_ereader_room_not_admitted";
         }

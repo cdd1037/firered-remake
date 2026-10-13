@@ -117,7 +117,16 @@ public static class PokemonStateValidator
         return null;
     }
 
-    internal static string? ValidateInstance(PokemonCatalog catalog, PokemonInstance? p, SourceMechanicsCatalog? mechanics = null)
+    internal static string? ValidateInstance(PokemonCatalog catalog, PokemonInstance? p, SourceMechanicsCatalog? mechanics = null) =>
+        ValidateInstanceCore(catalog, p, mechanics, null);
+
+    // No raw override flag is accepted: this path requires the exact authenticated source enemy.
+    internal static string? ValidateTrainerTowerInstance(PokemonCatalog catalog, PokemonInstance? p,
+        Game.Domain.Battle.SourceTrainerTowerPartyReceipt proof) =>
+        !ReferenceEquals(proof.Mechanics.Catalog, catalog) || !proof.MatchesIdentity(p)
+            ? "pokemon_trainer_tower_identity" : ValidateInstanceCore(catalog, p, proof.Mechanics, p!.AbilitySlot);
+
+    private static string? ValidateInstanceCore(PokemonCatalog catalog, PokemonInstance? p, SourceMechanicsCatalog? mechanics, int? sourceAbilitySlot)
     {
         if (p is null) return "pokemon_missing";
         if (!ValidSymbol(p.Species.Value, "pret:SPECIES_") || !catalog.Species.TryGetValue(p.Species, out var species))
@@ -141,7 +150,9 @@ public static class PokemonStateValidator
         if (p.CurrentHp < 0 || p.CurrentHp > expected.MaxHp) return "pokemon_hp";
         if (!Enum.IsDefined(p.Gender) || p.Gender != PokemonFactory.GenderFromPersonality(species.GenderRatio, p.Personality))
             return "pokemon_gender";
-        int abilitySlot = species.Ability2 == "ABILITY_NONE" ? 0 : (int)(p.Personality & 1);
+        // Only the internal source-authenticated Tower roster path supplies this override.
+        int abilitySlot = sourceAbilitySlot ?? (species.Ability2 == "ABILITY_NONE" ? 0 : (int)(p.Personality & 1));
+        if (abilitySlot is < 0 or > 1 || abilitySlot == 1 && species.Ability2 == "ABILITY_NONE") return "pokemon_ability";
         if (p.AbilitySlot != abilitySlot || p.AbilityId != (abilitySlot == 0 ? species.Ability1 : species.Ability2))
             return "pokemon_ability";
         if (p.Friendship is < 0 or > 255) return "pokemon_friendship";

@@ -3,9 +3,10 @@ using Game.Domain.WildBattle;
 
 namespace Game.Domain.Battle;
 
-// Ordinary Gen III battles: no link/Tower/e-Reader/Secret Base item exceptions.
+// Ordinary Gen III battles and the authenticated local Trainer Tower exception.
 internal abstract partial class SourceRecipeContext
 {
+    internal virtual bool IsTrainerTower => false;
     internal static bool HasItemTransferRecipe(string effect) => effect is "EFFECT_THIEF" or "EFFECT_TRICK" or "EFFECT_KNOCK_OFF" or "EFFECT_RECYCLE";
     internal virtual string? UsedHeldItem(BattlerSlot slot) => throw new SourceRecipeUnsupported("source_item_position_owner_required");
     internal virtual void SetUsedHeldItem(BattlerSlot slot, string? item) => throw new SourceRecipeUnsupported("source_item_position_owner_required");
@@ -36,7 +37,7 @@ internal abstract partial class SourceRecipeContext
             if (SourceCalledSecondaryBlocked(target)) { ItemTransferFailure(actor, target, move, "substitute"); return; }
             if (!SourceGenericAccuracy(actor, target, move, purpose)) { ItemTransferFailure(actor, target, move, "missed"); return; }
             var user = Get(actor); var foe = Get(target);
-            if (actor.Side == BattleSide.Opponent || user.KnockedOffItem is not null || foe.KnockedOffItem is not null ||
+            if (IsTrainerTower || actor.Side == BattleSide.Opponent || user.KnockedOffItem is not null || foe.KnockedOffItem is not null ||
                 user.HeldItem == "ITEM_NONE" && foe.HeldItem == "ITEM_NONE" ||
                 TransferForbiddenItem(user.HeldItem) || TransferForbiddenItem(foe.HeldItem))
             { ItemTransferFailure(actor, target, move, "item-swap-not-allowed"); return; }
@@ -87,6 +88,7 @@ internal abstract partial class SourceRecipeContext
     }
     private void StealItem(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move)
     {
+        if (IsTrainerTower) return; // Cmd_seteffectwithchance: Tower precedes Sticky Hold and all theft mutation.
         var user = Get(actor); var foe = Get(target);
         if (actor.Side == BattleSide.Opponent || user.KnockedOffItem is not null) return;
         if (foe.HeldItem != "ITEM_NONE" && ItemStickyHold(actor, target, move)) return;

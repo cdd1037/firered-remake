@@ -67,6 +67,7 @@ public sealed partial class CampaignSession
         if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||b.SevenIslandReceipt is not null&&b.SevenIsland is null||b.MewtwoReceipt is not null&&b.CeruleanCaveOrigin?.Kind!=CeruleanCaveEncounterKind.Mewtwo||!(b.PowerPlantReceipt is not null?IsPowerPlantHistory(b):b.EventIslandReceipt is not null?IsEventIslandHistory(b):b.SevenIsland is not null?IsSevenIslandWildHistory(b):b.CeruleanCaveOrigin is not null?IsCeruleanCaveWildHistory(b):b.CelioRoamer is not null?IsCelioRoamerHistory(state,b):b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
         if(ValidateCelioRoamerLedger(state) is {} roamerError)return roamerError;
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
+        if(_content.TrainerTowerEnabled&&IsTrainerTowerMap(map.Id))map=_content.TrainerTowerMap(map.Id,TrainerTowerLayout(state,map.Id))!;
         if(_content.SupportsTeleportPads(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
         if(here is >=0x60 and <=0x71)return (_content.MtMoonEnabled?FieldMovementRules.ValidateLadderPosition(state.World,map):WorldRules.ValidateState(state.World,map))?.Code;
@@ -121,6 +122,7 @@ public sealed partial class CampaignSession
         if(!turn&&_content.FuchsiaRouteEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsFuchsiaRouteWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"fuchsia_route_warp_not_open");
         if(!turn&&_content.SnorlaxEnabled&&_content.Maps[before.MapId].FieldWarps.Any(w=>(w.X==x&&w.Y==y||w.X==before.X&&w.Y==before.Y)&&!_content.IsSnorlaxWarpAllowed(before.MapId,w.Index)))return new(CommandStatus.Rejected,state,"snorlax_warp_not_open");
         if(TrySilphPadStep(state,command) is {} silphPad)return silphPad;
+        if(TryTrainerTowerDynamicExit(state,command) is {} towerExit)return towerExit;
         if(TrySilphDynamicExit(state,command) is {} silphExit)return silphExit;
         if(TryDepartmentDynamicExit(state,command) is {} departmentExit)return departmentExit;
         if(TryRocketDynamicExit(state,command) is {} dynamicExit)return dynamicExit;
@@ -163,6 +165,7 @@ public sealed partial class CampaignSession
         if(changed&&moved.World.Player.MapId.Value=="map.saffron-city-gym"&&(!_content.SaffronGymEnabled||!state.Script.Flags.GetValueOrDefault("FLAG_HIDE_SAFFRON_ROCKETS")))return new(CommandStatus.Rejected,state,"saffron_gym_rocket_blockade");
         if(changed)
         {
+            moved=RecordTrainerTowerElevatorEntrance(state,moved);
             moved=RecordSilphElevatorEntrance(state,moved);
             moved=RecordDepartmentElevatorEntrance(state,moved);
             moved=RecordRocketElevatorEntrance(state,moved);

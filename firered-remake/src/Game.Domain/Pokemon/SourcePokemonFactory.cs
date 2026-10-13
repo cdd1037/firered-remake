@@ -32,7 +32,13 @@ public static class SourcePokemonValidator
         return SourceFourActionTurns.ValidateCapability(catalog.Catalog, frame);
     }
 
-    internal static string? ValidateForBattle(PokemonCatalog? catalog, PokemonInstance? pokemon) =>
+    internal static string? ValidateForBattle(PokemonCatalog? catalog, PokemonInstance? pokemon,
+        SourceTrainerTowerPartyReceipt? tower = null) =>
+        tower is not null && tower.MatchesIdentity(pokemon) && ReferenceEquals(tower.Mechanics.Catalog, catalog)
+            ? PokemonStateValidator.ValidateTrainerTowerInstance(catalog!, pokemon, tower) :
+        ValidateOrdinaryForBattle(catalog, pokemon);
+
+    private static string? ValidateOrdinaryForBattle(PokemonCatalog? catalog, PokemonInstance? pokemon) =>
         SourceMechanicsCatalog.For(catalog) is { } mechanics
             ? ValidatePermanent(mechanics, pokemon) : PokemonStateValidator.Validate(catalog, pokemon);
 }

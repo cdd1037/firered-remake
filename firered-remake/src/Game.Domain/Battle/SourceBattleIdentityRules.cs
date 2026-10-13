@@ -61,6 +61,7 @@ public static class SourceBattleIdentityRules
         }
         if (frame.SourceCampaignRulesVersion is not null && frame.Parties.Any(p => p.Members.Any(m =>
             !OwnedBattlePokemonCatalog.ProfileAdmits(frame.SourceCampaignRulesVersion, m.Pokemon.Species) &&
+            !(p.Side == BattleSide.Opponent && frame.TrainerTowerEncounter?.Receipt?.MatchesIdentity(m.Pokemon) == true) &&
             !(p.Side == BattleSide.Opponent && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
               (frame.SourceCampaignRulesVersion is (PowerPlantOpponentPokemonCatalog.Profile or EventIslandOpponentPokemonCatalog.Profile or SevenIslandOpponentPokemonCatalog.Profile) && (SevenIslandOpponentPokemonCatalog.TrainerOnlySpecies.Contains(m.Pokemon.Species) || LeagueRematchOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species)) ||
                frame.SourceCampaignRulesVersion == LeagueRematchOpponentPokemonCatalog.Profile && LeagueRematchOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) ||
@@ -77,6 +78,7 @@ public static class SourceBattleIdentityRules
                trainerMembershipProfile is FiveIslandOpponentPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile &&
                (FiveIslandOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species) || SixIslandOpponentPokemonCatalog.AdditionalSpecies.Contains(m.Pokemon.Species)))))))
             return "source_frame_campaign_species";
+        if (SourceTrainerTowerEncounter.ValidateIdentity(frame) is { } towerIdentity) return towerIdentity;
         if (frame.Obedience is not null && frame.SourceMechanicsRulesVersion is null) return "source_obedience_profile";
         if (SourceObedienceRules.Validate(frame.Obedience, frame.Parties[0].Members) is { } obedienceError) return obedienceError;
         var field = frame.Field;
@@ -184,7 +186,7 @@ public static class SourceBattleIdentityRules
             frame.Queue.Any(a => a.Kind == SourceActionKind.Move && (a.OriginalChosenMove is null || string.IsNullOrWhiteSpace(a.OriginalChosenMove.Value.Value))) ||
             four.Defeats.Any(d => d is null || !frame.IsCurrent(d.Occupant) || frame.Get(d.Occupant.Slot).Body!.Pokemon.CurrentHp != 0 ||
                 d.FaintEventSequence < 0 || d.FaintEventSequence > frame.EventSequence ||
-                d.RequiresExperience != (d.Occupant.Member.Side == BattleSide.Opponent)) ||
+                d.RequiresExperience != (d.Occupant.Member.Side == BattleSide.Opponent && frame.TrainerTowerEncounter is null)) ||
             four.Defeats.Select(d => d.Occupant).Distinct().Count() != four.Defeats.Length ||
             four.EndTurnOrder.IsDefault || four.EndTurnOrder.Length != 0 && !ValidOrder(four.EndTurnOrder, frame.BattlerCount) ||
             (four.EndTurn is null) != four.EndTurnOrder.IsEmpty ||

@@ -45,7 +45,7 @@ public sealed partial class CampaignSession
             !ReferenceEquals(opponents.Predecessor, content.EventIslandOpponents) ||
             !ReferenceEquals(Game.Domain.Items.PowerPlantMachineCatalog.For(content.PewterMachines), machines) ||
             !ReferenceEquals(machines.Predecessor, content.EventIslandMachines) || !ReferenceEquals(machines.Pokemon, owned) ||
-            !ReferenceEquals(Game.Domain.Items.PowerPlantShopCatalog.For(content.EarlyShop), shop) ||
+            !ReferenceEquals(Game.Domain.Items.TrainerTowerShopCatalog.For(content.EarlyShop)?.Predecessor ?? Game.Domain.Items.PowerPlantShopCatalog.For(content.EarlyShop), shop) ||
             !ReferenceEquals(shop.Predecessor, content.EventIslandShop)) throw new InvalidDataException("power_plant_current_binding");
         var pickups = content.FieldPickups.Where(p => p.MapSymbol == "MAP_POWER_PLANT").ToArray();
         if (pickups.Length != 7 || pickups.Count(p => p.Hidden) != 2 ||

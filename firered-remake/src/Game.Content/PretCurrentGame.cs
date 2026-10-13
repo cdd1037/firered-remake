@@ -21,6 +21,7 @@ public sealed partial class PretCampaignCatalog
         // Load the fixed resource set through its source-authenticating factories.
         var eventIsland = PretEventIslandRegion.Load(projectRoot);
         var powerPlant = PretPowerPlantRegion.Load(projectRoot);
+        var trainerTower = PretTrainerTowerRegion.Load(projectRoot);
         var itemfinder = PretItemfinderSource.Load(projectRoot);
         var sevenIsland = PretSevenIslandRegion.Load(projectRoot);
         var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
@@ -997,6 +998,7 @@ public sealed partial class PretCampaignCatalog
         AppendSevenIslandSources(sevenIsland, sources, textFiles, constants, hashes);
         AppendEventIslandSources(eventIsland, sources, textFiles, constants, hashes);
         AppendPowerPlantSources(powerPlant, sources, textFiles, constants, hashes);
+        AppendTrainerTowerSources(trainerTower, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -1778,7 +1780,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         // Compile and validate the complete current script vocabulary.
-        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true);
+        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true);
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
         {
@@ -2220,6 +2222,22 @@ public sealed partial class PretCampaignCatalog
         hashes.Add("event-island-source-lock:" + PretEventIslandRules.LockSha256);
         hashes.Add("itemfinder-source:" + PretItemfinderSource.DocumentSha256);
 
+        maps = maps.AddRange(trainerTower.Maps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendTrainerTower(projectRoot, maps, celioRoamerMaps, trainerTower.Maps);
+        PretTrainerTowerRules.ValidateSourceEvidence(projectRoot);
+        var trainerTowerCatalog = PretTrainerTowerRules.Load(projectRoot);
+        var trainerTowerOpponents = PretTrainerTowerRules.LoadOpponents(projectRoot, powerPlantOpponents);
+        var trainerTowerShop = PretTrainerTowerRules.LoadShop(projectRoot, powerPlantShop);
+        earlyShop = earlyShop with { Catalog = trainerTowerShop.Catalog };
+        ValidateTrainerTowerComposition(trainerTower, maps, compiled, trainerTowerCatalog, trainerTowerOpponents, trainerTowerShop);
+        PretTrainerTowerPresentation.ValidateEvidence(projectRoot);
+        hashes.Add("trainer-tower-rules:" + PretTrainerTowerRules.CatalogSha256);
+        hashes.Add("trainer-tower-opponents:" + PretTrainerTowerRules.PokemonSha256);
+        hashes.Add("trainer-tower-items:" + PretTrainerTowerRules.ItemsSha256);
+        hashes.Add("trainer-tower-source-lock:" + PretTrainerTowerRules.LockSha256);
+        hashes.Add("trainer-tower-presentation:" + PretTrainerTowerPresentation.ManifestSha256);
+        hashes.Add("trainer-tower-presentation-source-lock:" + PretTrainerTowerPresentation.LockSha256);
+
         // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
         return new(
@@ -2391,7 +2409,8 @@ public sealed partial class PretCampaignCatalog
             leagueRematchTrainers: leagueRematchTrainers,
             leagueRematchOpponents: leagueRematchOpponents,
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
-            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop) { ItemfinderDocument = itemfinder };
+            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
+            trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

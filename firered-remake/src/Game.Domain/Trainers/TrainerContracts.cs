@@ -34,6 +34,8 @@ public sealed record TrainerPartyCreationResult(TrainerDefinition Trainer, Immut
 {
     [System.Text.Json.Serialization.JsonIgnore]
     internal SourceTrainerPartyReceipt? Receipt { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    internal Game.Domain.Battle.SourceTrainerTowerPartyReceipt? TowerReceipt { get; init; }
 }
 
 // Only terminal outcomes reachable in this bounded trainer battle are accepted.

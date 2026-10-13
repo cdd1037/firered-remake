@@ -51,6 +51,7 @@ public static partial class SourceFourActionTurns
         if (frame.SourceMechanicsRulesVersion != SourceBattleKernel.Version ||
             frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion || SourceMechanicsCatalog.For(catalog) is null)
             return "source_four_action_capability";
+        if (SourceTrainerTowerEncounter.Validate(catalog, frame) is { } towerError) return towerError;
         if (SourceItemTransferRules.Validate(catalog, frame) is { } itemError) return itemError;
         if (frame.Layout == SourceBattleLayout.PresetDoubles ? frame.BattleKind != WildBattleCalledBattleKind.Trainer
             : frame.KoReplacementTiming != KoReplacementTiming.SourceImmediate ||
@@ -81,7 +82,7 @@ public static partial class SourceFourActionTurns
                 frame.EntryAbilities is null && SourceFourEntryAbilities.HasEntryAbility(WildBattleTransformationRules.PersistentPokemon(body).AbilityId))
                 return "source_four_action_initial_entry_required";
             if (SourceMoveRestrictionRules.Validate(catalog, body) is { } restrictionError) return restrictionError;
-            if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
+            if (SourceCopyStateRules.Validate(catalog, body, frame, cell.Slot.Side) is { } copyError) return copyError;
             if ((body.Rage || body.FuryCutterCounter > 0) && body.Pokemon.CurrentHp == 0 || body.FirstTurnCounter is < 0 or > 2 || body.FuryCutterCounter is < 0 or > 5 ||
                 (body.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) && !WildBattleStatus.IsSleeping(body.Status) && !WildBattleSourceFieldEffects.IsValidToxic(body.Status)) || !SourceFrameBerryItems.SupportsHeldItem(body.HeldItem, catalog) || !SourceSubstituteRules.Supported(SourcePreparedMoveRules.WithoutPrepared(body)) ||
                 !SourceFourEntryAbilities.OverlaySupported(catalog, body) ||
@@ -418,7 +419,7 @@ public static partial class SourceFourActionTurns
                 ? a with { Kind = SourceActionKind.Cancelled,
                     MoveSlot = a.MoveSlot == WildBattleRules.StruggleSlot ? frame.Get(slot).Registers.LastMoveSlot : a.MoveSlot,
                     CancellationReason = "original-occupant-fainted" } : a).ToImmutableArray(),
-            FourTurn = frame.FourTurn with { Defeats = frame.FourTurn.Defeats.Add(new(defeated, sequence, slot.Side == BattleSide.Opponent)) }
+            FourTurn = frame.FourTurn with { Defeats = frame.FourTurn.Defeats.Add(new(defeated, sequence, slot.Side == BattleSide.Opponent && frame.TrainerTowerEncounter is null)) }
         };
     }
 

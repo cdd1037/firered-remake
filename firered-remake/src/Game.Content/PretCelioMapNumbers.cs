@@ -99,6 +99,20 @@ public static class PretCelioMapNumbers
         return predecessor.AddRange(current.Where(p=>!predecessor.ContainsKey(p.Key)));
     }
 
+    internal static ImmutableDictionary<MapId, RoamerMap> ExtendTrainerTower(string root,
+        IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
+        IReadOnlyDictionary<MapId, PretWorldMap> additions)
+    {
+        if (predecessor.Count != 300 || maps.Count != 311 || additions.Count != 11 ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
+            predecessor.Keys.Any(id => !maps.ContainsKey(id)) || additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
+            additions.Values.Any(m => !m.SourceMapSymbol.StartsWith("MAP_TRAINER_TOWER_", StringComparison.Ordinal)))
+            throw new InvalidDataException("trainer_tower_map_numbers_scope");
+        var current = ProjectSource(root, maps);
+        if (predecessor.Any(p => current[p.Key] != p.Value)) throw new InvalidDataException("trainer_tower_map_numbers_predecessor");
+        return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
+    }
+
     private static ImmutableDictionary<MapId, RoamerMap> ProjectSource(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)
     {
         var source = LoadSourceTable(root);

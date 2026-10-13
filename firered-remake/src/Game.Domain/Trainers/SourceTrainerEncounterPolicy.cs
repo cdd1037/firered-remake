@@ -52,7 +52,7 @@ public static class SourceTrainerEncounterPolicy
             !proof.Matches(created)) return new(null, "source_trainer_creation_receipt");
         if (SourceMechanicsCatalog.For(catalog) is null || created.Trainer.DoubleBattle ||
             created.Trainer.AiFlags is not (1 or 7) || created.Party.Any(p =>
-                SourcePokemonValidator.ValidateForBattle(catalog, p.Pokemon) is not null))
+                SourcePokemonValidator.ValidateForBattle(catalog, p.Pokemon, created.TowerReceipt) is not null))
             return new(null, "source_trainer_creation_catalog");
         SourceTrainerPartyReceipt.Register(proof);
         return new(new(proof.Key, style, SourceTrainerItemInventory.Create(created.Trainer),
@@ -87,6 +87,7 @@ public static class SourceTrainerEncounterPolicy
             !inventory.InitialItems.SequenceEqual(expected.InitialItems) ||
             (inventory.ConsumedMask & ~((1u << inventory.ItemsNo) - 1)) != 0)
             return "source_trainer_encounter_inventory";
+        if (proof.Tower != frame.TrainerTowerEncounter?.Receipt) return "source_trainer_tower_receipt";
         var party = frame.Party(BattleSide.Opponent).Members;
         if (party.Length != proof.Party.Length || party.Where((member, i) => member.IsEgg ||
                 !proof.MatchesIdentity(member.Pokemon, i)).Any()) return "source_trainer_encounter_roster";
@@ -137,14 +138,20 @@ public static class SourceTrainerEncounterPolicy
 internal sealed class SourceTrainerPartyReceipt
 {
     private static readonly Dictionary<string, WeakReference<SourceTrainerPartyReceipt>> registry = [];
+    internal SourceTrainerTowerPartyReceipt? Tower { get; }
     internal TrainerDefinition Trainer { get; }
     internal ImmutableArray<TrainerPartyPokemon> Party { get; }
     private readonly Game.Domain.Randomness.RngState rng;
     private readonly ImmutableArray<Game.Domain.Randomness.RandomTrace> trace;
     internal string Key { get; }
-    private SourceTrainerPartyReceipt(TrainerPartyCreationResult expected)
+    internal static SourceTrainerPartyReceipt CreateTower(TrainerPartyCreationResult expected, SourceTrainerTowerPartyReceipt proof)
     {
-        Trainer = expected.Trainer; Party = expected.Party; rng = expected.Rng; trace = expected.Trace;
+        if (!proof.Matches(expected)) throw new ArgumentException("source_tower_trainer_receipt");
+        return new(expected, proof);
+    }
+    private SourceTrainerPartyReceipt(TrainerPartyCreationResult expected, SourceTrainerTowerPartyReceipt? tower = null)
+    {
+        Tower = tower; Trainer = expected.Trainer; Party = expected.Party; rng = expected.Rng; trace = expected.Trace;
         Key = CampaignSourceFingerprint.Compute(expected);
     }
     internal static SourceTrainerPartyReceipt Create(PokemonCatalog catalog, TrainerPartyCreationResult natural)

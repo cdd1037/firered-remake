@@ -59,6 +59,15 @@ public static class StoryRules
             if(program is not null&&index>=0&&index<program.Instructions.Length)
             {
                 var instruction=program.Instructions[index];
+                if(instruction.Op==StoryOp.Multichoice&&instruction.Source.Path=="data/maps/TrainerTower_Lobby/scripts.inc"&&
+                    instruction.Args.Length==4&&instruction.Args[3]=="FALSE")
+                {
+                    int rows=instruction.Args[2] switch{"MULTICHOICE_YES_NO_INFO"=>3,"MULTICHOICE_TRAINER_TOWER_MODE"=>5,_=>0};
+                    if(rows>0)return choice==127||choice>=0&&choice<rows;
+                }
+                if(instruction.Op==StoryOp.Multichoice&&instruction.Source.Path=="data/maps/TrainerTower_Elevator/scripts.inc"&&
+                    instruction.Args.Length==5&&instruction.Args[2]=="MULTICHOICE_ROOFTOP_B1F"&&instruction.Args[4]=="FALSE")
+                    return choice is 0 or 1 or 127;
                 if(instruction.Op==StoryOp.WaitState&&instruction.Opcode=="waitstate"&&instruction.Args.IsEmpty&&
                     instruction.Source.Path=="data/scripts/seagallop.inc"&&instruction.Source.Symbol is "EventScript_SeviiDestinationsPage1" or "EventScript_SeviiDestinationsPage2")
                     return choice==127||choice>=0&&choice<(instruction.Source.Symbol.EndsWith('1')?6:5);

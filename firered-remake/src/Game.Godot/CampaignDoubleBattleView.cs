@@ -380,8 +380,8 @@ public partial class CampaignView
         _battleSkin.DrawBackground(this);DrawTexture(CurrentWildBattleTerrain,Vector2.Zero);
         if(SourceAnimationPresented)DrawTexture(_sourceMoveField!,Vector2.Zero);
         bool entry=_doubleOpening||b.CurrentEvent is SourceStartedEvent;
-        bool portrait=entry&&_doublePage==0||b.Stage==CampaignDoubleBattleStage.Finished&&b.Frame.Outcome==WildBattleOutcome.Won&&b.FinishPageIndex>0;
-        if(portrait)DrawTexture(DoubleTrainerPortrait,new(144,8));
+        bool portrait=entry&&_doublePage==0||b.Stage==CampaignDoubleBattleStage.Finished&&b.Frame.Outcome==WildBattleOutcome.Won&&(b.FinishPageIndex>0||b.Frame.TrainerTowerEncounter is not null);
+        if(portrait)DrawTexture(DoubleTrainerPortrait,VisibleTrainerPortraitPosition);
         if(entry&&_doublePage==0)DrawTexture(_forestTrainerPortraits[_session.State.PlayerGender==0?"red-back":"leaf-back"],new(48,48));
         foreach(int i in new[]{3,1,0,2})
         {

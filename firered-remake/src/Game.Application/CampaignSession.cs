@@ -72,6 +72,11 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioHandoff? CelioHandoff{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.Roaming.RoamerState? Roamer{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public byte SpecialSaveWarpFlags{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public TrainerTowerProgressState? TrainerTower{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignDepartmentElevator? TrainerTowerElevator{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignTrainerTowerHistory>? TrainerTowerHistory{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignTrainerTowerMenu? TrainerTowerMenu{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool TrainerTowerRecordsVisible{get;init;}
     public uint TrainerId{get;init;}
     public int PlayerGender{get;init;}
     public ImmutableArray<PartyPokemon> Party{get;init;}=[];
@@ -332,7 +337,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidatePowerPlantProgress(s)??ValidateItemfinderProgress(s)??ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateTrainerTowerProgress(s)??ValidatePowerPlantProgress(s)??ValidateItemfinderProgress(s)??ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -354,7 +359,7 @@ public sealed partial class CampaignSession
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
+            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
             var starter=_content.EarlyStarterEnabled?OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
@@ -402,6 +407,7 @@ public sealed partial class CampaignSession
     {
         try
         {
+            if(command.Kind=="trainer_tower_tick")return DecideTrainerTowerTime(state,command);
             if(command.Kind=="national_dex_resume")return NationalDexScenePendingIn(state)
                 ?new(CommandStatus.Accepted,Pump(state)):new(CommandStatus.Rejected,state,"national_dex_scene_not_pending");
             if(NationalDexScenePendingIn(state)&&command.Kind is "move" or "turn" or "interact")
@@ -472,11 +478,13 @@ public sealed partial class CampaignSession
                 {var preflight=PreflightStarterAcceptance(state);if(preflight is not null)return new(CommandStatus.Rejected,state,preflight);}
                 if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&!_content.FirstSeviiEnabled&&CinnabarFerryChoice(state))
                     return new(CommandStatus.Rejected,state,"sevii_first_visit_not_yet_available");
+                if(state.TrainerTowerMenu is {} towerMenu&&command.Choice is not 127&&
+                    (command.Choice is not {} towerChoice||towerChoice<0||towerChoice>=towerMenu.Options.Length))return new(CommandStatus.Rejected,state,"trainer_tower_menu_choice_invalid");
                 if(state.SeagallopMenu is {} ferryMenu&&command.Choice is not 127&&
                     (command.Choice is not {} selected||selected<0||selected>=ferryMenu.Options.Length))return new(CommandStatus.Rejected,state,"seagallop_menu_choice_invalid");
                 if(RainbowFerryMenu(state)&&command.Choice is {} rainbowChoice&&RainbowDestination(state,rainbowChoice) is int rainbowDestination&&rainbowDestination is >=0 and <=7&&!RainbowIslandAvailable(rainbowDestination))
                     return new(CommandStatus.Rejected,state,"seagallop_destination_not_yet_available");
-                var next=state with{SeagallopMenu=null,HealingEffect=wait.Kind==StoryWaitKind.Presentation&&state.PresentationEffects.Any(e=>e.Opcode=="waitfieldeffect")?null:state.HealingEffect,Nickname=state.Nickname?.Submitted==true?null:state.Nickname,Dialogue=state.Dialogue?.CloseOnCompletion==true&&wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice?null:state.Dialogue,Motions=[],PresentationTicks=0,PresentationEffects=[]};
+                var next=state with{ScreenIsBlack=state.TrainerTowerRecordsVisible?false:state.ScreenIsBlack,TrainerTowerMenu=null,TrainerTowerRecordsVisible=false,SeagallopMenu=null,HealingEffect=wait.Kind==StoryWaitKind.Presentation&&state.PresentationEffects.Any(e=>e.Opcode=="waitfieldeffect")?null:state.HealingEffect,Nickname=state.Nickname?.Submitted==true?null:state.Nickname,Dialogue=state.Dialogue?.CloseOnCompletion==true&&wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice?null:state.Dialogue,Motions=[],PresentationTicks=0,PresentationEffects=[]};
                 next=CompleteEventIslandPresentation(state,next);
                 next=CompleteFieldCutPresentation(state,next);
                 next=CompleteFieldStrengthPresentation(state,next);
@@ -637,6 +645,8 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyTrainerTowerElevatorEffect(state,effect,out var towerElevatorState)){state=towerElevatorState;continue;}
+            if(TryApplyTrainerTowerEffect(state,effect,out var trainerTowerState)){state=trainerTowerState;continue;}
             if(TryApplyPowerPlantEffect(state,effect,out var powerPlantState)){state=powerPlantState;continue;}
             if(TryApplyEventIslandBattleEffect(state,effect,out var eventBattleState)){state=eventBattleState;continue;}
             if(TryApplyEventIslandFieldEffect(state,effect,out var eventIslandFieldState)){state=eventIslandFieldState;continue;}
@@ -717,7 +727,7 @@ public sealed partial class CampaignSession
                     if(Int(a[0]) is <1 or >411)throw new InvalidDataException("audio_cry_species_invalid");break;
                 case "waitmoncry":break;
                 case "playse":case "playfanfare":case "waitfanfare":case "waitse":break; // Semantic effects preserved in transition; actual audio remains an explicit P0 gap.
-                case "msgbox":case "message":var textSymbol=a[0]=="0x0"?state.MessagePointer??throw new InvalidDataException("message_pointer_missing"):a[0];state=state with{Dialogue=new(textSymbol,_content.TextPages(textSymbol),0,a.Length>1&&a[1]=="MSGBOX_YESNO",effect.Opcode=="msgbox"&&a.Length>1&&(a[1] is "MSGBOX_NPC" or "MSGBOX_SIGN"||_content.ForestTrainersEnabled&&a[1]=="MSGBOX_AUTOCLOSE"))};break;
+                case "msgbox":case "message":var textSymbol=a[0]=="0x0"?state.MessagePointer??throw new InvalidDataException("message_pointer_missing"):a[0];state=state with{Dialogue=new(textSymbol,textSymbol=="gStringVar4"&&state.TextBuffers.TryGetValue(textSymbol,out var bufferedTowerSpeech)?[bufferedTowerSpeech]:_content.TextPages(textSymbol),0,a.Length>1&&a[1]=="MSGBOX_YESNO",effect.Opcode=="msgbox"&&a.Length>1&&(a[1] is "MSGBOX_NPC" or "MSGBOX_SIGN"||_content.ForestTrainersEnabled&&a[1]=="MSGBOX_AUTOCLOSE"))};if(textSymbol=="gStringVar4")state=state with{TextBuffers=state.TextBuffers.Remove(textSymbol)};break;
                 case "waitmessage":if(state.Dialogue is null)throw new InvalidDataException("waitmessage_without_text");break;
                 case "closemessage":state=state with{Dialogue=null};break;
                 case "delay":state=state with{PresentationTicks=Math.Max(state.PresentationTicks,Int(a[0]))};break;
@@ -797,7 +807,7 @@ public sealed partial class CampaignSession
                     else if(state.OldManTutorial is not null)state=state with{Script=state.Script with{Wait=state.Script.Wait! with{Kind=StoryWaitKind.Battle}}};
                     else if(state.ItemMenu is not null)state=state with{Script=state.Script with{Wait=state.Script.Wait! with{Kind=StoryWaitKind.Inventory}}};
                     else if(state.Nickname is {Submitted:false})state=state with{Script=state.Script with{Wait=state.Script.Wait! with{Kind=StoryWaitKind.Nickname}}};break;
-                default:if(!TryApplySourceItemEffect(state,effect,out state))throw new InvalidDataException("campaign_effect_unsupported: "+effect.Opcode);break;
+                default:if(!TryApplySourceItemEffect(state,effect,out state))throw new InvalidDataException("campaign_effect_unsupported: "+effect.Opcode+" at "+effect.Source.Path+":"+effect.Source.Symbol);break;
             }
         }
         return state;
@@ -851,7 +861,7 @@ public sealed partial class CampaignSession
             if(scriptedRun&&actor is not null)throw new InvalidDataException("movement_player_run_actor_unsupported");
             bool walk=scriptedRun||dottedThiefFall&&action=="slide_down"||action.StartsWith("walk_",StringComparison.Ordinal)&&!action.StartsWith("walk_in_place",StringComparison.Ordinal);
             if(!walk&&!action.StartsWith("walk_in_place",StringComparison.Ordinal)&&!action.StartsWith("face_",StringComparison.Ordinal))throw new InvalidDataException("movement_unsupported: "+action);
-            var (dx,dy)=walk?Delta(direction):(0,0);var tile=_content.Maps[position.MapId].GetTile(position.X+dx,position.Y+dy);
+            var (dx,dy)=walk?Delta(direction):(0,0);var tile=TrainerTowerMovementMaps(state)[position.MapId].GetTile(position.X+dx,position.Y+dy);
             // The original Cinnabar boat starts at x=30 and approaches to x=25,
             // beyond the 24-cell map. Its authenticated border blocks have elevation
             // zero, so the source object retains its elevation. This exception never

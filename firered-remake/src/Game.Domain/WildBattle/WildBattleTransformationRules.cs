@@ -82,12 +82,13 @@ public static class WildBattleTransformationRules
             Moves = moves, CurrentHp = hp };
     }
 
-    internal static string? Validate(PokemonCatalog? catalog, WildBattleCombatant mon, bool enabled)
+    internal static string? Validate(PokemonCatalog? catalog, WildBattleCombatant mon, bool enabled,
+        SourceTrainerTowerPartyReceipt? originalTower = null, SourceTrainerTowerPartyReceipt? donorTower = null)
     {
-        if (mon.Transform is not { } transform) return SourcePokemonValidator.ValidateForBattle(catalog, mon.Pokemon);
+        if (mon.Transform is not { } transform) return SourcePokemonValidator.ValidateForBattle(catalog, mon.Pokemon, originalTower);
         if (!enabled) return "transform_profile";
-        if (SourcePokemonValidator.ValidateForBattle(catalog, transform.OriginalPokemon) is { } originalError) return "transform_original_" + originalError;
-        if (SourcePokemonValidator.ValidateForBattle(catalog, transform.CopiedPokemon) is { } targetError) return "transform_target_" + targetError;
+        if (SourcePokemonValidator.ValidateForBattle(catalog, transform.OriginalPokemon, originalTower) is { } originalError) return "transform_original_" + originalError;
+        if (SourcePokemonValidator.ValidateForBattle(catalog, transform.CopiedPokemon, donorTower) is { } targetError) return "transform_target_" + targetError;
         if (transform.PartyStatusOverride is { } partyStatus && !(
             partyStatus == 0 && WildBattleStatus.IsSleeping(mon.Status) ||
             WildBattleStatus.IsSleeping(partyStatus) && mon.Status == 0)) return "transform_party_status";

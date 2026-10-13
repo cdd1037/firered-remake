@@ -16,11 +16,13 @@ internal static class SourceCopyStateRules
             return "source_copy_slots";
         return null;
     }
-    internal static string? Validate(PokemonCatalog catalog, WildBattleCombatant body)
+    internal static string? Validate(PokemonCatalog catalog, WildBattleCombatant body, SourceBattleFrame? frame = null, BattleSide side = BattleSide.Player)
     {
+        var tower = frame?.TrainerTowerEncounter?.Receipt;
+        var originalTower = side == BattleSide.Opponent ? tower : null;
         if (ValidateShape(body) is { } shape) return shape;
-        if (WildBattleTransformationRules.Validate(catalog, body, enabled: true) is { } live) return "source_copy_live_" + live;
-        if (SourcePokemonValidator.ValidateForBattle(catalog, WildBattleTransformationRules.PersistentPokemon(body)) is { } permanent)
+        if (WildBattleTransformationRules.Validate(catalog, body, enabled: true, originalTower, tower) is { } live) return "source_copy_live_" + live;
+        if (SourcePokemonValidator.ValidateForBattle(catalog, WildBattleTransformationRules.PersistentPokemon(body), originalTower) is { } permanent)
             return "source_copy_permanent_" + permanent;
         return null;
     }

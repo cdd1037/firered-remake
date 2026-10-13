@@ -27,6 +27,7 @@ internal static class SourceItemTransferRules
 
 internal sealed partial class FrameRecipeContext
 {
+    internal override bool IsTrainerTower => Frame.TrainerTowerEncounter?.Receipt is not null;
     private readonly Dictionary<BattlerSlot, string> changedItems = [];
     internal override string? UsedHeldItem(BattlerSlot slot) => Frame.Get(slot).Position.UsedHeldItem;
     internal override void SetUsedHeldItem(BattlerSlot slot, string? item)

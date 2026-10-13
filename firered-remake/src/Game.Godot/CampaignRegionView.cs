@@ -20,20 +20,23 @@ public partial class CampaignView
     }
     private void ApplyMapEdits(Game.Application.CampaignState state)
     {
-        var key=state.World.Player.MapId.Value+":"+Game.Application.CanonicalJson.Hash(state.MapEdits);
+        var key=PresentationMapKey(state.World.Player.MapId)+":"+Game.Application.CanonicalJson.Hash(state.MapEdits);
         if(_mapEditKey==key)return;
         var original=GetMapArt(state.World.Player.MapId);
         if(state.MapEdits is not {Count:>0}){_art=original;ReleaseMapEdits();_mapEditKey=key;return;}
         var definitions=state.World.Player.MapId.Value=="map.vermilion-city-gym"
             ?_catalog.VermilionGymRegion?.BeamDefinitions:_catalog.MartMetatiles?.Definitions;
-        if(definitions is null&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(_catalog.VictoryRoadEnabled&&IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
+        if(definitions is null&&!IsTrainerTowerPresentationMap(state.World.Player.MapId)&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(_catalog.VictoryRoadEnabled&&IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
         var replacement=_mapResources.CreateOwner("map-edits");
         using var tiles=_mapResources.CreateOwner("map-edit-tiles");
         Texture2D Patch(Texture2D texture,int layer)
         {
-            using var canvas=texture.GetImage();
+            // Dummy/headless GetImage may return the same Image resource. Tower crops
+            // read original layers, so their editable canvas must be a separate resource.
+            using var canvas=IsTrainerTowerPresentationMap(state.World.Player.MapId)?(Image)texture.GetImage().Duplicate():texture.GetImage();
             foreach(var edit in state.MapEdits.Values)
             {
+                if(TryTrainerTowerPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryCelioMachinePatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryFiveIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TrySixIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
@@ -75,6 +78,7 @@ public partial class CampaignView
     }
     private string ResolveRegionGraphics(string graphics)
     {
+        if(TrainerTowerGraphics(graphics) is {} towerGraphics)return towerGraphics;
         if(graphics!="OBJ_EVENT_GFX_VAR_0")return graphics;
         var value=_session.State.Script.Variables.GetValueOrDefault("VAR_OBJ_GFX_ID_0");
         if(_catalog.EventIslandsEnabled&&_session.State.World.Player.MapId.Value=="map.birth-island-exterior"&&
@@ -113,8 +117,8 @@ public partial class CampaignView
     private void PrepareVisibleMapResources(Vector2 camera)
     {
         BeginMapFrame();_drawMapEditOwner=_mapEditOwner;
-        _drawMapPins.Clear();_drawMapPins.Add(_art.Source.Id.Value);
-        foreach(var neighbor in VisibleMapNeighbors(camera))_drawMapPins.Add(neighbor.Id.Value);
+        _drawMapPins.Clear();_drawMapPins.Add(PresentationMapKey(_art.Source.Id));
+        foreach(var neighbor in VisibleMapNeighbors(camera))_drawMapPins.Add(PresentationMapKey(neighbor.Id));
         MapCache.SetPins(_drawMapPins);
     }
     private void DrawConnectedNeighbors(Vector2 camera,int layer)

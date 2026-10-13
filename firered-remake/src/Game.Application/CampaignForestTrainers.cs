@@ -385,6 +385,7 @@ public sealed partial class CampaignSession
     private CampaignState SettleForestTrainerBattle(CampaignState state)
     {
         var trainer = state.ForestTrainerBattle!; var b = trainer.Presentation;
+        if(trainer.Frame.TrainerTowerEncounter is not null)return SettleTrainerTowerBattle(state,trainer.Frame,trainer.Id,trainer.OpponentsSent);
         if ((state.ForestTrainerHistory ?? []).Any(h => h.Id == trainer.Id)) throw new InvalidDataException("forest_trainer_settlement_duplicate");
         bool won = trainer.Frame.Outcome == WildBattleOutcome.Won;
         var prize = SourceBattleMoneyRules.SettleTrainerPrize(state.Money,
@@ -439,6 +440,7 @@ public sealed partial class CampaignSession
     private CampaignState ReturnFromForestTrainerBattle(CampaignState state)
     {
         var trainer = state.ForestTrainerBattle!;
+        if(trainer.Frame.TrainerTowerEncounter is not null)return ReturnFromTrainerTowerBattle(state,trainer.Frame,trainer.Id);
         if (!(state.ForestTrainerHistory ?? []).Any(h => h.Id == trainer.Id) || !trainer.Presentation.PendingMoves.IsEmpty)
             throw new InvalidDataException("forest_trainer_not_settled");
         if(IsRoute22Trainer(trainer.Trainer))return ReturnFromRoute22Rival(state);

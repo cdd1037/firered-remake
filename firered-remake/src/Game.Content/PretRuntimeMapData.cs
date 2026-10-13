@@ -230,6 +230,7 @@ public sealed class PretRuntimeMapData : IFieldMap
             PretPokemonLeagueRegion.FullSourceHash => PretPokemonLeagueRegion.MapIdFromSourceSymbol,
             PretVictoryRoadRegion.FullSourceHash => PretVictoryRoadRegion.MapIdFromSourceSymbol,
             PretPowerPlantRegion.FullSourceHash => PretPowerPlantRegion.MapIdFromSourceSymbol,
+            PretTrainerTowerRegion.FullSourceHash => PretTrainerTowerRegion.MapIdFromSourceSymbol,
             PretFirstSeviiRegion.FullSourceHash => PretFirstSeviiRegion.MapIdFromSourceSymbol,
             PretCinnabarRegion.FullSourceHash => PretCinnabarRegion.MapIdFromSourceSymbol,
             PretSaffronGymRegion.FullSourceHash => PretSaffronGymRegion.MapIdFromSourceSymbol,

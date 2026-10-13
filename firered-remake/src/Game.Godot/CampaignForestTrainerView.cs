@@ -32,8 +32,8 @@ public partial class CampaignView
     private void AddForestTrainerTextValues(Dictionary<string, string> values)
     {
         if (_session.State.ForestTrainerBattle is not { } trainer) return;
-        values["B_TRAINER1_CLASS"] = VisibleSevenIslandTrainerText("className") ?? VisibleFiveIslandTrainerText("className") ?? VisibleSixIslandTrainerText("className") ?? VisibleFourIslandTrainerText("className") ?? VisibleSeviiRubyTrainerText("className") ?? VisiblePokemonLeagueTrainerText("className") ?? VisibleVictoryRoadTrainer()?.ClassName ?? VisibleViridianGymTrainer()?.ClassName ?? VisibleFirstSeviiTrainerClass() ?? VisibleCinnabarTrainerClass() ?? VisibleSaffronGymTrainerClass() ?? VisibleSilphTrainerClass() ?? VisibleFuchsiaGymTrainer()?.ClassName ?? (VisibleOrdinaryTrainer().TrainerClass switch{"TRAINER_CLASS_JUGGLER"=>"JUGGLER","TRAINER_CLASS_TAMER"=>"TAMER","TRAINER_CLASS_CHANNELER"=>"CHANNELER","TRAINER_CLASS_BOSS"=>"BOSS","TRAINER_CLASS_BEAUTY"=>"BEAUTY","TRAINER_CLASS_COOLTRAINER"=>"COOLTRAINER","TRAINER_CLASS_BIKER"=>"BIKER","TRAINER_CLASS_POKEMANIAC"=>"POKéMANIAC","TRAINER_CLASS_GAMER"=>"GAMER","TRAINER_CLASS_ENGINEER"=>"ENGINEER","TRAINER_CLASS_SAILOR"=>"SAILOR","TRAINER_CLASS_FISHERMAN"=>"FISHERMAN","TRAINER_CLASS_GENTLEMAN"=>"GENTLEMAN","TRAINER_CLASS_RIVAL_LATE"=>"RIVAL","TRAINER_CLASS_PICNICKER"=>"PICNICKER","TRAINER_CLASS_SWIMMER_M"=>"SWIMMER","TRAINER_CLASS_RIVAL_EARLY"=>"RIVAL","TRAINER_CLASS_LEADER"=>"LEADER","TRAINER_CLASS_CAMPER"=>"CAMPER","TRAINER_CLASS_YOUNGSTER"=>"YOUNGSTER","TRAINER_CLASS_LASS"=>"LASS","TRAINER_CLASS_SUPER_NERD"=>"SUPER NERD","TRAINER_CLASS_HIKER"=>"HIKER","TRAINER_CLASS_TEAM_ROCKET"=>"TEAM ROCKET",_=>"BUG CATCHER"});
-        values["B_TRAINER1_NAME"] = VisibleOrdinaryTrainer().TrainerClass is "TRAINER_CLASS_RIVAL_EARLY" or "TRAINER_CLASS_RIVAL_LATE" or "TRAINER_CLASS_CHAMPION"?_session.State.RivalName:VisibleOrdinaryTrainer().SourceTrainerName;
+        values["B_TRAINER1_CLASS"] = TrainerTowerTrainerText("className") ?? VisibleSevenIslandTrainerText("className") ?? VisibleFiveIslandTrainerText("className") ?? VisibleSixIslandTrainerText("className") ?? VisibleFourIslandTrainerText("className") ?? VisibleSeviiRubyTrainerText("className") ?? VisiblePokemonLeagueTrainerText("className") ?? VisibleVictoryRoadTrainer()?.ClassName ?? VisibleViridianGymTrainer()?.ClassName ?? VisibleFirstSeviiTrainerClass() ?? VisibleCinnabarTrainerClass() ?? VisibleSaffronGymTrainerClass() ?? VisibleSilphTrainerClass() ?? VisibleFuchsiaGymTrainer()?.ClassName ?? (VisibleOrdinaryTrainer().TrainerClass switch{"TRAINER_CLASS_JUGGLER"=>"JUGGLER","TRAINER_CLASS_TAMER"=>"TAMER","TRAINER_CLASS_CHANNELER"=>"CHANNELER","TRAINER_CLASS_BOSS"=>"BOSS","TRAINER_CLASS_BEAUTY"=>"BEAUTY","TRAINER_CLASS_COOLTRAINER"=>"COOLTRAINER","TRAINER_CLASS_BIKER"=>"BIKER","TRAINER_CLASS_POKEMANIAC"=>"POKéMANIAC","TRAINER_CLASS_GAMER"=>"GAMER","TRAINER_CLASS_ENGINEER"=>"ENGINEER","TRAINER_CLASS_SAILOR"=>"SAILOR","TRAINER_CLASS_FISHERMAN"=>"FISHERMAN","TRAINER_CLASS_GENTLEMAN"=>"GENTLEMAN","TRAINER_CLASS_RIVAL_LATE"=>"RIVAL","TRAINER_CLASS_PICNICKER"=>"PICNICKER","TRAINER_CLASS_SWIMMER_M"=>"SWIMMER","TRAINER_CLASS_RIVAL_EARLY"=>"RIVAL","TRAINER_CLASS_LEADER"=>"LEADER","TRAINER_CLASS_CAMPER"=>"CAMPER","TRAINER_CLASS_YOUNGSTER"=>"YOUNGSTER","TRAINER_CLASS_LASS"=>"LASS","TRAINER_CLASS_SUPER_NERD"=>"SUPER NERD","TRAINER_CLASS_HIKER"=>"HIKER","TRAINER_CLASS_TEAM_ROCKET"=>"TEAM ROCKET",_=>"BUG CATCHER"});
+        values["B_TRAINER1_NAME"] = TrainerTowerTrainerText("name") ?? (VisibleOrdinaryTrainer().TrainerClass is "TRAINER_CLASS_RIVAL_EARLY" or "TRAINER_CLASS_RIVAL_LATE" or "TRAINER_CLASS_CHAMPION"?_session.State.RivalName:VisibleOrdinaryTrainer().SourceTrainerName);
     }
     private bool TryForestTrainerIntroInput(InputEventKey key)
     {
@@ -80,6 +80,7 @@ public partial class CampaignView
     private bool ForestTrainerResultPage(CampaignWildBattle battle, Action<string, (string Key, string Value)[]> source)
     {
         if (_session.State.ForestTrainerBattle is not { } trainer) return false;
+        if (trainer.Frame?.TrainerTowerEncounter is not null) return false;
         if (trainer.Stage == CampaignForestTrainerStage.Finished && trainer.Combat.Battle.Outcome == WildBattleOutcome.Won)
         {
             if (battle.PageIndex == 0) { source("sText_PlayerDefeatedLinkTrainerTrainer1", []); return true; }
@@ -179,22 +180,22 @@ public partial class CampaignView
     private bool DrawForestTrainerPortrait(CampaignWildBattle battle)
     {
         if (!ForestTrainerOpening(battle) || _wildPage != 0) return false;
-        DrawTexture(_forestTrainerPortraits[VisibleTrainerPortraitId], new(144, 8));
+        DrawTexture(VisibleTrainerPortrait, VisibleTrainerPortraitPosition);
         DrawTexture(_forestTrainerPortraits[_session.State.PlayerGender == 0 ? "red-back" : "leaf-back"], new(48, 48));
         return true;
     }
     private bool DrawForestTrainerDefeatPortrait(CampaignWildBattle battle)
     {
         if (_session.State.ForestTrainerBattle is not { Stage: CampaignForestTrainerStage.Finished } trainer ||
-            !(trainer.Combat.Battle.Outcome == WildBattleOutcome.Won && battle.PageIndex > 0 ||
+            !(trainer.Combat.Battle.Outcome == WildBattleOutcome.Won && (battle.PageIndex > 0 || trainer.Frame?.TrainerTowerEncounter is not null) ||
               Route22RivalVisible && (trainer.Combat.Battle.Outcome is WildBattleOutcome.Lost or WildBattleOutcome.Draw) && battle.PageIndex < Route22RivalVictoryPageCount)) return false;
-        DrawTexture(_forestTrainerPortraits[VisibleTrainerPortraitId], new(144, 8));
+        DrawTexture(VisibleTrainerPortrait, VisibleTrainerPortraitPosition);
         return true;
     }
     private bool ForestTrainerHidePlayer(CampaignWildBattle battle, WildBattleSide side) =>
         ForestTrainerOpening(battle) && _wildPage == 1 && side == WildBattleSide.Player;
     private bool Route22RivalVisible => _session.State.ForestTrainerBattle is {} trainer && _catalog.Route22Trainers?.Trainers.ContainsKey(trainer.Trainer)==true;
     private int Route22RivalVictoryPageCount => Route22RivalVisible ? _catalog.TextPages(_catalog.Route22Trainers!.Battles[_session.State.ForestTrainerBattle!.Trainer].VictoryText).Length : 0;
-    private string VisibleTrainerPortraitId => VisibleSevenIslandTrainerText("portrait") ?? VisibleFiveIslandTrainerText("portrait") ?? VisibleSixIslandTrainerText("portrait") ?? VisibleFourIslandTrainerText("portrait") ?? VisibleSeviiRubyTrainerText("portrait") ?? VisiblePokemonLeagueTrainerText("portrait") ?? VisibleVictoryRoadTrainer()?.Portrait ?? VisibleViridianGymTrainer()?.Portrait ?? VisibleFirstSeviiTrainerPortrait() ?? VisibleCinnabarTrainerPortrait() ?? VisibleSaffronGymTrainerPortrait() ?? VisibleSilphTrainerPortrait() ?? VisibleFuchsiaGymTrainer()?.Portrait ?? (VisibleOrdinaryTrainer().TrainerClass switch
+    private string VisibleTrainerPortraitId => TrainerTowerTrainerText("portrait") ?? VisibleSevenIslandTrainerText("portrait") ?? VisibleFiveIslandTrainerText("portrait") ?? VisibleSixIslandTrainerText("portrait") ?? VisibleFourIslandTrainerText("portrait") ?? VisibleSeviiRubyTrainerText("portrait") ?? VisiblePokemonLeagueTrainerText("portrait") ?? VisibleVictoryRoadTrainer()?.Portrait ?? VisibleViridianGymTrainer()?.Portrait ?? VisibleFirstSeviiTrainerPortrait() ?? VisibleCinnabarTrainerPortrait() ?? VisibleSaffronGymTrainerPortrait() ?? VisibleSilphTrainerPortrait() ?? VisibleFuchsiaGymTrainer()?.Portrait ?? (VisibleOrdinaryTrainer().TrainerClass switch
     {"TRAINER_CLASS_JUGGLER"=>"juggler-front","TRAINER_CLASS_TAMER"=>"tamer-front","TRAINER_CLASS_CHANNELER"=>"channeler-front","TRAINER_CLASS_BOSS"=>"giovanni-front","TRAINER_CLASS_BEAUTY"=>"beauty-front","TRAINER_CLASS_COOLTRAINER"=>"cooltrainer-f-front","TRAINER_CLASS_BIKER"=>"biker-front","TRAINER_CLASS_POKEMANIAC"=>"pokemaniac-front","TRAINER_CLASS_GAMER"=>"gamer-front","TRAINER_CLASS_ENGINEER"=>"engineer-front","TRAINER_CLASS_SAILOR"=>"sailor-front","TRAINER_CLASS_FISHERMAN"=>"fisherman-front","TRAINER_CLASS_GENTLEMAN"=>"gentleman-front","TRAINER_CLASS_RIVAL_LATE"=>"rival-late-front","TRAINER_CLASS_RIVAL_EARLY"=>"rival-early-front","TRAINER_CLASS_PICNICKER"=>"picnicker-front","TRAINER_CLASS_SWIMMER_M"=>"swimmer-m-front","TRAINER_CLASS_LEADER"=>VisibleOrdinaryTrainer().Id==FuchsiaGymTrainerPartyFactory.Koga?"koga-front":VisibleOrdinaryTrainer().Id.Value=="pret:TRAINER_LEADER_ERIKA"?"erika-front":VisibleOrdinaryTrainer().Id==VermilionGymTrainerPartyFactory.LtSurge?"lt-surge-front":VisibleOrdinaryTrainer().Id==CeruleanTrainerPartyFactory.Misty?"misty-front":"brock-front","TRAINER_CLASS_YOUNGSTER"=>"youngster-front","TRAINER_CLASS_LASS"=>"lass-front","TRAINER_CLASS_CAMPER"=>"camper-front","TRAINER_CLASS_SUPER_NERD"=>"super-nerd-front","TRAINER_CLASS_HIKER"=>"hiker-front","TRAINER_CLASS_TEAM_ROCKET"=>_catalog.PokemonTowerTrainers?.Trainers.ContainsKey(VisibleOrdinaryTrainer().Id)==true||_catalog.RocketHideoutTrainers?.Trainers.ContainsKey(VisibleOrdinaryTrainer().Id)==true?"rocket-grunt-m-front":"rocket-m-front",_=>"bug-catcher-front"});
 }

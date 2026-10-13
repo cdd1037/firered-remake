@@ -82,6 +82,14 @@ public interface ICampaignCatalog:IStoryCatalog
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
+    bool TrainerTowerEnabled=>false;
+    TrainerTowerCatalog? TrainerTowerCatalog=>null;
+    TrainerTowerOpponentPokemonCatalog? TrainerTowerOpponents=>null;
+    TrainerTowerShopCatalog? TrainerTowerShop=>null;
+    IFieldMap? TrainerTowerMap(MapId map,TrainerTowerBattleFormat format)=>null;
+    ConnectedFieldMap? TrainerTowerConnectedMap(MapId map,TrainerTowerBattleFormat format)=>null;
+    ImmutableDictionary<string,int> TrainerTowerNpcGraphics(TrainerTowerBattleFormat format,TrainerTowerFloorTemplate template)=>throw new NotSupportedException("trainer_tower_not_enabled");
+    string TrainerTowerEncounterMusic(TrainerTowerFloorTemplate template,int trainerIndex)=>throw new NotSupportedException("trainer_tower_not_enabled");
     bool PowerPlantEnabled=>false;
     PowerPlantOwnedPokemonCatalog? PowerPlantOwnership=>null;
     PowerPlantOpponentPokemonCatalog? PowerPlantOpponents=>null;

@@ -42,11 +42,12 @@ public static class SourceBattleKernel
             !frame.Slots.IsDefault && frame.Slots.Any(c => c?.Body is { } body && !PokemonShape(body.Pokemon)))
             return "source_kernel_nested_pokemon_shape";
         if (SourceBattleIdentityRules.Validate(frame) is { } shape) return shape;
+        if (SourceTrainerTowerEncounter.Validate(catalog, frame) is { } towerError) return towerError;
         if (frame.SourceMechanicsRulesVersion == Version && SourceMechanicsCatalog.For(catalog) is null)
             return "source_kernel_authenticated_catalog_required";
         foreach (var party in frame.Parties)
             foreach (var member in party.Members)
-                if (SourcePokemonValidator.ValidateForBattle(catalog, member.Pokemon) is not null)
+                if (SourcePokemonValidator.ValidateForBattle(catalog, member.Pokemon, party.Side == BattleSide.Opponent ? frame.TrainerTowerEncounter?.Receipt : null) is not null)
                     return "source_kernel_party_pokemon";
         if (frame.SourceMechanicsRulesVersion == Version && SourceItemTransferRules.Validate(catalog, frame) is { } itemError) return itemError;
         if (frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion) return "source_kernel_profile";
@@ -114,7 +115,7 @@ public static class SourceBattleKernel
         {
             if (cell.Body is not { } body) continue;
             if (SourceMoveRestrictionRules.Validate(catalog, body) is { } restrictionError) return restrictionError;
-            if (SourceCopyStateRules.Validate(catalog, body) is { } copyError) return copyError;
+            if (SourceCopyStateRules.Validate(catalog, body, frame, cell.Slot.Side) is { } copyError) return copyError;
             if (cell.Registers.History?.LastHitByType is { } hitType && hitType != "TYPE_MYSTERY" && !WildBattleEffective.IsSourceType(hitType) ||
                 body.LastLandedMove is { } landed && landed.Value is not ("pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE") && !catalog.Moves.ContainsKey(landed))
                 return "source_kernel_type_change_history";
