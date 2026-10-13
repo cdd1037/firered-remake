@@ -42,7 +42,7 @@ controlled 60-caught grant, strict save/Continue and Oak/PC revisit checks;
 automatic first-frame and headless view checks also passed separately.
 The latest asset-complete recovery base is stage10 `8940b9b`; authenticated
 importers reconstruct newer resources. See [National Dex](docs/national-dex-campaign.md),
-[the completed refactor](docs/project-refactor-plan.md), [remaining scope](docs/first-clear-remaining-scope.md)
+[the completed bounded cleanup and remaining project refactor](docs/project-refactor-plan.md), [remaining scope](docs/first-clear-remaining-scope.md)
 and [implementation roadmap](docs/implementation-roadmap.md).
 
 ## Earlier first-badge checkpoint
