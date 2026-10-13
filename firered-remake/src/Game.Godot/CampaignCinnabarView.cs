@@ -6,7 +6,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool CinnabarProfileRequested => FirstSeviiProfileRequested || OS.GetEnvironment("FIRERED_CINNABAR") == "1" || OS.GetCmdlineUserArgs().Contains("--story-cinnabar");
     private readonly Dictionary<string,string> _cinnabarTrainerPortraits = new(StringComparer.Ordinal);
     private readonly Dictionary<string,string> _cinnabarTrainerClasses = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Family,int Id),CinnabarFieldTile> _cinnabarTiles = [];

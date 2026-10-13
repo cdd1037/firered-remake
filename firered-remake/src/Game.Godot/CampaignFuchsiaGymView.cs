@@ -3,8 +3,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool FuchsiaGymProfileRequested => OS.GetEnvironment("FIRERED_PRESET_DOUBLES") == "1" || OS.GetEnvironment("FIRERED_FUCHSIA_GYM") == "1" ||
-        OS.GetCmdlineUserArgs().Contains("--story-fuchsia-gym");
     private FuchsiaGymPresentationData? _fuchsiaGymPresentation;
     private bool IsFuchsiaGymLeader(string id) => _catalog.FuchsiaGymEnabled && id == "pret:TRAINER_LEADER_KOGA";
 

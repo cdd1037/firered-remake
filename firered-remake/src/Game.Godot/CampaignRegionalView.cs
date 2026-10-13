@@ -22,7 +22,4 @@ public partial class CampaignView
         if(input is InputEventKey {Keycode:Key.F12})return false;
         _held=null;_repeat=0;QueueRedraw();GetViewport().SetInputAsHandled();return true;
     }
-    private static bool RegionalInteriorServicesProfileRequested => FuchsiaRouteProfileRequested || OS.GetEnvironment("FIRERED_REGIONAL_INTERIORS")=="1" || OS.GetCmdlineUserArgs().Contains("--story-regional-interiors");
-    private static bool RegionalServicesProfileRequested => RegionalInteriorServicesProfileRequested || OS.GetEnvironment("FIRERED_REGIONAL_SERVICES")=="1" || OS.GetCmdlineUserArgs().Contains("--story-regional-services");
-    private static bool RegionalProfileRequested => RegionalServicesProfileRequested || OS.GetEnvironment("FIRERED_REGIONAL")=="1" || OS.GetCmdlineUserArgs().Contains("--story-regional");
 }

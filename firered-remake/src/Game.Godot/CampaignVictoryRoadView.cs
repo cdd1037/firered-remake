@@ -6,8 +6,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool VictoryRoadProfileRequested => PokemonLeagueProfileRequested || OS.GetEnvironment("FIRERED_VICTORY_ROAD") == "1" ||
-        OS.GetCmdlineUserArgs().Contains("--story-victory-road");
     private VictoryRoadPresentationData? _victoryRoadPresentation;
     private readonly Dictionary<int, VictoryRoadTilePresentation> _victoryRoadTiles = [];
     private readonly Dictionary<int, Texture2D> _victoryRoadTileLayers = [];

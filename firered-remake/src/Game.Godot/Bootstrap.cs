@@ -1,3 +1,4 @@
+using Game.Application;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -17,10 +18,21 @@ public partial class Bootstrap : Node2D
     private string _evidencePath = "";
     public override void _Ready()
     {
-        _probe = OS.GetCmdlineUserArgs().Contains("--probe");
-        _harness = OS.GetCmdlineUserArgs().Contains("--harness");
-        _pallet = OS.GetCmdlineUserArgs().Contains("--pallet");
-        _story = OS.GetCmdlineUserArgs().Contains("--story") || OS.GetCmdlineUserArgs().Contains("--story-rocket-hideout") || OS.GetCmdlineUserArgs().Contains("--story-pokemon-tower") || OS.GetCmdlineUserArgs().Contains("--story-snorlax") || OS.GetCmdlineUserArgs().Contains("--story-regional") || OS.GetCmdlineUserArgs().Contains("--story-regional-services") || OS.GetCmdlineUserArgs().Contains("--story-regional-interiors") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-route") || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-gym") || OS.GetCmdlineUserArgs().Contains("--story-safari") || OS.GetCmdlineUserArgs().Contains("--story-surf") || OS.GetCmdlineUserArgs().Contains("--story-silph") || OS.GetCmdlineUserArgs().Contains("--story-saffron-gym") || OS.GetCmdlineUserArgs().Contains("--story-cinnabar") || OS.GetCmdlineUserArgs().Contains("--story-first-sevii") || OS.GetCmdlineUserArgs().Contains("--story-viridian-gym") || OS.GetCmdlineUserArgs().Contains("--story-league-rival") || OS.GetCmdlineUserArgs().Contains("--story-victory-road") || OS.GetCmdlineUserArgs().Contains("--story-pokemon-league") || OS.GetCmdlineUserArgs().Contains("--story-national-dex") || OS.GetCmdlineUserArgs().Contains("--story-sevii-ruby") || OS.GetCmdlineUserArgs().Contains("--story-four-island") || OS.GetCmdlineUserArgs().Contains("--story-six-island");
+        GameStartupSelection startup;
+        try
+        {
+            var environment=System.Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
+                .ToDictionary(e=>(string)e.Key,e=>(string?)e.Value,StringComparer.Ordinal);
+            startup=GameStartupSelection.Resolve(OS.GetCmdlineUserArgs(),environment);
+        }
+        catch(InvalidOperationException error)
+        {
+            GD.PushError(error.Message);GetTree().Quit(22);return;
+        }
+        _probe=startup.Mode==GameStartupMode.Probe;
+        _harness=startup.Mode==GameStartupMode.Harness;
+        _pallet=startup.Mode==GameStartupMode.PalletDiagnostic;
+        _story=startup.Mode==GameStartupMode.Current;
         _evidencePath = OS.GetEnvironment("FIRERED_EVIDENCE");
         if (!string.IsNullOrEmpty(_evidencePath)) System.IO.File.WriteAllText(System.IO.Path.ChangeExtension(_evidencePath, ".events.log"), "");
         var evidence = new
@@ -57,7 +69,7 @@ public partial class Bootstrap : Node2D
         }
         var missing = "火红工程验证方向键确认退出等待按键".Where(c => !_font.HasChar(c)).ToArray();
         Record("CHINESE_GLYPHS " + (missing.Length == 0 ? "PASS" : "MISSING " + new string(missing)));
-        if (_story) { AddChild(new CampaignView()); return; }
+        if (_story) { AddChild(new CampaignView{Startup=startup}); return; }
         if (_pallet) { AddChild(new PalletTownView()); return; }
         if (_harness) { AddChild(new EngineeringHarness()); return; }
         var spriteImage = Image.CreateEmpty(12, 12, false, Image.Format.Rgba8);

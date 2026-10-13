@@ -8,8 +8,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool SeviiRubyProfileRequested => OS.GetEnvironment("FIRERED_SEVII_RUBY") == "1" ||
-        OS.GetCmdlineUserArgs().Contains("--story-sevii-ruby");
     private bool SeviiRubyPresentationProfile => _catalog.SeviiRubyEnabled && _catalog.NationalDexEnabled &&
         _catalog.PokemonLeagueEnabled && (_session.RulesVersion == CampaignSession.SeviiRubyRulesVersion || FourIslandPresentationProfile);
     private SeviiRubyPresentationData? _seviiRubyArt;

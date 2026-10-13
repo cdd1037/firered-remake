@@ -11,7 +11,6 @@ using Godot;
 /// <summary>Six Island authenticated source textures and display catalogs. The application remains authoritative.</summary>
 public partial class CampaignView
 {
-    private static bool SixIslandProfileRequested => FiveIslandProfileRequested || OS.GetEnvironment("FIRERED_SIX_ISLAND") == "1" || OS.GetCmdlineUserArgs().Contains("--story-six-island");
     private bool SixIslandPresentationProfile => _catalog.SixIslandEnabled && _catalog.FourIslandEnabled && (_session.RulesVersion == CampaignSession.SixIslandRulesVersion || FiveIslandPresentationProfile);
     private SixIslandPresentationData? _sixIslandArt;
     private readonly Dictionary<int,PokedexMenuEntry> _sixIslandDex = [];

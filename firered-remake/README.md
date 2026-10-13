@@ -21,10 +21,13 @@ it did not clear the League. See [League acceptance](docs/pokemon-league-campaig
 and the [controlled route report](tests/Game.PokemonLeagueControlledRoute.Tests/evidence/REPORT.md).
 
 `bash scripts/launch-current.sh` selects the latest accepted bounded postgame
-profile (Celio Sapphire delivery, Network Machine and persistent roaming encounters). Each profile keeps separate saves. Explicit
-predecessor upgrades preserve gameplay payload and generation except their
-documented initialization. The launcher checks the official Godot resource
-import before startup.
+game (Celio Sapphire delivery, Network Machine and persistent roaming encounters)
+through one current composition and save rules ID. Historical regional startup
+flags are rejected. Backed-up Celio milestones can be explicitly converted to a
+new destination with `Game.Tooling convert-current-checkpoint SOURCE NEW_DESTINATION`;
+the complete gameplay payload and generation are preserved. See
+[current composition](docs/current-game-composition.md). The launcher checks
+the official Godot resource import before startup.
 
 The ordinary shared battle core and preset doubles are available within their
 documented admission contracts. Dedicated move animation coverage is separate

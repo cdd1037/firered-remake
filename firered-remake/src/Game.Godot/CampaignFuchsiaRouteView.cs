@@ -7,7 +7,6 @@ using Godot;
 /// <summary>Source presentation for the admitted southern route. No authoritative movement or battle mutation.</summary>
 public partial class CampaignView
 {
-    private static bool FuchsiaRouteProfileRequested => FuchsiaGymProfileRequested || OS.GetEnvironment("FIRERED_FUCHSIA_ROUTE") == "1" || OS.GetCmdlineUserArgs().Contains("--story-fuchsia-route");
 
     private void LoadFuchsiaRoutePresentation()
     {

@@ -41,7 +41,7 @@ The target is one maintained current-game composition and one authoritative ordi
 
 ### R1 — Consolidate profile, capability and catalog selection
 
-**Status: open. Benefit: high. Risk: medium; current admission and selected checkpoint conversion require care.**
+**Status: first current-composition slice accepted; historical diagnostic/runtime-construction retirement remains open. Benefit: high. Risk: medium; current admission and selected checkpoint conversion require care.**
 
 Evidence of remaining duplication:
 
@@ -127,3 +127,7 @@ Acceptance: the current package can be reconstructed from documented retained in
 5. Synchronize the refactored source and verified Drive delivery, and update README/roadmap/status wording together. Historical reports stay labeled historical. The plan is complete only when R1–R4 have concrete accepted results and no unexplained remaining duplicate current path; writing this document or passing the earlier four changes does not close it.
 
 No completion claim is made for the remaining refactor in this revision.
+
+## 2026-10-13 current composition slice
+
+After the Ruby/Sapphire full backup, normal startup resolves one current game, deletes24 regional startup selectors and two competing selection chains, and uses one cached Application binding. New Game and Restore share catalog validation; Restore has no map-entry or RNG side effect. Current saves use an explicit new rules ID; original Celio files are rejected by normal loading and can be copied through the narrow offline converter. The owner normal Godot/Tooling builds and five real CLI conversion cases passed; independent57 focused checks and headless current startup passed. See [current composition](current-game-composition.md). This closes neither R1's remaining diagnostic/predecessor retirement nor R2/R3/R4.

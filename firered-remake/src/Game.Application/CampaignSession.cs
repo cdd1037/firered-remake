@@ -208,7 +208,9 @@ public sealed partial class CampaignSession
     public const string SaffronGymRulesVersion="fr-saffron-gym-campaign-v1";
     public const string SilphRulesVersion="fr-silph-campaign-v1";
     public const string SurfRulesVersion="fr-surf-campaign-v1";
-    public string RulesVersion=>_content.CelioEnabled?CelioRulesVersion:_content.FiveIslandEnabled?FiveIslandRulesVersion:_content.SixIslandEnabled?SixIslandRulesVersion:_content.FourIslandEnabled?FourIslandRulesVersion:_content.SeviiRubyEnabled?SeviiRubyRulesVersion:_content.NationalDexEnabled?NationalDexRulesVersion:_content.PokemonLeagueEnabled?PokemonLeagueRulesVersion:_content.VictoryRoadEnabled?VictoryRoadRulesVersion:_content.LeagueRivalEnabled?LeagueRivalRulesVersion:_content.ViridianGymEnabled?ViridianGymRulesVersion:_content.FirstSeviiEnabled?FirstSeviiRulesVersion:_content.CinnabarEnabled?CinnabarRulesVersion:_content.SaffronGymEnabled?SaffronGymRulesVersion:_content.SilphEnabled?SilphRulesVersion:_content.SurfEnabled?SurfRulesVersion:_content.SafariEnabled?SafariRulesVersion:_content.PresetDoublesEnabled?PresetDoublesRulesVersion:_content.FuchsiaGymEnabled?FuchsiaGymRulesVersion:_content.FuchsiaRouteEnabled?FuchsiaRouteRulesVersion:_content.SnorlaxEnabled?SnorlaxRulesVersion:_content.PokemonTowerEnabled?PokemonTowerRulesVersion:_content.RocketHideoutEnabled?RocketHideoutRulesVersion:_content.CeladonGymEnabled?CeladonGymRulesVersion:_content.CeladonApproachEnabled?CeladonApproachRulesVersion:_content.RockTunnelEnabled?RockTunnelRulesVersion:_content.Route11Enabled?Route11RulesVersion:_content.CityServicesEnabled?CityServicesRulesVersion:_content.VermilionGymEnabled?VermilionGymRulesVersion:_content.SsAnneEnabled?SsAnneRulesVersion:_content.VermilionEnabled?VermilionRulesVersion:_content.BillEnabled?BillRulesVersion:_content.CeruleanEnabled?CeruleanRulesVersion:_content.MtMoonEnabled?MtMoonRulesVersion:_content.MagikarpEnabled?MagikarpRulesVersion:_content.Route3Enabled?Route3RulesVersion:_content.Route22Enabled?Route22RulesVersion:_content.OakRatingEnabled?OakRatingRulesVersion:_content.TownMapEnabled?TownMapRulesVersion:_content.RepelEnabled?RepelRulesVersion:!_content.FieldPickups.IsEmpty?FieldPickupRulesVersion:_content.PokemonStorageEnabled?PokemonStorageRulesVersion:_content.EarlyPartyEnabled?EarlyPartyRulesVersion:_content.EarlyStarterEnabled?EarlyStarterRulesVersion:_content.EarlyShop is not null?EarlyShopRulesVersion:_content.PewterEnabled?PewterRules:_content.ForestTrainersEnabled?ForestTrainerRules:_content.ForestEnabled?ForestRules:_content.PartyTrainingEnabled?PartyTrainingRules:_content.OldManTutorialEnabled?TutorialRules:_content.ViridianCenterEnabled?CenterRules:_content.CaptureEnabled?CaptureRules:_content.QuestItems is not null?ParcelRules:_content.ConnectedFieldMaps is null?Rules:RegionRules;
+    public string RulesVersion=>_binding.RulesVersion;
+    public bool IsCurrentGame=>_binding.IsCurrent;
+    private readonly CampaignCatalogBinding _binding;
     private readonly ICampaignCatalog _content;
     private readonly CommandSession<CampaignState,CampaignCommand> _commands;
     public CampaignState State=>_commands.State;
@@ -225,70 +227,13 @@ public sealed partial class CampaignSession
             return text;
         }
     }
+    // Temporary diagnostic alias. Normal gameplay must enter through CreateCurrent.
+    // Remaining callers and the removal condition are listed in docs/current-game-composition.md.
     public CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options=null)
+        : this(content,options,BindDiagnosticCatalog(content)) { }
+    private CampaignSession(ICampaignCatalog content,CampaignNewGameOptions? options,CampaignCatalogBinding binding)
     {
-        _content=content;options??=new();
-        ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
-        if(content.CinnabarEnabled)
-        {
-            if(!content.SaffronGymEnabled||content.CinnabarOwnership is null||content.CinnabarOpponents is null||content.CinnabarTrainerParties is null||
-                !ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned))throw new InvalidDataException("cinnabar_source_profile_missing");
-            CinnabarTrainerPartyFactory.ValidateCatalog(content.CinnabarTrainerParties);
-        }
-        if(content.SaffronGymEnabled)
-        {
-            if(!content.SilphEnabled||content.SaffronGymOpponents is null||content.SaffronGymTrainerParties is null||!ReferenceEquals(content.SilphOwnership,content.SaffronGymOpponents.Owned))throw new InvalidDataException("saffron_gym_source_profile_missing");
-            SaffronGymTrainerPartyFactory.ValidateCatalog(content.SaffronGymTrainerParties);
-        }
-        if(content.SilphEnabled&&(!content.SurfEnabled||content.SilphOwnership is null||content.SilphOpponents is null||content.SilphTrainerParties is null))throw new InvalidDataException("silph_requires_authenticated_successor");
-        if(content.PresetDoublesEnabled&&(!content.FuchsiaGymEnabled||content.PresetDoublePokemon is null||content.PresetDoubleItems is null||content.PresetDoubleMechanics is null||
-            SourceTwinsTrainerEncounter.ValidateDefinition(content.Route8Twins) is not null))throw new InvalidDataException("preset_double_requires_authenticated_successor");
-        if(content.FuchsiaGymEnabled)
-        {
-            if(!content.FuchsiaRouteEnabled||content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
-                throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
-            FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
-            if(content.SafariEnabled)
-            {
-                if(content.CelioEnabled?!CelioMachineCatalog.IsAuthenticated(content.PewterMachines):content.FiveIslandEnabled?!FiveIslandMachineCatalog.IsAuthenticated(content.PewterMachines):content.SixIslandEnabled?!SixIslandMachineCatalog.IsAuthenticated(content.PewterMachines):content.FourIslandEnabled?!FourIslandMachineCatalog.IsAuthenticated(content.PewterMachines):content.SeviiRubyEnabled?!SeviiRubyMachineCatalog.IsAuthenticated(content.PewterMachines):content.VictoryRoadEnabled?!VictoryRoadMachineCatalog.IsAuthenticated(content.PewterMachines):content.ViridianGymEnabled?!ViridianGymMachineCatalog.IsAuthenticated(content.PewterMachines):content.CinnabarEnabled?!CinnabarMachineCatalog.IsAuthenticated(content.PewterMachines):content.SaffronGymEnabled?!SaffronGymMachineCatalog.IsAuthenticated(content.PewterMachines):content.SilphEnabled?!SilphMachineCatalog.IsAuthenticated(content.PewterMachines):content.SurfEnabled?!SurfMachineCatalog.IsAuthenticated(content.PewterMachines):!SafariMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("safari_machine_proof_missing");
-                if(content.FiveIslandEnabled){if(FiveIslandShopCatalog.For(content.EarlyShop) is null)throw new InvalidDataException("five_island_items_missing");}
-                else if(content.SixIslandEnabled){if(SixIslandShopCatalog.For(content.EarlyShop) is null)throw new InvalidDataException("six_island_items_missing");}
-                else if(content.FourIslandEnabled){if(FourIslandShopCatalog.For(content.EarlyShop) is null)throw new InvalidDataException("four_island_items_missing");}
-                else if(content.SeviiRubyEnabled){if(SeviiRubyShopCatalog.For(content.EarlyShop) is null)throw new InvalidDataException("sevii_ruby_items_missing");}
-                else if(content.VictoryRoadEnabled)VictoryRoadShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("victory_road_items_missing"));
-                else if(content.FirstSeviiEnabled)FirstSeviiShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("first_sevii_items_missing"));
-                else if(content.CinnabarEnabled)CinnabarShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("cinnabar_items_missing"));
-                else if(content.SaffronGymEnabled)SaffronGymShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("saffron_gym_items_missing"));
-                else if(content.SilphEnabled)SilphShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("silph_items_missing"));
-                else SafariShopCatalog.ValidateCatalog(content.EarlyShop??throw new InvalidDataException("safari_items_missing"));
-            }
-            else
-            {
-                FuchsiaGymMachineRules.ValidateCatalog(content.PewterMachines??throw new InvalidDataException("fuchsia_gym_machines_missing"));
-                FuchsiaGymItemRules.ValidateShop(content.EarlyShop??throw new InvalidDataException("fuchsia_gym_items_missing"));
-            }
-        }
-        if(content.SnorlaxEnabled&&!content.PokemonTowerEnabled)throw new InvalidDataException("snorlax_requires_tower_profile");
-        if(content.PokemonTowerEnabled&&!content.RocketHideoutEnabled)throw new InvalidDataException("tower_requires_rocket_profile");
-        if(content.RocketHideoutEnabled&&!content.CeladonGymEnabled)throw new InvalidDataException("rocket_hideout_requires_gym_profile");
-        if(content.CeladonGymEnabled&&!content.CeladonApproachEnabled)throw new InvalidDataException("celadon_gym_requires_approach_profile");
-        if(content.CeladonApproachEnabled&&!content.RockTunnelEnabled)throw new InvalidDataException("celadon_approach_requires_rocktunnel_profile");
-        if(content.RockTunnelEnabled&&!content.Route11Enabled)throw new InvalidDataException("rocktunnel_requires_route11_profile");
-        if(content.Route11Enabled&&!content.CityServicesEnabled)throw new InvalidDataException("route11_requires_city_services_profile");
-        if(content.CityServicesEnabled&&!content.VermilionGymEnabled)throw new InvalidDataException("city_services_requires_vermilion_gym_profile");
-        if(content.VermilionGymEnabled&&!content.SsAnneEnabled)throw new InvalidDataException("vermilion_gym_requires_ssanne_profile");
-        if(content.SsAnneEnabled&&!content.VermilionEnabled)throw new InvalidDataException("ssanne_requires_vermilion_profile");
-        if(content.VermilionEnabled&&!content.BillEnabled)throw new InvalidDataException("vermilion_requires_bill_profile");
-        if(content.BillEnabled&&!content.CeruleanEnabled)throw new InvalidDataException("bill_requires_cerulean_profile");
-        if(content.CeruleanEnabled&&!content.MtMoonEnabled)throw new InvalidDataException("cerulean_requires_mtmoon_profile");
-        if(content.MtMoonEnabled&&!content.MagikarpEnabled)throw new InvalidDataException("mtmoon_requires_magikarp_profile");
-        if(content.MagikarpEnabled&&!content.Route3Enabled)throw new InvalidDataException("magikarp_requires_route3_profile");
-        if(content.Route3Enabled&&!content.Route22Enabled)throw new InvalidDataException("route3_requires_route22_profile");
-        if(content.Route22Enabled&&!content.OakRatingEnabled)throw new InvalidDataException("route22_requires_oak_profile");
-        if(content.OakRatingEnabled&&!content.TownMapEnabled)throw new InvalidDataException("oak_rating_requires_town_map_profile");
-        if(content.TownMapEnabled&&(!content.RepelEnabled||content.QuestItems?.Profile!=QuestItemRules.TownMapProfile))throw new InvalidDataException("town_map_requires_repel_profile");
-        if(content.RepelEnabled&&(!content.PokemonStorageEnabled||content.FieldPickups.Length!=(content.FiveIslandEnabled?235:content.SixIslandEnabled?227:content.FourIslandEnabled?218:content.SeviiRubyEnabled?210:content.VictoryRoadEnabled?202:content.FirstSeviiEnabled?184:content.CinnabarEnabled?162:content.SilphEnabled?146:content.SafariEnabled?117:content.PokemonTowerEnabled?102:content.RocketHideoutEnabled?93:content.CeladonApproachEnabled?75:content.RockTunnelEnabled?62:content.Route11Enabled?47:content.SsAnneEnabled?41:content.BillEnabled?29:content.MtMoonEnabled?27:8)||content.EarlyShop is null))throw new InvalidDataException("repel_requires_field_pickup_profile");
-        if(content.PokemonStorageEnabled&&!content.EarlyPartyEnabled)throw new InvalidDataException("storage_requires_early_party_profile");
+        _content=content;_binding=binding;options??=new();
         if(!ValidTrainerName(options.PlayerName)||!ValidTrainerName(options.RivalName)||options.PlayerGender is <0 or >1)throw new ArgumentException("Invalid explicit new-game identity.");
         var id=content.MapFromSourceSymbol("MAP_PALLET_TOWN_PLAYERS_HOUSE_2F");var map=content.Maps[id];var tile=map.GetTile(6,6)??throw new InvalidDataException("Initial player room coordinate missing.");
         var initial=new CampaignState(new(RuleVersions.GridWorldV0,0,0,new(id,6,6,tile.Elevation,Direction.South),new(1)),StoryState.Empty with{Fame=ImmutableSortedDictionary<int,FameEntry>.Empty.Add(0,new(2,0))},ImmutableSortedDictionary<string,CampaignActor>.Empty,[],null,null,null,[],0,"HEAL_LOCATION_PALLET_TOWN","NPC_TEXT_COLOR_NEUTRAL","MUS_PALLET","RED","BLUE",3000,"MUS_DUMMY",[],true);
@@ -303,12 +248,17 @@ public sealed partial class CampaignSession
         initial=Pump(initial);
         _commands=new(initial,RulesVersion,content.ContentVersion);
     }
-    private CampaignSession(ICampaignCatalog content,CampaignState state,long revision)
+    private CampaignSession(ICampaignCatalog content,CampaignState state,long revision,CampaignCatalogBinding binding)
     {
-        _content=content;ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);var error=ValidatePlayerSave(state);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
+        _content=content;_binding=binding;var error=ValidatePlayerSave(state);if(error is not null)throw new InvalidDataException("campaign_restore_invalid: "+error);
         _commands=new(state,RulesVersion,content.ContentVersion,revision);
     }
-    public static CampaignSession Restore(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision);
+    // Temporary diagnostic alias, retained for archived fixtures and offline upgrades.
+    public static CampaignSession Restore(ICampaignCatalog content,CampaignState state,long revision)=>RestoreDiagnostic(content,state,revision);
+    public static CampaignSession CreateDiagnostic(ICampaignCatalog content,CampaignNewGameOptions? options=null)=>new(content,options,BindDiagnosticCatalog(content));
+    public static CampaignSession RestoreDiagnostic(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision,BindDiagnosticCatalog(content));
+    public static CampaignSession CreateCurrent(ICampaignCatalog content,CampaignNewGameOptions? options=null)=>new(content,options,BindCurrentCatalog(content));
+    public static CampaignSession RestoreCurrent(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision,BindCurrentCatalog(content));
     public CommandOutcome<CampaignState> Execute(string id,long revision,CampaignCommand command)=>
         _commands.Execute(new(id,revision,RulesVersion,_content.ContentVersion,command),Decide);
     public string? ValidatePlayerSave(CampaignState s)

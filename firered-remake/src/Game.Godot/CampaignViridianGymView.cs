@@ -3,8 +3,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool ViridianGymProfileRequested => LeagueRivalProfileRequested || OS.GetEnvironment("FIRERED_VIRIDIAN_GYM") == "1" ||
-        OS.GetCmdlineUserArgs().Contains("--story-viridian-gym");
     private ViridianGymPresentationData? _viridianGymPresentation;
     private bool IsViridianGymLeader(string id) => _catalog.ViridianGymEnabled && id == "pret:TRAINER_LEADER_GIOVANNI";
     private string SourceLeaderIntroMusic(string id) => IsViridianGymLeader(id) ? "MUS_ENCOUNTER_ROCKET" : "MUS_ENCOUNTER_GYM_LEADER";

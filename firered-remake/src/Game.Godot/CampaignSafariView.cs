@@ -8,8 +8,6 @@ using Godot;
 /// The session owns balls, turns, capture identity, delivery and the field return.</summary>
 public partial class CampaignView
 {
-    private static bool SafariProfileRequested => SurfProfileRequested || OS.GetEnvironment("FIRERED_SAFARI") == "1" ||
-        OS.GetCmdlineUserArgs().Contains("--story-safari");
     private string? _safariPresentationKey, _safariBattleId, _safariNotice;
     private int _safariCursor, _safariTextPage;
     private double _safariElapsed;

@@ -6,7 +6,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool SurfProfileRequested => OS.GetEnvironment("FIRERED_SURF") == "1" || OS.GetCmdlineUserArgs().Contains("--story-surf");
     private Texture2D? _fieldSurfRed, _fieldSurfGreen, _fieldSurfBlob;
     private string? _fieldSurfWait, _fieldSurfPhase;
     private double _fieldSurfFrames, _fieldSurfBlobFrames;

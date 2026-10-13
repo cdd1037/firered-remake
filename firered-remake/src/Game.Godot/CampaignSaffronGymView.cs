@@ -7,7 +7,6 @@ using Godot;
 // Source-authenticated Saffron art and bounded presentation projection.
 public partial class CampaignView
 {
-    private static bool SaffronGymProfileRequested => CinnabarProfileRequested || OS.GetEnvironment("FIRERED_SAFFRON_GYM") == "1" || OS.GetCmdlineUserArgs().Contains("--story-saffron-gym");
     private readonly Dictionary<string, string> _saffronGymTrainerPortraits = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _saffronGymTrainerClasses = new(StringComparer.Ordinal);
     private bool IsSaffronGymLeader(string id) => _catalog.SaffronGymEnabled && id == "pret:TRAINER_LEADER_SABRINA";

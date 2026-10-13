@@ -10,8 +10,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private static bool NationalDexProfileRequested => FourIslandProfileRequested||SeviiRubyProfileRequested||OS.GetEnvironment("FIRERED_NATIONAL_DEX")=="1"||OS.GetCmdlineUserArgs().Contains("--story-national-dex");
-    private static bool PokemonLeagueProfileRequested => NationalDexProfileRequested||OS.GetEnvironment("FIRERED_POKEMON_LEAGUE")=="1"||OS.GetCmdlineUserArgs().Contains("--story-pokemon-league");
     private PokemonLeaguePresentationData? _pokemonLeagueArt;
     private readonly Dictionary<string,Texture2D> _leagueTextures=new(StringComparer.Ordinal);
     private readonly Dictionary<string,JsonElement> _leagueTrainers=new(StringComparer.Ordinal);

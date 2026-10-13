@@ -8,8 +8,7 @@ using Godot;
 /// <summary>Original beast art and machine pixels. Authoritative commands own handoff and roaming state.</summary>
 public partial class CampaignView
 {
-    private static bool CelioProfileRequested => OS.GetEnvironment("FIRERED_CELIO") == "1" || OS.GetCmdlineUserArgs().Contains("--story-celio");
-    private bool CelioPresentationProfile => _catalog.CelioEnabled && _catalog.FiveIslandEnabled && _session.RulesVersion == CampaignSession.CelioRulesVersion;
+    private bool CelioPresentationProfile => _catalog.CelioEnabled && _catalog.FiveIslandEnabled && (_session.IsCurrentGame || _session.RulesVersion == CampaignSession.CelioRulesVersion);
     private CelioPresentationData? _celioArt;
     private readonly Dictionary<int,PokedexMenuEntry> _celioDex = [];
     private readonly Dictionary<(int Tile,int Layer),Texture2D> _celioMachineLayers = [];

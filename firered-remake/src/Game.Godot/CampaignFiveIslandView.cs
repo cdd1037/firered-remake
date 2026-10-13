@@ -11,7 +11,6 @@ using Godot;
 /// <summary>Five Island authenticated source textures and display catalogs. The application remains authoritative.</summary>
 public partial class CampaignView
 {
-    private static bool FiveIslandProfileRequested => CelioProfileRequested || OS.GetEnvironment("FIRERED_FIVE_ISLAND") == "1" || OS.GetCmdlineUserArgs().Contains("--story-five-island");
     private bool FiveIslandPresentationProfile => _catalog.FiveIslandEnabled && _catalog.SixIslandEnabled && (_session.RulesVersion == CampaignSession.FiveIslandRulesVersion || CelioPresentationProfile);
     private FiveIslandPresentationData? _fiveIslandArt;
     private readonly Dictionary<int,PokedexMenuEntry> _fiveIslandDex = [];

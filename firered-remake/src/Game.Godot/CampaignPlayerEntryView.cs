@@ -118,7 +118,7 @@ public partial class CampaignView
     {
         Span<byte> random=stackalloc byte[8];System.Security.Cryptography.RandomNumberGenerator.Fill(random);
         var options=new CampaignNewGameOptions(BinaryPrimitives.ReadUInt32LittleEndian(random),_entryPlayerName,_entryRivalName,_entryGender,BinaryPrimitives.ReadUInt32LittleEndian(random[4..]));
-        var session=new CampaignSession(_catalog,options);
+        var session=CampaignSession.CreateCurrent(_catalog,options);
         _entryOverwritePending=_entryHasExistingFiles;
         EnterPlayerSession(session);
         Write("playerNewGame",new{options,hash=CanonicalJson.Hash(_session.State),existingSavePreserved=_entryOverwritePending});
@@ -129,7 +129,7 @@ public partial class CampaignView
         {
             // Re-read and validate at selection: a summary is not permission to use stale bytes.
             var saved=LoadEntryProtectedSave();
-            EnterPlayerSession(CampaignSession.Restore(_catalog,saved.State,saved.Generation));_entryOverwritePending=false;
+            EnterPlayerSession(CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation));_entryOverwritePending=false;
             Write("playerContinue",new{saved.Source,saved.Generation,hash=CanonicalJson.Hash(_session.State)});
         }
         catch(Exception error) when(error is InvalidDataException or IOException or UnauthorizedAccessException)
