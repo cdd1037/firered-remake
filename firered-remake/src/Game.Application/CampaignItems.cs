@@ -6,7 +6,11 @@ using Game.Domain.Ids;
 using Game.Domain.Items;
 namespace Game.Application;
 
-public sealed record CampaignItemMenu(string Origin,string View,string? MessageSymbol=null,string ReturnView="top",InventoryState? DisplayInventory=null);
+public sealed record CampaignItemMenu(string Origin,string View,string? MessageSymbol=null,string ReturnView="top",InventoryState? DisplayInventory=null)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public long? TargetInstanceId{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public int? TargetPartyIndex{get;init;}
+}
 public sealed partial class CampaignSession
 {
     private const string BedroomPcScript="PalletTown_PlayersHouse_2F_EventScript_PC";
@@ -34,6 +38,8 @@ public sealed partial class CampaignSession
         Decision<CampaignState> No(string error)=>new(CommandStatus.Rejected,state,error);
         Decision<CampaignState> Menu(string view)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View=view,MessageSymbol=null,DisplayInventory=null}});
         Decision<CampaignState> Message(string symbol,string returnView)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View="message",MessageSymbol=symbol,ReturnView=returnView}});
+        if(command.Kind is "field_give" or "field_take" or "held_bag_open" or "pc_give")return DecideHeldItem(state,command);
+        if(menu.Origin=="bag"&&menu.TargetInstanceId is not null&&command.Kind is not ("menu_back" or "berry_open"))return No("held_item_selection_active");
         if(command.Kind=="berry_open")
         {
             if(!_content.SsAnneEnabled||menu.Origin!="bag"||menu.View!="bag"||OpeningInventoryRules.Quantity(state.Inventory!.KeyItems??[],SsAnneItemRules.BerryPouchId)!=1)return No("berry_pouch_context_invalid");
@@ -49,6 +55,8 @@ public sealed partial class CampaignSession
         {
             if(menu.View=="message")return Menu(menu.ReturnView);
             if(menu.Origin=="bag"&&menu.View is "machines" or "berries")return Menu("bag");
+            if(menu.Origin=="bag"&&menu.TargetInstanceId is not null)return new(CommandStatus.Accepted,state with{ItemMenu=menu with{Origin="party",View="held"}});
+            if(menu.Origin=="party")return new(CommandStatus.Accepted,state with{ItemMenu=null});
             if(menu.Origin=="bag")return new(CommandStatus.Accepted,state with{ItemMenu=null});
             if(menu.View=="top")return CloseBedroomPc(state);
             return Menu(menu.View is "withdraw" or "deposit"?"storage":"top");
@@ -74,11 +82,6 @@ public sealed partial class CampaignSession
             var transfer=TransferCampaignPotion(state.Inventory!,command.Quantity,withdraw);
             if(!transfer.Succeeded)return No(transfer.Error!);
             return new(CommandStatus.Accepted,state with{Inventory=transfer.State,TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",Items.Potion.Name).SetItem("STR_VAR_2",command.Quantity.ToString(CultureInfo.InvariantCulture)),ItemMenu=menu with{View="message",MessageSymbol=withdraw?"gText_WithdrewQuantItem":"gText_DepositedStrVar2StrVar1s",ReturnView=menu.View,DisplayInventory=state.Inventory}});
-        }
-        if(command.Kind=="pc_give")
-        {
-            if(menu.Origin!="pc"||menu.View!="withdraw"||OpeningInventoryRules.Quantity(state.Inventory!.PcItems,OpeningInventoryRules.PotionId)==0)return No("pc_give_context_invalid");
-            return state.Party.IsEmpty?Message("gText_ThereIsNoPokemon","withdraw"):No("held_item_transfer_not_implemented");
         }
         if(command.Kind=="field_rare_candy")return UseFieldRareCandy(state,command);
         if(command.Kind=="field_escape_rope")return UseFieldEscapeRope(state,command);

@@ -14,6 +14,8 @@ public partial class CampaignView
     {
         var menu=_session.State.ItemMenu;var key=menu is null?null:$"{menu.Origin}:{menu.View}";
         if(key!=_itemMenuKey){
+            if(menu is null && _itemMenuKey=="party:held")_fieldMenuMode="party";
+            _heldGiveItem=null;_heldExchange=false;_heldChoice=0;
             // A Bag result overlays the same pocket and selected item. Keep that
             // presentation identity through its acknowledgement back to the Bag.
             bool sameBag = menu is { Origin:"bag", View:"bag" } or { Origin:"bag", View:"message", ReturnView:"bag" }
@@ -27,6 +29,7 @@ public partial class CampaignView
         if(!key.Pressed)return true;
         var menu=_session.State.ItemMenu!;
         if(_itemNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace)_itemNotice=null;return true;}
+        if(HeldItemInput(key))return true;
         if(_fieldMedicineTargetOpen)return MtMoonTargetActive?MtMoonTargetInput(key):FieldMedicineTargetInput(key);
         if(menu.View=="message"){if(key.Keycode is Key.Enter or Key.Backspace)Apply(new("menu_ack"));return true;}
         if(_itemQuantityOpen)
@@ -40,15 +43,15 @@ public partial class CampaignView
         }
         if(_itemPopup)
         {
-            int count=menu.View=="withdraw"?3:2;
+            int count=ItemActionCount;
             if(key.Keycode==Key.Up)_itemAction=Math.Max(0,_itemAction-1);
             if(key.Keycode==Key.Down)_itemAction=Math.Min(count-1,_itemAction+1);
             if(key.Keycode==Key.Backspace){_itemPopup=false;return true;}
             if(key.Keycode==Key.Enter)
             {
                 if(_itemAction==count-1){_itemPopup=false;return true;}
-                if(menu.View=="withdraw"&&_itemAction==1)
-                {_itemPopup=false;Apply(new("pc_give",Text:OpeningInventoryRules.PotionId.Value));if(_session.State.ItemMenu?.View!="message")_itemNotice="Held-item transfer is not available yet.";return true;}
+                if(ItemActionLabels()[_itemAction]=="GIVE")
+                {StartGiveItem((menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item,menu.View=="withdraw");return true;}
                 if(menu.Origin=="bag"){_itemPopup=false;if(_catalog.EarlyShop is not null){var item=FieldItemStacks[_itemCursor].Item;if(TryOpenMtMoonItem(item))return true;if(_catalog.MtMoonEnabled&&item==EscapeRopeRules.Item){var revision=_session.Revision;Apply(new("field_escape_rope",Text:item.Value));if(_session.Revision==revision)_itemNotice=FieldConsumableNotice(_status);return true;}if(_catalog.RepelEnabled&&(item==EarlyRepelRules.Item||_catalog.CeladonApproachEnabled&&item==LavenderItemRules.SuperRepelId||_catalog.SaffronGymEnabled&&item==PretSaffronGymItems.MaxRepelId)){var revision=_session.Revision;Apply(new("field_repel",Text:item.Value));if(_session.Revision==revision)_itemNotice=_status;return true;}if(!CanSelectFieldMedicine(item)){_itemNotice="This item's use is not\nimplemented yet.";return true;}_fieldMedicineTarget=0;_fieldMedicineTargetOpen=true;return true;}Apply(new("field_potion"));if(_session.State.ItemMenu?.View!="message")_itemNotice=_status;return true;}
                 var stacks=menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks;
                 if(stacks[_itemCursor].Item!=OpeningInventoryRules.PotionId){_itemPopup=false;_itemNotice="PC storage for this item is\nnot implemented yet.";return true;}
@@ -81,6 +84,7 @@ public partial class CampaignView
     }
     private void DrawItemMenu()
     {
+        if(DrawHeldItemScreen())return;
         var menu=_session.State.ItemMenu!;var view=menu.View=="message"?menu.ReturnView:menu.View;
         if(view is "top" or "storage")
         {
@@ -93,8 +97,8 @@ public partial class CampaignView
         else DrawItemList(menu.DisplayInventory??_session.State.Inventory!,view,_itemCursor,menu.View=="message"?_session.VisibleItemMessage:null,_itemPopup||_itemQuantityOpen);
         if(_itemPopup)
         {
-            string[] labels=view=="withdraw"?[_itemSkin.Text("gText_Withdraw"),_itemSkin.Text("gOtherText_Give"),_itemSkin.Text("gFameCheckerText_Cancel")]:[view=="deposit"?"DEPOSIT":_itemSkin.Text("gOtherText_Use"),_itemSkin.Text("gFameCheckerText_Cancel")];
-            DrawItemActionPopup(view=="withdraw",labels,_itemAction,InventoryName((view=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item));
+            var labels=ItemActionLabels();
+            DrawItemActionPopup(labels.Length==3,labels,_itemAction,InventoryName((view=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item));
         }
         if(_itemQuantityOpen)ItemMessageBox(ItemText(view=="withdraw"?"gText_WithdrawHowMany":"gText_DepositHowManyStrVars1")+"   × "+_itemQuantity);
         if(_fieldMedicineTargetOpen){if(MtMoonTargetActive)DrawMtMoonTargets();else DrawFieldMedicineTargets();}

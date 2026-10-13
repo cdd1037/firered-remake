@@ -239,6 +239,7 @@ public partial class CampaignView
             if (_machineMode == "replacement") return PointerRows(point, direction, ref _machineCursor, 5, 12, 26, 220);
             return false;
         }
+        if (HeldItemScreen) return HeldItemMouse(point, direction);
         if (MtMoonTargetActive && _mtMoonMoveSlotOpen) return PointerRows(point, direction, ref _mtMoonMoveSlot, _session.State.Party[_fieldMedicineTarget].Pokemon.Moves.Length + 1, 12, 26, 220);
         if (_fieldMedicineTargetOpen) return PointerRows(point, direction, ref _fieldMedicineTarget, _session.State.Party.Length + 1, 8, 8, 224, 14);
         if (QuestPocketEnabled && _questPocket > 0)
@@ -252,7 +253,7 @@ public partial class CampaignView
             return PointerList(point, direction, ref _questPocketCursor, QuestPocketStacks.Length, scrolls: _catalog.SsAnneEnabled);
         }
         if (_itemQuantityOpen) return direction != 0 && MouseMessage.HasPoint(point) && MouseNavigationKey(direction);
-        if (_itemPopup) return PointerRows(point, direction, ref _itemAction, menu.View == "withdraw" ? 3 : 2, 168, menu.View == "withdraw" ? 106 : 130, 72);
+        if (_itemPopup) return PointerRows(point, direction, ref _itemAction, ItemActionCount, 168, ItemActionY, 72);
         if (menu.View is "top" or "storage") return PointerRows(point, direction, ref _itemCursor, 3, 8, 8, menu.View == "top" ? 104 : 112);
         return PointerList(point, direction, ref _itemCursor,
             (menu.View == "withdraw" ? _session.State.Inventory!.PcItems : FieldItemStacks).Length, menu.View == "withdraw");
@@ -354,6 +355,7 @@ public partial class CampaignView
     {
         var menu = _session.State.ItemMenu!;
         if (_itemNotice is not null) return MouseConfirm(point, MouseMessage);
+        if (HeldItemScreen) return HeldItemMouse(point);
         if (MachineActive) return MouseMachines(point);
         if (menu.View == "message") return MouseConfirm(point, MouseMessage);
         if (MtMoonTargetActive && _mtMoonMoveSlotOpen) return MouseSelect(point, ref _mtMoonMoveSlot, _session.State.Party[_fieldMedicineTarget].Pokemon.Moves.Length + 1, 12, 26, 220);
@@ -369,7 +371,7 @@ public partial class CampaignView
             return MouseBagArrows(point, _questPocket) || MouseList(point, ref _questPocketCursor, QuestPocketStacks.Length, scrolls: _catalog.SsAnneEnabled);
         }
         if (_itemQuantityOpen) return MouseConfirm(point, MouseMessage);
-        if (_itemPopup) return MouseSelect(point, ref _itemAction, menu.View == "withdraw" ? 3 : 2, 168, menu.View == "withdraw" ? 106 : 130, 72);
+        if (_itemPopup) return MouseSelect(point, ref _itemAction, ItemActionCount, 168, ItemActionY, 72);
         if (menu.View is "top" or "storage") return MouseSelect(point, ref _itemCursor, 3, 8, 8, menu.View == "top" ? 104 : 112);
         if (QuestPocketEnabled && MouseBagArrows(point, 0)) return true;
         return MouseList(point, ref _itemCursor, (menu.View == "withdraw" ? _session.State.Inventory!.PcItems : FieldItemStacks).Length, menu.View == "withdraw");

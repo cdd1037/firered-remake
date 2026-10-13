@@ -77,10 +77,12 @@ public partial class CampaignView
 
     private string[] QuestPocketActions() => _questPocket == 1
         ? [_itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel")]
+        : _session.State.ItemMenu?.TargetInstanceId is not null ? [_itemSkin.Text("gOtherText_Give"), _itemSkin.Text("gFameCheckerText_Cancel")]
         : [_itemSkin.Text("gOtherText_Give"), _itemSkin.Text("gOtherText_Toss"), _itemSkin.Text("gFameCheckerText_Cancel")];
 
     private bool TryQuestPocketInput(InputEventKey key)
     {
+        if (HeldItemScreen)return false;
         if (!QuestPocketEnabled || key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape) return false;
         if (_questPocket == 0)
         {
@@ -115,6 +117,11 @@ public partial class CampaignView
             if (key.Keycode == Key.Enter)
             {
                 _questPocketPopup = false;
+                if (_questPocket == 1 && _questPocketAction == 0 && _session.State.ItemMenu?.TargetInstanceId is not null &&
+                    QuestPocketStacks[_questPocketCursor].Item.Value != "pret:ITEM_BERRY_POUCH")
+                { _questPocketNotice = "This item can't be held."; return true; }
+                if (_questPocket == 2 && _questPocketAction == 0)
+                { StartGiveItem(QuestPocketStacks[_questPocketCursor].Item); return true; }
                 if (_catalog.PokemonTowerEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POKE_FLUTE")
                 { Apply(new("field_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
                 if (_questPocket == 1 && _questPocketAction == 0 && TryCityServiceItem(QuestPocketStacks[_questPocketCursor].Item.Value)) return true;
@@ -159,7 +166,7 @@ public partial class CampaignView
 
     private bool DrawQuestPocket()
     {
-        if (!QuestPocketEnabled || _questPocket == 0) return false;
+        if (HeldItemScreen || !QuestPocketEnabled || _questPocket == 0) return false;
         DrawQuestPocketAsset(_questPocket == 1 ? "bag-key-items-background" : "bag-poke-balls-background");
         var title = _questPocketUi!.Texts[_questPocket == 1 ? "gText_KeyItems2" : "gText_PokeBalls2"];
         var width = _sourceWhite.Font.GetStringSize(_sourceWhite.PrepareText(title), fontSize: _sourceWhite.Size).X;

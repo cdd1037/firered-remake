@@ -316,7 +316,7 @@ public sealed partial class CampaignSession
             if(!_content.ForestEnabled&&s.Party.Any(p=>p.Status!=0))return "party_status_unsupported";
             var partyError=PokemonStateValidator.ValidatePartyCollection(_content.PokemonContent,s.Party,s.NextPokemonId);if(partyError is not null)return partyError;
             if(allOwned.Any(p=>!s.CaughtSpecies.Contains(p.Pokemon.SourceSpeciesId)))return "save_party_dex_invalid";
-            // Current campaign has implemented only local gifts, not trades or other origin/item changes.
+            // Held items are mutable ownership; the original trainer/met/capture identity remains fixed.
             if(allOwned.Any(p=>p.Pokemon.OriginalTrainerId!=s.TrainerId||p.OriginalTrainerName!=s.PlayerName||p.OriginalTrainerGender!=s.PlayerGender||p.Language!=2||p.MetGame!=4||((!_content.CaptureEnabled||p.InstanceId==1)&&(p.MetLocation!="MAPSEC_PALLET_TOWN"||p.MetLevel!=5))||(p.Ball!="ITEM_POKE_BALL"&&!(p.InstanceId!=1&&(AdditionalCaptureBallSupported(p.Ball)||p.Ball=="ITEM_SAFARI_BALL"&&_content.SafariEnabled)))||!OwnedHeldItemSupported(s,p)))return "save_party_origin_not_supported";
         }
         else if(s.NextPokemonId<1)return "save_party_serial_invalid";
@@ -427,6 +427,7 @@ public sealed partial class CampaignSession
             if(state.TownMap is not null)return DecideTownMap(state,command);
             if(state.Repel is not null)return DecideRepel(state,command);
             if(command.Kind=="options_save")return DecideOptions(state,command);
+            if(command.Kind=="party_item_open")return OpenPartyItemMenu(state,command);
             if(command.Kind=="party_swap")return DecideFieldParty(state,command);
             if(state.FieldPoison is not null)return DecideFieldPoison(state,command);
             if(state.Evolution is not null)return DecideEvolution(state,command);

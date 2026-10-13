@@ -123,7 +123,7 @@ public partial class CampaignView
             SourceText(_sourceNormal, new(12, 6), mon.Nickname);
             if (scene.Stage == CampaignMoveTutorStage.ChooseMove)
             {
-                _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 110));
+                _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
                 for (int i = 0; i < 5; i++)
                 {
                     var row = TutorMoveRow(i);
@@ -138,7 +138,7 @@ public partial class CampaignView
             for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(10, 118 + i * 16), lines[i]);
             if (TutorHasChoice)
             {
-                _battleSkin.DrawStandardFrame(this, new(176, 68, 64, 44));
+                _battleSkin.DrawStandardFrame(this, new(176, 64, 64, 48));
                 SourceText(_sourceNormal, new(198, 73), "YES"); SourceText(_sourceNormal, new(198, 89), "NO");
                 SourceText(_sourceNormal, new(184, TutorChoiceRow(_tutorCursor).Position.Y), "▶");
             }

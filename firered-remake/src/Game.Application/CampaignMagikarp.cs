@@ -23,7 +23,7 @@ public sealed partial class CampaignSession
         if(state.MagikarpGift is not {} gift)return null;
         if(gift.InstanceId<2||gift.InstanceId>=state.NextPokemonId||gift.Ivs is null)return "save_magikarp_origin_invalid";
         var mon=OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==gift.InstanceId);
-        if(mon is null||!EvolutionSpeciesMatchesOrigin(state,mon,129)||mon.Pokemon.Personality!=gift.Personality||mon.Pokemon.Ivs!=gift.Ivs||mon.MetLocation!="MAPSEC_ROUTE_4"||mon.MetLevel!=5||mon.Ball!="ITEM_POKE_BALL"||mon.HeldItem!="ITEM_NONE"||!state.CaughtSpecies.Contains(129)||!state.SeenSpecies.Contains(129)||state.Exploration?.Captured is not {} captures||captures.IsDefault||captures.Any(c=>c is null||c.InstanceId==gift.InstanceId))return "save_magikarp_instance_mismatch";
+        if(mon is null||!EvolutionSpeciesMatchesOrigin(state,mon,129)||mon.Pokemon.Personality!=gift.Personality||mon.Pokemon.Ivs!=gift.Ivs||mon.MetLocation!="MAPSEC_ROUTE_4"||mon.MetLevel!=5||mon.Ball!="ITEM_POKE_BALL"||!OwnedHeldItemSupported(state,mon)||!state.CaughtSpecies.Contains(129)||!state.SeenSpecies.Contains(129)||state.Exploration?.Captured is not {} captures||captures.IsDefault||captures.Any(c=>c is null||c.InstanceId==gift.InstanceId))return "save_magikarp_instance_mismatch";
         return null;
     }
     private bool InMagikarpScript(CampaignState state)=>state.World.Player.MapId.Value=="map.route-4-pokemon-center-1f"&&
