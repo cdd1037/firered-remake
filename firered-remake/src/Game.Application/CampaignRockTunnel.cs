@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
         {
             if (state.World.Player.MapId.Value != "map.route-10-pokemon-center-1f" || state.LastTalked is null ||
                 !state.Actors.TryGetValue(state.LastTalked, out var actor) || actor.ScriptId != EverstoneAideEntry ||
-                !state.Script.Locked || state.Script.QuestLogState != 0 || OakLaterProgress(state))
+                !state.Script.Locked || state.Script.QuestLogState != 0 || OakLaterProgress(state) && !_content.NationalDexEnabled)
                 throw new InvalidDataException("rocktunnel_aide_context");
         }
         CampaignState Result(CampaignState basis, int value) => basis with

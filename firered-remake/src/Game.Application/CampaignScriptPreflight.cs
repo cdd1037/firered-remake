@@ -11,6 +11,8 @@ public sealed partial class CampaignSession
     {
         if(_content.ViridianGymEnabled&&!_content.LeagueRivalEnabled&&program.StartsWith("Route22_EventScript_LateRival",StringComparison.Ordinal)&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_ROUTE22")==3)
             throw new InvalidDataException("route22_league_rival_not_yet_available");
+        if(_content.NationalDexEnabled&&NationalDexEnabledIn(state)&&program=="OneIsland_PokemonCenter_1F_EventScript_Celio")
+            throw new InvalidDataException("sevii_ruby_campaign_not_yet_available");
         if(_content.DeferredRegionalServiceReason(state.World.Player.MapId,program) is {} unavailable)throw new InvalidDataException(unavailable);
         if(_content.ConnectedFieldMaps is not null&&!_preflightingStory&&_commands is not null)PreflightStoryEntry(state,program);
         return Advance(state,StoryRules.Start(state.Script,program,_content));

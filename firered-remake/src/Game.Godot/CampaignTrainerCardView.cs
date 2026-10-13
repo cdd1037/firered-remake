@@ -41,7 +41,7 @@ public partial class CampaignView
         if(s.Script.Flags.GetValueOrDefault(card.Rules.PokedexVisibleFlag))
         {
             var numbers=s.CaughtSpecies.Select(id=>_pokedexMenu!.Entries[id].NationalNumber);
-            int count=PretTrainerCard.CountCaught(numbers,nationalEnabled:false);
+            int count=PretTrainerCard.CountCaught(numbers,nationalEnabled:_session.NationalPokedexEnabled);
             Text(layout.PokedexLabel,card.Texts.Pokedex);Text(card.CaughtValuePosition(count),count.ToString());
         }
         // No elapsed-play-time counter is persisted yet. Do not fabricate time from step count,

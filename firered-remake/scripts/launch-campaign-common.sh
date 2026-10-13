@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sourced by the seven same-shape late-campaign launchers.
+# Sourced by the same-shape late-campaign launchers.
 prepare_campaign_launch() {
   source "$(dirname "$0")/env.sh"
   bash "$(dirname "$0")/ensure-godot-imports.sh"
@@ -17,6 +17,7 @@ launch_campaign() {
   prepare_campaign_launch "${@:2}"
   # Fall through in predecessor order. Do not clear inherited later flags.
   case "$1" in
+    national-dex) export FIRERED_NATIONAL_DEX=1 ;&
     pokemon-league) export FIRERED_POKEMON_LEAGUE=1 ;&
     victory-road) export FIRERED_VICTORY_ROAD=1 ;&
     league-rival) export FIRERED_LEAGUE_RIVAL=1 ;&

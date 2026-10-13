@@ -1,6 +1,8 @@
 # First-clear refactor and stop boundary
 
-The 2026-10-12 instruction is to finish the first main story, then perform a bounded project-level refactor and simplification, synchronize source and the complete Drive package, clean reproducible temporary material, and pause for further instructions. It does not authorize beginning postgame content. This is a development stopping condition, not a new gameplay restriction on a valid completed save.
+Historical milestone completed at `8940b9b`: final source synchronization, stage10 full backup and bounded cleanup finished, followed by the requested pause. The user's 2026-10-12 23:42 UTC instruction to continue has now resumed postgame development; [National Dex](national-dex-campaign.md) is the next bounded node. The original milestone scope and measurements below remain historical records.
+
+The earlier 2026-10-12 instruction was to finish the first main story, then perform a bounded project-level refactor and simplification, synchronize source and the complete Drive package, clean reproducible temporary material, and pause for further instructions. It did not itself authorize postgame development; the later explicit continue instruction is recorded above. The pause was a development stopping condition, not a gameplay restriction on a completed save.
 
 ## First-story exit reached
 

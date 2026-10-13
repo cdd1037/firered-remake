@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
         {
             if (state.World.Player.MapId.Value != "map.route-2-east-building" || state.LastTalked is null ||
                 !state.Actors.TryGetValue(state.LastTalked, out var actor) || actor.ScriptId != FlashAideEntry ||
-                !state.Script.Locked || state.Script.QuestLogState != 0 || OakLaterProgress(state))
+                !state.Script.Locked || state.Script.QuestLogState != 0 || OakLaterProgress(state) && !_content.NationalDexEnabled)
                 throw new InvalidDataException("route11_aide_context");
         }
         CampaignState Result(CampaignState basis, int value) => basis with

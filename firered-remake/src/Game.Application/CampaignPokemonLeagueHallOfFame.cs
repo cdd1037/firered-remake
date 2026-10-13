@@ -92,7 +92,8 @@ public sealed partial class CampaignSession
     }
     private bool PokemonLeagueCompletedContinue(CampaignState state)=>_content.PokemonLeagueEnabled&&state.HallOfFame is not null&&
         state.PokemonLeagueCompletion is null&&
-        state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX")&&state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX")==0;
+        state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")&&(_content.NationalDexEnabled||
+            !state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX")&&state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX")==0);
     private bool TryDecidePokemonLeague(CampaignState state,CampaignCommand command,out Decision<CampaignState> decision)
     {
         decision=new(CommandStatus.Rejected,state,"pokemon_league_command_not_available");
@@ -145,8 +146,8 @@ public sealed partial class CampaignSession
             return state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")||OwnedPokemon(state).Any(p=>p.ChampionRibbon)||
                 state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")>0?"save_pokemon_league_hof_missing":null;
         if(!PokemonLeagueCompletedContinue(state)||archive.Teams.IsDefault||archive.Teams.Length!=1||archive.FirstHallOfFamePlayTime is not null||
-            !archive.FanClubUpdateDeferred||state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||
-            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_OAK")!=2||state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POSTGAME_GOSSIPERS")||
+            !archive.FanClubUpdateDeferred||!_content.NationalDexEnabled&&(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||
+            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_OAK")!=2)||state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POSTGAME_GOSSIPERS")||
             new[]{"FLAG_LUGIA_FLEW_AWAY","FLAG_HO_OH_FLEW_AWAY","FLAG_DEOXYS_FLEW_AWAY"}.Any(f=>state.Script.Flags.GetValueOrDefault(f))||
             state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")!=1||!state.Script.Flags.GetValueOrDefault("FLAG_SYS_RIBBON_GET")||
             state.GameStats.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")!=1)return "save_pokemon_league_hof_state";

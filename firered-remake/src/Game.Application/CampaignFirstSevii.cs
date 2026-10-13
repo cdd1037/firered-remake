@@ -87,7 +87,7 @@ public sealed partial class CampaignSession
             if(ferry&&a[1]=="IsPlayerLeftOfVermilionSailor")
             {next=Result(a[0],state.World.Player.MapId.Value=="map.vermilion-city"&&state.World.Player.X<24?1:0);return true;}
             if(own&&a[1]=="IsNationalPokedexEnabled")
-            {next=Result(a[0],state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX")?1:0);return true;}
+            {next=Result(a[0],NationalDexEnabledIn(state)?1:0);return true;}
         }
         if(effect.Opcode=="special"&&a.Length==1)
         {

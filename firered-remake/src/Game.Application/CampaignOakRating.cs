@@ -48,8 +48,8 @@ public sealed partial class CampaignSession
     private void PreflightOakInteraction(CampaignState state, CampaignActor actor)
     {
         if (!_content.OakRatingEnabled || actor.ScriptId != OakLabEntry) return;
-        if (OakLaterProgress(state) || state.Script.Flags.GetValueOrDefault("FLAG_TEMP_2") ||
-            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") > 6 ||
+        if (!_content.NationalDexEnabled && OakLaterProgress(state) || state.Script.Flags.GetValueOrDefault("FLAG_TEMP_2") ||
+            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") > (_content.NationalDexEnabled ? 9 : 6) ||
             (!_content.BillEnabled&&state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CERULEAN_CITY_RIVAL") != 0))
             throw new InvalidDataException("oak_rating_later_progress_unsupported");
     }
@@ -58,12 +58,13 @@ public sealed partial class CampaignSession
     {
         if (!_content.OakRatingEnabled || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))
             throw new InvalidDataException("oak_rating_pokedex_required");
-        if (OakLaterProgress(state)) throw new InvalidDataException("oak_rating_later_progress_unsupported");
+        if (!_content.NationalDexEnabled && OakLaterProgress(state)) throw new InvalidDataException("oak_rating_later_progress_unsupported");
         if (state.Script.QuestLogState != 0) throw new InvalidDataException("oak_rating_quest_log_unsupported");
         bool pc = state.Script.Flags.GetValueOrDefault(OakPcFlag);
         if (pc ? !state.PcPoweredOn || !IsSupportedHealingCenter(state.World.Player.MapId) :
             state.World.Player.MapId.Value != "map.professor-oaks-lab" || state.LastTalked != "LOCALID_OAKS_LAB_PROF_OAK" ||
-            state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") != 6)
+            (state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") != 6 &&
+             !(_content.NationalDexEnabled && state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB") is 7 or 8 or 9)))
             throw new InvalidDataException("oak_rating_context_invalid");
         return _content.EvaluateOakRating(state.SeenSpecies, state.CaughtSpecies);
     }
@@ -108,11 +109,21 @@ public sealed partial class CampaignSession
                     throw new InvalidDataException("oak_rating_button_context_invalid");
                 return true;
             case "specialvar":
-                if (effect.Args[0] != "VAR_RESULT" || effect.Args[1] != "GetPokedexCount" ||
-                    (!countSource && effect.Source.Symbol != OakRatingEntry) || state.Script.Variables.GetValueOrDefault("VAR_0x8004") != 0)
+                if (effect.Args[0] != "VAR_RESULT" || (!countSource && effect.Source.Symbol != OakRatingEntry))
                     throw new InvalidDataException("oak_rating_national_or_special_unsupported");
-                next = Result(0);
-                next = next with { Script = next.Script with { Variables = next.Script.Variables.SetItem("VAR_0x8005", projection.Seen).SetItem("VAR_0x8006", projection.Caught) } };
+                if (effect.Args[1] == "HasAllMons" && _content.NationalDexEnabled && NationalDexEnabledIn(state))
+                {
+                    next = Result(_content.EvaluateNationalDex(state.SeenSpecies, state.CaughtSpecies).Complete ? 1 : 0);
+                    return true;
+                }
+                int selector = state.Script.Variables.GetValueOrDefault("VAR_0x8004");
+                if (effect.Args[1] != "GetPokedexCount" || selector is < 0 or > 1 ||
+                    selector == 1 && (!_content.NationalDexEnabled || !NationalDexEnabledIn(state)))
+                    throw new InvalidDataException("oak_rating_national_or_special_unsupported");
+                var national = selector == 1 ? _content.EvaluateNationalDex(state.SeenSpecies, state.CaughtSpecies) : null;
+                next = Result(NationalDexEnabledIn(state) ? 1 : 0);
+                next = next with { Script = next.Script with { Variables = next.Script.Variables
+                    .SetItem("VAR_0x8005", national?.Seen ?? projection.Seen).SetItem("VAR_0x8006", national?.Caught ?? projection.Caught) } };
                 return true;
             case "special":
                 switch (effect.Args[0])

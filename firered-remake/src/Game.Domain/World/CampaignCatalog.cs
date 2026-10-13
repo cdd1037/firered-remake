@@ -25,6 +25,7 @@ public sealed record FieldMapDefinition(MapId Id,string SourceMapSymbol,Immutabl
 }
 public sealed record CampaignBattleContent(TrainerCatalog Trainers,ImmutableSortedDictionary<string,string> MoveNames);
 public sealed record CampaignOakRatingProjection(int Seen,int Caught,string RatingTextSymbol,bool KantoComplete);
+public sealed record CampaignNationalDexProjection(int Seen,int Caught,bool Complete);
 public sealed record CampaignMapMetatileCell(int X,int Y,int SourceMetatileId,int Collision,int Elevation,
     uint RawAttributes,string AtlasPath,int AtlasX,int AtlasY);
 public sealed record CampaignMapMetatilePatch(string Label,MapId MapId,ImmutableArray<CampaignMapMetatileCell> Cells);
@@ -81,6 +82,8 @@ public interface ICampaignCatalog:IStoryCatalog
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
+    bool NationalDexEnabled=>false;
+    CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("national_dex_not_enabled");
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
     PokemonLeagueOpponentPokemonCatalog? PokemonLeagueOpponents=>null;
     PokemonLeagueMartStock? PokemonLeagueMartStock=>null;

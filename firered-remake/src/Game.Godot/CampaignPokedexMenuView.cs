@@ -1,3 +1,4 @@
+using Game.Application;
 using Game.Content;
 using Godot;
 
@@ -8,9 +9,15 @@ public partial class CampaignView
     private PokedexMenuList? _pokedexList;
     private PokedexMenuCursor _pokedexCursor;
     private readonly Dictionary<string,Texture2D> _pokedexTextures=new(StringComparer.Ordinal);
-    // The current campaign has not implemented the source National magic byte. A flag alone
-    // cannot unlock it; the read-only source catalog's full 386 entries confer no acquisition.
-    private PokedexMenuAccess PokedexAccess=>new(_session.State.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"));
+    // Read the actual source grant. Loading the successor profile or importing metadata
+    // never grants National mode or adds seen/caught species.
+    private static PokedexMenuAccess PokedexAccessFor(CampaignState state)=>new(
+        state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"),
+        state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX"),
+        state.NationalDexMagic,state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX"));
+    private PokedexMenuAccess PokedexAccess=>PokedexAccessFor(_session.State);
+    private int PokedexCaughtCount(CampaignState state)=>PretTrainerCard.CountCaught(
+        state.CaughtSpecies.Select(id=>_pokedexMenu?.Entries[id].NationalNumber??id),PokedexAccessFor(state).NationalEnabled);
     private void LoadPokedexMenuPresentation()
     {
         if(_catalog.PokemonStorageEnabled)_pokedexMenu=_catalog.PokedexMenu?.ForProjectRoot(_root)??PretPokedexMenu.Load(_root);
@@ -19,7 +26,7 @@ public partial class CampaignView
     {
         if(_pokedexMenu is null||!_pokedexMenu.CanOpen(PokedexAccess,_session.State.SeenSpecies))
         {_fieldMenuNotice="The POKéDEX cannot be opened\nhere.";return;}
-        _pokedexList=_pokedexMenu.BuildNumericalList(_session.State.SeenSpecies,_session.State.CaughtSpecies,PokedexAccess);
+        _pokedexList=_pokedexMenu.BuildNumericalList(_session.State.SeenSpecies,_session.State.CaughtSpecies,PokedexAccess,nationalOrder:_session.NationalPokedexEnabled);
         _pokedexCursor=PretPokedexMenu.CenterDetailCursor(_pokedexList.Rows.Length,Math.Clamp(_pokedexCursor.SelectedIndex,0,_pokedexList.Rows.Length-1));
         _fieldMenuMode="pokedex";
     }
@@ -76,7 +83,7 @@ public partial class CampaignView
         if(_fieldMenuMode=="pokedex-entry"){DrawPokedexEntry();return;}
         var list=_pokedexList!;var layout=_pokedexMenu!.ListLayout;
         _battleSkin.DrawStandardFrame(this,new(0,0,240,160));
-        SourceText(_sourceSmall,new(12,2),$"KANTO  Seen:{list.SeenCount}  Owned:{list.CaughtCount}");
+        SourceText(_sourceSmall,new(12,2),$"{(list.NationalOrder?"NATIONAL":"KANTO")}  Seen:{list.SeenCount}  Owned:{list.CaughtCount}");
         for(int i=0;i<Math.Min(layout.VisibleRows,list.Rows.Length-_pokedexCursor.ScrollOffset);i++)
         {
             var row=list.Rows[_pokedexCursor.ScrollOffset+i];int y=layout.Y+layout.TopY+i*layout.RowHeight;

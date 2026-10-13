@@ -22,7 +22,8 @@ public sealed partial class PretCampaignCatalog
     public static PretCampaignCatalog LoadPokemonLeagueProfile(string root,bool useCompactMapData=true,
         string? pokemonLeagueContentRoot=null,string? pokemonLeagueRulesRoot=null,
         string? victoryRoadContentRoot=null,string? victoryRoadRulesRoot=null,string? leagueRivalRulesRoot=null,string? viridianGymContentRoot=null,string? viridianGymRulesRoot=null,
-        string? firstSeviiContentRoot=null,string? firstSeviiRulesRoot=null,string? firstSeviiPresentationRoot=null)=>Load(root,
+        string? firstSeviiContentRoot=null,string? firstSeviiRulesRoot=null,string? firstSeviiPresentationRoot=null,
+        bool includeNationalDex=false,string? nationalDexSourceRoot=null)=>Load(root,
         includeStarterEvents:true,includeFirstBattle:true,includeOpeningItems:true,
         includeViridianRegion:true,includeParcelQuest:true,includeCapture:true,includeViridianCenter:true,
         includeOldManTutorial:true,includePartyTraining:true,includeForest:true,includeForestTrainers:true,
@@ -41,7 +42,8 @@ public sealed partial class PretCampaignCatalog
         viridianGymContentRoot:viridianGymContentRoot,viridianGymRulesRoot:viridianGymRulesRoot,
         includeLeagueRival:true,leagueRivalRulesRoot:leagueRivalRulesRoot,includeVictoryRoad:true,
         victoryRoadContentRoot:victoryRoadContentRoot,victoryRoadRulesRoot:victoryRoadRulesRoot,
-        includePokemonLeague:true,pokemonLeagueContentRoot:pokemonLeagueContentRoot,pokemonLeagueRulesRoot:pokemonLeagueRulesRoot);
+        includePokemonLeague:true,pokemonLeagueContentRoot:pokemonLeagueContentRoot,pokemonLeagueRulesRoot:pokemonLeagueRulesRoot,
+        includeNationalDex:includeNationalDex,nationalDexSourceRoot:nationalDexSourceRoot);
 
     private static void AppendPokemonLeagueSources(PretPokemonLeagueRegion region,List<PretSourceScriptFile> sources,
         List<string> texts,Dictionary<string,int> constants,List<string> hashes)

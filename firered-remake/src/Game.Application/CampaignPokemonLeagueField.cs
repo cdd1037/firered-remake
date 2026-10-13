@@ -142,8 +142,8 @@ public sealed partial class CampaignSession
             }
             if(a.SequenceEqual(new[]{"VAR_RESULT","IsNationalPokedexEnabled"})&&(hall||center))
             {
-                if(state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX"))throw new InvalidDataException("pokemon_league_national_dex_not_admitted");
-                next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",0)}};return true;
+                if(!_content.NationalDexEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX"))throw new InvalidDataException("pokemon_league_national_dex_not_admitted");
+                next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",NationalDexEnabledIn(state)?1:0)}};return true;
             }
             return false;
         }

@@ -2,7 +2,7 @@
 
 Goal: a complete, local single-player recreation of the English original-revision FireRed. Kanto, story, ordinary single-player side content and reachable post-game are the target. The first badge is an intermediate acceptance milestone. See [scope](docs/scope.md) and [full scope audit](docs/full-scope-audit.md).
 
-## Current recovered state — 2026-10-12
+## Current state — 2026-10-13
 
 The accepted Application route reaches all eight badges, completes the first
 Sevii rescue and return, wins the late Route22 rival battle, and traverses the
@@ -20,8 +20,8 @@ natural party remains sealed at generation 41923 after its second Lorelei win;
 it did not clear the League. See [League acceptance](docs/pokemon-league-campaign.md)
 and the [controlled route report](tests/Game.PokemonLeagueControlledRoute.Tests/evidence/REPORT.md).
 
-`bash scripts/launch-current.sh` selects `launch-pokemon-league.sh`, the current
-first-clear profile. Each profile keeps separate saves. Explicit
+`bash scripts/launch-current.sh` selects `launch-national-dex.sh`, the new
+postgame National Dex profile. Each profile keeps separate saves. Explicit
 predecessor upgrades preserve gameplay payload and generation except their
 documented initialization. The launcher checks the official Godot resource
 import before startup.
@@ -32,15 +32,17 @@ documented admission contracts. Dedicated move animation coverage is separate
 no-display environment. Passing the main route does not mean every regional
 service, optional path or presentation is complete.
 
-The user's current stopping point is first-story completion, followed by a
-bounded project refactor, normal GitHub synchronization and a complete Drive
-backup, cleanup of proven reproducible temporary files, then a pause. No new
-postgame work starts in this batch. The latest asset-complete base is stage9
-`012f7ae`; later source checkpoints and authenticated importers extend it.
-The bounded refactor is in progress; final synchronization, full backup and
-cleanup are not yet declared complete. See [the refactor boundary](docs/project-refactor-plan.md),
-[remaining scope](docs/first-clear-remaining-scope.md) and
-[implementation roadmap](docs/implementation-roadmap.md).
+The bounded first-clear refactor, private GitHub synchronization, stage10 full
+Drive backup and approved reproducible-cache cleanup completed at `8940b9b`.
+The user explicitly resumed development on 2026-10-12 at 23:42 UTC. The next
+bounded chain is National Dex → One Island Ruby → later Sevii unlocks. The
+National Dex profile has passed its source grant, 15/59-caught refusals,
+controlled 60-caught grant, strict save/Continue and Oak/PC revisit checks;
+automatic first-frame and headless view checks also passed separately.
+The latest asset-complete recovery base is stage10 `8940b9b`; authenticated
+importers reconstruct newer resources. See [National Dex](docs/national-dex-campaign.md),
+[the completed refactor](docs/project-refactor-plan.md), [remaining scope](docs/first-clear-remaining-scope.md)
+and [implementation roadmap](docs/implementation-roadmap.md).
 
 ## Earlier first-badge checkpoint
 

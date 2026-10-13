@@ -103,8 +103,8 @@ public sealed partial class CampaignSession
     {
         if(!_content.PokemonLeagueEnabled)return state.PokemonLeague is not null||state.HallOfFame is not null||state.PokemonLeagueCompletion is not null||
             OwnedPokemon(state).Any(p=>p.ChampionRibbon)||(state.ForestTrainerHistory??[]).Any(h=>h?.PokemonLeagueChallenge is not null)?"save_pokemon_league_profile_missing":null;
-        if(state.Script.Flags.GetValueOrDefault("FLAG_SYS_CAN_LINK_WITH_RS")||state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX")||
-            state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX")!=0)return "save_pokemon_league_postgame_not_admitted";
+        if(state.Script.Flags.GetValueOrDefault("FLAG_SYS_CAN_LINK_WITH_RS")||!_content.NationalDexEnabled&&(state.Script.Flags.GetValueOrDefault("FLAG_SYS_NATIONAL_DEX")||
+            state.Script.Variables.GetValueOrDefault("VAR_NATIONAL_DEX")!=0))return "save_pokemon_league_postgame_not_admitted";
         var progress=state.PokemonLeague??new(1,[]);var history=state.ForestTrainerHistory??[];
         if(progress.Resets.IsDefault||progress.ChallengeNumber<1||progress.ChallengeNumber!=progress.Resets.Length+1)return "save_pokemon_league_challenge";
         int lastCount=0;
