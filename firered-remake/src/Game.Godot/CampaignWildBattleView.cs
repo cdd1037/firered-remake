@@ -19,6 +19,7 @@ public partial class CampaignView
     private readonly Dictionary<string,Texture2D> _cityBattleScenes = [];
     private Texture2D WildBattleTerrainForMap(MapId mapId)
     {
+        if (SixIslandBattleTerrain(mapId) is {} sixIslandTerrain) return sixIslandTerrain;
         if (FourIslandBattleTerrain(mapId) is {} fourIslandTerrain) return fourIslandTerrain;
         if (_catalog.VictoryRoadEnabled && IsVictoryRoadCave(mapId))
             return _mtMoonTerrain ?? throw new InvalidDataException("Victory Road cave terrain was not loaded.");

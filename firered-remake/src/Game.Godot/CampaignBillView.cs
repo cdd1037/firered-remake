@@ -160,6 +160,7 @@ public partial class CampaignView
 
     private void DrawBillMapLayer(Texture2D original, Vector2 camera, int layer)
     {
+        original=SixIslandPaletteTexture(original,true);
         if (layer is < 0 or > 2) throw new ArgumentOutOfRangeException(nameof(layer));
         if (DrawSilphElevatorLayer(original,camera,layer)) return;
         if (DrawDepartmentElevatorLayer(original,camera,layer)) return;

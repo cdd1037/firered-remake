@@ -28,6 +28,7 @@ public sealed partial class CampaignSession
     {
         var p=state.World.Player;
         if(!_content.SafariEnabled)return null;
+        if(_content.SixIslandEnabled&&p.MapId.Value==SixIslandRuinMap)return AdjacentSixIslandBoulder(state,direction??p.Facing);
         if(_content.SeviiRubyEnabled&&SeviiRubyMap(p.MapId))return AdjacentSeviiRubyBoulder(state,direction??p.Facing);
         if(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(p.MapId))return AdjacentVictoryRoadBoulder(state,direction??p.Facing);
         if(p.MapId.Value!=FieldStrengthMap)return null;
@@ -127,7 +128,7 @@ public sealed partial class CampaignSession
         {
             // The compact interpreter projects msgbox as one wait. Strength's source
             // MSGBOX_SIGN owns Std_MsgboxSign's releaseall after its final text page.
-            if(_content.SafariEnabled&&(before.World.Player.MapId.Value==FieldStrengthMap||_content.SeviiRubyEnabled&&SeviiRubyMap(before.World.Player.MapId)||_content.VictoryRoadEnabled&&VictoryRoadFieldMap(before.World.Player.MapId))&&
+            if(_content.SafariEnabled&&(before.World.Player.MapId.Value==FieldStrengthMap||_content.SixIslandEnabled&&before.World.Player.MapId.Value==SixIslandRuinMap||_content.SeviiRubyEnabled&&SeviiRubyMap(before.World.Player.MapId)||_content.VictoryRoadEnabled&&VictoryRoadFieldMap(before.World.Player.MapId))&&
                 before.Script.Wait?.Kind==StoryWaitKind.Dialog&&before.Dialogue is {CloseOnCompletion:true} dialogue&&
                 dialogue.TextSymbol is "Text_MonUsedStrengthCanMoveBoulders" or "Text_MonMayPushBoulder" or "Text_StrengthMadeMovingBouldersPossible"&&
                 !before.Script.Stack.IsEmpty)
@@ -220,7 +221,8 @@ public sealed partial class CampaignSession
         if(state.StrengthEffect is not null)return "save_field_strength_active";
         bool active=state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthActiveFlag);
         if(!_content.SafariEnabled)return active?"save_field_strength_profile_missing":null;
-        if(active&&(state.World.Player.MapId.Value!=FieldStrengthMap&&!(_content.SeviiRubyEnabled&&SeviiRubyMap(state.World.Player.MapId))&&!(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthBadge)))return "save_field_strength_flag_invalid";
+        if(active&&(state.World.Player.MapId.Value!=FieldStrengthMap&&!(_content.SixIslandEnabled&&state.World.Player.MapId.Value==SixIslandRuinMap)&&!(_content.SeviiRubyEnabled&&SeviiRubyMap(state.World.Player.MapId))&&!(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.StrengthBadge)))return "save_field_strength_flag_invalid";
+        if(_content.SixIslandEnabled&&state.World.Player.MapId.Value==SixIslandRuinMap)return ValidateSixIslandBoulders(state);
         if(_content.SeviiRubyEnabled&&SeviiRubyMap(state.World.Player.MapId))return ValidateSeviiRubyBoulders(state);
         if(_content.VictoryRoadEnabled&&VictoryRoadFieldMap(state.World.Player.MapId))return ValidateVictoryRoadBoulders(state);
         if(state.World.Player.MapId.Value!=FieldStrengthMap)return null;

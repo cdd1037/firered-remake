@@ -114,6 +114,7 @@ public static class SourceTrainerAi
         if (VictoryRoadTrainerPartyFactory.Expected.TryGetValue(id, out var victory)) return victory.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (LeagueRivalTrainerPartyFactory.Expected.TryGetValue(id, out var league)) return league.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (ViridianGymTrainerPartyFactory.Expected.TryGetValue(id, out var viridian)) return viridian.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
+        if (SixIslandTrainerPartyFactory.Expected.TryGetValue(id, out var six)) return six.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (FourIslandTrainerPartyFactory.Expected.TryGetValue(id, out var four)) return four.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (SeviiRubyTrainerPartyFactory.Expected.TryGetValue(id, out var ruby)) return ruby.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
         if (FirstSeviiTrainerPartyFactory.Expected.TryGetValue(id, out var sevii)) return sevii.Items.Where(x => x != "ITEM_NONE").ToImmutableArray();
@@ -132,6 +133,7 @@ public static class SourceTrainerAi
         if (VictoryRoadTrainerPartyFactory.Expected.TryGetValue(id, out var victory)) return victory.AiFlags;
         if (LeagueRivalTrainerPartyFactory.Expected.TryGetValue(id, out var league)) return league.AiFlags;
         if (ViridianGymTrainerPartyFactory.Expected.TryGetValue(id, out var viridian)) return viridian.AiFlags;
+        if (SixIslandTrainerPartyFactory.Expected.TryGetValue(id, out var six)) return six.AiFlags;
         if (FourIslandTrainerPartyFactory.Expected.TryGetValue(id, out var four)) return four.AiFlags;
         if (SeviiRubyTrainerPartyFactory.Expected.TryGetValue(id, out var ruby)) return ruby.AiFlags;
         if (FirstSeviiTrainerPartyFactory.Expected.TryGetValue(id, out var sevii)) return sevii.AiFlags;

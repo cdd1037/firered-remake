@@ -60,6 +60,7 @@ public sealed partial class CampaignSession
         foreach(var h in state.ForestTrainerHistory??[])
         {
             if(h is null||h.TrainerId is null)continue;
+            if(IsSixIslandTrainer(new(h.TrainerId))){if(!SixIslandTrainerHistoryOriginMatches(h))return "save_six_island_trainer_origin";continue;}
             if(IsFourIslandTrainer(new(h.TrainerId))){if(!FourIslandTrainerHistoryOriginMatches(h))return "save_four_island_trainer_origin";continue;}
             if(IsSeviiRubyTrainer(new(h.TrainerId)))
             {if(!SeviiRubyTrainerHistoryOriginMatches(h))return "save_sevii_ruby_trainer_origin";continue;}

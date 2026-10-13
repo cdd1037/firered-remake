@@ -32,7 +32,9 @@ public static class FieldMovementRules
             if(entrance is {Blocked:false}&&(entrance.Elevation is 0 or 15||state.Player.Elevation==0||entrance.Elevation==state.Player.Elevation))
             {
                 // Non-animated doors warp after completing the actual step onto the tile.
-                warp=map.FieldWarps.FirstOrDefault(w=>w.X==frontX&&w.Y==frontY&&(w.Elevation==0||w.Elevation==entrance.Elevation));
+                // PlayerGetElevation reads previousElevation, retained across source elevations 0/15.
+                int warpElevation=entrance.Elevation is 0 or 15?state.Player.Elevation:entrance.Elevation;
+                warp=map.FieldWarps.FirstOrDefault(w=>w.X==frontX&&w.Y==frontY&&(w.Elevation==0||w.Elevation==warpElevation));
                 caveStep=warp is not null;
             }
         }

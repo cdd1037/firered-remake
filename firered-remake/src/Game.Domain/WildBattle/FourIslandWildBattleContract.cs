@@ -47,20 +47,23 @@ public static partial class WildBattleRules
     /// <summary>The field owner must first prove the source walk/Surf/cast has completed.
     /// This entry validates every origin and exact natural move set; it grants no new rod or map access.</summary>
     public static WildBattleResult StartFourIslandWild(FourIslandOwnedPokemonCatalog owned,FourIslandWildOrigin origin,
-        ImmutableArray<WildBattleCombatant> playerParty,int activeIndex,WildBattleCombatant opponent,RngState rng, WildBattleTerrain terrain)
+        ImmutableArray<WildBattleCombatant> playerParty,int activeIndex,WildBattleCombatant opponent,RngState rng, WildBattleTerrain terrain, OwnedBattlePokemonCatalog? successorOwned = null)
     {
         if (owned is null || !ReferenceEquals(FourIslandOwnedPokemonCatalog.For(owned.Catalog),owned)) return Fail(null,"four_island_wild_owned_proof");
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(owned, successorOwned))
+            return Fail(null,"source_wild_successor_owned");
+        OwnedBattlePokemonCatalog actualOwned = successorOwned ?? OwnedBattlePokemonCatalog.For(owned.Catalog)!;
         if (origin is null) return Fail(null,"four_island_wild_origin_missing");
         if (opponent?.Pokemon is not {} mon || opponent.Status!=WildBattleStatus.None || opponent.HeldItem!="ITEM_NONE" ||
             !FourIslandWildPokemonFactory.SourceInitialInstance(owned,origin,mon)) return Fail(null,"four_island_wild_source_instance");
-        if (SourceBattleAdmission.ValidateOwnedEntry(owned,playerParty,activeIndex) is {} ownedError) return Fail(null,ownedError);
+        if (SourceBattleAdmission.ValidateOwnedEntry(actualOwned,playerParty,activeIndex) is {} ownedError) return Fail(null,ownedError);
         if (SourceBattleAdmission.ValidateEntry(owned.Mechanics,BattleRulesProfile.CanonicalSourceSingles,playerParty,activeIndex,opponent) is {} sourceError)
             return Fail(null,sourceError);
         // BattleSetup_GetTerrainId reads the player destination tile, including shore fishing.
         // The authoritative field caller supplies that source-derived terrain.
         if (!Enum.IsDefined(terrain)) return Fail(null,"four_island_wild_terrain");
         return StartSourceWildCore(owned.Mechanics.Catalog,playerParty,activeIndex,opponent,rng,terrain,
-            origin.Kind==FourIslandEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,owned,fourIsland:origin);
+            origin.Kind==FourIslandEncounterKind.OldRod,null,false,BattleRulesProfile.CanonicalSourceSingles,actualOwned,fourIsland:origin);
     }
 }
 
@@ -71,10 +74,13 @@ public static partial class WildBattleRules
         MapId map, FirstSeviiEncounterKind kind, ImmutableArray<WildBattleCombatant> playerParty,
         int activeIndex, WildBattleCombatant opponent, RngState rng, WildBattleTerrain terrain,
         VictoryRoadWildOrigin? victoryRoad = null, SeviiRubyWildOrigin? seviiRuby = null,
-        bool lostelleHypno = false, PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false)
+        bool lostelleHypno = false, PokemonTowerBattleKind? towerKind = null, bool scriptedSnorlax = false, OwnedBattlePokemonCatalog? successorOwned = null)
     {
         if (owned is null || !ReferenceEquals(FourIslandOwnedPokemonCatalog.For(owned.Catalog),owned))
             return Fail(null,"four_island_inherited_owned_proof");
+        if (successorOwned is not null && !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(owned, successorOwned))
+            return Fail(null,"source_wild_successor_owned");
+        OwnedBattlePokemonCatalog actualOwned = successorOwned ?? OwnedBattlePokemonCatalog.For(owned.Catalog)!;
         if (!Enum.IsDefined(kind) || !Enum.IsDefined(terrain) || opponent?.Pokemon is null)
             return Fail(null,"four_island_inherited_context");
         if (FourIslandEncounterTables.Land.Any(t=>t.Map==map) || FourIslandEncounterTables.Water.Any(t=>t.Map==map))
@@ -85,9 +91,9 @@ public static partial class WildBattleRules
                 seviiRuby.Kind != (kind switch { FirstSeviiEncounterKind.Land=>SeviiRubyEncounterKind.Land,
                     FirstSeviiEncounterKind.Surf=>SeviiRubyEncounterKind.Surf, _=>SeviiRubyEncounterKind.OldRod }))
                 return Fail(null,"four_island_inherited_ruby_origin");
-            return StartSeviiRubyWild(owned.Predecessor,seviiRuby,playerParty,activeIndex,opponent,rng,terrain,owned);
+            return StartSeviiRubyWild(owned.Predecessor,seviiRuby,playerParty,activeIndex,opponent,rng,terrain,actualOwned);
         }
         return StartSeviiRubyInheritedWild(owned.Predecessor,map,kind,playerParty,activeIndex,opponent,rng,terrain,
-            victoryRoad,lostelleHypno,towerKind,scriptedSnorlax,owned);
+            victoryRoad,lostelleHypno,towerKind,scriptedSnorlax,actualOwned);
     }
 }

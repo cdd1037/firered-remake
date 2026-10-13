@@ -79,7 +79,8 @@ public static class SourceTwinsTrainerEncounter
         if (successorOwned is not null && (!ReferenceEquals(OwnedBattlePokemonCatalog.For(successorOwned.Catalog),successorOwned) ||
             !ReferenceEquals(successorOwned.Mechanics,proof) ||
             !(SeviiRubyOwnedPokemonCatalog.For(successorOwned.Catalog) is {} ruby && SeviiRubyOpponentPokemonCatalog.For(ruby) is not null ||
-              FourIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} four && FourIslandOpponentPokemonCatalog.For(four) is not null)))
+              FourIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} four && FourIslandOpponentPokemonCatalog.For(four) is not null ||
+              SixIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} six && SixIslandOpponentPokemonCatalog.For(six) is not null)))
             return Fail("source_twins_successor_owned");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("source_twins_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("source_twins_player_party");

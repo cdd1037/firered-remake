@@ -40,7 +40,7 @@ public sealed partial class CampaignSession
 
     private bool IsSeviiRubyWildHistory(CampaignWildHistory history)
     {
-        if (!_content.SeviiRubyEnabled || history.SeviiRuby is not {} origin || history.FourIsland is not null || history.VictoryRoad is not null ||
+        if (!_content.SeviiRubyEnabled || history.SeviiRuby is not {} origin || history.SixIsland is not null || history.FourIsland is not null || history.VictoryRoad is not null ||
             history.Safari || history.ScriptedMarowak || history.ScriptedSnorlaxRoute!=0 || history.LostelleHypno is not null ||
             origin.Kind is not (SeviiRubyEncounterKind.Land or SeviiRubyEncounterKind.Surf or SeviiRubyEncounterKind.OldRod) ||
             SeviiRubyWildBattleContract.SourceSlot(origin) is not {} slot) return false;
@@ -51,7 +51,7 @@ public sealed partial class CampaignSession
     private bool IsSeviiRubyCapture(CampaignState state,CampaignCapturedPokemon capture)
     {
         var history=state.Exploration?.Battles.SingleOrDefault(h=>h.Id==capture.BattleId);
-        return capture.FourIsland is null && history is not null && IsSeviiRubyWildHistory(history) && history.Outcome==WildBattleOutcome.Caught &&
+        return capture.SixIsland is null && capture.FourIsland is null && history is not null && IsSeviiRubyWildHistory(history) && history.Outcome==WildBattleOutcome.Caught &&
             history.ExperienceGained==0 && history.SourceSpeciesId==capture.SourceSpeciesId && history.Level==capture.MetLevel &&
             _content.MapDefinition(history.SeviiRuby!.Map).RegionMapSection==capture.MetLocation;
     }

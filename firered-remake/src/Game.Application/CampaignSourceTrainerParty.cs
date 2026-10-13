@@ -57,7 +57,8 @@ public sealed partial class CampaignSession
         var style=EffectiveBattleStyle(state);var terrain=CampaignBattleTerrain(state);
         var owned=SafariOrdinaryOwnership;var catalog=owned?.Predecessor??BattlePokemon;
         var successor=_content.SeviiRubyEnabled?owned:null;
-        var result=IsFourIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FourIslandTrainers!,_content.FourIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+        var result=IsSixIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SixIslandTrainers!,_content.SixIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain)
+            : IsFourIslandTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.FourIslandTrainers!,_content.FourIslandOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.SixIslandEnabled?owned:null)
             : IsSeviiRubyTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.SeviiRubyTrainers!,_content.SeviiRubyOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:_content.FourIslandEnabled?owned:null)
             : IsPokemonLeagueTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.PokemonLeagueTrainerParties!,_content.PokemonLeagueOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)
             : IsVictoryRoadTrainer(trainer) ? ForestTrainerCombatRules.StartSource(_content.VictoryRoadTrainerParties!,_content.VictoryRoadOpponents!,trainer,party,active,state.World.Rng,style,terrain,successorOwned:successor)

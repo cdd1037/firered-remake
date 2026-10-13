@@ -12,7 +12,7 @@ public partial class CampaignView
     private PretSilphInterface? _silphInterface;
     private Texture2D? _silphScrollUp, _silphScrollDown;
 
-    private int PresentedSpeciesId(SpeciesId species) => _catalog.PokemonLeagueOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.VictoryRoadOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.CinnabarArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.SaffronGymArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.SilphArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.PokemonContent!.Catalog.Species[species].SourceSpeciesId;
+    private int PresentedSpeciesId(SpeciesId species) => _catalog.SixIslandOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.PokemonLeagueOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.VictoryRoadOpponents?.Catalog.Species.GetValueOrDefault(species)?.SourceSpeciesId ?? _catalog.CinnabarArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.SaffronGymArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.SilphArt?.Sprites.FirstOrDefault(s => s.SpeciesId == species.Value)?.SourceSpeciesId ?? _catalog.PokemonContent!.Catalog.Species[species].SourceSpeciesId;
 
     private void DisposeSilphPresentation()
     {

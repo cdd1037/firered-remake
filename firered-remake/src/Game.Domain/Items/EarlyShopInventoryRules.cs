@@ -25,6 +25,7 @@ public static class EarlyShopInventoryRules
     public static void ValidateCatalog(EarlyShopCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.Profile == SixIslandShopCatalog.Profile) { SixIslandShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == FourIslandShopCatalog.Profile) { FourIslandShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == SeviiRubyShopCatalog.Profile) { SeviiRubyShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == VictoryRoadShopCatalog.Profile) { VictoryRoadShopCatalog.ValidateCatalog(catalog); return; }
@@ -109,6 +110,7 @@ public static class EarlyShopInventoryRules
     public static string? Validate(EarlyShopCatalog catalog, InventoryState? state)
     {
         ValidateCatalog(catalog);
+        if (SixIslandShopCatalog.For(catalog) is { } sixIsland) return sixIsland.ValidateInventory(state);
         if (FourIslandShopCatalog.For(catalog) is { } fourIsland) return fourIsland.ValidateInventory(state);
         if (SeviiRubyShopCatalog.For(catalog) is { } ruby) return ruby.ValidateInventory(state);
         if (VictoryRoadShopCatalog.For(catalog) is { } victoryRoad) return victoryRoad.ValidateInventory(state);

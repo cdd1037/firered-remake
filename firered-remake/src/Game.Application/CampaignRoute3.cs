@@ -5,7 +5,7 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool OwnedHeldItemSupported(CampaignState state,PartyPokemon owned)=>owned.HeldItem=="ITEM_NONE" || _content.FourIslandEnabled&&Game.Domain.Encounters.FourIslandWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SeviiRubyEnabled&&Game.Domain.Encounters.SeviiRubyWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.VictoryRoadEnabled&&Game.Domain.Encounters.VictoryRoadWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SafariEnabled&&owned.HeldItem is "ITEM_LUCKY_EGG" or "ITEM_QUICK_CLAW" || _content.FuchsiaRouteEnabled&&owned.HeldItem=="ITEM_METAL_POWDER" ||
+    private bool OwnedHeldItemSupported(CampaignState state,PartyPokemon owned)=>owned.HeldItem=="ITEM_NONE" || _content.SixIslandEnabled&&Game.Domain.Encounters.SixIslandWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.FourIslandEnabled&&Game.Domain.Encounters.FourIslandWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SeviiRubyEnabled&&Game.Domain.Encounters.SeviiRubyWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.VictoryRoadEnabled&&Game.Domain.Encounters.VictoryRoadWildSource.Species.Any(s=>s.ItemCommon==owned.HeldItem||s.ItemRare==owned.HeldItem) || _content.SafariEnabled&&owned.HeldItem is "ITEM_LUCKY_EGG" or "ITEM_QUICK_CLAW" || _content.FuchsiaRouteEnabled&&owned.HeldItem=="ITEM_METAL_POWDER" ||
         _content.PokemonTowerEnabled&&owned.HeldItem is "ITEM_SPELL_TAG" or "ITEM_THICK_CLUB" or "ITEM_CLEANSE_TAG" or "ITEM_SOOTHE_BELL" ||
         _content.RockTunnelEnabled&&owned.HeldItem is "ITEM_HARD_STONE" or "ITEM_EVERSTONE" ||
         _content.VermilionEnabled&&VermilionPickupRules.IsKnownHeldItem(owned.HeldItem)||
@@ -30,7 +30,7 @@ public sealed partial class CampaignSession
         var a=effect.Args;
         if(effect.Opcode=="specialvar"&&a.Length==2&&a[1]=="ShouldTryRematchBattle")
         {
-            if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&(state.World.Player.MapId.Value is "map.route-8" or "map.route-21-north"||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f")&&
+            if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&(state.World.Player.MapId.Value is "map.route-8" or "map.route-21-north"||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f"||_content.SeviiRubyEnabled&&state.World.Player.MapId.Value=="map.one-island-kindle-road"||_content.SixIslandEnabled&&state.World.Player.MapId.Value=="map.six-island-water-path")&&
                 state.LastTalked is {} twinsActor&&state.Actors.TryGetValue(twinsActor,out var twins)&&IsTwinsScript(twins.ScriptId))
             {
                 next=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",
@@ -60,7 +60,7 @@ public sealed partial class CampaignSession
         }
         return false;
     }
-    private bool OrdinaryPostBattleMap(string map)=>_content.SeviiRubyEnabled&&map is "map.one-island-kindle-road" or "map.mt-ember-exterior"||map=="map.route-3"||
+    private bool OrdinaryPostBattleMap(string map)=>_content.SixIslandEnabled&&map is "map.six-island-water-path" or "map.six-island-ruin-valley"||_content.SeviiRubyEnabled&&map is "map.one-island-kindle-road" or "map.mt-ember-exterior"||map=="map.route-3"||
         _content.VermilionEnabled&&map=="map.route-6"||
         _content.CinnabarEnabled&&map is "map.route-21-north" or "map.route-21-south"||
         _content.FirstSeviiEnabled&&map=="map.three-island-bond-bridge";

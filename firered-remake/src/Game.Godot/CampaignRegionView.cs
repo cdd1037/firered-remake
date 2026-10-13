@@ -26,7 +26,7 @@ public partial class CampaignView
         if(state.MapEdits is not {Count:>0}){_art=original;ReleaseMapEdits();_mapEditKey=key;return;}
         var definitions=state.World.Player.MapId.Value=="map.vermilion-city-gym"
             ?_catalog.VermilionGymRegion?.BeamDefinitions:_catalog.MartMetatiles?.Definitions;
-        if(definitions is null&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(_catalog.VictoryRoadEnabled&&IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
+        if(definitions is null&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(_catalog.VictoryRoadEnabled&&IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
         var replacement=_mapResources.CreateOwner("map-edits");
         using var tiles=_mapResources.CreateOwner("map-edit-tiles");
         Texture2D Patch(Texture2D texture,int layer)
@@ -34,6 +34,7 @@ public partial class CampaignView
             using var canvas=texture.GetImage();
             foreach(var edit in state.MapEdits.Values)
             {
+                if(TrySixIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryFourIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TrySeviiRubyPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryPokemonLeaguePatch(canvas,edit,layer,state.World.Player.MapId))continue;

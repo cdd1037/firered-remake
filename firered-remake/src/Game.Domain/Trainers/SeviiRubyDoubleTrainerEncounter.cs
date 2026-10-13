@@ -97,11 +97,14 @@ public static class SeviiRubyDoubleTrainerEncounter
             return "sevii_ruby_double_catalog";
         try { SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "sevii_ruby_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion != SeviiRubyOpponentPokemonCatalog.Profile && frame.SourceCampaignRulesVersion != FourIslandOpponentPokemonCatalog.Profile ||
+        if (frame is null || frame.SourceCampaignRulesVersion != SeviiRubyOpponentPokemonCatalog.Profile && frame.SourceCampaignRulesVersion != FourIslandOpponentPokemonCatalog.Profile && frame.SourceCampaignRulesVersion != SixIslandOpponentPokemonCatalog.Profile ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "sevii_ruby_double_frame";
         if (frame.SourceCampaignRulesVersion == FourIslandOpponentPokemonCatalog.Profile &&
             (FourIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } successor ||
              !ReferenceEquals(successor.Owned.Predecessor,opponents.Owned))) return "source_double_successor_owned";
+        if (frame.SourceCampaignRulesVersion == SixIslandOpponentPokemonCatalog.Profile &&
+            (SixIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } sixSuccessor ||
+             !ReferenceEquals(sixSuccessor.Owned.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
         if (frame.Parties.SelectMany(p => p.Members).Any(m =>
             SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "sevii_ruby_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;

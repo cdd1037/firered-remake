@@ -26,7 +26,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -125,6 +125,11 @@ public static partial class PretStoryCompiler
                     if(body.Count==1&&body[0].Text==".byte 0")headers.Add(label,[]);
                     assemblyData.Add(label,body.Where(b=>b.Text.StartsWith(".",StringComparison.Ordinal)).Select(b=>b.Text).ToImmutableArray());continue;
                 }
+                if(includeSixIsland&&IsSixIslandAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
+                {
+                    if(body.Count==1&&body[0].Text==".byte 0")headers.Add(label,[]);
+                    assemblyData.Add(label,body.Where(b=>b.Text.StartsWith(".",StringComparison.Ordinal)).Select(b=>b.Text).ToImmutableArray());continue;
+                }
                 if(body[0].Text.StartsWith(".string",StringComparison.Ordinal))continue;
                 if(body.Any(x=>x.Text.StartsWith("map_script ",StringComparison.Ordinal)))
                 {
@@ -209,6 +214,11 @@ public static partial class PretStoryCompiler
                             var admitted=FourIslandInstructionShape(file,label,opcode,operands);
                             if(admitted is {} shape)(kind,min,max)=shape;
                         }
+                        if(includeSixIsland)
+                        {
+                            var admitted=SixIslandInstructionShape(file,label,opcode,operands);
+                            if(admitted is {} shape)(kind,min,max)=shape;
+                        }
                         if(kind!=StoryOp.Unsupported&&(operands.Length<min||operands.Length>max))throw ContentJson.Error("story_opcode_arity",$"{file.Path}:{lineNumber}",$"{opcode} requires {min}..{max} arguments.");
                         if(kind==StoryOp.Unsupported)unsupported.Add(new("opcode_unsupported",$"{file.Path}:{lineNumber}",opcode));
                         instructions.Add(new(kind,opcode,operands,new(file.Path,label,lineNumber)));
@@ -222,6 +232,16 @@ public static partial class PretStoryCompiler
                         if(args.Length!=1||!args[0].StartsWith("Braille_Text_",StringComparison.Ordinal))
                             throw ContentJson.Error("sevii_ruby_braille_operands",$"{file.Path}:{lineNumber}",op);
                         // Literal source macro from asm/macros/event.inc:1845-1850.
+                        Emit("setvar",["VAR_0x8006","0"]);
+                        Emit("braillemessage",args);
+                        Emit("getbraillestringwidth",args);
+                        Emit("call",["EventScript_BrailleCursorWaitButton"]);
+                    }
+                    else if(includeSixIsland&&op=="braillemessage_wait"&&IsSixIslandBrailleWait(file,label))
+                    {
+                        if(args.Length!=1||!args[0].StartsWith("Braille_Text_",StringComparison.Ordinal))
+                            throw ContentJson.Error("six_island_braille_operands",$"{file.Path}:{lineNumber}",op);
+                        // Exact asm/macros/event.inc:1845-1850, preserving each source line.
                         Emit("setvar",["VAR_0x8006","0"]);
                         Emit("braillemessage",args);
                         Emit("getbraillestringwidth",args);

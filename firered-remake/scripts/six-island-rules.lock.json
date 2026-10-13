@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-six-island-rules-v1",
+  "files": [
+    {
+      "path": "content/generated/six-island-rules/pokemon.json",
+      "byteLength": 2268,
+      "sha256": "991c172e3d8bcefe39e76d1d595ad390d0a71e7b0886d47e7030369a895c624f"
+    },
+    {
+      "path": "content/generated/six-island-rules/rules.json",
+      "byteLength": 42208,
+      "sha256": "cb78c554b72a6dfcbe4cf21e60fa60eee51ee87b62988fdff03de013341106ae"
+    },
+    {
+      "path": "content/generated/six-island-rules/source-input-hashes.json",
+      "byteLength": 6067,
+      "sha256": "ec437b15e7fff2a7bbb142639069746f88e822331da623856858778062a8a795"
+    },
+    {
+      "path": "content/generated/six-island-rules/trainers.json",
+      "byteLength": 54959,
+      "sha256": "aeff4df0217ae10670d12101ff0e94b5d98572c4c7165844f522ad35d41cc178"
+    }
+  ]
+}

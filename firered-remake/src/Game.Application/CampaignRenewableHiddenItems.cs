@@ -14,8 +14,10 @@ public sealed partial class CampaignSession
         if (!_content.FirstSeviiEnabled) return state;
         int old = state.Script.Variables.GetValueOrDefault(RenewableHiddenItemRules.CounterVariable);
         int next = RenewableHiddenItemRules.IncrementStepCounter(old);
-        return next == old ? state : state with { Script = state.Script with
+        if(next != old) state = state with { Script = state.Script with
         { Variables = state.Script.Variables.SetItem(RenewableHiddenItemRules.CounterVariable, next) } };
+        if(_content.SixIslandEnabled)state=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_MASSAGE_COOLDOWN_STEP_COUNTER",Math.Min(500,state.Script.Variables.GetValueOrDefault("VAR_MASSAGE_COOLDOWN_STEP_COUNTER")+1))}};
+        return state;
     }
 
     private CampaignState ApplyRenewableHiddenItemMapEntry(CampaignState state)
@@ -39,6 +41,8 @@ public sealed partial class CampaignSession
     private string? ValidateRenewableHiddenItems(CampaignState state)
     {
         if (!_content.FirstSeviiEnabled) return null;
+        if (_content.SixIslandEnabled && state.Script.Variables.GetValueOrDefault("VAR_MASSAGE_COOLDOWN_STEP_COUNTER") is < 0 or > 500)
+            return "save_massage_cooldown_counter_invalid";
         if (state.Script.Variables.GetValueOrDefault(RenewableHiddenItemRules.CounterVariable) is < 0 or > RenewableHiddenItemRules.StepThreshold)
             return "save_renewable_counter_invalid";
         return RenewableHiddenItemRules.AllFlags.Any(flag => !state.Script.Flags.ContainsKey(flag))

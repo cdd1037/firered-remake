@@ -97,7 +97,7 @@ public static class VictoryRoadDoubleTrainerEncounter
             return "victory_road_double_catalog";
         try { VictoryRoadTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "victory_road_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion is not (CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile) ||
+        if (frame is null || frame.SourceCampaignRulesVersion is not (CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile) ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "victory_road_double_frame";
         if (frame.SourceCampaignRulesVersion == SeviiRubyOpponentPokemonCatalog.Profile &&
             (SeviiRubyOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } successor ||
@@ -105,6 +105,9 @@ public static class VictoryRoadDoubleTrainerEncounter
         if (frame.SourceCampaignRulesVersion == FourIslandOpponentPokemonCatalog.Profile &&
             (FourIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } fourSuccessor ||
              !ReferenceEquals(fourSuccessor.Owned.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
+        if (frame.SourceCampaignRulesVersion == SixIslandOpponentPokemonCatalog.Profile &&
+            (SixIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } sixSuccessor ||
+             !ReferenceEquals(sixSuccessor.Owned.Predecessor.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
         if (frame.Parties.SelectMany(p => p.Members).Any(m =>
             SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "victory_road_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;

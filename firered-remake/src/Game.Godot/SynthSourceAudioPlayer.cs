@@ -41,7 +41,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false, bool includeSeviiRuby = false, bool includeFourIsland = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false, bool includeSeviiRuby = false, bool includeFourIsland = false, bool includeSixIsland = false)
     {
         if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
         if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
@@ -281,6 +281,21 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             var inheritedSeel=extension.InheritedCues[0];
             if(inheritedSeel is null||inheritedSeel.Id!="CRY_SEEL_NORMAL"||cues.SingleOrDefault(c=>c.Id=="CRY_SEEL_NORMAL")!=inheritedSeel)
                 throw new InvalidDataException("Four Island inherited Seel cue differs.");
+            cues=[..cues,..extension.Cues];
+        }
+        if(includeSixIsland)
+        {
+            if(!includeFourIsland)throw new InvalidDataException("Six Island audio requires Four Island.");
+            byte[] sixIslandBytes=File.ReadAllBytes(Path.Combine(Path.GetFullPath(projectRoot),SixIslandPresentationAssets.Base+"synth-manifest.json"));
+            if(sixIslandBytes.Length!=SixIslandPresentationAssets.SynthBytes||Convert.ToHexStringLower(SHA256.HashData(sixIslandBytes))!=SixIslandPresentationAssets.SynthSha256)
+                throw new InvalidDataException("Six Island synth identity differs.");
+            var extension=JsonSerializer.Deserialize<SixIslandSynthManifest>(sixIslandBytes,options)??throw new InvalidDataException("Six Island synth missing.");
+            if(extension.SchemaVersion!=1||extension.SourceCommit!=manifest.SourceCommit||extension.Cues.Length!=15||
+                !extension.Cues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"MUS_SEVII_67","MUS_SEVII_DUNGEON","SE_BANG","CRY_SENTRET_NORMAL","CRY_FURRET_NORMAL","CRY_NATU_NORMAL","CRY_XATU_NORMAL","CRY_YANMA_NORMAL","CRY_WOBBUFFET_NORMAL","CRY_BELLOSSOM_NORMAL","CRY_SUNKERN_NORMAL","CRY_SUNFLORA_NORMAL","CRY_CHINCHOU_NORMAL","CRY_LANTURN_NORMAL","CRY_SUDOWOODO_NORMAL"})||extension.Cues.Any(c=>cues.Any(old=>old.Id==c.Id)))
+                throw new InvalidDataException("Six Island source cue scope differs.");
+            if(extension.InheritedCues is not {Length:2}||!extension.InheritedCues.Select(c=>c.Id).ToHashSet(StringComparer.Ordinal).SetEquals(new[]{"SE_FALL","SE_M_STRENGTH"})||
+                extension.InheritedCues.Any(c=>cues.SingleOrDefault(old=>old.Id==c.Id)!=c))
+                throw new InvalidDataException("Six Island inherited cues differ.");
             cues=[..cues,..extension.Cues];
         }
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
@@ -613,6 +628,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         public long? EndFrame { get; set; }
     }
     private sealed record SynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues);
+    private sealed record SixIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
     private sealed record FourIslandSynthManifest(int SchemaVersion, string SourceCommit, SynthCue[] Cues, SynthCue[] InheritedCues);
     private sealed record SynthCue(string Id, string SourceCommit, string SourceSymbol, string SourcePath,
         int SourcePlayer, int Priority, int? SourceCounter, uint SongAddress, int Species, bool Looping, int CryMode = 0)

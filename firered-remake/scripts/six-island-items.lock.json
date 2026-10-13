@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "profile": "firered-six-island-items-v1",
+  "files": [
+    {
+      "path": "content/generated/six-island-items/items.json",
+      "byteLength": 138131,
+      "sha256": "79ca27696bb8f15983f97a817cfbf56002f3d68a9936466a8d75e152b935ac84"
+    },
+    {
+      "path": "content/generated/six-island-items/source-input-hashes.json",
+      "byteLength": 3635,
+      "sha256": "be16d0080429a7823d2a48acb2a997b93d49c3d28d476f04a3d3bda7192c5ba9"
+    }
+  ]
+}

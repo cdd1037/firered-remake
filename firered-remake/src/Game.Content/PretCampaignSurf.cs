@@ -13,7 +13,7 @@ public sealed partial class PretCampaignCatalog
     public PretSurfEncounters? SurfEncounters { get; }
     public SurfOwnedPokemonCatalog? SurfOwnership { get; }
     public bool SurfEnabled=>SurfOwnership is not null;
-    public IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters=>FourIslandWaterEncounters?.Tables??SeviiRubyWaterEncounters?.Tables??VictoryRoadWaterEncounters?.Tables??FirstSeviiWaterEncounters?.Tables??CinnabarWaterEncounters?.Tables??SurfEncounters?.Tables;
+    public IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters=>SixIslandWaterEncounters?.Tables??FourIslandWaterEncounters?.Tables??SeviiRubyWaterEncounters?.Tables??VictoryRoadWaterEncounters?.Tables??FirstSeviiWaterEncounters?.Tables??CinnabarWaterEncounters?.Tables??SurfEncounters?.Tables;
     public static PretCampaignCatalog LoadSurfProfile(string root,bool useCompactMapData=true,string? surfContentRoot=null)=>
         LoadFuchsiaGymProfile(root,useCompactMapData,includePresetDoubles:true,includeSafari:true,includeSurf:true,surfContentRoot:surfContentRoot);
     private static void AppendSurfSources(PretSurfScripts surf,List<PretSourceScriptFile> sources,List<string> texts,

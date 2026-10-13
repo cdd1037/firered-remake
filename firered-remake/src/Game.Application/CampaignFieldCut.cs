@@ -75,13 +75,14 @@ public sealed partial class CampaignSession
         if(partyIndex<0||partyIndex>=state.Party.Length)return "field_cut_party_index_invalid";
         if(!KnowsFieldCut(state.Party[partyIndex]))return "field_cut_move_missing";
         if(!state.Script.Flags.GetValueOrDefault("FLAG_BADGE02_GET"))return "field_cut_badge_required";
-        return AdjacentFieldCutTree(state) is null?"field_cut_nothing_to_cut":null;
+        return !RuinValleyCutPosition(state)&&AdjacentFieldCutTree(state) is null?"field_cut_nothing_to_cut":null;
     }
 
     private Decision<CampaignState> DecideFieldCut(CampaignState state,CampaignCommand command)
     {
         var error=FieldCutCommandError(state,command.PartyIndex);
         if(error is not null)return new(CommandStatus.Rejected,state,error);
+        if(RuinValleyCutPosition(state))return DecideRuinValleyCut(state,command);
         var tree=AdjacentFieldCutTree(state)!;
         // FieldCallback_CutTree stores the selected menu member, then starts this entry.
         // Unlike direct interaction, this source path has no Yes/No or used-move textbox.

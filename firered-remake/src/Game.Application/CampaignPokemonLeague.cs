@@ -72,7 +72,7 @@ public sealed partial class CampaignSession
             if(content.PokemonLeagueTrainerParties is not null||content.PokemonLeagueOpponents is not null)throw new InvalidDataException("pokemon_league_profile_missing");
             return;
         }
-        if(!content.VictoryRoadEnabled||content.Maps.Count!=(content.FourIslandEnabled?237:content.SeviiRubyEnabled?229:218)||content.PokemonLeagueTrainerParties is null||content.PokemonLeagueOpponents is null||content.PokemonLeagueMartStock is null||
+        if(!content.VictoryRoadEnabled||content.Maps.Count!=(content.SixIslandEnabled?249:content.FourIslandEnabled?237:content.SeviiRubyEnabled?229:218)||content.PokemonLeagueTrainerParties is null||content.PokemonLeagueOpponents is null||content.PokemonLeagueMartStock is null||
             !ReferenceEquals(content.PokemonLeagueOpponents.Predecessor,content.VictoryRoadOpponents)||
             content.PokemonLeagueOpponents.Catalog.Species.Count!=133||content.PokemonLeagueOpponents.Owned.Catalog.Species.Count!=115)
             throw new InvalidDataException("pokemon_league_catalog_scope");

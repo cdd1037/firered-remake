@@ -36,12 +36,12 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("sevii_ruby_profile_missing");
             return;
         }
-        if (!content.NationalDexEnabled || content.Maps.Count != (content.FourIslandEnabled ? 237 : 229) || content.SeviiRubyOwnership is not { } owned ||
+        if (!content.NationalDexEnabled || content.Maps.Count != (content.SixIslandEnabled ? 249 : content.FourIslandEnabled ? 237 : 229) || content.SeviiRubyOwnership is not { } owned ||
             content.SeviiRubyOpponents is not { } opponents || content.SeviiRubyTrainers is not { } trainers ||
             !ReferenceEquals(owned.Predecessor, content.CinnabarOwnership) || !ReferenceEquals(content.FourIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.PokemonLeagueOpponents) ||
-            (FourIslandMachineCatalog.For(content.PewterMachines)?.Predecessor ?? SeviiRubyMachineCatalog.For(content.PewterMachines)) is not { } machines || !ReferenceEquals(machines.Pokemon, owned) ||
-            (FourIslandShopCatalog.For(content.EarlyShop)?.Predecessor ?? SeviiRubyShopCatalog.For(content.EarlyShop)) is null) throw new InvalidDataException("sevii_ruby_source_profile_missing");
+            ((SixIslandMachineCatalog.For(content.PewterMachines)?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? SeviiRubyMachineCatalog.For(content.PewterMachines)) is not { } machines || !ReferenceEquals(machines.Pokemon, owned) ||
+            ((SixIslandShopCatalog.For(content.EarlyShop)?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? SeviiRubyShopCatalog.For(content.EarlyShop)) is null) throw new InvalidDataException("sevii_ruby_source_profile_missing");
         SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers);
     }
 

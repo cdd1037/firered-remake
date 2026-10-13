@@ -7,14 +7,23 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     private static bool RainbowFerryMenu(CampaignState state) => state.SeagallopMenu?.SourceMenu is "SEVII_PAGE_0" or "SEVII_PAGE_1";
+    private bool RainbowIslandAvailable(int id) => id is >= 0 and <= 3 || id == 4 && _content.FourIslandEnabled || id == 6 && _content.SixIslandEnabled;
+    private static ImmutableArray<int> RainbowPageDestinations(int origin, int page)
+    {
+        // script_menu.c DrawSeagallopDestinationMenu: page2 starts at Four
+        // when the current island is Five or later; skip the current island.
+        int first = page == 0 ? 0 : origin < 5 ? 5 : 4;
+        int count = page == 0 ? 4 : 3;
+        return Enumerable.Range(first, 8 - first).Where(x => x != origin).Take(count).ToImmutableArray();
+    }
     private int RainbowDestination(CampaignState state, int choice)
     {
         int origin = state.Script.Variables.GetValueOrDefault("VAR_0x8004"), page = state.Script.Variables.GetValueOrDefault("VAR_0x8005");
-        if (origin < 0 || origin > (_content.FourIslandEnabled ? 4 : 3) || page is < 0 or > 1) throw new InvalidDataException("seagallop_page_context");
+        if (!RainbowIslandAvailable(origin) || page is < 0 or > 1) throw new InvalidDataException("seagallop_page_context");
         if (choice == 127 || choice == (page == 0 ? 5 : 4)) return 127;
         if (choice == (page == 0 ? 4 : 3)) return 254; // SEAGALLOP_MORE
         if (choice < 0 || choice >= (page == 0 ? 4 : 3)) throw new InvalidDataException("seagallop_menu_choice_invalid");
-        return page == 0 ? choice >= origin ? choice + 1 : choice : choice + 5;
+        return RainbowPageDestinations(origin, page)[choice];
     }
     private bool TryApplyRainbowFerryEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
@@ -24,12 +33,12 @@ public sealed partial class CampaignSession
             OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], RainbowPassItem) != 1)
             throw new InvalidDataException("seagallop_rainbow_context");
         int page = state.Script.Variables.GetValueOrDefault("VAR_0x8005"), origin = state.Script.Variables.GetValueOrDefault("VAR_0x8004");
-        if (page != (effect.Source.Symbol.EndsWith('1') ? 0 : 1) || origin < 0 || origin > (_content.FourIslandEnabled ? 4 : 3)) throw new InvalidDataException("seagallop_page_context");
+        if (page != (effect.Source.Symbol.EndsWith('1') ? 0 : 1) || !RainbowIslandAvailable(origin)) throw new InvalidDataException("seagallop_page_context");
         if (effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "DrawSeagallopDestinationMenu" }))
         {
             string[] labels = ["VERMILION", "ONE ISLAND", "TWO ISLAND", "THREE ISLAND", _content.FourIslandEnabled ? "FOUR ISLAND" : "FOUR ISLAND (unavailable)",
-                "FIVE ISLAND (unavailable)", "SIX ISLAND (unavailable)", "SEVEN ISLAND (unavailable)"];
-            var destinations = page == 0 ? Enumerable.Range(0, 5).Where(d => d != origin).Take(4) : Enumerable.Range(5, 3);
+                "FIVE ISLAND (unavailable)", _content.SixIslandEnabled ? "SIX ISLAND" : "SIX ISLAND (unavailable)", "SEVEN ISLAND (unavailable)"];
+            var destinations = RainbowPageDestinations(origin, page);
             next = state with { SeagallopMenu = new("SEVII_PAGE_" + page, destinations.Select(d => labels[d]).Concat(["OTHER", "EXIT"]).ToImmutableArray()),
                 Dialogue = null, Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", 255) } }; return true;
         }
@@ -41,7 +50,7 @@ public sealed partial class CampaignSession
         if (effect.Opcode == "specialvar" && effect.Args.SequenceEqual(new[] { "VAR_0x8006", "GetSelectedSeagallopDestination" }))
         {
             int destination = RainbowDestination(state, state.Script.Variables.GetValueOrDefault("VAR_RESULT"));
-            if (destination >= (_content.FourIslandEnabled ? 5 : 4) && destination <= 7) throw new InvalidDataException("seagallop_destination_not_yet_available");
+            if (destination is >= 0 and <= 7 && !RainbowIslandAvailable(destination)) throw new InvalidDataException("seagallop_destination_not_yet_available");
             next = state with { Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_0x8006", destination) } }; return true;
         }
         return false;

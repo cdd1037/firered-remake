@@ -166,7 +166,7 @@ public partial class CampaignView
         if (!SeviiRubyBrailleVisible) return false;
         var braille = SeviiRubyManifest.GetProperty("braille");
         string symbol = _session.State.Dialogue!.TextSymbol;
-        var message = braille.GetProperty("messages").EnumerateArray().SingleOrDefault(m => m.GetProperty("label").GetString() == symbol);
+        var message = SixIslandBrailleMessage(symbol) ?? braille.GetProperty("messages").EnumerateArray().SingleOrDefault(m => m.GetProperty("label").GetString() == symbol);
         if (message.ValueKind == JsonValueKind.Undefined || message.GetProperty("text").GetString() != _session.VisibleText)
             throw new InvalidDataException("Braille text differs from the authenticated source bank.");
         string text = message.GetProperty("text").GetString()!;

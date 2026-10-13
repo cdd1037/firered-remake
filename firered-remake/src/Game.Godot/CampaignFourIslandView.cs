@@ -11,8 +11,8 @@ using Godot;
 /// <summary>Four Island source pixels and correlated forced-movement presentation. The application remains authoritative.</summary>
 public partial class CampaignView
 {
-    private static bool FourIslandProfileRequested => OS.GetEnvironment("FIRERED_FOUR_ISLAND") == "1" || OS.GetCmdlineUserArgs().Contains("--story-four-island");
-    private bool FourIslandPresentationProfile => _catalog.FourIslandEnabled && _catalog.SeviiRubyEnabled && _session.RulesVersion == CampaignSession.FourIslandRulesVersion;
+    private static bool FourIslandProfileRequested => SixIslandProfileRequested || OS.GetEnvironment("FIRERED_FOUR_ISLAND") == "1" || OS.GetCmdlineUserArgs().Contains("--story-four-island");
+    private bool FourIslandPresentationProfile => _catalog.FourIslandEnabled && _catalog.SeviiRubyEnabled && (_session.RulesVersion == CampaignSession.FourIslandRulesVersion || SixIslandPresentationProfile);
     private FourIslandPresentationData? _fourIslandArt;
     private readonly Dictionary<int,PokedexMenuEntry> _fourIslandDex = [];
     private readonly Dictionary<string,JsonElement> _fourIslandTrainers = new(StringComparer.Ordinal);

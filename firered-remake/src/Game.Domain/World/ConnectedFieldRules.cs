@@ -10,8 +10,10 @@ public enum ConnectedFieldEventKind { Idle, Turned, Blocked, Walked, JumpedLedge
 public sealed record ConnectedFieldIntent(CommandId CommandId, long ExpectedRevision, ConnectedFieldAction Action, Direction Direction);
 /// <summary>Raw source values. Occupied is a caller-resolved, elevation-compatible object collision.</summary>
 public sealed record ConnectedFieldCell(int SourceBehavior, int Collision, int Elevation, bool Occupied = false);
-public sealed record ConnectedFieldConnection(Direction Direction, int Offset, MapId DestinationMapId);
-/// <summary>Local zero-based cells; connections preserve source order. This profile supports one per side.</summary>
+/// <summary>DestinationSpan is the authenticated width (north/south) or height (east/west)
+/// of an unloaded target. Loaded target dimensions remain authoritative.</summary>
+public sealed record ConnectedFieldConnection(Direction Direction, int Offset, MapId DestinationMapId, int? DestinationSpan = null);
+/// <summary>Local zero-based cells; connections preserve source order, including multiple connections per side.</summary>
 public sealed record ConnectedFieldMap(MapId Id, int Width, int Height, ImmutableArray<ConnectedFieldCell> Cells,
     ImmutableArray<ConnectedFieldConnection> Connections)
 {
@@ -97,7 +99,35 @@ public static class ConnectedFieldRules
         bool crosses = x < 0 || y < 0 || x >= map.Width || y >= map.Height;
         if (crosses)
         {
-            var connection = map.Connections.FirstOrDefault(c => c.Direction == intent.Direction);
+            var candidates = map.Connections.Where(c => c.Direction == intent.Direction).ToArray();
+            // Keep the historical single-edge boundary diagnostics. Segmented sides use
+            // fieldmap.c:GetIncomingConnection's first matching source-order span.
+            ConnectedFieldConnection? connection = candidates.Length == 1 ? candidates[0] : null;
+            if (candidates.Length > 1)
+            {
+                bool horizontal = intent.Direction is Direction.East or Direction.West;
+                int coordinate = horizontal ? state.Player.Y : state.Player.X;
+                int sourceSpan = horizontal ? map.Height : map.Width;
+                foreach (var candidate in candidates)
+                {
+                    int destinationSpan;
+                    if (maps.TryGetValue(candidate.DestinationMapId, out var target) && target is not null)
+                    {
+                        validation = ValidateMap(target, candidate.DestinationMapId);
+                        if (validation is not null) return Fail(validation.Code, validation.Message);
+                        destinationSpan = horizontal ? target.Height : target.Width;
+                    }
+                    else if (candidate.DestinationSpan is int knownSpan) destinationSpan = knownSpan;
+                    else return Fail("connection-destination-missing", candidate.DestinationMapId.Value);
+                    // IsCoordInIncomingConnectingMap deliberately uses an inclusive
+                    // selection bound; the translated aperture below remains strict.
+                    long lower = Math.Max(candidate.Offset, 0);
+                    long upper = Math.Min((long)destinationSpan + candidate.Offset, sourceSpan);
+                    if (coordinate < lower || coordinate > upper) continue;
+                    connection = candidate;
+                    break;
+                }
+            }
             if (connection is null)
                 return Fail("unloaded-field-exit", "No supported connection is defined for this edge.");
             if (!maps.TryGetValue(connection.DestinationMapId, out destination) || destination is null)
@@ -174,11 +204,10 @@ public static class ConnectedFieldRules
             map.Height is <= 0 or > MaximumMapDimension || map.Cells.IsDefault || (long)map.Width * map.Height != map.Cells.Length ||
             map.Connections.IsDefault)
             return new("invalid-connected-map", "Map identity, dimensions, cells, or connections are invalid.");
-        var directions = new HashSet<Direction>();
         foreach (var c in map.Connections)
             if (c is null || !Enum.IsDefined(c.Direction) || !StableId.IsValid(c.DestinationMapId.Value) ||
-                c.DestinationMapId == map.Id || !directions.Add(c.Direction))
-                return new("unsupported-connection-definition", "Only one valid non-self connection per cardinal side is supported.");
+                c.DestinationMapId == map.Id || c.DestinationSpan is <= 0 or > MaximumMapDimension)
+                return new("unsupported-connection-definition", "Connections require a valid cardinal direction, non-self destination, and optional positive bounded span.");
         return null;
     }
     internal static bool ValidCell(ConnectedFieldCell cell) => cell.SourceBehavior is >= 0 and <= 255 &&

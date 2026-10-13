@@ -58,3 +58,7 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 
 # Frozen Ruby validation binaries are rebuildable; retain only their hashes and source manifests.
 /evidence/sevii-ruby-combination-20261013/product*/*.dll
+
+# Six Island fixed-cohort binaries and linked headless resources are regenerated.
+/evidence/six-island-combination-20261013/**/*.dll
+/tests/Game.SixIslandView.Tests/Assets/

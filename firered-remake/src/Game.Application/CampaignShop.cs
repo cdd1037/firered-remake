@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
         }
         else
         {
-            string sourceMap = map switch { "map.four-island-mart" when _content.FourIslandEnabled => "FourIsland_Mart", "map.cinnabar-island-mart" when _content.CinnabarEnabled => "CinnabarIsland_Mart", "map.saffron-city-mart" when _content.SaffronGymEnabled => "SaffronCity_Mart", "map.lavender-town-mart" when _content.CeladonApproachEnabled => "LavenderTown_Mart", "map.vermilion-city-mart" when _content.VermilionEnabled => "VermilionCity_Mart", "map.viridian-mart" => "ViridianCity_Mart", "map.pewter-mart" => "PewterCity_Mart", "map.cerulean-city-mart" when _content.CeruleanEnabled => "CeruleanCity_Mart", _ => throw new InvalidDataException("shop_map_unsupported") };
+            string sourceMap = map switch { "map.six-island-mart" when _content.SixIslandEnabled => "SixIsland_Mart", "map.four-island-mart" when _content.FourIslandEnabled => "FourIsland_Mart", "map.cinnabar-island-mart" when _content.CinnabarEnabled => "CinnabarIsland_Mart", "map.saffron-city-mart" when _content.SaffronGymEnabled => "SaffronCity_Mart", "map.lavender-town-mart" when _content.CeladonApproachEnabled => "LavenderTown_Mart", "map.vermilion-city-mart" when _content.VermilionEnabled => "VermilionCity_Mart", "map.viridian-mart" => "ViridianCity_Mart", "map.pewter-mart" => "PewterCity_Mart", "map.cerulean-city-mart" when _content.CeruleanEnabled => "CeruleanCity_Mart", _ => throw new InvalidDataException("shop_map_unsupported") };
             stockId = sourceMap + "_Items"; sourcePath = "data/maps/" + sourceMap + "/scripts.inc"; clerkScript = sourceMap + "_EventScript_Clerk";
         }
         if (effect.Args.Length != 1 || effect.Args[0] != stockId ||
