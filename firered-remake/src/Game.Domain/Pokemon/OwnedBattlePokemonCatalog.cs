@@ -16,6 +16,7 @@ public sealed class OwnedBattlePokemonCatalog
     private static readonly ConcurrentDictionary<string, ImmutableHashSet<SpeciesId>> SuccessorSpecies = new(StringComparer.Ordinal);
     private static readonly ConcurrentDictionary<string, ImmutableHashSet<SpeciesId>> SuccessorOpponentSpecies = new(StringComparer.Ordinal);
     private static readonly ConcurrentDictionary<string, string> SuccessorParentProfiles = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, string> SuccessorOwnedParentProfiles = new(StringComparer.Ordinal);
     private OwnedBattlePokemonCatalog? CampaignParent { get; init; }
     private PokemonCatalog? SuccessorOpponents { get; set; }
     private string? SuccessorOpponentProfile { get; set; }
@@ -76,6 +77,7 @@ public sealed class OwnedBattlePokemonCatalog
         var proof = new OwnedBattlePokemonCatalog(catalog, predecessor.Predecessor, predecessor.Mechanics, profile) { CampaignParent = predecessor };
         Authenticated.Add(catalog, proof);
         SuccessorSpecies[profile] = catalog.Species.Keys.ToImmutableHashSet();
+        SuccessorOwnedParentProfiles[profile] = predecessor.RulesVersion;
         MechanicsOwners.GetValue(proof.Mechanics.Catalog, _ => new())[profile] = proof;
     }
 
@@ -103,6 +105,25 @@ public sealed class OwnedBattlePokemonCatalog
 
     internal static bool RegisteredProfileAdmitsTrainerOpponent(string profile, SpeciesId species) =>
         SuccessorOpponentSpecies.TryGetValue(profile, out var admitted) && admitted.Contains(species);
+
+    // Regional factories retain their authenticated source owner. A registered campaign
+    // successor inherits that source without replacing its own battle/party profile.
+    internal static OwnedBattlePokemonCatalog? SourceRoot(OwnedBattlePokemonCatalog? owned)
+    {
+        if (owned is null || !ReferenceEquals(For(owned.Catalog), owned)) return null;
+        while (owned.CampaignParent is { } parent)
+        {
+            if (!ReferenceEquals(For(parent.Catalog), parent) || !ReferenceEquals(parent.Mechanics, owned.Mechanics)) return null;
+            owned = parent;
+        }
+        return owned;
+    }
+
+    internal static string? InheritedWildProfile(string? profile)
+    {
+        while (profile is not null && SuccessorOwnedParentProfiles.TryGetValue(profile, out var predecessor)) profile = predecessor;
+        return profile;
+    }
 
     internal static string? InheritedTrainerProfile(string? profile)
     {

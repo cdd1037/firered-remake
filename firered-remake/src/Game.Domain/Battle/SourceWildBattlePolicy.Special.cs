@@ -13,28 +13,28 @@ public static partial class SourceWildBattlePolicy
     internal static bool Disguised(SourceBattleFrame frame) => TowerPolicy(frame) is { OrdinaryAttacks: false };
 
     private static CelioOwnedPokemonCatalog? CelioSourceOwnership(OwnedBattlePokemonCatalog? owned) =>
-        owned is not null && ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned)
-            ? CelioOwnedPokemonCatalog.For(owned.Catalog) ?? CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor ?? SevenIslandOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor.Predecessor ?? (EventIslandOwnedPokemonCatalog.For(owned.Catalog) ?? PowerPlantOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor)?.Predecessor.Predecessor.Predecessor
+        OwnedBattlePokemonCatalog.SourceRoot(owned) is { } source
+            ? CelioOwnedPokemonCatalog.For(source.Catalog) ?? CeruleanCaveOwnedPokemonCatalog.For(source.Catalog)?.Predecessor ?? SevenIslandOwnedPokemonCatalog.For(source.Catalog)?.Predecessor.Predecessor ?? (EventIslandOwnedPokemonCatalog.For(source.Catalog) ?? PowerPlantOwnedPokemonCatalog.For(source.Catalog)?.Predecessor)?.Predecessor.Predecessor.Predecessor
             : null;
 
     private static bool AdmitsOpponent(OwnedBattlePokemonCatalog owned, SourceWildEncounterContext context, WildBattleCombatant opponent)
     {
         var mon = opponent.Pokemon;
-        if (!owned.Catalog.Species.ContainsKey(mon.Species)) return false;
+        if (!owned.Catalog.Species.ContainsKey(mon.Species) || OwnedBattlePokemonCatalog.SourceRoot(owned) is not { } source) return false;
         if (context.CelioRoamer is { } roamer)
             return CelioSourceOwnership(owned) is not null && CelioRoamerBattleContract.MatchesIdentity(roamer, mon);
-        var five = FiveIslandOwnedPokemonCatalog.For(owned.Catalog) ?? CelioSourceOwnership(owned)?.Predecessor;
-        var six = SixIslandOwnedPokemonCatalog.For(owned.Catalog) ?? five?.Predecessor;
-        var four = FourIslandOwnedPokemonCatalog.For(owned.Catalog) ?? six?.Predecessor;
-        var ruby = SeviiRubyOwnedPokemonCatalog.For(owned.Catalog) ?? four?.Predecessor;
-        var cinnabar = CinnabarOwnedPokemonCatalog.For(owned.Catalog) ?? ruby?.Predecessor;
-        var events = EventIslandOwnedPokemonCatalog.For(owned.Catalog) ?? PowerPlantOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor;
-        var seven = SevenIslandOwnedPokemonCatalog.For(owned.Catalog) ?? events?.Predecessor;
+        var five = FiveIslandOwnedPokemonCatalog.For(source.Catalog) ?? CelioSourceOwnership(source)?.Predecessor;
+        var six = SixIslandOwnedPokemonCatalog.For(source.Catalog) ?? five?.Predecessor;
+        var four = FourIslandOwnedPokemonCatalog.For(source.Catalog) ?? six?.Predecessor;
+        var ruby = SeviiRubyOwnedPokemonCatalog.For(source.Catalog) ?? four?.Predecessor;
+        var cinnabar = CinnabarOwnedPokemonCatalog.For(source.Catalog) ?? ruby?.Predecessor;
+        var events = EventIslandOwnedPokemonCatalog.For(source.Catalog) ?? PowerPlantOwnedPokemonCatalog.For(source.Catalog)?.Predecessor;
+        var seven = SevenIslandOwnedPokemonCatalog.For(source.Catalog) ?? events?.Predecessor;
         bool sourceEntry = context switch {
-            { PowerPlant: { } origin } => PowerPlantOwnedPokemonCatalog.For(owned.Catalog) is { } plant && PowerPlantPokemonFactory.SourceInitialInstance(plant, origin, mon),
+            { PowerPlant: { } origin } => PowerPlantOwnedPokemonCatalog.For(source.Catalog) is { } plant && PowerPlantPokemonFactory.SourceInitialInstance(plant, origin, mon),
             { EventIsland: { } origin } => events is not null && EventIslandPokemonFactory.SourceInitialInstance(events, origin, mon),
             { SevenIsland: { } origin } => seven is not null && SevenIslandWildPokemonFactory.SourceInitialInstance(seven, origin, mon),
-            { CeruleanCave: { } origin } => (CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog) ?? seven?.Predecessor) is { } cave &&
+            { CeruleanCave: { } origin } => (CeruleanCaveOwnedPokemonCatalog.For(source.Catalog) ?? seven?.Predecessor) is { } cave &&
                 CeruleanCaveWildPokemonFactory.SourceInitialInstance(cave, origin, mon),
             { FiveIsland: { } origin } => five is not null && FiveIslandWildPokemonFactory.SourceInitialInstance(five, origin, mon),
             { SixIsland: { } origin } => six is not null && SixIslandWildPokemonFactory.SourceInitialInstance(six, origin, mon),

@@ -104,3 +104,6 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /tests/Game.NpcTradeView.Tests/*.cs.uid
 /evidence/npc-trades-*/**/*.dll
 /evidence/npc-trades-*/**/*.pdb
+
+/evidence/npc-trades-view-*/**/userdata/
+/evidence/npc-trades-view-*/**/host.log
