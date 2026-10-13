@@ -170,7 +170,7 @@ public static class SourceFourRewards
             {
                 if (next.FourTurn!.OutcomeAfterRewards is { } outcome)
                 {
-                    next = SourceWildBattlePolicy.SetOutcome(next, outcome) with { FourTurn = next.FourTurn with { OutcomeAfterRewards = null, Phase = SourceFourActionPhase.BattleEnded } };
+                    next = SourceBattleOutcomeRules.SetOutcome(next, outcome) with { FourTurn = next.FourTurn with { OutcomeAfterRewards = null, Phase = SourceFourActionPhase.BattleEnded } };
                     completedOutcome = outcome;
                 }
                 else next = next with { FourTurn = next.FourTurn! with {
@@ -179,7 +179,7 @@ public static class SourceFourRewards
             }
             Publish((n, t) => new SourceOpponentRewardCompletedEvent(n, t, defeat.Occupant));
             if (completedOutcome is { } finalOutcome) Publish((n, t) => new SourceEndedEvent(n, t, finalOutcome));
-            else if (!SourceFourActionTurns.HasPendingRewards(next) && SourceFourActionTurns.HasImmediateVacancy(next))
+            else if (next.FourTurn!.OutcomeAfterEndTurn is null && !SourceFourActionTurns.HasPendingRewards(next) && SourceFourActionTurns.HasImmediateVacancy(next))
                 next = SourceFourActionTurns.ExposeReplacements(next, events);
             return Commit();
 

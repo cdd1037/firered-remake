@@ -14,7 +14,7 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame, PokemonCatalog?
     internal override int Turn => Frame.Turn;
     internal override int BattlerCount => Frame.BattlerCount;
     internal override SourceFieldRegisters Field { get => Frame.Field; set => Frame = Frame with { Field = value }; }
-    internal override bool SuppressIntimidateTrace => false;
+    internal override bool SuppressIntimidateTrace => SourceWildBattlePolicy.TowerPolicy(Frame) is { SuppressEntryIntimidateAndTrace: true };
     internal override bool SinglesLivingTargets => Frame.Layout == SourceBattleLayout.Singles;
     internal override bool IsAbsent(BattlerSlot slot) => Frame.IsSourceAbsent(slot);
     internal override WildBattleCombatant Get(BattlerSlot slot) => Frame.Get(slot).Body ?? throw new SourceRecipeUnsupported("source_entry_absent_body");
@@ -31,7 +31,11 @@ internal sealed class FrameEntryContext(SourceBattleFrame frame, PokemonCatalog?
     {
         var draw = Gen3Rng.Next(Frame.Rng, purpose, bound); Frame = Frame with { Rng = draw.State }; Trace.Add(draw.Trace); return draw.Value;
     }
-    internal override void RecordAbility(BattlerSlot slot, string ability) { }
+    internal override void RecordAbility(BattlerSlot slot, string ability)
+    {
+        if (slot.Side == BattleSide.Player && Frame.TrainerEncounter is { } trainer)
+            Frame = Frame with { TrainerEncounter = trainer with { KnownPlayerAbility = ability } };
+    }
     internal override bool SourceCalledMist(BattlerSlot slot) => Frame.Sides[(int)slot.Side].MistTurnsRemaining > 0;
     internal override bool SourceCalledSecondaryBlocked(BattlerSlot slot) => Get(slot).CalledVolatile?.SubstituteHp > 0;
     internal override void SourceCalledProtectionFailure(BattlerSlot actor, BattlerSlot target, MoveId move, string reason) =>

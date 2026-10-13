@@ -2,10 +2,12 @@ using System.Collections.Immutable;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.WildBattle;
+using Game.Domain.Trainers;
 
 namespace Game.Domain.Battle;
 
-public enum SourceFourActionPhase { Actions, EndTurn, RewardsPending, ReplacementsPending, BattleEnded, EndTurnResume, ActionSwitchPending }
+public enum SourceFourActionPhase { Actions, EndTurn, RewardsPending, ReplacementsPending, BattleEnded, EndTurnResume, ActionSwitchPending, ShiftPending }
+public sealed record SourcePendingTrainerReplacement(PartyMemberKey Incoming, bool ShiftOffered);
 public sealed record SourceDefeatedOccupant(OccupantToken Occupant, long FaintEventSequence, bool RequiresExperience);
 public sealed record SourceFourActionCursor(int Turn, SourceFourActionPhase Phase,
     ImmutableArray<SourceDefeatedOccupant> Defeats)
@@ -16,6 +18,8 @@ public sealed record SourceFourActionCursor(int Turn, SourceFourActionPhase Phas
     public SourceEndTurnCursor? EndTurn { get; init; }
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public SourcePursuitSwitchCursor? PursuitSwitch { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public SourcePendingTrainerReplacement? TrainerReplacement { get; init; }
     // Terminal party state cannot bypass the outstanding source experience boundary.
     public WildBattleOutcome? OutcomeAfterRewards { get; init; }
     // Single wild terminal turns still run source end-turn sorting/cleanup before EXP.
@@ -49,8 +53,10 @@ public static partial class SourceFourActionTurns
             return "source_four_action_capability";
         if (SourceItemTransferRules.Validate(catalog, frame) is { } itemError) return itemError;
         if (frame.Layout == SourceBattleLayout.PresetDoubles ? frame.BattleKind != WildBattleCalledBattleKind.Trainer
-            : frame.BattleKind != WildBattleCalledBattleKind.Wild || frame.KoReplacementTiming != KoReplacementTiming.SourceImmediate ||
-                frame.Party(BattleSide.Opponent).Members.Length != 1) return "source_four_action_battle_kind";
+            : frame.KoReplacementTiming != KoReplacementTiming.SourceImmediate ||
+                frame.BattleKind == WildBattleCalledBattleKind.Wild && frame.Party(BattleSide.Opponent).Members.Length != 1) return "source_four_action_battle_kind";
+        if (frame.Layout == SourceBattleLayout.Singles && frame.BattleKind == WildBattleCalledBattleKind.Trainer &&
+            SourceTrainerEncounterPolicy.Validate(catalog, frame) is { } trainerError) return trainerError;
         if (frame.WildTurn is not null) return "source_four_action_competing_owner";
         if (new[] { frame.Field.RainTurnsRemaining, frame.Field.SandstormTurnsRemaining, frame.Field.SunTurnsRemaining, frame.Field.HailTurnsRemaining }.Count(t => t > 0) > 1)
             return "source_four_action_weather_conflict";
@@ -247,7 +253,10 @@ public static partial class SourceFourActionTurns
             return Fail(frame, "source_four_action_stale_continuation");
         if (cursor.Phase == SourceFourActionPhase.RewardsPending) return SourceFourRewards.Settle(catalog, frame, continuation);
         if (cursor.Phase == SourceFourActionPhase.ActionSwitchPending) return Fail(frame, "source_four_action_switch_choice_required");
-        if (cursor.Phase == SourceFourActionPhase.ReplacementsPending) return Fail(frame, "source_four_action_replacement_choice_required");
+        if (cursor.Phase == SourceFourActionPhase.ShiftPending) return Fail(frame, "source_trainer_shift_choice_required");
+        if (cursor.Phase == SourceFourActionPhase.ReplacementsPending) return frame.TrainerEncounter is not null &&
+            frame.PendingSwitches.FirstOrDefault()?.Slot.Side == BattleSide.Opponent
+            ? ContinueTrainerReplacement(catalog, frame, continuation) : Fail(frame, "source_four_action_replacement_choice_required");
         if (cursor.Phase == SourceFourActionPhase.BattleEnded) return Fail(frame, "source_four_action_battle_ended");
         try
         {
@@ -303,6 +312,9 @@ public static partial class SourceFourActionTurns
                             Registers = cell.Registers with { ChosenMoveSlot = position, LastMoveSlot = position } }) };
                 }
                 var move = SourceBattleKernel.ActionMove(catalog, actionFrame.Get(action.Slot), action.MoveSlot!.Value);
+                if (actionFrame.TrainerEncounter is { } trainer && action.MoveSlot != WildBattleRules.StruggleSlot &&
+                    actionFrame.Get(action.Slot).Registers.Turn?.Lock is null)
+                    actionFrame = actionFrame with { TrainerEncounter = trainer with { StaleCurrentMove = move.Id } };
                 // Source forced/recharge selection precedes the overwritten-selected-move branch.
                 bool struggle = action.MoveSlot == WildBattleRules.StruggleSlot;
                 var replaced = encoreRedirect || !struggle && actionFrame.Get(action.Slot).Registers.Turn?.Lock is null && action.OriginalChosenMove != move.Id;
@@ -350,13 +362,13 @@ public static partial class SourceFourActionTurns
             if (!playerAlive || !opponentAlive)
             {
                 var outcome = !playerAlive && !opponentAlive ? WildBattleOutcome.Draw : playerAlive ? WildBattleOutcome.Won : WildBattleOutcome.Lost;
-                if (next.KoReplacementTiming == KoReplacementTiming.SourceImmediate)
+                if (next.KoReplacementTiming == KoReplacementTiming.SourceImmediate && next.TrainerEncounter is null)
                     next = next with { FourTurn = next.FourTurn! with { OutcomeAfterEndTurn = outcome } };
                 else if (HasPendingRewards(next))
                     next = next with { FourTurn = next.FourTurn! with { OutcomeAfterRewards = outcome } };
                 else
                 {
-                    next = SourceWildBattlePolicy.SetOutcome(next, outcome);
+                    next = SourceBattleOutcomeRules.SetOutcome(next, outcome);
                     var ended = SourceBattleEventHooks.Publish(next, (n, t) => new SourceEndedEvent(n, t, outcome));
                     next = ended.State; events.Add(ended.Event);
                 }
@@ -398,6 +410,8 @@ public static partial class SourceFourActionTurns
         var defeated = frame.Get(slot).Occupant!.Value;
         if (frame.FourTurn!.Defeats.Any(d => d.Occupant == defeated)) return frame;
         return frame with {
+            TrainerEncounter = slot.Side == BattleSide.Player && frame.TrainerEncounter is { } trainer
+                ? trainer with { PlayerFaintedThisTurn = true } : frame.TrainerEncounter,
             DeferredKoVacancyMask = frame.KoReplacementTiming == KoReplacementTiming.EndOfTurn
                 ? (byte)(frame.DeferredKoVacancyMask | slot.Mask) : frame.DeferredKoVacancyMask,
             Queue = frame.Queue.Select(a => frame.NextAction < frame.Queue.Length && a.Token?.Owner == defeated &&
@@ -432,7 +446,8 @@ public static partial class SourceFourActionTurns
     {
         if (frame.NextAction != frame.Queue.Length || frame.Outcome != WildBattleOutcome.Ongoing || frame.FourTurn!.EndTurn?.Stage == WildBattleSourceEndTurnStage.Complete)
             return Fail(frame, "source_four_action_end_turn_phase");
-        var next = frame;
+        var next = frame.TrainerEncounter is { } trainer ? frame with {
+            TrainerEncounter = trainer with { StaleCurrentMove = ForestTrainerCombatRules.NoMove } } : frame;
         var events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
         var trace = ImmutableArray.CreateBuilder<RandomTrace>();
         var cursor = frame.FourTurn!.EndTurn;
@@ -454,7 +469,7 @@ public static partial class SourceFourActionTurns
         }
         // HandleFaintedMonActions is after every ordinary field/battler residual and before
         // delayed scripts. The cursor prevents replay while the actual owner supplies EXP/entry.
-        if (HasPendingRewards(next) && next.FourTurn!.OutcomeAfterEndTurn is null)
+        if (HasPendingRewards(next) && (next.FourTurn!.OutcomeAfterEndTurn is null || next.TrainerEncounter is not null))
             return Pause(SourceFourActionPhase.RewardsPending);
         if ((next.DeferredKoVacancyMask != 0 || HasImmediateVacancy(next)) && next.Outcome == WildBattleOutcome.Ongoing &&
             next.FourTurn!.OutcomeAfterEndTurn is null)
@@ -473,7 +488,7 @@ public static partial class SourceFourActionTurns
         var delayed = new FrameEndTurnContext(next, catalog);
         cursor = delayed.Advance(catalog, cursor.Order, cursor);
         next = delayed.Frame; events.AddRange(delayed.Events); trace.AddRange(delayed.Trace);
-        if (HasPendingRewards(next) && next.FourTurn!.OutcomeAfterEndTurn is null) return Pause(SourceFourActionPhase.RewardsPending);
+        if (HasPendingRewards(next) && (next.FourTurn!.OutcomeAfterEndTurn is null || next.TrainerEncounter is not null)) return Pause(SourceFourActionPhase.RewardsPending);
         if (next.Outcome != WildBattleOutcome.Ongoing) return Pause(SourceFourActionPhase.BattleEnded);
         if (HasImmediateVacancy(next) && next.FourTurn!.OutcomeAfterEndTurn is null)
         {
@@ -486,7 +501,7 @@ public static partial class SourceFourActionTurns
             next = next with { FourTurn = next.FourTurn with { OutcomeAfterEndTurn = null,
                 OutcomeAfterRewards = HasPendingRewards(next) ? terminal : null } };
             if (HasPendingRewards(next)) return Pause(SourceFourActionPhase.RewardsPending);
-            next = SourceWildBattlePolicy.SetOutcome(next, terminal);
+            next = SourceBattleOutcomeRules.SetOutcome(next, terminal);
             var ended = SourceBattleEventHooks.Publish(next, (n, t) => new SourceEndedEvent(n, t, terminal));
             next = ended.State; events.Add(ended.Event);
             return Pause(SourceFourActionPhase.BattleEnded);
@@ -496,7 +511,9 @@ public static partial class SourceFourActionTurns
             Registers = c.Registers with { ChosenMoveSlot = null } }).ToImmutableArray() };
         var draw = Gen3Rng.Next(next.Rng, "wild-battle.turn-end.random-turn-number");
         next = next with { Rng = draw.State, Turn = Math.Min(255, next.Turn + 1), RandomTurnNumber = draw.Value,
-            Queue = [], NextAction = 0, FourTurn = null, Revision = checked(frame.Revision + 1), TurnStartAbsentMask = next.SourceAbsentMask };
+            Queue = [], NextAction = 0, FourTurn = null, Revision = checked(frame.Revision + 1), TurnStartAbsentMask = next.SourceAbsentMask,
+            TrainerEncounter = next.TrainerEncounter is { } complete ? complete with {
+                StaleCurrentMove = ForestTrainerCombatRules.NoMove, PlayerFaintedThisTurn = false } : null };
         var ready = SourceBattleEventHooks.Publish(next, (n, t) => new SourceTurnReadyEvent(n, t, draw.Value));
         events.Add(ready.Event); trace.Add(draw.Trace);
         return new(ready.State, events.ToImmutable(), trace.ToImmutable(), null);

@@ -178,6 +178,7 @@ public sealed record SourceBattleFrame
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<SourcePreparedMedicine>? PreparedMedicines { get; init; }
     public SourceWildTurnCursor? WildTurn { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceWildEncounterContext? WildEncounter { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.Trainers.SourceTrainerEncounterContext? TrainerEncounter { get; init; }
     public SourceFourActionCursor? FourTurn { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceFourRewardState? Rewards { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceEntryAbilityState? EntryAbilities { get; init; }

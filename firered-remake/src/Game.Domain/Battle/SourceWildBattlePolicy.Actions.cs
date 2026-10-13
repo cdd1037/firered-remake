@@ -122,6 +122,12 @@ public static partial class SourceWildBattlePolicy
         var next = frame; var events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
         BeginItem(ref next, events, clearGrudge: true);
         Publish(ref next, events, (n, t) => new SourceBallThrownEvent(n, t, new(0), new(1), selection.Ball));
+        if (next.WildEncounter?.TowerBattleKind is { } tower && PokemonTowerBattleContract.BallDodges(tower))
+        {
+            next = next with { Revision = checked(frame.Revision + 1) };
+            Publish(ref next, events, (n, t) => new SourceTowerBallDodgedEvent(n, t, selection.Ball));
+            return new(next, events.ToImmutable(), [], null);
+        }
         var target = next.Get(new(1)).Body!; var pokemon = target.Pokemon;
         var status = WildBattleSourceFieldEffects.IsValidToxic(target.Status) ? CaptureStatus.BadPoison :
             WildBattleStatus.IsSleeping(target.Status) ? CaptureStatus.Sleep : target.Status switch {
@@ -138,7 +144,7 @@ public static partial class SourceWildBattlePolicy
             capture.Branch!.Value, capture.Calculation!, capture.ChecksPassed, capture.AnimationCode!.Value));
         if (capture.Outcome == CaptureOutcome.Caught)
         {
-            next = SetOutcome(next, WildBattleOutcome.Caught);
+            next = SourceBattleOutcomeRules.SetOutcome(next, WildBattleOutcome.Caught);
             Publish(ref next, events, (n, t) => new SourceEndedEvent(n, t, WildBattleOutcome.Caught));
         }
         return new(next, events.ToImmutable(), capture.RandomTrace, null);
@@ -154,7 +160,7 @@ public static partial class SourceWildBattlePolicy
             Publish(ref next, events, (n, t) => new SourceRoamerRunEvent(n, t, escaped));
             if (escaped)
             {
-                next = SetOutcome(next, WildBattleOutcome.Escaped, RoamerBattleOutcome.MonFled);
+                next = SourceBattleOutcomeRules.SetOutcome(next, WildBattleOutcome.Escaped, RoamerBattleOutcome.MonFled);
                 Publish(ref next, events, (n, t) => new SourceEndedEvent(n, t, WildBattleOutcome.Escaped));
             }
         }
@@ -163,7 +169,8 @@ public static partial class SourceWildBattlePolicy
             var player = frame.Get(new(0)).Body!; int p = player.Pokemon.Stats.Speed, o = frame.Get(new(1)).Body!.Pokemon.Stats.Speed;
             int before = frame.RunAttempts; string? item = EscapeItem(catalog, player);
             bool ability = WildBattleEffective.Ability(player) == "ABILITY_RUN_AWAY";
-            bool escaped = item is not null || ability || p >= o;
+            bool guaranteed = TowerPolicy(frame) is { GuaranteedRun: true };
+            bool escaped = item is not null || ability || guaranteed || p >= o;
             int? threshold = null, roll = null;
             if (!escaped)
             {
@@ -171,12 +178,12 @@ public static partial class SourceWildBattlePolicy
                 var draw = Gen3Rng.Next(next.Rng, "wild-battle.run", 256); next = next with { Rng = draw.State }; trace.Add(draw.Trace);
                 roll = draw.Value & 255; escaped = threshold > roll;
             }
-            int attempts = item is not null || ability ? before : (before + 1) & 255;
+            int attempts = item is not null || ability || guaranteed ? before : (before + 1) & 255;
             next = next with { RunAttempts = attempts };
             Publish(ref next, events, (n, t) => new SourceRunAttemptEvent(n, t, before, attempts, p, o, threshold, roll, escaped) { EscapingItem = item });
             if (escaped)
             {
-                next = SetOutcome(next, WildBattleOutcome.Escaped, RoamerBattleOutcome.Ran);
+                next = SourceBattleOutcomeRules.SetOutcome(next, WildBattleOutcome.Escaped, RoamerBattleOutcome.Ran);
                 Publish(ref next, events, (n, t) => new SourceEndedEvent(n, t, WildBattleOutcome.Escaped));
             }
             else if (frame.FourTurn?.Phase != SourceFourActionPhase.ReplacementsPending) BeginItem(ref next, events, clearGrudge: false);

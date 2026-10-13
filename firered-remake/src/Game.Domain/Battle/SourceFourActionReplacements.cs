@@ -28,12 +28,18 @@ public static partial class SourceFourActionTurns
     }
 
     public static SourceFourActionResult ChooseReplacement(PokemonCatalog catalog, SourceBattleFrame frame,
-        SourceTurnContinuation continuation, BattlerSlot slot, PartyMemberKey incoming)
+        SourceTurnContinuation continuation, BattlerSlot slot, PartyMemberKey incoming) =>
+        ChooseReplacementCore(catalog, frame, continuation, slot, incoming, false);
+
+    private static SourceFourActionResult ChooseReplacementCore(PokemonCatalog catalog, SourceBattleFrame frame,
+        SourceTurnContinuation continuation, BattlerSlot slot, PartyMemberKey incoming, bool trainerSelected)
     {
         if (ValidateCapability(catalog, frame) is { } invalid) return Fail(frame, invalid);
         if (frame.FourTurn is not { Phase: SourceFourActionPhase.ReplacementsPending } cursor ||
             continuation != new SourceTurnContinuation(frame.Revision, frame.EventSequence, frame.NextAction, cursor.Phase))
             return Fail(frame, "source_four_replacement_stale_continuation");
+        if (!trainerSelected && frame.TrainerEncounter is not null && slot.Side == BattleSide.Opponent)
+            return Fail(frame, "source_trainer_policy_replacement_required");
         if (frame.PendingSwitches.IsEmpty || frame.PendingSwitches[0].Slot != slot || incoming.Side != slot.Side ||
             !frame.PendingSwitches[0].LegalPartyIndices.Contains(incoming.Index) || HasPendingRewards(frame))
             return Fail(frame, "source_four_replacement_choice");

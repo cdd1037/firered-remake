@@ -1,0 +1,7 @@
+# Current map presentation bindings
+
+The current view resolves map-to-NPC-source and local-border availability once into `PretCampaignMapPresentation.Create`. Content supplies file locations; Godot retains texture validation, ownership, caching and drawing. `CampaignView.GetMapArt` now reads one immutable map entry instead of repeating 35 regional NPC selectors and a second regional border chain on every first map load.
+
+The ordered content overlays preserve the former newest-first NPC precedence. Border availability is an independent union, so an NPC override does not accidentally add or remove a border. The Fuji house retains Tower NPCs without acquiring a new local border. Regional services include the later department-store/name-rater interiors. League, Viridian Center and early Viridian NPC-only bindings retain their former distinction. Missing regional NPC bindings still use the source map's authenticated local `npc-sprites.json`.
+
+A one-time characterisation extracted the exact two selection expressions from `64a3f828` before editing. All 254 current maps have identical selected NPC source and local-border flag, with zero missing selected NPC files: 508 comparisons. See `evidence/refactor-map-presentation-20261013/result.json` and the retained comparison source. This checks resource selection, not rendered pixel equivalence. The normal Godot build passed with zero warnings/errors alongside the encounter-policy integration; no new resources, save change or native visual claim is introduced.

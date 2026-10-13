@@ -43,7 +43,7 @@ public static class CeruleanTrainerActionAi
         }
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fault("cerulean_switch_rng_algorithm");
         if (input.LastHitBy is { } lastSide && !Enum.IsDefined(lastSide)) return Fault("cerulean_switch_last_hit_by");
-        var last = input.LastLandedMove is null || input.LastLandedMove.Value.Value is "pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" || slots is null && input.LastLandedMove.Value.Value == "pret:MOVE_STRUGGLE" ? null :
+        var last = input.LastLandedMove is null || input.LastLandedMove.Value.Value is "pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" || slots?.Doubles != true && input.LastLandedMove.Value.Value == "pret:MOVE_STRUGGLE" ? null :
             catalog.Moves.GetValueOrDefault(input.LastLandedMove.Value);
         if (input.LastLandedMove is { } lastId && lastId.Value is not ("pret:MOVE_NONE" or "pret:MOVE_UNAVAILABLE" or "pret:MOVE_STRUGGLE") &&
             (last is null || !(source is not null || slots is not null ? MetronomeSourceMoveDefinition.Matches(last) : rockTunnelRules ? CeladonApproachBattleScope.ValidDefinitionForCatalog(catalog, last) : route11Rules ? Route11BattleScope.ValidDefinition(last) : vermilionGymRules ? VermilionGymBattleScope.ValidDefinition(last) : ssAnneRules ? SsAnneBattleScope.ValidDefinition(last) : vermilionRules ? VermilionBattleScope.ValidDefinition(last) : billRules ? BillBattleScope.ValidDefinition(last) : CeruleanBattleScope.ValidDefinition(last)))) return Fault("cerulean_switch_last_move");
@@ -68,7 +68,7 @@ public static class CeruleanTrainerActionAi
             for (int targetIndex = 0; targetIndex < targets.Length; targetIndex++)
                 for (int slot=0;slot<input.User.Pokemon.Moves.Length;slot++)
                     if ((TypeFlags(catalog,catalog.Moves[input.User.Pokemon.Moves[slot].Move],targets[targetIndex]) & SuperEffective) != 0 &&
-                        (noRng || Draw(slots is null ? $"has-super-effective.slot.{slot}" : $"has-super-effective.target.{targetIndex}.slot.{slot}",10) != 0)) return true;
+                        (noRng || Draw(slots?.Doubles != true ? $"has-super-effective.slot.{slot}" : $"has-super-effective.target.{targetIndex}.slot.{slot}",10) != 0)) return true;
             return false;
         }
         int? FindResistant(int flag,int modulus)
@@ -105,7 +105,7 @@ public static class CeruleanTrainerActionAi
             if (!Enumerable.Range(0,input.Party.Length).Any(Living)) return Done();
             if ((source is not null || slots is not null) && input.User.CalledVolatile?.PerishSongTimer == 0)
                 return Done(Replacement());
-            if (source is not null && slots is null && WildBattleEffective.Ability(input.Target) == "ABILITY_WONDER_GUARD" && !HasSuperEffective(true))
+            if ((source is not null || slots is not null) && slots?.Doubles != true && WildBattleEffective.Ability(input.Target) == "ABILITY_WONDER_GUARD" && !HasSuperEffective(true))
                 for (int i=0;i<input.Party.Length;i++) {
                     if (!Living(i)) continue;
                     for (int slot=0;slot<input.Party[i].Pokemon.Moves.Length;slot++)

@@ -97,7 +97,7 @@ public static partial class SourceFourMedicineRules
             if (p.Actor.Slot.Side == BattleSide.Opponent && p.DeferredEffect is null) return "source_medicine_deferred_required";
             if (p.EscapeOnUse && (p.Actor.Slot.Side != BattleSide.Player || p.Target != p.Actor.Member || p.DeferredEffect is not null ||
                 p.Item.Value is not ("pret:ITEM_POKE_DOLL" or "pret:ITEM_FLUFFY_TAIL") ||
-                frame.WildEncounter is not { ScriptedSnorlax: false, TowerBattleKind: null })) return "source_medicine_escape_receipt";
+                frame.WildEncounter is not { ScriptedSnorlax: false, TowerBattleKind: null or PokemonTowerBattleKind.OrdinaryWild })) return "source_medicine_escape_receipt";
             if (!frame.Queue.IsEmpty && !frame.Queue.Skip(frame.NextAction).Any(a =>
                 a.Kind == SourceActionKind.Item && a.Token?.Owner == p.Actor && a.Item == p.Item))
                 return "source_medicine_receipt_queue";
@@ -130,7 +130,7 @@ public static partial class SourceFourMedicineRules
         }
         else if (receipt.EscapeOnUse)
         {
-            frame = SourceWildBattlePolicy.SetOutcome(frame, WildBattleOutcome.Escaped);
+            frame = SourceBattleOutcomeRules.SetOutcome(frame, WildBattleOutcome.Escaped);
             var ended = SourceBattleEventHooks.Publish(frame, (n, t) => new SourceEndedEvent(n, t, WildBattleOutcome.Escaped));
             frame = ended.State; appliedEvents = [ended.Event];
         }

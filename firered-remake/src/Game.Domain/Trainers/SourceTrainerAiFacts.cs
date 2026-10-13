@@ -11,7 +11,7 @@ internal sealed class SourceTrainerAiFacts(SourceTrainerAiContext? source, Sourc
     internal PokemonCatalog Catalog => slots?.Catalog ?? source!.Catalog;
     internal WildBattleCombatant User => slots is not null ? slots.Frame.Get(slots.Actor).Body! : source!.Battle.Opponent;
     internal WildBattleCombatant Target => slots is not null ? slots.Frame.Get(slots.Target).Body! : source!.Battle.Player;
-    internal bool Doubles => slots is not null;
+    internal bool Doubles => slots?.Doubles == true;
     private SourceBattleSlot TargetCell => slots!.Frame.Get(slots.Target);
     private SourceBattleSlot UserCell => slots!.Frame.Get(slots.Actor);
     private SourceSideRegisters UserSide => slots!.Frame.Sides[(int)slots.Actor.Side];

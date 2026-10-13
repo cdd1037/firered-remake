@@ -30,7 +30,7 @@ public static partial class SourceFourTrainerAi
         string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null)
     {
         SourceTrainerActionPreparationResult Fail(string code) => new(frame, inventory!, [], [], [], code) { SourceCurrentMove = staleCurrentMove };
-        if (ValidateMetadata(trainer) is { } metadata) return Fail(metadata);
+        if (ValidateMetadata(trainer, frame) is { } metadata) return Fail(metadata);
         if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } capability) return Fail(capability);
         if (items is null || inventory is null) return Fail("source_four_trainer_preparation_inventory");
         if (inventory.Validate(items, trainer) is { } inventoryError) return Fail(inventoryError);
@@ -47,11 +47,12 @@ public static partial class SourceFourTrainerAi
             var trace = ImmutableArray.CreateBuilder<RandomTrace>();
             var events = ImmutableArray.CreateBuilder<SourceBattleEvent>();
             var switches = ImmutableArray.CreateBuilder<SourceActionSelection>();
-            foreach (var actor in new[] { new BattlerSlot(1), new BattlerSlot(3) })
+            foreach (var actor in frame.Slots.Take(frame.BattlerCount).Where(c => c.Slot.Side == BattleSide.Opponent).Select(c => c.Slot))
             {
                 if (!SourceFourMedicineRules.CanSelect(current, actor)) continue;
                 var cell = current.Get(actor);
-                if (cell.Registers.Turn?.Lock is null)
+                if (cell.Registers.Turn?.Lock is null &&
+                    (frame.Layout != SourceBattleLayout.Singles || WildBattleRules.ForcedMoveSlot(cell.Body!) is null))
                 {
                     var switching = DecideSwitch(catalog, current, actor, currentMove, switches.ToImmutable());
                     if (!switching.Succeeded) return Fail(switching.Fault!);

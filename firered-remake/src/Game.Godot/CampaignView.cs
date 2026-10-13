@@ -27,6 +27,7 @@ public partial class CampaignView:Node2D
     private CampaignResourceCache.MapCache<MapArt> MapCache=>_maps??=new(_mapResources);
     private CampaignResourceCache.Owner SceneTextures=>_sceneTextures??=_mapResources.CreateOwner("scene");
     private IReadOnlyDictionary<MapId,PretMapBorders> _borderSources=null!;
+    private IReadOnlyDictionary<MapId,PretMapPresentationBinding>? _mapPresentation;
     private readonly Dictionary<string,Pose> _poses=new(StringComparer.Ordinal);
     private readonly List<Track> _tracks=[];
     private readonly Dictionary<int,Texture2D> _portraits=[];
@@ -121,41 +122,8 @@ public partial class CampaignView:Node2D
             var source=_catalog.SourceMaps[id];
             Texture2D MapTexture(string path)=>owner.Texture(path,expectedSha256:source.Artifacts.FirstOrDefault(a=>System.IO.Path.Combine(source.DirectoryPath,a.Path)==path)?.Sha256);
             var npcs=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
-            if(_catalog.FiveIslandRegion is {} fiveIsland&&fiveIsland.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(fiveIsland.NpcSourcePath,owner);
-            else if(_catalog.SixIslandRegion is {} sixIsland&&sixIsland.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(sixIsland.NpcSourcePath,owner);
-            else if(_catalog.FourIslandRegion is {} fourIsland&&fourIsland.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(fourIsland.NpcSourcePath,owner);
-            else if(_catalog.SeviiRubyRegion is {} seviiRuby&&seviiRuby.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(seviiRuby.NpcSourcePath,owner);
-            else if(_catalog.PokemonLeagueRegion is {} pokemonLeague&&pokemonLeague.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(pokemonLeague.NpcSourcePath,owner);
-            else if(_catalog.VictoryRoadRegion is {} victoryRoad&&victoryRoad.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(victoryRoad.NpcSourcePath,owner);
-            else if(_catalog.ViridianGymRegion is {} viridianGym&&viridianGym.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(viridianGym.NpcSourcePath,owner);
-            else if(_catalog.FirstSeviiRegion is {} firstSevii&&firstSevii.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(firstSevii.NpcSourcePath,owner);
-            else if(_catalog.CinnabarRegion is {} cinnabar&&cinnabar.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(cinnabar.NpcSourcePath,owner);
-            else if(_catalog.SaffronGymRegion is {} saffronGym&&saffronGym.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(saffronGym.NpcSourcePath,owner);
-            else if(_catalog.SilphRegion is {} silph&&silph.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(silph.NpcSourcePath,owner);
-            else if(_catalog.SafariRegion is {} safari&&safari.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(safari.NpcSourcePath,owner);
-            else if(_catalog.FuchsiaGymRegion is {} fuchsiaGym&&fuchsiaGym.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(fuchsiaGym.NpcSourcePath,owner);
-            else if(_catalog.FuchsiaRouteRegion is {} fuchsiaRoute&&fuchsiaRoute.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(fuchsiaRoute.NpcSourcePath,owner);
-            else if(_catalog.RegionalServiceMaps is {} regionalServices&&_catalog.IsRegionalServiceMap(id))npcs=LoadRegionNpcs(regionalServices.NpcSourcePath,owner);
-            else if(_catalog.SnorlaxRegion is {} snorlax&&snorlax.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(snorlax.NpcSourcePath,owner);
-            else if(_catalog.PokemonTowerRegion is {} tower&&(tower.NewMaps.ContainsKey(id)||id==PretPokemonTowerRegion.HouseMapId))npcs=LoadRegionNpcs(tower.NpcSourcePath,owner);
-            else if(_catalog.RocketHideoutRegion is {} rocket&&rocket.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(rocket.NpcSourcePath,owner);
-            else if(_catalog.CeladonGymRegion is {} celadonGym&&celadonGym.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(celadonGym.NpcSourcePath,owner);
-            else if(_catalog.CeladonApproachRegion is {} approach&&approach.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(approach.NpcSourcePath,owner);
-            else if(_catalog.RockTunnelRegion is {} rockTunnel&&rockTunnel.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(rockTunnel.NpcSourcePath,owner);
-            else if(_catalog.Route11Region is {} route11&&route11.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(route11.NpcSourcePath,owner);
-            else if(_catalog.CityServices is {} city&&city.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(city.NpcSourcePath,owner);
-            else if(_catalog.VermilionGymRegion is {} gym&&gym.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(gym.NpcSourcePath,owner);
-            else if(_catalog.SsAnneRegion is {} ship&&ship.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(ship.NpcSourcePath,owner);
-            else if(_catalog.VermilionRegion is {} vermilion&&vermilion.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(vermilion.NpcSourcePath,owner);
-            else if(_catalog.BillRegion is {} bill&&bill.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(bill.NpcSourcePath,owner);
-            else if(_catalog.CeruleanRegion is {} cerulean&&cerulean.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(cerulean.NpcSourcePath,owner);
-            else if(_catalog.MtMoonRegion is {} moon&&moon.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(moon.NpcSourcePath,owner);
-            else if(_catalog.Route3Region is {} route3&&route3.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(route3.NpcSourcePath,owner);
-            else if(_catalog.Route22Region is {} route22&&route22.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(route22.NpcSourcePath,owner);
-            else if(_catalog.PewterRegion is {} pewter&&pewter.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(pewter.NpcSourcePath,owner);
-            else if(_catalog.ForestRegion is {} forest&&forest.NewMaps.ContainsKey(id))npcs=LoadRegionNpcs(forest.NpcSourcePath,owner);
-            else if(_catalog.ViridianCenter is {} center&&id==center.Map.Id)npcs=LoadRegionNpcs(center.NpcSourcePath,owner);
-            else if(_catalog.ViridianRegion is {} region&&id.Value is "map.route-1" or "map.viridian-city" or "map.viridian-mart")npcs=LoadRegionNpcs(region.NpcSourcePath,owner);
+            var binding=(_mapPresentation??=PretCampaignMapPresentation.Create(_catalog))[id];
+            if(binding.NpcSourcePath is {} npcSource)npcs=LoadRegionNpcs(npcSource,owner);
             else
             {
             using var json=JsonDocument.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(source.DirectoryPath,"npc-sprites.json")));
@@ -176,7 +144,7 @@ public partial class CampaignView:Node2D
             }
             BorderArt? borderArt=null;
             if(_borderSources.TryGetValue(id,out var border))borderArt=new(border.BorderWidth,border.BorderHeight,MapTexture(border.BottomTexturePath),MapTexture(border.MiddleTexturePath),MapTexture(border.TopTexturePath));
-            else if(_catalog.FiveIslandRegion?.NewMaps.ContainsKey(id)==true||_catalog.SixIslandRegion?.NewMaps.ContainsKey(id)==true||_catalog.FourIslandRegion?.NewMaps.ContainsKey(id)==true||_catalog.SeviiRubyRegion?.NewMaps.ContainsKey(id)==true||_catalog.VictoryRoadRegion?.NewMaps.ContainsKey(id)==true||_catalog.ViridianGymRegion?.NewMaps.ContainsKey(id)==true||_catalog.FirstSeviiRegion?.NewMaps.ContainsKey(id)==true||_catalog.CinnabarRegion?.NewMaps.ContainsKey(id)==true||_catalog.SaffronGymRegion?.NewMaps.ContainsKey(id)==true||_catalog.SilphRegion?.NewMaps.ContainsKey(id)==true||_catalog.SafariRegion?.NewMaps.ContainsKey(id)==true||_catalog.FuchsiaGymRegion?.NewMaps.ContainsKey(id)==true||_catalog.FuchsiaRouteRegion?.NewMaps.ContainsKey(id)==true||_catalog.RegionalServicesEnabled&&_catalog.IsRegionalServiceMap(id)||_catalog.SnorlaxRegion?.NewMaps.ContainsKey(id)==true||_catalog.PokemonTowerRegion?.NewMaps.ContainsKey(id)==true||_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(id)==true||_catalog.CeladonGymRegion?.NewMaps.ContainsKey(id)==true||_catalog.CeladonApproachRegion?.NewMaps.ContainsKey(id)==true||_catalog.RockTunnelRegion?.NewMaps.ContainsKey(id)==true||_catalog.Route11Region?.NewMaps.ContainsKey(id)==true||_catalog.CityServices?.NewMaps.ContainsKey(id)==true||_catalog.VermilionGymRegion?.NewMaps.ContainsKey(id)==true||_catalog.SsAnneRegion?.NewMaps.ContainsKey(id)==true||_catalog.ForestRegion?.NewMaps.ContainsKey(id)==true||_catalog.PewterRegion?.NewMaps.ContainsKey(id)==true||_catalog.Route22Region?.NewMaps.ContainsKey(id)==true||_catalog.Route3Region?.NewMaps.ContainsKey(id)==true||_catalog.MtMoonRegion?.NewMaps.ContainsKey(id)==true||_catalog.CeruleanRegion?.NewMaps.ContainsKey(id)==true||_catalog.BillRegion?.NewMaps.ContainsKey(id)==true||_catalog.VermilionRegion?.NewMaps.ContainsKey(id)==true)borderArt=new(source.BorderWidth,source.BorderHeight,MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-bottom.png")),MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-middle.png")),MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-top.png")));
+            else if(binding.UsesLocalBorder)borderArt=new(source.BorderWidth,source.BorderHeight,MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-bottom.png")),MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-middle.png")),MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-top.png")));
             return new(source,MapTexture(source.BottomTexturePath),MapTexture(source.MiddleTexturePath),MapTexture(source.TopTexturePath),new(MapTexture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,borderArt);
         });
     }

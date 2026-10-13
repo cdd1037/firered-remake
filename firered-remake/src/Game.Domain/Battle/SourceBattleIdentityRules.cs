@@ -170,6 +170,9 @@ public static class SourceBattleIdentityRules
             if (pending.LegalPartyIndices.Any(i => active.Contains(new(pending.Slot.Side, i)) ||
                 frame.Party(pending.Slot.Side).Members[i].IsEgg || frame.Party(pending.Slot.Side).Members[i].Pokemon.CurrentHp <= 0))
                 return "source_frame_pending_switch_reserve";
+        if (frame.TrainerEncounter is not null && (frame.Layout != SourceBattleLayout.Singles || frame.WildEncounter is not null ||
+            frame.SinglesEncoding is not null || frame.BattleKind != WildBattleCalledBattleKind.Trainer)) return "source_trainer_frame_identity";
+        if (ValidateTrainerReplacement(frame) is { } trainerReplacement) return trainerReplacement;
         if (frame.Layout == SourceBattleLayout.PresetDoubles && (frame.SinglesEncoding is not null || frame.WildTurn is not null))
             return "source_frame_singles_encoding_in_doubles";
         if (frame.SinglesEncoding is { } encoding && (
@@ -251,7 +254,7 @@ public static class SourceBattleIdentityRules
                 residual.Turn != frame.Turn || (residual.NextBattler < 0 || residual.NextBattler > frame.BattlerCount) || !Enum.IsDefined(residual.Stage) ||
                 residual.RulesVersion != WildBattleRules.SourceEndTurnRulesVersion || residual.MinimumRevision < 0 ||
                 residual.MinimumRevision > frame.Revision || residual.MinimumEventSequence < 0 || residual.MinimumEventSequence > frame.EventSequence ||
-                frame.NextAction != frame.BattlerCount || four.Phase is not (SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.RewardsPending or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.BattleEnded) ||
+                frame.NextAction != frame.BattlerCount || four.Phase is not (SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.RewardsPending or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.ShiftPending or SourceFourActionPhase.BattleEnded) ||
                 residual.Stage == WildBattleSourceEndTurnStage.Complete && (residual.NextBattler != frame.BattlerCount || four.Phase is not (SourceFourActionPhase.BattleEnded or SourceFourActionPhase.RewardsPending)) ||
                 residual.Stage == WildBattleSourceEndTurnStage.Complete && four.Phase == SourceFourActionPhase.RewardsPending &&
                     (frame.KoReplacementTiming != KoReplacementTiming.SourceImmediate || four.OutcomeAfterRewards is null) ||
@@ -262,7 +265,7 @@ public static class SourceBattleIdentityRules
             four.OutcomeAfterRewards is { } pendingOutcome && (pendingOutcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw) ||
                 !four.Defeats.Any(d => d.RequiresExperience)) ||
             four.Phase == SourceFourActionPhase.Actions && frame.NextAction >= frame.BattlerCount ||
-            four.Phase is SourceFourActionPhase.EndTurn or SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.ReplacementsPending && frame.NextAction != frame.BattlerCount ||
+            four.Phase is SourceFourActionPhase.EndTurn or SourceFourActionPhase.EndTurnResume or SourceFourActionPhase.ReplacementsPending or SourceFourActionPhase.ShiftPending && frame.NextAction != frame.BattlerCount ||
             four.Phase == SourceFourActionPhase.RewardsPending && !four.Defeats.Any(d => d.RequiresExperience) ||
             four.Phase == SourceFourActionPhase.ActionSwitchPending && (frame.NextAction < 1 ||
                 frame.PendingSwitches is not [{ Kind: WildBattleCalledSwitchKind.BatonPass, Invocation: { } }])))
@@ -328,6 +331,23 @@ public static class SourceBattleIdentityRules
         WildBattleSourcePartyEffects.SamePokemon(member.Pokemon, WildBattleTransformationRules.PersistentPokemon(body)) &&
         member.Status == WildBattleTransformationRules.PersistentStatus(body) && member.HeldItem == body.HeldItem &&
         member.KnockedOffItem == body.KnockedOffItem;
+
+    private static string? ValidateTrainerReplacement(SourceBattleFrame frame)
+    {
+        if (frame.FourTurn?.Phase == SourceFourActionPhase.ShiftPending && frame.FourTurn.TrainerReplacement is null)
+            return "source_trainer_shift_receipt_required";
+        if (frame.FourTurn?.TrainerReplacement is not { } pending) return null;
+        if (frame.TrainerEncounter is null || pending.Incoming.Side != BattleSide.Opponent ||
+            frame.FourTurn.Phase is not (SourceFourActionPhase.ShiftPending or SourceFourActionPhase.ReplacementsPending) ||
+            frame.PendingSwitches.All(p => p.Slot.Value != 1 || !p.LegalPartyIndices.Contains(pending.Incoming.Index)) ||
+            frame.Get(new(1)).Body!.Pokemon.CurrentHp != 0 ||
+            frame.FourTurn.Phase == SourceFourActionPhase.ShiftPending && (!pending.ShiftOffered ||
+                frame.TrainerEncounter.BattleStyle != Game.Domain.Trainers.ForestTrainerBattleStyle.Shift ||
+                frame.TrainerEncounter.PlayerFaintedThisTurn || !frame.CanAct(new(0)) ||
+                !frame.Party(BattleSide.Player).Members.Where((m,i) => !m.IsEgg && m.Pokemon.CurrentHp > 0 &&
+                    frame.Get(new(0)).Member!.Value.Index != i).Any())) return "source_trainer_shift_receipt";
+        return null;
+    }
 
     public static ImmutableArray<int> LegalReserveIndices(SourceBattleFrame frame, BattleSide side)
     {
@@ -426,6 +446,12 @@ public static class SourceBattleIdentityRules
         var cell = old with { Member = reservation.Incoming, EntrySerial = checked(old.EntrySerial + 1), Body = preparedBody, Registers = preparedRegisters };
         next = next with { Slots = next.Slots.SetItem(slot.Value, cell),
             SourceAbsentMask = (byte)(next.SourceAbsentMask & ~slot.Mask), DeferredKoVacancyMask = (byte)(next.DeferredKoVacancyMask & ~slot.Mask),
+            TrainerEncounter = next.TrainerEncounter is { } trainer ? trainer with {
+                StaleCurrentMove = Game.Domain.Trainers.ForestTrainerCombatRules.NoMove,
+                PlayerFaintedThisTurn = reservation.Kind == WildBattleCalledSwitchKind.FaintedReplacement &&
+                    (slot.Side == BattleSide.Opponent && next.Get(new(0)).Body!.Pokemon.CurrentHp > 0 ||
+                     slot.Side == BattleSide.Player && next.Get(new(1)).Body!.Pokemon.CurrentHp > 0) ? false : trainer.PlayerFaintedThisTurn
+            } : null,
             FourTurn = next.FourTurn?.PursuitSwitch?.Outgoing == reservation.Outgoing ? next.FourTurn with { PursuitSwitch = null } : next.FourTurn,
             Queue = next.Queue.Select(a => a.Slot == slot ? a with { Kind = SourceActionKind.Cancelled, CancellationReason = "occupant-departed" } : a).ToImmutableArray(),
             Reservations = next.Reservations.Remove(reservation), PendingSwitches = next.PendingSwitches.Where(p => p.Slot != slot).ToImmutableArray(),

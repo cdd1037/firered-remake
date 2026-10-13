@@ -49,7 +49,8 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
         "rain" => SourceWeatherRules.HasRain(Frame.Field), "sandstorm" => SourceWeatherRules.HasSandstorm(Frame.Field),
         "sun" => SourceWeatherRules.HasSun(Frame.Field), "hail" => Frame.Field.HailTurnsRemaining > 0,
         _ => throw new SourceRecipeUnsupported("source_end_turn_weather") };
-    internal override bool WeatherDamageEnabled(BattlerSlot slot, string weather) => true;
+    internal override bool WeatherDamageEnabled(BattlerSlot slot, string weather) =>
+        slot.Side != BattleSide.Opponent || SourceWildBattlePolicy.TowerPolicy(Frame) is not { SuppressOpponentWeatherDamage: true };
     internal override bool UnderGroundOrWater(BattlerSlot slot) => SourceChargeRules.SemiInvulnerable(
         Frame.Get(slot).Registers.Turn?.Lock is {Kind:WildBattleCalledLockKind.Charge} charge?charge.Move:null)
         is WildBattleSemiInvulnerable.Underground or WildBattleSemiInvulnerable.Underwater;
@@ -88,7 +89,11 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
     internal override string Purpose(BattlerSlot slot, string effect) => Frame.Layout == SourceBattleLayout.Singles
         ? $"wild-battle.{(slot.Side == BattleSide.Player ? "player" : "opponent")}.{effect}"
         : $"source-battle.slot-{slot.Value}.{effect}";
-    internal override void RecordAbility(BattlerSlot slot, string ability) { } // Events remain available to the future AI owner.
+    internal override void RecordAbility(BattlerSlot slot, string ability)
+    {
+        if (slot.Side == BattleSide.Player && Frame.TrainerEncounter is { } trainer)
+            Frame = Frame with { TrainerEncounter = trainer with { KnownPlayerAbility = ability } };
+    }
     internal override void ChangeStatus(BattlerSlot slot, uint status, string reason)
     {
         var before = Get(slot);
@@ -133,7 +138,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
             Frame = Frame with { FourTurn = Frame.FourTurn! with { OutcomeAfterRewards = outcome } };
         else if (Frame.Outcome != outcome)
         {
-            Frame = SourceWildBattlePolicy.SetOutcome(Frame, outcome);
+            Frame = SourceBattleOutcomeRules.SetOutcome(Frame, outcome);
             Add(n => new SourceEndedEvent(n, Turn, outcome));
         }
     }

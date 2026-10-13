@@ -18,14 +18,14 @@ public sealed record SourceTrainerMoveResult(SourceBattleFrame State, ImmutableA
     public ImmutableArray<SourceActionSelection> Selections => Choices.Select(c => c.Selection).ToImmutableArray();
 }
 
-/// <summary>FireRed enemy controller decisions over actual four-slot state. Content owns source
+/// <summary>FireRed enemy controller decisions over actual source positions. Content owns source
 /// trainer metadata; the shared action owner executes the returned selections.</summary>
 public static partial class SourceFourTrainerAi
 {
     public static SourceTrainerMoveResult ChooseMoves(PokemonCatalog catalog, TrainerDefinition trainer,
         SourceBattleFrame frame, long expectedRevision, string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null, MoveId? staleCurrentMove = null)
     {
-        if (ValidateMetadata(trainer) is { } error) return new(frame, [], [], error);
+        if (ValidateMetadata(trainer, frame) is { } error) return new(frame, [], [], error);
         return ChooseCore(catalog, frame, expectedRevision, trainer.AiFlags, knownPlayerAbility, "source-trainer", knownPlayerHoldEffect, staleCurrentMove: staleCurrentMove);
     }
 
@@ -35,19 +35,21 @@ public static partial class SourceFourTrainerAi
         SourceBattleFrame frame, long expectedRevision, BattlerSlot actor,
         string? knownPlayerAbility = null, string? knownPlayerHoldEffect = null, MoveId? staleCurrentMove = null)
     {
-        if (ValidateMetadata(trainer) is { } error) return new(frame, [], [], error);
-        if (actor.Value is not (1 or 3)) return new(frame, [], [], "source_four_trainer_ai_actor");
+        if (ValidateMetadata(trainer, frame) is { } error) return new(frame, [], [], error);
+        if (actor.Value >= frame.BattlerCount || actor.Side != BattleSide.Opponent) return new(frame, [], [], "source_four_trainer_ai_actor");
         return ChooseCore(catalog, frame, expectedRevision, trainer.AiFlags, knownPlayerAbility, "source-trainer", knownPlayerHoldEffect, actor, staleCurrentMove);
     }
 
-    private static string? ValidateMetadata(TrainerDefinition trainer)
+    private static string? ValidateMetadata(TrainerDefinition trainer, SourceBattleFrame frame)
     {
-        if (trainer is null || !trainer.DoubleBattle || trainer.AiFlags is not (1 or 7) ||
-            trainer.Party.IsDefaultOrEmpty || trainer.Party.Length is < 2 or > 6 ||
+        if (frame is null || trainer is null || trainer.DoubleBattle != (frame.Layout == SourceBattleLayout.PresetDoubles) || trainer.AiFlags is not (1 or 7) ||
+            trainer.Party.IsDefaultOrEmpty || trainer.Party.Length < (trainer.DoubleBattle ? 2 : 1) || trainer.Party.Length > 6 ||
             trainer.AiFlagSymbols.IsDefault || !trainer.AiFlagSymbols.Order().SequenceEqual((trainer.AiFlags == 1
                 ? new[] { "AI_SCRIPT_CHECK_BAD_MOVE" }
                 : new[] { "AI_SCRIPT_CHECK_BAD_MOVE", "AI_SCRIPT_CHECK_VIABILITY", "AI_SCRIPT_TRY_TO_FAINT" }).Order()))
             return "source_four_trainer_ai_metadata";
+        if (frame.Layout == SourceBattleLayout.Singles && !SourceTrainerEncounterPolicy.MatchesTrainer(frame, trainer))
+            return "source_trainer_ai_roster_proof";
         return null;
     }
 
@@ -59,6 +61,7 @@ public static partial class SourceFourTrainerAi
         var currentMove = staleCurrentMove ?? ForestTrainerCombatRules.NoMove;
         SourceTrainerMoveResult Fail(string code) => new(frame, [], [], code) { SourceCurrentMove = staleCurrentMove };
         if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } capability) return Fail(capability);
+        if (frame.Layout == SourceBattleLayout.Singles && SourceTrainerEncounterPolicy.Validate(catalog, frame) is { } encounter) return Fail(encounter);
         if (frame.Revision != expectedRevision || frame.Outcome != WildBattleOutcome.Ongoing || frame.FourTurn is not null ||
             !frame.Queue.IsEmpty || !frame.PendingSwitches.IsEmpty || !frame.Reservations.IsEmpty || frame.DeferredKoVacancyMask != 0)
             return Fail("source_four_trainer_ai_phase");
@@ -68,7 +71,7 @@ public static partial class SourceFourTrainerAi
         {
             var rng = frame.Rng; var trace = ImmutableArray.CreateBuilder<RandomTrace>();
             var choices = ImmutableArray.CreateBuilder<SourceTrainerEnemyChoice>();
-            foreach (var actor in new[] { new BattlerSlot(1), new BattlerSlot(3) })
+            foreach (var actor in frame.Slots.Take(frame.BattlerCount).Where(c => c.Slot.Side == BattleSide.Opponent).Select(c => c.Slot))
             {
                 if (onlyActor is { } selectedActor && actor != selectedActor || !SourceFourMedicineRules.CanSelect(frame, actor)) continue;
                 var cell = frame.Get(actor); var user = cell.Body!;
@@ -77,15 +80,24 @@ public static partial class SourceFourTrainerAi
                     choices.Add(new(actor, forced.Target, new(cell.Occupant!.Value, SourceActionKind.Move, forced.PpSlot, forced.Target), [], [], []));
                     continue;
                 }
+                if (frame.Layout == SourceBattleLayout.Singles && WildBattleRules.ForcedMoveSlot(user) is { } lockedSlot)
+                {
+                    choices.Add(new(actor, actor.Opposite, new(cell.Occupant!.Value, SourceActionKind.Move, lockedSlot, actor.Opposite), [], [], []));
+                    continue;
+                }
                 // Source avoids the controller entirely during MULTIPLETURNS/RECHARGE.
                 // Rollout is represented by its actual four-position lock once its recipe is admitted.
                 if (SourceFourActionTurns.RequiresStruggle(catalog, frame, actor))
                 {
                     // AreAllMovesUnusable runs before CHOOSEMOVE, so it skips AI setup/scoring.
                     // HandleAction_UseMove later discards this target and calls GetMoveTarget.
-                    var draw = Gen3Rng.Next(rng, $"source-battle.slot-{actor.Value}.struggle-selection-target");
-                    rng = draw.State; trace.Add(draw.Trace);
-                    var initialTarget = new BattlerSlot((actor.Value ^ 1) | (draw.Value & 2));
+                    var initialTarget = actor.Opposite;
+                    if (frame.Layout == SourceBattleLayout.PresetDoubles)
+                    {
+                        var draw = Gen3Rng.Next(rng, $"source-battle.slot-{actor.Value}.struggle-selection-target");
+                        rng = draw.State; trace.Add(draw.Trace);
+                        initialTarget = new BattlerSlot((actor.Value ^ 1) | (draw.Value & 2));
+                    }
                     choices.Add(new(actor, initialTarget, SourceActionSelection.Struggle(cell.Occupant!.Value, initialTarget) with {
                         StruggleSelectionPrepared = true }, [], [], []));
                     continue;
@@ -102,12 +114,18 @@ public static partial class SourceFourTrainerAi
                 }
                 var simulated = ImmutableArray.CreateBuilder<int>(4);
                 for (int i = 0; i < 4; i++) {
-                    var draw = Gen3Rng.Next(rng, $"{tracePrefix}.ai.battler.{actor.Value}.setup.slot.{i}.damage-percent", 16);
+                    var purpose = frame.Layout == SourceBattleLayout.Singles ? $"cerulean-trainer.ai.setup.slot.{i}.damage-percent"
+                        : $"{tracePrefix}.ai.battler.{actor.Value}.setup.slot.{i}.damage-percent";
+                    var draw = Gen3Rng.Next(rng, purpose, 16);
                     rng = draw.State; trace.Add(draw.Trace); simulated.Add(100 - draw.Trace.Result);
                 }
-                var targetDraw = Gen3Rng.Next(rng, $"{tracePrefix}.ai.battler.{actor.Value}.setup.target-flank");
-                rng = targetDraw.State; trace.Add(targetDraw.Trace);
-                var target = new BattlerSlot(targetDraw.Value & 2);
+                var target = actor.Opposite;
+                if (frame.Layout == SourceBattleLayout.PresetDoubles)
+                {
+                    var targetDraw = Gen3Rng.Next(rng, $"{tracePrefix}.ai.battler.{actor.Value}.setup.target-flank");
+                    rng = targetDraw.State; trace.Add(targetDraw.Trace);
+                    target = new BattlerSlot(targetDraw.Value & 2);
+                }
                 if (frame.IsSourceAbsent(target)) target = new(target.Value ^ 2);
                 if (!frame.CanAct(target)) return Fail("source_four_trainer_ai_no_living_target");
                 var context = new SourceTrainerAiSlotContext(catalog, frame, actor, target, simulated.MoveToImmutable(), rng, aiFlags, staleCurrentMove: currentMove, knownTargetHoldEffect: knownPlayerHoldEffect);
@@ -139,6 +157,7 @@ public static partial class SourceFourTrainerAi
 /// <summary>Opaque validated explicit source positions for the shared scorer. It never creates a singles battle.</summary>
 public sealed class SourceTrainerAiSlotContext
 {
+    internal bool Doubles => Frame.Layout == SourceBattleLayout.PresetDoubles;
     internal PokemonCatalog Catalog { get; }
     internal SourceBattleFrame Frame { get; }
     internal BattlerSlot Actor { get; }

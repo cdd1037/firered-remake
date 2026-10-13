@@ -88,6 +88,9 @@ namespace Game.Domain.Battle;
 [JsonDerivedType(typeof(SourceRootsChangedEvent), "SourceRootsChangedEvent")]
 [JsonDerivedType(typeof(SourceRunAttemptEvent), "SourceRunAttemptEvent")]
 [JsonDerivedType(typeof(SourceRoamerRunEvent), "SourceRoamerRunEvent")]
+[JsonDerivedType(typeof(Game.Domain.Trainers.SourceTrainerStartedEvent), "SourceTrainerStartedEvent")]
+[JsonDerivedType(typeof(SourceTrainerOpponentSelectedEvent), "SourceTrainerOpponentSelectedEvent")]
+[JsonDerivedType(typeof(SourceTrainerShiftOfferedEvent), "SourceTrainerShiftOfferedEvent")]
 [JsonDerivedType(typeof(SourceSelfDestructEvent), "SourceSelfDestructEvent")]
 [JsonDerivedType(typeof(SourceSleepTalkEvent), "SourceSleepTalkEvent")]
 [JsonDerivedType(typeof(SourceSnatchPressurePpEvent), "SourceSnatchPressurePpEvent")]
@@ -201,6 +204,8 @@ public sealed record SourceRecoilEvent(long Sequence, int Turn, BattlerSlot Acto
 public sealed record SourceRecoveredEvent(long Sequence, int Turn, BattlerSlot Side, MoveId Move, int HpBefore, int HpAfter, int Recovered) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRolloutChangedEvent(long Sequence, int Turn, BattlerSlot Side, int Before, int After, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRootsChangedEvent(long Sequence, int Turn, BattlerSlot Side, bool Rooted, string Reason) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceTrainerOpponentSelectedEvent(long Sequence, int Turn, PartyMemberKey Incoming) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceTrainerShiftOfferedEvent(long Sequence, int Turn, PartyMemberKey Incoming) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRoamerRunEvent(long Sequence, int Turn, bool Escaped) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRunAttemptEvent(long Sequence, int Turn, int AttemptsBefore, int AttemptsAfter, int PlayerSpeed, int OpponentSpeed, int? Threshold, int? Roll, bool Escaped) : SourceBattleEvent(Sequence, Turn)
 {
@@ -488,6 +493,13 @@ public static class SourceBattleEventHooks
             value is SourceRewardLearningEvent learning && (!PlayerKey(frame, learning.Recipient) || !Enum.IsDefined(learning.Outcome)) ||
             value is SourceOpponentRewardCompletedEvent completed && !DefeatKey(frame, completed.Defeated))
             return "source_event_reward_identity";
+        if (value is Game.Domain.Trainers.SourceTrainerStartedEvent started && (frame.TrainerEncounter is null ||
+            started.Trainer != frame.TrainerEncounter.Inventory.Trainer || started.OpponentCount != frame.Party(BattleSide.Opponent).Members.Length))
+            return "source_event_trainer_start_identity";
+        var selectedTrainer = value switch { SourceTrainerOpponentSelectedEvent selected => selected.Incoming,
+            SourceTrainerShiftOfferedEvent offered => offered.Incoming, _ => (PartyMemberKey?)null };
+        if (selectedTrainer is { } incoming && (frame.TrainerEncounter is null || incoming.Side != BattleSide.Opponent ||
+            frame.FourTurn?.TrainerReplacement?.Incoming != incoming)) return "source_event_trainer_replacement_identity";
         IEnumerable<BattlerSlot?> Slots() => value switch {
             SourceRewardAppliedEvent x => [x.Defeated.Slot],
             SourceRewardLearningEvent x => [],
@@ -563,6 +575,9 @@ public static class SourceBattleEventHooks
             SourceRolloutChangedEvent x => [x.Side],
             SourceRootsChangedEvent x => [x.Side],
             SourceRoamerRunEvent x => [],
+            Game.Domain.Trainers.SourceTrainerStartedEvent x => [],
+            SourceTrainerOpponentSelectedEvent x => [],
+            SourceTrainerShiftOfferedEvent x => [],
             SourceRunAttemptEvent x => [],
             SourceSelfDestructEvent x => [x.Actor],
             SourceSleepTalkEvent x => [x.Side],

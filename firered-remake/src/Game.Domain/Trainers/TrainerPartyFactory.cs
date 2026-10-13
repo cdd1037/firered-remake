@@ -71,7 +71,8 @@ public static class TrainerPartyFactory
                 throw new InvalidOperationException("Fixed Pokemon creation unexpectedly consumed RNG.");
             result.Add(new(created.Pokemon, member.HeldItem));
         }
-        return new(trainer, result.MoveToImmutable(), rng, trace.ToImmutable());
+        var createdParty = new TrainerPartyCreationResult(trainer, result.MoveToImmutable(), rng, trace.ToImmutable());
+        return createdParty with { Receipt = SourceTrainerPartyReceipt.Create(pokemon, createdParty) };
     }
 
     public static void ValidateCatalog(TrainerCatalog catalog)

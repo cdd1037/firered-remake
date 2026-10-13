@@ -26,7 +26,8 @@ public static partial class SourceFourTrainerAi
             !frame.Queue.IsEmpty || !frame.PendingSwitches.IsEmpty || frame.DeferredKoVacancyMask != 0)
             return Fail("source_four_trainer_switch_phase");
         // These conditions bypass CHOOSEACTION entirely; Encore does not.
-        if (frame.Get(actor).Registers.Turn?.Lock is not null) return new(null, frame.Rng, [], [], null);
+        if (frame.Get(actor).Registers.Turn?.Lock is not null ||
+            frame.Layout == SourceBattleLayout.Singles && WildBattleRules.ForcedMoveSlot(frame.Get(actor).Body!) is not null) return new(null, frame.Rng, [], [], null);
         var target = FirstOpponent(frame);
         var slots = new SourceTrainerAiSlotContext(catalog, frame, actor, target, [], frame.Rng, 1,
             preparedSwitches, staleCurrentMove);
@@ -61,8 +62,13 @@ public static partial class SourceFourTrainerAi
             return Fail("source_four_trainer_replacement_no_reserve");
         try
         {
-            var draw = Gen3Rng.Next(rng, $"source-trainer.replacement.battler.{actor.Value}.target-flank");
-            rng = draw.State; var target = new BattlerSlot(draw.Value & 2);
+            var target = actor.Opposite;
+            var trace = ImmutableArray<RandomTrace>.Empty;
+            if (slots.Doubles)
+            {
+                var draw = Gen3Rng.Next(rng, $"source-trainer.replacement.battler.{actor.Value}.target-flank");
+                rng = draw.State; target = new BattlerSlot(draw.Value & 2); trace = [draw.Trace];
+            }
             if (frame.IsSourceAbsent(target)) target = target.Partner;
             if (frame.Get(target).Body is null || frame.IsSourceAbsent(target)) return Fail("source_four_trainer_replacement_no_target");
             var context = slots.WithTarget(target, rng);
@@ -83,7 +89,7 @@ public static partial class SourceFourTrainerAi
                     (forced || context.Reserved(new(1)) != i && context.Reserved(new(3)) != i));
             }
             return chosen is null ? Fail("source_four_trainer_replacement_no_candidate")
-                : new(chosen, rng, [draw.Trace], result.Scores, null);
+                : new(chosen, rng, trace, result.Scores, null);
         }
         catch (OverflowException) { return Fail("source_four_trainer_replacement_rng_exhausted"); }
     }
@@ -92,7 +98,8 @@ public static partial class SourceFourTrainerAi
         BattlerSlot actor, MoveId stale, ImmutableArray<SourceActionSelection> prepared)
     {
         if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } capability) return capability;
-        if (actor.Value is not (1 or 3) || frame.Get(actor).Body is null || frame.Get(actor).Member is null)
+        if (frame.Layout == SourceBattleLayout.Singles && SourceTrainerEncounterPolicy.Validate(catalog, frame) is { } encounter) return encounter;
+        if (actor.Value >= frame.BattlerCount || actor.Side != BattleSide.Opponent || frame.Get(actor).Body is null || frame.Get(actor).Member is null)
             return "source_four_trainer_switch_actor";
         if (stale != ForestTrainerCombatRules.NoMove && stale != WildBattleRules.StruggleMove &&
             (!catalog.Moves.TryGetValue(stale, out var move) || !MetronomeSourceMoveDefinition.Matches(move)))

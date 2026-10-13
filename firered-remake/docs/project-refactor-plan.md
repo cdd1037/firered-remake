@@ -41,9 +41,9 @@ The target is one maintained current-game composition and one authoritative ordi
 
 ### R1 — Consolidate profile, capability and catalog selection
 
-**Status: current composition and historical diagnostic/upgrade runtime retirement implemented. Remaining R1 work is source-proof regional construction and current presentation capability consolidation, coordinated with R2/R3. Benefit: high. Risk: medium.**
+**Status: current composition, historical diagnostic/upgrade runtime retirement and current map-presentation selection implemented. Regional source-proof construction remains explicit because current authenticated content still depends on it; it is not a selectable historical game runtime. Current battle admission is coordinated with R3. Benefit: high. Risk: medium.**
 
-Evidence of remaining duplication:
+Original inventory (the startup and session selectors below have since been removed; retained source-proof/catalog and battle ownership work is distinguished in the dated results):
 
 - [CampaignView.cs](../src/Game.Godot/CampaignView.cs), `_Ready`: the long `FiveIslandProfileRequested ? ... : ...` loader chain combines current selection with many historical environment switches. [CampaignSixIslandView.cs](../src/Game.Godot/CampaignSixIslandView.cs), `SixIslandProfileRequested`, also inherits its successor's request; similar chaining is distributed across the regional view files.
 - [CampaignSession.cs](../src/Game.Application/CampaignSession.cs), constructors: regional catalog validation calls are repeated, and machine/shop authentication uses another latest-to-earliest region chain.
@@ -151,3 +151,11 @@ The default `FireRed.Current.slnx` now names the maintained product and small cu
 The one-off Victory Road shared-hook assembler is also removed. Its current source verifier keeps pinned data/source checks and deterministic data regeneration; historical C# template reconstruction is explicit and optional, with original strict template hashes. The current integrated source check passes 424 checks. Its initial refusal of a changed historical template is retained and explained; no hash or source guarantee was weakened.
 
 R3 canonical wild/trainer Application migration and deletion of the competing legacy executors remain in progress. The full deep refactor is still incomplete.
+
+## 2026-10-13 current encounter policies and presentation bindings
+
+The shared owner now accepts authentic ordinary trainer singles, canonical wild actions and the explicit Tower, Snorlax, Lostelle and regional policies. Trainer entry uses one authenticated source factory, retains its original RNG chain and supplies AI/Shift/item metadata to the same queue. There is no new encounter-specific turn loop. Selected trainer KO/EXP/Shift and terminal/residual combinations passed 6 groups/225 checks; special wild policy passed 12 groups/1,013 checks. Exact candidate source and assembly identities remain with those reports. A final narrow Shift/Spikes ordering change is source-inspected and is not represented as runtime-covered. See [current encounter hooks](r3-current-encounter-hooks.md) and [trainer policy](r3-trainer-encounter-policy.md).
+
+The normal integrated Godot target built with zero warnings/errors in 39.86 seconds. Current Application wild/trainer migration is still a separate pending acceptance point in this checkpoint, and the competing legacy executors still exist until that cutover.
+
+Current map rendering also resolves its NPC source and local-border selection through one immutable Content binding. The exact former choices match on all 254 maps (508 comparisons); resource authentication and Godot texture lifetime stay intact. See [map bindings](current-map-presentation-bindings.md). This is content selection acceptance, not a new native visual comparison.

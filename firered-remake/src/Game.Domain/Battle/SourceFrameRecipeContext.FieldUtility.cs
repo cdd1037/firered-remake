@@ -15,7 +15,7 @@ internal sealed partial class FrameRecipeContext
         // The four-action battle owner admits trainer battles only. Do not invent
         // wild-double termination, rewards or application callbacks here.
         if (Frame.Layout != SourceBattleLayout.Singles) throw new SourceRecipeUnsupported("source_four_action_battle_kind");
-        Frame = SourceWildBattlePolicy.SetOutcome(Frame, WildBattleOutcome.Escaped, Game.Domain.Roaming.RoamerBattleOutcome.PlayerTeleported);
+        Frame = SourceBattleOutcomeRules.SetOutcome(Frame, WildBattleOutcome.Escaped, Game.Domain.Roaming.RoamerBattleOutcome.PlayerTeleported);
         Add(n => new SourceEndedEvent(n, Turn, WildBattleOutcome.Escaped));
     }
 }

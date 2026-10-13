@@ -9,6 +9,9 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext : SourceRecipeContext
 {
+    internal override bool CancellerInfatuationEnabled => !SourceWildBattlePolicy.Disguised(Frame);
+    internal override bool BideInCanceller => !SourceWildBattlePolicy.Disguised(Frame);
+    internal override bool CancellerLateMoveThawEnabled => !SourceWildBattlePolicy.Disguised(Frame);
     private readonly PokemonCatalog catalog;
     private readonly SourceResolvedMoveAction action;
     private readonly SourceBattleFrame initial;
@@ -98,6 +101,12 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         PrepareDynamicPower(invocation.Actor, move);
         PrepareDynamicType(move);
         bool blocked = !resumed && ActionPreventsMove(catalog, invocation.Actor, move.Id, purpose);
+        if (!blocked && SourceWildBattlePolicy.Disguised(Frame))
+        {
+            Add(n => new SourceTowerGhostActionEvent(n, Turn, invocation.Actor,
+                invocation.Actor.Side == BattleSide.Player ? "STRINGID_MONTOOSCAREDTOMOVE" : "STRINGID_GHOSTGETOUTGETOUT"));
+            blocked = true;
+        }
         if (blocked) CompleteScriptTarget();
         else
         {
@@ -338,7 +347,11 @@ internal sealed partial class FrameRecipeContext : SourceRecipeContext
         if (published.Event is SourceHpChangedEvent lateHit) RecordLateTurnDamage(lateHit);
         if (published.Event is SourceMoveUsedEvent used) Set(used.Actor, Get(used.Actor) with { LastUsedMove = used.Move });
     }
-    internal override void RecordAbility(BattlerSlot slot, string ability) { } // Explicit events are retained for the future AI owner.
+    internal override void RecordAbility(BattlerSlot slot, string ability)
+    {
+        if (slot.Side == BattleSide.Player && Frame.TrainerEncounter is { } trainer)
+            Frame = Frame with { TrainerEncounter = trainer with { KnownPlayerAbility = ability } };
+    }
     internal override void SpikesResultMessage(BattlerSlot actor) =>
         Add(n => new SourceMtMoonVolatileEvent(n, Turn, actor, "spikes", 0, 1, "move"));
     internal override int SpikesLayers(BattleSide side) => Frame.Sides[(int)side].Spikes;
