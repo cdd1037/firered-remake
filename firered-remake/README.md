@@ -21,7 +21,7 @@ it did not clear the League. See [League acceptance](docs/pokemon-league-campaig
 and the [controlled route report](tests/Game.PokemonLeagueControlledRoute.Tests/evidence/REPORT.md).
 
 `bash scripts/launch-current.sh` selects the latest accepted bounded postgame
-profile (Five Island through the Warehouse and Sapphire recovery). Each profile keeps separate saves. Explicit
+profile (Celio Sapphire delivery, Network Machine and persistent roaming encounters). Each profile keeps separate saves. Explicit
 predecessor upgrades preserve gameplay payload and generation except their
 documented initialization. The launcher checks the official Godot resource
 import before startup.
@@ -35,12 +35,12 @@ service, optional path or presentation is complete.
 The bounded first-clear refactor, private GitHub synchronization, stage10 full
 Drive backup and approved reproducible-cache cleanup completed at `8940b9b`.
 The user explicitly resumed development on 2026-10-12 at 23:42 UTC. The postgame chain has reached National Dex → One Island Ruby → Four Island
-the original Lorelei rescue, Six Island password and Five Warehouse Sapphire recovery. The next bounded node is the real Celio delivery, Network Machine and roaming lifecycle. The
+the original Lorelei rescue, Six Island password, Five Warehouse Sapphire recovery and actual Celio delivery. The Network Machine/world flags and persistent roaming lifecycle are implemented; a bounded field probe covers reencounter, capture and KO/EXP. The next phase is the approved deeper project refactor after the complete Ruby/Sapphire backup. The
 National Dex profile has passed its source grant, 15/59-caught refusals,
 controlled 60-caught grant, strict save/Continue and Oak/PC revisit checks;
 automatic first-frame and headless view checks also passed separately.
 The latest asset-complete recovery base is stage10 `8940b9b`; authenticated
-importers reconstruct newer resources. See [National Dex](docs/national-dex-campaign.md),
+importers reconstruct newer resources. See [Celio acceptance](docs/celio-campaign.md), [National Dex](docs/national-dex-campaign.md),
 [the completed bounded cleanup and remaining project refactor](docs/project-refactor-plan.md), [remaining scope](docs/first-clear-remaining-scope.md)
 and [implementation roadmap](docs/implementation-roadmap.md).
 

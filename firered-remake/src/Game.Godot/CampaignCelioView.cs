@@ -79,7 +79,8 @@ public partial class CampaignView
         // The Ruby tile remains owned and authenticated by the predecessor presentation.
         var tile = CelioManifest.GetProperty("tiles").EnumerateArray().SingleOrDefault(t => t.GetProperty("metatileId").GetInt32() == edit.SourceMetatileId);
         if (tile.ValueKind == JsonValueKind.Undefined) return false;
-        if (edit.Collision != tile.GetProperty("collision").GetInt32() ||
+        // The script operand is boolean; committed map edits use the two-bit collision mask.
+        if (edit.Collision != (tile.GetProperty("collision").GetInt32() == 0 ? 0 : 3) ||
             !tile.GetProperty("positions").EnumerateArray().Any(p => p.GetProperty("x").GetInt32() == edit.X && p.GetProperty("y").GetInt32() == edit.Y) ||
             !_celioMachineLayers.TryGetValue((edit.SourceMetatileId,layer),out var texture))
             throw new InvalidDataException("Celio machine patch is outside its authenticated source.");
