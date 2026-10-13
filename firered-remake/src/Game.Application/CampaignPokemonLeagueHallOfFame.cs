@@ -81,10 +81,10 @@ public sealed partial class CampaignSession
         // write/retry reuses the same payload and never appends or awards again.
         stats=stats.SetItem("GAME_STAT_ENTERED_HOF",Math.Min(999,stats.GetValueOrDefault("GAME_STAT_ENTERED_HOF")+1));
         if(ribbon){flags=flags.SetItem("FLAG_SYS_RIBBON_GET",true);stats=stats.SetItem("GAME_STAT_RECEIVED_RIBBONS",Math.Min(0xffffff,stats.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")+1));}
-        return state with{Party=party,GameStats=stats,Script=state.Script with{Flags=flags},
+        return GrantEventIslandTicketsForHall(state with{Party=party,GameStats=stats,Script=state.Script with{Flags=flags},
             HallOfFame=new((state.HallOfFame?.Teams??[]).Add(new(pending.ChallengeNumber,champion.Id,members)).TakeLast(50).ToImmutableArray(),
                 state.HallOfFame?.FirstHallOfFamePlayTime,true){RibbonRecipients=recipients},
-            PokemonLeagueCompletion=pending with{Stage=CampaignPokemonLeagueCompletionStage.AwaitingSave}};
+            PokemonLeagueCompletion=pending with{Stage=CampaignPokemonLeagueCompletionStage.AwaitingSave}},ribbon);
     }
     private CampaignState PokemonLeagueContinueSnapshot(CampaignState state)
     {
@@ -171,7 +171,7 @@ public sealed partial class CampaignSession
             archive.Teams.Length!=Math.Min(50,completions.Length)||archive.Teams.Any(t=>t is null)||archive.FirstHallOfFamePlayTime is not null||
             !archive.FanClubUpdateDeferred||!_content.NationalDexEnabled&&(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_OAK")!=2)||state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POSTGAME_GOSSIPERS")||
-            new[]{"FLAG_LUGIA_FLEW_AWAY","FLAG_HO_OH_FLEW_AWAY","FLAG_DEOXYS_FLEW_AWAY"}.Any(f=>state.Script.Flags.GetValueOrDefault(f))||
+
             state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")!=Math.Min(999,completions.Length)||
             archive.RibbonRecipients is null&&completions.Length!=1)return "save_pokemon_league_hof_state";
         if(!archive.Teams.Select(t=>t.ChallengeNumber).SequenceEqual(completions.TakeLast(50).Select(r=>r.ChallengeNumber)))return "save_pokemon_league_hof_receipt";

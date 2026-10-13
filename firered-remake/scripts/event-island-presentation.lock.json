@@ -1,0 +1,593 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 8,
+      "gitBlobSha1": "4ecad6cd2b6dcd351a11e736dd8e523cbf25b6fc",
+      "path": "data/layouts/NavelRock_Summit/border.bin",
+      "sha256": "f60d396c930577615d9f7eee4d6cf9ce4e94ddb5d19e6f85109d887255f9349a"
+    },
+    {
+      "byteLength": 950,
+      "gitBlobSha1": "d49777f32f71da85e2317bba8151144d95018861",
+      "path": "data/layouts/NavelRock_Summit/map.bin",
+      "sha256": "ff4c02e6a542bfc226b93e766b86bfb17706f4c23548becf55c27c4061e86a70"
+    },
+    {
+      "byteLength": 158096,
+      "gitBlobSha1": "41d0eb1b5e51fa75d535b5a098bae2bd650f710d",
+      "path": "data/layouts/layouts.json",
+      "sha256": "1e8fdf737b31d269d0b918d4ed88bec8c2701bc7b1cbae2b2e3938bdea3de394"
+    },
+    {
+      "byteLength": 1625,
+      "gitBlobSha1": "654ddfc1cd4e212184f493420c313082d83a558b",
+      "path": "data/maps/BirthIsland_Exterior/map.json",
+      "sha256": "0ff589880a1f5895a09d412a461867ff806daf0a42b5594f4a073a2e863d0a13"
+    },
+    {
+      "byteLength": 3557,
+      "gitBlobSha1": "5bef2d0e9a9ca88bf5aac889ce21059cfb23e935",
+      "path": "data/maps/BirthIsland_Exterior/scripts.inc",
+      "sha256": "04f37aed5bbf5fa74a85151f9887397dbdc46b19d3e8679ac10bb8c774258b08"
+    },
+    {
+      "byteLength": 1457,
+      "gitBlobSha1": "2d329c4cb08133d2423dd930453f69ef7ea4a4f9",
+      "path": "data/maps/BirthIsland_Harbor/map.json",
+      "sha256": "771522fc3c6fdf72c55601b2c95b5ef71d69ca5946bde6e414bb1868eb3efa3c"
+    },
+    {
+      "byteLength": 1150,
+      "gitBlobSha1": "feabdef6435dffcfca7d4fe719c363ac1255329d",
+      "path": "data/maps/NavelRock_Base/map.json",
+      "sha256": "daef13c810baf267a4b449eacdd4c1df6dd2ee24f0df4f76db791fc5a38e702f"
+    },
+    {
+      "byteLength": 2247,
+      "gitBlobSha1": "9984658a7703ab7f5613ffa414a4e632bd1c34c6",
+      "path": "data/maps/NavelRock_Base/scripts.inc",
+      "sha256": "c51810c7c0f63c8700fb7d49815166287cefa9c43d46b5ec1882a03b795b2b40"
+    },
+    {
+      "byteLength": 814,
+      "gitBlobSha1": "e8d2476bc9fb70095fb9202a15a924c5cc30dd0c",
+      "path": "data/maps/NavelRock_Exterior/map.json",
+      "sha256": "dd0f6db2f50784ab5962490d9ee48b173bfa12b8f205e0003f303832031d68d5"
+    },
+    {
+      "byteLength": 1454,
+      "gitBlobSha1": "f53a46a8471a7b7a598fa8b8d2d3728529329446",
+      "path": "data/maps/NavelRock_Harbor/map.json",
+      "sha256": "18548ba0bb1ca1743b65567e339621101d6764021e31da285cd64a8b2bb827e4"
+    },
+    {
+      "byteLength": 1556,
+      "gitBlobSha1": "582e51e10808f2b0f796f478807db19ba02ce825",
+      "path": "data/maps/NavelRock_Summit/map.json",
+      "sha256": "437c0d90ced74c7ce764e8d7e37717fcc05735645838233e9145a98f03a65e2d"
+    },
+    {
+      "byteLength": 2908,
+      "gitBlobSha1": "7dd3f0e947d93c8d8b3ce6ef244a72eb416d40f8",
+      "path": "data/maps/NavelRock_Summit/scripts.inc",
+      "sha256": "3dffe6191b7c9cd9cb60083cc370b326afcc8057ec5d874cc7e372e5cbc528d8"
+    },
+    {
+      "byteLength": 10240,
+      "gitBlobSha1": "7a228eeaea2f928545b294505b1181618ec9c429",
+      "path": "data/tilesets/primary/general/metatiles.bin",
+      "sha256": "8d950c1a1f151f5e1bded1ecee165b815c3a4d62b69a4a9cec4f676283f9041e"
+    },
+    {
+      "byteLength": 3520,
+      "gitBlobSha1": "7fdc5c55d7518f355ecb3008d3bc4de6d11e681b",
+      "path": "data/tilesets/secondary/navel_rock/metatiles.bin",
+      "sha256": "bb6e045060d29483a94751934742dc74c87770bc976b41f410779262af91879f"
+    },
+    {
+      "byteLength": 201,
+      "gitBlobSha1": "ed67e8cf9a9d1009750b17d36d4896cf55ff4ff5",
+      "path": "graphics/field_effects/pics/deoxys_rock_fragment_bottom_left.png",
+      "sha256": "e342091d1539cb0d85db7d70b87907900d3153b15346c7dcf0652805f04b8ce7"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "18e3fabead7f90e2a32761667e63a62c9912b27c",
+      "path": "graphics/field_effects/pics/deoxys_rock_fragment_bottom_right.png",
+      "sha256": "5bee1487eea3695ccfd21ee66bbef967e03f530a3241777018913cffb423e4b0"
+    },
+    {
+      "byteLength": 201,
+      "gitBlobSha1": "af1db7882753008485660c8a301ae412ebdf217e",
+      "path": "graphics/field_effects/pics/deoxys_rock_fragment_top_left.png",
+      "sha256": "509e1d1c573cbf80ff2058c619b8e08a24c6df8b4deff95fac34faf64e2c40a7"
+    },
+    {
+      "byteLength": 202,
+      "gitBlobSha1": "bafa44350c66d911153672e6d62f5f27bbc9e618",
+      "path": "graphics/field_effects/pics/deoxys_rock_fragment_top_right.png",
+      "sha256": "3bc251c359bcd50fe958a28d1f0cb02f0d40cc8cbdb62c9eb4e99c420d634b88"
+    },
+    {
+      "byteLength": 131,
+      "gitBlobSha1": "c20bacb57bba0d09a950bc0564f4a7e6d913b4eb",
+      "path": "graphics/field_specials/deoxys_rock_0.pal",
+      "sha256": "3b2f779561e74d564302ac47d467100707f5d0155c83622f416b399e86edda78"
+    },
+    {
+      "byteLength": 131,
+      "gitBlobSha1": "2c106a4ae33d5a07b3cd4578a216877f0664fbc3",
+      "path": "graphics/field_specials/deoxys_rock_1.pal",
+      "sha256": "c20bfbc458cfba86d2c77123c7e4041ea726aad4747e14b75540ea095c38405b"
+    },
+    {
+      "byteLength": 133,
+      "gitBlobSha1": "6c754061136a588a52566790d8e440b1729015c2",
+      "path": "graphics/field_specials/deoxys_rock_10.pal",
+      "sha256": "bc8860864476099fecff032226531fdc32b8254668e2558c335bd0c940de86a0"
+    },
+    {
+      "byteLength": 125,
+      "gitBlobSha1": "38fe7d0845170406df7b71d0a6c4f89a8504f0f9",
+      "path": "graphics/field_specials/deoxys_rock_2.pal",
+      "sha256": "186b40eafc9309c173e461c906b65541f5fafc9d3def9ee07e4021acae7d4ba8"
+    },
+    {
+      "byteLength": 126,
+      "gitBlobSha1": "7b7fb7c4424809bc20e5a1dc1a87a0a436bbf579",
+      "path": "graphics/field_specials/deoxys_rock_3.pal",
+      "sha256": "a26a9623f68e4d2756d715487303ab7dab5c7909e4c9cb87834916ba1931ae5d"
+    },
+    {
+      "byteLength": 126,
+      "gitBlobSha1": "4eda607b76ab7c0c8f52b3c3c778ae23f406c1c3",
+      "path": "graphics/field_specials/deoxys_rock_4.pal",
+      "sha256": "9ac221715401504c31a14025ca6ecdc530a73cc6a6892e9286217f2a127bdb46"
+    },
+    {
+      "byteLength": 126,
+      "gitBlobSha1": "a92bc65fdcca116ff5103bb4b1976cbfffdbd83a",
+      "path": "graphics/field_specials/deoxys_rock_5.pal",
+      "sha256": "079d022bc19c8fcc66dd2b7a6ffed92244ba2734ae187fedc9b0d2bfdd526fcd"
+    },
+    {
+      "byteLength": 126,
+      "gitBlobSha1": "0de8519c68f7bc341c528824b748b4c57f6122a0",
+      "path": "graphics/field_specials/deoxys_rock_6.pal",
+      "sha256": "ed1e9e355deb4958479e5fa0b9b1ac0fab9d4028b66afa229163f9370c3ab33c"
+    },
+    {
+      "byteLength": 127,
+      "gitBlobSha1": "ae67047d4364871c9320a7b1da4e4cc6039981f1",
+      "path": "graphics/field_specials/deoxys_rock_7.pal",
+      "sha256": "66b3cea29ae7375f7303981436ee918a25f8269bc8fe00be9ada2434dc27aae1"
+    },
+    {
+      "byteLength": 127,
+      "gitBlobSha1": "27cf345e4c0ab988f19620c9003ca89090783fa7",
+      "path": "graphics/field_specials/deoxys_rock_8.pal",
+      "sha256": "069f004f82f21389bd4cc3a038ca973e0c9a0c6d3623ee39b27b620b4151ea86"
+    },
+    {
+      "byteLength": 127,
+      "gitBlobSha1": "fcca0b4dedd25266d0c98bfbc0c64595a5533510",
+      "path": "graphics/field_specials/deoxys_rock_9.pal",
+      "sha256": "72dfcebae1f9772ebd233eec63a1a02a32eb4fb74400ffac2021782b49aed637"
+    },
+    {
+      "byteLength": 209,
+      "gitBlobSha1": "706049ee02588e9699ad2778f3dbb23bfc2e4b0b",
+      "path": "graphics/object_events/pics/misc/birth_island_stone.png",
+      "sha256": "2941f63534b34170a33bc41774bb3c82860b067a8b9cfdac1a5ac2b27300b175"
+    },
+    {
+      "byteLength": 2004,
+      "gitBlobSha1": "b719d111f73ad26966817ebb64a72cf0e369a2a5",
+      "path": "graphics/pokedex/kanto_dex_bgpals.pal",
+      "sha256": "6592bc9bf2739b97b6a0f97b5163748811709dfdb0ef4987acdc119b6d8355bf"
+    },
+    {
+      "byteLength": 1146,
+      "gitBlobSha1": "c6cf22288486c42e024666eb640693a5f06deb44",
+      "path": "graphics/pokemon/deoxys/back.png",
+      "sha256": "39975a7369b962c181b24d7f1bfd5292f88a3a50405cc2e37c62a7db3da8d59f"
+    },
+    {
+      "byteLength": 84,
+      "gitBlobSha1": "ea97e4014c644dc0e5f62ff9fa3ed23c91c893c2",
+      "path": "graphics/pokemon/deoxys/footprint.png",
+      "sha256": "325c924390323eedd66cc9dcdb39bdf20dd4f220256d30f395c1c92b621efb26"
+    },
+    {
+      "byteLength": 1579,
+      "gitBlobSha1": "017eb84d3624e6cbb1f1f830defe874016140a35",
+      "path": "graphics/pokemon/deoxys/front.png",
+      "sha256": "1dcd1ad9b5aea89f288f8ae11e98ba9a2358760ba48b8e8b08dd53a1dda61c14"
+    },
+    {
+      "byteLength": 456,
+      "gitBlobSha1": "ae34130ee00e4ee1309d95b33964fd2c547dccdc",
+      "path": "graphics/pokemon/deoxys/icon_attack.png",
+      "sha256": "80ae2154acd796306b0eefd81f2e04fe48b64297cf5e83a6a06ccc0ac8892982"
+    },
+    {
+      "byteLength": 188,
+      "gitBlobSha1": "e8921dd3d55ed0ac17b7934171a500f214ae257c",
+      "path": "graphics/pokemon/deoxys/normal.pal",
+      "sha256": "479c76fdaf9a0ca458fa37a514b9bbf20d9dc3c7b82d813ea743e4830a58f197"
+    },
+    {
+      "byteLength": 187,
+      "gitBlobSha1": "666acaa3ae626af5c0a57a9f83e0cf806bc80d71",
+      "path": "graphics/pokemon/deoxys/shiny.pal",
+      "sha256": "23bd87d62536a21095ac0d34484df693e79ec12e7ef27705d9aa94b0ebb160b1"
+    },
+    {
+      "byteLength": 831,
+      "gitBlobSha1": "9acbdf0cc184525f2c6b0848618a4415483559a3",
+      "path": "graphics/pokemon/ho_oh/back.png",
+      "sha256": "6219c104f368a4653998512a78caa97fa3c4fdf750abc5fda0d5863ec55a239b"
+    },
+    {
+      "byteLength": 95,
+      "gitBlobSha1": "adceb38787b4292ab1935316d591bda35f49496e",
+      "path": "graphics/pokemon/ho_oh/footprint.png",
+      "sha256": "9655a505dc2229343efe0d64aae39cfb865410a1aa20e1c714aec06a5ba72685"
+    },
+    {
+      "byteLength": 1332,
+      "gitBlobSha1": "97a7c3e25eae321af8f0869a0194f4f4387eb707",
+      "path": "graphics/pokemon/ho_oh/front.png",
+      "sha256": "07f1159d439da9d697f39621463876b1439fd83e043c9ce97ffcc410af0884b9"
+    },
+    {
+      "byteLength": 480,
+      "gitBlobSha1": "4cd5ed871f69ddb978de343c2039e75a58001c0b",
+      "path": "graphics/pokemon/ho_oh/icon.png",
+      "sha256": "12c913e5404ad6342778ab0a40fa84eb251bbaa59bf1dd4937461060f6fd6416"
+    },
+    {
+      "byteLength": 185,
+      "gitBlobSha1": "f4b583541803553a5a98571f9df968c9351529d9",
+      "path": "graphics/pokemon/ho_oh/normal.pal",
+      "sha256": "909ab97f151966936b329e49fbd35086e025d1723f1ebf44582aee7a49b1c76b"
+    },
+    {
+      "byteLength": 193,
+      "gitBlobSha1": "2c14ff9e4b6f5e68706f08c6ca269a06eacd1a3d",
+      "path": "graphics/pokemon/ho_oh/shiny.pal",
+      "sha256": "f37f5d1bf646bb84a949c1faac6b3ca14548cdbdac10d909f1d7deeda5065248"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "48a835b0db32aa5a2195f9dccac3c84e8b5bb87d",
+      "path": "graphics/pokemon/icon_palettes/icon_palette_0.pal",
+      "sha256": "05e68987f3a786c27943a03005221d25fdf35e32b201b1b212f7fa454b35ec7a"
+    },
+    {
+      "byteLength": 195,
+      "gitBlobSha1": "261ea164d9415f0c3f35ff0efe63df968c9d2c93",
+      "path": "graphics/pokemon/icon_palettes/icon_palette_1.pal",
+      "sha256": "39bd2dbfe6ddb9d27cc002fbc3764a7b834178a42fde8bf17adef514037112ae"
+    },
+    {
+      "byteLength": 783,
+      "gitBlobSha1": "ece7def85c9f8d454ba7ed0891b7067960ee9d64",
+      "path": "graphics/pokemon/lugia/back.png",
+      "sha256": "e12d7046e964c267c1b8dbd8111cdf074124050b62e311b4ce309de88311a98c"
+    },
+    {
+      "byteLength": 95,
+      "gitBlobSha1": "e6642ed07f1cd991dc6bcd8dc7bab0bd1c64f894",
+      "path": "graphics/pokemon/lugia/footprint.png",
+      "sha256": "912d9329d0c7cea1c280f5fef9539dd904f41d397332f66a470bd70950eb02ff"
+    },
+    {
+      "byteLength": 1030,
+      "gitBlobSha1": "44f6ce2785b17d77f5b1d860fab764a305908f74",
+      "path": "graphics/pokemon/lugia/front.png",
+      "sha256": "7fc4f8ee23829b7b3879d37bf79fd60500c46c0cc5d02a3e293637aa31cd7eb9"
+    },
+    {
+      "byteLength": 454,
+      "gitBlobSha1": "5e581ee193f2414668570bc325c1db0a560f7f5b",
+      "path": "graphics/pokemon/lugia/icon.png",
+      "sha256": "5bcc90416ef2215fed877e55c136e211480f930264a9ed6ff47529c40fb89c99"
+    },
+    {
+      "byteLength": 184,
+      "gitBlobSha1": "483157770ab4cb848db4c10375876888d2d94535",
+      "path": "graphics/pokemon/lugia/normal.pal",
+      "sha256": "fd0b7fc521ca2d6f16fb10ef8fbcfaa33e9f19c03a32953f558ca3c8cb9d218d"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "42db26696e7d7e50fe26a5a7697c327f3d4c1b78",
+      "path": "graphics/pokemon/lugia/shiny.pal",
+      "sha256": "527b1f256ac25ab0e820e3c1be56a3cceb0c0462ffa5286028fd4f1ede251b80"
+    },
+    {
+      "byteLength": 17891,
+      "gitBlobSha1": "4f5fc3cc6fda1aee6585a0944378be934fc10ded",
+      "path": "include/constants/songs.h",
+      "sha256": "ae4166b40bdde0bc014657636f63b49ebe0d3e00f7fb61531c99bf714eba36b4"
+    },
+    {
+      "byteLength": 2051,
+      "gitBlobSha1": "0890f4290b871688076881f395de05c9cba8d2ee",
+      "path": "include/constants/sound.h",
+      "sha256": "20db92775546c49cc2ef4fa5d1f9f068c58f469d16017d9166b98e3bd6ad02e2"
+    },
+    {
+      "byteLength": 12982,
+      "gitBlobSha1": "7446cc1380995ab62deff8359bad813aa2b936e9",
+      "path": "include/constants/species.h",
+      "sha256": "ec3f9f9c2717dcd453aa7a27506c32e1e6ca067864534dee494695d74344c51a"
+    },
+    {
+      "byteLength": 11261,
+      "gitBlobSha1": "128189b0bdde65f0353ebf5e75d2fb6858f1b649",
+      "path": "include/event_object_movement.h",
+      "sha256": "cbf412819bdd65b808a8667a50008795bed0bea6e3af8fe0da70354ff68eb4e7"
+    },
+    {
+      "byteLength": 16533,
+      "gitBlobSha1": "22e7433635a64d65d2fcf4de7f3f407b62b239d9",
+      "path": "sound/cry_tables.inc",
+      "sha256": "18210b001e842eb70a9f3b92834007f9434e332b7f0df0c32ed0de4305f47e3a"
+    },
+    {
+      "byteLength": 10420,
+      "gitBlobSha1": "c5943318dbf899e52fb77a5c3b49c4a24d803d9d",
+      "path": "sound/direct_sound_samples/cries/deoxys.wav",
+      "sha256": "1106a0a379f6958ad3db0a0e48bd0199ebcceffad3f815bc07e8699d3002b267"
+    },
+    {
+      "byteLength": 11292,
+      "gitBlobSha1": "e098f9806b5f9a09a085f177008b0ca27c2484ec",
+      "path": "sound/direct_sound_samples/cries/ho_oh.wav",
+      "sha256": "eb71d746aa59c5b6d57de5cd1f339d9b4e9908da85cf0fb87fd983fe881550ac"
+    },
+    {
+      "byteLength": 18930,
+      "gitBlobSha1": "1a1c46ef41fd86c1d37c7bbaf96267970b8520f2",
+      "path": "sound/direct_sound_samples/cries/lugia.wav",
+      "sha256": "120a333c38d0fe59a8d8450dbef3ad18525619846a62a330d38d528941ee473a"
+    },
+    {
+      "byteLength": 9204,
+      "gitBlobSha1": "000cc41b99f419fa043d3730d37b657ac6c48a57",
+      "path": "sound/song_table.inc",
+      "sha256": "015887679404738d0bbe02ee20c891d79d28284ef29d4f180cfec46510e8e061"
+    },
+    {
+      "byteLength": 5387,
+      "gitBlobSha1": "d322b9a1a5f8d0f564b8aa4d3d750332d5eaae8d",
+      "path": "sound/songs/midi/mus_encounter_deoxys.mid",
+      "sha256": "0fec19c004756cddb280557f9e15fab6e46e78878353b01520a17382585a0bc0"
+    },
+    {
+      "byteLength": 12971,
+      "gitBlobSha1": "7f32963c9aa18040d50b7a41272a94773e630922",
+      "path": "sound/songs/midi/mus_sevii_cave.mid",
+      "sha256": "19b0d34005bebedf5362870e0b6433bb9b93b189144630f2e034dc0a1a9a1de0"
+    },
+    {
+      "byteLength": 11862,
+      "gitBlobSha1": "d215f0122e8092143c8adb51511823bf1c7583ee",
+      "path": "sound/songs/midi/mus_sevii_route.mid",
+      "sha256": "9e669cb78f8a927297c323fbdf0c5bd16016bf42143d8e81d8589218a4c5b8bb"
+    },
+    {
+      "byteLength": 33236,
+      "gitBlobSha1": "1f9c00bb105f605aa4f734b1e4226b019a0601c9",
+      "path": "sound/songs/midi/mus_vs_deoxys.mid",
+      "sha256": "de7f6a073ec226e190d4d8b579be30a904632d52c3ecd56d74bd93dddb9fda41"
+    },
+    {
+      "byteLength": 16522,
+      "gitBlobSha1": "93d3785be6d68ec636b09a9d3d82f164a79a34af",
+      "path": "sound/songs/midi/mus_vs_legend.mid",
+      "sha256": "0b6a1bb1175419e4ef72a5dfb733457a167e3e0494df2a634d68d3608333019d"
+    },
+    {
+      "byteLength": 497,
+      "gitBlobSha1": "98391c9c99da781c1dfde59c4606c0ef148c8ffa",
+      "path": "sound/songs/midi/se_deoxys_move.mid",
+      "sha256": "4ea294b4ed8e9143d5b3f990215e196e04bd61c7852052f12f5390d0ad7879e5"
+    },
+    {
+      "byteLength": 280,
+      "gitBlobSha1": "4ad9b70d9ed9f7057ccda1d2cc81e4b1f6007a9b",
+      "path": "sound/songs/midi/se_m_confuse_ray.mid",
+      "sha256": "2baf95683d033d482435874962c0b1ecfee8866fa4d05b478b1543f2550fc3ca"
+    },
+    {
+      "byteLength": 224,
+      "gitBlobSha1": "956119f6875ba5fca851b725d69e9437c5f44857",
+      "path": "sound/songs/midi/se_m_strength.mid",
+      "sha256": "b3d00179e34f4c303d81180787322ad0c1e66f191bc9124da79ea8c5f3287f90"
+    },
+    {
+      "byteLength": 284,
+      "gitBlobSha1": "459e7240613a9aa62d9c623aa7e6686d69e01fdd",
+      "path": "sound/songs/midi/se_m_wing_attack.mid",
+      "sha256": "506ec7914e5e410422a3b3e80754fb475b5d4c7f42dead9031b3d8cf242e0a1b"
+    },
+    {
+      "byteLength": 191,
+      "gitBlobSha1": "71d8163bda3d66e624f7f0d1329b0b8ee92f7cfc",
+      "path": "sound/songs/midi/se_thunder.mid",
+      "sha256": "0176dbf857e457785a2542a036980eb28071f7b577072406410dac46932cd627"
+    },
+    {
+      "byteLength": 142,
+      "gitBlobSha1": "c47731b9450ee91f8d00e7abc8b046b4b6b2e3b3",
+      "path": "sound/songs/midi/se_thunder2.mid",
+      "sha256": "5c2b8ae6c203dd7762664a364d473f2154f584aebc87f87a6d9c10fe746e6a90"
+    },
+    {
+      "byteLength": 134,
+      "gitBlobSha1": "2397eea6482ad078008105880affa373eb1dfe17",
+      "path": "sound/songs/midi/se_thunderstorm_stop.mid",
+      "sha256": "dde295fbdd457a89758568ea764ee7a9b36dfa1025c11395f7d95aab8aaab74f"
+    },
+    {
+      "byteLength": 33351,
+      "gitBlobSha1": "6d62084dbb697fc3a42d49a6dc865657339dcea2",
+      "path": "src/battle_setup.c",
+      "sha256": "f33e6cdd3ff22ab9fe0f43219dfc795a9abfcc5f01c04e96809b98ddf5b952fd"
+    },
+    {
+      "byteLength": 214609,
+      "gitBlobSha1": "e744f80e08f2f849238d58fdcbfd29107bd3decd",
+      "path": "src/data/graphics/pokemon.h",
+      "sha256": "72985c8d3d839543aab842efe4b5fc711662296d2c7d1ed00fca4096181618f5"
+    },
+    {
+      "byteLength": 37750,
+      "gitBlobSha1": "cd6a8a04b67c022aef0874405a887c0f3ee6769d",
+      "path": "src/data/object_events/object_event_anims.h",
+      "sha256": "a484f38af198398f763c1d5f239dddd4397bb4cc7eab48c2b2e992552d767b0e"
+    },
+    {
+      "byteLength": 23522,
+      "gitBlobSha1": "4e229cb14cf3eaec78066454d788d3aaea1274be",
+      "path": "src/data/object_events/object_event_graphics.h",
+      "sha256": "0ab0217ef739fe47c2cc703c863f5a4b8a4bf9b9312dc2bebb880fe0bce97cec"
+    },
+    {
+      "byteLength": 97115,
+      "gitBlobSha1": "78ee95a47bddc92fcb098ccaeaa039a92fe3ec47",
+      "path": "src/data/object_events/object_event_graphics_info.h",
+      "sha256": "fc19a22d4471e83653e80257145f08c3b6d0b59868974399541a8bc3119ef512"
+    },
+    {
+      "byteLength": 44872,
+      "gitBlobSha1": "17f818f458434bc6c35cb7f10acd7776a36e9c22",
+      "path": "src/data/pokemon_graphics/back_pic_coordinates.h",
+      "sha256": "a8d7ae72ebf462ca1a5915bc4f9a77d0ee2c13d4e9a4d9f2f66dd947256b9fab"
+    },
+    {
+      "byteLength": 1834,
+      "gitBlobSha1": "dccd063dae2a1ab421c9a990c891ac2eabadf820",
+      "path": "src/data/pokemon_graphics/enemy_mon_elevation.h",
+      "sha256": "bab9380267270b2eb30ac50cc643bc0e3fc684fa0195e85be0dc97fc9d28f7e1"
+    },
+    {
+      "byteLength": 19857,
+      "gitBlobSha1": "86ca067901f96aee2b1aed81912bac4f7e84c99b",
+      "path": "src/data/pokemon_graphics/footprint_table.h",
+      "sha256": "90b1bf05b85a00ae2f16a2beacf3316bcf4d313a1197cfb8368728fa39090b70"
+    },
+    {
+      "byteLength": 44879,
+      "gitBlobSha1": "d521b615fd22c171c441ca6b9e4a56ff37474036",
+      "path": "src/data/pokemon_graphics/front_pic_coordinates.h",
+      "sha256": "81a9024f3aa28ab750e6f817367d525e3a97233c981ec05e23850a971c54989f"
+    },
+    {
+      "byteLength": 15851,
+      "gitBlobSha1": "25f2c9aa2363202e75cf2080be01465b2d64b5c4",
+      "path": "src/data/text/species_names.h",
+      "sha256": "73e87117c98828423b7fc15565bd2a839a0671665fb7c1c1b26264d7d7a8912f"
+    },
+    {
+      "byteLength": 21121,
+      "gitBlobSha1": "676bd21050e753822a61aa127310c338938c3c00",
+      "path": "src/data/tilesets/headers.h",
+      "sha256": "bd8233763e26d3dbb025010ad379c53bcc5b102dd1a1de40cec85f8262686c8c"
+    },
+    {
+      "byteLength": 15339,
+      "gitBlobSha1": "a9f267159b45291c4a8f28a7577609d9f15b655f",
+      "path": "src/data/tilesets/metatiles.h",
+      "sha256": "4609feb19cc299e896c8d955a5031abe0d78a7dbcdbcf218257092a008b4e182"
+    },
+    {
+      "byteLength": 11157,
+      "gitBlobSha1": "f4740f917ed9ae7e0fd967107e1e63733bb8c66a",
+      "path": "src/decompress.c",
+      "sha256": "f190145b3948c1c22213e1a540f261aba89592ed9f30b6d13fa25b78ac417c7f"
+    },
+    {
+      "byteLength": 125868,
+      "gitBlobSha1": "1707cbd4ae5dbc978f7efdb059c5ca49fd8ee9be",
+      "path": "src/field_effect.c",
+      "sha256": "87a44c0a6411a2a51092928971346f24cb71183824f095533394357dfbc2344a"
+    },
+    {
+      "byteLength": 77314,
+      "gitBlobSha1": "08b7ced2d20dcd90700cf43c06edadabeb42728d",
+      "path": "src/field_specials.c",
+      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9"
+    },
+    {
+      "byteLength": 33681,
+      "gitBlobSha1": "56cf6505bd381fde0aaa9a704cc4e997b5f934d2",
+      "path": "src/field_weather.c",
+      "sha256": "935ed0d0d83ff91bd8fdb52883c8223a816a66a40ec44b2b61c3e68fedc52672"
+    },
+    {
+      "byteLength": 62867,
+      "gitBlobSha1": "6d69e355258ec0164a22b11e0ca198638b1c13ca",
+      "path": "src/field_weather_effects.c",
+      "sha256": "28ac11dd8d3cf66bb4e6d7e663cfc2411e8bfc82fec13bb2f2ec55d9c51ec67d"
+    },
+    {
+      "byteLength": 27804,
+      "gitBlobSha1": "84f23428f2e7b2802bcadb497d4ca401af6c0531",
+      "path": "src/palette.c",
+      "sha256": "d406f56ba0a815d184753396e7e05120921c651a7bb2f5efff642816e64e7dc6"
+    },
+    {
+      "byteLength": 45145,
+      "gitBlobSha1": "037b1bfa82189906b205fe1a50a9276a4e2041e6",
+      "path": "src/pokemon_icon.c",
+      "sha256": "2034625b3e4b804fb8052400b98bf1920a9cb435699338f18c34ea32e3e2f967"
+    },
+    {
+      "byteLength": 15232,
+      "gitBlobSha1": "9060aa513d2946d5a59c34f24658da96e0ab6a8e",
+      "path": "src/sound.c",
+      "sha256": "851313931ebdbf2f0933b52295707f82e948735813fac84fdba74c0446ada958"
+    }
+  ],
+  "inheritedInputs": [
+    {
+      "byteLength": 132335,
+      "path": "content/generated/campaign-hit-art/manifest.json",
+      "sha256": "f65895babddf0327ad6884ba4d86d2c582e780c17bf91064599a657361acc94c"
+    },
+    {
+      "byteLength": 1254,
+      "path": "content/generated/sevii-ruby-presentation/synth-manifest.json",
+      "sha256": "33d4b1cbf7fdcc4a06239c25a313c6fc2819f2ad71a86c11b4db914b963b6c35"
+    },
+    {
+      "byteLength": 6995,
+      "path": "content/generated/six-island-presentation/synth-manifest.json",
+      "sha256": "1831a1dfe43f9c450d663cd90727e270fa14a4bd95ed787871b744660712a76d"
+    },
+    {
+      "byteLength": 2565436,
+      "path": "content/generated/synth-audio/firered.pack",
+      "sha256": "00b3a8376e2a44f1919d4a2573a63cb2873a19b5662df496c4f292c16ad0b46d"
+    },
+    {
+      "byteLength": 88374,
+      "path": "content/generated/synth-audio/manifest.json",
+      "sha256": "10906e43fa80b13eb5d54177a93003df3fae5292f5da3a22b5805ff3e21220df"
+    },
+    {
+      "byteLength": 6188,
+      "path": "content/generated/synth-audio/normal-cries.bin",
+      "sha256": "623fe59bb7fc0b8d3907dd67bc677a7985037e0086698636f35db82e113d7f2e"
+    }
+  ],
+  "profile": "firered-event-island-presentation-v1",
+  "repository": "pret/pokefirered",
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}

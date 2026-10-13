@@ -39,7 +39,7 @@ public sealed partial class CampaignSession
              completion.SwitchBoulderIds.Length != 7 || completion.SwitchBoulderIds.Any(i => i is < 1 or > 7)))
             return "save_tanoby_unlock_receipt";
         string? expectedWeather = SevenIslandChamber(state.World.Player.MapId) && !unlocked ? "WEATHER_SHADE" : null;
-        if (state.FieldWeather != expectedWeather) return "save_seven_island_weather";
+        if (!(_content.EventIslandsEnabled && state.World.Player.MapId.Value == NavelSummitMap) && state.FieldWeather != expectedWeather) return "save_seven_island_weather";
         if (state.World.Player.MapId.Value == "map.seven-island-house-room1" &&
             (state.Script.Variables.GetValueOrDefault("VAR_TEMP_1") != 0 || state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_SEVEN_ISLAND_HOUSE_ROOM1") != 0))
             return "save_seven_island_ereader_not_admitted";

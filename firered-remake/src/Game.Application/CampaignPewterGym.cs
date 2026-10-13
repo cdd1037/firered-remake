@@ -63,6 +63,7 @@ public sealed partial class CampaignSession
     private InventoryState LegacyQuestInventory(InventoryState inventory)
     {
         var view=WithoutCityServiceItems(_content.PewterEnabled?PewterMachineRules.WithoutMachines(inventory):inventory);
+        if(_content.EventIslandsEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=EventAuroraTicket&&s.Item!=EventMysticTicket).ToImmutableArray()};
         if(_content.FiveIslandEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=SapphireItem).ToImmutableArray()};
         if(_content.SeviiRubyEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=RubyItem&&s.Item!=RainbowPassItem).ToImmutableArray()};
         if(_content.FirstSeviiEnabled)view=view with{KeyItems=view.KeyItems?.Where(s=>s.Item!=FirstSeviiShopCatalog.MeteoriteId&&s.Item!=FirstSeviiShopCatalog.TriPassId).ToImmutableArray()};

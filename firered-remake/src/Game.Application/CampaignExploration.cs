@@ -9,7 +9,8 @@ using Game.Domain.World;
 namespace Game.Application;
 
 public sealed record CampaignWildHistory(string Id,int SourceSpeciesId,int Level,Game.Domain.WildBattle.WildBattleOutcome Outcome,int ExperienceGained)
-{[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerSettlement? CelioRoamer{get;init;}
+{[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignEventIslandReceipt? EventIslandReceipt{get;init;}
+[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerSettlement? CelioRoamer{get;init;}
 [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CeruleanCaveWildOrigin? CeruleanCaveOrigin{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public SevenIslandWildOrigin? SevenIsland { get; init; }
 [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignMewtwoReceipt? MewtwoReceipt{get;init;}
@@ -62,7 +63,7 @@ public sealed partial class CampaignSession
             try{Route1EncounterRules.ValidateState(exploration.Encounter);}catch(Exception ex) when(ex is ArgumentException or NotSupportedException){return "save_encounter_invalid";}
             if(exploration.Encounter.Pending is not null)return "save_encounter_pending";
         }
-        if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||b.SevenIslandReceipt is not null&&b.SevenIsland is null||b.MewtwoReceipt is not null&&b.CeruleanCaveOrigin?.Kind!=CeruleanCaveEncounterKind.Mewtwo||!(b.SevenIsland is not null?IsSevenIslandWildHistory(b):b.CeruleanCaveOrigin is not null?IsCeruleanCaveWildHistory(b):b.CelioRoamer is not null?IsCelioRoamerHistory(state,b):b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
+        if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||b.SevenIslandReceipt is not null&&b.SevenIsland is null||b.MewtwoReceipt is not null&&b.CeruleanCaveOrigin?.Kind!=CeruleanCaveEncounterKind.Mewtwo||!(b.EventIslandReceipt is not null?IsEventIslandHistory(b):b.SevenIsland is not null?IsSevenIslandWildHistory(b):b.CeruleanCaveOrigin is not null?IsCeruleanCaveWildHistory(b):b.CelioRoamer is not null?IsCelioRoamerHistory(state,b):b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
         if(ValidateCelioRoamerLedger(state) is {} roamerError)return roamerError;
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
         if(_content.SupportsTeleportPads(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
@@ -168,7 +169,7 @@ public sealed partial class CampaignSession
             bool tookStep=moved.World.StepCount>state.World.StepCount;
             // Cave step-warps count before the new map's transition callback;
             // camera connections enter first, then complete the player-input step.
-            if(legacySpecial&&tookStep)moved=ApplyRenewableHiddenItemWalkingStep(moved);
+            if(legacySpecial&&tookStep)moved=ApplyEventIslandWalkingStep(ApplyRenewableHiddenItemWalkingStep(moved),before.MapId.Value);
             moved=EnterSurfConnectionMap(moved,moved.World.Player.Facing,legacySpecial);
             if(_content.FirstSeviiEnabled&&!legacySpecial&&tookStep)moved=moved with{EntryPrograms=moved.EntryPrograms.Add("@renewable-camera-step")};
             moved=Pump(moved);
@@ -185,7 +186,7 @@ public sealed partial class CampaignSession
             {
                 var onFrame=Pump(moved);preempted=onFrame.Script.Revision!=moved.Script.Revision;moved=onFrame;
             }
-            if(!preempted&&moved.World.StepCount>state.World.StepCount)moved=ApplyRenewableHiddenItemWalkingStep(moved);
+            if(!preempted&&moved.World.StepCount>state.World.StepCount)moved=ApplyEventIslandWalkingStep(ApplyRenewableHiddenItemWalkingStep(moved));
             var p=moved.World.Player;
             if(!preempted&&(p.X!=before.X||p.Y!=before.Y))
             {

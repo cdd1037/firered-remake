@@ -15,7 +15,7 @@ public sealed record FieldBackgroundTrigger(int X,int Y,int Elevation,string Scr
 }
 public sealed record FieldPickupDefinition(string Id,string MapSymbol,bool Hidden,int? SourceLocalId,int X,int Y,int Elevation,
     string Script,string ItemSymbol,int SourceItemId,ItemId Item,string ItemName,string Pocket,int Quantity,string Flag,int SourceFlagId);
-public sealed record FieldMapPrograms(string? OnTransition,string? OnWarpTable,string? OnFrameTable,string? OnLoad=null,string? OnResume=null);
+public sealed record FieldMapPrograms(string? OnTransition,string? OnWarpTable,string? OnFrameTable,string? OnLoad=null,string? OnResume=null,string? OnReturnToField=null);
 public sealed record FieldProgramCondition(string Variable,int Expected,string ScriptId);
 public sealed record FieldMapDefinition(MapId Id,string SourceMapSymbol,ImmutableArray<FieldActorDefinition> Actors,
     ImmutableArray<FieldCoordTrigger> CoordTriggers,ImmutableArray<FieldBackgroundTrigger> BackgroundTriggers,FieldMapPrograms Programs,string Music,string RegionMapSection="")
@@ -82,6 +82,12 @@ public interface ICampaignCatalog:IStoryCatalog
     bool FuchsiaGymEnabled=>false;
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
+    bool EventIslandsEnabled=>false;
+    EventIslandFieldData? EventIslandField=>null;
+    EventIslandOwnedPokemonCatalog? EventIslandOwnership=>null;
+    EventIslandOpponentPokemonCatalog? EventIslandOpponents=>null;
+    EventIslandMachineCatalog? EventIslandMachines=>null;
+    EventIslandShopCatalog? EventIslandShop=>null;
     bool SevenIslandEnabled=>false;
     SevenIslandFieldData? SevenIslandField=>null;
     SevenIslandOwnedPokemonCatalog? SevenIslandOwnership=>null;

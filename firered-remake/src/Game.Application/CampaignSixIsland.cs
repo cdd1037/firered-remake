@@ -38,7 +38,7 @@ public sealed partial class CampaignSession
             !ReferenceEquals(owned.Predecessor, content.FourIslandOwnership) || !ReferenceEquals(content.FiveIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.FourIslandOpponents) ||
             (CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines)) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
-            (SevenIslandShopCatalog.For(content.EarlyShop)?.Predecessor?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop)) is null)
+            (content.SevenIslandShop?.Predecessor?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop)) is null)
             throw new InvalidDataException("six_island_source_profile_missing");
         SixIslandTrainerPartyFactory.ValidateCatalog(trainers);
     }

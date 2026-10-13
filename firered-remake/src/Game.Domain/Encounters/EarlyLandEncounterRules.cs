@@ -153,6 +153,25 @@ public static class EarlyLandEncounterRules
         return CheckValidated(state, table, check, profile, globalRng, gate, repelSteps, repelLevel);
     }
 
+    public static EarlyLandEncounterResult Check(EventIslandOwnedPokemonCatalog owned,
+        EarlyLandEncounterState state, EarlyLandEncounterTable table, EarlyLandEncounterCheck check,
+        ImmutableArray<PartyPokemon> party, ushort repelSteps, RngState globalRng,
+        RoamerState roamer, RoamerMap playerMap, bool wildEncountersDisabled = false,
+        SaffronGymShopCatalog? saffronShop = null)
+    {
+        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop);
+        if (state.RulesVersion != FiveIslandRulesVersion) throw new ArgumentException("event_island_land_profile");
+        var lead = party[0];
+        // Only these source field modifiers matter; all real party fields were authenticated above.
+        var profile = new EarlyLandEncounterProfile(RulesVersion: FiveIslandRulesVersion,
+            LeadAbility: !lead.IsEgg && lead.Pokemon.AbilityId is "ABILITY_STENCH" or "ABILITY_ILLUMINATE"
+                ? lead.Pokemon.AbilityId : "ABILITY_NONE",
+            LeadHeldItem: lead.HeldItem == "ITEM_CLEANSE_TAG" ? lead.HeldItem : "ITEM_NONE",
+            WildEncountersDisabled: wildEncountersDisabled);
+        int? repelLevel = party.FirstOrDefault(p => !p.IsEgg && p.Pokemon.CurrentHp > 0)?.Pokemon.Level;
+        return CheckValidated(state, table, check, profile, globalRng, gate, repelSteps, repelLevel);
+    }
+
     private static EarlyLandEncounterResult CheckValidated(EarlyLandEncounterState state,
         EarlyLandEncounterTable table, EarlyLandEncounterCheck check, EarlyLandEncounterProfile profile,
         RngState globalRng, CelioRoamerEncounterGate? roamerGate = null,

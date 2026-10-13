@@ -133,7 +133,7 @@ public partial class CampaignView
     }
     private Texture2D SixIslandPaletteTexture(Texture2D original,bool background)
     {
-        original=SevenIslandShadeTexture(original,background);
+        original=EventIslandPaletteTexture(SevenIslandShadeTexture(original,background),background);
         var palette=_sixIslandLanding?.Palette ?? _sixIslandDeparture?.Palette;
         int blend=palette is null?0:background?palette.BackgroundBlend:palette.ObjectBlend;
         if (blend==0) return original;

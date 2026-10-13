@@ -149,7 +149,7 @@ public static class LabBattleRewards
         // These nine stable symbols have the same English names. Names here are only required by
         // the shared metadata validator; no display text or ownership field is replaced.
         var names = catalog.Species.Values.ToImmutableSortedDictionary(s => s.SourceSpeciesId,
-            s => s.SourceSpeciesId switch { 29 => "NIDORAN♀", 32 => "NIDORAN♂", _ => s.Id.Value["pret:SPECIES_".Length..] });
+            s => s.SourceSpeciesId switch { 29 => "NIDORAN♀", 32 => "NIDORAN♂", 250 => "HO-OH", _ => s.Id.Value["pret:SPECIES_".Length..] });
         var error = PokemonStateValidator.ValidateParty(new(catalog, names, PokemonStateValidator.NicknameAlphabet), owned);
         if (error is not null) throw new ArgumentException(error, nameof(owned));
     }

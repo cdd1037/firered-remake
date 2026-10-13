@@ -14,7 +14,7 @@ public static partial class SourceWildBattlePolicy
 
     private static CelioOwnedPokemonCatalog? CelioSourceOwnership(OwnedBattlePokemonCatalog? owned) =>
         owned is not null && ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned)
-            ? CelioOwnedPokemonCatalog.For(owned.Catalog) ?? CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor ?? SevenIslandOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor.Predecessor
+            ? CelioOwnedPokemonCatalog.For(owned.Catalog) ?? CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor ?? SevenIslandOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor.Predecessor ?? EventIslandOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor.Predecessor.Predecessor
             : null;
 
     private static bool AdmitsOpponent(OwnedBattlePokemonCatalog owned, SourceWildEncounterContext context, WildBattleCombatant opponent)
@@ -28,9 +28,11 @@ public static partial class SourceWildBattlePolicy
         var four = FourIslandOwnedPokemonCatalog.For(owned.Catalog) ?? six?.Predecessor;
         var ruby = SeviiRubyOwnedPokemonCatalog.For(owned.Catalog) ?? four?.Predecessor;
         var cinnabar = CinnabarOwnedPokemonCatalog.For(owned.Catalog) ?? ruby?.Predecessor;
+        var seven = SevenIslandOwnedPokemonCatalog.For(owned.Catalog) ?? EventIslandOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor;
         bool sourceEntry = context switch {
-            { SevenIsland: { } origin } => SevenIslandOwnedPokemonCatalog.For(owned.Catalog) is { } seven && SevenIslandWildPokemonFactory.SourceInitialInstance(seven, origin, mon),
-            { CeruleanCave: { } origin } => (CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog) ?? SevenIslandOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor) is { } cave &&
+            { EventIsland: { } origin } => EventIslandOwnedPokemonCatalog.For(owned.Catalog) is { } eventOwned && EventIslandPokemonFactory.SourceInitialInstance(eventOwned, origin, mon),
+            { SevenIsland: { } origin } => seven is not null && SevenIslandWildPokemonFactory.SourceInitialInstance(seven, origin, mon),
+            { CeruleanCave: { } origin } => (CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog) ?? seven?.Predecessor) is { } cave &&
                 CeruleanCaveWildPokemonFactory.SourceInitialInstance(cave, origin, mon),
             { FiveIsland: { } origin } => five is not null && FiveIslandWildPokemonFactory.SourceInitialInstance(five, origin, mon),
             { SixIsland: { } origin } => six is not null && SixIslandWildPokemonFactory.SourceInitialInstance(six, origin, mon),
@@ -40,7 +42,7 @@ public static partial class SourceWildBattlePolicy
             { FirstSeviiWild: true } => cinnabar is not null && FirstSeviiWildPokemonFactory.WildSpecies.Contains(mon.Species),
             _ => owned.AdmitsWildOpponent(mon)
         };
-        bool regional = context.SevenIsland is not null || context.CeruleanCave is not null || context.FiveIsland is not null || context.SixIsland is not null || context.FourIsland is not null ||
+        bool regional = context.EventIsland is not null || context.SevenIsland is not null || context.CeruleanCave is not null || context.FiveIsland is not null || context.SixIsland is not null || context.FourIsland is not null ||
             context.SeviiRuby is not null || context.VictoryRoad is not null;
         return sourceEntry && (!regional || opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE");
     }

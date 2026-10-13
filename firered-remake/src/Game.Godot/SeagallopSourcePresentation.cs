@@ -25,7 +25,8 @@ internal sealed class SeagallopSourcePresentation
     private static readonly int[] Directions=[0x6fe,0x6fc,0x6f8,0x6f0,0x6e0,0x4c0,0x400,0x440,0x7ff,0x6e0,0];
     internal SeagallopSourcePresentation(int origin,int destination)
     {
-        if(origin is not (0 or 1 or 2 or 3 or 8)||destination is not (0 or 1 or 2 or 3 or 8)||origin==destination)
+        bool eventRoute=origin==0&&destination is 9 or 10||destination==0&&origin is 9 or 10;
+        if(!eventRoute&&(origin is not (0 or 1 or 2 or 3 or 8)||destination is not (0 or 1 or 2 or 3 or 8)||origin==destination))
             throw new ArgumentOutOfRangeException(nameof(destination),"Ferry route lies outside first-Sevii scope.");
         Eastbound=((Directions[origin]>>destination)&1)!=0;FerryX=Eastbound?0:240;
     }

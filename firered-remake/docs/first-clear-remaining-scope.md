@@ -68,3 +68,5 @@
 ### AI 修正的追溯边界
 
 原包字节与缺陷证据仍保留，运行时只在认证的三个操作数字节处采用批准修正。原 `89171036` 下 PC6845 的状态对象、PC6691／6697 的天气比较都是修正前证据，不再表示当前未实现。详见 [实现报告](../tests/Game.ApprovedTrainerAi.Tests/README.md) 和 [原作修正记录](research/prioritized-improvements.md)。
+
+活动双岛现已进入当前组合实现检查点，精确 pret Ribbon/Aurora 授票条件、原航线与三事件个体目录已接，连续传说旅程、Itemfinder 服务及生产表现验收仍在执行；详见[活动双岛范围](event-islands-campaign.md)。

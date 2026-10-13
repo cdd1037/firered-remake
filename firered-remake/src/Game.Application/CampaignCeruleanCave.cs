@@ -27,7 +27,7 @@ public sealed partial class CampaignSession
 
     private static void ValidateCeruleanCaveCatalog(ICampaignCatalog content)
     {
-        if(!content.CeruleanCaveEnabled||content.Maps.Count!=275||content.CeruleanCaveOwnership is not{} owned||
+        if(!content.CeruleanCaveEnabled||content.CeruleanCaveOwnership is not{} owned||
             content.CeruleanCaveOpponents is not{} opponents||content.CeruleanCaveMachines is not{} machines||
             !ReferenceEquals(CeruleanCaveOwnedPokemonCatalog.For(owned.Catalog),owned)||
             !ReferenceEquals(owned.Predecessor,content.CelioOwnership)||!ReferenceEquals(content.SevenIslandOwnership?.Predecessor,owned)||

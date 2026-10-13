@@ -29,7 +29,7 @@ public sealed partial class CampaignSession
         if(SevenIslandEncounterTables.IsChamber(p.MapId)&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_UNLOCKED_TANOBY_RUINS")||!_content.LandEncounters!.TryGetValue(p.MapId,out var table))return state with{Exploration=exploration with{EarlyEncounter=process with{PreviousMetatileBehavior=(ushort)cell.SourceBehavior}}};
         if(state.Party.IsEmpty||state.Party.All(p=>p.IsEgg||p.Pokemon.CurrentHp==0))throw new InvalidDataException("wild_encounter_live_party_required");
         var check=new EarlyLandEncounterCheck(p.MapId,trigger,(byte)cell.SourceBehavior,(_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==1)?EncounterTileType.Land:EncounterTileType.None);
-        var result=EarlyLandEncounterRules.Check(_content.SevenIslandOwnership!,process,table,check,state.Party,
+        var result=EarlyLandEncounterRules.Check(_content.EventIslandOwnership!,process,table,check,state.Party,
             checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,
             state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),saffronShop:SaffronGymShopProof);
         var next=state with{Exploration=exploration with{EarlyEncounter=result.State},World=state.World with{Rng=result.GlobalRng}};

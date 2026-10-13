@@ -27,7 +27,7 @@ public partial class CampaignView
         if (!_catalog.SevenIslandEnabled) return;
         if (!_session.IsCurrentGame || !_catalog.LeagueRematchEnabled || _battleArt.Count != 672 ||
             _storageIcons.Count != 163 || _route22Footprints.Count != 116 ||
-            _catalog.PokemonContent?.Catalog.Species.Count != 146 || _catalog.SevenIslandOpponents?.Catalog.Species.Count != 180)
+            _catalog.PokemonContent?.Catalog.Species.Count != (_catalog.EventIslandsEnabled?149:146) || _catalog.SevenIslandOpponents?.Catalog.Species.Count != 180)
             throw new InvalidDataException("Seven Island requires its complete current League-rematch predecessor.");
         _sevenIslandArt = SevenIslandPresentationAssets.Load(_root);
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)

@@ -25,7 +25,7 @@ public sealed partial class CampaignSession
         // A source map without a water table retains the previous-behavior callback only.
         if(!tables.TryGetValue(p.MapId,out var table))return state with{Exploration=exploration with{EarlyEncounter=shared with{PreviousMetatileBehavior=behavior}}};
         if(state.Party.IsEmpty||state.Party.All(p=>p.IsEgg||p.Pokemon.CurrentHp==0))throw new InvalidDataException("wild_encounter_live_party_required");
-        var result=WaterEncounterRules.Check(_content.SevenIslandOwnership!,WaterProcess(shared),table,
+        var result=WaterEncounterRules.Check(_content.EventIslandOwnership!,WaterProcess(shared),table,
             new(p.MapId,trigger,behavior,_content.Maps[p.MapId].SourceEncounterTypeAt(p.X,p.Y)==2?EncounterTileType.Water:EncounterTileType.None),
             state.Party,checked((ushort)state.Script.Variables.GetValueOrDefault(RepelCounterVariable)),state.World.Rng,state.Roamer??Game.Domain.Roaming.RoamerState.Empty,CelioSourceMap(p.MapId),saffronShop:SaffronGymShopProof);
         var next=state with{Exploration=exploration with{EarlyEncounter=SharedWaterProcess(shared,result.State)},World=state.World with{Rng=result.GlobalRng}};
@@ -36,7 +36,7 @@ public sealed partial class CampaignSession
         }
         if(result.Candidate is null)return next;
         var generated=WaterEncounterRules.Generate(
-            _content.SevenIslandOwnership!,result.State,table,next.World.Rng,next.TrainerId);
+            _content.EventIslandOwnership!,result.State,table,next.World.Rng,next.TrainerId);
         if(state.SafariVisit is {Active:true})
         {
             var rng=generated.GlobalRng;var trace=generated.RandomTrace.ToBuilder();

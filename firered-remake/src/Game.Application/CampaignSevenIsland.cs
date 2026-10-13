@@ -15,17 +15,17 @@ public sealed partial class CampaignSession
 
     private static void ValidateSevenIslandCatalog(ICampaignCatalog content)
     {
-        if (!content.SevenIslandEnabled || content.Maps.Count != 275 || content.SevenIslandOwnership is not { } owned ||
+        if (!content.SevenIslandEnabled || content.SevenIslandOwnership is not { } owned ||
             content.SevenIslandOpponents is not { } opponents || content.SevenIslandTrainers is not { } trainers ||
             content.SevenIslandMachines is not { } machines ||
             !ReferenceEquals(SevenIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned.Catalog, content.PokemonContent?.Catalog) || owned.Catalog.Species.Count != 146 ||
+            !ReferenceEquals(owned, content.EventIslandOwnership?.Predecessor) || owned.Catalog.Species.Count != 146 ||
             !ReferenceEquals(owned.Predecessor, content.CeruleanCaveOwnership) ||
             !ReferenceEquals(SevenIslandOpponentPokemonCatalog.For(owned), opponents) ||
             !ReferenceEquals(opponents.Predecessor, content.LeagueRematchOpponents) || opponents.Catalog.Species.Count != 180 ||
-            !ReferenceEquals(SevenIslandMachineCatalog.For(content.PewterMachines), machines) ||
+            !ReferenceEquals(SevenIslandMachineCatalog.For(machines.Catalog), machines) ||
             !ReferenceEquals(machines.Pokemon, owned) || !ReferenceEquals(machines.Predecessor, content.CeruleanCaveMachines) ||
-            SevenIslandShopCatalog.For(content.EarlyShop) is null || trainers.Trainers.Count != 18 || trainers.BattlesByScript.Count != 20)
+            content.SevenIslandShop is null || trainers.Trainers.Count != 18 || trainers.BattlesByScript.Count != 20)
             throw new InvalidDataException("seven_island_source_binding");
         SevenIslandTrainerPartyFactory.ValidateCatalog(trainers);
         if (!content.TryConstant("HEAL_LOCATION_SEVEN_ISLAND", out var healing) || healing != 19)

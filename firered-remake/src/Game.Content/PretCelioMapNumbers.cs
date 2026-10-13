@@ -74,6 +74,18 @@ public static class PretCelioMapNumbers
         return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
     }
 
+    internal static ImmutableDictionary<MapId, RoamerMap> ExtendEventIslands(string root,
+        IReadOnlyDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, RoamerMap> predecessor,
+        IReadOnlyDictionary<MapId, PretWorldMap> additions)
+    {
+        if (predecessor.Count != 275 || maps.Count != 299 || additions.Count != 24 ||
+            !maps.Keys.Except(predecessor.Keys).ToHashSet().SetEquals(additions.Keys) ||
+            additions.Any(p => !ReferenceEquals(p.Value, maps[p.Key]))) throw new InvalidDataException("event_island_map_numbers_scope");
+        var current = ProjectSource(root, maps);
+        if (predecessor.Any(p => current[p.Key] != p.Value)) throw new InvalidDataException("event_island_map_numbers_predecessor");
+        return predecessor.AddRange(current.Where(p => !predecessor.ContainsKey(p.Key)));
+    }
+
     private static ImmutableDictionary<MapId, RoamerMap> ProjectSource(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)
     {
         var source = LoadSourceTable(root);

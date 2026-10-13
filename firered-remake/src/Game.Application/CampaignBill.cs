@@ -169,7 +169,7 @@ public sealed partial class CampaignSession
             // ScrCmd_fadeinbgm returns FALSE: enqueue the audio fade without blocking the script.
             return true;
         }
-        if(effect.Opcode=="applymovement"&&a.Length>0&&a[0]==BillSourcePresentation.CameraActor)
+        if(effect.Opcode=="applymovement"&&effect.Source.Path==BillCottageSource&&a.Length>0&&a[0]==BillSourcePresentation.CameraActor)
         {
             Cottage(BillSeparator);
             if(a.Length!=2||a[1] is not ("Route25_SeaCottage_Movement_CameraPanToTeleporters" or "Route25_SeaCottage_Movement_CameraPanBackFromTeleporters")||

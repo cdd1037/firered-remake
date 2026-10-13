@@ -26,7 +26,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false,bool includeEventIslands=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -136,6 +136,8 @@ public static partial class PretStoryCompiler
                     if(body.Count==1&&body[0].Text==".byte 0")headers.Add(label,[]);
                     assemblyData.Add(label,body.Where(b=>b.Text.StartsWith(".",StringComparison.Ordinal)).Select(b=>b.Text).ToImmutableArray());continue;
                 }
+                if(includeEventIslands&&IsEventIslandAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
+                {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                 if(includeFiveIsland&&IsFiveIslandAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                 if (FirstSeviiSource(file, "data/maps/CeruleanCave_2F/scripts.inc", "1ee9c61f02f4624d95e73729d315de26860298d04c4d047c7a889c6c7b432908") &&
@@ -239,6 +241,8 @@ public static partial class PretStoryCompiler
                         }
                         if(includeSevenIsland&&SevenIslandInstructionShape(file,label,opcode,operands) is {} sevenShape)
                             (kind,min,max)=sevenShape;
+                        if(includeEventIslands&&EventIslandInstructionShape(file,label,opcode,operands) is {} eventIslandShape)
+                            (kind,min,max)=eventIslandShape;
                         if(includeCelio)
                         {
                             var admitted=CelioInstructionShape(file,label,opcode,operands);

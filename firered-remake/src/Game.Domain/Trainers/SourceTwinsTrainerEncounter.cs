@@ -78,7 +78,8 @@ public static class SourceTwinsTrainerEncounter
         if (SourceMechanicsCatalog.For(catalog) is not { } proof) return Fail("source_twins_catalog_proof");
         if (successorOwned is not null && (!ReferenceEquals(OwnedBattlePokemonCatalog.For(successorOwned.Catalog),successorOwned) ||
             !ReferenceEquals(successorOwned.Mechanics,proof) ||
-            !(SevenIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} seven && SevenIslandOpponentPokemonCatalog.For(seven) is not null ||
+            !(EventIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} events && EventIslandOpponentPokemonCatalog.For(events) is not null ||
+              SevenIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} seven && SevenIslandOpponentPokemonCatalog.For(seven) is not null ||
               CeruleanCaveOwnedPokemonCatalog.For(successorOwned.Catalog) is {} cave && CeruleanCaveOpponentPokemonCatalog.For(cave) is not null ||
               SeviiRubyOwnedPokemonCatalog.For(successorOwned.Catalog) is {} ruby && SeviiRubyOpponentPokemonCatalog.For(ruby) is not null ||
               FourIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} four && FourIslandOpponentPokemonCatalog.For(four) is not null ||

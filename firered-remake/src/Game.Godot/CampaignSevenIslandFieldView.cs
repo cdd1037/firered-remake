@@ -52,7 +52,7 @@ public partial class CampaignView
         // Every used source chamber background/border tile palette was authenticated as 0..12.
         // The chambers contain no NPCs; the player's alternate OBJ gamma table is unchanged at index3.
         if(!_catalog.SevenIslandEnabled||!background||_session.State.FieldWeather!="WEATHER_SHADE")return original;
-        if(!UnownFormRules.IsChamber(_session.State.World.Player.MapId))throw new InvalidDataException("Shade outside Tanoby chamber.");
+        if(!UnownFormRules.IsChamber(_session.State.World.Player.MapId)&&!(_catalog.EventIslandsEnabled&&_session.State.World.Player.MapId.Value=="map.navel-rock-summit"))throw new InvalidDataException("Shade outside Tanoby chamber.");
         if(_sevenIslandShadeTextures.TryGetValue(original,out var cached))return cached;
         using var image=original.GetImage();image.Convert(Image.Format.Rgba8);byte[] pixels=image.GetData();
         for(int i=0;i<pixels.Length;i+=4)if(pixels[i+3]!=0)

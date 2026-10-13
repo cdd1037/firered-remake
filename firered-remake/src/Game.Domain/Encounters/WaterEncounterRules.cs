@@ -167,6 +167,18 @@ public static class WaterEncounterRules
             globalRng, wildEncountersDisabled, movement, gate);
     }
 
+    public static WaterEncounterResult Check(EventIslandOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
+        ushort repelSteps, RngState globalRng, RoamerState roamer, RoamerMap playerMap,
+        bool wildEncountersDisabled = false, EncounterMovementMode movement = EncounterMovementMode.Surfing,
+        SaffronGymShopCatalog? saffronShop = null)
+    {
+        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop);
+        if (state.RulesVersion != FiveIslandRulesVersion) throw new ArgumentException("event_island_water_profile");
+        return CheckOwned(owned.Catalog, owned.Mechanics, state, table, check, party, repelSteps,
+            globalRng, wildEncountersDisabled, movement, gate);
+    }
+
     private static WaterEncounterResult CheckOwned(OwnedBattlePokemonCatalog owned, WaterEncounterState state,
         WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
         ushort repelSteps, RngState globalRng, bool wildEncountersDisabled, EncounterMovementMode movement)
@@ -305,6 +317,18 @@ public static class WaterEncounterRules
         if (owned is null || !ReferenceEquals(SevenIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             state.RulesVersion != FiveIslandRulesVersion || !owned.Catalog.Species.ContainsKey(pending.Candidate.Species))
             throw new ArgumentException("seven_island_water_generation_scope");
+        return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog, pending.Candidate.Species,
+            pending.Candidate.Level, globalRng, playerTrainerId);
+    }
+
+    public static Route1WildPokemonResult Generate(EventIslandOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, RngState globalRng, uint playerTrainerId)
+    {
+        ValidateState(state, table);
+        var pending = state.Pending ?? throw new InvalidOperationException("water_pending_missing");
+        if (owned is null || !ReferenceEquals(EventIslandOwnedPokemonCatalog.For(owned.Catalog), owned) ||
+            state.RulesVersion != FiveIslandRulesVersion || !owned.Catalog.Species.ContainsKey(pending.Candidate.Species))
+            throw new ArgumentException("event_island_water_generation_scope");
         return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog, pending.Candidate.Species,
             pending.Candidate.Level, globalRng, playerTrainerId);
     }

@@ -77,6 +77,8 @@ public partial class CampaignView
     {
         if(graphics!="OBJ_EVENT_GFX_VAR_0")return graphics;
         var value=_session.State.Script.Variables.GetValueOrDefault("VAR_OBJ_GFX_ID_0");
+        if(_catalog.EventIslandsEnabled&&_session.State.World.Player.MapId.Value=="map.birth-island-exterior"&&
+            _catalog.TryConstant("OBJ_EVENT_GFX_DEOXYS_N",out var deoxys)&&value==deoxys)return "OBJ_EVENT_GFX_DEOXYS_N";
         foreach(var candidate in new[]{"OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN","OBJ_EVENT_GFX_OLD_MAN_1","OBJ_EVENT_GFX_OMANYTE","OBJ_EVENT_GFX_KABUTO"})if(_catalog.TryConstant(candidate,out var id)&&id==value)return candidate;
         throw new InvalidDataException("unsupported_dynamic_npc_graphics:"+value);
     }

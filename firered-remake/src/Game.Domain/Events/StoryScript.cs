@@ -74,6 +74,19 @@ public static class StoryRules
                     };
                     if(rows>0&&instruction.Args[1]==(rows==3?"6":"5"))return choice==127||choice>=0&&choice<rows;
                 }
+                if(instruction.Op==StoryOp.Multichoice&&instruction.Opcode=="multichoice"&&instruction.Args.Length==4&&instruction.Args[3]=="FALSE")
+                {
+                    int rows=(instruction.Source.Path,instruction.Source.Symbol,instruction.Args[0],instruction.Args[1],instruction.Args[2]) switch
+                    {
+                        ("data/maps/VermilionCity/scripts.inc","VermilionCity_EventScript_HasMysticTicket","17","6","MULTICHOICE_SEVII_NAVEL")=>3,
+                        ("data/maps/VermilionCity/scripts.inc","VermilionCity_EventScript_HasAuroraTicket","13","6","MULTICHOICE_SEVII_BIRTH")=>3,
+                        ("data/maps/VermilionCity/scripts.inc","VermilionCity_EventScript_HasMysticAndAuroraTickets","13","5","MULTICHOICE_SEVII_NAVEL_BIRTH")=>4,
+                        ("data/maps/NavelRock_Harbor/scripts.inc","NavelRock_Harbor_EventScript_Sailor","20","8","MULTICHOICE_SEAGALLOP_VERMILION")=>2,
+                        ("data/maps/BirthIsland_Harbor/scripts.inc","BirthIsland_Harbor_EventScript_Sailor","20","8","MULTICHOICE_SEAGALLOP_VERMILION")=>2,
+                        _=>0
+                    };
+                    if(rows>0)return choice==127||choice>=0&&choice<rows;
+                }
                 if(instruction.Op==StoryOp.Multichoice&&instruction.Opcode=="multichoicedefault"&&
                     instruction.Source.Path=="data/maps/CeladonCity_DepartmentStore_Elevator/scripts.inc"&&instruction.Args.Length==5&&
                     instruction.Args[2]=="MULTICHOICE_DEPT_STORE_ELEVATOR"&&instruction.Args[4]=="FALSE")

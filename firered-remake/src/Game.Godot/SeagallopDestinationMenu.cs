@@ -13,6 +13,10 @@ internal sealed class SeagallopDestinationMenu
         string[] laterLabels=["VERMILION","ONE ISLAND","TWO ISLAND","THREE ISLAND","FOUR ISLAND (unavailable)"];
         string[] expected=sourceMenu switch
         {
+            "MULTICHOICE_SEVII_NAVEL"=>["SEVII ISLANDS","NAVEL ROCK","EXIT"],
+            "MULTICHOICE_SEVII_BIRTH"=>["SEVII ISLANDS","BIRTH ISLAND","EXIT"],
+            "MULTICHOICE_SEVII_NAVEL_BIRTH"=>["SEVII ISLANDS","NAVEL ROCK","BIRTH ISLAND","EXIT"],
+            "MULTICHOICE_SEAGALLOP_VERMILION"=>["VERMILION","EXIT"],
             "MULTICHOICE_ISLAND_23"=>["TWO ISLAND","THREE ISLAND","EXIT"],
             "MULTICHOICE_ISLAND_13"=>["ONE ISLAND","THREE ISLAND","EXIT"],
             "MULTICHOICE_ISLAND_12"=>["ONE ISLAND","TWO ISLAND","EXIT"],
@@ -32,6 +36,14 @@ internal sealed class SeagallopDestinationMenu
     {
         if(maximumTextWidth is <=0 or >200)throw new ArgumentOutOfRangeException(nameof(maximumTextWidth));
         int width=(maximumTextWidth+9)/8+1,left=Math.Min(19,28-width),top=Options.Count==3?6:5;
+        (left,top)=SourceMenu switch
+        {
+            "MULTICHOICE_SEVII_NAVEL"=>(Math.Min(17,28-width),6),
+            "MULTICHOICE_SEVII_BIRTH"=>(Math.Min(13,28-width),6),
+            "MULTICHOICE_SEVII_NAVEL_BIRTH"=>(Math.Min(13,28-width),5),
+            "MULTICHOICE_SEAGALLOP_VERMILION"=>(Math.Min(20,28-width),8),
+            _=>(left,top)
+        };
         return new(left*8,top*8,(width+2)*8,((Options.Count*14+7)/8+2)*8);
     }
     internal bool Move(int direction)

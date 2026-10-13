@@ -56,8 +56,8 @@ public sealed partial class CampaignSession
             if(menu.View=="message")return Menu(menu.ReturnView);
             if(menu.Origin=="bag"&&menu.View is "machines" or "berries")return Menu("bag");
             if(menu.Origin=="bag"&&menu.TargetInstanceId is not null)return new(CommandStatus.Accepted,state with{ItemMenu=menu with{Origin="party",View="held"}});
-            if(menu.Origin=="party")return new(CommandStatus.Accepted,state with{ItemMenu=null});
-            if(menu.Origin=="bag")return new(CommandStatus.Accepted,state with{ItemMenu=null});
+            if(menu.Origin=="party")return new(CommandStatus.Accepted,ReturnToEventIslandField(state with{ItemMenu=null}));
+            if(menu.Origin=="bag")return new(CommandStatus.Accepted,ReturnToEventIslandField(state with{ItemMenu=null}));
             if(menu.View=="top")return CloseBedroomPc(state);
             return Menu(menu.View is "withdraw" or "deposit"?"storage":"top");
         }

@@ -204,6 +204,7 @@ public partial class CampaignView
     }
     private void DrawCityServicesActor(string id,SpriteAsset asset,Pose pose,Vector2 camera)
     {
+        if(DrawEventIslandActor(id,asset,pose,camera))return;
         if(id=="LOCALID_PLAYER"&&FishingPlayerFrame is {} frame)
         {
             var sprite=_cityFishingSprites[_session.State.PlayerGender];

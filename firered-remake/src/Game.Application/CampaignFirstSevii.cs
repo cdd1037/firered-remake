@@ -41,7 +41,9 @@ public sealed partial class CampaignSession
             5 when _content.FiveIslandEnabled=>("MAP_FIVE_ISLAND_HARBOR",8,5),
             6 when _content.SixIslandEnabled=>("MAP_SIX_ISLAND_HARBOR",8,5),
             7 when _content.SevenIslandEnabled=>("MAP_SEVEN_ISLAND_HARBOR",8,5),
-            8=>("MAP_CINNABAR_ISLAND",21,7),_=>throw new InvalidDataException("seagallop_destination_not_admitted")
+            8=>("MAP_CINNABAR_ISLAND",21,7),
+            9 when _content.EventIslandsEnabled=>("MAP_NAVEL_ROCK_HARBOR",8,5),
+            10 when _content.EventIslandsEnabled=>("MAP_BIRTH_ISLAND_HARBOR",8,5),_=>throw new InvalidDataException("seagallop_destination_not_admitted")
         };
         var map=_content.MapFromSourceSymbol(symbol);var cell=_content.Maps[map].GetTile(x,y)??throw new InvalidDataException("seagallop_landing_missing");
         return new(map,x,y,cell.Elevation,Direction.South);
@@ -63,6 +65,7 @@ public sealed partial class CampaignSession
     private bool TryApplyFirstSeviiEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {
         next=state;if(!_content.FirstSeviiEnabled)return false;
+        if(TryApplyEventIslandFerryEffect(state,effect,out next))return true;
         var a=effect.Args;bool own=FirstSeviiSource(effect.Source.Path),ferry=effect.Source.Path==SeagallopSource;
         CampaignState Result(string name,int value)=>state with{Script=state.Script with{Variables=state.Script.Variables.SetItem(name,value)}};
         if(effect.Opcode=="buffernumberstring"&&ferry&&effect.Source.Symbol=="EventScript_SailToDest"&&
@@ -70,7 +73,7 @@ public sealed partial class CampaignSession
         {
             // StoryEffects already resolves the VAR_RESULT read operand to its value.
             int number=SeviiValue(state,a[1]);
-            if(number is not (1 or 2 or 7) && !(number is 3 or 6&&_content.FourIslandEnabled) && !(number==5&&_content.SevenIslandEnabled))throw new InvalidDataException("seagallop_number_invalid");
+            if(number is not (1 or 2 or 7) && !(number is 3 or 6&&_content.FourIslandEnabled) && !(number==5&&_content.SevenIslandEnabled) && !(number is 10 or 12&&_content.EventIslandsEnabled))throw new InvalidDataException("seagallop_number_invalid");
             next=state with{TextBuffers=state.TextBuffers.SetItem("STR_VAR_1",number.ToString(System.Globalization.CultureInfo.InvariantCulture))};return true;
         }
         if(effect.Opcode=="multichoice"&&(ferry||effect.Source.Path=="data/maps/VermilionCity/scripts.inc")&&
@@ -86,7 +89,7 @@ public sealed partial class CampaignSession
             {
                 int origin=SeviiValue(state,"VAR_0x8004"),destination=SeviiValue(state,"VAR_0x8006");
                 _=SeagallopDestination(origin);_=SeagallopDestination(destination);
-                next=Result(a[0],origin==8||destination==8?1:origin==0||destination==0?7:origin is >=1 and <=3 && destination is >=1 and <=3?2:origin is 4 or 5&&destination is 4 or 5?3:origin is 6 or 7&&destination is 6 or 7?5:6);return true;
+                next=Result(a[0],origin==8||destination==8?1:origin==0||destination==0?7:origin==9||destination==9?10:origin==10||destination==10?12:origin is >=1 and <=3 && destination is >=1 and <=3?2:origin is 4 or 5&&destination is 4 or 5?3:origin is 6 or 7&&destination is 6 or 7?5:6);return true;
             }
             if(ferry&&a[1]=="IsPlayerLeftOfVermilionSailor")
             {next=Result(a[0],state.World.Player.MapId.Value=="map.vermilion-city"&&state.World.Player.X<24?1:0);return true;}
@@ -105,7 +108,7 @@ public sealed partial class CampaignSession
                         _content.SeviiRubyEnabled&&OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],RainbowPassItem)==1)&&
                     (origin<4&&destination<4||_content.FourIslandEnabled&&OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],RainbowPassItem)==1)&&
                     (origin!=0&&destination!=0||state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_CINNABAR_ISLAND")>=4);
-                if(!(first||returning||ordinary)||state.Seagallop is not null||!state.Script.Locked||!state.ScreenIsBlack)
+                if(!(first||returning||ordinary||EventIslandFerryDeparture(state,origin,destination))||state.Seagallop is not null||!state.Script.Locked||!state.ScreenIsBlack)
                     throw new InvalidDataException("seagallop_departure_context");
                 next=state with{Seagallop=new("seagallop:"+effect.Sequence,origin,destination,SeagallopDestination(destination)),SeagallopMenu=null};return true;
             }

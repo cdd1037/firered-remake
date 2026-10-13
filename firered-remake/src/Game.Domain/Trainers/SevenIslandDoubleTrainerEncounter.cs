@@ -98,7 +98,7 @@ public static class SevenIslandDoubleTrainerEncounter
             return "seven_island_double_catalog";
         try { SevenIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "seven_island_double_source"; }
-        if (!TrainerIds.Contains(trainer) || frame is null || frame.SourceCampaignRulesVersion != SevenIslandOpponentPokemonCatalog.Profile ||
+        if (!TrainerIds.Contains(trainer) || frame is null || frame.SourceCampaignRulesVersion is not (SevenIslandOpponentPokemonCatalog.Profile or EventIslandOpponentPokemonCatalog.Profile) ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "seven_island_double_frame";
         if (frame.Parties.SelectMany(p => p.Members).Any(m =>
             SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "seven_island_double_pokemon";

@@ -19,6 +19,7 @@ public sealed partial class PretCampaignCatalog
     public static PretCampaignCatalog LoadCurrent(string projectRoot)
     {
         // Load the fixed resource set through its source-authenticating factories.
+        var eventIsland = PretEventIslandRegion.Load(projectRoot);
         var sevenIsland = PretSevenIslandRegion.Load(projectRoot);
         var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
         var fiveIsland = PretFiveIslandRegion.Load(projectRoot, compact: true);
@@ -992,6 +993,7 @@ public sealed partial class PretCampaignCatalog
 
         AppendCeruleanCaveSources(ceruleanCave, sources, textFiles, constants);
         AppendSevenIslandSources(sevenIsland, sources, textFiles, constants, hashes);
+        AppendEventIslandSources(eventIsland, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -1773,7 +1775,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         // Compile and validate the complete current script vocabulary.
-        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true);
+        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true);
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
         {
@@ -2173,8 +2175,7 @@ public sealed partial class PretCampaignCatalog
                 KeyValuePair.Create(sevenOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[sevenOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
         machines = sevenMachines.Catalog;
         earlyShop = earlyShop with { Catalog = sevenShop.Catalog };
-        var moveTutors = PretMoveTutors.Load(projectRoot, sevenOwned.Catalog);
-        hashes.AddRange(moveTutors.AdditionalSourceHashes);
+
         ValidateSevenIslandComposition(sevenIsland, maps, sevenPredecessorMaps, sevenOwned, sevenOpponents,
             sevenTrainers, sevenMachines, sevenShop, sevenItems, compiled);
         hashes.Add("seven-island-trainers:" + PretSevenIslandRules.TrainersSha256);
@@ -2183,6 +2184,23 @@ public sealed partial class PretCampaignCatalog
         hashes.Add("seven-island-items:" + PretSevenIslandRules.ItemsSha256);
         hashes.Add("seven-island-encounters:" + PretSevenIslandRules.EncountersSha256);
         hashes.Add("seven-island-source-inputs:" + PretSevenIslandRules.SourceInputsSha256);
+
+        maps = maps.AddRange(eventIsland.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendEventIslands(projectRoot, maps, celioRoamerMaps, eventIsland.NewMaps);
+        PretEventIslandRules.ValidateSourceEvidence(projectRoot, projectRoot);
+        var eventOwned = PretEventIslandRules.LoadOwned(projectRoot, sevenOwned);
+        var eventOpponents = PretEventIslandRules.LoadOpponents(projectRoot, sevenOpponents, eventOwned);
+        var eventMachines = PretEventIslandRules.LoadMachines(projectRoot, sevenMachines, eventOwned);
+        var eventShop = PretEventIslandRules.LoadShop(projectRoot, sevenShop);
+        pokemonContent = pokemonContent with { Catalog = eventOwned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.AddRange(EventIslandOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
+                KeyValuePair.Create(eventOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[eventOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
+        machines = eventMachines.Catalog;
+        earlyShop = earlyShop with { Catalog = eventShop.Catalog };
+        var moveTutors = PretMoveTutors.Load(projectRoot, eventOwned.Catalog);
+        hashes.AddRange(moveTutors.AdditionalSourceHashes);
+        hashes.Add("event-island-species:" + PretEventIslandRules.CatalogSha256);
+        hashes.Add("event-island-source-lock:" + PretEventIslandRules.LockSha256);
 
         // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
@@ -2355,7 +2373,7 @@ public sealed partial class PretCampaignCatalog
             leagueRematchTrainers: leagueRematchTrainers,
             leagueRematchOpponents: leagueRematchOpponents,
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
-            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors);
+            sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop);
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,
