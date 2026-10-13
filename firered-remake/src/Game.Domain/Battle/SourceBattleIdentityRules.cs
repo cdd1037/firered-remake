@@ -117,6 +117,7 @@ public static class SourceBattleIdentityRules
             }
             if (ValidateRegisters(frame, cell) is { } registerError) return registerError;
         }
+        if (SourceWildBattlePolicy.ValidateFrame(frame) is { } wildPolicyError) return wildPolicyError;
         if (SourceFourEntryAbilities.ValidateState(frame) is { } entryError) return entryError;
         if (frame.Reservations.IsDefault || frame.Queue.IsDefault || frame.PendingSwitches.IsDefault) return "source_frame_collections";
         var reserves = new HashSet<PartyMemberKey>(); var outgoing = new HashSet<BattlerSlot>();
@@ -149,7 +150,10 @@ public static class SourceBattleIdentityRules
                 return "source_frame_stale_occupant";
             if (action.Kind == SourceActionKind.Move && action.MoveSlot is not (>= -1 and <= 3) ||
                 action.Kind == SourceActionKind.Switch && action.Incoming is null ||
-                action.Kind == SourceActionKind.Item && action.Item is null) return "source_frame_action_payload";
+                action.Kind == SourceActionKind.Item && action.Item is null ||
+                action.Kind == SourceActionKind.Capture && action.Capture is null ||
+                action.Kind is not (SourceActionKind.Capture or SourceActionKind.Cancelled) && action.Capture is not null ||
+                action.Kind is SourceActionKind.Run or SourceActionKind.Capture && frame.WildEncounter is null) return "source_frame_action_payload";
             if (action.Kind == SourceActionKind.Switch && !frame.Reservations.Any(r => r.Outgoing == action.Token!.Value.Owner &&
                 r.Incoming == action.Incoming && r.Kind == WildBattleCalledSwitchKind.Voluntary)) return "source_frame_switch_action_reservation";
         }
@@ -356,12 +360,14 @@ public static class SourceBattleIdentityRules
                 return new(frame, "source_selection_ineligible_actor");
             if (selection.Target is { } target && target.Value >= frame.BattlerCount ||
                 selection.Kind == SourceActionKind.Move && selection.MoveSlot is not (>= -1 and <= 3) ||
-                selection.Kind == SourceActionKind.Item && selection.Item is null) return new(frame, "source_selection_payload");
+                selection.Kind == SourceActionKind.Item && selection.Item is null ||
+                selection.Kind == SourceActionKind.Capture && selection.Capture is null) return new(frame, "source_selection_payload");
             if (selection.Kind == SourceActionKind.Move && selection.MoveSlot >= frame.Get(selection.Actor.Slot).Body!.Pokemon.Moves.Length)
                 return new(frame, "source_selection_missing_move_slot");
             if (selection.Kind != SourceActionKind.Move && (selection.MoveSlot is not null || selection.Target is not null) ||
                 selection.Kind != SourceActionKind.Switch && selection.Incoming is not null ||
-                selection.Kind != SourceActionKind.Item && selection.Item is not null) return new(frame, "source_selection_mixed_payload");
+                selection.Kind != SourceActionKind.Item && selection.Item is not null ||
+                selection.Kind != SourceActionKind.Capture && selection.Capture is not null) return new(frame, "source_selection_mixed_payload");
             if (selection.Kind == SourceActionKind.Switch)
             {
                 if (selection.Incoming is not { } incoming || incoming.Side != selection.Actor.Slot.Side ||
@@ -378,7 +384,7 @@ public static class SourceBattleIdentityRules
             var slot = new BattlerSlot(i);
             if (!bySlot.TryGetValue(slot, out var selection)) { queue.Add(new(slot, null, SourceActionKind.Cancelled, CancellationReason: "unavailable-at-selection")); continue; }
             var token = new SourceActionToken(frame.Revision, frame.EventSequence, i, selection.Actor);
-            queue.Add(new(slot, token, selection.Kind, selection.MoveSlot, selection.Target, selection.Incoming, selection.Item));
+            queue.Add(new(slot, token, selection.Kind, selection.MoveSlot, selection.Target, selection.Incoming, selection.Item) { Capture = selection.Capture });
             if (selection.Kind == SourceActionKind.Switch) reservations.Add(new(selection.Actor, selection.Incoming!.Value, WildBattleCalledSwitchKind.Voluntary));
         }
         return new(frame with { Queue = queue.ToImmutable(), Reservations = reservations.ToImmutable(), Revision = checked(frame.Revision + 1) }, null);

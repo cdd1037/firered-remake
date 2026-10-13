@@ -26,10 +26,11 @@ public static partial class SourceFourMedicineRules
             if (SourceBattleItemRules.Prepare(items,mechanics,frame,actor,inventory,party,selection,currentMapSection,out var preparation) is { } fault)
                 return Fail(fault);
             var p = preparation!;
-            var applied = p.Item.IsPokeFlute ? new SourceFourActionResult(p.Frame,[],[],null) :
+            var applied = p.Item.IsPokeFlute || p.Item.IsEscapeItem ? new SourceFourActionResult(p.Frame,[],[],null) :
                 SourceBattleItemEffects.PublishChanges(frame,p.Frame,actor,p.Target,p.Item.Id,p.TargetInstanceId);
             var next = applied.State with { Revision = checked(frame.Revision+1),
-                PreparedMedicines = (frame.PreparedMedicines ?? []).Add(new(actor,p.Item.Id,p.Target) { SourceAbsentMaskBeforeSelection = SelectionAbsentMask(frame) }) };
+                PreparedMedicines = (frame.PreparedMedicines ?? []).Add(new(actor,p.Item.Id,p.Target) {
+                    SourceAbsentMaskBeforeSelection = SelectionAbsentMask(frame), EscapeOnUse = p.Item.IsEscapeItem }) };
             if (SourceFourActionTurns.ValidateCapability(mechanics.Catalog,next) is { } finalError) return Fail(finalError);
             return new(new(next,applied.Events,[],null),p.Inventory,p.Party,new(actor,SourceActionKind.Item,Item:p.Item.Id));
         }

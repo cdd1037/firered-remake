@@ -87,6 +87,7 @@ namespace Game.Domain.Battle;
 [JsonDerivedType(typeof(SourceRolloutChangedEvent), "SourceRolloutChangedEvent")]
 [JsonDerivedType(typeof(SourceRootsChangedEvent), "SourceRootsChangedEvent")]
 [JsonDerivedType(typeof(SourceRunAttemptEvent), "SourceRunAttemptEvent")]
+[JsonDerivedType(typeof(SourceRoamerRunEvent), "SourceRoamerRunEvent")]
 [JsonDerivedType(typeof(SourceSelfDestructEvent), "SourceSelfDestructEvent")]
 [JsonDerivedType(typeof(SourceSleepTalkEvent), "SourceSleepTalkEvent")]
 [JsonDerivedType(typeof(SourceSnatchPressurePpEvent), "SourceSnatchPressurePpEvent")]
@@ -200,6 +201,7 @@ public sealed record SourceRecoilEvent(long Sequence, int Turn, BattlerSlot Acto
 public sealed record SourceRecoveredEvent(long Sequence, int Turn, BattlerSlot Side, MoveId Move, int HpBefore, int HpAfter, int Recovered) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRolloutChangedEvent(long Sequence, int Turn, BattlerSlot Side, int Before, int After, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRootsChangedEvent(long Sequence, int Turn, BattlerSlot Side, bool Rooted, string Reason) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourceRoamerRunEvent(long Sequence, int Turn, bool Escaped) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceRunAttemptEvent(long Sequence, int Turn, int AttemptsBefore, int AttemptsAfter, int PlayerSpeed, int OpponentSpeed, int? Threshold, int? Roll, bool Escaped) : SourceBattleEvent(Sequence, Turn)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? EscapingItem { get; init; }
@@ -302,6 +304,7 @@ public static class SourceBattleEventAdapter
         WildBattleRecoveredEvent x => new SourceRecoveredEvent(x.Sequence, x.Turn, Slot(x.Side), x.Move, x.HpBefore, x.HpAfter, x.Recovered),
         WildBattleRolloutChangedEvent x => new SourceRolloutChangedEvent(x.Sequence, x.Turn, Slot(x.Side), x.Before, x.After, x.Reason),
         WildBattleRootsChangedEvent x => new SourceRootsChangedEvent(x.Sequence, x.Turn, Slot(x.Side), x.Rooted, x.Reason),
+        WildBattleRoamerRunEvent x => new SourceRoamerRunEvent(x.Sequence, x.Turn, x.Escaped),
         WildBattleRunAttemptEvent x => new SourceRunAttemptEvent(x.Sequence, x.Turn, x.AttemptsBefore, x.AttemptsAfter, x.PlayerSpeed, x.OpponentSpeed, x.Threshold, x.Roll, x.Escaped) { EscapingItem = x.EscapingItem },
         WildBattleSelfDestructEvent x => new SourceSelfDestructEvent(x.Sequence, x.Turn, Slot(x.Actor), x.Move, x.HpBefore),
         WildBattleSleepTalkEvent x => new SourceSleepTalkEvent(x.Sequence, x.Turn, Slot(x.Side), x.CalledSlot, x.CalledMove),
@@ -400,6 +403,7 @@ public static class SourceBattleEventAdapter
         SourceRecoveredEvent x => new WildBattleRecoveredEvent(x.Sequence, x.Turn, Side(x.Side), x.Move, x.HpBefore, x.HpAfter, x.Recovered),
         SourceRolloutChangedEvent x => new WildBattleRolloutChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Before, x.After, x.Reason),
         SourceRootsChangedEvent x => new WildBattleRootsChangedEvent(x.Sequence, x.Turn, Side(x.Side), x.Rooted, x.Reason),
+        SourceRoamerRunEvent x => new WildBattleRoamerRunEvent(x.Sequence, x.Turn, x.Escaped),
         SourceRunAttemptEvent x => new WildBattleRunAttemptEvent(x.Sequence, x.Turn, x.AttemptsBefore, x.AttemptsAfter, x.PlayerSpeed, x.OpponentSpeed, x.Threshold, x.Roll, x.Escaped) { EscapingItem = x.EscapingItem },
         SourceSelfDestructEvent x => new WildBattleSelfDestructEvent(x.Sequence, x.Turn, Side(x.Actor), x.Move, x.HpBefore),
         SourceSleepTalkEvent x => new WildBattleSleepTalkEvent(x.Sequence, x.Turn, Side(x.Side), x.CalledSlot, x.CalledMove),
@@ -558,6 +562,7 @@ public static class SourceBattleEventHooks
             SourceRecoveredEvent x => [x.Side],
             SourceRolloutChangedEvent x => [x.Side],
             SourceRootsChangedEvent x => [x.Side],
+            SourceRoamerRunEvent x => [],
             SourceRunAttemptEvent x => [],
             SourceSelfDestructEvent x => [x.Actor],
             SourceSleepTalkEvent x => [x.Side],

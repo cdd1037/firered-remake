@@ -133,7 +133,7 @@ internal sealed partial class FrameEndTurnContext(SourceBattleFrame frame, Pokem
             Frame = Frame with { FourTurn = Frame.FourTurn! with { OutcomeAfterRewards = outcome } };
         else if (Frame.Outcome != outcome)
         {
-            Frame = Frame with { Outcome = outcome };
+            Frame = SourceWildBattlePolicy.SetOutcome(Frame, outcome);
             Add(n => new SourceEndedEvent(n, Turn, outcome));
         }
     }

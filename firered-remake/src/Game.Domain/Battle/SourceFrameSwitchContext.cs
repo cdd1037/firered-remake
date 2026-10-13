@@ -27,7 +27,7 @@ internal sealed partial class FrameRecipeContext
         Frame = result.State; Events.AddRange(result.Events); Trace.AddRange(result.Trace);
         invocation = invocation with { CurrentMove = new("pret:MOVE_NONE") };
     }
-    internal override void ForceSwitchEscape() => throw new SourceRecipeUnsupported("source_four_action_battle_kind");
+    internal override void ForceSwitchEscape() => TeleportEscape();
     internal override ImmutableArray<int> BatonPassReserves(BattlerSlot actor) => SourceBattleIdentityRules.LegalReserveIndices(Frame,actor.Side);
     internal override void PauseBatonPass(BattlerSlot actor, ImmutableArray<int> legal)
     {

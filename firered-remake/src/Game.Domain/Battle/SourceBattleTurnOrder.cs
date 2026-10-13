@@ -57,15 +57,15 @@ public static class SourceBattleTurnOrder
         try
         {
             // Source resets the numeric battler IDs before each sort, including end turn.
+            bool BeforeMoves(SourceQueuedAction a) => a.Kind is SourceActionKind.Item or SourceActionKind.Switch or SourceActionKind.Capture ||
+                a.Kind == SourceActionKind.Run && a.Slot.Side == BattleSide.Player;
             var queue = frame.Queue.OrderBy(a => a.Slot.Value).ToArray();
             if (phase == WildBattleOrderPhase.Actions)
-                queue = queue.Where(a => a.Kind is SourceActionKind.Item or SourceActionKind.Switch)
-                    .Concat(queue.Where(a => a.Kind is not (SourceActionKind.Item or SourceActionKind.Switch))).ToArray();
+                queue = queue.Where(BeforeMoves).Concat(queue.Where(a => !BeforeMoves(a))).ToArray();
             for (int i = 0; i < queue.Length - 1; i++)
                 for (int j = i + 1; j < queue.Length; j++)
                 {
-                    if (phase == WildBattleOrderPhase.Actions && (queue[i].Kind is SourceActionKind.Item or SourceActionKind.Switch ||
-                        queue[j].Kind is SourceActionKind.Item or SourceActionKind.Switch)) continue;
+                    if (phase == WildBattleOrderPhase.Actions && (BeforeMoves(queue[i]) || BeforeMoves(queue[j]))) continue;
                     int left = phase == WildBattleOrderPhase.Entry ? 0 : Priority(queue[i]), right = phase == WildBattleOrderPhase.Entry ? 0 : Priority(queue[j]);
                     uint a = Speed(queue[i].Slot), b = Speed(queue[j].Slot);
                     bool swap = left < right;

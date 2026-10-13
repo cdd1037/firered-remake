@@ -78,10 +78,11 @@ public sealed record SourceFieldRegisters
     public int PayDayMoney { get; init; }
     public WildBattleTerrain? Terrain { get; init; }
 }
-public enum SourceActionKind { Move, Item, Switch, Cancelled }
+public enum SourceActionKind { Move, Item, Switch, Cancelled, Run, Capture }
 public sealed record SourceActionSelection(OccupantToken Actor, SourceActionKind Kind,
     int? MoveSlot = null, BattlerSlot? Target = null, PartyMemberKey? Incoming = null, ItemId? Item = null)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceCaptureSelection? Capture { get; init; }
     [JsonIgnore] public bool IsStruggle => Kind == SourceActionKind.Move && MoveSlot == WildBattleRules.StruggleSlot;
     public static SourceActionSelection Struggle(OccupantToken actor, BattlerSlot? target = null) =>
         new(actor, SourceActionKind.Move, WildBattleRules.StruggleSlot, target ?? actor.Slot.Opposite);
@@ -93,6 +94,7 @@ public sealed record SourceQueuedAction(BattlerSlot Slot, SourceActionToken? Tok
     int? MoveSlot = null, BattlerSlot? Target = null, PartyMemberKey? Incoming = null, ItemId? Item = null,
     string? CancellationReason = null)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceCaptureSelection? Capture { get; init; }
     // gChosenMoveByBattler survives learning that overwrites the selected move position.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public MoveId? OriginalChosenMove { get; init; }
 }
@@ -102,6 +104,7 @@ public sealed record SourceSwitchReservation(OccupantToken Outgoing, PartyMember
 /// This bounded, current-turn receipt prevents the later item action from applying it again.</summary>
 public sealed record SourcePreparedMedicine(OccupantToken Actor, ItemId Item, PartyMemberKey Target)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool EscapeOnUse { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Game.Domain.Items.SourceBattleItemDefinition? DeferredEffect { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -174,6 +177,7 @@ public sealed record SourceBattleFrame
     public ImmutableArray<SourcePendingSwitch> PendingSwitches { get; init; } = [];
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<SourcePreparedMedicine>? PreparedMedicines { get; init; }
     public SourceWildTurnCursor? WildTurn { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceWildEncounterContext? WildEncounter { get; init; }
     public SourceFourActionCursor? FourTurn { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceFourRewardState? Rewards { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourceEntryAbilityState? EntryAbilities { get; init; }

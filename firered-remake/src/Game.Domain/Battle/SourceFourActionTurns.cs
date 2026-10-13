@@ -111,6 +111,8 @@ public static partial class SourceFourActionTurns
         if (ValidateCapability(catalog, frame) is { } invalid) return Fail(frame, invalid);
         if (frame.FourTurn is not null || frame.DeferredKoVacancyMask != 0) return Fail(frame, "source_four_action_start_phase");
         if (frame.EventSequence == long.MaxValue) return Fail(frame, "source_four_action_counter_exhausted");
+        if (!selections.IsDefault) foreach (var choice in selections)
+            if (choice is not null && SourceWildBattlePolicy.ValidatePolicySelection(catalog, frame, choice) is { } policyError) return Fail(frame, policyError);
         var committed = SourceBattleIdentityRules.CommitSelections(frame, expectedRevision, selections);
         if (!committed.Succeeded) return Fail(frame, committed.Fault!);
         var next = SourceFourRewards.ObserveParticipation(committed.State with { Rewards = committed.State.Rewards ?? new() });
@@ -125,6 +127,7 @@ public static partial class SourceFourActionTurns
                 if (ValidateVoluntarySwitch(catalog, next, action.Slot) is { } switchError) return Fail(frame, switchError);
                 continue;
             }
+            if (action.Kind is SourceActionKind.Run or SourceActionKind.Capture) continue;
             if (action.Kind == SourceActionKind.Item)
             {
                 if (!SourceFourMedicineRules.IsPrepared(next, action)) return Fail(frame, "source_medicine_not_prepared");
@@ -207,7 +210,8 @@ public static partial class SourceFourActionTurns
         {
             if (chosen.Kind != SourceActionKind.Move || chosen.MoveSlot is not >= 0 || chosen.OriginalChosenMove is not { } selected) continue;
             var cell = next.Get(chosen.Slot); var body = cell.Body!;
-            if (!WildBattleSourcePreparedMoves.FocusPunchSetup(selected, body.Status, body.TruantLoafing, false, false)) continue;
+            if (!WildBattleSourcePreparedMoves.FocusPunchSetup(selected, body.Status, body.TruantLoafing, false,
+                next.Queue.Any(a => a.Slot.Side == BattleSide.Player && a.Kind == SourceActionKind.Run))) continue;
             var setup = SourceBattleEventHooks.Publish(next, (n, t) => new SourceFocusPunchPreparedEvent(n, t,
                 chosen.Slot, chosen.MoveSlot.Value, cell.Member!.Value.Index));
             next = setup.State; preparedEvents.Add(setup.Event);
@@ -265,6 +269,12 @@ public static partial class SourceFourActionTurns
                 var immunity = SourceFrameImmunityRules.Apply(switched.State);
                 next = immunity.State; events.AddRange(interrupted.Events); events.AddRange(switched.Events); events.AddRange(immunity.Events);
                 trace = interrupted.Trace.AddRange(switched.Trace);
+            }
+            else if (action.Kind is SourceActionKind.Run or SourceActionKind.Capture)
+            {
+                var policy = SourceWildBattlePolicy.Execute(catalog, frame, action);
+                if (!policy.Succeeded) return Fail(frame, policy.Fault!);
+                next = policy.State; events.AddRange(policy.Events); trace = policy.Trace;
             }
             else if (action.Kind == SourceActionKind.Item)
             {
@@ -329,7 +339,7 @@ public static partial class SourceFourActionTurns
                     next = RecordDefeat(next, faint.Side, faint.Sequence);
                 }
             }
-            if (action.Kind is SourceActionKind.Switch or SourceActionKind.Item)
+            if (action.Kind is SourceActionKind.Switch or SourceActionKind.Item or SourceActionKind.Run or SourceActionKind.Capture)
                 next = SourceFrameSpecialStatuses.Clear(next);
             next = next with { NextAction = frame.NextAction + 1, FourTurn = next.FourTurn! with {
                 Phase = frame.NextAction + 1 == frame.Queue.Length ? SourceFourActionPhase.EndTurn : SourceFourActionPhase.Actions } };
@@ -346,7 +356,7 @@ public static partial class SourceFourActionTurns
                     next = next with { FourTurn = next.FourTurn! with { OutcomeAfterRewards = outcome } };
                 else
                 {
-                    next = next with { Outcome = outcome };
+                    next = SourceWildBattlePolicy.SetOutcome(next, outcome);
                     var ended = SourceBattleEventHooks.Publish(next, (n, t) => new SourceEndedEvent(n, t, outcome));
                     next = ended.State; events.Add(ended.Event);
                 }
@@ -476,7 +486,7 @@ public static partial class SourceFourActionTurns
             next = next with { FourTurn = next.FourTurn with { OutcomeAfterEndTurn = null,
                 OutcomeAfterRewards = HasPendingRewards(next) ? terminal : null } };
             if (HasPendingRewards(next)) return Pause(SourceFourActionPhase.RewardsPending);
-            next = next with { Outcome = terminal };
+            next = SourceWildBattlePolicy.SetOutcome(next, terminal);
             var ended = SourceBattleEventHooks.Publish(next, (n, t) => new SourceEndedEvent(n, t, terminal));
             next = ended.State; events.Add(ended.Event);
             return Pause(SourceFourActionPhase.BattleEnded);

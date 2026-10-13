@@ -170,7 +170,7 @@ public static class SourceFourRewards
             {
                 if (next.FourTurn!.OutcomeAfterRewards is { } outcome)
                 {
-                    next = next with { Outcome = outcome, FourTurn = next.FourTurn with { OutcomeAfterRewards = null, Phase = SourceFourActionPhase.BattleEnded } };
+                    next = SourceWildBattlePolicy.SetOutcome(next, outcome) with { FourTurn = next.FourTurn with { OutcomeAfterRewards = null, Phase = SourceFourActionPhase.BattleEnded } };
                     completedOutcome = outcome;
                 }
                 else next = next with { FourTurn = next.FourTurn! with {

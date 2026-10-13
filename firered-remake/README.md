@@ -115,10 +115,9 @@ For a desktop with a display:
 
 ```sh
 ./scripts/launch-probe.sh
-./scripts/launch-probe.sh -- --harness
+./scripts/launch-harness.sh
 ./scripts/launch-export.sh
-./scripts/launch-export.sh -- --harness
-./scripts/launch-story.sh          # historical opening profile, requires reference inputs
+./scripts/launch-harness.sh export
 bash scripts/launch-current.sh     # latest accepted bounded continuation
 ```
 
@@ -140,7 +139,7 @@ Pure test executables intentionally use no third-party test framework; nonzero e
 
 `evidence/` contains exact tool metadata, restore/build logs, measured runtime JSON, native screenshots, test output and the P0 gate result. Failed attempts are retained with a failure label. The first export attempt failed because Godot requires a `.sln` beside the C# project; this was fixed and independently re-exported. Default parallel MSBuild fails without diagnostics in this sandbox; the launcher uses tested `-m:1 -nr:false`.
 
-Current save checksum detects corruption, not tampering. Commands keep the expected-revision/version guards and serialized atomic commit, with no historical receipt or command-ID ledger. Stale requests return the current state unchanged; a reused trace ID with the current revision is a new request evaluated by game rules. Saved business reward flags preserve one-time rewards independently. See [the revision contract](docs/command-revision-only.md). Historical profile upgrades are explicit tools. Same-directory staging/flush/rename is exercised; absolute power-loss guarantees and clean-machine packaging remain unverified. Source maps, event IR and diagnostics do not imply all FireRed scripts or tile behaviors execute yet.
+Current save checksum detects corruption, not tampering. Commands keep the expected-revision/version guards and serialized atomic commit, with no historical receipt or command-ID ledger. Stale requests return the current state unchanged; a reused trace ID with the current revision is a new request evaluated by game rules. Saved business reward flags preserve one-time rewards independently. See [the revision contract](docs/command-revision-only.md). Historical profile upgrades are retired; the selected Celio checkpoint converter is explicit and offline. Same-directory staging/flush/rename is exercised; absolute power-loss guarantees and clean-machine packaging remain unverified. Source maps, event IR and diagnostics do not imply all FireRed scripts or tile behaviors execute yet.
 
 No ROM was downloaded or included in the recovery archive. Local reference inputs are retained for private development and the user-authorized private Drive recovery archive; no public publication is authorized. Public source availability is not a blanket asset license. See `docs/source-baseline.md` and `content/source-lock.json` before any future import.
 
