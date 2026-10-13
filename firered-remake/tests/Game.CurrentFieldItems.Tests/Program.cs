@@ -241,6 +241,10 @@ Same(checkpoint.State.Inventory!.KeyItems, machine.State.Inventory.KeyItems, "ma
 Check(machine.State.Party[0].InstanceId == checkpoint.State.Party[0].InstanceId, "machine preserves owned identity");
 Check(machine.State.ItemMenu?.MessageSymbol == "gText_PkmnLearnedMove3" && machine.State.ItemMenu.ReturnView == "machines", "machine result uses existing UI return");
 
+var stoneOutput = Path.GetFullPath(args[2]) + ".stones";
+Directory.CreateDirectory(stoneOutput);
+StoneEvolutionCases.Run(catalog, checkpoint.State, checkpoint.Generation, stoneOutput, Check);
+
 Check(File.ReadAllBytes(args[1]).SequenceEqual(originalBytes), "source checkpoint unchanged");
 Check(checks.Count > 100 && commands.Count > 50, "nonempty bounded characterization");
 File.WriteAllText(args[2], JsonSerializer.Serialize(new { runtime = Environment.Version.ToString(), checkpoint.Generation,

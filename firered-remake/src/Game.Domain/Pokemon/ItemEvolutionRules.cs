@@ -17,7 +17,7 @@ public sealed record ItemEvolutionResult(PartyPokemon Pokemon, SpeciesId Previou
     ImmutableArray<ItemEvolutionPendingMove> PendingMoves);
 
 /// <summary>
-/// Pinned FireRed Moon Stone use in the authenticated MtMoon catalog. Pure eligibility/species
+/// Pinned FireRed Moon/Sun Stone use in an exact authenticated owned campaign catalog. Pure eligibility/species
 /// changes only: no RNG, inventory consumption, scene state, Pokédex changes, UI or IO.
 /// </summary>
 public static class ItemEvolutionRules
@@ -25,18 +25,19 @@ public static class ItemEvolutionRules
     public const string SourceCommit = PokemonFactory.SourceCommit;
     public const string RulesVersion = "firered-moon-stone-evolution-v1";
     public const string MoonStone = "ITEM_MOON_STONE";
+    public const string SunStone = "ITEM_SUN_STONE";
 
     /// <summary>
     /// EVO_MODE_ITEM_USE: the first matching item method wins, at any current level and without a
     /// battle or level gain. Everstone prevents actual use even though the party menu can show a
     /// compatible target. The caller must own one separate bag item and consume it only on success.
     /// </summary>
-    public static ItemEvolutionEligibility? Eligibility(CampaignPokemonContent content, PartyPokemon owned,
-        string item = MoonStone, bool fuchsiaRules = false)
+    public static ItemEvolutionEligibility? Eligibility(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+        PartyPokemon owned, string item = MoonStone)
     {
-        Validate(content, owned, item, fuchsiaRules);
+        Validate(content, ownership, owned, item);
         if (owned.HeldItem == "ITEM_EVERSTONE") return null;
-        var evolution = MatchingEvolution(content, owned, item);
+        var evolution = SourceEvolution(content, ownership, owned.Pokemon.Species, item);
         return evolution is null ? null : new(owned.InstanceId, owned.Pokemon.Species, evolution.Target,
             owned.Pokemon.Level, item, evolution.Source);
     }
@@ -45,11 +46,11 @@ public static class ItemEvolutionRules
     /// EVO_MODE_ITEM_CHECK, for the source party-menu compatibility label only. This ignores an
     /// Everstone; always call Eligibility again before actual use. Eggs remain unsupported.
     /// </summary>
-    public static SpeciesId? PartyMenuTarget(CampaignPokemonContent content, PartyPokemon owned,
-        string item = MoonStone, bool fuchsiaRules = false)
+    public static SpeciesId? PartyMenuTarget(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+        PartyPokemon owned, string item = MoonStone)
     {
-        Validate(content, owned, item, fuchsiaRules);
-        return MatchingEvolution(content, owned, item)?.Target;
+        Validate(content, ownership, owned, item);
+        return SourceEvolution(content, ownership, owned.Pokemon.Species, item)?.Target;
     }
 
     /// <summary>
@@ -58,11 +59,11 @@ public static class ItemEvolutionRules
     /// held items are preserved; they are never the bag stone being consumed. Retain PendingMoves
     /// for explicit move decisions, including Body Slam/Thrash only at exactly level 22.
     /// </summary>
-    public static ItemEvolutionResult Apply(CampaignPokemonContent content, PartyPokemon owned,
-        ItemEvolutionEligibility eligibility, bool fuchsiaRules = false)
+    public static ItemEvolutionResult Apply(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership, PartyPokemon owned,
+        ItemEvolutionEligibility eligibility)
     {
         ArgumentNullException.ThrowIfNull(eligibility);
-        var expected = Eligibility(content, owned, eligibility.Item, fuchsiaRules);
+        var expected = Eligibility(content, ownership, owned, eligibility.Item);
         if (expected is null || expected != eligibility)
             throw new ArgumentException("Item evolution proposal is stale, ineligible or belongs to another Pokemon.", nameof(eligibility));
         var evolved = LevelEvolutionRules.ApplySpeciesChange(content, owned, eligibility.TargetSpecies);
@@ -71,19 +72,36 @@ public static class ItemEvolutionRules
             evolved.PendingMoves.Select(m => new ItemEvolutionPendingMove(m.Level, m.Move)).ToImmutableArray());
     }
 
-    // ValidateParty validates the exact four admitted Moon Stone families. Their targets are
-    // Kanto species, so both the source party-menu and scene National Dex gates always pass.
-    private static PokemonEvolution? MatchingEvolution(CampaignPokemonContent content, PartyPokemon owned, string item) =>
-        content.Catalog.Species[owned.Pokemon.Species].Evolutions.FirstOrDefault(e =>
-            e.Method == PokemonEvolutionMethod.Item && e.Parameter == item);
-
-    private static void Validate(CampaignPokemonContent content, PartyPokemon owned, string item, bool fuchsiaRules)
+    /// <summary>Authenticated source edge shared by use, menu labels and saved lineage checks.
+    /// Only the two exposed stones and targets admitted by the exact owned catalog are eligible.
+    /// The full source table retains branches omitted from earlier regional catalog projections.</summary>
+    public static SourceMechanicsEvolution? SourceEvolution(CampaignPokemonContent content,
+        OwnedBattlePokemonCatalog ownership, SpeciesId species, string item)
     {
+        ValidateCatalog(content, ownership, item);
+        if (!content.Catalog.Species.ContainsKey(species))
+            throw new ArgumentException("item_evolution_species_not_owned", nameof(species));
+        int sourceItem = item == MoonStone ? 94 : 93;
+        return ownership.Mechanics.SpeciesMechanics[species].SourceEvolutions.FirstOrDefault(e =>
+            e.Method == "EVO_ITEM" && e.SourceMethodId == 7 && e.Parameter == item &&
+            e.ParameterValue == sourceItem && content.Catalog.Species.ContainsKey(e.Target));
+    }
+
+    private static void Validate(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership,
+        PartyPokemon owned, string item)
+    {
+        ValidateCatalog(content, ownership, item);
         LevelEvolutionRules.Validate(content, owned);
-        if (!SixIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) && !FourIslandOwnedPokemonCatalog.IsAuthenticated(content.Catalog) && !SeviiRubyOwnedPokemonCatalog.IsAuthenticated(content.Catalog) && (fuchsiaRules ? content.Catalog.Species.Count != 107 :
-            Game.Domain.WildBattle.EeveeBattleScope.MechanicsCount(content.Catalog) is not (56 or 65 or 68 or 70 or 73 or 79 or 93 or 94 or 98 or 99 or 101 or 102)))
-            throw new NotSupportedException("Moon Stone evolution requires the verified MtMoon or Cerulean catalog.");
-        if (item != MoonStone)
-            throw new NotSupportedException("Only Moon Stone item evolution is implemented by this profile.");
+    }
+
+    private static void ValidateCatalog(CampaignPokemonContent content, OwnedBattlePokemonCatalog ownership, string item)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(ownership);
+        if (!ReferenceEquals(ownership.Catalog, content.Catalog) ||
+            !ReferenceEquals(OwnedBattlePokemonCatalog.For(content.Catalog), ownership))
+            throw new ArgumentException("item_evolution_owned_catalog_identity", nameof(ownership));
+        if (item is not (MoonStone or SunStone))
+            throw new NotSupportedException("Only Moon Stone and Sun Stone item evolution are implemented.");
     }
 }

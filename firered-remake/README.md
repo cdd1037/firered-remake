@@ -40,13 +40,12 @@ service, optional path or presentation is complete.
 The bounded first-clear refactor, private GitHub synchronization, stage10 full
 Drive backup and approved reproducible-cache cleanup completed at `8940b9b`.
 The user explicitly resumed development on 2026-10-12 at 23:42 UTC. The postgame chain has reached National Dex → One Island Ruby → Four Island
-the original Lorelei rescue, Six Island password, Five Warehouse Sapphire recovery and actual Celio delivery. The Network Machine/world flags and persistent roaming lifecycle are implemented; a bounded field probe covers reencounter, capture and KO/EXP. The next phase is the approved deeper project refactor after the complete Ruby/Sapphire backup. The
+the original Lorelei rescue, Six Island password, Five Warehouse Sapphire recovery and actual Celio delivery. The Network Machine/world flags and persistent roaming lifecycle are implemented; a bounded field probe covers reencounter, capture and KO/EXP. After the complete Ruby/Sapphire backup, the approved deeper refactor now has one current loader, one ordinary single/double battle owner, shared current field/item bindings, and retired historical runtime selectors/executors. The maintained 17-project build and bounded current contracts pass; the final affected-item gate covers Rare Candy and Moon/Sun Stone ownership. Exact evidence cohorts and remaining product limitations are recorded in the refactor plan. The
 National Dex profile has passed its source grant, 15/59-caught refusals,
 controlled 60-caught grant, strict save/Continue and Oak/PC revisit checks;
 automatic first-frame and headless view checks also passed separately.
-The latest asset-complete recovery base is stage10 `8940b9b`; authenticated
-importers reconstruct newer resources. See [Celio acceptance](docs/celio-campaign.md), [National Dex](docs/national-dex-campaign.md),
-[the completed bounded cleanup and remaining project refactor](docs/project-refactor-plan.md), [remaining scope](docs/first-clear-remaining-scope.md)
+The latest asset-complete recovery base is stage11 `687d0c9`, including Ruby/Sapphire resources; subsequent refactor source checkpoints are synchronized separately. Authenticated importers remain available for reconstruction. See [Celio acceptance](docs/celio-campaign.md), [National Dex](docs/national-dex-campaign.md),
+[the completed bounded cleanup and deeper refactor](docs/project-refactor-plan.md), [remaining scope](docs/first-clear-remaining-scope.md)
 and [implementation roadmap](docs/implementation-roadmap.md).
 
 ## Earlier first-badge checkpoint

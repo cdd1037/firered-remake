@@ -1,10 +1,10 @@
 # Project refactor: current integration and historical evidence
 
-**Status, 2026-10-13: current composition and battle-owner retirement passed combined validation; bounded field-encounter cleanup and final delivery remain.** The validated tree has the sole public Content loader, shared trainer bindings, canonical wild/trainer Application ownership and physical retirement of the competing Domain executors. The 16-project build and focused current contracts passed. This does not establish that every historical capability branch is gone: current-always-true profile branches in field encounter/fishing dispatch remain a separate bounded cleanup. See [the latest integration snapshot](#2026-10-13-content-specialization-and-battle-owner-retirement).
+**Status, 2026-10-13: the bounded R1–R4 implementation and maintained acceptance gates are complete; final source synchronization is the remaining delivery action.** Current composition has one public loader; ordinary singles/doubles have one authoritative lifecycle; current Application trainer/field/item wiring is consolidated; superseded runtime/tooling owners are physically retired. The final Moon/Sun Stone ownership boundary also passes. Historical candidate cohorts, the combined battle gate and the final affected-item gate are identified separately below. This closes the defined deep refactor, not every possible future cleanup or all remaining game content. See [the final bounded result](#2026-10-13-final-bounded-refactor-result).
 
 Commit `8940b9b` completed only the four bounded changes listed below, source synchronization and the stage10 backup. Earlier wording describing the overall refactor as completed at that commit was too broad. Preserve those results as evidence of their original slice.
 
-The original first-clear instruction included project cleanup and a pause. Development resumed on the user's explicit 2026-10-12 23:42 UTC instruction. The latest 2026-10-13 direction explicitly requests deeper refactoring afterward, prioritizes project quality over historical baggage, and permits invalidating old saves; useful milestone saves may be converted manually. The Five Island / Celio and Ruby/Sapphire delivery and full Drive package are complete at `687d0c9`; the remaining refactor below is now executing. This correction does not stop the current product work or reinstate the old pause.
+The original first-clear instruction included project cleanup and a pause. Development resumed on the user's explicit 2026-10-12 23:42 UTC instruction. The latest 2026-10-13 direction explicitly requests deeper refactoring afterward, prioritizes project quality over historical baggage, and permits invalidating old saves; useful milestone saves may be converted manually. The Five Island / Celio and Ruby/Sapphire delivery and full Drive package are complete at `687d0c9`; the deeper refactor defined below has now reached its bounded implementation exit. This correction does not stop the current product work or reinstate the old pause.
 
 The original inventory was based on `9fba4616`. Dated execution updates below identify the later implemented slices and their actual checks. The four historical changes remain accepted within their original scope; open work is not counted as complete.
 
@@ -43,7 +43,7 @@ The target is one maintained current-game composition and one authoritative ordi
 
 ### R1 — Consolidate profile, capability and catalog selection
 
-**Status: current composition/loader retirement passed combined validation. `LoadCurrent` is the sole public catalog factory. The generic loader, its 60 booleans/24 alternate roots and 22 regional public profile wrappers are removed. Current startup, saves, diagnostic/upgrade runtime retirement and map-presentation bindings are implemented. Field encounter/fishing dispatch still has redundant current-profile branches awaiting bounded cleanup; typed regional source proofs remain required authenticated construction inputs. Benefit: high. Risk: medium.**
+**Status: current composition/loader retirement passed combined validation. `LoadCurrent` is the sole public catalog factory. The generic loader, its 60 booleans/24 alternate roots and 22 regional public profile wrappers are removed. Current startup, saves, diagnostic/upgrade runtime retirement and map-presentation bindings are implemented. Field encounter/fishing/item dispatch now binds directly to current authenticated services; typed regional source proofs remain required authenticated construction inputs. Benefit: high. Risk: medium.**
 
 Original inventory (the startup and session selectors below have since been removed; retained source-proof/catalog and battle ownership work is distinguished in the dated results):
 
@@ -63,7 +63,7 @@ Acceptance: current startup selects exactly one profile; new saves strictly Cont
 
 ### R2 — Consolidate repeated Application wiring
 
-**Status: shared current trainer bindings and canonical entry passed combined validation. The pre-Fuchsia executor matrix and discarded-party sight preflight are removed. Explicit scene, callback and double/rematch policies remain. This does not claim that every field-content selector has been consolidated. Benefit: high. Risk: medium.**
+**Status: shared current trainer bindings and canonical entry passed combined validation. The pre-Fuchsia executor matrix and discarded-party sight preflight are removed. Explicit scene, callback and double/rematch policies remain. The bounded field-encounter and current-item selectors are also consolidated; genuine per-map/source/story policies remain explicit. Benefit: high. Risk: medium.**
 
 Original inventory, before the binding and Application cutovers:
 
@@ -103,7 +103,7 @@ Acceptance: selected complete current singles and real doubles flows retain orde
 
 The runtime-retirement slice removes the 43-entry old save router, diagnostic campaign constructors/factories, 46 historical launch scripts and obsolete early-lab window replay. The selected Celio offline converter, current imports and engineering diagnostics remain. Historical test source and evidence remain archived; 52 projects that reference removed APIs leave the larger solution. `dev build/test` now has a bounded current product/contract solution. See [the exact inventory and validation](runtime-retirement.md). This does not claim that all source preparation/import tooling has been audited.
 
-**Status: documented runtime/tooling retirement and maintained-solution checks passed; final delivery verification remains. Historical test source and unique proof remain archived. This bounded result is not an audit of every retained importer or generator. Benefit: medium. Risk: low for proven duplicates; high if a reconstruction dependency is removed.**
+**Status: documented runtime/tooling retirement and maintained-solution checks passed; final source synchronization remains. Historical test source and unique proof remain archived. This bounded result is not an audit of every retained importer or generator. Benefit: medium. Risk: low for proven duplicates; high if a reconstruction dependency is removed.**
 
 Evidence and limits:
 
@@ -130,7 +130,7 @@ Acceptance: the current package can be reconstructed from documented retained in
 4. At the final current commit, run focused startup, new-save/Continue, selected converted-checkpoint, field and current single/double battle checks. Old-version rejection is expected where documented; no historical full-chain replay is required. Record the actual compiler/runtime. Native visual and physical audio limits stay explicit; source or headless evidence does not close them.
 5. Synchronize the refactored source and verified Drive delivery, and update README/roadmap/status wording together. Historical reports stay labeled historical. The plan is complete only when R1–R4 have concrete accepted results and no unexplained remaining duplicate current path; writing this document or passing the earlier four changes does not close it.
 
-Final project-refactor completion is withheld until the remaining bounded cleanup and delivery satisfy these gates. The chronological updates below retain their original checkpoint scope; later entries supersede their then-pending work.
+The bounded implementation gates are now satisfied by the separately identified results below. Final source synchronization remains a delivery status; a later package must retain current authored inputs and selected original/converted checkpoints. No backup rebuild or historical journey replay is required. The chronological updates below retain their original checkpoint scope; later entries supersede their then-pending work.
 
 ## 2026-10-13 current composition slice
 
@@ -185,6 +185,22 @@ The actual combined 16-project build passed with zero warnings/errors in 57.52 s
 
 Remaining work is a separate bounded cleanup of field-encounter dispatch, including redundant fishing/current-profile branches, followed by its affected checks and final source/package synchronization. Do not describe every historical branch as retired before that work is accepted. Native framebuffer, animation and physical audio acceptance remain outside these checks; no historical route replay, active-battle save support or new region is claimed.
 
-## 2026-10-13 field-dispatch follow-up
+## 2026-10-13 field-dispatch follow-up at `a35fa07`
 
 After `d3b2eb9`, ordinary land/Surf/Old Rod and current item selectors now directly choose the already authenticated current branches. A controlled comparison preserved 360 successful entry states/RNG/origins, with three documented fixture limitations. Current shop predecessor views remain real authentication/inventory responsibilities. The isolated item comparison exposed and preserved the prior Candy admission failure; the shared owned-proof fix passes 225 checks / 83 public commands, including learning, evolution, HM/PP Ups and level-100 no-consumption. The maintained build now has 17 projects, zero warnings/errors. These checks do not repeat the prior battle/default suite or native validation. See [scope and evidence](current-field-item-bindings.md). Moon/Sun Stone admission is under the same bounded review; this follow-up does not declare that remaining item boundary closed.
+
+## 2026-10-13 final bounded refactor result
+
+After the `a35fa07` field follow-up, Moon/Sun Stone use, its existing compatibility label and saved lineage share the exact current ownership proof and original source evolution edge. Obsolete catalog-count/region runtime guards and the duplicate Six execution body are removed. The source-only Six edge authenticator remains because Content still uses it. Both original atomic public-command failures are retained. This is a correctness closure of existing exposed items, not permission to expose other stone families.
+
+The final normal 17-project build, including Godot, passed with zero warnings/errors in 59.14 seconds. The integrated current-item suite passed 396 checks: 83 existing command observations plus 42 stone-command observations in its separate trace. Its controlled original-owned Clefairy/Gloom, source-factory family, Everstone, HM, PP, fainting and lineage cases are documented. Candidate 171-check and separate-process five-check Continue evidence remain labeled candidate evidence. The earlier `d3b2eb9` combined ordinary-battle/default/checkpoint gate and `a35fa07` dispatch comparison were not needlessly replayed for this item API closure. [Final build and source/assembly identity](../evidence/current-stone-evolution-20261013/verification.json), [field scope](current-field-item-bindings.md).
+
+Intentional current boundaries remain:
+
+- FirstBattle laboratory and OldMan teaching modes have different game responsibilities; neither is an ordinary single/double fallback.
+- Read-only battle/event presentation projections own no gameplay state and cannot import a second authoritative turn. Shared low-level algorithms and historical class names do not create a second executor.
+- Regional content schemas, original script/party factories and predecessor ownership proofs authenticate actual source resources. Retaining them does not restore selectable historical runtime profiles.
+- Stable current saves have a strict rules ID. Active-battle player saves remain rejected. Selected old Celio milestones can be converted once, offline, to a new destination; originals remain unchanged.
+- Historical tests and proof stay historical. Current builds contain 17 product/contract projects; fixture-dependent Application/item runs are explicit. There is no obligation to retain deleted runtime APIs so every historic project compiles today.
+
+No native framebuffer, audible output, full 354-animation restoration, unimplemented regional service or new postgame encounter is certified by this refactor. Those remain in [the product scope list](first-clear-remaining-scope.md). Future cleanup should follow an identified current responsibility or defect, rather than reopen this bounded phase indefinitely.

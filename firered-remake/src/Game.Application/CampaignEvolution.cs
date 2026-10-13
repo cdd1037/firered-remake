@@ -56,11 +56,12 @@ public sealed partial class CampaignSession
         var consumed = EarlyInventoryAddRules.Remove(shop, ShopInventoryView(state.Inventory), evolutionItem, 1);
         if (!consumed.Succeeded) return No(consumed.Error!);
         var owned = state.Party[command.PartyIndex];
-        var proposal = sunStone ? SixIslandItemEvolutionRules.Eligibility(_content.PokemonContent!, owned) : ItemEvolutionRules.Eligibility(_content.PokemonContent!, owned,fuchsiaRules:_content.FuchsiaRouteEnabled);
+        var stone = sunStone ? ItemEvolutionRules.SunStone : ItemEvolutionRules.MoonStone;
+        var proposal = ItemEvolutionRules.Eligibility(_content.PokemonContent!, _binding.Ownership, owned, stone);
         if (proposal is null)
             return new(CommandStatus.Accepted, state with { ItemMenu = menu with
                 { View = "message", MessageSymbol = "gText_WontHaveEffect", ReturnView = "bag" } });
-        var evolved = sunStone ? SixIslandItemEvolutionRules.Apply(_content.PokemonContent!, owned, proposal) : ItemEvolutionRules.Apply(_content.PokemonContent!, owned, proposal,fuchsiaRules:_content.FuchsiaRouteEnabled);
+        var evolved = ItemEvolutionRules.Apply(_content.PokemonContent!, _binding.Ownership, owned, proposal);
         int target = evolved.Pokemon.Pokemon.SourceSpeciesId;
         var pages = ImmutableArray.CreateBuilder<string>();
         pages.Add($"Congratulations! Your {owned.Nickname}\nevolved into {_content.PokemonContent!.SpeciesNames[target]}!");
@@ -283,10 +284,9 @@ public sealed partial class CampaignSession
                     ? entry.BattleId is not null || (entry.Item == RareCandyItem
                         ? entry.Level != entry.LevelBeforeBattle + 1 || !previous.Evolutions.Any(e =>
                             e.Method == PokemonEvolutionMethod.Level && e.Target == target.Id && e.Level <= entry.Level)
-                        : entry.Level != entry.LevelBeforeBattle || !(entry.Item == "pret:ITEM_SUN_STONE"
-                            ? _content.SixIslandEnabled && previous.Id == SixIslandItemEvolutionRules.Gloom && target.Id == SixIslandItemEvolutionRules.Bellossom && SixIslandItemEvolutionRules.SourceEdge(_content.SixIslandOwnership!) is not null
-                            : entry.Item == MtMoonItemRules.MoonStoneId.Value && previous.Evolutions.Any(e =>
-                                e.Method == PokemonEvolutionMethod.Item && e.Parameter == ItemEvolutionRules.MoonStone && e.Target == target.Id)))
+                        : entry.Level != entry.LevelBeforeBattle || !(entry.Item is "pret:ITEM_MOON_STONE" or "pret:ITEM_SUN_STONE" &&
+                            ItemEvolutionRules.SourceEvolution(_content.PokemonContent!, _binding.Ownership, previous.Id,
+                                entry.Item[5..])?.Target == target.Id))
                     : entry.Level <= entry.LevelBeforeBattle || !previous.Evolutions.Any(e =>
                         e.Method == PokemonEvolutionMethod.Level && e.Target == target.Id && e.Level <= entry.Level)))
                 return "save_evolution_lineage_invalid";
