@@ -29,7 +29,7 @@ public sealed partial class CampaignSession
     {
         next = state;
         if (effect.Source.Path != SeagallopSource || effect.Source.Symbol is not ("EventScript_SeviiDestinationsPage1" or "EventScript_SeviiDestinationsPage2")) return false;
-        if (!state.Script.Locked || state.Script.Variables.GetValueOrDefault(RubyCenterScene) != 5 ||
+        if (!state.Script.Locked || !RainbowQuestComplete(state) ||
             OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], RainbowPassItem) != 1)
             throw new InvalidDataException("seagallop_rainbow_context");
         int page = state.Script.Variables.GetValueOrDefault("VAR_0x8005"), origin = state.Script.Variables.GetValueOrDefault("VAR_0x8004");

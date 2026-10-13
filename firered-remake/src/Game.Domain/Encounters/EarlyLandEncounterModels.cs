@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Game.Domain.Ids;
 using Game.Domain.Randomness;
+using Game.Domain.Roaming;
 
 namespace Game.Domain.Encounters;
 
@@ -44,6 +45,12 @@ public sealed record EarlyLandEncounterState(
 
 public sealed record EarlyLandEncounterResult(EarlyLandEncounterState State, RngState GlobalRng,
     EncounterCheckOutcome Outcome, EarlyLandEncounterCandidate? Candidate, int? RateThreshold,
-    ImmutableArray<EncounterRandomTrace> RandomTrace);
+    ImmutableArray<EncounterRandomTrace> RandomTrace)
+{
+    /// <summary>Transient replacement candidate; commit its battle start atomically with this result.
+    /// It is never represented as an ordinary table slot or persisted as an ordinary pending candidate.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public RoamerEncounterCandidate? RoamerCandidate { get; init; }
+}
 public sealed record EarlyLandEncounterInitialization(EarlyLandEncounterState State, RngState GlobalRng,
     ImmutableArray<EncounterRandomTrace> RandomTrace);

@@ -129,6 +129,7 @@ public sealed record SinglesBoundaryEncoding
     public string? FieldRulesVersion { get; init; }
     public string? DelayedRulesVersion { get; init; }
     public string? SourceWildRulesVersion { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public CelioRoamerBattleOrigin? CelioRoamerBattleOrigin { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public VictoryRoadWildOrigin? VictoryRoadWildOrigin { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SixIslandWildOrigin? SixIslandWildOrigin { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public FiveIslandWildOrigin? FiveIslandWildOrigin { get; init; }

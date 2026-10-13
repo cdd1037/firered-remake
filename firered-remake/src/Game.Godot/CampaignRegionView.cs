@@ -34,6 +34,7 @@ public partial class CampaignView
             using var canvas=texture.GetImage();
             foreach(var edit in state.MapEdits.Values)
             {
+                if(TryCelioMachinePatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryFiveIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TrySixIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryFourIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;

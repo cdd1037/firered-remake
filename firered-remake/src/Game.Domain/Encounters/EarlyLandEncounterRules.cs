@@ -1,4 +1,7 @@
 using System.Collections.Immutable;
+using Game.Domain.Pokemon;
+using Game.Domain.Items;
+using Game.Domain.Roaming;
 using Game.Domain.Ids;
 using Game.Domain.Randomness;
 
@@ -87,6 +90,33 @@ public static class EarlyLandEncounterRules
 
     public static EarlyLandEncounterResult Check(EarlyLandEncounterState state, EarlyLandEncounterTable table,
         EarlyLandEncounterCheck check, EarlyLandEncounterProfile profile, RngState globalRng)
+        => CheckValidated(state, table, check, profile, globalRng);
+
+    /// <summary>Celio's authenticated party138 entry; the inherited Five process and source tables
+    /// remain unchanged. The roamer gate runs only after the ordinary rate test succeeds.</summary>
+    public static EarlyLandEncounterResult Check(CelioOwnedPokemonCatalog owned,
+        EarlyLandEncounterState state, EarlyLandEncounterTable table, EarlyLandEncounterCheck check,
+        ImmutableArray<PartyPokemon> party, ushort repelSteps, RngState globalRng,
+        RoamerState roamer, RoamerMap playerMap, bool wildEncountersDisabled = false,
+        SaffronGymShopCatalog? saffronShop = null)
+    {
+        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop);
+        if (state.RulesVersion != FiveIslandRulesVersion) throw new ArgumentException("celio_land_profile");
+        var lead = party[0];
+        // Only these source field modifiers matter; all real party fields were authenticated above.
+        var profile = new EarlyLandEncounterProfile(RulesVersion: FiveIslandRulesVersion,
+            LeadAbility: !lead.IsEgg && lead.Pokemon.AbilityId is "ABILITY_STENCH" or "ABILITY_ILLUMINATE"
+                ? lead.Pokemon.AbilityId : "ABILITY_NONE",
+            LeadHeldItem: lead.HeldItem == "ITEM_CLEANSE_TAG" ? lead.HeldItem : "ITEM_NONE",
+            WildEncountersDisabled: wildEncountersDisabled);
+        int? repelLevel = party.FirstOrDefault(p => !p.IsEgg && p.Pokemon.CurrentHp > 0)?.Pokemon.Level;
+        return CheckValidated(state, table, check, profile, globalRng, gate, repelSteps, repelLevel);
+    }
+
+    private static EarlyLandEncounterResult CheckValidated(EarlyLandEncounterState state,
+        EarlyLandEncounterTable table, EarlyLandEncounterCheck check, EarlyLandEncounterProfile profile,
+        RngState globalRng, CelioRoamerEncounterGate? roamerGate = null,
+        ushort repelSteps = 0, int? repelLevel = null)
     {
         ValidateState(state, table);
         ArgumentNullException.ThrowIfNull(check);
@@ -106,13 +136,15 @@ public static class EarlyLandEncounterRules
 
         return CheckCore(state, table, check, profile.WildEncountersDisabled, globalRng,
             stench: state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && profile.LeadAbility == "ABILITY_STENCH",
-            illuminate: state.RulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && profile.LeadAbility == "ABILITY_ILLUMINATE", cleanseTag: state.RulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && profile.LeadHeldItem == "ITEM_CLEANSE_TAG");
+            illuminate: state.RulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && profile.LeadAbility == "ABILITY_ILLUMINATE", cleanseTag: state.RulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && profile.LeadHeldItem == "ITEM_CLEANSE_TAG",
+            repelSteps: repelSteps, repelLevel: repelLevel, roamerGate: roamerGate);
     }
 
     // Public profiles validate their own contracts before entering this single source engine.
     internal static EarlyLandEncounterResult CheckCore(EarlyLandEncounterState state, EarlyLandEncounterTable table,
         EarlyLandEncounterCheck check, bool wildEncountersDisabled, RngState globalRng, bool stench = false, bool illuminate = false, bool cleanseTag = false,
-        Func<int, int>? chooseSlot = null, string slotPurpose = "encounter.land-slot", ushort repelSteps = 0, int? repelLevel = null)
+        Func<int, int>? chooseSlot = null, string slotPurpose = "encounter.land-slot", ushort repelSteps = 0, int? repelLevel = null,
+        CelioRoamerEncounterGate? roamerGate = null, RoamerEncounterMethod roamerMethod = RoamerEncounterMethod.Land)
     {
 
         var trace = ImmutableArray.CreateBuilder<EncounterRandomTrace>();
@@ -159,7 +191,21 @@ public static class EarlyLandEncounterRules
             state = state with { EncounterRateBuff = repelSteps == 0 ? unchecked((ushort)(state.EncounterRateBuff + table.RawEncounterRate)) : (ushort)0 };
             return Finish(EncounterCheckOutcome.RateMiss);
         }
-        // No active roamer; FR does not add Emerald's Static/Synchronize/Keen Eye branches.
+        // StandardWildEncounter: rate succeeds before TryStartRoamerEncounter, and its
+        // successful Repel rejection returns immediately without AddToWildEncounterRateBuff.
+        if (roamerGate is not null)
+        {
+            var roamer = SourceRoamerRules.TryEncounter(roamerGate.State,
+                new(roamerGate.PlayerMap, roamerMethod, OrdinaryGatesPassed: true,
+                    HasEncounterTable: true, RepelActive: repelSteps > 0, roamerGate.Party), globalRng);
+            globalRng = roamer.Rng;
+            trace.AddRange(roamer.Trace.Select(draw => new EncounterRandomTrace("global", draw)));
+            if (roamer.Decision == RoamerEncounterDecision.NoEncounter)
+                return Finish(EncounterCheckOutcome.RepelSuppressed);
+            if (roamer.Decision == RoamerEncounterDecision.RoamerEncounter)
+                return Finish(EncounterCheckOutcome.RoamerCandidateReady) with { RoamerCandidate = roamer.Candidate };
+        }
+        // FR does not add Emerald's Static/Synchronize/Keen Eye branches.
         var slot = table.Slots[(chooseSlot ?? ChooseSlot)(DrawGlobal(slotPurpose, 100))];
         int lo = Math.Min(slot.MinimumLevel, slot.MaximumLevel), hi = Math.Max(slot.MinimumLevel, slot.MaximumLevel);
         byte level = (byte)(lo + DrawGlobal("encounter.level", hi - lo + 1));

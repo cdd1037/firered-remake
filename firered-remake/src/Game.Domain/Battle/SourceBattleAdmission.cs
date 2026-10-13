@@ -50,6 +50,9 @@ public static class SourceBattleAdmission
 
     public static bool IsOwnedCampaign(OwnedBattlePokemonCatalog owned, WildBattleState state) =>
         (state.SourceCampaignRulesVersion == owned.RulesVersion ||
+         state.SourceCampaignRulesVersion == CelioOpponentPokemonCatalog.Profile &&
+         CelioOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } celio &&
+         ReferenceEquals(celio.Owned.Catalog, owned.Catalog) ||
          state.SourceCampaignRulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
          FiveIslandOpponentPokemonCatalog.ForMechanics(owned.Mechanics.Catalog) is { } five &&
          ReferenceEquals(five.Owned.Catalog, owned.Catalog) ||

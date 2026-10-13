@@ -83,6 +83,11 @@ public interface ICampaignCatalog:IStoryCatalog
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
     bool NationalDexEnabled=>false;
+    bool CelioEnabled=>false;
+    CelioOwnedPokemonCatalog? CelioOwnership=>null;
+    CelioOpponentPokemonCatalog? CelioOpponents=>null;
+    CelioMachineCatalog? CelioMachines=>null;
+    IReadOnlyDictionary<MapId,Game.Domain.Roaming.RoamerMap>? CelioRoamerMaps=>null;
     bool FiveIslandEnabled=>false;
     FiveIslandOwnedPokemonCatalog? FiveIslandOwnership=>null;
     FiveIslandOpponentPokemonCatalog? FiveIslandOpponents=>null;

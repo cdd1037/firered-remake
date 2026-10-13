@@ -34,6 +34,8 @@ public sealed class OwnedBattlePokemonCatalog
             proof = new(catalog, silph.Predecessor.Predecessor.Predecessor, silph.Mechanics, SilphOwnedPokemonCatalog.Profile);
         else if (CinnabarOwnedPokemonCatalog.For(catalog) is { } cinnabar)
             proof = new(catalog, cinnabar.Predecessor.Predecessor.Predecessor.Predecessor, cinnabar.Mechanics, CinnabarOwnedPokemonCatalog.Profile);
+        else if (CelioOwnedPokemonCatalog.For(catalog) is { } celio)
+            proof = new(catalog, For(celio.Predecessor.Catalog)!.Predecessor, celio.Mechanics, CelioOwnedPokemonCatalog.Profile);
         else if (FiveIslandOwnedPokemonCatalog.For(catalog) is { } five)
             proof = new(catalog, For(five.Predecessor.Catalog)!.Predecessor, five.Mechanics, FiveIslandOwnedPokemonCatalog.Profile);
         else if (SixIslandOwnedPokemonCatalog.For(catalog) is { } six)
@@ -79,12 +81,20 @@ public sealed class OwnedBattlePokemonCatalog
     public static implicit operator OwnedBattlePokemonCatalog?(FiveIslandOwnedPokemonCatalog? owned) =>
         owned is null ? null : For(owned.Catalog)!;
 
-    internal string TrainerOpponentProfile => RulesVersion == FiveIslandOwnedPokemonCatalog.Profile
+    [return: NotNullIfNotNull(nameof(owned))]
+    public static implicit operator OwnedBattlePokemonCatalog?(CelioOwnedPokemonCatalog? owned) =>
+        owned is null ? null : For(owned.Catalog)!;
+
+    internal string TrainerOpponentProfile => RulesVersion == CelioOwnedPokemonCatalog.Profile
+        ? CelioOpponentPokemonCatalog.Profile : RulesVersion == FiveIslandOwnedPokemonCatalog.Profile
         ? FiveIslandOpponentPokemonCatalog.Profile : RulesVersion == SixIslandOwnedPokemonCatalog.Profile
         ? SixIslandOpponentPokemonCatalog.Profile : RulesVersion == FourIslandOwnedPokemonCatalog.Profile
         ? FourIslandOpponentPokemonCatalog.Profile : SeviiRubyOpponentPokemonCatalog.Profile;
 
     internal static bool IsCampaignSuccessorOf(OwnedBattlePokemonCatalog predecessor, OwnedBattlePokemonCatalog successor) =>
+        ReferenceEquals(For(successor.Catalog), successor) && CelioOwnedPokemonCatalog.For(successor.Catalog) is { } celio &&
+        ReferenceEquals(celio.Mechanics, predecessor.Mechanics) && CelioOpponentPokemonCatalog.For(celio) is not null &&
+        (ReferenceEquals(celio.Predecessor.Catalog, predecessor.Catalog) || IsCampaignSuccessorOf(predecessor, For(celio.Predecessor.Catalog)!)) ||
         ReferenceEquals(For(successor.Catalog), successor) && FiveIslandOwnedPokemonCatalog.For(successor.Catalog) is { } five &&
         ReferenceEquals(five.Mechanics, predecessor.Mechanics) && FiveIslandOpponentPokemonCatalog.For(five) is not null &&
         (ReferenceEquals(five.Predecessor.Catalog, predecessor.Catalog) || IsCampaignSuccessorOf(predecessor, For(five.Predecessor.Catalog)!)) ||
@@ -103,6 +113,9 @@ public sealed class OwnedBattlePokemonCatalog
         ReferenceEquals(ruby.Mechanics, predecessor.Mechanics) && SeviiRubyOpponentPokemonCatalog.For(ruby) is not null;
 
     internal bool AdmitsTrainerOpponent(SpeciesId species, string? trainerProfile = null) => Catalog.Species.ContainsKey(species) ||
+        trainerProfile == CelioOpponentPokemonCatalog.Profile &&
+        CelioOwnedPokemonCatalog.For(Catalog) is { } celioOwned &&
+        CelioOpponentPokemonCatalog.For(celioOwned) is { } celio && celio.Catalog.Species.ContainsKey(species) ||
         trainerProfile == FiveIslandOpponentPokemonCatalog.Profile &&
         FiveIslandOwnedPokemonCatalog.For(Catalog) is { } fiveOwned &&
         FiveIslandOpponentPokemonCatalog.For(fiveOwned) is { } five && five.Catalog.Species.ContainsKey(species) ||
@@ -133,6 +146,8 @@ public sealed class OwnedBattlePokemonCatalog
     internal static OwnedBattlePokemonCatalog? ForMechanics(PokemonCatalog? catalog, string? rulesVersion)
     {
         if (catalog is null || rulesVersion is null) return null;
+        if (rulesVersion == CelioOpponentPokemonCatalog.Profile &&
+            CelioOpponentPokemonCatalog.ForMechanics(catalog) is { } celio) return For(celio.Owned.Catalog);
         if (rulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
             FiveIslandOpponentPokemonCatalog.ForMechanics(catalog) is { } five) return For(five.Owned.Catalog);
         if (rulesVersion == SixIslandOpponentPokemonCatalog.Profile &&
@@ -155,8 +170,10 @@ public sealed class OwnedBattlePokemonCatalog
     }
 
     internal static bool IsKnownProfile(string profile) =>
-        profile is FiveIslandOwnedPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile;
+        profile is CelioOwnedPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or SafariOwnedPokemonCatalog.Profile or SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or SaffronGymOpponentPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or CinnabarOpponentPokemonCatalog.Profile or VictoryRoadOpponentPokemonCatalog.Profile or PokemonLeagueOpponentPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile;
     internal static bool ProfileAdmits(string profile, SpeciesId species) =>
+        (profile is CelioOwnedPokemonCatalog.Profile or CelioOpponentPokemonCatalog.Profile) &&
+        (ProfileAdmits(FiveIslandOwnedPokemonCatalog.Profile, species) || CelioOwnedPokemonCatalog.AdditionalSpecies.Contains(species)) ||
         (profile is FiveIslandOwnedPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile) &&
         (ProfileAdmits(SixIslandOwnedPokemonCatalog.Profile, species) || FiveIslandOwnedPokemonCatalog.AdditionalSpecies.Contains(species)) ||
         (profile is SixIslandOwnedPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile) &&
@@ -171,11 +188,11 @@ public sealed class OwnedBattlePokemonCatalog
     // Surf adds only Psyduck to historical wild membership. Golduck is an owned
     // evolution; Safari's three extra catches still use their separate encounter owner.
     internal bool AdmitsWildOpponent(PokemonInstance pokemon) =>
-        Predecessor.Species.ContainsKey(pokemon.Species) || RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile &&
+        Predecessor.Species.ContainsKey(pokemon.Species) || RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile &&
         pokemon.Species == SurfOwnedPokemonCatalog.AdditionalSpecies[0] ||
-        RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species);
+        RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species);
 
     internal bool SupportsOrdinaryWildOpponent(PokemonInstance pokemon) => AdmitsWildOpponent(pokemon) &&
         (FuchsiaBattleScope.SupportsWildOpponent(pokemon.SourceSpeciesId) ||
-         RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile && pokemon.SourceSpeciesId is 54 or 72 or 109 || RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species));
+         RulesVersion is SurfOwnedPokemonCatalog.Profile or SilphOwnedPokemonCatalog.Profile or CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile && pokemon.SourceSpeciesId is 54 or 72 or 109 || RulesVersion is CinnabarOwnedPokemonCatalog.Profile or SeviiRubyOwnedPokemonCatalog.Profile or FourIslandOwnedPokemonCatalog.Profile or SixIslandOwnedPokemonCatalog.Profile or FiveIslandOwnedPokemonCatalog.Profile or CelioOwnedPokemonCatalog.Profile && Game.Domain.Encounters.CinnabarWildPokemonFactory.WildSpecies.Contains(pokemon.Species));
 }

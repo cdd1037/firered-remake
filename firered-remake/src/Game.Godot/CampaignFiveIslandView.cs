@@ -11,8 +11,8 @@ using Godot;
 /// <summary>Five Island authenticated source textures and display catalogs. The application remains authoritative.</summary>
 public partial class CampaignView
 {
-    private static bool FiveIslandProfileRequested => OS.GetEnvironment("FIRERED_FIVE_ISLAND") == "1" || OS.GetCmdlineUserArgs().Contains("--story-five-island");
-    private bool FiveIslandPresentationProfile => _catalog.FiveIslandEnabled && _catalog.SixIslandEnabled && _session.RulesVersion == CampaignSession.FiveIslandRulesVersion;
+    private static bool FiveIslandProfileRequested => CelioProfileRequested || OS.GetEnvironment("FIRERED_FIVE_ISLAND") == "1" || OS.GetCmdlineUserArgs().Contains("--story-five-island");
+    private bool FiveIslandPresentationProfile => _catalog.FiveIslandEnabled && _catalog.SixIslandEnabled && (_session.RulesVersion == CampaignSession.FiveIslandRulesVersion || CelioPresentationProfile);
     private FiveIslandPresentationData? _fiveIslandArt;
     private readonly Dictionary<int,PokedexMenuEntry> _fiveIslandDex = [];
     private readonly Dictionary<string,JsonElement> _fiveIslandTrainers = new(StringComparer.Ordinal);
@@ -133,7 +133,7 @@ public partial class CampaignView
         if (!IsFiveIslandPatchedMap(map)) return false;
         bool permitted = FiveIslandManifest.GetProperty("tiles").EnumerateArray().Any(tile =>
             tile.GetProperty("map").GetString() == map.Value && tile.GetProperty("metatileId").GetInt32() == edit.SourceMetatileId &&
-            tile.GetProperty("collision").GetInt32() == edit.Collision &&
+            (tile.GetProperty("collision").GetInt32() == 0 ? 0 : 3) == edit.Collision &&
             tile.GetProperty("positions").EnumerateArray().Any(p => p.GetProperty("x").GetInt32() == edit.X && p.GetProperty("y").GetInt32() == edit.Y));
         if (!permitted || !_fiveIslandDoorLayers.TryGetValue((edit.SourceMetatileId, layer), out var texture))
             throw new InvalidDataException("Five Island map patch is outside its authenticated source.");

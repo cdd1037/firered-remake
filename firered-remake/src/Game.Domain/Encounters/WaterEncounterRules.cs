@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Game.Domain.Pokemon;
 using Game.Domain.Items;
 using Game.Domain.Randomness;
+using Game.Domain.Roaming;
 
 namespace Game.Domain.Encounters;
 
@@ -125,9 +126,29 @@ public static class WaterEncounterRules
         return CheckOwned(owned,state,table,check,party,repelSteps,globalRng,wildEncountersDisabled,movement);
     }
 
+    /// <summary>Authenticated Celio party138 Surf entry; fishing and Rock Smash use other APIs.</summary>
+    public static WaterEncounterResult Check(CelioOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
+        ushort repelSteps, RngState globalRng, RoamerState roamer, RoamerMap playerMap,
+        bool wildEncountersDisabled = false, EncounterMovementMode movement = EncounterMovementMode.Surfing,
+        SaffronGymShopCatalog? saffronShop = null)
+    {
+        var gate = CelioEncounterRules.Validate(owned, party, repelSteps, roamer, playerMap, saffronShop);
+        if (state.RulesVersion != FiveIslandRulesVersion) throw new ArgumentException("celio_water_profile");
+        return CheckOwned(owned.Catalog, owned.Mechanics, state, table, check, party, repelSteps,
+            globalRng, wildEncountersDisabled, movement, gate);
+    }
+
     private static WaterEncounterResult CheckOwned(OwnedBattlePokemonCatalog owned, WaterEncounterState state,
         WaterEncounterTable table, EarlyLandEncounterCheck check, ImmutableArray<PartyPokemon> party,
         ushort repelSteps, RngState globalRng, bool wildEncountersDisabled, EncounterMovementMode movement)
+        => CheckOwned(owned.Catalog, owned.Mechanics, state, table, check, party, repelSteps,
+            globalRng, wildEncountersDisabled, movement);
+
+    private static WaterEncounterResult CheckOwned(PokemonCatalog catalog, SourceMechanicsCatalog mechanics,
+        WaterEncounterState state, WaterEncounterTable table, EarlyLandEncounterCheck check,
+        ImmutableArray<PartyPokemon> party, ushort repelSteps, RngState globalRng,
+        bool wildEncountersDisabled, EncounterMovementMode movement, CelioRoamerEncounterGate? roamerGate = null)
     {
         ArgumentNullException.ThrowIfNull(check); ValidateState(state,table);
         if (state.Pending is not null ||
@@ -136,8 +157,8 @@ public static class WaterEncounterRules
             globalRng.AlgorithmId != Gen3Rng.AlgorithmId || party.IsDefaultOrEmpty || party.Length > 6)
             throw new ArgumentException("water_check_scope");
         foreach (var member in party)
-            if (member is null || PokemonStateValidator.Validate(owned.Catalog,member.Pokemon) is not null ||
-                !Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(owned.Mechanics.Catalog,member.HeldItem))
+            if (member is null || PokemonStateValidator.Validate(catalog,member.Pokemon) is not null ||
+                !Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(mechanics.Catalog,member.HeldItem))
                 throw new ArgumentException("water_party_source");
         var lead = party[0];
         bool stench = !lead.IsEgg && lead.Pokemon.AbilityId == "ABILITY_STENCH";
@@ -149,10 +170,11 @@ public static class WaterEncounterRules
             table.SourceSha256,table.RawEncounterRate,table.Slots.Select(s => new EarlyLandEncounterSlot(s.Index,s.Species,s.MinimumLevel,s.MaximumLevel,s.Weight)).ToImmutableArray());
         var commonState = new EarlyLandEncounterState(state.RateRng,state.PreviousMetatileBehavior,state.EncounterRateBuff,state.StepsSinceLastEncounter);
         var result = EarlyLandEncounterRules.CheckCore(commonState,commonTable,check,wildEncountersDisabled,globalRng,
-            stench,illuminate,lead.HeldItem == "ITEM_CLEANSE_TAG",ChooseSlot,"encounter.water-slot",repelSteps,repelLevel);
+            stench,illuminate,lead.HeldItem == "ITEM_CLEANSE_TAG",ChooseSlot,"encounter.water-slot",repelSteps,repelLevel,roamerGate,RoamerEncounterMethod.Surfing);
         var c = result.Candidate is { } candidate ? new WaterEncounterCandidate(candidate.Map,candidate.Slot,candidate.Species,candidate.Level) : null;
         return new(new(result.State.RateRng,result.State.PreviousMetatileBehavior,result.State.EncounterRateBuff,
-            result.State.StepsSinceLastEncounter,c is null ? null : new(c,check.MetatileBehavior),RulesVersion:state.RulesVersion),result.GlobalRng,result.Outcome,c,result.RateThreshold,result.RandomTrace);
+            result.State.StepsSinceLastEncounter,c is null ? null : new(c,check.MetatileBehavior),RulesVersion:state.RulesVersion),result.GlobalRng,result.Outcome,c,result.RateThreshold,result.RandomTrace)
+            { RoamerCandidate = result.RoamerCandidate };
     }
     public static WaterEncounterState CompleteCandidate(WaterEncounterState state, WaterEncounterTable table)
     {
@@ -221,6 +243,18 @@ public static class WaterEncounterRules
         if (owned is null || !ReferenceEquals(SixIslandOwnedPokemonCatalog.For(owned.Catalog),owned) ||
             !owned.Catalog.Species.ContainsKey(pending.Candidate.Species)) throw new ArgumentException("water_generation_scope");
         return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog,pending.Candidate.Species,pending.Candidate.Level,globalRng,playerTrainerId);
+    }
+
+    public static Route1WildPokemonResult Generate(CelioOwnedPokemonCatalog owned, WaterEncounterState state,
+        WaterEncounterTable table, RngState globalRng, uint playerTrainerId)
+    {
+        ValidateState(state, table);
+        var pending = state.Pending ?? throw new InvalidOperationException("water_pending_missing");
+        if (owned is null || !ReferenceEquals(CelioOwnedPokemonCatalog.For(owned.Catalog), owned) ||
+            state.RulesVersion != FiveIslandRulesVersion || !owned.Catalog.Species.ContainsKey(pending.Candidate.Species))
+            throw new ArgumentException("celio_water_generation_scope");
+        return Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog, pending.Candidate.Species,
+            pending.Candidate.Level, globalRng, playerTrainerId);
     }
 
     /// <summary>All3 exact source water species have NONE/NONE, but SetWildMonHeldItem draws once.</summary>

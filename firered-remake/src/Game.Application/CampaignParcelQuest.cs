@@ -94,7 +94,7 @@ public sealed partial class CampaignSession
         int parcel=QuestQuantity(catalog,state.Inventory!,QuestItemRules.ParcelSymbol);
         if(!dex&&QuestQuantity(catalog,state.Inventory!,QuestItemRules.PokeBallSymbol)!=0)return "save_balls_before_pokedex";
         if(mart is <0 or >2||mart==0&&(parcel!=0||dex||lab>4)||mart==1&&(parcel!=1||dex||lab!=5)||mart==2&&(parcel!=0||!dex||lab!=6&&!(_content.NationalDexEnabled&&lab is 8 or 9)))return "save_parcel_progress_inconsistent";
-        if(state.GcnLinkFlags!=(dex?0x31:0))return "save_pokedex_link_flags_inconsistent";
+        if(state.GcnLinkFlags!=(dex?CelioCompleted(state)?0x803f:0x31:0))return "save_pokedex_link_flags_inconsistent";
         if(state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POKEDEX")!=dex)return "save_pokedex_objects_flag_inconsistent";
         if(state.World.Player.MapId.Value=="map.professor-oaks-lab")
         {

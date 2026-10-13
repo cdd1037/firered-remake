@@ -171,9 +171,9 @@ public sealed partial class CampaignSession
         // The source subframe TURN_DIRECTION encounter-only edge is recorded by the C fixture.
         return new(CommandStatus.Accepted,state with{SurfEffect=null,FieldEffectArguments=null,Script=state.Script with{Locked=false},Motions=[],PresentationTicks=0,PresentationEffects=[]});
     }
-    private CampaignState EnterSurfConnectionMap(CampaignState state,Direction arrival)
+    private CampaignState EnterSurfConnectionMap(CampaignState state,Direction arrival,bool isWarp=false)
     {
-        var next=EnterMap(state,arrival);
+        var next=EnterMap(state,arrival,isWarp?Game.Domain.Roaming.RoamerTransition.Warp:Game.Domain.Roaming.RoamerTransition.Connection);
         return state.IsSurfing?next with{IsSurfing=true,Music=SurfMusic(next.World.Player.MapId)}:next;
     }
     private string? ValidateFieldSurfState(CampaignState state)

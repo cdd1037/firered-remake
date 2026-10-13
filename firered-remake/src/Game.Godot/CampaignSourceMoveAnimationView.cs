@@ -47,6 +47,7 @@ public partial class CampaignView
             string side=row.GetProperty("side").GetString()!;
             _sourceBattlerGeometry.Add((row.GetProperty("species").GetInt32(),side),new(new(side=="back"?0:1),"",row.GetProperty("yOffset").GetInt32(),row.GetProperty("elevation").GetInt32(),row.GetProperty("sourceWidth").GetInt32(),row.GetProperty("sourceHeight").GetInt32()));
         }
+        VerifyCelioMoveGeometry();
         foreach(var row in doc.RootElement.GetProperty("assets").EnumerateArray())
         {
             string path=row.GetProperty("path").GetString()!,id=row.GetProperty("id").GetString()!;

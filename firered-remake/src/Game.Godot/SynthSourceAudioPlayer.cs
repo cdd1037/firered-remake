@@ -41,7 +41,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
     public double Peak => _synth.Peak;
     public long Clipped => _synth.Clipped;
 
-    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false, bool includeSeviiRuby = false, bool includeFourIsland = false, bool includeSixIsland = false, bool includeFiveIsland = false)
+    public SynthSourceAudioPlayer(string projectRoot, bool includeRoute11 = false, bool includeRockTunnel = false, bool includeCeladonApproach = false, bool includeCeladonGym = false, bool includeRocketHideout = false, bool includePokemonTower = false, bool includeSnorlax = false, bool includeFuchsiaRoute = false, bool includeSafari = false, bool includeSurf = false, string? surfContentRoot = null, bool includeSilph = false, bool includeSaffronGym = false, bool includeCinnabar = false, bool includeFirstSevii = false, bool includeVictoryRoad = false, bool includePokemonLeague = false, bool includeSeviiRuby = false, bool includeFourIsland = false, bool includeSixIsland = false, bool includeFiveIsland = false, bool includeCelio = false)
     {
         if(includeSilph&&!includeSurf)throw new ArgumentException("Silph audio requires Surf.");
         if(includeSurf&&!includeSafari)throw new ArgumentException("Surf audio requires Safari.");
@@ -313,6 +313,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
                 throw new InvalidDataException("Five Island inherited cues differ.");
             cues=[..cues,..extension.Cues];
         }
+        if (includeCelio) cues = ExtendCelioCues(projectRoot,includeFiveIsland,cues,options,manifest.SourceCommit);
         // Dedicated animation cues reuse the locked pack without modifying regional catalogs.
         if(includeFuchsiaRoute)
         {

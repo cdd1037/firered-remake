@@ -13,6 +13,9 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("route22_league_rival_not_yet_available");
         if(_content.NationalDexEnabled&&!_content.SeviiRubyEnabled&&NationalDexEnabledIn(state)&&program=="OneIsland_PokemonCenter_1F_EventScript_Celio")
             throw new InvalidDataException("sevii_ruby_campaign_not_yet_available");
+        if(_content.CelioEnabled&&state.Script.Flags.GetValueOrDefault(CelioLinkFlag)&&
+            PokemonLeagueRoomIndex(state.World.Player.MapId)>=0)
+            throw new InvalidDataException("pokemon_league_rematch_not_yet_available");
         if(_content.DeferredRegionalServiceReason(state.World.Player.MapId,program) is {} unavailable)throw new InvalidDataException(unavailable);
         if(_content.ConnectedFieldMaps is not null&&!_preflightingStory&&_commands is not null)PreflightStoryEntry(state,program);
         return Advance(state,StoryRules.Start(state.Script,program,_content));

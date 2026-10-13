@@ -86,7 +86,7 @@ public sealed partial class CampaignSession
         if(!_content.FirstSeviiEnabled)return center!=0||rescued||received||pending||Flag("FLAG_SYS_SEVII_MAP_123")||
             Count(FirstSeviiShopCatalog.TriPassId)!=0||Count(FirstSeviiShopCatalog.MeteoriteId)!=0?"save_first_sevii_profile_missing":null;
         if(state.Seagallop is not null||state.SeagallopMenu is not null)return "save_seagallop_active";
-        if(center<0||center>(_content.SeviiRubyEnabled?5:3)||Var("VAR_MAP_SCENE_ONE_ISLAND_HARBOR") is <0 or >3||
+        if(center<0||center>(CelioCompleted(state)?7:_content.SeviiRubyEnabled?5:3)||Var("VAR_MAP_SCENE_ONE_ISLAND_HARBOR") is <0 or >3||
             Var("VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER") is <0 or >4||Var("VAR_MAP_SCENE_THREE_ISLAND") is <0 or >4||
             Var("VAR_MAP_SCENE_TWO_ISLAND") is <0 or >2)return "save_first_sevii_scene";
         if((center>0||FirstSeviiMap(state.World.Player.MapId.Value))&&!Flag("FLAG_BADGE07_GET"))return "save_first_sevii_without_badge";

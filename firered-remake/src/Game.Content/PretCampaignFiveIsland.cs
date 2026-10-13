@@ -92,7 +92,7 @@ public sealed partial class PretCampaignCatalog
     private static void ValidateFiveIslandComposition(PretFiveIslandRegion region,
         ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<MapId, PretWorldMap> previous,
         FiveIslandOwnedPokemonCatalog owned, FiveIslandOpponentPokemonCatalog opponents, FiveIslandTrainerCatalog trainers,
-        PretStoryCompilation scripts, CampaignPokemonContent pokemon, FiveIslandItemContent items)
+        PretStoryCompilation scripts, CampaignPokemonContent pokemon, FiveIslandItemContent items, bool includeCelio = false)
     {
         if (maps.Count != 254 || previous.Count != 249 || previous.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) ||
             region.NewMaps.Any(p => !ReferenceEquals(p.Value, maps[p.Key])) || owned.Catalog.Species.Count != 135 ||
@@ -110,13 +110,13 @@ public sealed partial class PretCampaignCatalog
                 i.Source.Line >= battle.Source.StartLine && i.Source.Line <= battle.Source.EndLine))
                 throw new InvalidDataException("five_island_trainer_instruction: " + battle.ScriptEntry);
         }
-        ValidateFiveIslandStory(scripts);
+        ValidateFiveIslandStory(scripts, includeCelio);
         foreach (var symbol in new[] { "MAP_FIVE_ISLAND_WATER_LABYRINTH", "MAP_FIVE_ISLAND_MEMORIAL_PILLAR",
             "MAP_FIVE_ISLAND_HOUSE1", "MAP_FIVE_ISLAND_HOUSE2", "MAP_FIVE_ISLAND_POKEMON_CENTER_2F", "MAP_SEVEN_ISLAND" })
             if (maps.Values.Any(m => m.SourceMapSymbol == symbol)) throw new InvalidDataException("five_island_excluded_map_admitted");
     }
 
-    internal static void ValidateFiveIslandStory(PretStoryCompilation scripts)
+    internal static void ValidateFiveIslandStory(PretStoryCompilation scripts, bool includeCelio = false)
     {
         StoryInstruction[] Program(string label) => (scripts.FindProgram(label) ??
             throw new InvalidDataException("five_island_story_missing: " + label)).Instructions.ToArray();
@@ -162,7 +162,8 @@ public sealed partial class PretCampaignCatalog
         foreach (var label in new[] { "FiveIsland_RocketWarehouse_EventScript_DefeatedAdmin1", "FiveIsland_RocketWarehouse_EventScript_DefeatedAdmin2" })
             if (Program(label)[0].Opcode != "getplayerxy" || !Program(label)[0].Args.SequenceEqual(new[] { "VAR_0x8004", "VAR_0x8005" }))
                 throw new InvalidDataException("five_island_player_coordinate_aliases");
-        if (Program("OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire").Any(i => i.Op != StoryOp.Unsupported))
+        if (includeCelio) PretCelioStory.Validate(scripts);
+        else if (Program("OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire").Any(i => i.Op != StoryOp.Unsupported))
             throw new InvalidDataException("five_island_celio_boundary");
     }
 }

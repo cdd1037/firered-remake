@@ -52,7 +52,7 @@ public sealed partial class CampaignSession
             !state.Script.Locked || state.Script.Wait?.Kind != StoryWaitKind.Battle ||
             state.Script.Stack.LastOrDefault()?.ProgramId != FourIslandTrainerPartyFactory.BattleScript ||
             state.Script.Variables.GetValueOrDefault(FourIslandSceneVariable) != 0 ||
-            !NationalDexEnabledIn(state) || state.Script.Variables.GetValueOrDefault(RubyCenterScene) != 5 ||
+            !NationalDexEnabledIn(state) || !RainbowQuestComplete(state) ||
             OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], RainbowPassItem) != 1 ||
             state.BattledTrainers.Contains(trainer.Value) || state.Script.Flags.GetValueOrDefault("FLAG_HIDE_RUIN_VALLEY_SCIENTIST") ||
             state.Script.Flags.GetValueOrDefault("FLAG_HIDE_ICEFALL_CAVE_ROCKETS") ||

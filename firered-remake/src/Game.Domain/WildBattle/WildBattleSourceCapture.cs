@@ -31,7 +31,8 @@ public static partial class WildBattleRules
 {
     /// <summary>
     /// Authenticated source ordinary-wild capture. This overload does not enlarge historical regional
-    /// ResolveBall contracts or admit Safari, story, roamer, trainer, link or double battle modes.
+    /// ResolveBall contracts or admit Safari, story, trainer, link or double battle modes.
+    /// The explicit Celio origin alone admits Roamer capture with its source result receipt.
     /// The source battle's own Turn is the saturating completed-turn counter used by Timer Ball.
     /// </summary>
     public static WildBattleCaptureActionResult ResolveBall(SourceMechanicsCatalog mechanics,
@@ -44,7 +45,7 @@ public static partial class WildBattleRules
             captureContext.CaughtSpecies.Any(s => !mechanics.Catalog.Species.ContainsKey(s)))
             return Reject("source_capture_context");
         if (!Enum.IsDefined(captureContext.Encounter)) return Reject("source_capture_encounter_kind");
-        if (captureContext.Encounter != CaptureEncounterKind.OrdinaryWild || state.ScriptedSnorlax || state.TowerBattleKind is not null)
+        if (captureContext.Encounter != (state.SourceWild?.CelioRoamer is not null ? CaptureEncounterKind.Roamer : CaptureEncounterKind.OrdinaryWild) || state.ScriptedSnorlax || state.TowerBattleKind is not null)
             return Reject("source_capture_encounter_unsupported");
         if (!Enum.IsDefined(ball) || ball == CaptureBall.Safari) return Reject("source_capture_ball_unsupported");
         var catalog = mechanics.Catalog;

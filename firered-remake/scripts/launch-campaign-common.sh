@@ -17,6 +17,7 @@ launch_campaign() {
   prepare_campaign_launch "${@:2}"
   # Fall through in predecessor order. Do not clear inherited later flags.
   case "$1" in
+    celio) export FIRERED_CELIO=1 ;&
     five-island) export FIRERED_FIVE_ISLAND=1 ;&
     six-island) export FIRERED_SIX_ISLAND=1 ;&
     four-island) export FIRERED_FOUR_ISLAND=1 ;&

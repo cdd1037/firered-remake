@@ -62,3 +62,10 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 # Six Island fixed-cohort binaries and linked headless resources are regenerated.
 /evidence/six-island-combination-20261013/**/*.dll
 /tests/Game.SixIslandView.Tests/Assets/
+
+# Rebuildable recovery cohorts and linked late-postgame host resources.
+/evidence/recovery-20261013/product*/*.dll
+/tests/Game.FiveIslandView.Tests/Assets/
+/tests/Game.CelioView.Tests/Assets/
+/tests/Game.FiveIslandView.Tests/*.cs.uid
+/tests/Game.CelioView.Tests/*.cs.uid

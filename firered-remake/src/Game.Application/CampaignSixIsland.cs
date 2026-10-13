@@ -37,7 +37,7 @@ public sealed partial class CampaignSession
             content.SixIslandOpponents is not {} opponents || content.SixIslandTrainers is not {} trainers ||
             !ReferenceEquals(owned.Predecessor, content.FourIslandOwnership) || !ReferenceEquals(content.FiveIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.FourIslandOpponents) ||
-            (FiveIslandMachineCatalog.For(content.PewterMachines)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines)) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
+            (CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines)) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
             (FiveIslandShopCatalog.For(content.EarlyShop)?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop)) is null)
             throw new InvalidDataException("six_island_source_profile_missing");
         SixIslandTrainerPartyFactory.ValidateCatalog(trainers);
@@ -54,7 +54,7 @@ public sealed partial class CampaignSession
         if (center is < 0 or > 1 || center == 1 && (!Flag("FLAG_HIDE_SIX_ISLAND_POKECENTER_RIVAL") ||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_FOUR_ISLAND") != 1)) return "save_six_island_center_scene";
         if ((center != 0 || cut || password || SixIslandMap(state.World.Player.MapId)) &&
-            (!NationalDexEnabledIn(state) || state.Script.Variables.GetValueOrDefault(RubyCenterScene) != 5 ||
+            (!NationalDexEnabledIn(state) || !RainbowQuestComplete(state) ||
              OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], RainbowPassItem) != 1)) return "save_six_island_rainbow_gate";
         if (password != Flag("FLAG_HIDE_SAPPHIRE") || password && (!cut || !Flag("FLAG_HIDE_DOTTED_HOLE_SCIENTIST")) ||
             (cut || DottedHoleMap(state.World.Player.MapId)) && !Flag("FLAG_HIDE_RUIN_VALLEY_SCIENTIST"))

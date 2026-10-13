@@ -40,7 +40,7 @@ public sealed partial class CampaignSession
             content.SeviiRubyOpponents is not { } opponents || content.SeviiRubyTrainers is not { } trainers ||
             !ReferenceEquals(owned.Predecessor, content.CinnabarOwnership) || !ReferenceEquals(content.FourIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.PokemonLeagueOpponents) ||
-            (((FiveIslandMachineCatalog.For(content.PewterMachines)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? SeviiRubyMachineCatalog.For(content.PewterMachines)) is not { } machines || !ReferenceEquals(machines.Pokemon, owned) ||
+            (((CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? SeviiRubyMachineCatalog.For(content.PewterMachines)) is not { } machines || !ReferenceEquals(machines.Pokemon, owned) ||
             (((FiveIslandShopCatalog.For(content.EarlyShop)?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? SeviiRubyShopCatalog.For(content.EarlyShop)) is null) throw new InvalidDataException("sevii_ruby_source_profile_missing");
         SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers);
     }
@@ -59,7 +59,8 @@ public sealed partial class CampaignSession
         int x = SeviiValue(state, a[0]), y = SeviiValue(state, a[1]), tile = SeviiValue(state, a[2]);
         var cell = _content.Maps[state.World.Player.MapId].GetTile(x, y) ?? throw new InvalidDataException("sevii_ruby_metatile_cell");
         if (_content.MetatileDefinition(state.World.Player.MapId, tile) is null) throw new InvalidDataException("sevii_ruby_metatile_definition");
-        return result.Add(x + ":" + y, new(x, y, tile, SeviiValue(state, a[3]) == 0 ? 0 : 3, cell.Elevation));
+        result = result.Add(x + ":" + y, new(x, y, tile, SeviiValue(state, a[3]) == 0 ? 0 : 3, cell.Elevation));
+        return map == RubyCenterMap && CelioCompleted(state) ? result.SetItems(CelioMachineEdits(state)) : result;
     }
 
     private string? ValidateSeviiRubyProgress(CampaignState state)
@@ -71,12 +72,12 @@ public sealed partial class CampaignSession
         bool got = Flag("FLAG_GOT_RUBY"), rainbow = Flag("FLAG_SYS_SEVII_MAP_4567");
         if (!_content.SeviiRubyEnabled) return got || rainbow || exterior != 0 || scene > 3 || Count(RubyItem) != 0 || Count(RainbowPassItem) != 0 ||
             Flag("FLAG_GOT_HM06") ? "save_sevii_ruby_profile_missing" : null;
-        if (!_content.FiveIslandEnabled && Flag("FLAG_RECOVERED_SAPPHIRE") || Flag("FLAG_SYS_CAN_LINK_WITH_RS") || scene > 5 || exterior is < 0 or > 2)
+        if (!_content.FiveIslandEnabled && Flag("FLAG_RECOVERED_SAPPHIRE") || Flag("FLAG_SYS_CAN_LINK_WITH_RS") && !CelioCompleted(state) || scene > (_content.CelioEnabled ? 7 : 5) || exterior is < 0 or > 2)
             return "save_sevii_sapphire_not_admitted";
         if ((scene >= 4 || got || rainbow || exterior != 0) && !NationalDexEnabledIn(state)) return "save_sevii_ruby_national_gate";
         if (scene < 4 && (exterior != 0 || got || rainbow || Count(RubyItem) != 0 || Count(RainbowPassItem) != 0) ||
-            scene >= 4 && exterior == 0 || rainbow != (scene == 5) || Count(RainbowPassItem) != (scene == 5 ? 1 : 0) ||
-            Count(RubyItem) > (got && scene == 4 ? 1 : 0) || scene == 5 && !got)
+            scene >= 4 && exterior == 0 || rainbow != (scene >= 5) || Count(RainbowPassItem) != (scene >= 5 ? 1 : 0) ||
+            Count(RubyItem) > (got && scene == 4 ? 1 : 0) || scene >= 5 && !got)
             return "save_sevii_ruby_quest_progress";
         // The source sets GOT_RUBY and removes the object before AddBagItem. A full
         // Key Items pocket can therefore legally retain the flag without the item.

@@ -25,9 +25,9 @@ public sealed partial class CampaignSession
         }
         if (!content.SixIslandEnabled || content.Maps.Count != 254 || content.FiveIslandOwnership is not {} owned ||
             content.FiveIslandOpponents is not {} opponents || content.FiveIslandTrainers is not {} trainers ||
-            !ReferenceEquals(owned.Predecessor, content.SixIslandOwnership) || !ReferenceEquals(content.PokemonContent?.Catalog, owned.Catalog) ||
+            !ReferenceEquals(owned.Predecessor, content.SixIslandOwnership) || !ReferenceEquals(content.CelioOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.SixIslandOpponents) ||
-            FiveIslandMachineCatalog.For(content.PewterMachines) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
+            CelioFiveMachines(content) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
             FiveIslandShopCatalog.For(content.EarlyShop) is null)
             throw new InvalidDataException("five_island_source_profile_missing");
         FiveIslandTrainerPartyFactory.ValidateCatalog(trainers);
@@ -44,7 +44,7 @@ public sealed partial class CampaignSession
                 ? "save_five_island_profile_missing" : null;
         if (scene is < 0 or > 1) return "save_five_island_scene";
         if ((door || defeated || recovered || scene != 0 || FiveIslandMap(state.World.Player.MapId)) &&
-            (!NationalDexEnabledIn(state) || state.Script.Variables.GetValueOrDefault(RubyCenterScene) != 5 ||
+            (!NationalDexEnabledIn(state) || !RainbowQuestComplete(state) ||
              OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], RainbowPassItem) != 1)) return "save_five_island_rainbow_gate";
         if ((door || defeated || recovered || scene != 0 || state.World.Player.MapId.Value == FiveIslandWarehouseMap) &&
             !Flag(SixIslandPasswordFlag)) return "save_five_island_password_required";
@@ -57,7 +57,7 @@ public sealed partial class CampaignSession
             return "save_five_island_sapphire_progress";
         // Gideon's original source sets RECOVERED before AddBagItem; a full Key pocket
         // can leave the flag without the item. This is retained, not silently repaired.
-        if (Flag("FLAG_SYS_CAN_LINK_WITH_RS")) return "save_celio_activation_not_admitted";
+        if (Flag("FLAG_SYS_CAN_LINK_WITH_RS") && !CelioCompleted(state)) return "save_celio_activation_not_admitted";
         if (FiveIslandEditedMap(state.World.Player.MapId) &&
             !(state.MapEdits ?? ImmutableSortedDictionary<string, FieldMetatileEdit>.Empty).SequenceEqual(FiveIslandExpectedEdits(state)))
             return "save_five_island_metatiles";

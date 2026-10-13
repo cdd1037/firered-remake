@@ -36,6 +36,9 @@ public sealed record CampaignWildBattle(string Id,PartyPokemon OwnedBefore,WildB
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool ScriptedMarowak{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public int ScriptedSnorlaxRoute{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignLostelleHypnoReceipt? LostelleHypno{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerEncounter? CelioRoamer{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerSettlement? CelioRoamerSettlement{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<EncounterRandomTrace>? CelioRoamerEncounterTrace{get;init;}
     [JsonIgnore] public int RewardPartyIndex=>RewardReceivers is {} receivers&&RewardReceiverIndex<receivers.Length?receivers[RewardReceiverIndex].PartyIndex:ActivePartyIndex;
 }
 
@@ -227,6 +230,7 @@ public sealed partial class CampaignSession
             return state with{WildBattle=b};
         }
         if(b.State.Outcome==WildBattleOutcome.Ongoing)return state with{WildBattle=b with{Phase=CampaignBattlePhase.ChooseMove,Replacement=b.State.CalledParty?.PendingSwitch is{Kind:WildBattleCalledSwitchKind.BatonPass}?CampaignReplacementStage.Select:b.State.AwaitingReplacement?b.Replacement??CampaignReplacementStage.UseNext:null,DisplayPlayer=BattleDisplayPokemon(b.State.Player),DisplayOpponent=BattleDisplayPokemon(b.State.Opponent),DisplayPlayerAppearance=BattleAppearance(b.State.Player),DisplayOpponentAppearance=BattleAppearance(b.State.Opponent)}};
+        state=SettleCelioRoamer(state with{WildBattle=b});b=state.WildBattle!;
         if(b.State.Outcome==WildBattleOutcome.Caught)return BeginCapturePresentation(state with{WildBattle=b});
         return SettleWildBattle(state with{WildBattle=b});
     }
@@ -261,7 +265,7 @@ public sealed partial class CampaignSession
             pages.Add(new(state.Money==0?$"{state.PlayerName} whited out!":$"{state.PlayerName} panicked and lost\n{lost}...\n{state.PlayerName} whited out!"));
             foreach(var page in _content.TextPages(HasCenterRespawn(state)?"gText_PlayerScurriedToCenter":"gText_PlayerScurriedBackHome"))pages.Add(new(page.Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal)));
         }
-        var history=new CampaignWildHistory(b.Id,WildBattleTransformationRules.PersistentPokemon(b.State.Opponent).SourceSpeciesId,b.State.Opponent.Pokemon.Level,b.State.Outcome,reward?.ExperienceGained??0){FiveIsland=b.State.SourceWild?.FiveIsland,SixIsland=b.State.SourceWild?.SixIsland,FourIsland=b.State.SourceWild?.FourIsland,SeviiRuby=b.State.SourceWild?.SeviiRuby,VictoryRoad=b.State.SourceWild?.VictoryRoad,LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute,ScriptedMarowak=b.ScriptedMarowak};
+        var history=new CampaignWildHistory(b.Id,WildBattleTransformationRules.PersistentPokemon(b.State.Opponent).SourceSpeciesId,b.State.Opponent.Pokemon.Level,b.State.Outcome,reward?.ExperienceGained??0){CelioRoamer=b.CelioRoamerSettlement,FiveIsland=b.State.SourceWild?.FiveIsland,SixIsland=b.State.SourceWild?.SixIsland,FourIsland=b.State.SourceWild?.FourIsland,SeviiRuby=b.State.SourceWild?.SeviiRuby,VictoryRoad=b.State.SourceWild?.VictoryRoad,LostelleHypno=b.LostelleHypno,ScriptedSnorlaxRoute=b.ScriptedSnorlaxRoute,ScriptedMarowak=b.ScriptedMarowak};
         var next=state with{Party=party,Exploration=exploration with{Battles=exploration.Battles.Add(history)},WildBattle=b with{Reward=reward,Phase=CampaignBattlePhase.Results,Pages=pages.ToImmutable(),PageIndex=0,PendingMoves=reward?.PendingMoves??[]}};
         return pages.Count==0&&next.WildBattle!.PendingMoves.IsEmpty?ReturnFromWildBattle(next):next;
     }

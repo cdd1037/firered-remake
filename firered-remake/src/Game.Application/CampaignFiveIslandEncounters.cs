@@ -27,12 +27,17 @@ public sealed partial class CampaignSession
                     FirstSeviiEncounterKind.Surf=>FiveIslandEncounterKind.Surf,
                     _=>FiveIslandEncounterKind.OldRod}))
                 throw new InvalidDataException("five_island_wild_field_origin");
+            if(_content.CelioEnabled)return WildBattleRules.StartFiveIslandWild(_content.CelioOwnership!,fiveIslandOrigin,SourceTrainerEntryParty(state),active,
+                new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state));
             return WildBattleRules.StartFiveIslandWild(owned,fiveIslandOrigin,SourceTrainerEntryParty(state),active,
                 new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state));
         }
         if (FiveIslandEncounterTables.Land.Any(t=>t.Map==state.World.Player.MapId) ||
             FiveIslandEncounterTables.Water.Any(t=>t.Map==state.World.Player.MapId))
             throw new InvalidDataException("five_island_wild_missing_field_origin");
+        if(_content.CelioEnabled)return WildBattleRules.StartFiveIslandInheritedWild(_content.CelioOwnership!,state.World.Player.MapId,kind,
+            SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state),
+            victoryRoadOrigin,seviiRubyOrigin,fourIslandOrigin,sixIslandOrigin,lostelleHypno is not null,towerKind,scriptedSnorlax);
         return WildBattleRules.StartFiveIslandInheritedWild(owned,state.World.Player.MapId,kind,
             SourceTrainerEntryParty(state),active,new(generated.Pokemon),generated.GlobalRng,CampaignBattleTerrain(state),
             victoryRoadOrigin,seviiRubyOrigin,fourIslandOrigin,sixIslandOrigin,lostelleHypno is not null,towerKind,scriptedSnorlax);

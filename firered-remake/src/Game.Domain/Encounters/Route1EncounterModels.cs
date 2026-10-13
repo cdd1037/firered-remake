@@ -7,7 +7,7 @@ namespace Game.Domain.Encounters;
 public enum EncounterMovementMode { Walking, Running, Bicycle, Surfing, Forced }
 public enum EncounterTileType { None = 0, Land = 1, Water = 2 }
 public enum EncounterCheckTrigger { Idle, WalkingStepCompleted, TurnInPlaceCompleted, Blocked, PreemptedByScript }
-public enum EncounterCheckOutcome { NoCheck, NoEncounterTerrain, CooldownSuppressed, Disabled, TerrainChangeSuppressed, RateMiss, CandidateReady, RepelSuppressed }
+public enum EncounterCheckOutcome { NoCheck, NoEncounterTerrain, CooldownSuppressed, Disabled, TerrainChangeSuppressed, RateMiss, CandidateReady, RepelSuppressed, RoamerCandidateReady }
 
 /// <summary>Explicit supported context; every modifier outside this bounded profile is rejected.</summary>
 public sealed record Route1EncounterProfile(

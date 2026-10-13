@@ -8,7 +8,8 @@ using Game.Domain.World;
 namespace Game.Application;
 
 public sealed record CampaignWildHistory(string Id,int SourceSpeciesId,int Level,Game.Domain.WildBattle.WildBattleOutcome Outcome,int ExperienceGained)
-{[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.WildBattle.SixIslandWildOrigin? SixIsland{get;init;}
+{[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioRoamerSettlement? CelioRoamer{get;init;}
+[System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.WildBattle.SixIslandWildOrigin? SixIsland{get;init;}
 [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.WildBattle.FiveIslandWildOrigin? FiveIsland{get;init;}
  [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.WildBattle.FourIslandWildOrigin? FourIsland{get;init;}
 [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public Game.Domain.WildBattle.SeviiRubyWildOrigin? SeviiRuby{get;init;}
@@ -56,7 +57,8 @@ public sealed partial class CampaignSession
             try{Route1EncounterRules.ValidateState(exploration.Encounter);}catch(Exception ex) when(ex is ArgumentException or NotSupportedException){return "save_encounter_invalid";}
             if(exploration.Encounter.Pending is not null)return "save_encounter_pending";
         }
-        if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||!(b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
+        if(exploration.NextWildBattleId!=exploration.Battles.Length+1L||exploration.Battles.Where((b,i)=>b is null||b.Id!="wild-battle:"+(i+1)||!(b.CelioRoamer is not null?IsCelioRoamerHistory(state,b):b.FiveIsland is not null?IsFiveIslandWildHistory(b):b.SixIsland is not null?IsSixIslandWildHistory(b):b.FourIsland is not null?IsFourIslandWildHistory(b):b.SeviiRuby is not null?IsSeviiRubyWildHistory(b):b.VictoryRoad is not null?IsVictoryRoadWildHistory(b):b.LostelleHypno is not null?IsLostelleHypnoHistory(state,b):b.Safari?IsSafariHistory(b):b.ScriptedSnorlaxRoute!=0?IsSnorlaxHistory(b):b.ScriptedMarowak?_content.PokemonTowerEnabled&&b.SourceSpeciesId==105&&b.Level==30&&b.Outcome!=Game.Domain.WildBattle.WildBattleOutcome.Caught:WildOriginSupported(b.SourceSpeciesId,b.Level))||!Enum.IsDefined(b.Outcome)||b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Ongoing||(!_content.CaptureEnabled&&b.Outcome==Game.Domain.WildBattle.WildBattleOutcome.Caught)||b.ExperienceGained<0).Any())return "save_wild_history_invalid";
+        if(ValidateCelioRoamerLedger(state) is {} roamerError)return roamerError;
         if(state.World.RulesVersion!=RuleVersions.GridWorldV0)return "save_world_profile_invalid";
         if(_content.SupportsTeleportPads(map.Id))map=new SilphMovementMap(map,state.MapEdits,_content);
         var p=state.World.Player;var here=map.SourceBehaviorAt(p.X,p.Y);
@@ -150,7 +152,7 @@ public sealed partial class CampaignSession
             // Cave step-warps count before the new map's transition callback;
             // camera connections enter first, then complete the player-input step.
             if(legacySpecial&&tookStep)moved=ApplyRenewableHiddenItemWalkingStep(moved);
-            moved=EnterSurfConnectionMap(moved,moved.World.Player.Facing);
+            moved=EnterSurfConnectionMap(moved,moved.World.Player.Facing,legacySpecial);
             if(_content.FirstSeviiEnabled&&!legacySpecial&&tookStep)moved=moved with{EntryPrograms=moved.EntryPrograms.Add("@renewable-camera-step")};
             moved=Pump(moved);
         }

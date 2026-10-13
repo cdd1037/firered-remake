@@ -34,7 +34,7 @@ public sealed partial class CampaignSession
             content.FourIslandOpponents is not {} opponents || content.FourIslandTrainers is not {} trainers ||
             !ReferenceEquals(owned.Predecessor, content.SeviiRubyOwnership) || !ReferenceEquals(content.SixIslandOwnership?.Predecessor.Catalog ?? content.PokemonContent?.Catalog, owned.Catalog) ||
             !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.SeviiRubyOpponents) ||
-            ((FiveIslandMachineCatalog.For(content.PewterMachines)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines)) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
+            ((CelioFiveMachines(content)?.Predecessor ?? SixIslandMachineCatalog.For(content.PewterMachines))?.Predecessor ?? FourIslandMachineCatalog.For(content.PewterMachines)) is not {} machines || !ReferenceEquals(machines.Pokemon, owned) ||
             ((FiveIslandShopCatalog.For(content.EarlyShop)?.Predecessor ?? SixIslandShopCatalog.For(content.EarlyShop))?.Predecessor ?? FourIslandShopCatalog.For(content.EarlyShop)) is null)
             throw new InvalidDataException("four_island_source_profile_missing");
         FourIslandTrainerPartyFactory.ValidateCatalog(trainers);
@@ -52,10 +52,10 @@ public sealed partial class CampaignSession
             ? "save_four_island_profile_missing" : null;
         if (town is < 0 or > 1 || scene is < 0 or > 1 || town == 1 && !Flag("FLAG_HIDE_FOUR_ISLAND_RIVAL")) return "save_four_island_scene";
         if ((town != 0 || scene != 0 || hm || FourIslandMap(state.World.Player.MapId)) &&
-            (!NationalDexEnabledIn(state) || state.Script.Variables.GetValueOrDefault(RubyCenterScene) != 5 ||
+            (!NationalDexEnabledIn(state) || !RainbowQuestComplete(state) ||
              OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], RainbowPassItem) != 1)) return "save_four_island_rainbow_gate";
         if (completed != (scene == 1) || won != completed || Flag("FLAG_HIDE_ICEFALL_CAVE_ROCKETS") != completed ||
-            completed && Flag("FLAG_HIDE_LORELEI_IN_HER_HOUSE") || Flag("FLAG_HIDE_ICEFALL_CAVE_LORELEI") && !completed)
+            completed && Flag("FLAG_HIDE_LORELEI_IN_HER_HOUSE") && !CelioCompleted(state) || Flag("FLAG_HIDE_ICEFALL_CAVE_LORELEI") && !completed)
             return "save_four_island_lorelei_progress";
         if (hm && !Flag("FLAG_HIDE_FOUR_ISLAND_ICEFALL_CAVE_1F_HM07")) return "save_four_island_hm07_progress";
         if (Flag("FLAG_PENDING_DAYCARE_EGG")) return "save_four_island_daycare_not_admitted";

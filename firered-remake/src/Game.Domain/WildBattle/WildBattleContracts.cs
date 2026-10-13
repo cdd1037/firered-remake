@@ -199,6 +199,7 @@ public sealed record WildBattleState(WildBattleCombatant Player, WildBattleComba
 [JsonDerivedType(typeof(WildBattleFlinchEvent), "flinch")]
 [JsonDerivedType(typeof(WildBattleMultiHitEvent), "multi-hit")]
 [JsonDerivedType(typeof(WildBattleForcedOutEvent), "forced-out")]
+[JsonDerivedType(typeof(WildBattleRoamerRunEvent), "roamer-run")]
 [JsonDerivedType(typeof(WildBattlePursuitInterceptedEvent), "pursuit-intercepted")]
 [JsonDerivedType(typeof(WildBattleDisableChangedEvent), "disable-changed")]
 [JsonDerivedType(typeof(WildBattleRolloutChangedEvent), "rollout-changed")]
