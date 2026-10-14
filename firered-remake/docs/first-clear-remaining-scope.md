@@ -1,12 +1,12 @@
 # 首次主线后：当前剩余范围
 
-更新：2026-10-14，稳定节点为代币服务公共路线及短View收尾（实现`d629e1b`）。本页只维护当前状态和未完项；历史逐批数字、夹具、失败探针和精确执行身份保留在各模块报告及Git记录，不把旧段落的“下一步”当成今天的待办。
+更新：2026-10-14，稳定节点为奖品三柜台公共路线、独立Continue及短headless View收尾（实现`0bd8350`，路线／图标修正`77dfb3b`）。本页只维护当前状态和未完项；历史逐批数字、夹具、失败探针和精确执行身份保留在各模块报告及Git记录，不把旧段落的“下一步”当成今天的待办。
 
 ## 当前工作与统计边界
 
-原代币盒／余额／换币柜台与三位普通赠币NPC已完成实际应用路线、独立Continue和短headless View；奖品三柜台／15项已接入并通过受控公开命令，实际路线与短View待收口。老虎机、隐藏币仍未完成。通信进化替代的具体接入仍待讨论。
+原代币盒／余额／换币柜台与三位普通赠币NPC已完成实际应用路线、独立Continue和短headless View；奖品三柜台／15项已接入，受控边界与实际三类兑换、独立Continue及短headless View均通过。老虎机、隐藏币仍未完成。通信进化替代的具体接入仍待讨论。
 
-当前已加载组合为336地图、170可持有物种、195普通敌方定义、354招式、132普通物品、45机器和18导师定义。塔专用敌方另列；这些是数据与准入集合，不是地图交互、全部物种或招式表现的完工率。普通单打和原预设双打共享规则阶段已达到既定出口，76个有效特性身份及有边界的整回合／应用回归已建立；所有交互、获得途径与特殊模式仍分别验收。[战斗出口](battle-system-completion-matrix.md#2026-10-11-ordinary-core-closure-and-bounded-refactor)
+当前已加载组合为337地图、174可持有物种、196普通敌方定义、354招式、137普通物品、50机器和18导师定义。塔专用敌方另列；这些是数据与准入集合，不是地图交互、全部物种或招式表现的完工率。普通单打和原预设双打共享规则阶段已达到既定出口，76个有效特性身份及有边界的整回合／应用回归已建立；所有交互、获得途径与特殊模式仍分别验收。[战斗出口](battle-system-completion-matrix.md#2026-10-11-ordinary-core-closure-and-bounded-refactor)
 
 项目级深入重构R1–R4的有界结果已经交付：普通单／双打共用唯一frame与执行生命周期，旧执行器及桥接实体退休，Content只保留当前入口，普通训练家、场外遭遇和药品／进化石使用共享绑定。原始资源证明、特殊实验室／教学战和只读表现投影是实际保留边界。[重构范围](project-refactor-plan.md#2026-10-13-final-bounded-refactor-result)
 
@@ -14,7 +14,7 @@
 
 - 历史自然队伍停在generation41923，**没有自然首通**。明确准备的成型队／补给分支实际战胜后续联盟成员和原冠军，执行奖励，写出42922名人堂并在42943完成Credits→Reset；不是注入胜利，也不是自然新游戏首通。[联盟报告](pokemon-league-campaign.md)、[受控链](../tests/Game.PokemonLeagueControlledRoute.Tests/README.md)
 - 后续区域沿实际合法检查点推进，但有明示的源码站位、受控个体／资源或独立分支。各模块文档分别说明，不把不同分支合成一条自然旅行。
-- 2026-10-14磁盘恢复保留stage12真实52746档，并显式离线迁内容版本。旧58063／58103只剩历史报告，不能声称原始文件已经恢复。当前谱系为PP52786→5F维生素52894→4F三石52996→屋顶53266→代币53539。前几段的站位条件见各自报告；**最后屋顶路线全程公共门／楼梯，没有新定位或物品注入**。[恢复后PP](pp-boost-field-integration.md#recovered-current-product-acceptance-2026-10-14)、[屋顶终档](department-rooftop-services.md#actual-route-and-representative-view-closure)
+- 2026-10-14磁盘恢复保留stage12真实52746档，并显式离线迁内容版本。旧58063／58103只剩历史报告，不能声称原始文件已经恢复。当前谱系为PP52786→5F维生素52894→4F三石52996→屋顶53266→代币53539→奖品53821。前几段的站位条件见各自报告；**屋顶、代币和奖品路线全程公共门／楼梯，没有新定位或物品注入**。[恢复后PP](pp-boost-field-integration.md#recovered-current-product-acceptance-2026-10-14)、[屋顶终档](department-rooftop-services.md#actual-route-and-representative-view-closure)
 - 最近的headless Draw、源素材和Dummy合成检查不等于原生窗口像素／实际听感。历史原生结果只适用于其固定源和运行批次，不自动覆盖后继代码。
 
 ## 已接通的主要单机模块
@@ -41,7 +41,7 @@
 | 范围 | 未完成或未完整验收 | 记录 |
 | --- | --- | --- |
 | 各城镇和道路 | 普通／条件对白、隐藏物、侧室与剩余训练家仍须逐区补齐；早期常青学校／民居、深灰博物馆购票与展览没有完整交付证明。主线通过不等于全交互。 | [交互覆盖](regional-interaction-coverage.md)、[早期遗留](first-badge-followups.md) |
-| 玉虹服务 | 代币盒／余额／两档换币与原三NPC赠币已接通，实际coins600／money5798并独立存读；奖品三柜台／15项已接入受控验证，实际路线待收口；老虎机、隐藏币后继。Retro Mail销售已完成，写信和空白预览未做。 | [原代币服务](game-corner-coins.md#actual-city-route-and-short-view-closure)、[奖品接线](game-corner-redemption.md)、[4F准确边界](department-fourth-floor-shops.md)、[完整地区分母](full-scope-audit.md#4-关都全部地区与主线) |
+| 玉虹服务 | 代币盒／余额／两档换币与原三NPC赠币已接通，实际coins600／money5798并独立存读；奖品三柜台／15项已接入，实际售物换币→三类兑换／PC命名与独立Continue通过；老虎机、隐藏币后继。Retro Mail销售已完成，写信和空白预览未做。 | [原代币服务](game-corner-coins.md#actual-city-route-and-short-view-closure)、[奖品接线](game-corner-redemption.md)、[4F准确边界](department-fourth-floor-shops.md)、[完整地区分母](full-scope-audit.md#4-关都全部地区与主线) |
 | 南路与浅红周边 | 自行车道、另一条南行路线、未覆盖浅红设施／拾取、尚未开放钓鱼区域及Safari高级钓鱼。Haden18号门楼可达不等于整条道路开放。 | [Haden](npc-trade-haden.md)、[浅红](fuchsia-arrival.md)、[高级竿](super-rod-campaign.md) |
 | 海路与传说分支 | 另一条海路与尚未列入验收的静态遇敌分支；双子岛21队未逐队实战，急冻鸟自然原个体捕获未完成。保留上述发电厂／双子岛已通业务，不重新列为从零待做。 | [双子岛](seafoam-campaign.md)、[红莲](cinnabar-campaign.md) |
 | 首次一至三岛支路 | 宝物海滩、灯火山顶与火焰鸟；三岛港口城镇地图定位点和未覆盖支线。岬边／回忆、灯火山道／温泉／红宝石洞窟与救人往返已经完成。 | [首次七岛余项](first-sevii-campaign.md#remaining-regional-boundaries) |
