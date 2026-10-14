@@ -26,7 +26,7 @@ public sealed partial class CampaignSession
     private string? ValidateCampaignMail(CampaignState state)
     {
         var mail = state.Mail ?? SourceMailState.Empty;
-        if (SourceMailRules.Validate(mail, state.Party, state.Storage) is {} error) return error;
+        if (SourceMailRules.Validate(mail, state.Party, state.Storage, state.Pc?.MoveCursor?.Pokemon) is {} error) return error;
         var messages = mail.Attached.Concat(mail.Mailbox).Append(state.Route5DayCare?.Resident?.Mail).Append(state.FourIslandDayCare?.First?.Mail).Append(state.FourIslandDayCare?.Second?.Mail).OfType<SourceMailMessage>().ToArray();
         if (messages.Any(m => !IsValidCampaignMailMessage(state, m))) return "save_mail_source_invalid";
         var receipts = state.NpcTrades ?? [];
@@ -65,7 +65,7 @@ public sealed partial class CampaignSession
     {
         if (SourceMailRules.ValidateAttachmentReference(pokemon) is not null || pokemon.Mail == SourceMailState.NoMail)
             return false;
-        if (state.Party.Any(p => p.InstanceId == pokemon.InstanceId) && state.Mail is {} mail &&
+        if ((state.Party.Any(p => p.InstanceId == pokemon.InstanceId) || state.Pc?.MoveCursor?.Pokemon.InstanceId == pokemon.InstanceId) && state.Mail is {} mail &&
             !mail.Attached.IsDefault && mail.Attached.Length == SourceMailState.AttachedCapacity &&
             IsValidCampaignMailMessage(state, mail.Attached[pokemon.Mail])) return true;
         return (state.NpcTrades ?? []).Any(r => r.Outgoing.InstanceId == pokemon.InstanceId &&

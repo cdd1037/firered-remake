@@ -104,7 +104,7 @@ public static class PokemonStorageRules
         PokemonStorageState storage, PokemonStorageDiagnostic error) =>
         new(PokemonStorageOutcome.Rejected, party, storage, null, error);
 
-    private static PokemonStorageState Put(PokemonStorageState storage, PokemonStorageAddress address, PartyPokemon? owned)
+    internal static PokemonStorageState Put(PokemonStorageState storage, PokemonStorageAddress address, PartyPokemon? owned)
     {
         var box = storage.Boxes[address.BoxIndex];
         return storage with { Boxes = storage.Boxes.SetItem(address.BoxIndex,

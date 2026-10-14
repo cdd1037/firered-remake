@@ -49,6 +49,8 @@ public partial class CampaignView
             if (_menuMousePressed || _menuRightMousePressed) return true;
             if (right) _menuRightMousePressed = true; else _menuMousePressed = true;
         }
+        if (_busy && _session?.State.Pc?.View == CampaignPcView.Move && mouse is { Pressed: true, DoubleClick: false })
+        { _pcNotice = StorageMoveBusyNotice; QueueRedraw(); GetViewport().SetInputAsHandled(); return true; }
         if (mouse is { DoubleClick: true } || _menuMouseActionFrame == Engine.GetProcessFrames() ||
             _session is null || _busy || _fade > 0 || (_session.State.ScreenIsBlack && !_session.State.TrainerTowerRecordsVisible && !MoveTutorActive) ||
             _tracks.Any(t => t.Time < t.Duration)) return true;
@@ -168,6 +170,7 @@ public partial class CampaignView
         if (_session.State.Pc is { } pc)
         {
             if (_pcNotice is not null || _storagePartyPeek) return false;
+            if (pc.View == CampaignPcView.Move) return NavigateStorageMovePointer(point, direction);
             if (pc.View is CampaignPcView.Main or CampaignPcView.StorageMenu)
                 return PointerRows(point, direction, ref _pcCursor, pc.View == CampaignPcView.Main ? _session.PcMenuTextSymbols.Length : 5, 8, 8, 184);
             if (pc.View == CampaignPcView.Deposit) return PointerRows(point, direction, ref _pcCursor, _session.State.Party.Length + 1, 8, 24, 224);

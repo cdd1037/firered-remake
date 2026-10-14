@@ -212,6 +212,8 @@ public sealed record CampaignCommand(string Kind,Direction Direction=Direction.S
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSlotInput? SlotInput { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public long? TargetInstanceId{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageMoveLocation? StorageLocation{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public long? HeldInstanceId{get;init;}
 }
 /// <summary>Source-driven event composition; all rule state and effects commit through the existing command session.</summary>
 public sealed partial class CampaignSession
@@ -457,6 +459,9 @@ public sealed partial class CampaignSession
     {
         try
         {
+            // MOVE owns an actual removed creature. Route before every other command family,
+            // including field actions and timers, so none can bypass this native modal.
+            if(state.Pc is {View:CampaignPcView.Move} or {MoveCursor:not null})return DecidePc(state,command);
             if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);

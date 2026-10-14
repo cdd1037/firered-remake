@@ -5,10 +5,12 @@ using Game.Domain.Pokemon;
 
 namespace Game.Application;
 
-public enum CampaignPcView { Main, StorageMenu, Deposit, Withdraw, PlayerItems, HallOfFame }
+public enum CampaignPcView { Main, StorageMenu, Deposit, Withdraw, PlayerItems, HallOfFame, Move }
 public sealed record CampaignPcState(CampaignPcView View,int StorageMenuSelection=0)
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignHallOfFamePc? HallOfFame { get; init; }
+    // Native cursor ownership is transient: every open PC is already excluded from player saves.
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageMoveCursor? MoveCursor { get; init; }
 }
 
 public sealed partial class CampaignSession
@@ -23,6 +25,7 @@ public sealed partial class CampaignSession
         if (state.Route5DayCare?.Resident is {} resident) owned = owned.Add(resident.Pokemon);
         if (state.FourIslandDayCare?.First is {} first) owned = owned.Add(first.Pokemon);
         if (state.FourIslandDayCare?.Second is {} second) owned = owned.Add(second.Pokemon);
+        if (state.Pc?.MoveCursor is {} cursor) owned = owned.Add(cursor.Pokemon);
         return owned;
     }
 
@@ -30,8 +33,12 @@ public sealed partial class CampaignSession
     {
         if(!_content.PokemonStorageEnabled)return state.Storage is not null||state.Pc is not null?"save_storage_profile_missing":null;
         if(!_content.EarlyPartyEnabled)return "storage_requires_early_party_profile";
-        var error=PokemonStorageValidator.Validate(_content.PokemonContent,state.Party,state.Storage,state.NextPokemonId);
+        if(state.Pc?.MoveCursor is not null&&state.Pc.View!=CampaignPcView.Move)return "storage_move_cursor_context";
+        var error=PokemonStorageMoveRules.Validate(_content.PokemonContent,state.Party,state.Storage,state.Pc?.MoveCursor,state.NextPokemonId);
         if(error is not null)return error.Code;
+        var owned=OwnedPokemon(state);
+        if(owned.Select(p=>p.InstanceId).Distinct().Count()!=owned.Length)return "storage_duplicate_instance_id";
+        if(owned.Any(p=>p.InstanceId>=state.NextPokemonId))return "storage_next_instance_id";
         if(state.Script.Variables.GetValueOrDefault("VAR_PC_BOX_TO_SEND_MON")>=PokemonStorageState.BoxCount)return "save_storage_delivery_box";
         return null;
     }
@@ -81,6 +88,7 @@ public sealed partial class CampaignSession
         Decision<CampaignState> View(CampaignPcView view,int? selection=null)=>new(CommandStatus.Accepted,
             state with{Pc=pc with{View=view,StorageMenuSelection=selection??pc.StorageMenuSelection}});
         if(pc.View==CampaignPcView.HallOfFame)return DecideHallOfFamePc(state,command);
+        if(pc.View==CampaignPcView.Move||pc.MoveCursor is not null)return DecideStorageMove(state,command);
         if(command.Kind=="pc_back")
         {
             if(pc.View is CampaignPcView.Deposit or CampaignPcView.Withdraw)return View(CampaignPcView.StorageMenu);
@@ -109,7 +117,7 @@ public sealed partial class CampaignSession
                 0=>View(CampaignPcView.Withdraw,0),
                 1 when state.Party.Length<=1=>No("storage_last_usable"),
                 1=>View(CampaignPcView.Deposit,1),
-                2=>No("storage_move_not_implemented"),
+                2=>View(CampaignPcView.Move,2),
                 3=>No("storage_move_items_not_implemented"),
                 4=>ResumePcScript(state),
                 _=>No("storage_menu_index_invalid")
@@ -133,6 +141,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState> ResumePcScript(CampaignState state,int? result=null)
     {
+        if(state.Pc?.MoveCursor is not null)return new(CommandStatus.Rejected,state,"storage_move_holding");
         if(state.Pc is null||state.Script.Wait is not {} wait||wait.Kind is not (StoryWaitKind.Presentation or StoryWaitKind.Inventory))
             return new(CommandStatus.Fault,state,"pc_callback_context_invalid");
         var next=state with{Pc=state.Pc.HallOfFame is {ReturnPending:true}?state.Pc:null,ItemMenu=null,Dialogue=null,Motions=[],PresentationTicks=0,PresentationEffects=[]};

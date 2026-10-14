@@ -25,7 +25,7 @@ public partial class CampaignView
             foreach(var icon in route22.Icons)_storageIcons.Add(new SpeciesId(icon.SpeciesId),Decode(route22.ReadIconTexture(new(icon.SpeciesId))));
         if(_catalog.Route3Pokemon is {} route3)
             foreach(var icon in route3.Icons)_storageIcons.Add(new SpeciesId(icon.SpeciesId),Decode(route3.ReadIconTexture(new(icon.SpeciesId))));
-        foreach(var id in new[]{"box-background","box-arrow-left","box-arrow-right"})_storageAssets.Add(id,Decode(source.ReadAssetTexture(id)));
+        foreach(var id in new[]{"box-background","box-arrow-left","box-arrow-right","party-panel","party-slot-empty","party-slot-filled"})_storageAssets.Add(id,Decode(source.ReadAssetTexture(id)));
     }
     private CampaignPcView? _pcView;
     private int _pcCursor, _boxCursor;
@@ -41,7 +41,7 @@ public partial class CampaignView
         if(view!=_pcView)
         {
             _pcView=view;_pcCursor=view==CampaignPcView.StorageMenu?_session.State.Pc!.StorageMenuSelection:0;
-            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;
+            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();
         }
         if(view is not null){_held=null;_repeat=0;}
         if(view==CampaignPcView.Deposit)_pcCursor=Math.Clamp(_pcCursor,0,_session.State.Party.Length);
@@ -66,6 +66,7 @@ public partial class CampaignView
     {
         if(key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape)return false;
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return HallPcInput(key);
+        if(_session.State.Pc?.View==CampaignPcView.Move)return StorageMoveInput(key);
         if(!key.Pressed)return true;
         if(_storagePartyPeek){if(key.Keycode is Key.Enter or Key.Backspace)_storagePartyPeek=false;return true;}
         if(_pcNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace)_pcNotice=null;return true;}
@@ -111,6 +112,7 @@ public partial class CampaignView
     private bool MouseStorage(Vector2 point)
     {
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return MouseHallPc(point);
+        if(_session.State.Pc?.View==CampaignPcView.Move)return MouseStorageMove(point);
         if(_storagePartyPeek)return new Rect2(0,140,80,20).HasPoint(point)&&MouseKey(Key.Backspace);
         if(_pcNotice is not null)return MouseConfirm(point,MouseMessage);
         var pc=_session.State.Pc!;
@@ -130,6 +132,7 @@ public partial class CampaignView
     {
         var pc=_session.State.Pc!;if(pc.View==CampaignPcView.PlayerItems)return;
         if(pc.View==CampaignPcView.HallOfFame){DrawHallPc();return;}
+        if(pc.View==CampaignPcView.Move){DrawStorageMove();return;}
         if(pc.View is CampaignPcView.Main or CampaignPcView.StorageMenu)
         {
             var labels=pc.View==CampaignPcView.Main?_session.PcMenuTextSymbols.ToArray():_catalog.PokemonStorageSource!.StorageMenu.Select(o=>o.TextSymbol).ToArray();

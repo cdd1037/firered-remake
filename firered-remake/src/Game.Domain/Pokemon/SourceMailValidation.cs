@@ -47,9 +47,14 @@ public static partial class SourceMailRules
     public static string? ValidateBoxedPokemon(PartyPokemon? pokemon) => pokemon is null ? null :
         pokemon.Mail != SourceMailState.NoMail || IsMailItem(pokemon.HeldItem) ? "mail_boxed" : null;
 
-    /// <summary>Mail-only invariants; the caller still owns ordinary Pokemon/storage validation.</summary>
+    /// <summary>Mail-only invariants; the caller still owns ordinary Pokemon/storage validation.
+    /// A transient MOVE POKEMON cursor uses the four-argument overload below.</summary>
     public static string? Validate(SourceMailState? state, ImmutableArray<PartyPokemon> party,
-        PokemonStorageState? storage = null)
+        PokemonStorageState? storage = null) => Validate(state, party, storage, null);
+
+    /// <summary>The cursor retains its existing attached record, even beside a full party.</summary>
+    public static string? Validate(SourceMailState? state, ImmutableArray<PartyPokemon> party,
+        PokemonStorageState? storage, PartyPokemon? movingPokemon)
     {
         if (state is null) return "mail_state_missing";
         if (state.Attached.IsDefault || state.Attached.Length != SourceMailState.AttachedCapacity) return "mail_attached_count";
@@ -59,7 +64,7 @@ public static partial class SourceMailRules
             if (message is not null && ValidateMessage(message) is { } error) return error;
         var references = new bool[SourceMailState.AttachedCapacity];
         var identities = new HashSet<long>();
-        foreach (var pokemon in party)
+        foreach (var pokemon in movingPokemon is null ? party : party.Add(movingPokemon))
         {
             if (ValidateAttachmentReference(pokemon) is { } error) return error;
             if (pokemon.InstanceId <= 0 || !identities.Add(pokemon.InstanceId)) return "mail_party_identity";
