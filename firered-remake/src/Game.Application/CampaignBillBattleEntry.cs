@@ -17,6 +17,7 @@ public sealed partial class CampaignSession
             "SevenIsland_TrainerTower" when _content.SevenIslandEnabled=>new("map.seven-island-trainer-tower"),
             "SevenIsland_SevaultCanyon_Entrance" when _content.SevenIslandEnabled=>new("map.seven-island-sevault-canyon-entrance"),
             "SevenIsland_SevaultCanyon" when _content.SevenIslandEnabled=>new("map.seven-island-sevault-canyon"),
+            "FiveIsland_MemorialPillar" when _content.MemorialPillarTrainers is not null=>new(Game.Domain.Trainers.MemorialPillarTrainerPartyFactory.Map),
             "FiveIsland_Meadow" when _content.FiveIslandEnabled=>new(FiveIslandMeadowMap),
             "FiveIsland_RocketWarehouse" when _content.FiveIslandEnabled=>new(FiveIslandWarehouseMap),
             "SixIsland_WaterPath" when _content.SixIslandEnabled=>new("map.six-island-water-path"),

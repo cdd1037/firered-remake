@@ -13,7 +13,7 @@ public sealed partial class PretCampaignCatalog
     public PretSurfEncounters? SurfEncounters { get; }
     public SurfOwnedPokemonCatalog? SurfOwnership { get; }
     public bool SurfEnabled=>SurfOwnership is not null;
-    public IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters=>CapeBrinkWaterEncounters.Tables;
+    public IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters { get; }
     private static void AppendSurfSources(PretSurfScripts surf,List<PretSourceScriptFile> sources,List<string> texts,
         Dictionary<string,int> constants,List<string> hashes)
     {

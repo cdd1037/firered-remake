@@ -9,7 +9,7 @@ public static class SevenIslandOldRodEncounterRules
 {
     public const string RulesVersion = CeruleanCaveOldRodEncounterRules.RulesVersion;
     public static ImmutableArray<OldRodEncounterTable> SourceAdditions => SevenIslandEncounterTables.OldRod;
-    public static ImmutableArray<OldRodEncounterTable> Tables { get; } = [.. CeruleanCaveOldRodEncounterRules.Tables, .. SourceAdditions, .. SeafoamEncounterTables.OldRod, .. CapeBrinkEncounterTables.OldRod];
+    public static ImmutableArray<OldRodEncounterTable> Tables { get; } = [.. CeruleanCaveOldRodEncounterRules.Tables, .. SourceAdditions, .. SeafoamEncounterTables.OldRod, .. CapeBrinkEncounterTables.OldRod, .. MemorialPillarEncounterTables.OldRod];
     public static ImmutableArray<MapId> MapsWithoutFishingMons { get; } = [
         new("map.seven-island"), new("map.seven-island-harbor"), new("map.seven-island-house-room1"),
         new("map.seven-island-mart"), new("map.seven-island-pokemon-center-1f"),

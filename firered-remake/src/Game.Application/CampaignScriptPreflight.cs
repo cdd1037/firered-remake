@@ -14,6 +14,7 @@ public sealed partial class CampaignSession
         if(_content.NationalDexEnabled&&!_content.SeviiRubyEnabled&&NationalDexEnabledIn(state)&&program=="OneIsland_PokemonCenter_1F_EventScript_Celio")
             throw new InvalidDataException("sevii_ruby_campaign_not_yet_available");
         if(_content.DeferredRegionalServiceReason(state.World.Player.MapId,program) is {} unavailable)throw new InvalidDataException(unavailable);
+        state=BeginFieldItemService(state,program);
         if(_content.ConnectedFieldMaps is not null&&!_preflightingStory&&_commands is not null)PreflightStoryEntry(state,program);
         return Advance(state,StoryRules.Start(state.Script,program,_content));
     }

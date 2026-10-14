@@ -30,6 +30,7 @@ public sealed partial class CampaignSession
         var a=effect.Args;
         if(effect.Opcode=="specialvar"&&a.Length==2&&a[1]=="ShouldTryRematchBattle")
         {
+            if (IsMemorialPillarTrainerMap(state.World.Player.MapId)) RequireMemorialPillarRematchQuery(state,effect);
             if (_content.SeafoamEnabled && SeafoamTrainerMap(state.World.Player.MapId)) RequireSeafoamRematchQuery(state,effect);
             if(_content.PresetDoublesEnabled&&a[0]=="VAR_RESULT"&&(state.World.Player.MapId.Value is "map.route-8" or "map.route-21-north"||_content.Route16FlyTrainers is not null&&state.World.Player.MapId.Value=="map.route-16"||_content.SeafoamEnabled&&SeafoamTrainerMap(state.World.Player.MapId)||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f"||_content.SeviiRubyEnabled&&state.World.Player.MapId.Value=="map.one-island-kindle-road"||_content.SixIslandEnabled&&state.World.Player.MapId.Value=="map.six-island-water-path")&&
                 state.LastTalked is {} twinsActor&&state.Actors.TryGetValue(twinsActor,out var twins)&&IsTwinsScript(twins.ScriptId))
@@ -53,6 +54,7 @@ public sealed partial class CampaignSession
             var battle=OrdinaryTrainerScripts.SingleOrDefault(x=>x.Trainer==id);
             if(battle is null||effect.Source.Path!=battle.Source.Path||effect.Source.Symbol!=battle.ScriptEntry+"Rematch"||a[1]!=battle.IntroText.Replace("Intro","RematchIntro",StringComparison.Ordinal)||a[2]!=battle.DefeatText||!state.BattledTrainers.Contains(id.Value))
                 throw new InvalidDataException("route3_rematch_source_mismatch");
+            if (IsMemorialPillarTrainer(id)) RequireMemorialPillarRematchContinuation(state,effect,battle);
             if (IsSeafoamTrainer(id)) RequireSeafoamSingleRematch(state,effect,battle);
             // EventScript_TryDoRematchBattle: IsTrainerReadyForRematch is FALSE with no
             // VS Seeker state, so gotopostbattlescript resumes this exact source continuation.
@@ -62,7 +64,7 @@ public sealed partial class CampaignSession
         }
         return false;
     }
-    private bool OrdinaryPostBattleMap(string map)=>_content.SeafoamEnabled&&map is "map.route-19" or "map.route-20"||_content.SixIslandEnabled&&map is "map.six-island-water-path" or "map.six-island-ruin-valley"||_content.SeviiRubyEnabled&&map is "map.one-island-kindle-road" or "map.mt-ember-exterior"||map=="map.route-3"||
+    private bool OrdinaryPostBattleMap(string map)=>IsMemorialPillarTrainerMap(new(map))||_content.SeafoamEnabled&&map is "map.route-19" or "map.route-20"||_content.SixIslandEnabled&&map is "map.six-island-water-path" or "map.six-island-ruin-valley"||_content.SeviiRubyEnabled&&map is "map.one-island-kindle-road" or "map.mt-ember-exterior"||map=="map.route-3"||
         _content.VermilionEnabled&&map=="map.route-6"||
         _content.CinnabarEnabled&&map is "map.route-21-north" or "map.route-21-south"||
         _content.FirstSeviiEnabled&&map=="map.three-island-bond-bridge";

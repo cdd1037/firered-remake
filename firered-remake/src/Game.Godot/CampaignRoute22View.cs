@@ -43,6 +43,7 @@ public partial class CampaignView
     private PokedexMenuPage PresentedPokedexPage(int species)
     {
         var page=_pokedexMenu!.BuildPage(species,_session.State.SeenSpecies,_session.State.CaughtSpecies,PokedexAccess);
+        if(MemorialPillarPokedexPage(species,page) is {} memorialPage)return memorialPage;
         if(OrdinaryEvolutionPokedexPage(species,page) is {} ordinaryPage)return ordinaryPage;
         if(BreedingPokedexPage(species,page) is {} breedingPage)return breedingPage;
         if(GameCornerPokedexPage(species,page) is {} cornerPage)return cornerPage;
@@ -72,6 +73,7 @@ public partial class CampaignView
 
     private byte[] ReadPokedexTexture(PokedexMenuTexture texture)
     {
+        if(ReadMemorialPillarDexTexture(texture) is {} memorialPixels)return memorialPixels;
         if(ReadOrdinaryEvolutionDexTexture(texture) is {} ordinaryPixels)return ordinaryPixels;
         if(ReadBreedingDexTexture(texture) is {} breedingPixels)return breedingPixels;
         if(ReadGameCornerDexTexture(texture) is {} cornerPixels)return cornerPixels;

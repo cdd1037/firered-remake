@@ -73,7 +73,10 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-breeding-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
  ('import-ordinary-evolution-species.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
  ('import-ordinary-evolution-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
- ('import-field-rock-smash.py', ['--reference-repo', '{reference}'])]
+ ('import-field-rock-smash.py', ['--reference-repo', '{reference}']),
+ ('import-original-machine-catalog.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-original-tm-acquisition.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-memorial-pillar-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

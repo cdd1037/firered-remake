@@ -13,7 +13,7 @@ public sealed record CampaignSourceTableReceipt(SourceTableWildOrigin Origin, Rn
 public sealed partial class CampaignSession
 {
     private bool IsSourceTableMap(MapId map) => _content.Maps.ContainsKey(map) &&
-        (CapeBrinkEncounterTables.Land.Any(t => t.Map == map) || _content.Route16FlyTrainers is not null && map == Route16LandEncounterTables.Map);
+        (map == MemorialPillarEncounterTables.Map || CapeBrinkEncounterTables.Land.Any(t => t.Map == map) || _content.Route16FlyTrainers is not null && map == Route16LandEncounterTables.Map);
 
     private CampaignSourceTableReceipt? PrepareSourceTableReceipt(CampaignState state, Route1WildPokemonResult made,
         SourceTableWildOrigin? origin, RngState? generationRng, bool scripted, bool surfing, bool fishing,

@@ -243,6 +243,19 @@ public static class PewterMachineRules
         return count != 0 ? count <= catalog.MaximumStack - quantity : stacks.Length < catalog.MachineSlots;
     }
 
+    /// <summary>Remove stock atomically while retaining its reusable TM CASE.</summary>
+    public static InventoryTransactionResult RemoveMachine(PewterMachineCatalog catalog, InventoryState state, ItemId machine, int quantity = 1)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        InventoryTransactionResult Fail(string error) => new(state, false, error);
+        if (Validate(catalog, state) is { } error) return Fail(error);
+        if (Definition(catalog, machine) is null) return Fail("inventory_machine_unsupported");
+        if (quantity is < 1 or > 999) return Fail("inventory_transfer_quantity");
+        int count = OpeningInventoryRules.Quantity(state.Machines ?? [], machine);
+        if (count < quantity) return Fail("inventory_insufficient_quantity");
+        return new(state with { Machines = OpeningInventoryRules.SetQuantity(state.Machines ?? [], machine, count - quantity) }, true, null);
+    }
+
     public static InventoryTransactionResult AddTm39(PewterMachineCatalog catalog, InventoryState state, int quantity = 1)
         => AddMachine(catalog, state, Tm39Id, quantity);
 

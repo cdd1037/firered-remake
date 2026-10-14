@@ -112,6 +112,8 @@ public interface ICampaignCatalog:IStoryCatalog
     SeafoamMachineCatalog? SeafoamMachines=>null;
     SeafoamTrainerCatalog? SeafoamTrainers=>null;
     Route16FlyTrainerCatalog? Route16FlyTrainers=>null;
+    MemorialPillarTrainerCatalog? MemorialPillarTrainers=>null;
+    MemorialPillarOpponentPokemonCatalog? MemorialPillarOpponents=>null;
     IFieldMap? SeafoamMap(MapId map,bool stoppedCurrent)=>null;
     ConnectedFieldMap? SeafoamConnectedMap(MapId map,bool stoppedCurrent)=>null;
     bool PowerPlantEnabled=>false;
@@ -282,6 +284,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool IsRoute22StablePosition(MapId map,int x,int y)=>false;
     CampaignOakRatingProjection EvaluateOakRating(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("oak_rating_not_enabled");
     ImmutableArray<FieldPickupDefinition> FieldPickups=>[];
+    ImmutableArray<FieldItemServiceDefinition> FieldItemServices=>[];
     EarlyShopCatalog? EarlyShop=>null;
     ForestTrainerCatalog? ForestTrainers=>null;
     PewterTrainerCatalog? PewterTrainers=>null;

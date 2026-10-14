@@ -145,6 +145,17 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
         stock.Validate(); Proofs.Add(stock.Machines, stock);
     }
 
+    internal static void BindOriginalMachineSuccessor(OriginalMachineCatalog successor)
+    {
+        if (!ReferenceEquals(OriginalMachineCatalog.For(successor.Catalog), successor) ||
+            For(successor.Predecessor.Catalog) is not { } before ||
+            !ReferenceEquals(before._owner, successor.Pokemon.SharedBattle))
+            throw new ArgumentException("department_original_machine_successor_proof");
+        var stock = new DepartmentStoreMachineStock(before.OriginalMachines, successor.Catalog, before._owner)
+        { RooftopPredecessor = before.RooftopPredecessor };
+        stock.Validate(); Proofs.Add(stock.Machines, stock);
+    }
+
     public bool IsClerk(string mapId, string sourcePath, string script, string stockId) =>
         mapId == ExpectedMapId && sourcePath == ExpectedSourcePath && script == ExpectedClerkScript && stockId == Id;
 

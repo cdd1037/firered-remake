@@ -11,7 +11,7 @@ public partial class CampaignView
     private const string MachineIcon = "pewter-tm39", MachineCaseIcon = "pewter-tm-case";
     private bool _machineWasActive;
     private string _machineMode = "list", _machineNoticeReturn = "party";
-    private int _machineCursor, _machineParty, _machineSlot = -1, _machinePage;
+    private int _machineCursor, _machineListCursor, _machineParty, _machineSlot = -1, _machinePage;
     private ImmutableArray<string> _machinePages = [];
     private bool MachineActive => _catalog.PewterMachines is not null && _session.State.ItemMenu is { Origin: "bag" } menu
         && (menu.View == "machines" || menu.View == "message" && menu.ReturnView == "machines");
@@ -95,9 +95,12 @@ public partial class CampaignView
         _machinePage = 0; _machineCursor = 0;
     }
 
+    private void ReturnToMachineList()
+    { _machineMode = "list"; _machineCursor = Math.Clamp(_machineListCursor, 0, MachineStacks.Length); }
+
     private bool MachineInput(InputEventKey key)
     {
-        if (!MachineActive || key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape) return false;
+        if (!MachineActive || HeldItemScreen || key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape) return false;
         if (!key.Pressed || key.Echo) return true;
         _held = null;
         if (_itemNotice is not null) { if (key.Keycode is Key.Enter or Key.Backspace) _itemNotice = null; return true; }
@@ -105,6 +108,26 @@ public partial class CampaignView
         {
             if (key.Keycode is Key.Enter or Key.Backspace)
             { Apply(new("menu_ack")); _machineMode = "list"; _machineCursor = 0; }
+            return true;
+        }
+        if (_machineMode == "actions")
+        {
+            if (key.Keycode == Key.Backspace) { ReturnToMachineList(); return true; }
+            FieldMenuMoveCursor(key, ref _machineCursor, 3);
+            if (key.Keycode == Key.Enter)
+            {
+                int action = _machineCursor;
+                if (action == 0)
+                {
+                    if (_session.State.Party.IsEmpty) MachineNotice("gText_ThereIsNoPokemon", "list");
+                    else { _machineMode = "party"; _machineCursor = 0; }
+                }
+                else
+                {
+                    ReturnToMachineList();
+                    if (action == 1) StartGiveItem(_machineSelected);
+                }
+            }
             return true;
         }
         if (_machineMode == "notice")
@@ -141,7 +164,8 @@ public partial class CampaignView
         if (key.Keycode == Key.Backspace)
         {
             if (_machineMode == "list") Apply(new("menu_back"));
-            else { _machineMode = _machineMode == "party" ? "list" : "party"; _machineCursor = 0; }
+            else if (_machineMode == "party") ReturnToMachineList();
+            else { _machineMode = "party"; _machineCursor = 0; }
             return true;
         }
         int count = _machineMode == "list" ? MachineStacks.Length
@@ -154,10 +178,15 @@ public partial class CampaignView
             if (_machineCursor == count)
             {
                 if (_machineMode == "list") Apply(new("menu_back"));
-                else { _machineMode = _machineMode == "party" ? "list" : "party"; _machineCursor = 0; }
+                else if (_machineMode == "party") ReturnToMachineList();
+                else { _machineMode = "party"; _machineCursor = 0; }
             }
             else if (_machineMode == "list")
-            { _machineSelected = MachineStacks[_machineCursor].Item; if (_session.State.Party.IsEmpty) MachineNotice("gText_ThereIsNoPokemon", "list"); else { _machineMode = "party"; _machineCursor = 0; } }
+            {
+                _machineListCursor = _machineCursor; _machineSelected = MachineStacks[_machineCursor].Item;
+                if (_session.State.ItemMenu.TargetInstanceId is not null) StartGiveItem(_machineSelected);
+                else { _machineMode = "actions"; _machineCursor = 0; }
+            }
             else if (_machineMode == "party") SelectMachineParty();
             else
             {
@@ -196,7 +225,7 @@ public partial class CampaignView
 
     private bool DrawMachines()
     {
-        if (!MachineActive) return false;
+        if (!MachineActive || HeldItemScreen) return false;
         // Reuse authenticated source menu frames/fonts; this is deliberately not the original case skin.
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         string mode = _session.State.ItemMenu!.View == "message" ? "list" : _machineMode;
@@ -216,6 +245,14 @@ public partial class CampaignView
             SourceText(_sourceNormal, new(36, 40 + Math.Min(_machineCursor, count) * 32), _itemSkin.Text("gText_SelectorArrow2"));
             if (_machineCursor < count) ItemLines(_sourceSmall, new(16, 92), _catalog.PewterMachines!.Tm39.Description, 13);
             else ItemLines(_sourceNormal, new(16, 112), MachineText("gText_TMCaseWillBePutAway"));
+        }
+        else if (mode == "actions")
+        {
+            SourceText(_sourceNormal, new(16, 12), MachineDefinition.Machine.Item.Name + " " + MachineMoveName);
+            ItemLines(_sourceSmall, new(16, 38), MachineDefinition.Machine.Description, 13);
+            string[] options = ["USE", "GIVE", "CANCEL"];
+            for (int i = 0; i < options.Length; i++) SourceText(_sourceNormal, new(176, 98 + i * 17), options[i]);
+            SourceText(_sourceNormal, new(164, 98 + _machineCursor * 17), _itemSkin.Text("gText_SelectorArrow2"));
         }
         else if (mode == "replacement")
         {

@@ -330,7 +330,7 @@ public static class EarlyLandEncounterRules
     {
         ArgumentNullException.ThrowIfNull(table);
         // Admission of a new exact map/symbol pair leaves old rejected aliases unchanged.
-        var mtMoonTable = MtMoonLandEncounterTables.All.Concat(BillLandEncounterTables.All).Concat(VermilionLandEncounterTables.All).Concat(Route11LandEncounterTables.All).Concat(RockTunnelLandEncounterTables.All).Concat(CeladonApproachLandEncounterTables.All).Concat(PokemonTowerLandEncounterTables.All).Concat(FuchsiaRouteLandEncounterTables.All).Concat(SafariLandEncounterTables.All).Concat(CinnabarLandEncounterTables.All).Concat(FirstSeviiEncounterTables.Land).Concat(VictoryRoadEncounterTables.Land).Concat(SeviiRubyEncounterTables.Land).Concat(FourIslandEncounterTables.Land).Concat(SixIslandEncounterTables.Land).Concat(FiveIslandEncounterTables.Land).Concat(CeruleanCaveEncounterTables.Land).Concat(SevenIslandEncounterTables.Land).Append(PowerPlantEncounterTables.Land).Concat(SeafoamEncounterTables.Land).Concat(CapeBrinkEncounterTables.Land).Append(Route16LandEncounterTables.Route16).FirstOrDefault(t => t.Map == table.Map && t.SourceSymbol == table.SourceSymbol);
+        var mtMoonTable = MtMoonLandEncounterTables.All.Concat(BillLandEncounterTables.All).Concat(VermilionLandEncounterTables.All).Concat(Route11LandEncounterTables.All).Concat(RockTunnelLandEncounterTables.All).Concat(CeladonApproachLandEncounterTables.All).Concat(PokemonTowerLandEncounterTables.All).Concat(FuchsiaRouteLandEncounterTables.All).Concat(SafariLandEncounterTables.All).Concat(CinnabarLandEncounterTables.All).Concat(FirstSeviiEncounterTables.Land).Concat(VictoryRoadEncounterTables.Land).Concat(SeviiRubyEncounterTables.Land).Concat(FourIslandEncounterTables.Land).Concat(SixIslandEncounterTables.Land).Concat(FiveIslandEncounterTables.Land).Concat(CeruleanCaveEncounterTables.Land).Concat(SevenIslandEncounterTables.Land).Append(PowerPlantEncounterTables.Land).Concat(SeafoamEncounterTables.Land).Concat(CapeBrinkEncounterTables.Land).Concat(MemorialPillarEncounterTables.Land).Append(Route16LandEncounterTables.Route16).FirstOrDefault(t => t.Map == table.Map && t.SourceSymbol == table.SourceSymbol);
         string symbol = table.Map.Value switch
         {
             "map.route-1" => "sRoute1_FireRed", "map.route-2" => "sRoute2_FireRed",
@@ -384,6 +384,8 @@ public static class EarlyLandEncounterRules
         ValidateTable(table); ValidateState(state);
         if (table.Map == Route16LandEncounterTables.Map && state.RulesVersion != FiveIslandRulesVersion)
             throw new NotSupportedException("Route16 requires the current walking process.");
+        if (table.Map == MemorialPillarEncounterTables.Map && state.RulesVersion != FiveIslandRulesVersion)
+            throw new NotSupportedException("Memorial Pillar requires the current walking process.");
         if (table.Map == CapeBrinkEncounterTables.Map && state.RulesVersion != FiveIslandRulesVersion)
             throw new NotSupportedException("Cape Brink requires the current walking process.");
         if (SevenIslandEncounterTables.Land.Any(t => t.Map == table.Map) && state.RulesVersion != FiveIslandRulesVersion)
@@ -486,6 +488,7 @@ public static class EarlyLandEncounterRules
             return WildSpecies.Contains(candidate.Species);
         EarlyLandEncounterTable table;
         if (rulesVersion == FiveIslandRulesVersion && candidate.Map == Route16LandEncounterTables.Map) table = Route16LandEncounterTables.Route16;
+        else if (rulesVersion == FiveIslandRulesVersion && candidate.Map == MemorialPillarEncounterTables.Map) table = MemorialPillarEncounterTables.Land[0];
         else if (rulesVersion == FiveIslandRulesVersion && candidate.Map == CapeBrinkEncounterTables.Map) table = CapeBrinkEncounterTables.Land[0];
         else if (rulesVersion == FiveIslandRulesVersion && SeafoamEncounterTables.Land.FirstOrDefault(t=>t.Map==candidate.Map) is {} seafoamTable) table=seafoamTable;
         else if (rulesVersion == FiveIslandRulesVersion && candidate.Map == PowerPlantEncounterTables.Map) table = PowerPlantEncounterTables.Land;

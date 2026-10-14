@@ -237,8 +237,10 @@ public partial class CampaignView
     {
         var menu = _session.State.ItemMenu!;
         if (_itemNotice is not null || menu.View == "message") return false;
+        if (HeldItemScreen) return HeldItemMouse(point, direction);
         if (MachineActive)
         {
+            if (_machineMode == "actions") return PointerRows(point, direction, ref _machineCursor, 3, 164, 98, 68, 17);
             if (_machineMode == "notice") return false;
             if (_machineMode is "teach-confirm" or "replace-confirm")
                 return _machinePage + 1 == _machinePages.Length && PointerYesNo(point, direction, ref _machineCursor);
@@ -248,7 +250,6 @@ public partial class CampaignView
             return false;
         }
         if (MailScreen) return MailMouse(point, direction);
-        if (HeldItemScreen) return HeldItemMouse(point, direction);
         if (MtMoonTargetActive && (PpBoostSelectionStale || VitaminSelectionStale || EvolutionSelectionStale)) return MouseKey();
         if (MtMoonTargetActive && _mtMoonMoveSlotOpen) return PointerRows(point, direction, ref _mtMoonMoveSlot, _session.State.Party[_fieldMedicineTarget].Pokemon.Moves.Length + 1, 12, 26, 220);
         if (_fieldMedicineTargetOpen) return PointerRows(point, direction, ref _fieldMedicineTarget, _session.State.Party.Length + 1, 8, 8, 224, 14);
@@ -391,6 +392,7 @@ public partial class CampaignView
 
     private bool MouseMachines(Vector2 point)
     {
+        if (_machineMode == "actions") return MouseSelect(point, ref _machineCursor, 3, 164, 98, 68, 17);
         if (_session.State.ItemMenu!.View == "message" || _machineMode == "notice") return MouseConfirm(point, MouseMessage);
         if (_machineMode is "teach-confirm" or "replace-confirm")
             return _machinePage + 1 < _machinePages.Length ? MouseConfirm(point, MouseMessage) : MouseYesNo(point, ref _machineCursor);

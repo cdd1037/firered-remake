@@ -10,7 +10,7 @@ namespace Game.Domain.Encounters;
 public static class GoodRodEncounterRules
 {
     public const string RulesVersion = "firered-kanto-good-rod-v1";
-    public static ImmutableArray<OldRodEncounterTable> Tables { get; } = [..GoodRodEncounterTables.Tables, ..SeafoamEncounterTables.GoodRod, ..CapeBrinkEncounterTables.GoodRod];
+    public static ImmutableArray<OldRodEncounterTable> Tables { get; } = [..GoodRodEncounterTables.Tables, ..SeafoamEncounterTables.GoodRod, ..CapeBrinkEncounterTables.GoodRod, ..MemorialPillarEncounterTables.GoodRod];
     public static ImmutableArray<MapId> MapsWithoutFishingMons => OldRodEncounterRules.MapsWithoutFishingMons;
     public static bool IsAdmittedMap(MapId map) => Tables.Any(t => t.Map == map) || MapsWithoutFishingMons.Contains(map);
 

@@ -144,6 +144,8 @@ public static partial class PretStoryCompiler
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                 if(includeFiveIsland&&IsFiveIslandAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
                 {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
+                if(includeGiftOpcodes&&IsOriginalTmAcquisitionAssemblyData(file,label,body.Select(b=>b.Text).ToArray()))
+                {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                 if (FirstSeviiSource(file, "data/maps/CeruleanCave_2F/scripts.inc", "1ee9c61f02f4624d95e73729d315de26860298d04c4d047c7a889c6c7b432908") &&
                     label == "CeruleanCave_2F_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
@@ -323,6 +325,8 @@ public static partial class PretStoryCompiler
                             var admitted=CelioInstructionShape(file,label,opcode,operands);
                             if(admitted is {} shape)(kind,min,max)=shape;
                         }
+                        if(includeGiftOpcodes&&OriginalTmAcquisitionInstructionShape(file,label,opcode,operands) is {} originalTmShape)
+                            (kind,min,max)=originalTmShape;
                         if(kind!=StoryOp.Unsupported&&(operands.Length<min||operands.Length>max))throw ContentJson.Error("story_opcode_arity",$"{file.Path}:{lineNumber}",$"{opcode} requires {min}..{max} arguments.");
                         if(kind==StoryOp.Unsupported)unsupported.Add(new("opcode_unsupported",$"{file.Path}:{lineNumber}",opcode));
                         instructions.Add(new(kind,opcode,operands,new(file.Path,label,lineNumber)));

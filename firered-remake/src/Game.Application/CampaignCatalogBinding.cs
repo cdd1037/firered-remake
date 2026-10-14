@@ -28,6 +28,13 @@ public sealed partial class CampaignSession
         var owned = ordinary.Predecessor;
         var battle = ordinary.SharedBattle;
         var ordinaryOpponents = OrdinaryEvolutionOpponentPokemonCatalog.For(ordinary);
+        var memorial = content.MemorialPillarOpponents;
+        if (content.MemorialPillarTrainers is not { } memorialTrainers || memorial is null ||
+            !ReferenceEquals(MemorialPillarOpponentPokemonCatalog.For(memorial.Catalog), memorial) ||
+            !ReferenceEquals(memorial.Predecessor, ordinaryOpponents) || !ReferenceEquals(memorial.Owned, ordinary) ||
+            !ReferenceEquals(MemorialPillarOpponentPokemonCatalog.For(ordinary), memorial))
+            throw new InvalidDataException("current_memorial_pillar_trainer_proof_missing");
+        MemorialPillarTrainerPartyFactory.ValidateCatalog(memorialTrainers);
         var opponents = ordinaryOpponents?.Predecessor;
         var prize = owned.Predecessor;
         var prizeOpponents = opponents?.Predecessor;

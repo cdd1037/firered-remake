@@ -118,6 +118,24 @@ public sealed class OwnedBattlePokemonCatalog
         MechanicsOwners.GetValue(owner.Mechanics.Catalog, _ => new())[profile] = owner;
     }
 
+    // Opponent-only additions retain the current ownership object and its previous trainer profile.
+    // The sealed regional successor authenticates the exact source additions before this binding.
+    internal static void BindOpponentSuccessor(OwnedBattlePokemonCatalog owner, PokemonCatalog predecessor,
+        string predecessorProfile, PokemonCatalog opponents, string profile)
+    {
+        if (!ReferenceEquals(For(owner.Catalog), owner) || !ReferenceEquals(owner.SuccessorOpponents, predecessor) ||
+            owner.SuccessorOpponentProfile != predecessorProfile || !ReferenceEquals(opponents.Moves, predecessor.Moves) ||
+            opponents.SourceCommit != predecessor.SourceCommit || opponents.Species.Count <= predecessor.Species.Count ||
+            predecessor.Species.Any(p => !opponents.Species.TryGetValue(p.Key, out var value) || !ReferenceEquals(value, p.Value)) ||
+            !owner.Catalog.Species.Keys.All(opponents.Species.ContainsKey))
+            throw new ArgumentException("owned_opponent_successor_predecessor");
+        owner.SuccessorOpponents = opponents; owner.SuccessorOpponentProfile = profile;
+        SuccessorSpecies[profile] = owner.Catalog.Species.Keys.ToImmutableHashSet();
+        SuccessorOpponentSpecies[profile] = opponents.Species.Keys.ToImmutableHashSet();
+        SuccessorParentProfiles[profile] = predecessorProfile;
+        MechanicsOwners.GetValue(owner.Mechanics.Catalog, _ => new())[profile] = owner;
+    }
+
     internal static OwnedBattlePokemonCatalog ResolveCurrent(OwnedBattlePokemonCatalog predecessor, OwnedBattlePokemonCatalog? current)
     {
         current ??= predecessor;

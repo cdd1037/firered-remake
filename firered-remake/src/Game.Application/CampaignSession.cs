@@ -104,6 +104,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     public CampaignPcState? Pc{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public CampaignFieldPickup? FieldPickup{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public CampaignFieldItemService? FieldItemService { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public CampaignRepel? Repel{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
@@ -345,6 +347,7 @@ public sealed partial class CampaignSession
         var strengthError=ValidateFieldStrengthState(s);if(strengthError is not null)return strengthError;
         var flashError=ValidateFieldFlashState(s);if(flashError is not null)return flashError;
         var pickupError=ValidateFieldPickupState(s);if(pickupError is not null)return pickupError;
+        if(s.FieldItemService is not null)return "save_field_item_service_active";
         var worldError=ValidateCampaignWorld(s,map);if(worldError is not null)return worldError;
         if(!ValidTrainerName(s.PlayerName)||!ValidTrainerName(s.RivalName)||s.Money is <0 or >999999||s.LastHealingLocation is null||s.TextColor is null||s.Music is null||s.SavedMusic is null)return "save_player_invalid";
         if(s.PlayerGender is <0 or >1||s.PresentationTicks!=0||!s.Motions.IsEmpty||s.ArrivalFacing is not null)return "save_unstable_presentation";
@@ -667,6 +670,7 @@ public sealed partial class CampaignSession
             if(state.Script.Wait is not null||!state.Script.Completed)return state;
             if(state.SafariExitPending){state=CompleteSafariExitWarp(state);continue;}
             state=FinishFieldPickup(state);
+            if(state.FieldItemService is not null)state=state with{FieldItemService=null};
             if(state.NpcTrade is not null)state=state with{NpcTrade=null};
             if(state.NameRater is not null)state=state with{NameRater=null};
             if(state.MoveReminder is not null)state=state with{MoveReminder=null};
@@ -737,6 +741,7 @@ public sealed partial class CampaignSession
             if(TryApplyEventIslandFieldEffect(state,effect,out var eventIslandFieldState)){state=eventIslandFieldState;continue;}
             if(TryApplyCelioEffect(state,effect,out var celioState)){state=celioState;continue;}
             if(TryApplyFiveIslandFieldEffect(state,effect,out var fiveFieldState)){state=fiveFieldState;continue;}
+            if(TryApplyFieldItemServiceEffect(state,effect,out var fieldItemServiceState)){state=fieldItemServiceState;continue;}
             if(TryApplyFiveIslandItemEffect(state,effect,out var fiveItemState)){state=fiveItemState;continue;}
             if(TryApplySeafoamFieldEffect(state,effect,out var seafoamFieldState)){state=seafoamFieldState;continue;}
             if(TryApplySevenIslandFieldEffect(state,effect,out var sevenFieldState)){state=sevenFieldState;continue;}

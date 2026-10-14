@@ -61,6 +61,7 @@ public sealed partial class CampaignSession
         {
             if(h is null||h.TrainerId is null)continue;
             if(IsFightingDojoTrainer(new(h.TrainerId))){if(!FightingDojoTrainerHistoryOriginMatches(h))return "save_fighting_dojo_trainer_origin";continue;}
+            if(IsMemorialPillarTrainer(new(h.TrainerId))){if(!MemorialPillarTrainerHistoryOriginMatches(h))return "save_memorial_pillar_trainer_origin";continue;}
             if(IsFiveIslandTrainer(new(h.TrainerId))){if(!FiveIslandTrainerHistoryOriginMatches(h))return "save_five_island_trainer_origin";continue;}
             if(IsSeafoamTrainer(new(h.TrainerId))){if(!SeafoamTrainerHistoryOriginMatches(h))return "save_seafoam_trainer_origin";continue;}
             if(IsSevenIslandTrainer(new(h.TrainerId))){if(!SevenIslandTrainerHistoryOriginMatches(h))return "save_seven_island_trainer_origin";continue;}

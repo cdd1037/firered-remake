@@ -86,13 +86,14 @@ public partial class CampaignView
         _heldGiveItem = null; _heldExchange = false;
         long revision = _session.Revision;
         Apply(command);
+        if (MachineActive) _machineCursor = Math.Min(_machineCursor, MachineStacks.Length);
         _itemCursor = Math.Min(_itemCursor, FieldItemStacks.Length);
         _questPocketCursor = Math.Min(_questPocketCursor, QuestPocketStacks.Length);
         _itemNotice = _session.Revision == revision ? HeldItemNotice(_status) : "Gave " + InventoryName(item) + "\nto " + _session.State.Party[_heldTarget].Nickname + ".";
     }
     private static string HeldItemNotice(string status) => status switch {
         "held_item_none" => "It isn't holding anything.",
-        "inventory_destination_full" or "inventory_stack_full" => "The BAG is full. The item\ncouldn't be taken.",
+        "inventory_destination_full" or "inventory_stack_full" or "inventory_key_items_full" => "The BAG is full. The item\ncouldn't be taken.",
         "held_item_target_stale" or "item_party_index_invalid" => "The selected POKéMON changed.",
         "held_item_not_holdable" => "This item can't be held.",
         "held_item_mail_or_egg_unsupported" => "Mail and Eggs aren't supported\nfor item transfers here.",

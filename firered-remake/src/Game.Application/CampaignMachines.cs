@@ -18,7 +18,7 @@ public sealed partial class CampaignSession
             if (menu.View != "bag") return No("machine_context_invalid");
             if (OpeningInventoryRules.Quantity(state.Inventory.KeyItems ?? [], PewterMachineRules.TmCaseId) != 1)
                 return No("inventory_tm_case_missing");
-            return new(CommandStatus.Accepted, state with { ItemMenu = new("bag", "machines") });
+            return new(CommandStatus.Accepted, state with { ItemMenu = menu with { View = "machines" } });
         }
         if (menu.View != "machines") return No("machine_context_invalid");
         if (command.PartyIndex < 0 || command.PartyIndex >= state.Party.Length) return No("item_party_index_invalid");

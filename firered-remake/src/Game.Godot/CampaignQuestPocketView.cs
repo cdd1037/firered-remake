@@ -122,7 +122,7 @@ public partial class CampaignView
             {
                 _questPocketPopup = false;
                 if (_questPocket == 1 && _questPocketAction == 0 && _session.State.ItemMenu?.TargetInstanceId is not null &&
-                    QuestPocketStacks[_questPocketCursor].Item.Value != "pret:ITEM_BERRY_POUCH")
+                    QuestPocketStacks[_questPocketCursor].Item.Value is not ("pret:ITEM_BERRY_POUCH" or "pret:ITEM_TM_CASE"))
                 { _questPocketNotice = "This item can't be held."; return true; }
                 if (_questPocket == 2 && _questPocketAction == 0)
                 { StartGiveItem(QuestPocketStacks[_questPocketCursor].Item); return true; }
