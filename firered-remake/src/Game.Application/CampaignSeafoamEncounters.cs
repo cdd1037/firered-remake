@@ -249,8 +249,10 @@ public sealed partial class CampaignSession
             return "save_articuno_completion";
         if (hidden && !fought && attempts.LastOrDefault()?.Outcome != WildBattleOutcome.Escaped)
             return "save_articuno_hide_receipt";
-        if (state.World.Player.MapId.Value == ArticunoMap &&
-            state.Actors.Values.Any(a => a.SourceLocalId == ArticunoLocalId && a.ScriptId == ArticunoScript && a.Active == hidden))
+        // Off-camera source objects may be inactive without a hide flag. Only a
+        // hidden-but-live object contradicts the persistent event outcome.
+        if (state.World.Player.MapId.Value == ArticunoMap && hidden &&
+            state.Actors.Values.Any(a => a.SourceLocalId == ArticunoLocalId && a.ScriptId == ArticunoScript && a.Active))
             return "save_articuno_actor";
         return null;
     }

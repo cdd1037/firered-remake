@@ -141,7 +141,7 @@ public sealed partial class CampaignSession
         next=state; var map=state.World.Player.MapId;
         if(!_content.SeafoamEnabled||!SeafoamFieldRules.IsCave(map)||!effect.Source.Path.StartsWith("data/maps/SeafoamIslands_",StringComparison.Ordinal))return false;
         var a=effect.Args;
-        if(effect.Opcode=="addvar"&&a.SequenceEqual(new[]{"NUM_BOULDERS_PRESENT","1"}))
+        if(effect.Opcode=="addvar"&&a.SequenceEqual(new[]{"VAR_TEMP_2","1"}))
         {
             int count=state.Script.Variables.GetValueOrDefault("VAR_TEMP_2");
             if(count is <0 or >=2||!effect.Source.Symbol.EndsWith("_EventScript_AddBoulderPresent",StringComparison.Ordinal))throw new InvalidDataException("seafoam_boulder_count_context");
@@ -172,9 +172,12 @@ public sealed partial class CampaignSession
         {
             if(map!=SeafoamFieldRules.B4F||(state.World.Player.X,state.World.Player.Y)!=(12,13)||!state.IsSurfing||!state.Script.Locked)
                 throw new InvalidDataException("seafoam_current_dismount_context");
-            var before=state.World.Player;var after=before with {Y=12,Elevation=3,Facing=Direction.North};
-            next=state with {World=state.World with {Player=after,Revision=checked(state.World.Revision+1)},IsSurfing=false,Music=_content.MapDefinition(map).Music,
-                Motions=[new("LOCALID_PLAYER",[before,after],["jump_special_with_effect_up","step_end"])],PresentationTicks=32};return true;
+            var result=SeafoamMovementRules.StartScriptDismount(state.World,
+                new(new("seafoam:script-dismount:"+state.World.Revision),state.World.Revision),SeafoamRawMaps(state)[map],true,
+                occupied:(x,y,e)=>ActorOccupies(state,x,y,e));
+            var decision=AcceptSeafoamMovement(state,result);
+            if(decision.Status!=CommandStatus.Accepted)throw new InvalidDataException(decision.Error);
+            next=decision.State;return true;
         }
         if(effect.Opcode=="warp"&&map==SeafoamFieldRules.B3F&&a.SequenceEqual(new[]{"MAP_SEAFOAM_ISLANDS_B4F","27","21"}))
         {

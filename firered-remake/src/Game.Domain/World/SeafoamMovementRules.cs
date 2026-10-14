@@ -74,6 +74,19 @@ public static class SeafoamMovementRules
         return MoveCurrent(world,intent.CommandId,map,direction,0,null,occupied);
     }
 
+    /// <summary>The original B4F special starts the same asynchronous StopSurfing task.
+    /// Its preventStep lifetime survives releaseall; completing the cue owns the unlock.</summary>
+    public static SeafoamFieldTransition StartScriptDismount(WorldSnapshot world, FourIslandFieldIntent intent,
+        IFieldMap map, bool surfing, Func<int,int,int,bool>? occupied = null)
+    {
+        var invalid = Validate(world,intent,map);
+        if(invalid is not null)return Fail(world,null,invalid);
+        if(intent.CompletedPresentationId is not null || !surfing || map.Id!=SeafoamFieldRules.B4F ||
+            world.Player.X!=12 || world.Player.Y!=13 || world.Player.Elevation!=1)
+            return Fail(world,null,"seafoam-script-dismount-context");
+        return MoveCurrent(world,intent.CommandId,map,Direction.North,0,null,occupied);
+    }
+
     public static SeafoamFieldTransition CompletePresentation(WorldSnapshot world,SeafoamMovementState active,
         FourIslandFieldIntent intent,IReadOnlyDictionary<MapId,IFieldMap> maps,Func<int,int,int,bool>? occupied = null)
     {
