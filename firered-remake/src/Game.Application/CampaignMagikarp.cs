@@ -42,16 +42,16 @@ public sealed partial class CampaignSession
         {
             case "showmoneybox":
                 if(Value(a[0])!=0||Value(a[1])!=0)throw new InvalidDataException("magikarp_moneybox_position");
-                next=state with{MoneyBox=new(state.Money,0,0)};break;
-            case "hidemoneybox":next=state with{MoneyBox=null};break;
-            case "updatemoneybox":next=state with{MoneyBox=state.MoneyBox is {} box?box with{Amount=state.Money}:throw new InvalidDataException("magikarp_moneybox_missing")};break;
+                next=ApplySourceMoneyBox(state,effect);break;
+            case "hidemoneybox":next=ApplySourceMoneyBox(state,effect);break;
+            case "updatemoneybox":next=ApplySourceMoneyBox(state,effect);break;
             case "checkplayergender":next=SetResult(state.PlayerGender);break;
             case "checkmoney":
                 if(Value(a[0])!=500)throw new InvalidDataException("magikarp_price_invalid");
-                next=SetResult(state.Money>=500?1:0);break;
+                next=SourceMoneyResult(state,500);break;
             case "removemoney":
                 if(Value(a[0])!=500||state.MagikarpGift is null||state.GiftDelivery is null||state.Money<500)throw new InvalidDataException("magikarp_payment_context_invalid");
-                next=state with{Money=state.Money-500};break;
+                next=DebitSourceMoney(state,500);break;
             case "givemon":next=GiveMagikarp(state,Value(a[1]));break;
         }
         return true;

@@ -38,6 +38,10 @@ public sealed partial class CampaignSession
                 if(probe.SeafoamMovement is not null||probe.RuinValleyCut is not null||probe.DottedHoleFall is not null||probe.FourIslandMovement is not null||probe.PokemonLeagueCompletion is not null||probe.Seagallop is not null||probe.Pc is not null||probe.Shop is not null||probe.DoubleBattle is not null||probe.ForestTrainerBattle is not null||probe.Battle is not null||probe.WildBattle is not null||probe.OldManTutorial is not null||probe.ItemMenu is not null||probe.Nickname is not null||probe.NpcTrade is not null||probe.NameRater is not null||probe.MoveTutor is not null||probe.MoveReminder is not null||probe.MoveDeleter is not null||probe.MagikarpRecord is not null)continue;
                 if(probe.Script.Completed&&probe.Script.Wait is null)continue;
                 if(probe.Script.Wait is not {} wait)throw new InvalidDataException("script_preflight_unstable: "+program);
+                var roofMenu=DepartmentRooftopSource.Pending(probe.Script,_content);
+                // The authenticated vending loop is transaction-owned; its repeated purchases
+                // are covered by bounded command tests rather than enumerating every wallet/Bag state.
+                if(_content.DepartmentRooftopEnabled && roofMenu?.Vending==true)continue;
                 bool billMenu=IsBillPreflightMenu(probe);
                 bool finiteLoop=billMenu||RainbowFerryMenu(probe)||_content.SeviiRubyEnabled&&probe.Dialogue?.TextSymbol=="OneIsland_PokemonCenter_1F_Text_PleaseINeedYourHelp";
                 if(finiteLoop)
@@ -59,7 +63,7 @@ public sealed partial class CampaignSession
                 // every page, making a long yes/no message grow exponentially.
                 bool moreText=wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice or StoryWaitKind.MenuChoice or StoryWaitKind.MessagePrinting&&
                     probe.Dialogue is {} dialogue&&dialogue.Page+1<dialogue.Pages.Length;
-                foreach(var choice in moreText?new int?[]{null}:billMenu?new int?[]{0,1,2,3,4,127}:probe.SeagallopMenu is {} ferryMenu?Enumerable.Range(0,ferryMenu.Options.Length).Select(i=>(int?)i).Append(127).ToArray():probe.FossilMenu is {} fossilMenu?Enumerable.Range(0,fossilMenu.Options.Length).Select(i=>(int?)i).Append(127).ToArray():SilphMenuPending(probe)?new int?[]{0,1,2,3,4,5,6,7,8,9,10,11,127}:probe.DepartmentElevator?.MenuDefault is not null?new int?[]{0,1,2,3,4,5,127}:probe.RocketElevator?.MenuDefault is not null?new int?[]{0,1,2,3,127}:wait.Kind==StoryWaitKind.MenuChoice?new int?[]{0,1,127}:wait.Kind==StoryWaitKind.Choice?new int?[]{0,1}:new int?[]{null})
+                foreach(var choice in moreText?new int?[]{null}:roofMenu is not null?Enumerable.Range(0,roofMenu.Rows.Length).Select(i=>(int?)i).Append(127).ToArray():billMenu?new int?[]{0,1,2,3,4,127}:probe.SeagallopMenu is {} ferryMenu?Enumerable.Range(0,ferryMenu.Options.Length).Select(i=>(int?)i).Append(127).ToArray():probe.FossilMenu is {} fossilMenu?Enumerable.Range(0,fossilMenu.Options.Length).Select(i=>(int?)i).Append(127).ToArray():SilphMenuPending(probe)?new int?[]{0,1,2,3,4,5,6,7,8,9,10,11,127}:probe.DepartmentElevator?.MenuDefault is not null?new int?[]{0,1,2,3,4,5,127}:probe.RocketElevator?.MenuDefault is not null?new int?[]{0,1,2,3,127}:wait.Kind==StoryWaitKind.MenuChoice?new int?[]{0,1,127}:wait.Kind==StoryWaitKind.Choice?new int?[]{0,1}:new int?[]{null})
                 {
                     var decision=Decide(probe,SilphMenuPending(probe)?new("silph_elevator_choice",Choice:choice):wait.Kind==StoryWaitKind.ButtonPress?new("button_press",Text:"A"):new("ack",Choice:choice));
                     // A declared unavailable Yes option must not block the original No

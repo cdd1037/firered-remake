@@ -160,19 +160,18 @@ public sealed partial class CampaignSession
                 case "showmoneybox":
                     if (a.Length != 2 || Value(a[0]) != 0 || Value(a[1]) != 0 || state.MoneyBox is not null)
                         throw new InvalidDataException("safari_moneybox_context");
-                    next = state with { MoneyBox = new(state.Money, 0, 0) }; break;
-                case "hidemoneybox": next = state with { MoneyBox = null }; break;
-                case "updatemoneybox": next = state with { MoneyBox = state.MoneyBox is { } box
-                    ? box with { Amount = state.Money } : throw new InvalidDataException("safari_moneybox_missing") }; break;
+                    next = ApplySourceMoneyBox(state, effect); break;
+                case "hidemoneybox": next = ApplySourceMoneyBox(state, effect); break;
+                case "updatemoneybox": next = ApplySourceMoneyBox(state, effect); break;
                 case "getpartysize": next = Result(state.Party.Length); break;
                 case "checkmoney":
                     if (a.Length != 1 || Value(a[0]) != 500) throw new InvalidDataException("safari_price_invalid");
-                    next = Result(state.Money >= 500 ? 1 : 0); break;
+                    next = SourceMoneyResult(state, 500); break;
                 case "removemoney":
                     if (a.Length != 1 || Value(a[0]) != 500 || state.Money < 500 || state.SafariVisit is not null ||
                         !CanReceiveSafariPokemon(state) || state.Script.Flags.GetValueOrDefault(SafariFlag))
                         throw new InvalidDataException("safari_payment_context");
-                    next = state with { Money = state.Money - 500, SafariVisit = new(30, 600, false) }; break;
+                    next = DebitSourceMoney(state, 500) with { SafariVisit = new(30, 600, false) }; break;
             }
             return true;
         }

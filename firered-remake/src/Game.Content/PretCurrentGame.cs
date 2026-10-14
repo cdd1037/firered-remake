@@ -2367,6 +2367,9 @@ public sealed partial class PretCampaignCatalog
         PretDepartmentFourthFloor.ValidateSourceEvidence(projectRoot);
         earlyShop = earlyShop with { Catalog = PretDepartmentFourthFloor.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
         hashes.AddRange(PretDepartmentFourthFloor.AdditionalSourceHashes);
+        PretDepartmentRooftopItems.ValidateSourceEvidence(projectRoot);
+        earlyShop = earlyShop with { Catalog = PretDepartmentRooftopItems.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
+        hashes.AddRange(PretDepartmentRooftopItems.AdditionalSourceHashes);
         var seafoamOwned = PretSeafoamRules.LoadOwned(projectRoot, tradeOwned);
         var seafoamOpponents = PretSeafoamRules.LoadOpponents(projectRoot, tradeOpponents, seafoamOwned);
         var seafoamMachines = PretSeafoamRules.LoadMachines(projectRoot, tradeMachines, seafoamOwned);
@@ -2417,7 +2420,7 @@ public sealed partial class PretCampaignCatalog
                 int number = stoneOwned.Catalog.Species[id].SourceSpeciesId;
                 return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
             })) };
-        machines = stoneMachines.Catalog;
+        machines = PretDepartmentRooftopItems.LoadMachines(projectRoot, stoneMachines.Catalog).Machines;
         hashes.AddRange(PretStoneEvolutionSpecies.AdditionalSourceHashes);
         hashes.AddRange(PretSuperRodSpecies.AdditionalSourceHashes);
         hashes.AddRange(PretDepartmentStoreMachines.AdditionalSourceHashes);

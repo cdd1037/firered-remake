@@ -81,7 +81,7 @@ public sealed partial class CampaignSession
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
         if (!content.SuperRodEnabled || content.PewterMachines is not { } machines ||
             DepartmentStoreMachineStock.For(machines) is not { } machineStock ||
-            StoneEvolutionMachineCatalog.For(machines) is not { } currentMachines ||
+            StoneEvolutionMachineCatalog.For(DepartmentStoreMachineStock.RooftopBaseCatalog(machines)) is not { } currentMachines ||
             !ReferenceEquals(currentMachines.Pokemon, StoneEvolutionOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)) ||
             !ReferenceEquals(currentMachines.Pokemon.Predecessor, content.SuperRodOwnership) ||
             !ReferenceEquals(SuperRodMachineCatalog.For(DepartmentStoreMachineStock.BaseCatalog(machines))?.Pokemon, content.SuperRodOwnership))

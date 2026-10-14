@@ -213,6 +213,7 @@ public interface ICampaignCatalog:IStoryCatalog
     IReadOnlyDictionary<MapId,WaterEncounterTable>? WaterEncounters=>null;
     FuchsiaGymTrainerCatalog? FuchsiaGymTrainerParties=>null;
     bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;
+    bool DepartmentRooftopEnabled=>false;
     string? DeferredRegionalServiceReason(MapId map,string script)=>null;
     NameRaterSourceContent? NameRaterSource=>null;
     MoveTutorCatalog? MoveTutors=>null;

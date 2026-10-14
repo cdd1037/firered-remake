@@ -13,6 +13,7 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
     public const string ExpectedClerkScript = "CeladonCity_DepartmentStore_2F_EventScript_ClerkTMs";
     public const string ExpectedSourcePath = "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc";
     public const string Tm15SourceSha256 = "94fd64f9d5f13c89be211e690e1d789aab6ce04ae2c25f4caec3c32a35c45a06";
+    public const string RooftopRewardsSourceSha256 = "f30cb3edf4d701eb5abac98ede000f71ec9a5eb02a08c465fb0ba4b24e7b27d9";
     public static ItemId Tm15Id { get; } = new("pret:ITEM_TM15");
     public static OpeningItemSourceRef Source { get; } = new(ExpectedSourcePath, ExpectedStockId, 54, 63,
         "3c3838130444cd6c1bbae4b21cdf7869d5d0fa585c8a5ded6343ba98b3fbf17e");
@@ -29,6 +30,9 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
     public override ImmutableArray<ItemId> Items { get; } = Expected.Select(row => new ItemId("pret:ITEM_" + row.Item)).ToImmutableArray();
     public override PewterMachineCatalog Machines { get; }
     public PewterMachineCatalog OriginalMachines { get; }
+    private PewterMachineCatalog? RooftopPredecessor { get; init; }
+    public static PewterMachineCatalog RooftopBaseCatalog(PewterMachineCatalog catalog) => For(catalog)?.RooftopPredecessor ?? catalog;
+    public static bool HasRooftopRewards(PewterMachineCatalog? catalog) => For(catalog)?.RooftopPredecessor is not null;
     private readonly OwnedBattlePokemonCatalog _owner;
     private DepartmentStoreMachineStock(PewterMachineCatalog original, PewterMachineCatalog machines, OwnedBattlePokemonCatalog owner)
     { OriginalMachines = original; Machines = machines; _owner = owner; }
@@ -67,6 +71,33 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
         var stock = new DepartmentStoreMachineStock(successor.Predecessor.OriginalMachines,
             successor.Catalog, successor.Pokemon.SharedBattle);
         stock.Validate(); Proofs.Add(stock.Machines, stock);
+    }
+
+    /// <summary>Add the three original rooftop rewards to the exact current 170-species owner.</summary>
+    public static DepartmentStoreMachineStock AppendRooftopRewards(PewterMachineCatalog original,
+        ImmutableArray<PewterAdditionalMachine> additions)
+    {
+        ArgumentNullException.ThrowIfNull(original);
+        if (For(original) is not { } before || before.RooftopPredecessor is not null ||
+            StoneEvolutionMachineCatalog.For(original) is not { } stone ||
+            !ReferenceEquals(OwnedMachineCatalogBinding.For(original), stone.Pokemon.SharedBattle) ||
+            additions.IsDefault || additions.Length != 3 || additions.Any(m => m is null) ||
+            !additions.Select(m => m.Machine.Item.Id.Value).SequenceEqual(new[] { "pret:ITEM_TM16", "pret:ITEM_TM20", "pret:ITEM_TM33" }) ||
+            CampaignSourceFingerprint.Compute(additions.ToArray()) != RooftopRewardsSourceSha256)
+            throw new ArgumentException("department_rooftop_machine_source");
+        before.Validate();
+        foreach (var machine in additions)
+            if (PewterMachineRules.Definition(original, machine.Machine.Item.Id) is not null ||
+                machine.Compatibility.Length != before._owner.Catalog.Species.Count ||
+                !machine.Compatibility.Select(c => c.Species).ToHashSet().SetEquals(before._owner.Catalog.Species.Keys) ||
+                machine.Compatibility.Any(c => before._owner.Catalog.Species[c.Species].SourceSpeciesId != c.SourceSpeciesId) ||
+                !PokemonMoveRules.IsLearningSupported(before._owner.Catalog, machine.Move))
+                throw new ArgumentException("department_rooftop_machine_owner");
+        var machines = original with { AdditionalMachines = original.AdditionalMachines!.Value.AddRange(additions) };
+        OwnedMachineCatalogBinding.Register(machines, before._owner);
+        var stock = new DepartmentStoreMachineStock(before.OriginalMachines, machines, before._owner)
+        { RooftopPredecessor = original };
+        stock.Validate(); Proofs.Add(machines, stock); return stock;
     }
 
     public bool IsClerk(string mapId, string sourcePath, string script, string stockId) =>

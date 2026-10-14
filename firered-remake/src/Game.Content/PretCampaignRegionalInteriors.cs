@@ -51,8 +51,13 @@ public sealed partial class PretCampaignCatalog
         if(DepartmentStoreContract is not {} c || distance is <1 or >4)throw new InvalidDataException("department_elevator_distance");
         return c.Document.GetProperty("elevator").GetProperty("windowTable")[distance].GetInt32();
     }
+    public bool DepartmentRooftopEnabled => RegionalInteriorServicesEnabled &&
+        DepartmentStoreMachineStock.HasRooftopRewards(PewterMachines) &&
+        OrdinaryItemInventoryCatalog.For(EarlyShop)?.IsAddition(new("pret:ITEM_LEMONADE")) == true;
     public string? DeferredRegionalServiceReason(MapId map,string script)
     {
+        if(DepartmentRooftopEnabled && map.Value==Game.Domain.Events.DepartmentRooftopSource.Map &&
+            script is Game.Domain.Events.DepartmentRooftopSource.Girl or Game.Domain.Events.DepartmentRooftopSource.Vending)return null;
         if(FourIslandEnabled&&map.Value=="map.four-island"&&script=="FourIsland_EventScript_DaycareMan")
             return "four_island_service_unavailable: Day Care and breeding are not available yet.";
         if(map.Value=="map.celadon-city-department-store-3f"&&script=="CeladonCity_DepartmentStore_3F_EventScript_CounterTutor"&&

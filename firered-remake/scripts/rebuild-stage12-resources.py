@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate the bounded stage12-to-department/stone resource additions from pinned local pret Git data.
+"""Regenerate the bounded stage12-to-department/stone/rooftop resources from pinned local pret Git data.
 This executes project-authored importers only, never upstream scripts or gameplay.
 The complete stage12 resource base and reviewed tools/import-regional-service-maps
 must already exist. No networking, archive restore, or backup replay is performed.
@@ -54,7 +54,10 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-department-fourth-floor.py', ['{reference}', '{project}', '{project}']),
  ('import-stone-evolution-species.py', ['{reference}', '{project}', '{project}']),
  ('import-stone-evolution-presentation.py',
-  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}'])]
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-department-rooftop-items.py', ['{reference}', '{project}', '{project}']),
+ ('import-vending-sound.py',
+  ['--reference', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

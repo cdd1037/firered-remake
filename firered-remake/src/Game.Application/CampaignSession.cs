@@ -508,6 +508,9 @@ public sealed partial class CampaignSession
                 {var preflight=PreflightStarterAcceptance(state);if(preflight is not null)return new(CommandStatus.Rejected,state,preflight);}
                 if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&!_content.FirstSeviiEnabled&&CinnabarFerryChoice(state))
                     return new(CommandStatus.Rejected,state,"sevii_first_visit_not_yet_available");
+                if(DepartmentRooftopSource.Pending(state.Script,_content) is {} rooftopMenu && command.Choice is not 127 &&
+                    (command.Choice is not {} roofChoice || roofChoice<0 || roofChoice>=rooftopMenu.Rows.Length))
+                    return new(CommandStatus.Rejected,state,"department_rooftop_menu_choice_invalid");
                 if(state.TrainerTowerMenu is {} towerMenu&&command.Choice is not 127&&
                     (command.Choice is not {} towerChoice||towerChoice<0||towerChoice>=towerMenu.Options.Length))return new(CommandStatus.Rejected,state,"trainer_tower_menu_choice_invalid");
                 if(state.SeagallopMenu is {} ferryMenu&&command.Choice is not 127&&
@@ -683,6 +686,7 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyDepartmentRooftopEffect(state,effect,out var rooftopState)){state=rooftopState;continue;}
             if(TryApplyTrainerTowerElevatorEffect(state,effect,out var towerElevatorState)){state=towerElevatorState;continue;}
             if(TryApplyTrainerTowerEffect(state,effect,out var trainerTowerState)){state=trainerTowerState;continue;}
             if(TryApplyArticunoEffect(state,effect,out var articunoState)){state=articunoState;continue;}
