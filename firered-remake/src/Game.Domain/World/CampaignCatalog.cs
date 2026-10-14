@@ -42,6 +42,7 @@ public sealed record CampaignDepartmentDynamicExit(int WarpIndex,int X,int Y,int
 public interface ICampaignCatalog:IStoryCatalog
 {
     string ContentVersion{get;}
+    FameCheckerCatalog? FameChecker=>null;
     bool RegionalFlavorEnabled=>false;
     bool SupportsRegionalFlavor(MapId map)=>false;
     CampaignPokemonContent? PokemonContent=>null;

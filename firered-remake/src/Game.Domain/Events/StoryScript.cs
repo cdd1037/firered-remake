@@ -184,18 +184,9 @@ public static class StoryRules
                     case StoryOp.Delay:if(Value(a[0])<0)return Fault("event_delay_invalid",i.Source.ToString());Effect(i,StoryWaitKind.Presentation);break;
                     case StoryOp.WaitMovement:case StoryOp.WaitState:Effect(i,StoryWaitKind.Presentation);break;
                     case StoryOp.FameChecker:
-                        int person=Value(a[0]),index=Value(a[1]);
-                        state=state with{Variables=state.Variables.SetItem("VAR_0x8004",person).SetItem("VAR_0x8005",index)};
-                        var entry=state.Fame.GetValueOrDefault(person,new FameEntry(0,0));
-                        var function=a.Length==3?a[2]:"SetFlavorTextFlagFromSpecialVars";
-                        if(function=="SetFlavorTextFlagFromSpecialVars")
-                        {
-                            if(person>=16||index>=6)break;
-                            entry=entry with{FlavorFlags=entry.FlavorFlags|(1<<index)};index=1;state=state with{Variables=state.Variables.SetItem("VAR_0x8005",1)};
-                        }
-                        else if(function!="UpdatePickStateFromSpecialVar8005")return Fault("fame_special_unsupported",function);
-                        if(person<16&&index is 1 or 2&&!(index==1&&entry.PickState==2))entry=entry with{PickState=index};
-                        if(person<16)state=state with{Fame=state.Fame.SetItem(person,entry)};
+                        var fame = FameCheckerRules.ApplyMacro(state,Value(a[0]),Value(a[1]),a.Length==3?a[2]:FameCheckerRules.CollectFactFunction);
+                        if(!fame.Succeeded)return Fault(fame.Error!,a.Length==3?a[2]:FameCheckerRules.CollectFactFunction);
+                        state=fame.State;
                         break;
                     case StoryOp.TrainerBattle:Effect(i,StoryWaitKind.Battle);break;
                     case StoryOp.PokemonPicture:Effect(i,i.Opcode=="hidemonpic"?StoryWaitKind.Presentation:StoryWaitKind.NativeEffect);break;

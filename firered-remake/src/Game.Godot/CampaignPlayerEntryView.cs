@@ -321,7 +321,7 @@ public partial class CampaignView
     }
     public override void _ExitTree()
     {
-        DisposeSourceMoveAnimation();DisposeSlotMachinePresentation();
+        DisposeSourceMoveAnimation();DisposeSlotMachinePresentation();DisposeFameCheckerPresentation();
         _saffronGymTrainerPortraits.Clear(); _saffronGymTrainerClasses.Clear();
         DisposeMailPresentation();DisposeMemorialPillarPresentation();DisposeOrdinaryEvolutionPresentation();DisposeBreedingPresentation();DisposeGameCornerPresentation();DisposeStoneEvolutionPresentation();DisposeQwilfishPresentation();DisposeSeafoamPresentation();DisposeFossilLabPresentation();DisposeFightingDojoPresentation();DisposePowerPlantPresentation();DisposeEventIslandPresentation();DisposeSevenIslandPresentation();DisposeLeagueRematchPresentation();DisposeMewtwoPresentation();DisposeCelioPresentation();DisposeFiveIslandPresentation();DisposeSixIslandPresentation();DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
         DisposeMapResources();

@@ -19,20 +19,12 @@ public sealed partial class CampaignSession
     {
         bool got=state.Script.Flags.GetValueOrDefault(ItemfinderFlag);
         int count=OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],ItemfinderRules.Item);
-        if(!ItemfinderEnabled)return got||count!=0||state.RegisteredItem is not null||state.Itemfinder is not null?"save_itemfinder_profile_missing":null;
+        if(!ItemfinderEnabled)return got||count!=0||state.Itemfinder is not null?"save_itemfinder_profile_missing":null;
         if(state.Itemfinder is not null)return "save_itemfinder_active";
         if(count!=(got?1:0))return "save_itemfinder_reward_mismatch";
         if(got&&_content.EvaluateOakRating(state.SeenSpecies,state.CaughtSpecies).Caught<30)return "save_itemfinder_caught_requirement";
-        if(state.RegisteredItem is {} registered&&(registered!=ItemfinderRules.Item.Value||!got))return "save_registered_item_invalid";
         if(ItemfinderSource!.Underfoot.Any(i=>state.Script.Flags.GetValueOrDefault(i.Flag))&&!got)return "save_itemfinder_pickup_without_itemfinder";
         return null;
-    }
-    private Decision<CampaignState> RegisterItemfinder(CampaignState state,CampaignCommand command)
-    {
-        if(!ItemfinderEnabled||state.ItemMenu is not{Origin:"bag",View:"bag",TargetInstanceId:null}||command.Text!=ItemfinderRules.Item.Value||
-            OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],ItemfinderRules.Item)!=1)
-            return new(CommandStatus.Rejected,state,"itemfinder_registration_context_invalid");
-        return new(CommandStatus.Accepted,state with{RegisteredItem=state.RegisteredItem==command.Text?null:command.Text});
     }
     private Decision<CampaignState> UseItemfinder(CampaignState state,CampaignCommand command,bool registered=false)
     {

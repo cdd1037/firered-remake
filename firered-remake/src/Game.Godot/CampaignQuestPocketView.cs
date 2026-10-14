@@ -78,8 +78,8 @@ public partial class CampaignView
         => _questPocketUi!.Items.Single(x => x.Id == stack.Item.Value);
 
     private string[] QuestPocketActions() => _questPocket == 1
-        ? _questPocketCursor<QuestPocketStacks.Length&&QuestPocketStacks[_questPocketCursor].Item.Value=="pret:ITEM_ITEMFINDER"
-            ? [_itemSkin.Text("gOtherText_Use"), _session.State.RegisteredItem=="pret:ITEM_ITEMFINDER"?"DESELECT":"REGISTER",_itemSkin.Text("gFameCheckerText_Cancel")]
+        ? _questPocketCursor<QuestPocketStacks.Length&&_session.SupportsRegisteredKeyItem(QuestPocketStacks[_questPocketCursor].Item.Value)
+            ? [_itemSkin.Text("gOtherText_Use"), _session.State.RegisteredItem==QuestPocketStacks[_questPocketCursor].Item.Value?"DESELECT":"REGISTER",_itemSkin.Text("gFameCheckerText_Cancel")]
             : [_itemSkin.Text("gOtherText_Use"), _itemSkin.Text("gFameCheckerText_Cancel")]
         : _session.State.ItemMenu?.TargetInstanceId is not null ? [_itemSkin.Text("gOtherText_Give"), _itemSkin.Text("gFameCheckerText_Cancel")]
         : [_itemSkin.Text("gOtherText_Give"), _itemSkin.Text("gOtherText_Toss"), _itemSkin.Text("gFameCheckerText_Cancel")];
@@ -126,9 +126,10 @@ public partial class CampaignView
                 { _questPocketNotice = "This item can't be held."; return true; }
                 if (_questPocket == 2 && _questPocketAction == 0)
                 { StartGiveItem(QuestPocketStacks[_questPocketCursor].Item); return true; }
-                if (_questPocket == 1 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_ITEMFINDER" && _questPocketAction < 2)
+                if (_questPocket == 1 && _session.SupportsRegisteredKeyItem(QuestPocketStacks[_questPocketCursor].Item.Value) && _questPocketAction < 2)
                 {
-                    Apply(new(_questPocketAction == 0 ? "field_itemfinder" : "item_register", Text: "pret:ITEM_ITEMFINDER"));
+                    string registeredId = QuestPocketStacks[_questPocketCursor].Item.Value;
+                    Apply(new(_questPocketAction == 0 ? registeredId=="pret:ITEM_FAME_CHECKER"?"fame_checker_open":"field_itemfinder" : "item_register", Text: registeredId));
                     if (_questPocketAction == 1 && _session.State.RegisteredItem is not null) _questPocketNotice = "Registered. Press R in the field.";
                     return true;
                 }

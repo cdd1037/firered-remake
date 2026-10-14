@@ -78,7 +78,9 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-original-tm-acquisition.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
  ('import-memorial-pillar-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
  ('import-slot-machine.py', ['{reference}', '{project}']),
- ('import-slot-machine-presentation.py', ['{reference}', '{project}', '--dependency', '{project}'])]
+ ('import-slot-machine-presentation.py', ['{reference}', '{project}', '--dependency', '{project}']),
+ ('import-fame-checker.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/fame-checker']),
+ ('import-fame-checker-presentation.py', ['{reference}','{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

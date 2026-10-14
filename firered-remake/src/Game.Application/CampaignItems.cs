@@ -48,12 +48,13 @@ public sealed partial class CampaignSession
             return Menu("berries");
         }
         if(command.Kind=="field_itemfinder")return UseItemfinder(state,command);
-        if(command.Kind=="item_register")return RegisterItemfinder(state,command);
+        if(command.Kind=="item_register")return RegisterKeyItem(state,command);
         if(command.Kind=="field_sacred_ash"||command.Kind=="field_medicine"&&command.Text=="pret:ITEM_SACRED_ASH")return UseSacredAsh(state,command);
         if(command.Kind=="field_poke_flute")return UseFieldPokeFlute(state,command);
         if(command.Kind=="field_bicycle")return UseFieldBicycle(state,command);
         if(command.Kind=="field_fish")return StartFieldFishing(state,command);
         if(command.Kind=="field_coin_case")return UseCoinCase(state,command);
+        if(command.Kind=="fame_checker_open")return OpenFameChecker(state,command);
         if(command.Kind=="town_map_open")return OpenTownMap(state,command);
         if(command.Kind is "machine_open" or "machine_teach")return DecideMachine(state,command);
         if(command.Kind=="menu_ack"&&menu.View=="message"&&menu.SourceMessages is {} messages&&menu.SourceMessageIndex+1<messages.Length)return new(CommandStatus.Accepted,state with{ItemMenu=menu with{SourceMessageIndex=menu.SourceMessageIndex+1}});
