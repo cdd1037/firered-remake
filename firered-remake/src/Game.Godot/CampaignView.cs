@@ -213,7 +213,7 @@ public partial class CampaignView:Node2D
         if(naming&&!_nicknameEdit.Visible){_nicknameEdit.Text="";_nicknameEdit.Visible=true;_nicknameEdit.GrabFocus();_nicknameEdit.Edit();}
         else if(!naming&&_nicknameEdit.Visible){_nicknameEdit.Visible=false;_nicknameEdit.ReleaseFocus();if(after.Nickname?.Submitted==true||before?.WildBattle?.Capture?.Stage==CampaignCaptureStage.Naming||before?.SafariBattle?.Capture?.Stage==CampaignCaptureStage.Naming)_fade=16.0/60;}
         SynchronizePokemonTowerPresentation(before,after);SynchronizeBattle();SynchronizeWildBattle();SynchronizeDoubleBattle();SynchronizeSafariBattle();SynchronizeItems();SynchronizeStorage();SynchronizeMachines();SynchronizeShop();SynchronizeCenterHealing(before,after);SynchronizeOldManPresentation();
-        SynchronizeOptionFrames();SynchronizeTrainerTowerSpeech();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeFossilLabPresentation();SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldRockSmashPresentation(after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeRooftopMenu();SynchronizeGameCornerCoinMenu();SynchronizeGameCornerPrizeMenu();SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeMagikarpRecordPresentation(before,after);SynchronizeNameRaterPresentation(before,after);SynchronizeNpcTradePresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSeafoamPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);SynchronizeFieldFlyTravelPresentation(after);SynchronizeEggHatchPresentation(before,after);
+        SynchronizeOptionFrames();SynchronizeTrainerTowerSpeech();SynchronizeFieldText();SynchronizeSourceAudio(before,after);SynchronizeRepelPresentation();SynchronizeTownMapPresentation();SynchronizeBillPresentation(before,after);SynchronizeFossilLabPresentation();SynchronizeSsAnnePresentation(before,after);SynchronizeFieldCutPresentation(before,after);SynchronizeFieldRockSmashPresentation(after);SynchronizeFieldFlashPresentation(after);SynchronizeFieldStrengthPresentation(after);SynchronizeFieldSurfPresentation(before,after);SynchronizeCityServicesPresentation(before,after);SynchronizeRocketPresentation(before,after);SynchronizeDepartmentPresentation(before,after);SynchronizeRooftopMenu();SynchronizeGameCornerCoinMenu();SynchronizeGameCornerPrizeMenu();SynchronizeSilphPresentation(before,after);SynchronizeCinnabarPresentation(before,after);SynchronizeFirstSeviiPresentation(before,after);SynchronizeSeagallopMenu();SynchronizeTrainerTowerMenu();SynchronizeMagikarpRecordPresentation(before,after);SynchronizeNameRaterPresentation(before,after);SynchronizeNpcTradePresentation(before,after);SynchronizeMoveTutorPresentation(before,after);SynchronizePokemonLeaguePresentation(before,after);SynchronizeFourIslandPresentation(after);SynchronizeSixIslandPresentation(after);SynchronizeSeafoamPresentation(after);SynchronizeSevenIslandFieldPresentation(before,after);SynchronizeEventIslandFieldPresentation(before,after);SynchronizeFieldFlyTravelPresentation(after);SynchronizeEggHatchPresentation(before,after);SynchronizeSlotMachine();
         var wait=after.Script.Wait;
         if(wait?.CorrelationId!=_waitId||wait?.Kind!=_waitKind||before?.Dialogue?.Page!=after.Dialogue?.Page)
         {
@@ -234,6 +234,7 @@ public partial class CampaignView:Node2D
         if(_quitRequested||_session is null)return;
         ProcessTrainerTowerTime(delta);
         if(PlayerEntryActive){QueueRedraw();return;}
+        if(ProcessSlotMachine(delta))return;
         if(_session.NationalDexScenePending&&!_lastCommandFault){Apply(new("national_dex_resume"));QueueRedraw();return;}
         if(ProcessPokemonLeaguePresentation(delta)){QueueRedraw();return;}
         if(ProcessFirstSeviiPresentation(delta))return;
@@ -322,10 +323,11 @@ public partial class CampaignView:Node2D
     {
         if(what==(int)NotificationWMCloseRequest){RequestQuit();return;}
         if(what==(int)NotificationWMWindowFocusOut || what==(int)NotificationApplicationFocusOut)
-        {_runningShiftHeld=false;_held=null;_repeat=0;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ResetRegionalSignInput();}
+        {_slotHeld=0;_slotFrameTime=0;_runningShiftHeld=false;_held=null;_repeat=0;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ResetRegionalSignInput();}
     }
     public override void _UnhandledInput(InputEvent input)
     {
+        if(TrySlotMachineInput(input))return;
         if(EggHatchInput(input))return;
         if(TryItemfinderInput(input))return;
         if(ConsumeMoveTutorTransitionInput(input)||ConsumeNameRaterTransitionInput(input)||ConsumeMagikarpRecordTransitionInput(input)||ConsumeNpcTradeTransitionInput(input)||TryRegionalServiceNoticeInput(input))return;
@@ -425,8 +427,9 @@ public partial class CampaignView:Node2D
     {
         if(_quitRequested||_busy)return;CommitTrainerTowerTime(true);_busy=true;
         var before=_session.State;_fieldStepTicks=command.Kind=="move"?FieldStepTicksForDirection(before,command.Direction):16;var result=_session.Execute("ui:"+(_sequence++),_session.Revision,command);
-        Write("command",new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,state=result.State});
-        if(result.Status==CommandStatus.Accepted){_lastCommandFault=false;_blockedAutomaticWait=null;Synchronize(before,result.State);SynchronizeRegionalSignInput(before,result.State);_status="方向键移动 · Enter对话 · F5保存 / F9读取";}
+        if(command.Kind=="slot_tick")Write("slotFrame",new{command.SlotInput,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,phase=result.State.SlotMachine?.Phase.ToString(),step=result.State.SlotMachine?.MainStep,coins=result.State.Coins});
+        else Write("command",new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,state=result.State});
+        if(result.Status==CommandStatus.Accepted){_lastCommandFault=false;_blockedAutomaticWait=null;if(command.Kind=="slot_tick"&&result.State.SlotMachine is not null){SynchronizeSlotMachine();SynchronizeSourceAudio(before,result.State);}else{Synchronize(before,result.State);SynchronizeRegionalSignInput(before,result.State);}_status="方向键移动 · Enter对话 · F5保存 / F9读取";}
         else if(result.Error=="sevii_first_visit_not_yet_available")
         {_regionalServiceNotice="The trip to ONE ISLAND is not\navailable yet.";_held=null;_repeat=0;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}
         else if(result.Error=="seagallop_destination_not_yet_available")
@@ -447,6 +450,7 @@ public partial class CampaignView:Node2D
         BeginMapFrame();
         if(_session is null)return;
         if(PlayerEntryActive){DrawPlayerEntry();return;}
+        if(DrawSlotMachine())return;
         if(DrawEggHatch())return;
         if(DrawTrainerTowerRecords())return;
         if(DrawPokemonLeagueScreen())return;

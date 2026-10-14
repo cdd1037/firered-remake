@@ -13,7 +13,7 @@ public sealed record StorySource(string Path, string Symbol, int Line);
 public sealed record StoryInstruction(StoryOp Op, string Opcode, ImmutableArray<string> Args, StorySource Source);
 public sealed record StoryProgram(string Id, ImmutableArray<StoryInstruction> Instructions);
 public sealed record StoryFrame(string ProgramId, int InstructionIndex);
-public enum StoryWaitKind { None, Dialog, Choice, Presentation, NativeEffect, MessagePrinting, Nickname, Battle, Inventory, MenuChoice, ButtonPress, PartySelection }
+public enum StoryWaitKind { None, Dialog, Choice, Presentation, NativeEffect, MessagePrinting, Nickname, Battle, Inventory, MenuChoice, ButtonPress, PartySelection, SlotMachine }
 public sealed record StoryWait(StoryWaitKind Kind, string CorrelationId);
 public sealed record FameEntry(int PickState,int FlavorFlags);
 public sealed record StoryState(ImmutableArray<StoryFrame> Stack, ImmutableSortedDictionary<string,int> Variables,

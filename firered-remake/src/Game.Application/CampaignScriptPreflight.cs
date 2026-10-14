@@ -35,6 +35,11 @@ public sealed partial class CampaignSession
             while(pending.TryDequeue(out var probe))
             {
                 if(++steps>budget)throw new InvalidDataException("script_preflight_budget: "+program);
+                if(probe.SlotMachine is not null)
+                {
+                    if(!CampaignSlotMachineTransactions.OwnsCallback(probe,_content))throw new InvalidDataException("slot_preflight_callback_context");
+                    continue;
+                }
                 // These are already-owned application workflows with separate admission contracts.
                 if(probe.EggHatch is not null||probe.DayCareInteraction is not null||probe.SeafoamMovement is not null||probe.RuinValleyCut is not null||probe.DottedHoleFall is not null||probe.FourIslandMovement is not null||probe.PokemonLeagueCompletion is not null||probe.Seagallop is not null||probe.Pc is not null||probe.Shop is not null||probe.DoubleBattle is not null||probe.ForestTrainerBattle is not null||probe.Battle is not null||probe.WildBattle is not null||probe.OldManTutorial is not null||probe.ItemMenu is not null||probe.Nickname is not null||probe.NpcTrade is not null||probe.NameRater is not null||probe.MoveTutor is not null||probe.MoveReminder is not null||probe.MoveDeleter is not null||probe.MagikarpRecord is not null)continue;
                 if(probe.Script.Completed&&probe.Script.Wait is null)continue;

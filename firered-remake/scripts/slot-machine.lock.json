@@ -1,0 +1,58 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-slot-machine-rules-v1",
+  "importerSha256": "00ef6ab44a7a3f31ae489e863f7d9efcb12cd8ab8cc9c0a821d182f05d39b777",
+  "files": [
+    {
+      "path": "content/generated/slot-machine/rules.json",
+      "byteLength": 3227,
+      "sha256": "857579095b78e884e817e740f3554b49e56d94c8934b03ff09e0bc610148280d"
+    },
+    {
+      "path": "content/generated/slot-machine/source-contract.json",
+      "byteLength": 8042,
+      "sha256": "fdf0c511ac3fa99454de080d7ff5c9b3db1427fc7ccaf67718ab51e5ce49db3f"
+    },
+    {
+      "path": "content/generated/slot-machine/source-input-hashes.json",
+      "byteLength": 1739,
+      "sha256": "6269dcb52987cccd9ac78e952023044e4c7da23debd1e3b24b5d5071b8c1d5c2"
+    },
+    {
+      "path": "content/raw/slot-machine/data/maps/CeladonCity_GameCorner/map.json",
+      "byteLength": 13572,
+      "sha256": "e0924467ae57d2fce051f3959bf1526bcb0befce6a6c39a51162aa2089f555ee"
+    },
+    {
+      "path": "content/raw/slot-machine/data/maps/CeladonCity_GameCorner/scripts.inc",
+      "byteLength": 14326,
+      "sha256": "1e05d3520f34fa7a6bad3542e0f99b205d0308cdb9d9e812c33a8f0b71498da5"
+    },
+    {
+      "path": "content/raw/slot-machine/src/coins.c",
+      "byteLength": 2755,
+      "sha256": "ac223117abbde9e09abd13d75810e5f84d0fa7b03723b7a103655b55d7096b7f"
+    },
+    {
+      "path": "content/raw/slot-machine/src/field_specials.c",
+      "byteLength": 77314,
+      "sha256": "9c49d3702f0f4dcba61ae26bccefce1c26fbd1247475289dd821780bc537d1d9"
+    },
+    {
+      "path": "content/raw/slot-machine/src/malloc.c",
+      "byteLength": 6256,
+      "sha256": "a81ff86e81b72f4a57d5c891e3f50d93e0c2a75a3e3ec37a48bdb84041ad369e"
+    },
+    {
+      "path": "content/raw/slot-machine/src/random.c",
+      "byteLength": 323,
+      "sha256": "e7e90cc070d1fbf09579f5f91762cd8875d5bbe1d7a90f468bcd870df73b9de2"
+    },
+    {
+      "path": "content/raw/slot-machine/src/slot_machine.c",
+      "byteLength": 75596,
+      "sha256": "bc80b3334a1aae51db36cfccd7df33cf08fc19b18d9c871e6aecf0e58056087d"
+    }
+  ]
+}
