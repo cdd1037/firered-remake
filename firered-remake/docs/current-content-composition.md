@@ -156,3 +156,12 @@ supports both services without adding a regional runtime profile. The current
 content fingerprint is `4ce9d194223a381fb2e8378a909e33ec2a2845a6a3d3845aacdb7020650d9697`.
 See [Reminder](move-reminder-flow.md) and [Deleter](move-deleter-flow.md) for their
 separate current-flow, strict-save and headless presentation evidence and limits.
+
+
+The subsequent existing-map tutor increment keeps329 maps and162 owned species,
+and admits original indices1/5/11/13 through one generated actor-binding table
+and shared executor. The final authenticated source lock expands to16 files;
+its current fingerprint is `ac6087eb18d240b0d2574ddf3ea2ef8561ebdb71f678f35b38556d6f93a45e57`.
+The prior room fingerprint above identifies the separate Deleter proof cohort.
+Three real-party lessons and stable Continue are documented in
+[original tutor integration](original-move-tutors.md).

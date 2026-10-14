@@ -18,26 +18,32 @@ public sealed record CampaignMoveTutor(int TutorIndex, CampaignMoveTutorStage St
 public sealed partial class CampaignSession
 {
     private const string TutorPath = "data/scripts/move_tutors.inc";
-    private const string TutorEntry = "SevenIsland_EventScript_SwordsDanceTutor";
     private const string TutorCallback = "EventScript_ChooseMoveTutorMon";
-    private const string TutorFlag = "FLAG_TUTOR_SWORDS_DANCE";
 
-    private bool InMoveTutorScript(CampaignState state)
+    private bool TryMoveTutorContext(CampaignState state, out MoveTutorDefinition tutor)
     {
+        tutor = null!;
         if (_content.MoveTutors is not { } catalog || !ReferenceEquals(catalog.Pokemon, _content.PokemonContent?.Catalog) ||
             state.LastTalked is not { } actor || !state.Actors.TryGetValue(actor, out var npc) ||
-            !npc.Active || npc.Invisible || npc.SourceLocalId != 1 || npc.GraphicsId != "OBJ_EVENT_GFX_COOLTRAINER_M" ||
-            npc.ScriptId != TutorEntry || npc.TemplateX != 7 || npc.Elevation != 3 || !state.Script.Locked || state.Script.Completed ||
-            state.Script.Flags.GetValueOrDefault(TutorFlag) || !state.Script.Stack.Any(f => f.ProgramId == TutorEntry)) return false;
-        var definition = _content.MapDefinition(state.World.Player.MapId).Actors.FirstOrDefault(a => a.LocalId == actor);
-        return definition is not null && definition.ScriptId == TutorEntry && definition.SourceLocalId == 1 &&
-            (state.World.Player.MapId.Value == "map.seven-island" && npc.TemplateY == 18 && !definition.IsClone ||
-             state.World.Player.MapId.Value == "map.seven-island-sevault-canyon-entrance" && npc.TemplateY == -2 && definition.IsClone);
+            !npc.Active || npc.Invisible || !state.Script.Locked || state.Script.Completed) return false;
+        var map = _content.MapDefinition(state.World.Player.MapId);
+        var definition = map.Actors.FirstOrDefault(a => a.LocalId == actor);
+        foreach (var binding in TutorBindings)
+        {
+            var expected = binding.Actor;
+            if (binding.Map != map.Id.Value || binding.SourceMap != map.SourceMapSymbol || definition != expected ||
+                npc.LocalId != expected.LocalId || npc.SourceLocalId != expected.SourceLocalId || npc.GraphicsId != expected.GraphicsId ||
+                npc.ScriptId != expected.ScriptId || npc.TemplateX != expected.X || npc.TemplateY != expected.Y ||
+                npc.Elevation != expected.Elevation || npc.MovementType != expected.MovementType || npc.HideFlag != expected.HideFlag ||
+                state.Script.Flags.GetValueOrDefault(binding.Flag) || !state.Script.Stack.Any(f => f.ProgramId == binding.Entry)) continue;
+            return catalog.Definitions.TryGetValue(binding.Index, out tutor!);
+        }
+        return false;
     }
 
     private bool AtMoveTutorWait(CampaignState state)
     {
-        if (!InMoveTutorScript(state) || state.Script.Wait?.Kind != StoryWaitKind.PartySelection || state.Script.Stack.IsEmpty) return false;
+        if (!TryMoveTutorContext(state, out var tutor) || state.MoveTutor?.TutorIndex != tutor.Index || state.Script.Wait?.Kind != StoryWaitKind.PartySelection || state.Script.Stack.IsEmpty) return false;
         var frame = state.Script.Stack[^1]; var program = _content.FindProgram(frame.ProgramId); int index = frame.InstructionIndex - 1;
         return program is not null && index >= 0 && index < program.Instructions.Length &&
             program.Instructions[index] is { Op: StoryOp.WaitState, Opcode: "waitstate" } instruction &&
@@ -169,15 +175,16 @@ public sealed partial class CampaignSession
         next = state;
         if (effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "ChooseMonForMoveTutor" }))
         {
-            if (!InMoveTutorScript(state) || state.MoveTutor is not null || effect.Source.Path != TutorPath || effect.Source.Symbol != TutorCallback ||
-                state.Script.Variables.GetValueOrDefault("VAR_0x8005", -1) != 1 || state.Party.IsDefaultOrEmpty)
+            if (!TryMoveTutorContext(state, out var tutor) || state.MoveTutor is not null || effect.Source.Path != TutorPath || effect.Source.Symbol != TutorCallback ||
+                state.Script.Variables.GetValueOrDefault("VAR_0x8005", -1) != tutor.Index || state.Party.IsDefaultOrEmpty)
                 throw new InvalidDataException("move_tutor_native_context");
-            next = state with { MoveTutor = new(1, CampaignMoveTutorStage.Party),
+            next = state with { MoveTutor = new(tutor.Index, CampaignMoveTutorStage.Party),
                 Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", 0) } };
             return true;
         }
         if (effect.Opcode != "waitstate" || state.MoveTutor is null) return false;
-        if (!InMoveTutorScript(state) || !effect.Args.IsEmpty || effect.Source.Path != TutorPath || effect.Source.Symbol != TutorCallback ||
+        if (!TryMoveTutorContext(state, out var pendingTutor) || state.MoveTutor.TutorIndex != pendingTutor.Index ||
+            state.Script.Variables.GetValueOrDefault("VAR_0x8005", -1) != pendingTutor.Index || !effect.Args.IsEmpty || effect.Source.Path != TutorPath || effect.Source.Symbol != TutorCallback ||
             state.Script.Wait?.Kind != StoryWaitKind.Presentation) throw new InvalidDataException("move_tutor_wait_context");
         next = state with { Dialogue = null, SignMessage = null, PresentationTicks = 0,
             Script = state.Script with { Wait = state.Script.Wait with { Kind = StoryWaitKind.PartySelection } } };

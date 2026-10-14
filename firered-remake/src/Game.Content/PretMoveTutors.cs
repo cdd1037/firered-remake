@@ -7,7 +7,7 @@ namespace Game.Content;
 
 public sealed class PretMoveTutors
 {
-    public const string LockSha256 = "9dc2e6528e26d889275a1a819d1ba8357d76f0f945dfb3320dd0b61d075a2e6e";
+    public const string LockSha256 = "a6e30cf09cd5582613dc8e5e8cd0e915aee4980d0d52fbdfd63a9de4d355542b";
     public MoveTutorCatalog Catalog { get; }
     public ImmutableArray<string> AdditionalSourceHashes { get; }
     private PretMoveTutors(MoveTutorCatalog catalog, ImmutableArray<string> hashes)
@@ -25,10 +25,10 @@ public sealed class PretMoveTutors
                 throw new InvalidDataException("move_tutor_source_hash");
             return bytes;
         }
-        using var document = JsonDocument.Parse(Read(Path.Combine(root, "scripts/move-tutors.lock.json"), 2609, LockSha256));
+        using var document = JsonDocument.Parse(Read(Path.Combine(root, "scripts/move-tutors.lock.json"), 3805, LockSha256));
         var doc = document.RootElement;
         if (doc.GetProperty("schemaVersion").GetInt32() != 1 || doc.GetProperty("commit").GetString() != PokemonFactory.SourceCommit ||
-            doc.GetProperty("files").GetArrayLength() != 11) throw new InvalidDataException("move_tutor_source_scope");
+            doc.GetProperty("files").GetArrayLength() != 16) throw new InvalidDataException("move_tutor_source_scope");
         var hashes = ImmutableArray.CreateBuilder<string>(); hashes.Add("move-tutors-lock:" + LockSha256);
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in doc.GetProperty("files").EnumerateArray())
@@ -39,6 +39,6 @@ public sealed class PretMoveTutors
             files.Add(path, Read(Path.Combine(root, "content/raw/move-tutors", path), row.GetProperty("bytes").GetInt32(), hash));
             hashes.Add("move-tutors-source:" + path + ":" + hash);
         }
-        return new(MoveTutorCatalog.Authenticate(owned, files["src/data/pokemon/tutor_learnsets.h"], files["src/strings.c"]), hashes.ToImmutable());
+        return new(MoveTutorCatalog.Authenticate(owned, files["src/data/pokemon/tutor_learnsets.h"], files["src/strings.c"], files["include/constants/moves.h"]), hashes.ToImmutable());
     }
 }
