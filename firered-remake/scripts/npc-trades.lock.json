@@ -220,6 +220,7 @@
       "gitBlobSha1": "7ee088f62924cdf3c6aa5a61b2916c86fd585478",
       "path": "data/maps/Route2_House/scripts.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],
@@ -230,6 +231,7 @@
       "gitBlobSha1": "c7084903abb5dd341246c867a2153a7dce94e071",
       "path": "data/maps/Route2_House/text.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],

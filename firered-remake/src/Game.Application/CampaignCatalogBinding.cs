@@ -23,14 +23,14 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var owned = content.FossilLabOwnership!;
-        var battle = OwnedBattlePokemonCatalog.For(owned.Catalog);
-        if (battle is null || !ReferenceEquals(battle.Catalog, content.PokemonContent!.Catalog) ||
+        var owned = NpcTradeOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
+            ?? throw new InvalidDataException("current_npc_trade_owned_proof_missing");
+        var battle = owned.SharedBattle;
+        var opponents = NpcTradeOpponentPokemonCatalog.For(owned);
+        if (!ReferenceEquals(battle.Catalog, content.PokemonContent.Catalog) ||
             !ReferenceEquals(battle.Mechanics, owned.Mechanics) ||
-            !ReferenceEquals(FossilLabOwnedPokemonCatalog.For(owned.Catalog), owned) ||
-            !ReferenceEquals(owned.Predecessor, content.FightingDojoOwnership) ||
-            !ReferenceEquals(FossilLabOpponentPokemonCatalog.For(owned), content.FossilLabOpponents) ||
-            !ReferenceEquals(content.FossilLabOpponents!.Predecessor, content.FightingDojoOpponents))
+            !ReferenceEquals(owned.Predecessor, content.FossilLabOwnership) ||
+            opponents is null || !ReferenceEquals(opponents.Predecessor, content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, owned.Catalog, battle);
     }
@@ -76,7 +76,7 @@ public sealed partial class CampaignSession
         if(content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
-        if(!FossilLabMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
+        if(!NpcTradeMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
         if(FossilLabShopCatalog.For(content.EarlyShop) is null)throw new InvalidDataException("current_shop_proof_missing");
         if(content.QuestItems?.Profile!=QuestItemRules.TownMapProfile)throw new InvalidDataException("current_quest_item_profile_missing");
         if(content.FieldPickups.IsDefaultOrEmpty||content.EarlyShop is null)throw new InvalidDataException("current_field_pickup_profile_missing");

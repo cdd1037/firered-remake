@@ -2277,8 +2277,6 @@ public sealed partial class PretCampaignCatalog
             SpeciesNames = pokemonContent.SpeciesNames.AddRange(FossilLabOwnedPokemonCatalog.AdditionalSpecies.Select(id =>
                 KeyValuePair.Create(fossilOwned.Catalog.Species[id].SourceSpeciesId, oakPokedex.Entries[fossilOwned.Catalog.Species[id].SourceSpeciesId].Name))) };
         machines = fossilMachines.Catalog;
-        var moveTutors = PretMoveTutors.Load(projectRoot, fossilOwned.Catalog);
-        hashes.AddRange(moveTutors.AdditionalSourceHashes);
         hashes.Add("fossil-lab-rules:" + PretFossilLabRules.CatalogSha256);
         hashes.Add("fossil-lab-source-lock:" + PretFossilLabRules.LockSha256);
         hashes.Add("fossil-lab-machines:" + PretFossilLabRules.MachinesSha256);
@@ -2292,6 +2290,19 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(npcTrades.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTrades.NewMaps);
         ValidateNpcTradeComposition(npcTrades, maps, npcTradePreviousMaps, compiled);
+        PretNpcTradeOwnedRules.ValidateSourceEvidence(projectRoot);
+        var tradeOwned = PretNpcTradeOwnedRules.LoadOwned(projectRoot, fossilOwned);
+        _ = PretNpcTradeOwnedRules.LoadOpponents(projectRoot, fossilOpponents, tradeOwned);
+        var tradeMachines = PretNpcTradeOwnedRules.LoadMachines(projectRoot, fossilMachines, tradeOwned);
+        pokemonContent = pokemonContent with { Catalog = tradeOwned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.SetItem(122, oakPokedex.Entries[122].Name) };
+        machines = tradeMachines.Catalog;
+        var moveTutors = PretMoveTutors.Load(projectRoot, tradeOwned.Catalog);
+        hashes.AddRange(moveTutors.AdditionalSourceHashes);
+        hashes.Add("npc-trade-owned:" + PretNpcTradeOwnedRules.PokemonSha256);
+        hashes.Add("npc-trade-owned-machines:" + PretNpcTradeOwnedRules.MachinesSha256);
+        hashes.Add("npc-trade-owned-source-lock:" + PretNpcTradeOwnedRules.LockSha256);
+        hashes.Add("npc-trade-owned-inputs:" + PretNpcTradeOwnedRules.SourceInputsSha256);
 
         // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
