@@ -4,9 +4,17 @@ using Game.Domain.World;
 
 namespace Game.Domain.Slots;
 
-/// <summary>Explicit bounded admission. No production heap initialization is inferred from Alloc.</summary>
+/// <summary>Explicit admission, including the approved remake initialization rather than inferred original heap state.</summary>
 public sealed record SlotMachineSessionContract(SlotMachineRules Rules, SlotBiasState InitialBias, string InitialStateEvidence)
 {
+    public const string ApprovedProductionPolicyId = "firered-slot-safety-none0-circular21-v1";
+
+    public static SlotMachineSessionContract CreateApprovedProduction(SlotMachineRules rules)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        return new(rules, new(SlotReward.None, 0), ApprovedProductionPolicyId);
+    }
+
     public void Validate()
     {
         ArgumentNullException.ThrowIfNull(Rules);

@@ -11,6 +11,7 @@ using Game.Domain.Trainers;
 using Game.Domain.Items;
 using Game.Domain.Encounters;
 using Game.Domain.Roaming;
+using Game.Domain.Slots;
 
 namespace Game.Content;
 public sealed partial class PretCampaignCatalog
@@ -25,6 +26,7 @@ public sealed partial class PretCampaignCatalog
         var fightingDojo = PretFightingDojoRegion.Load(projectRoot);
         var fossilLab = PretFossilLabRegion.Load(projectRoot);
         var itemfinder = PretItemfinderSource.Load(projectRoot);
+        var slotRules = SlotMachineRules.FromAuthenticatedJson(File.ReadAllBytes(Path.Combine(projectRoot, "content/generated/slot-machine/rules.json")));
         var sevenIsland = PretSevenIslandRegion.Load(projectRoot);
         var ceruleanCave = PretCeruleanCaveRegion.Load(projectRoot);
         var fiveIsland = PretFiveIslandRegion.Load(projectRoot, compact: true);
@@ -1845,7 +1847,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         // Compile and validate the complete current script vocabulary.
-        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true, includeGameCornerCoins: true);
+        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true, includeGameCornerCoins: true, includeGameCornerSlots: true);
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
         compiled = CompleteFourIslandDayCareFallthrough(compiled);
@@ -2537,6 +2539,9 @@ public sealed partial class PretCampaignCatalog
         hashes.Add("npc-trade-owned-source-lock:" + PretNpcTradeOwnedRules.LockSha256);
         hashes.Add("npc-trade-owned-inputs:" + PretNpcTradeOwnedRules.SourceInputsSha256);
 
+        hashes.Add("slot-machine-rules:" + SlotMachineRules.RulesSha256);
+        hashes.Add("slot-machine-policy:" + SlotMachineSessionContract.ApprovedProductionPolicyId);
+
         // Source additions deliberately change the current content/save fingerprint.
         var version = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", hashes))));
         return new(
@@ -2712,7 +2717,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare, originalTmAcquisition: originalTmAcquisition) { ItemfinderDocument = itemfinder, FieldRockSmash = fieldRockSmash, MemorialPillarTrainers = memorialTrainers, MemorialPillarOpponents = memorialOpponents };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare, originalTmAcquisition: originalTmAcquisition) { GameCornerSlots = SlotMachineSessionContract.CreateApprovedProduction(slotRules), ItemfinderDocument = itemfinder, FieldRockSmash = fieldRockSmash, MemorialPillarTrainers = memorialTrainers, MemorialPillarOpponents = memorialOpponents };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

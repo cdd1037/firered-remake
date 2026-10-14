@@ -191,8 +191,9 @@ public static class SlotMachineCore
                     for (j = 0; j < 3; j++, position++)
                     {
                         if (position >= 21) position = 0;
-                        // The pinned C omits its negative wrap here. Do not invent adjacent ROM bytes.
-                        if (position < 0) throw new NotSupportedException("slot_original_negative_reel_read_requires_rom_layout");
+                        // Approved safety policy: wrap the source's negative internal read onto this reel.
+                        // Caller positions remain validated; valid indices and RNG scheduling are unchanged.
+                        if (position < 0) position = Wrap(position);
                         if (Matches(SlotReward.Cherries2, rules.Reels[0][position])) break;
                     }
                     if (j == 3) candidates.Add(i);

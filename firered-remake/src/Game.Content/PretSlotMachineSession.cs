@@ -6,7 +6,7 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
-    // The production composer must supply a reviewed initial-state policy before enabling play.
+    // Current production supplies the approved None/0 and circular21 safety policy.
     public SlotMachineSessionContract? GameCornerSlots { get; init; }
 }
 
