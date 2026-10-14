@@ -11,13 +11,12 @@ public sealed partial class PretCampaignCatalog
     public PretFuchsiaRouteArt? FuchsiaRouteArt {get;}
     public bool FuchsiaRouteEnabled=>FuchsiaRouteRegion is not null;
     public FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>FuchsiaRoutePokemon?.Trainers;
+    // These are source-package completeness boundaries, not story locks. Resolve
+    // static doors against the authenticated current graph, so newly implemented
+    // destinations do not require another historical feature-name exception.
     public bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>
-        map.Value=="map.route-12"&&sourceWarpId==0?SuperRodEnabled:
-        map.Value=="map.fuchsia-city"&&sourceWarpId==10?MoveDeleter is not null:
-        map.Value=="map.fuchsia-city"&&sourceWarpId is 7 or 8 or 9?GoodRodEnabled:
-        SafariRegion is {} safari && Maps[map].FieldWarps.Any(w=>w.Index==sourceWarpId&&safari.SourceMaps.ContainsKey(w.DestinationMapId))?true:
-        map.Value=="map.fuchsia-city"&&sourceWarpId==4?FuchsiaGymEnabled:FuchsiaRouteRegion is not {} region ||
-        !region.NewMaps.ContainsKey(map) || region.AllowsNewMapWarp(map,sourceWarpId);
+        FuchsiaRouteRegion is not {} region || !region.NewMaps.ContainsKey(map) ||
+        IsCurrentStaticWarpResolved(map, sourceWarpId);
     private static void AppendFuchsiaRouteSources(PretFuchsiaRouteRegion region,List<PretSourceScriptFile> sources,
         List<string> textFiles,Dictionary<string,int> constants,List<string> hashes)
     {

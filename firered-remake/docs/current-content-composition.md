@@ -206,13 +206,16 @@ The actual purchase/teaching terminal56575 and independent Continue, plus stable
 [Copycat verification cohorts](copycat-mimic-campaign.md).
 
 
-## Super Rod implementation checkpoint, 2026-10-14
+## Super Rod integrated checkpoint, 2026-10-14
 
 Current composition is334 maps,163 owned species and192 ordinary opponents.
 The one-species Qwilfish successor preserves all162 inherited species objects,
 354 moves and41 existing machine rows, adding only the original Qwilfish cells.
 Current fingerprint is `0a58645c0a68412b01c6784e913fac5176256699ab2811027268f5c46a17c6de`.
 LoadCurrent/CreateCurrent and exact Copycat56575 payload admission passed after
-normal Godot compilation. Original house acquisition, record/capture route and
-production view acceptance are still pending at this recoverable point.
+normal Godot compilation. The build03 original house/fishing/capture/record/return
+chain passed165 checks/1,279 commands, terminating at57854 with independent Continue.
+The narrow production headless view passed90 checks/eight Draw calls. Build04 then
+consolidated the affected static door admission, preserving all41 decisions, and
+strictly restored the same final payload in a new process; the long route was not rerun.
 See [the separate evidence boundaries](super-rod-campaign.md).
