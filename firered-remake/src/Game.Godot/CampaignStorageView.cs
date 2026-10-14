@@ -42,8 +42,9 @@ public partial class CampaignView
         if(view!=_pcView)
         {
             _pcView=view;_pcCursor=view==CampaignPcView.StorageMenu?_session.State.Pc!.StorageMenuSelection:0;
-            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();ResetStorageItemPresentation();ResetStorageCreaturePresentation();ResetStorageCustomizationPresentation();
+            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();ResetStorageItemPresentation();ResetStorageCreaturePresentation();ResetStorageCustomizationPresentation();ResetStorageSummaryPresentation();
         }
+        SynchronizeStorageSummary();
         SynchronizeStorageItemPrompt();
         SynchronizeStorageReleasePrompt();
         SynchronizeStorageCustomization();
@@ -70,6 +71,7 @@ public partial class CampaignView
     {
         if(StorageBoxNaming&&key.Keycode==Key.Escape)return true;
         if(key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape)return false;
+        if(_session.State.Pc?.Summary is not null)return StorageSummaryInput(key);
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return HallPcInput(key);
         if(StorageCustomizationInput(key))return true;
         if(key.Pressed&&!key.Echo&&_pcNotice is null&&!_busy&&StorageTitleInput(key))return true;
@@ -121,6 +123,7 @@ public partial class CampaignView
     }
     private bool MouseStorage(Vector2 point)
     {
+        if(_session.State.Pc?.Summary is not null)return MouseStorageSummary(point);
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return MouseHallPc(point);
         if(StorageCustomizationOverlayActive)return MouseStorageCustomization(point);
         if(_session.State.Pc?.View==CampaignPcView.Move)return MouseStorageMove(point);
@@ -146,6 +149,7 @@ public partial class CampaignView
     private void DrawStorage()
     {
         var pc=_session.State.Pc!;if(pc.View==CampaignPcView.PlayerItems)return;
+        if(pc.Summary is not null){DrawStorageSummary();return;}
         if(pc.View==CampaignPcView.HallOfFame){DrawHallPc();return;}
         if(pc.View==CampaignPcView.Move){DrawStorageMove();return;}
         if(pc.View==CampaignPcView.MoveItems){DrawStorageItems();return;}

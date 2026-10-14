@@ -466,7 +466,7 @@ public sealed partial class CampaignSession
         {
             // MOVE owns a removed creature or held item. Route before every other command family,
             // including field actions and timers, so none can bypass this native modal.
-            if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null} or {Customization:not null})return DecidePc(state,command);
+            if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null} or {Customization:not null} or {Summary:not null})return DecidePc(state,command);
             if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);
@@ -524,6 +524,7 @@ public sealed partial class CampaignSession
             if(command.Kind=="options_save")return DecideOptions(state,command);
             if(command.Kind=="party_item_open")return OpenPartyItemMenu(state,command);
             if(command.Kind=="party_swap")return DecideFieldParty(state,command);
+            if(command.Kind=="party_summary_swap")return DecideFieldSummarySwap(state,command);
             if(state.FieldPoison is not null)return DecideFieldPoison(state,command);
             if(state.Evolution is not null)return DecideEvolution(state,command);
             if(state.OldManTutorial is not null)return DecideOldManTutorial(state,command);

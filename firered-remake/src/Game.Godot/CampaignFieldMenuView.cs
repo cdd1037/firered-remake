@@ -35,13 +35,13 @@ public partial class CampaignView
     private void ResetFieldMenu()
     {
         _fieldMenuMode = "closed"; _fieldMenuNotice = null; _fieldNoticeCloses = false;
-        _fieldSwapSource = -1; _held = null; _repeat = 0;
+        _fieldSwapSource = -1; ResetOwnedSummarySelection(); _held = null; _repeat = 0;
     }
 
     // Called before the key-only guard so an actual joypad Start works too.
     private bool TryFieldMenuToggle(InputEvent input)
     {
-        if (_session?.State.MailComposer is not null || _session?.State.Pc?.View is Game.Application.CampaignPcView.Move or Game.Application.CampaignPcView.MoveItems) return false;
+        if (_session?.State.Pc?.Summary is not null || _session?.State.MailComposer is not null || _session?.State.Pc?.View is Game.Application.CampaignPcView.Move or Game.Application.CampaignPcView.MoveItems) return false;
         bool start = input is InputEventKey { Keycode: Key.Tab, Echo: false } ||
             input is InputEventJoypadButton { ButtonIndex: JoyButton.Start };
         if (!start) return false;
@@ -86,6 +86,7 @@ public partial class CampaignView
             return true;
         }
         if (PokedexMenuInput(key)||TrainerCardInput(key)||OptionsInput(key)) return true;
+        if (_fieldMenuMode == "summary") return FieldSummaryInput(key);
         if (key.Keycode == Key.Backspace)
         {
             if (_fieldMenuMode == "start") ResetFieldMenu();
@@ -108,18 +109,6 @@ public partial class CampaignView
             }
             return true;
         }
-        if (_fieldMenuMode == "summary")
-        {
-            if (!_session.State.Party[_fieldPartyCursor].IsEgg)
-            {
-                if (key.Keycode == Key.Left) _fieldSummaryPage = (_fieldSummaryPage + 2) % 3;
-                if (key.Keycode == Key.Right) _fieldSummaryPage = (_fieldSummaryPage + 1) % 3;
-            }
-            if (key.Keycode == Key.Up) _fieldPartyCursor = (_fieldPartyCursor + _session.State.Party.Length - 1) % _session.State.Party.Length;
-            if (key.Keycode == Key.Down) _fieldPartyCursor = (_fieldPartyCursor + 1) % _session.State.Party.Length;
-            if (_session.State.Party[_fieldPartyCursor].IsEgg) _fieldSummaryPage = 0;
-            return true;
-        }
         if (_fieldMenuMode == "start")
         {
             var entries = FieldMenuEntries();
@@ -132,7 +121,7 @@ public partial class CampaignView
             var actions=FieldPartyActions();
             FieldMenuMoveCursor(key, ref _fieldPartyAction, actions.Length);
             if (key.Keycode != Key.Enter) return true;
-            if (actions[_fieldPartyAction] == "SUMMARY") { _fieldMenuMode = "summary"; _fieldSummaryPage = 0; }
+            if (actions[_fieldPartyAction] == "SUMMARY") { _fieldMenuMode = "summary"; _fieldSummaryPage = 0; ResetOwnedSummarySelection(); }
             else if (actions[_fieldPartyAction] == "SWITCH")
             {
                 if (!_session.CanReorderFieldParty) _fieldMenuNotice = "At least two POKéMON are\nneeded to SWITCH positions.";
@@ -258,13 +247,7 @@ public partial class CampaignView
         if (_fieldMenuMode == "start")
             return MouseSelect(point, ref _fieldMenuCursor, FieldMenuEntries().Length, 176, 8, 56, 15);
         if (_fieldMenuMode == "actions") return MouseSelect(point, ref _fieldPartyAction, FieldPartyActions().Length, 160, FieldPartyActionTop, 72, 16);
-        if (_fieldMenuMode == "summary")
-        {
-            if (new Rect2(8, 140, 60, 16).HasPoint(point)) return MouseKey(Key.Left);
-            if (new Rect2(84, 140, 68, 16).HasPoint(point)) return MouseKey(Key.Right);
-            if (new Rect2(172, 140, 60, 16).HasPoint(point)) return MouseKey(Key.Backspace);
-            return false;
-        }
+        if (_fieldMenuMode == "summary") return MouseOwnedSummary(point, _session.State.Party[_fieldPartyCursor], _fieldSummaryPage);
         if (MouseSelect(point, ref _fieldPartyCursor, _session.State.Party.Length, 8, 8, 224, 20)) return true;
         if (new Rect2(8, 132, 76, 16).HasPoint(point)) { _fieldPartyCursor = _session.State.Party.Length; return MouseKey(); }
         return false;
@@ -332,9 +315,10 @@ public partial class CampaignView
     // These are live values from the owned instance/catalog, never reconstructed
     // from level or starter choice. Exact original summary/party artwork is pending.
     private string[] FieldSummaryLines() => PartySummaryLines(_fieldPartyCursor, _fieldSummaryPage);
-    private string[] PartySummaryLines(int partyIndex, int page)
+    private string[] PartySummaryLines(int partyIndex, int page) => OwnedSummaryLines(_session.State.Party[partyIndex], page);
+    private string[] OwnedSummaryLines(PartyPokemon owned, int page)
     {
-        var owned = _session.State.Party[partyIndex]; var mon = owned.Pokemon;
+        var mon = owned.Pokemon;
         if (owned.IsEgg) return EggSummaryLines(owned);
         var species = _catalog.PokemonContent!.Catalog.Species[mon.Species];
         return page switch
@@ -350,10 +334,12 @@ public partial class CampaignView
     }
     private static string FieldSymbol(string value, string prefix) => value.StartsWith(prefix, StringComparison.Ordinal) ? value[prefix.Length..].Replace('_', ' ') : value;
 
-    private void DrawFieldSummary() => DrawPartySummary(_fieldPartyCursor, _fieldSummaryPage);
-    private void DrawPartySummary(int partyIndex, int page)
+    private void DrawFieldSummary() => DrawOwnedSummary(_session.State.Party[_fieldPartyCursor], _fieldSummaryPage, true);
+    private void DrawPartySummary(int partyIndex, int page) => DrawOwnedSummary(_session.State.Party[partyIndex], page);
+    private void DrawOwnedSummary(PartyPokemon owned, int page, bool interactive = false)
     {
-        var owned = _session.State.Party[partyIndex]; var mon = owned.Pokemon;
+        if (interactive && _summaryDetails) { DrawOwnedMoveDetails(owned); return; }
+        var mon = owned.Pokemon;
         if (owned.IsEgg) { DrawEggSummary(owned); return; }
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         SourceText(_sourceNormal, new(8, 8), new[] { "POKéMON INFO", "POKéMON SKILLS", "KNOWN MOVES" }[page]);
@@ -362,7 +348,7 @@ public partial class CampaignView
         SourceText(_sourceSmall, new(105, 28), "Lv" + mon.Level);
         if (mon.Gender != PokemonGender.Genderless) SourceText(mon.Gender == PokemonGender.Female ? _healthFemale : _healthMale, new(139, 28), mon.Gender == PokemonGender.Female ? "♀" : "♂");
         DrawForestPartyStatus(owned, new(198, 28));
-        var lines = PartySummaryLines(partyIndex, page);
+        var lines = OwnedSummaryLines(owned, page);
         if (page == 0)
         {
             if (_battleArt.TryGetValue((PresentedRenderSpecies(mon), "front", mon.IsShiny), out var art)) DrawTexture(art.Texture, new(8, 44));
@@ -374,8 +360,9 @@ public partial class CampaignView
             SourceText(_sourceSmall, new(8, 124), lines[5]);
         }
         else for (int i = 0; i < lines.Length; i++) SourceText(_sourceSmall, new(12, 45 + i * (page == 1 ? 12 : 22)), lines[i]);
-        SourceText(_sourceSmall, new(8, 143), "< PREV");
-        SourceText(_sourceSmall, new(84, 143), "NEXT >");
+        if (page > 0 || !interactive) SourceText(_sourceSmall, new(8, 143), "< PREV");
+        if (page < 2 || !interactive) SourceText(_sourceSmall, new(84, 143), "NEXT >");
+        else if (interactive) SourceText(_sourceSmall, new(84, 143), "DETAILS");
         SourceText(_sourceSmall, new(172, 143), "BACK");
     }
 }

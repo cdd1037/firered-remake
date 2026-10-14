@@ -88,10 +88,19 @@ public partial class CampaignView
             });
             return;
         }
-        if (action == "Summary" || _session.State.Pc!.View == CampaignPcView.Move && action is "Store" or "Withdraw")
+        if (action == "Summary")
         {
-            _pcNotice = action is "Store" or "Withdraw" ? "Use DEPOSIT or WITHDRAW from\nthe storage menu for this option."
-                : "This PC option is not available yet.\nChoose another option or go back.";
+            StorageSummaryAction(new("storage_summary_open")
+            {
+                StorageLocation = _storageCreatureHeldId is null ? location : null,
+                TargetInstanceId = _storageCreatureHeldId is null ? _storageCreatureTargetId : null,
+                HeldInstanceId = _storageCreatureHeldId
+            });
+            return;
+        }
+        if (_session.State.Pc!.View == CampaignPcView.Move && action is "Store" or "Withdraw")
+        {
+            _pcNotice = "Use DEPOSIT or WITHDRAW from\nthe storage menu for this option.";
             return;
         }
         if (action == "Release")

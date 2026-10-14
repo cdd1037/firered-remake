@@ -169,6 +169,7 @@ public partial class CampaignView
         if (_session.State.ItemMenu is not null) return NavigateItemsPointer(point, direction);
         if (_session.State.Pc is { } pc)
         {
+            if (pc.Summary is not null) return _pcNotice is null && _session.StorageSummaryPokemon is { } summaryPokemon && NavigateOwnedSummaryPointer(point, direction, summaryPokemon);
             if (_pcNotice is not null || _storagePartyPeek) return false;
             if (StorageCustomizationOverlayActive) return NavigateStorageCustomizationPointer(point, direction);
             if (StorageCreatureOverlayActive) return NavigateStorageCreaturePointer(point, direction);
@@ -233,7 +234,8 @@ public partial class CampaignView
             if (_pokedexCursor.Row == row) return false;
             _pokedexCursor = new(_pokedexCursor.ScrollOffset, row); return true;
         }
-        if (_fieldMenuMode is "pokedex-entry" or "trainer-card" or "summary") return false;
+        if (_fieldMenuMode == "summary") return NavigateOwnedSummaryPointer(point, direction, _session.State.Party[_fieldPartyCursor]);
+        if (_fieldMenuMode is "pokedex-entry" or "trainer-card") return false;
         if (_fieldMenuMode == "options") return PointerRows(point, direction, ref _optionsCursor, 7, 16, 58, 208, 13);
         if (_fieldMenuMode is "save-confirm" or "save-overwrite") return PointerRows(point, direction, ref _fieldSaveChoice, 2, 192, 73, 40);
         if (_fieldMenuMode == "start") return PointerRows(point, direction, ref _fieldMenuCursor, FieldMenuEntries().Length, 176, 8, 56, 15);
