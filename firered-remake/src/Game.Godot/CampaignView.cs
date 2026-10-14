@@ -423,6 +423,8 @@ public partial class CampaignView:Node2D
         {_regionalServiceNotice="The trip to ONE ISLAND is not\navailable yet.";_held=null;_repeat=0;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}
         else if(result.Error=="seagallop_destination_not_yet_available")
         {_regionalServiceNotice="Travel to this island is not\navailable yet.";_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
+        else if(result.Error=="npc_trade_access_boundary_not_open")
+        {_regionalServiceNotice="Cycling Road and western Route18\nare not available yet.";_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
         else if(result.Error?.StartsWith("regional_service_unavailable: ",StringComparison.Ordinal)==true){_regionalServiceNotice=result.Error[30..];_held=null;_repeat=0;_lastCommandFault=false;_status=result.Error;}
         else if(result.Status==CommandStatus.Fault){_lastCommandFault=true;_blockedAutomaticWait=before.Script.Wait?.CorrelationId;_status="未接入或故障："+result.Error;_held=null;/* authoritative state is unchanged; let the player choose a different valid action */}
         else _status=result.Error??"操作被拒绝";

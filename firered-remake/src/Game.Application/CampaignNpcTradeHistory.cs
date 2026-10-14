@@ -43,6 +43,8 @@ public sealed partial class CampaignSession
 
     private string? ValidateNpcTradeHistory(CampaignState state)
     {
+        if (!_content.IsNpcTradeStablePosition(state.World.Player.MapId,state.World.Player.X,state.World.Player.Y))
+            return "save_npc_trade_access_boundary";
         var receipts = state.NpcTrades ?? [];
         if (receipts.IsDefault || receipts.Any(t => t is null) ||
             state.EvolutionHistory is { IsDefault: true })

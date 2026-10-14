@@ -159,6 +159,7 @@ public sealed partial class CampaignSession
             moved=state with{World=transition.State with{RulesVersion=RuleVersions.GridWorldV0}};changed=transition.MapChanged;checkEncounter=transition.RequiresEncounterCheck;
             trigger=turn?EncounterCheckTrigger.TurnInPlaceCompleted:EncounterCheckTrigger.WalkingStepCompleted;
         }
+        if(!_content.IsNpcTradeStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"npc_trade_access_boundary_not_open");
         if(state.IsSurfing&&!SurfRegionAllows(moved.World.Player))return new(CommandStatus.Rejected,state,"field_surf_region_boundary_not_open");
         if(_content.SnorlaxEnabled&&!_content.IsSnorlaxStablePosition(moved.World.Player.MapId,moved.World.Player.X,moved.World.Player.Y))return new(CommandStatus.Rejected,state,"snorlax_region_boundary_not_open");
         if(changed&&moved.World.Player.MapId.Value==ViridianGymMap&&(!_content.ViridianGymEnabled||state.Script.Variables.GetValueOrDefault(ViridianGymDoor)!=1||!ViridianGymDoorBadges(state)))return new(CommandStatus.Rejected,state,"viridian_gym_door_locked");

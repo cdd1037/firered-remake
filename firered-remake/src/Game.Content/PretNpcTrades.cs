@@ -8,12 +8,12 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-/// <summary>Original FireRed NPC trades and the one new Lounge map. Runtime enablement is bounded to 0/2/3/4/6/7/8.</summary>
+/// <summary>Original FireRed NPC trades and the one new Lounge map. Runtime enablement is bounded to 0/2/3/4/5/6/7/8.</summary>
 public sealed class PretNpcTrades
 {
     public const string ResourceId = "firered-npc-trades-v1";
-    public const string ManifestSha256 = "66e609b0e32ccf1bddae02940f6295af77c39ee8c6942a6de6e0ca2f64e8019d";
-    public const string LockSha256 = "baf50c94b9185a9748576029223d77dbeba922e333762f3bd42584b16670ab1c";
+    public const string ManifestSha256 = "feb79c6ff5d5fda620f5c511e4b73eb08a1b708fcc501f41549fac699676d057";
+    public const string LockSha256 = "fc8a55d2e23888dad15b6b264ec20d9ad038d2d89311de282c433253cf33cf52";
     public const string FullSourceHash = "d34edcac7ca2b83d5e6f73360b3e1be983ad46bb558876768a26980507bd82be";
     public static MapId LoungeMapId { get; } = new("map.cinnabar-island-pokemon-lab-lounge");
     public NpcTradePokemonCatalog Trades { get; }
@@ -63,7 +63,7 @@ public sealed class PretNpcTrades
     {
         ArgumentNullException.ThrowIfNull(mechanics);
         var source = new SilphSourcePackage(projectRoot, "npc-trades", ResourceId,
-            "scripts/npc-trades.lock.json", LockSha256, 32334, ManifestSha256, 4061, 105, 17);
+            "scripts/npc-trades.lock.json", LockSha256, 32388, ManifestSha256, 4068, 105, 17);
         var catalog = source.Document("catalog.json");
         Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
             catalog.GetProperty("resourceId").GetString() == ResourceId &&
@@ -78,9 +78,9 @@ public sealed class PretNpcTrades
         var contracts = source.Document("contracts.json");
         foreach (var row in contracts.GetProperty("retainedMaps").EnumerateArray())
             _ = SafariSource.Read(projectRoot, row.GetProperty("path").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
-        Need(contracts.GetProperty("enabledTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual([0, 2, 3, 4, 6, 7, 8]) &&
-            contracts.GetProperty("deferredTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual([1, 5]) &&
-            contracts.GetProperty("retainedMaps").GetArrayLength() == 6 &&
+        Need(contracts.GetProperty("enabledTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual([0, 2, 3, 4, 5, 6, 7, 8]) &&
+            contracts.GetProperty("deferredTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual([1]) &&
+            contracts.GetProperty("retainedMaps").GetArrayLength() == 7 &&
             contracts.GetProperty("construction").GetProperty("metLocationValue").GetInt32() == 254 &&
             contracts.GetProperty("construction").GetProperty("discardedRandomIvDraws").GetInt32() == 2,
             "NPC trade construction/runtime boundary differs.");
@@ -129,11 +129,12 @@ public sealed class PretNpcTrades
         foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
         {
             string path = entry.GetString()!;
-            // Other two services remain evidence only. ExperimentRoom already owns its full script.
+            // Jynx mail service remains evidence only. ExperimentRoom already owns its full script.
             if (path.StartsWith("data/maps/", StringComparison.Ordinal) &&
                 !path.StartsWith("data/maps/CinnabarIsland_PokemonLab_Lounge/", StringComparison.Ordinal) &&
                 !path.StartsWith("data/maps/Route2_House/", StringComparison.Ordinal) &&
                 !path.StartsWith("data/maps/VermilionCity_House2/", StringComparison.Ordinal) &&
+                !path.StartsWith("data/maps/Route18_EastEntrance_2F/", StringComparison.Ordinal) &&
                 !path.StartsWith("data/maps/UndergroundPath_NorthEntrance/", StringComparison.Ordinal) &&
                 !path.StartsWith("data/maps/Route11_EastEntrance_2F/", StringComparison.Ordinal)) continue;
             string text = new UTF8Encoding(false, true).GetString(raw[path]);

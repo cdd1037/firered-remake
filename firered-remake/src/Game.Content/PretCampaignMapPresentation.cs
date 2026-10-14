@@ -27,6 +27,7 @@ public static class PretCampaignMapPresentation
         Add(catalog.FossilLabRegion.NewMaps.Keys,catalog.FossilLabRegion.NpcSourcePath);
         Add(catalog.NpcTradeContent.NewMaps.Keys,catalog.NpcTradeContent.NpcSourcePath);
         Add(catalog.NpcTradeElyssa.NewMaps.Keys,catalog.NpcTradeElyssa.NpcSourcePath);
+        Add(catalog.NpcTradeHaden.NewMaps.Keys,catalog.NpcTradeHaden.NpcSourcePath);
         Add(catalog.TrainerTowerRegion.Maps.Keys,catalog.TrainerTowerRegion.NpcSourcePath);
         Add(catalog.PowerPlantRegion.NewMaps.Keys,catalog.PowerPlantRegion.NpcSourcePath);
         Add(catalog.EventIslandRegion.NewMaps.Keys,catalog.EventIslandRegion.NpcSourcePath);

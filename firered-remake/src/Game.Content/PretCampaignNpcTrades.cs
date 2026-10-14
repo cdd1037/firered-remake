@@ -9,6 +9,8 @@ public sealed partial class PretCampaignCatalog
 {
     public PretNpcTrades NpcTradeContent { get; }
     public PretNpcTradeElyssa NpcTradeElyssa { get; }
+    public PretNpcTradeHaden NpcTradeHaden { get; }
+    public bool IsNpcTradeStablePosition(MapId map,int x,int y) => !NpcTradeHaden.NewMaps.ContainsKey(map) || NpcTradeHaden.AllowsFootDestination(map,x,y);
     public NpcTradePokemonCatalog NpcTrades => NpcTradeContent.Trades;
 
     private static void AppendNpcTradeSources(PretNpcTrades content, List<PretSourceScriptFile> sources,
@@ -20,7 +22,7 @@ public sealed partial class PretCampaignCatalog
         ImmutableDictionary<MapId,PretWorldMap> maps, ImmutableDictionary<MapId,PretWorldMap> previous,
         PretStoryCompilation scripts)
     {
-        if (previous.Count != 315 || maps.Count != 316 || trades.NewMaps.Count != 1 ||
+        if (previous.Count != 318 || maps.Count != 319 || trades.NewMaps.Count != 1 ||
             previous.Any(p => !ReferenceEquals(p.Value,maps[p.Key])) ||
             !ReferenceEquals(maps[PretNpcTrades.LoungeMapId],trades.NewMaps[PretNpcTrades.LoungeMapId]))
             throw new InvalidDataException("npc_trade_current_map_composition");

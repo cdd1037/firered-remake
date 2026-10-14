@@ -215,6 +215,7 @@ public interface ICampaignCatalog:IStoryCatalog
     int DepartmentStoreElevatorWindowCycles(int distance)=>throw new NotSupportedException();
     bool SnorlaxEnabled=>false;
     bool IsSnorlaxStablePosition(MapId map,int x,int y)=>true;
+    bool IsNpcTradeStablePosition(MapId map,int x,int y)=>true;
     bool IsSnorlaxWarpAllowed(MapId map,int sourceWarpId)=>true;
     bool PokemonTowerEnabled=>false;
     PokemonTowerTrainerCatalog? PokemonTowerTrainers=>null;

@@ -191,6 +191,7 @@
       "gitBlobSha1": "506e21d1eec842878ad488de26aca46821be3a35",
       "path": "data/maps/Route18_EastEntrance_2F/scripts.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],
@@ -201,6 +202,7 @@
       "gitBlobSha1": "16099b4289bd936d24c6a9baab37d1873935e1f4",
       "path": "data/maps/Route18_EastEntrance_2F/text.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],

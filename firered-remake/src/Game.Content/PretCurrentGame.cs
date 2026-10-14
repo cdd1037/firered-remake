@@ -40,6 +40,7 @@ public sealed partial class PretCampaignCatalog
         var doubleMechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(projectRoot);
         var npcTrades = PretNpcTrades.Load(projectRoot, doubleMechanics);
         var npcTradeElyssa = PretNpcTradeElyssa.Load(projectRoot);
+        var npcTradeHaden = PretNpcTradeHaden.Load(projectRoot);
         var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
         var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName), PretRocketHideoutRuntimeMaps.ManifestSha256);
@@ -1006,6 +1007,8 @@ public sealed partial class PretCampaignCatalog
         AppendFightingDojoSources(fightingDojo, sources, textFiles, constants, hashes);
         AppendFossilLabSources(fossilLab, sources, textFiles, constants, hashes);
         AppendNpcTradeSources(npcTrades, sources, textFiles, constants, hashes);
+        AppendAuthenticatedRegionalSources(npcTradeHaden.Scripts, npcTradeHaden.TextSources.Values, npcTradeHaden.Constants,
+            npcTradeHaden.AdditionalSourceHashes, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -2291,6 +2294,8 @@ public sealed partial class PretCampaignCatalog
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTradeElyssa.NewMaps);
         earlyShop = earlyShop with { Catalog = npcTradeElyssa.ExtendShop(fossilShop).Catalog };
         hashes.AddRange(npcTradeElyssa.AdditionalSourceHashes);
+        maps = maps.AddRange(npcTradeHaden.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTradeHaden.NewMaps);
         var npcTradePreviousMaps = maps;
         maps = maps.AddRange(npcTrades.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTrades.NewMaps);
@@ -2482,7 +2487,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,
