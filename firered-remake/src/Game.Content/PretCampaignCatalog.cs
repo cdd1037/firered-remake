@@ -617,6 +617,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         FieldPickups=FieldPickups.AddRange(SourceRegionPickupDefinitions(seafoam.NewMaps,seafoam.Items,seafoam.Contracts,
             PretSeafoamRegion.MapIdFromSourceSymbol,"seafoam",8,3,earlyShop.Catalog,scripts));
         FieldPickups = FieldPickups.Add(CopycatHiddenPickup(copycatHouse, earlyShop.Catalog, scripts));
+        FieldPickups = FieldPickups.AddRange(PretGameCornerHiddenCoins.Pickups(maps[new(GameCornerCoinSource.Map)], scripts));
         var capeBrinkPickups = CapeBrinkHiddenPickups(capeBrinkTutor, earlyShop.Catalog, scripts);
         FieldPickups = FieldPickups.AddRange(capeBrinkPickups);
         CapeBrinkUnderfootItems = capeBrinkPickups.Where(p => p.ItemSymbol == "ITEM_PP_MAX")

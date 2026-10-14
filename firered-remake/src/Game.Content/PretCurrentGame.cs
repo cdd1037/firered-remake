@@ -153,6 +153,7 @@ public sealed partial class PretCampaignCatalog
         var route11Trainers = PretRoute11Trainers.Load(projectRoot);
         var cityServices = PretCityServices.Load(projectRoot, runtimeMaps);
         var gameCornerCoins = PretGameCornerCoins.Load(projectRoot);
+        PretGameCornerHiddenCoins.ValidateSourceEvidence(projectRoot);
         var oldRod = PretOldRod.Load(projectRoot);
         var vermilionGym = PretVermilionGymRegion.Load(projectRoot, runtimeMaps);
         var vermilionGymTrainers = PretVermilionGymTrainers.Load(projectRoot);
@@ -1045,6 +1046,7 @@ public sealed partial class PretCampaignCatalog
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         MergeRegionalServiceConstants(constants, gameCornerCoins.Constants);
         hashes.AddRange(PretGameCornerCoins.AdditionalSourceHashes);
+        hashes.AddRange(PretGameCornerHiddenCoins.AdditionalSourceHashes);
         {
             MergeRegionalServiceConstants(constants, departmentStore.Constants);
             MergeRegionalServiceConstants(constants, new Dictionary<string, int> { { "PARTY_SIZE", 6 }, { "SPECIES_EGG", 412 } });

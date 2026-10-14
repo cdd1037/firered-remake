@@ -15,7 +15,8 @@ public sealed partial class CampaignSession
         bool received = state.Script.Flags.GetValueOrDefault(GameCornerCoinSource.CaseFlag);
         int quantity = OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], GameCornerCoinSource.CoinCase);
         if ((state.Inventory?.KeyItems ?? []).Count(s => s.Item == GameCornerCoinSource.CoinCase) > 1) return "save_coin_case_duplicate";
-        bool gifts = GameCornerCoinSource.GiftFlags.Any(f => state.Script.Flags.GetValueOrDefault(f));
+        bool gifts = GameCornerCoinSource.GiftFlags.Any(f => state.Script.Flags.GetValueOrDefault(f)) ||
+            _content.FieldPickups.Any(p => IsHiddenCoinPickup(p) && state.Script.Flags.GetValueOrDefault(p.Flag));
         if (!_content.GameCornerCoinsEnabled) return received || quantity != 0 || gifts || state.Coins != 0 ? "save_game_corner_coins_missing" : null;
         return quantity != (received ? 1 : 0) || !received && (gifts || state.Coins != 0) ? "save_coin_case_receipt" : null;
     }

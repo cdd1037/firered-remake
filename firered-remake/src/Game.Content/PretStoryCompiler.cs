@@ -392,6 +392,14 @@ public static partial class PretStoryCompiler
     private static (StoryOp,int,int)? GameCornerCoinsInstructionShape(PretSourceScriptFile file, string label,
         string opcode, ImmutableArray<string> operands)
     {
+        if (FirstSeviiSource(file, PretGameCornerHiddenCoins.ScriptPath, PretGameCornerHiddenCoins.ScriptsSha256) &&
+            label == "EventScript_TryPickUpHiddenCoins" && opcode is "checkcoins" or "addcoins")
+        {
+            string argument = opcode == "checkcoins" ? "VAR_RESULT" : "VAR_0x8006";
+            if (!operands.SequenceEqual(new[] { argument }))
+                throw ContentJson.Error("hidden_coins_operands", file.Path + ":" + label, opcode);
+            return (StoryOp.Special, 1, 1);
+        }
         if (!FirstSeviiSource(file, PretGameCornerCoins.ScriptPath, PretGameCornerCoins.ScriptsSha256)) return null;
         const string prefix = "CeladonCity_GameCorner_EventScript_";
         string? suffix = label.StartsWith(prefix, StringComparison.Ordinal) ? label[prefix.Length..] : null;

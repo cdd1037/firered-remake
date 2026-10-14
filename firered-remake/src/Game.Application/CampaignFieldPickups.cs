@@ -45,6 +45,7 @@ public sealed partial class CampaignSession
         int Value(string token)=>int.TryParse(token,out var n)?n:_content.TryConstant(token,out n)?n:
             throw new InvalidDataException("field_pickup_value_missing: "+token);
         var args=effect.Args;
+        if(IsHiddenCoinPickup(definition)&&TryApplyHiddenCoinEffect(state,definition,context,effect,out next))return true;
         if(effect.Opcode=="specialvar"&&args[1]=="BufferTMHMMoveName")
         {
             if(definition.Hidden||effect.Source.Path!="data/scripts/obtain_item.inc"||effect.Source.Symbol!="EventScript_PickUpItem"||
@@ -57,9 +58,10 @@ public sealed partial class CampaignSession
         }
         if(effect.Opcode=="special"&&args[0]=="SetHiddenItemFlag")
         {
-            if(!definition.Hidden||!context.InventoryAdded||effect.Source.Path!="data/scripts/obtain_item.inc"||effect.Source.Symbol!="EventScript_PickedUpHiddenItem"||
+            if(!definition.Hidden||!context.InventoryAdded||effect.Source.Path!="data/scripts/obtain_item.inc"||effect.Source.Symbol!=(IsHiddenCoinPickup(definition)?"EventScript_TryPickUpHiddenCoins":"EventScript_PickedUpHiddenItem")||
                 state.Script.Variables.GetValueOrDefault("VAR_0x8004")!=definition.SourceFlagId)
                 throw new InvalidDataException("hidden_item_flag_context_invalid");
+            if(IsHiddenCoinPickup(definition))RequireCoinEffect(state,effect);
             next=state with{Script=state.Script with{Flags=state.Script.Flags.SetItem(definition.Flag,true)}};return true;
         }
         if(effect.Opcode is not("checkitemspace" or "additem" or "bufferitemname" or "checkitemtype"))return false;
