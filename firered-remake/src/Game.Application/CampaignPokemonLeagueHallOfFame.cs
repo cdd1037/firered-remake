@@ -188,7 +188,7 @@ public sealed partial class CampaignSession
                 if(p is null||m.PartySlot!=i||m.SpeciesOrEgg is <1 or >412||m.OriginalTrainerId!=p.Pokemon.OriginalTrainerId||
                     m.Personality!=p.Pokemon.Personality||m.Level is <1 or >100||m.Level>p.Pokemon.Level||m.Nickname is null||
                     m.Nickname.Length is <1 or >10||(m.SpeciesOrEgg==412?m.Nickname!="EGG":m.Nickname.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c)))||m.NicknameBytes.IsDefault||
-                    m.SpeciesOrEgg!=NameRaterRules.SpeciesOrEgg(p)&&!(m.SpeciesOrEgg==412&&(state.DayCareEggs??[]).Any(e=>e.InstanceId==p.InstanceId&&e.Hatch is not null))&&!(state.EvolutionHistory??[]).Any(e=>e.InstanceId==p.InstanceId&&e.PreviousSpeciesId==m.SpeciesOrEgg&&e.Level>=m.Level)||
+                    m.SpeciesOrEgg!=NameRaterRules.SpeciesOrEgg(p)&&!(m.SpeciesOrEgg==412&&HasHatchedEggReceipt(state,p.InstanceId))&&!(state.EvolutionHistory??[]).Any(e=>e.InstanceId==p.InstanceId&&e.PreviousSpeciesId==m.SpeciesOrEgg&&e.Level>=m.Level)||
                     !m.NicknameBytes.SequenceEqual(PokemonLeagueNicknameBytes(m.Nickname))||m.SpeciesOrEgg!=412&&!p.ChampionRibbon)
                     return "save_pokemon_league_hof_member";
             }

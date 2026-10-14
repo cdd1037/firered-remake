@@ -58,7 +58,8 @@ public sealed partial class CampaignSession
         if (_content.PokemonStorageEnabled && IsSupportedHealingCenter(player.MapId) && behavior == 0x83)
             return new(CommandStatus.Accepted, Pump(StartStory(RegionalFacing(state), CenterPcScript)));
         string? script = RegionalFlavorRules.ScriptFor(behavior, player.Facing);
-        if (script is null) return new(CommandStatus.Rejected, state, "nothing_to_interact");
+        if (script is null || behavior == 0x85 && (!_content.TownMapEnabled || _content.FindProgram(script) is null))
+            return new(CommandStatus.Rejected, state, "nothing_to_interact");
         var next = RegionalFacing(state);
         // Source MsgSetSignpost applies to the exterior Center/Mart signs.
         if (behavior is 0x87 or 0x88) next = next with { SignMessage = new(SignStyle: true) };

@@ -8,7 +8,7 @@ public partial class CampaignView
     private readonly Dictionary<string, ImageTexture> _townMapTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<int, SourceGameFont> _townMapFonts = [];
     private SourceGameFont? _townMapSmallFont;
-    private bool _townMapWasActive, _townMapMoving;
+    private bool _townMapWasActive, _townMapMoving, _townMapWasWall;
     private Vector2I _townMapCursor, _townMapPlayer, _townMapMoveFrom, _townMapMoveTo;
     private Vector2I? _townMapHeld;
     private double _townMapElapsed, _townMapMoveElapsed;
@@ -79,8 +79,8 @@ public partial class CampaignView
         if (active && !_townMapWasActive)
         {
             LoadTownMapPresentation(); var p = _session.State.World.Player;
-            _townMapWasFly = FlyMapActive;
-            var projected = FlyMapActive ? InitializeFlyMap() : InitializeFirstSeviiTownMap(p.MapId.Value, p.X, p.Y);
+            _townMapWasFly = FlyMapActive; _townMapWasWall = WallTownMapActive;
+            var projected = FlyMapActive ? InitializeFlyMap() : WallTownMapActive ? InitializeWallTownMap() : InitializeFirstSeviiTownMap(p.MapId.Value, p.X, p.Y);
             _townMapPlayer = _townMapCursor = new(projected.X, projected.Y);
             _townMapElapsed = 0; _townMapSnap = 0; _townMapNotice = null;
             _townMapMoving = false; _townMapHeld = null; _held = null; _repeat = 0;
@@ -93,6 +93,7 @@ public partial class CampaignView
                 if (_session.State.FlyEffect is null) { _fieldMenuMode = "party"; _fieldPartyAction = 0; }
                 else ResetFieldMenu();
             }
+            if (_townMapWasWall) { ResetFieldMenu(); _townMapWasActive = false; return; }
             _questPocket = 1; _questPocketPopup = false;
             _questPocketCursor = Math.Max(0, Enumerable.Range(0, QuestPocketStacks.Length)
                 .FirstOrDefault(i => QuestPocketStacks[i].Item == QuestItemRules.TownMapId, 0));
@@ -156,7 +157,7 @@ public partial class CampaignView
             if (_townMapCursor == new Vector2I(map.Layout.Cancel.X, map.Layout.Cancel.Y))
             { SourceSound("SE_M_HYPER_BEAM2"); CloseTownMap(); }
             else if (TrySelectFlyDestination()) { }
-            else if (CurrentTownMapIcons.Any(i => i.SectionId == CurrentTownMapCell.DungeonSectionId &&
+            else if (!WallTownMapActive && CurrentTownMapIcons.Any(i => i.SectionId == CurrentTownMapCell.DungeonSectionId &&
                 _session.State.Script.Flags.GetValueOrDefault(i.VisitedFlag)))
                 _townMapNotice = "Detailed guide pages are not\navailable yet.";
         }

@@ -8,14 +8,14 @@ namespace Game.Domain.Encounters;
 public sealed class SourceTableWaterEncounterCatalog
 {
     private static readonly ConditionalWeakTable<WaterEncounterTable, SourceTableWaterEncounterCatalog> Proofs = new();
-    public static ImmutableArray<WaterEncounterTable> SourceTables => MemorialPillarEncounterTables.Water;
+    public static ImmutableArray<WaterEncounterTable> SourceTables => [.. MemorialPillarEncounterTables.Water, .. LostCaveEncounterTables.Water];
     public ImmutableDictionary<MapId, WaterEncounterTable> Tables { get; }
     private SourceTableWaterEncounterCatalog(ImmutableArray<WaterEncounterTable> tables) =>
         Tables = tables.ToImmutableDictionary(t => t.Map);
 
     public static SourceTableWaterEncounterCatalog Authenticate(ImmutableArray<WaterEncounterTable> tables)
     {
-        if (tables.IsDefaultOrEmpty || tables.Length != SourceTables.Length || tables.Any(t => t is null) ||
+        if (tables.IsDefaultOrEmpty || tables.Length > SourceTables.Length || tables.Any(t => t is null) ||
             tables.Select(t => t.Map).Distinct().Count() != tables.Length)
             throw new ArgumentException("source_table_water_scope");
         foreach (var actual in tables)

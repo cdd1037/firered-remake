@@ -59,6 +59,7 @@ public partial class CampaignView
         CaptureBall.Poke=>"POKé BALL", CaptureBall.Great=>"GREAT BALL",
         CaptureBall.Ultra=>"ULTRA BALL", CaptureBall.Master=>"MASTER BALL",
         CaptureBall.Net=>"NET BALL", CaptureBall.Nest=>"NEST BALL",
+        CaptureBall.Luxury=>"LUXURY BALL",
         _=>throw new InvalidDataException("Unsupported visible capture ball: "+ball)
     };
 }

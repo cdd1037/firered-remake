@@ -1,9 +1,10 @@
 using Game.Domain;
 using Game.Domain.Items;
+using Game.Domain.Events;
 
 namespace Game.Application;
 
-/// <summary>Shared Bag/Fly map callback; cursor and original artwork belong to the adapter.</summary>
+/// <summary>Shared Bag/Fly/wall map callback; cursor and original artwork belong to the adapter.</summary>
 public sealed record CampaignTownMap(string Origin = "bag");
 
 public sealed partial class CampaignSession
@@ -46,10 +47,52 @@ public sealed partial class CampaignSession
         return new(CommandStatus.Accepted, state with { TownMap = new() });
     }
 
+    private bool WallTownMapContext(CampaignState state)
+    {
+        if (!_content.TownMapEnabled || !_content.SupportsRegionalFlavor(state.World.Player.MapId) ||
+            !state.Script.Locked || state.Script.Completed || state.ItemMenu is not null || state.FlyEffect is not null)
+            return false;
+        var p = state.World.Player; var (dx, dy) = Delta(p.Facing);
+        return SourceBehavior(state, p.X + dx, p.Y + dy) == 0x85;
+    }
+
+    private bool AtWallTownMapInstruction(CampaignState state, StoryOp op, string opcode, int line)
+    {
+        if (state.Script.Stack.IsEmpty) return false;
+        var frame = state.Script.Stack[^1];
+        var program = _content.FindProgram(frame.ProgramId); int index = frame.InstructionIndex - 1;
+        return program is not null && index >= 0 && index < program.Instructions.Length &&
+            program.Instructions[index] is { } instruction && instruction.Op == op && instruction.Opcode == opcode &&
+            instruction.Source is { Path: "data/event_scripts.s", Symbol: "EventScript_WallTownMap" } &&
+            instruction.Source.Line == line;
+    }
+
+    private bool TryApplyWallTownMapEffect(CampaignState state, StoryEffect effect, out CampaignState next)
+    {
+        next = state;
+        if (effect.Opcode != "special" || !effect.Args.SequenceEqual(new[] { "ShowTownMap" })) return false;
+        if (!WallTownMapContext(state) || state.TownMap is not null || !state.ScreenIsBlack ||
+            effect.Source is not { Path: "data/event_scripts.s", Symbol: "EventScript_WallTownMap", Line: 1100 } ||
+            !AtWallTownMapInstruction(state, StoryOp.Special, "special", 1100))
+            throw new InvalidDataException("wall_town_map_source_context_invalid");
+        // The source viewer fades in, then its exit callback resumes the suspended
+        // waitstate. It neither opens the Bag nor consumes/awards a Town Map item.
+        next = state with { TownMap = new("wall"), Dialogue = null, ScreenIsBlack = false, PresentationTicks = 0 };
+        return true;
+    }
+
     private Decision<CampaignState> DecideTownMap(CampaignState state, CampaignCommand command)
     {
         if (state.TownMap?.Origin == "fly") return DecideFieldFly(state, command);
         if (command.Kind != "town_map_close") return new(CommandStatus.Rejected, state, "town_map_active");
+        if (state.TownMap?.Origin == "wall")
+        {
+            if (!WallTownMapContext(state) || state.Script.Wait is not { Kind: StoryWaitKind.Presentation } wait ||
+                !AtWallTownMapInstruction(state, StoryOp.WaitState, "waitstate", 1101))
+                return new(CommandStatus.Fault, state, "wall_town_map_callback_context_invalid");
+            var next = state with { TownMap = null, ScreenIsBlack = false, PresentationTicks = 0, PresentationEffects = [] };
+            return new(CommandStatus.Accepted, Pump(Advance(next, StoryRules.Continue(next.Script, wait.CorrelationId, _content))));
+        }
         if (!_content.TownMapEnabled || state.TownMap?.Origin != "bag" || state.ItemMenu is not { Origin: "bag", View: "bag" })
             return new(CommandStatus.Fault, state, "town_map_callback_context_invalid");
         return new(CommandStatus.Accepted, state with { TownMap = null });

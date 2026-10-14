@@ -15,7 +15,7 @@ public sealed partial class CampaignSession
     // The Domain overloads retain catalog identity, owned/opponent and party checks.
     private enum TrainerRegion
     {
-        Forest, Pewter, Route22, Route3, MtMoon, Cerulean, Bill, Vermilion, SsAnne, VermilionGym, Route11, RockTunnel, CeladonApproach, CeladonGym, RocketHideout, PokemonTower, FuchsiaRoute, FuchsiaGym, Silph, SaffronGym, Cinnabar, FirstSevii, ViridianGym, LeagueRival, VictoryRoad, PokemonLeague, SeviiRuby, FourIsland, FiveIsland, SixIsland, SevenIsland, FightingDojo, Seafoam, MemorialPillar, VsSeeker
+        Forest, Pewter, Route22, Route3, MtMoon, Cerulean, Bill, Vermilion, SsAnne, VermilionGym, Route11, RockTunnel, CeladonApproach, CeladonGym, RocketHideout, PokemonTower, FuchsiaRoute, FuchsiaGym, Silph, SaffronGym, Cinnabar, FirstSevii, ViridianGym, LeagueRival, VictoryRoad, PokemonLeague, SeviiRuby, FourIsland, FiveIsland, SixIsland, SevenIsland, FightingDojo, Seafoam, MemorialPillar, LostCave, VsSeeker
     }
 
     private sealed record TrainerScriptBinding(TrainerRegion Region, ImmutableArray<ForestTrainerBattleDefinition> Sources,
@@ -222,6 +222,12 @@ public sealed partial class CampaignSession
                 (trainer, rng) => MemorialPillarTrainerPartyFactory.Create(memorial, _content.MemorialPillarOpponents!, trainer, rng),
                 "memorial-pillar-trainer", memorial.BattlesByScript.Values);
         }
+        if (_content.LostCaveEnabled && _content.LostCaveTrainers is { } lostCave)
+        {
+            Add(TrainerRegion.LostCave, lostCave.Trainers.Values, lostCave.BattlesByScript.Values.Select(ProjectTrainerScript),
+                (trainer, rng) => LostCaveTrainerPartyFactory.Create(lostCave, _binding.Ownership, trainer, rng),
+                "lost-cave-trainer", lostCave.BattlesByScript.Values);
+        }
         if (VsSeekerEnabled && _content.VsSeekerTrainers is { } vsSeeker)
         {
             // Existing first-battle bindings keep their regional occurrence policy. Newly
@@ -262,6 +268,7 @@ public sealed partial class CampaignSession
         }
         string? prefix = region switch
         {
+            TrainerRegion.LostCave => "lost_cave",
             TrainerRegion.MemorialPillar => "memorial_pillar",
             TrainerRegion.Seafoam => "seafoam",
             TrainerRegion.FightingDojo => "fighting_dojo",
@@ -293,6 +300,7 @@ public sealed partial class CampaignSession
             : sources.SingleOrDefault(b => b.ScriptEntry == script) ?? throw new InvalidDataException(prefix + "_trainer_script_missing");
         bool accepted = region switch
         {
+            TrainerRegion.LostCave => selected.Mode is 0 or 3 && selected.BattleTypeFlags == 8,
             TrainerRegion.FightingDojo => selected.Mode is 0 or 2 && selected.BattleTypeFlags == 8 && selected.Source.Path == FightingDojoSource,
             TrainerRegion.MemorialPillar or TrainerRegion.Seafoam or TrainerRegion.SevenIsland or TrainerRegion.FiveIsland or TrainerRegion.SixIsland => selected.Mode == 0 && selected.BattleTypeFlags == 8,
             TrainerRegion.FourIsland => selected.Mode == 3 && selected.BattleTypeFlags == 8 && selected.Source.Path == FourIslandBackSource,
@@ -304,6 +312,7 @@ public sealed partial class CampaignSession
         };
         // Preserve each region's fingerprint validation on the original complete
         // battle record, including Five's callback and Six's double parameters.
+        if (region == TrainerRegion.LostCave) LostCaveTrainerPartyFactory.ValidateBattle(binding.Scripts.AuthenticatedSources[selected.ScriptEntry]);
         if (region == TrainerRegion.MemorialPillar) MemorialPillarTrainerPartyFactory.ValidateBattle(binding.Scripts.AuthenticatedSources[selected.ScriptEntry]);
         if (region == TrainerRegion.FiveIsland) FiveIslandTrainerPartyFactory.ValidateBattle(binding.Scripts.AuthenticatedSources[selected.ScriptEntry]);
         if (region == TrainerRegion.SixIsland) SixIslandTrainerPartyFactory.ValidateBattle(binding.Scripts.AuthenticatedSources[selected.ScriptEntry]);

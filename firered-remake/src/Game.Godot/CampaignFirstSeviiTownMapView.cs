@@ -6,13 +6,13 @@ public partial class CampaignView
     private PretFirstSeviiTownMap? _firstSeviiTownMap;
     private int _townMapPage, _townMapPlayerPage, _townMapSwitchSelection;
     private bool _townMapSwitchMenu, _townMapPlayerKnown = true;
-    private bool TownMapSwitchAvailable => !FlyMapActive && _firstSeviiTownMap is not null &&
+    private bool TownMapSwitchAvailable => !FlyMapActive && !WallTownMapActive && _firstSeviiTownMap is not null &&
         _session.State.Script.Flags.GetValueOrDefault(PretFirstSeviiTownMap.UnlockFlag);
-    private string TownMapBackground => FlyMapActive ? "fly-current" : _townMapPage == 1 ? (TownMapSwitchAvailable ? "sevii123" : "sevii123-locked") : TownMapSwitchAvailable ? "kanto-switch" : "kanto";
+    private string TownMapBackground => FlyMapActive ? "fly-current" : WallTownMapActive ? "wall-current" : _townMapPage == 1 ? (TownMapSwitchAvailable ? "sevii123" : "sevii123-locked") : TownMapSwitchAvailable ? "kanto-switch" : "kanto";
     private string TownMapDarkBackground => TownMapBackground == "kanto" ? "dark-name-background" : "dark-" + TownMapBackground;
-    private TownMapCell CurrentTownMapCell => FlyMapActive ? _flyMap!.CellAt(_townMapPage, _townMapCursor.X, _townMapCursor.Y, CurrentMapFlags) : _townMapPage == 1 ? _firstSeviiTownMap!.CellAt(_townMapCursor.X, _townMapCursor.Y) :
+    private TownMapCell CurrentTownMapCell => FlyMapActive || WallTownMapActive ? _flyMap!.CellAt(_townMapPage, _townMapCursor.X, _townMapCursor.Y, CurrentMapFlags) : _townMapPage == 1 ? _firstSeviiTownMap!.CellAt(_townMapCursor.X, _townMapCursor.Y) :
         _catalog.TownMap!.CellAt(_townMapCursor.X, _townMapCursor.Y);
-    private IEnumerable<TownMapIcon> CurrentTownMapIcons => FlyMapActive ? _flyMap!.VisibleDungeonIcons(_townMapPage, CurrentMapFlags) : _townMapPage == 1 ? _firstSeviiTownMap!.Icons : _catalog.TownMap!.Icons;
+    private IEnumerable<TownMapIcon> CurrentTownMapIcons => FlyMapActive || WallTownMapActive ? _flyMap!.VisibleDungeonIcons(_townMapPage, CurrentMapFlags) : _townMapPage == 1 ? _firstSeviiTownMap!.Icons : _catalog.TownMap!.Icons;
 
     private TownMapPoint InitializeFirstSeviiTownMap(string mapId, int x, int y)
     {

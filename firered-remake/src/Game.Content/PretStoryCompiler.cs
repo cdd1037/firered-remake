@@ -16,6 +16,8 @@ public sealed record PretStoryCompilation(
     ImmutableArray<ContentDiagnostic> UnsupportedInstructions, ImmutableDictionary<string,int> Constants) : IStoryCatalog
 {
     public ImmutableDictionary<string,ImmutableArray<string>> AssemblyData { get; init; }=ImmutableDictionary<string,ImmutableArray<string>>.Empty;
+    public ImmutableDictionary<string,StoryMenuDefinition> Menus { get; init; }=ImmutableDictionary<string,StoryMenuDefinition>.Empty;
+    public StoryMenuDefinition? FindMenu(string id)=>Menus.GetValueOrDefault(id);
     public StoryProgram? FindProgram(string id)=>Programs.GetValueOrDefault(id);
     public bool TryConstant(string symbol,out int value)
     {
@@ -26,7 +28,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false,bool includeEventIslands=false,bool includePowerPlant=false,bool includeTrainerTower=false,bool includeSeafoam=false,bool includeGameCornerCoins=false,bool includeGameCornerSlots=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false,bool includeEventIslands=false,bool includePowerPlant=false,bool includeTrainerTower=false,bool includeSeafoam=false,bool includeGameCornerCoins=false,bool includeGameCornerSlots=false,IReadOnlyDictionary<string,string>? authenticatedMapScriptHashes=null)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -86,6 +88,8 @@ public static partial class PretStoryCompiler
             foreach(var (label,body) in blocks)
             {
                 if(body.Count==0)continue;
+                if(IsEmptySourceMapHeader(file,label,body.Select(b=>b.Text).ToArray(),authenticatedMapScriptHashes))
+                {headers.Add(label,[]);assemblyData.Add(label,[".byte 0"]);continue;}
                 // Exact authenticated declarations are data, never swallowed script effects.
                 if(includeSaffronGymData&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&
                     file.SourceRef.Repository=="pret/pokefirered"&&
@@ -304,7 +308,10 @@ public static partial class PretStoryCompiler
                             var admitted=SixIslandInstructionShape(file,label,opcode,operands);
                             if(admitted is {} shape)(kind,min,max)=shape;
                         }
-                        if(includeFiveIsland)
+                        // An independently authenticated successor map uses the shared opcode shapes.
+                        // Keep the older source-specific warehouse contracts and reject unmounted files.
+                        if(includeFiveIsland && (IsFiveIslandMapSource(file) ||
+                            !IsAuthenticatedMapScriptSource(file, authenticatedMapScriptHashes)))
                         {
                             var admitted=FiveIslandInstructionShape(file,label,opcode,operands);
                             if(admitted is {} shape)(kind,min,max)=shape;
@@ -491,7 +498,7 @@ public static partial class PretStoryCompiler
             "setflag" or "setworldmapflag"=>(StoryOp.SetFlag,1,1),"clearflag"=>(StoryOp.ClearFlag,1,1),"setvar" or "setorcopyvar"=>(StoryOp.SetVar,2,2),"copyvar"=>(StoryOp.CopyVar,2,2),
             "goto_if_set" or "goto_if_unset"=>(StoryOp.FlagGoto,2,2),"call_if_set" or "call_if_unset"=>(StoryOp.FlagCall,2,2),
             "lock" or "lockall"=>(StoryOp.Lock,0,0),"release" or "releaseall"=>(StoryOp.Release,0,0),
-            "multichoice"=>(StoryOp.Multichoice,4,4),"msgbox"=>(StoryOp.Dialog,1,2),"message"=>(StoryOp.Message,1,1),"waitmessage"=>(StoryOp.WaitMessage,0,0),"waitbuttonpress"=>(StoryOp.WaitButtonPress,0,0),"closemessage"=>(StoryOp.CloseMessage,0,0),"delay"=>(StoryOp.Delay,1,1),
+            "multichoicegrid"=>(StoryOp.Multichoice,5,5),"multichoice"=>(StoryOp.Multichoice,4,4),"msgbox"=>(StoryOp.Dialog,1,2),"message"=>(StoryOp.Message,1,1),"waitmessage"=>(StoryOp.WaitMessage,0,0),"waitbuttonpress"=>(StoryOp.WaitButtonPress,0,0),"closemessage"=>(StoryOp.CloseMessage,0,0),"delay"=>(StoryOp.Delay,1,1),
             "applymovement"=>(StoryOp.ApplyMovement,2,3),"waitmovement"=>(StoryOp.WaitMovement,1,1),"warp"=>(StoryOp.Warp,3,4),"waitstate"=>(StoryOp.WaitState,0,0),
             "setobjectxyperm"=>(StoryOp.ObjectPosition,3,3),"setobjectmovementtype"=>(StoryOp.ObjectMovementType,2,2),"addobject" or "removeobject"=>(StoryOp.ObjectVisible,1,2),"turnobject"=>(StoryOp.TurnObject,2,2),
             "setrespawn"=>(StoryOp.Respawn,1,1),"faceplayer"=>(StoryOp.FacePlayer,0,0),"textcolor"=>(StoryOp.TextColor,1,1),"playbgm"=>(StoryOp.Music,2,2),"savebgm"=>(StoryOp.Music,1,1),"fadedefaultbgm"=>(StoryOp.Music,0,0),
@@ -499,7 +506,7 @@ public static partial class PretStoryCompiler
             "playse" or "playfanfare"=>(StoryOp.Sound,1,1),"waitfanfare" or "waitse"=>(StoryOp.Sound,0,0),
             "playmoncry"=>(StoryOp.Sound,2,2),"waitmoncry"=>(StoryOp.Sound,0,0),"fadeoutbgm"=>(StoryOp.Music,1,1),
             "opendoor" or "closedoor"=>(StoryOp.Door,2,2),"waitdooranim"=>(StoryOp.Door,0,0),"famechecker"=>(StoryOp.FameChecker,2,3),
-            "showmonpic"=>(StoryOp.PokemonPicture,3,3),"hidemonpic"=>(StoryOp.PokemonPicture,0,0),"givemon"=>(StoryOp.GivePokemon,2,6),"bufferspeciesname"=>(StoryOp.BufferSpecies,2,2),"fadescreen"=>(StoryOp.ScreenFade,1,1),"special"=>(StoryOp.Special,1,1),
+            "showmonpic"=>(StoryOp.PokemonPicture,3,3),"hidemonpic"=>(StoryOp.PokemonPicture,0,0),"givemon"=>(StoryOp.GivePokemon,2,6),"giveegg"=>(StoryOp.GivePokemon,1,1),"bufferspeciesname"=>(StoryOp.BufferSpecies,2,2),"fadescreen"=>(StoryOp.ScreenFade,1,1),"special"=>(StoryOp.Special,1,1),
             // These source opcodes change message state. They yield a native effect and retain
             // their own opcode, so an absent application handler faults instead of skipping them.
             "signmsg" or "normalmsg"=>(StoryOp.Special,0,0),

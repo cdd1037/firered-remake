@@ -40,13 +40,15 @@ public sealed partial class CampaignSession
 {
     private bool AdditionalCaptureBallSupported(string? symbol)=>
         symbol=="ITEM_GREAT_BALL"&&_content.CeladonApproachEnabled||
-        (symbol is "ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL")&&_content.SilphEnabled;
+        (symbol is "ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL")&&_content.SilphEnabled||
+        symbol=="ITEM_LUXURY_BALL"&&_content.LostCaveEnabled;
     private static string? CaptureBallReceipt(CaptureBall ball)=>ball switch
     {
         CaptureBall.Poke=>null,
         CaptureBall.Great=>"ITEM_GREAT_BALL",
         CaptureBall.Ultra=>"ITEM_ULTRA_BALL",
         CaptureBall.Master=>"ITEM_MASTER_BALL",
+        CaptureBall.Luxury=>"ITEM_LUXURY_BALL",
         _=>throw new InvalidDataException("capture_ball_unsupported")
     };
     private CampaignState BeginCapturePresentation(CampaignState state)
@@ -142,7 +144,7 @@ public sealed partial class CampaignSession
     private string? ValidateCapturedParty(CampaignState state)
     {
         if(!_content.CaptureEnabled)return state.Exploration?.Captured is null?null:"save_capture_profile_missing";
-        var allOwned=HistoricalPokemon(state);int gifts=GiftCount(state), trades=NpcTradeCount(state), eggs=DayCareEggCount(state);
+        var allOwned=HistoricalPokemon(state);int gifts=GiftCount(state), trades=NpcTradeCount(state), eggs=EggAcquisitionCount(state);
         // Capture history is lifetime acquisition proof, not current capacity. Released/traded
         // identities remain historical; delivery and storage validators bound current ownership.
         if(state.Exploration?.Captured is not {} captures||captures.IsDefault||state.NextPokemonId!=(allOwned.IsEmpty?1:captures.Length+gifts+trades+eggs+2L)||allOwned.Length!=(allOwned.IsEmpty?0:captures.Length+gifts+trades+eggs+1))return "save_capture_party_count";

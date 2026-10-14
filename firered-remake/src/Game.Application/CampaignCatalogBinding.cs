@@ -23,10 +23,11 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var ordinary = OrdinaryEvolutionOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
+        var battle = OwnedBattlePokemonCatalog.For(content.PokemonContent!.Catalog)
+            ?? throw new InvalidDataException("current_owned_battle_proof_missing");
+        var ordinary = OwnedBattlePokemonCatalog.SourceAncestor(battle, OrdinaryEvolutionOwnedPokemonCatalog.For)
             ?? throw new InvalidDataException("current_ordinary_evolution_owned_proof_missing");
         var owned = ordinary.Predecessor;
-        var battle = ordinary.SharedBattle;
         var ordinaryOpponents = OrdinaryEvolutionOpponentPokemonCatalog.For(ordinary);
         var memorial = content.MemorialPillarOpponents;
         if (content.MemorialPillarTrainers is not { } memorialTrainers || memorial is null ||
@@ -51,9 +52,18 @@ public sealed partial class CampaignSession
             !ReferenceEquals(stoneOpponents.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
         if (content.VsSeeker is not null && (content.VsSeekerOpponents is not {} vs ||
-            !ReferenceEquals(vs.Owned, battle) || !ReferenceEquals(vs.Predecessor, memorial.Catalog)))
+            !ReferenceEquals(vs.Owned, ordinary.SharedBattle) || !ReferenceEquals(vs.Predecessor, memorial.Catalog)))
             throw new InvalidDataException("current_vs_seeker_opponent_identity");
-        return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, ordinary.Catalog, battle);
+        if (content.LostCaveEnabled)
+        {
+            if (GiftEggOwnedPokemonCatalog.For(battle.Catalog) is not {} gift ||
+                !ReferenceEquals(gift.Predecessor.Predecessor, content.VsSeekerOpponents) ||
+                !ReferenceEquals(gift.SharedBattle, battle) || content.LostCaveTrainers is not {} trainers ||
+                !ReferenceEquals(trainers.InheritedTrainers, content.VsSeekerTrainers))
+                throw new InvalidDataException("current_lost_cave_owned_identity");
+            LostCaveTrainerPartyFactory.ValidateCatalog(trainers);
+        }
+        return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, battle.Catalog, battle);
     }
 
     // Source validation is shared by New Game and Restore, and remains independent of rendering.

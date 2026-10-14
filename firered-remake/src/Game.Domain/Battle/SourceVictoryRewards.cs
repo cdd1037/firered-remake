@@ -97,7 +97,8 @@ public static class SourceVictoryRewards
         if (SourcePokemonValidator.ValidatePartyMember(mechanics.Catalog, member, ownership) is { } error)
             throw new ArgumentException(error, nameof(member));
         if (!ValidName(facts.OriginalTrainerName) ||
-            !ValidRegion(facts.MetLocation) && facts.MetLocation != NpcTradePokemonOriginRules.MetLocation ||
+            !ValidRegion(facts.MetLocation) && facts.MetLocation != NpcTradePokemonOriginRules.MetLocation &&
+                !(member.IsEgg && facts.MetLocation == SourceGiftEggRules.MetLocation) ||
             !NpcTradePokemonOriginRules.MatchesRewardMetadata(mechanics.Catalog, member.Pokemon,
                 facts.OriginalTrainerName, facts.MetLocation, facts.Ball) ||
             facts.Ball is not ("ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL" or "ITEM_GREAT_BALL" or "ITEM_POKE_BALL" or

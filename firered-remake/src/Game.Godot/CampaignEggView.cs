@@ -19,6 +19,22 @@ public partial class CampaignView
         _ => ["It looks like this", "EGG will take a", "long time to hatch."]
     };
 
+    // pret 037335f pokemon_summary_screen.c:2789-2839,3243-3269;
+    // strings.c:820-824. This is the owned-party/box branch, not the link
+    // opponent's party. Validated current names contain no extended controls.
+    private string[] EggOriginLines(PartyPokemon owned)
+    {
+        if (owned.MetLocation == "METLOC_FATEFUL_ENCOUNTER" || owned.ModernFatefulEncounter)
+            return ["A wondrously peculiar POKéMON EGG", "obtained at a nice place."];
+        bool currentOwner = (owned.Pokemon.OriginalTrainerId & 0xffff) == (_session.State.TrainerId & 0xffff) &&
+            string.Equals(owned.OriginalTrainerName, _session.State.PlayerName, StringComparison.Ordinal);
+        if (owned.MetGame is not (4 or 5) || !currentOwner)
+            return ["A peculiar POKéMON EGG obtained", "in a trade."];
+        return owned.MetLocation == SourceGiftEggRules.MetLocation
+            ? ["An odd POKéMON EGG obtained from", "the traveling man."]
+            : ["An odd POKéMON EGG found by the", "DAY-CARE couple."];
+    }
+
     private void DrawEggSummary(PartyPokemon owned)
     {
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
@@ -27,9 +43,9 @@ public partial class CampaignView
         DrawTexture(BreedingEggShell(), new(8, 38));
         var lines = EggSummaryLines(owned);
         for (int i = 0; i < lines.Length; i++) SourceText(_sourceNormal, new(82, 51 + 15 * i), lines[i]);
-        // This admitted Egg owner only supports original Day-Care acquisition.
-        SourceText(_sourceSmall, new(8, 111), "An odd POKéMON EGG found by the");
-        SourceText(_sourceSmall, new(8, 125), "DAY-CARE couple.");
+        var origin = EggOriginLines(owned);
+        SourceText(_sourceSmall, new(8, 111), origin[0]);
+        SourceText(_sourceSmall, new(8, 125), origin[1]);
         SourceText(_sourceSmall, new(172, 143), "BACK");
     }
 

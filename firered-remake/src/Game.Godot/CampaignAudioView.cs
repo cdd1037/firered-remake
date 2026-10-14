@@ -39,6 +39,8 @@ public partial class CampaignView
                     synthesized.VerifyOrdinaryEvolutionPresentationCues(ordinaryOwned,_root);
                 if(_catalog.MemorialPillarOpponents is {} memorialOpponents)
                     synthesized.RegisterMemorialPillarCues(memorialOpponents,_root);
+                if(OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(_catalog.PokemonContent?.Catalog), GiftEggOwnedPokemonCatalog.For) is {} giftOwned)
+                    synthesized.RegisterGiftEggCues(giftOwned,_root);
                 _sourceAudio=synthesized;AddChild(synthesized);
                 synthesized.PlaybackEvent+=cue=>
                 {

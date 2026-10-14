@@ -17,7 +17,7 @@ public sealed partial class CampaignSession
         if(next != old) state = state with { Script = state.Script with
         { Variables = state.Script.Variables.SetItem(RenewableHiddenItemRules.CounterVariable, next) } };
         if(_content.SixIslandEnabled)state=state with{Script=state.Script with{Variables=state.Script.Variables.SetItem("VAR_MASSAGE_COOLDOWN_STEP_COUNTER",Math.Min(500,state.Script.Variables.GetValueOrDefault("VAR_MASSAGE_COOLDOWN_STEP_COUNTER")+1))}};
-        return state;
+        return ApplySelphyWalkingStep(state);
     }
 
     private CampaignState ApplyRenewableHiddenItemMapEntry(CampaignState state)

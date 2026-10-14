@@ -25,9 +25,10 @@ public sealed record CampaignEggHatch(int PartyIndex, long InstanceId, int Sourc
 
 public sealed partial class CampaignSession
 {
-    private static int DayCareEggCount(CampaignState state) => (state.DayCareEggs ?? []).Length;
+    private static int EggAcquisitionCount(CampaignState state) => (state.DayCareEggs ?? []).Length + (state.GiftEggs ?? []).Length;
     private static IEnumerable<int> HatchedEggSpecies(CampaignState state) =>
-        (state.DayCareEggs ?? []).Where(e => e.Hatch is not null).Select(e => e.SourceSpeciesId);
+        (state.DayCareEggs ?? []).Where(e => e.Hatch is not null).Select(e => e.SourceSpeciesId)
+            .Concat((state.GiftEggs ?? []).Where(e => e.Hatch is not null).Select(e => e.SourceSpeciesId));
     private SourceEggTrainer EggTrainer(CampaignState state) => new(state.TrainerId, state.PlayerName, state.PlayerGender);
 
     private CampaignState ApplyDayCareWalkingStep(CampaignState state)
@@ -100,7 +101,7 @@ public sealed partial class CampaignSession
         var receipts = state.DayCareEggs ?? [];
         if (receipts.IsDefault || receipts.Any(e => e is null)) return "save_daycare_egg_receipts";
         var history = HistoricalPokemon(state);
-        if (history.Any(p => p.IsEgg && !receipts.Any(e => e.InstanceId == p.InstanceId))) return "save_daycare_egg_acquisition_missing";
+        if (history.Any(p => p.IsEgg && !EggAcquisitionIds(state).Contains(p.InstanceId))) return "save_daycare_egg_acquisition_missing";
         var ids = new HashSet<long>(); long lastId = 1; ulong lastCursor = 0;
         foreach (var receipt in receipts)
         {
@@ -165,14 +166,13 @@ public sealed partial class CampaignSession
         int index = state.Script.Variables.GetValueOrDefault("VAR_0x8004", -1);
         if (index < 0 || index >= state.Party.Length || !state.Party[index].IsEgg || state.Party[index].Pokemon.Friendship != 0) throw new InvalidDataException("hatch_selected_egg");
         var egg = state.Party[index];
-        int receiptIndex = Array.FindIndex((state.DayCareEggs ?? []).ToArray(), e => e.InstanceId == egg.InstanceId);
-        if (receiptIndex < 0 || state.DayCareEggs!.Value[receiptIndex].Hatch is not null) throw new InvalidDataException("hatch_receipt_missing");
+        if (EggHatchReceipt(state, egg.InstanceId) is not null) throw new InvalidDataException("hatch_receipt_already_hatched");
         string location = _content.MapDefinition(state.World.Player.MapId).RegionMapSection;
         var hatched = SourceEggRules.Hatch(_content.PokemonContent!, egg, EggTrainer(state), location, state.World.Rng);
         var shards = SourceEggRules.CreateNormalHatchShards(hatched.Rng);
-        var receipt = state.DayCareEggs.Value[receiptIndex] with { Hatch = new(location, state.World.Rng, hatched.Rng) };
-        next = state with { Party = state.Party.SetItem(index, hatched.Pokemon), World = state.World with { Rng = hatched.Rng },
-            DayCareEggs = state.DayCareEggs.Value.SetItem(receiptIndex, receipt), SeenSpecies = state.SeenSpecies.Add(egg.Pokemon.SourceSpeciesId),
+        next = WriteEggHatchReceipt(state, egg.InstanceId, new(location, state.World.Rng, hatched.Rng)) with {
+            Party = state.Party.SetItem(index, hatched.Pokemon), World = state.World with { Rng = hatched.Rng },
+            SeenSpecies = state.SeenSpecies.Add(egg.Pokemon.SourceSpeciesId),
             CaughtSpecies = state.CaughtSpecies.Add(egg.Pokemon.SourceSpeciesId), TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", hatched.Pokemon.Nickname),
             EggHatch = new(index, egg.InstanceId, egg.Pokemon.SourceSpeciesId, CampaignEggHatchStage.Animation, shards.AnimationIndexes),
             Dialogue = null, ScreenIsBlack = false, PresentationTicks = 0, PresentationEffects = [] };
@@ -197,10 +197,9 @@ public sealed partial class CampaignSession
             case CampaignEggHatchStage.Animation:
                 var shards = SourceEggRules.CreateNormalHatchShards(state.World.Rng);
                 if (!shards.AnimationIndexes.SequenceEqual(scene.ShardAnimationIndexes)) throw new InvalidDataException("hatch_shard_projection_changed");
-                int index = Array.FindIndex(state.DayCareEggs!.Value.ToArray(), e => e.InstanceId == scene.InstanceId);
-                var receipt = state.DayCareEggs.Value[index];
-                next = Text("gText_HatchedFromEgg", CampaignEggHatchStage.Hatched) with { World = state.World with { Rng = shards.Rng },
-                    DayCareEggs = state.DayCareEggs.Value.SetItem(index, receipt with { Hatch = receipt.Hatch! with { RngAfter = shards.Rng } }) }; break;
+                var hatch = EggHatchReceipt(state, scene.InstanceId) ?? throw new InvalidDataException("hatch_receipt_missing");
+                next = WriteEggHatchReceipt(Text("gText_HatchedFromEgg", CampaignEggHatchStage.Hatched), scene.InstanceId,
+                    hatch with { RngAfter = shards.Rng }) with { World = state.World with { Rng = shards.Rng } }; break;
             case CampaignEggHatchStage.Hatched:
                 next = Text("gText_NickHatchPrompt", CampaignEggHatchStage.NicknameChoice, true); break;
             case CampaignEggHatchStage.NicknameChoice:

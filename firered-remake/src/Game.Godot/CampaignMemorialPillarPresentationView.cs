@@ -14,7 +14,8 @@ public partial class CampaignView
         if (_catalog.MemorialPillarOpponents is not { } opponents) return;
         if (!_session.IsCurrentGame || _ordinaryEvolutionArt is null ||
             !ReferenceEquals(MemorialPillarOpponentPokemonCatalog.For(opponents.Catalog), opponents) ||
-            !ReferenceEquals(_catalog.PokemonContent?.Catalog, opponents.Owned.Catalog))
+            !ReferenceEquals(OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(_catalog.PokemonContent?.Catalog),
+                OrdinaryEvolutionOwnedPokemonCatalog.For), opponents.Owned))
             throw new InvalidDataException("Memorial Pillar presentation requires authenticated current opponents and owned predecessor.");
         var art = PretMemorialPillarPresentation.Load(_root);
         int battleCount = _battleArt.Count, portraitCount = _portraits.Count, iconCount = _storageIcons.Count, footprintCount = _route22Footprints.Count;

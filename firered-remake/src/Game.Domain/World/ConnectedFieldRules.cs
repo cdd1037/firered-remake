@@ -212,7 +212,9 @@ public static class ConnectedFieldRules
     }
     internal static bool ValidCell(ConnectedFieldCell cell) => cell.SourceBehavior is >= 0 and <= 255 &&
         cell.Collision is >= 0 and <= 3 && cell.Elevation is >= 0 and <= 15;
-    private static bool WalkableBehavior(int behavior,bool enableCaveGround=false,bool enableSand=false,bool enableSpinTiles=false) => behavior is 0x00 or 0x02 or >= 0x30 and <= 0x37 || enableCaveGround&&behavior is 0x08 or 0x2a or 0x2b || enableSand&&behavior==0x21 || enableSpinTiles&&behavior is >=0x54 and <=0x58;
+    // Source MetatileBehavior_IsSandOrShallowFlowingWater groups 0x17 with sand.
+    // It is absent from sBehaviorSurfable; collision and elevation still gate landing.
+    private static bool WalkableBehavior(int behavior,bool enableCaveGround=false,bool enableSand=false,bool enableSpinTiles=false) => behavior is 0x00 or 0x02 or >= 0x30 and <= 0x37 || enableCaveGround&&behavior is 0x08 or 0x2a or 0x2b || enableSand&&behavior is 0x17 or 0x21 || enableSpinTiles&&behavior is >=0x54 and <=0x58;
     private static string BehaviorFault(int behavior) => behavior switch
     {
         0x10 or 0x11 or 0x12 or 0x13 or 0x15 or 0x16 or 0x17 or 0x19 or 0x1a or 0x1b or >= 0x50 and <= 0x53 => "unsupported-water-movement",

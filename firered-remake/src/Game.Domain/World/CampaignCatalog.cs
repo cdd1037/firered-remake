@@ -115,6 +115,8 @@ public interface ICampaignCatalog:IStoryCatalog
     int TrainerTowerTextGender(TrainerTowerFloorTemplate template,int trainerIndex,bool secondDoubleSpeaker)=>throw new NotSupportedException("trainer_tower_not_enabled");
     string TrainerTowerEncounterMusic(TrainerTowerFloorTemplate template,int trainerIndex)=>throw new NotSupportedException("trainer_tower_not_enabled");
     bool SeafoamEnabled=>false;
+    bool LostCaveEnabled=>false;
+    LostCaveTrainerCatalog? LostCaveTrainers=>null;
     SeafoamOwnedPokemonCatalog? SeafoamOwnership=>null;
     SeafoamOpponentPokemonCatalog? SeafoamOpponents=>null;
     SeafoamMachineCatalog? SeafoamMachines=>null;
@@ -189,6 +191,8 @@ public interface ICampaignCatalog:IStoryCatalog
     SeviiRubyWaterEncounterCatalog? SeviiRubyWaterEncounters=>null;
     // Original species IDs include Hoenn entries 277–411 and skip legacy Unown placeholders.
     bool IsValidPokedexSourceSpecies(int sourceSpeciesId) => sourceSpeciesId is >=1 and <=251 or >=277 and <=411;
+    // Text-only source lookup does not imply that the species is admitted for ownership or battle.
+    string? SourceSpeciesName(int sourceSpeciesId) => PokemonContent?.SpeciesNames.GetValueOrDefault(sourceSpeciesId);
     CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)=>throw new NotSupportedException("national_dex_not_enabled");
     PokemonLeagueTrainerCatalog? PokemonLeagueTrainerParties=>null;
     PokemonLeagueOpponentPokemonCatalog? PokemonLeagueOpponents=>null;
@@ -310,20 +314,21 @@ public interface ICampaignCatalog:IStoryCatalog
     ImmutableArray<string> TextPages(string symbol);
 }
 
-/// <summary>Bounded source GetInteractedMetatileScript flavor subset; service behaviors remain unadmitted.</summary>
+/// <summary>Bounded source GetInteractedMetatileScript flavor and wall-map dispatch.</summary>
 public static class RegionalFlavorRules
 {
     private static readonly ImmutableDictionary<int,string> Labels = new Dictionary<int,string>
     {
         [0x81]="EventScript_Bookshelf", [0x82]="EventScript_PokeMartShelf",
         [0x86]="EventScript_PlayerFacingTVScreen", [0x87]="EventScript_PokecenterSign",
-        [0x88]="EventScript_PokemartSign", [0x8a]="EventScript_Kitchen",
+        [0x88]="EventScript_PokemartSign", [0x89]="EventScript_Cabinet", [0x8a]="EventScript_Kitchen",
         [0x90]="EventScript_Food", [0x98]="EventScript_AdvertisingPoster",
         [0x9c]="EventScript_PolishedWindow", [0x9d]="EventScript_BeautifulSkyWindow",
         [0x9f]="EventScript_NeatlyLinedUpTools"
     }.ToImmutableDictionary();
+    // Only simple MSGBOX_SIGN/end programs belong to the flavor closure validator.
     public static IEnumerable<string> Scripts => Labels.Values;
     public static string? ScriptFor(int behavior, Direction facing) =>
         !Enum.IsDefined(facing) || behavior is 0x86 or 0x87 or 0x88 && facing != Direction.North
-            ? null : Labels.GetValueOrDefault(behavior);
+            ? null : behavior == 0x85 ? "EventScript_WallTownMap" : Labels.GetValueOrDefault(behavior);
 }

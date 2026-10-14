@@ -8,7 +8,7 @@ Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／�
 
 原代币盒／余额／换币柜台与三位普通赠币NPC已完成实际应用路线、独立Continue和短headless View；奖品三柜台／15项已接入，受控边界与实际三类兑换、独立Continue及短headless View均通过。原12处隐藏币已通过实际120→380续走与独立Continue；老虎机规则及生产入口已接入，原默认实走一回合/退出与短视图通过，精确原生视听仍未完成。通信进化替代的具体接入仍待讨论。
 
-当前已加载组合为343地图、186可持有物种、209普通敌方定义、354招式、147普通物品、57机器和18导师定义。新增五TM实际取得与真道具携带往返已通过，TM10另有明示受控Pickup→公共TAKE验证，见[本批边界](original-machine-integration.md)。塔专用敌方另列；这些是数据与准入集合，不是地图交互、全部物种或招式表现的完工率。普通单打和原预设双打共享规则阶段已达到既定出口，76个有效特性身份及有边界的整回合／应用回归已建立；所有交互、获得途径与特殊模式仍分别验收。[战斗出口](battle-system-completion-matrix.md#2026-10-11-ordinary-core-closure-and-bounded-refactor)
+当前已加载组合为346地图、186可持有物种、209普通敌方定义、354招式、147普通物品、57机器和18导师定义。新增五TM实际取得与真道具携带往返已通过，TM10另有明示受控Pickup→公共TAKE验证，见[本批边界](original-machine-integration.md)。塔专用敌方另列；这些是数据与准入集合，不是地图交互、全部物种或招式表现的完工率。普通单打和原预设双打共享规则阶段已达到既定出口，76个有效特性身份及有边界的整回合／应用回归已建立；所有交互、获得途径与特殊模式仍分别验收。[战斗出口](battle-system-completion-matrix.md#2026-10-11-ordinary-core-closure-and-bounded-refactor)
 
 项目级深入重构R1–R4的有界结果已经交付：普通单／双打共用唯一frame与执行生命周期，旧执行器及桥接实体退休，Content只保留当前入口，普通训练家、场外遭遇和药品／进化石使用共享绑定。原始资源证明、特殊实验室／教学战和只读表现投影是实际保留边界。[重构范围](project-refactor-plan.md#2026-10-13-final-bounded-refactor-result)
 
@@ -20,7 +20,7 @@ Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／�
 该范围已完成并以02c32b8固定为stage13完整包，包含当前源码、运行资源、必要原输入及少量关键存档／验收摘要。以下第2项后继工作分别继续，不把历史备份节点误当当前未完成要求：
 - 玉虹游戏厅原老虎机：规则、App 会话、原资源和显示/音频接线已接入；用户批准 None/0 初值与 21 格负索引归一，原默认入口实际单回合与退出、短 headless View 通过，精确调色动画/原生视听仍待验。见[当前边界](slot-machine-integration.md)。
 - 对战搜寻器原规则、351队伍、共享单／双打入口和场外表现已接入，原领取／100步充电／6号路真实再战与独立Continue、短headless View通过；全部重战地点和原生视听仍分别验收。见[当前边界](vs-seeker-integration.md)。
-- 人物收集器列表／事实／肖像界面已接通；96条资料中仍有7条区域取得入口未挂载，精确原生表现另列。
+- 人物收集器列表／事实／肖像界面已接通；96条资料中原7条区域缺口已实际接通学校／浅红民居／三岛House2的4条，仍有3条取得入口未挂载，精确原生表现另列。
 - Teachy TV已接原目录／菜单／临时演示所有者，状态与相性课原行动表耗尽的安全补一回合方案待用户批准；当前显式边界可B返回。完整公开流程／原生视听仍按[教学接线说明](teachy-tv-integration.md)区分。
 - 邮件九词编写／确认取消和12种原信纸已接通，真实既有Retro Mail写信／读信／送PC、独立Continue和短View通过，见[邮件当前边界](mail-composer-integration.md)。
 
@@ -58,7 +58,7 @@ Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／�
 
 | 范围 | 未完成或未完整验收 | 记录 |
 | --- | --- | --- |
-| 各城镇和道路 | 普通／条件对白、隐藏物、侧室与剩余训练家仍须逐区补齐；早期常青学校／民居、深灰博物馆购票与展览没有完整交付证明。主线通过不等于全交互。 | [交互覆盖](regional-interaction-coverage.md)、[早期遗留](first-badge-followups.md) |
+| 各城镇和道路 | 普通／条件对白、隐藏物、侧室与剩余训练家仍须逐区补齐；常青学校、浅红House1与三岛House2已通过实际门路／对白及独立Continue，学校原菜单与墙地图亦已验；其他侧室、深灰博物馆购票与展览仍缺完整交付证明。主线通过不等于全交互。 | [交互覆盖](regional-interaction-coverage.md)、[早期遗留](first-badge-followups.md) |
 | 玉虹服务 | 代币盒／余额／两档换币与原三NPC赠币已接通，实际coins600／money5798并独立存读；奖品三柜台／15项已接入，实际售物换币→三类兑换／PC命名与独立Continue通过；12处隐藏币实际260币／一次性flag／Itemfinder排除与独立Continue通过；老虎机原默认入口实际一回合/退币退出已通过，精确原生视听另列。Retro Mail销售已完成；写信和空白预览、真实送PC／独立Continue与短View已通过，原生表现仍另列。 | [原代币服务](game-corner-coins.md#actual-city-route-and-short-view-closure)、[奖品接线](game-corner-redemption.md)、[4F准确边界](department-fourth-floor-shops.md)、[完整地区分母](full-scope-audit.md#4-关都全部地区与主线) |
 | 南路与浅红周边 | 自行车道、另一条南行路线、未覆盖浅红设施／拾取、尚未开放钓鱼区域及Safari高级钓鱼。Haden18号门楼可达不等于整条道路开放。 | [Haden](npc-trade-haden.md)、[浅红](fuchsia-arrival.md)、[高级竿](super-rod-campaign.md) |
 | 海路与传说分支 | 另一条海路与尚未列入验收的静态遇敌分支；双子岛21队未逐队实战，急冻鸟自然原个体捕获未完成。保留上述发电厂／双子岛已通业务，不重新列为从零待做。 | [双子岛](seafoam-campaign.md)、[红莲](cinnabar-campaign.md) |

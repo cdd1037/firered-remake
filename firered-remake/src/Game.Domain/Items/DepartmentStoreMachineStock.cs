@@ -156,6 +156,21 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
         stock.Validate(); Proofs.Add(stock.Machines, stock);
     }
 
+    // The sealed species extension has already authenticated source rows and registered its owner.
+    // This carries the original six-item shop proof without adding another regional shop class.
+    internal static void BindOwnedSuccessor(PewterMachineCatalog predecessor, PewterMachineCatalog successor)
+    {
+        if (For(predecessor) is not { } before || OwnedMachineCatalogBinding.For(successor) is not { } owner ||
+            !ReferenceEquals(OwnedMachineCatalogBinding.SourceAncestor(successor,
+                c => ReferenceEquals(c, predecessor) ? before : null), before) ||
+            !ReferenceEquals(OwnedBattlePokemonCatalog.SourceAncestor(owner,
+                c => ReferenceEquals(c, before._owner.Catalog) ? before._owner : null), before._owner))
+            throw new ArgumentException("department_owned_successor_proof");
+        var stock = new DepartmentStoreMachineStock(before.OriginalMachines, successor, owner)
+        { RooftopPredecessor = before.RooftopPredecessor };
+        stock.Validate(); Proofs.Add(successor, stock);
+    }
+
     public bool IsClerk(string mapId, string sourcePath, string script, string stockId) =>
         mapId == ExpectedMapId && sourcePath == ExpectedSourcePath && script == ExpectedClerkScript && stockId == Id;
 

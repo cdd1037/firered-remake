@@ -66,7 +66,7 @@ public static class FieldMovementRules
             return new(TransitionStatus.Accepted,next,[new(intent.CommandId,WorldEventKind.Blocked,state.Player,next.Player,"stair-turn")],false,null);
         }
         if(enableLadders&&(here is 0x08 or 0x2a or 0x2b or 0x61||map.SourceBehaviorAt(frontX,frontY) is 0x08 or 0x2a or 0x2b or 0x61)||
-            enableSand&&(here==0x21||map.SourceBehaviorAt(frontX,frontY)==0x21))
+            enableSand&&(here is 0x17 or 0x21||map.SourceBehaviorAt(frontX,frontY) is 0x17 or 0x21))
         {
             var cells=ImmutableArray.CreateBuilder<ConnectedFieldCell>(map.Width*map.Height);
             for(int y=0;y<map.Height;y++)for(int x=0;x<map.Width;x++)
@@ -94,7 +94,7 @@ public static class FieldMovementRules
         {
             var cell=source.GetTile(x,y);
             var behavior=source.SourceBehaviorAt(x,y);
-            return cell is not null&&(cell.Blocked||behavior==0x00||enableLadders&&behavior is 0x08 or 0x2a or 0x2b or 0x32 or 0x61||enableSand&&behavior==0x21)?cell with{Behavior=TileBehavior.Floor}:cell;
+            return cell is not null&&(cell.Blocked||behavior==0x00||enableLadders&&behavior is 0x08 or 0x2a or 0x2b or 0x32 or 0x61||enableSand&&behavior is 0x17 or 0x21)?cell with{Behavior=TileBehavior.Floor}:cell;
         }
     }
 

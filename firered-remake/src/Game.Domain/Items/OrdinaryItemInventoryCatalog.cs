@@ -135,6 +135,27 @@ public sealed class OrdinaryItemInventoryCatalog
         Proofs.Add(proof.Catalog, proof); return proof;
     }
 
+    public static ItemId LuxuryBallId { get; } = new("pret:ITEM_LUXURY_BALL");
+    public const string LostCaveItemsSourceSha256 = "60dd836df4e3e846e4adc5401442d6106e1fb41cca9e262a81eb46837e5b3909";
+    public static ImmutableArray<ItemId> LostCaveItems { get; } = new[] {
+        "SILK_SCARF", "SEA_INCENSE", "LAX_INCENSE", "LUXURY_BALL"
+    }.Select(name => new ItemId("pret:ITEM_" + name)).ToImmutableArray();
+    /// <summary>Close the original Lost Cave pickups and Selphy rewards without changing existing item identities or shelves.</summary>
+    public static OrdinaryItemInventoryCatalog AppendLostCaveItems(EarlyShopCatalog predecessor,
+        ImmutableArray<EarlyShopItemDefinition> additions)
+    {
+        ArgumentNullException.ThrowIfNull(predecessor);
+        if (For(predecessor) is not { } old || predecessor.Items.Length != 147 || old.Additions.Length != 18 ||
+            additions.IsDefault || additions.Length != 4 ||
+            additions.Any(i => i is null || i.EffectBytes.IsDefault || i.SourceMetadata is null || i.Importance != 0) ||
+            !additions.Select(i => i.Id).SequenceEqual(LostCaveItems) ||
+            additions.Any(i => predecessor.Items.Any(before => before.Id == i.Id)) ||
+            CampaignSourceFingerprint.Compute(additions.ToArray()) != LostCaveItemsSourceSha256)
+            throw new ArgumentException("ordinary_lost_cave_item_source");
+        var proof = new OrdinaryItemInventoryCatalog(old.Predecessor, old.Additions.AddRange(additions));
+        Proofs.Add(proof.Catalog, proof); return proof;
+    }
+
     public string? ValidateInventory(InventoryState? inventory)
     {
         if (inventory is null) return "inventory_missing";
@@ -149,17 +170,22 @@ public sealed class OrdinaryItemInventoryCatalog
         if (Pocket(inventory.BagItems, Catalog.Limits.BagItemSlots) is {} bag) return bag;
         if (Pocket(inventory.PcItems, Catalog.Limits.PcItemSlots) is {} pc) return pc;
         var keys = inventory.KeyItems ?? [];
+        var balls = inventory.Balls ?? [];
         if (Pocket(keys, Catalog.QuestLimits.KeyItemSlots) is {} keyError) return keyError;
+        if (Pocket(balls, Catalog.QuestLimits.BallSlots) is {} ballError) return ballError;
         if (keys.Any(s => IsAddition(s.Item) && (s.Item != VsSeekerId || s.Quantity != 1)) ||
-            inventory.BagItems.Any(s => s.Item == VsSeekerId) || inventory.PcItems.Any(s => s.Item == VsSeekerId))
+            inventory.BagItems.Any(s => s.Item == VsSeekerId || s.Item == LuxuryBallId) ||
+            inventory.PcItems.Any(s => s.Item == VsSeekerId) ||
+            balls.Any(s => IsAddition(s.Item) && s.Item != LuxuryBallId))
             return "inventory_item_pocket";
-        foreach (var pocket in new[] { inventory.Balls, inventory.Berries, inventory.Machines })
+        foreach (var pocket in new[] { inventory.Berries, inventory.Machines })
             if (pocket is {} stacks && !stacks.IsDefault && stacks.Any(s => s is not null && IsAddition(s.Item)))
                 return "inventory_item_pocket";
         // Preserve original capacities and reject malformed full state before narrowing to the source proof.
         return EarlyShopInventoryRules.Validate(Predecessor, inventory with {
             BagItems = inventory.BagItems.RemoveAll(s => IsAddition(s.Item)),
             PcItems = inventory.PcItems.RemoveAll(s => IsAddition(s.Item)),
+            Balls = inventory.Balls is null ? null : balls.RemoveAll(s => IsAddition(s.Item)),
             KeyItems = keys.RemoveAll(s => IsAddition(s.Item)) });
     }
 }

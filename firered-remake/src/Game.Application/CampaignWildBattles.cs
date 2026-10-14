@@ -181,6 +181,7 @@ public sealed partial class CampaignSession
                 "pret:ITEM_GREAT_BALL" when _content.CeladonApproachEnabled=>CaptureBall.Great,
                 "pret:ITEM_ULTRA_BALL" when _content.SilphEnabled=>CaptureBall.Ultra,
                 "pret:ITEM_MASTER_BALL" when _content.SilphEnabled=>CaptureBall.Master,
+                "pret:ITEM_LUXURY_BALL" when _content.LostCaveEnabled=>CaptureBall.Luxury,
                 _=>(CaptureBall)0
             };
             if(ball==(CaptureBall)0)return new(CommandStatus.Rejected,state,"capture_ball_unsupported");
@@ -194,7 +195,7 @@ public sealed partial class CampaignSession
                 var ballItem=new ItemId("pret:"+CaptureBallReceipt(ball));
                 var balls=state.Inventory.Balls??[];int index=-1;
                 for(int n=0;n<balls.Length;n++)if(balls[n].Item==ballItem){index=n;break;}
-                if(index<0)return new(CommandStatus.Rejected,state,ball switch{CaptureBall.Great=>"capture_no_great_ball",CaptureBall.Ultra=>"capture_no_ultra_ball",_=>"capture_no_master_ball"});
+                if(index<0)return new(CommandStatus.Rejected,state,ball switch{CaptureBall.Great=>"capture_no_great_ball",CaptureBall.Ultra=>"capture_no_ultra_ball",CaptureBall.Luxury=>"capture_no_luxury_ball",_=>"capture_no_master_ball"});
                 var stack=balls[index];
                 capturedInventory=state.Inventory with{Balls=stack.Quantity==1?balls.RemoveAt(index):balls.SetItem(index,stack with{Quantity=stack.Quantity-1})};
             }

@@ -23,6 +23,7 @@ public static class PretCampaignMapPresentation
                 if(localBorder)localBorders.Add(id);
             }
         }
+        Add(catalog.LostCaveRegion.NewMaps.Keys,catalog.LostCaveRegion.NpcSourcePath);
         Add(catalog.FightingDojoRegion.NewMaps.Keys,catalog.FightingDojoRegion.NpcSourcePath);
         Add(catalog.FossilLabRegion.NewMaps.Keys,catalog.FossilLabRegion.NpcSourcePath);
         Add(catalog.NpcTradeContent.NewMaps.Keys,catalog.NpcTradeContent.NpcSourcePath);
@@ -40,6 +41,7 @@ public static class PretCampaignMapPresentation
         Add(catalog.Route5DayCare.NewMaps.Keys,catalog.Route5DayCare.NpcSourcePath);
         Add(catalog.FourIslandDayCare.NewMaps.Keys,catalog.FourIslandDayCare.NpcSourcePath);
         Add(catalog.OriginalTmAcquisition.NewMaps.Keys,catalog.OriginalTmAcquisition.NpcSourcePath);
+        Add(catalog.SchoolHouseInteriors.NewMaps.Keys,catalog.SchoolHouseInteriors.NpcSourcePath);
         Add(catalog.TrainerTowerRegion.Maps.Keys,catalog.TrainerTowerRegion.NpcSourcePath);
         Add(catalog.PowerPlantRegion.NewMaps.Keys,catalog.PowerPlantRegion.NpcSourcePath);
         Add(catalog.EventIslandRegion.NewMaps.Keys,catalog.EventIslandRegion.NpcSourcePath);

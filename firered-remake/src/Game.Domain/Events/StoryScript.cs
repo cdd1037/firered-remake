@@ -29,6 +29,7 @@ public interface IStoryCatalog
 {
     StoryProgram? FindProgram(string id);
     bool TryConstant(string symbol, out int value);
+    StoryMenuDefinition? FindMenu(string id) => null;
 }
 /// <summary>A bounded typed interpreter; unknown source operations fault, never silently no-op.</summary>
 public static class StoryRules
@@ -59,6 +60,7 @@ public static class StoryRules
             if(program is not null&&index>=0&&index<program.Instructions.Length)
             {
                 var instruction=program.Instructions[index];
+                if(instruction.Opcode=="multichoicegrid")return StoryGridMenuRules.Resolve(instruction,catalog)?.Accepts(choice)==true;
                 if(GameCornerPrizeSource.MenuKind(instruction) is not null)return choice==127||choice>=0&&choice<6;
                 if(GameCornerCoinSource.IsMenu(instruction))return choice is 0 or 1 or 2 or 127;
                 if(DepartmentRooftopSource.Menu(instruction) is {} roofMenu)return choice==127||choice>=0&&choice<roofMenu.Rows.Length;
@@ -177,7 +179,10 @@ public static class StoryRules
                     case StoryOp.Lock:state=state with{Locked=true};Effect(i);break;
                     case StoryOp.Release:state=state with{Locked=false};Effect(i);break;
                     case StoryOp.Dialog:Effect(i,a.Length>1&&a[1]=="MSGBOX_YESNO"?StoryWaitKind.Choice:StoryWaitKind.Dialog);break;
-                    case StoryOp.Multichoice:Effect(i,StoryWaitKind.MenuChoice);break;
+                    case StoryOp.Multichoice:
+                        if(i.Opcode=="multichoicegrid"&&StoryGridMenuRules.Resolve(i,catalog) is null)
+                            return Fault("event_grid_menu_invalid","Unknown source menu or invalid grid operands.");
+                        Effect(i,StoryWaitKind.MenuChoice);break;
                     case StoryOp.Message:Effect(i);break;
                     case StoryOp.WaitMessage:Effect(i,StoryWaitKind.MessagePrinting);break;
                     case StoryOp.WaitButtonPress:Effect(i,StoryWaitKind.ButtonPress);break;

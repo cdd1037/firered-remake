@@ -9,6 +9,13 @@ public sealed partial class CampaignSession
         if(IsPokemonLeagueTrainer(trainer))return PokemonLeagueTrainerMap(trainer);
         var definition=OrdinaryTrainerScript(trainer);
         var sourceMap=definition.Source.Path.StartsWith("data/maps/",StringComparison.Ordinal)?definition.Source.Path.Split('/')[2]:definition.ScriptEntry.Split("_EventScript_",StringSplitOptions.None)[0];
+        if (IsLostCaveTrainer(trainer))
+        {
+            string symbol = "MAP_" + System.Text.RegularExpressions.Regex.Replace(sourceMap, "([a-z])([A-Z])", "$1_$2").ToUpperInvariant();
+            var map = _content.MapFromSourceSymbol(symbol);
+            if (!_content.Maps.ContainsKey(map)) throw new InvalidDataException("lost_cave_trainer_map_missing");
+            return map;
+        }
         return sourceMap switch
         {
             _ when _content.SsAnneEnabled && sourceMap.StartsWith("SSAnne_",StringComparison.Ordinal)=>_content.MapFromSourceSymbol("MAP_"+System.Text.RegularExpressions.Regex.Replace(sourceMap,"([a-z])([A-Z])","$1_$2").ToUpperInvariant()),
@@ -59,7 +66,7 @@ public sealed partial class CampaignSession
             _=>throw new InvalidDataException("ordinary_trainer_source_map")
         };
     }
-    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsFourIslandTrainer(trainer)?"0x0":IsSeviiRubyTrainer(trainer)?SeviiRubyNoIntroActorScript(trainer):IsPokemonLeagueTrainer(trainer)?PokemonLeagueTrainerActorScript(trainer):IsLeagueRivalTrainer(trainer)?"0x0":IsFirstSeviiTrainer(trainer)?"ThreeIsland_EventScript_Biker":IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer).ScriptEntry:IsSilphTrainer(trainer)?"0x0":IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
+    private string OrdinaryNoIntroActorScript(TrainerId trainer)=>IsLostCaveTrainer(trainer)?"0x0":IsFourIslandTrainer(trainer)?"0x0":IsSeviiRubyTrainer(trainer)?SeviiRubyNoIntroActorScript(trainer):IsPokemonLeagueTrainer(trainer)?PokemonLeagueTrainerActorScript(trainer):IsLeagueRivalTrainer(trainer)?"0x0":IsFirstSeviiTrainer(trainer)?"ThreeIsland_EventScript_Biker":IsCinnabarTrainer(trainer)?OrdinaryTrainerScript(trainer).ScriptEntry:IsSilphTrainer(trainer)?"0x0":IsRocketHideoutTrainer(trainer)?"RocketHideout_B4F_EventScript_Giovanni":IsMtMoonTrainer(trainer)?"MtMoon_B2F_EventScript_Miguel":
         IsPokemonTowerRival(trainer)||IsCeruleanRival(trainer)||IsSsAnneRival(trainer)?"0x0":
         IsCeruleanTrainer(trainer)?"CeruleanCity_EventScript_Grunt":
         trainer==Game.Domain.Trainers.BillTrainerPartyFactory.Rocket?"Route24_EventScript_Rocket":

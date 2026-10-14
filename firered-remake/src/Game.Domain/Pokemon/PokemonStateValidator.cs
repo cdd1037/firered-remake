@@ -251,6 +251,8 @@ public static class PokemonStateValidator
 
     internal static string? ValidateOriginMetadata(PokemonCatalog catalog, PartyPokemon owned)
     {
+        if (owned.MetLocation == SourceGiftEggRules.MetLocation)
+            return SourceGiftEggRules.AdmitsSpecialOrigin(catalog, owned) ? null : "party_gift_egg_origin";
         if (!ValidSymbol(owned.MetLocation, "MAPSEC_") && owned.MetLocation != NpcTradePokemonOriginRules.MetLocation)
             return "party_met_location";
         return NpcTradePokemonOriginRules.ValidateParty(catalog, owned);
