@@ -14,7 +14,8 @@ public static class PokemonMoveRules
             ? catalog.Moves.TryGetValue(move, out var sourceMove) && Game.Domain.WildBattle.WildBattleRules.IsCalledMoveEffectSupported(sourceMove)
             : catalog.Species.Count == 107 ? Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.FuchsiaRulesVersion) : catalog.Species.Count != 103 || Game.Domain.WildBattle.WildBattleRules.IsMoveSupported(move, Game.Domain.WildBattle.WildBattleRules.SnorlaxRulesVersion);
 
-    /// <summary>CreateBoxMon learns in source order. Only initial creation automatically forgets the oldest move.</summary>
+    /// <summary>CreateBoxMon learns in source order and automatically forgets the oldest move.
+    /// Day Care later uses the same source automatic-learning primitive.</summary>
     public static ImmutableArray<PokemonMoveSlot> InitialMoves(PokemonCatalog catalog, PokemonSpeciesDefinition species, int level)
     {
         PokemonFactory.ValidateCatalog(catalog);
@@ -31,9 +32,7 @@ public static class PokemonMoveRules
         foreach (var entry in species.LevelUpMoves)
         {
             if (entry.Level > level) break;
-            var result = TryLearnCore(catalog, moves, entry.Move, metadataCreation: true);
-            moves = result.Outcome == MoveLearningOutcome.NeedsReplacement
-                ? moves.RemoveAt(0).Add(NewSlot(catalog.Moves[entry.Move])) : result.Moves;
+            moves = LearnAutomatically(catalog, moves, entry.Move);
         }
         return moves;
     }
@@ -50,6 +49,17 @@ public static class PokemonMoveRules
     /// <summary>Actual level-up does not silently FIFO-replace: a full set returns NeedsReplacement unchanged.</summary>
     public static MoveLearningResult TryLearn(PokemonCatalog catalog, ImmutableArray<PokemonMoveSlot> moves, MoveId move) =>
         TryLearnCore(catalog, moves, move, metadataCreation: false);
+
+    /// <summary>Source Day Care uses GiveMoveToMon then DeleteFirstMoveAndGiveMoveToMon.
+    /// Unlike the player's learning menu this can forget an HM; retained PP bonuses move with
+    /// their slots, and a newly learned move has full base PP and no bonuses.</summary>
+    internal static ImmutableArray<PokemonMoveSlot> LearnAutomatically(PokemonCatalog catalog,
+        ImmutableArray<PokemonMoveSlot> moves, MoveId move)
+    {
+        var learned = TryLearnCore(catalog, moves, move, metadataCreation: true);
+        return learned.Outcome == MoveLearningOutcome.NeedsReplacement
+            ? moves.RemoveAt(0).Add(NewSlot(catalog.Moves[move])) : learned.Moves;
+    }
 
     private static MoveLearningResult TryLearnCore(PokemonCatalog catalog, ImmutableArray<PokemonMoveSlot> moves, MoveId move, bool metadataCreation)
     {

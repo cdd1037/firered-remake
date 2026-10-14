@@ -172,6 +172,9 @@ public static partial class PretStoryCompiler
                 if (FirstSeviiSource(file, "data/maps/SaffronCity_CopycatsHouse_2F/scripts.inc", "b6be843b486aca59f577ec9cbec8cea1c529c655542ef6536b0e1ad0e47cef26") &&
                     label == "SaffronCity_CopycatsHouse_2F_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
+                if (FirstSeviiSource(file, "data/maps/Route5_PokemonDayCare/scripts.inc", PretRoute5DayCare.MapScriptSha256) &&
+                    label == "Route5_PokemonDayCare_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
+                { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
                 if (FirstSeviiSource(file, "data/maps/FuchsiaCity_House3/scripts.inc", Game.Domain.Pokemon.MoveDeleterCatalog.ScriptSha256) &&
                     label == "FuchsiaCity_House3_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }

@@ -223,6 +223,7 @@ public interface ICampaignCatalog:IStoryCatalog
     MoveTutorCatalog? MoveTutors=>null;
     MoveDeleterCatalog? MoveDeleter=>null;
     MoveReminderCatalog? MoveReminder=>null;
+    bool Route5DayCareEnabled=>false;
     DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock=>null;
     DepartmentStoreCounterStock? DepartmentStoreCounter(string stockId)=>null;
     PokeDollShopStock? PokeDollShopStock=>null;

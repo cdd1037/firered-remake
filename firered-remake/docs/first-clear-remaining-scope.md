@@ -4,11 +4,11 @@
 
 ## 当前工作与统计边界
 
-Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／飞玉虹实际链和独立Continue；短headless View另过4号道路中心自动起降与原声事件，原生屏幕和物理音频仍未验。见[field Fly当前边界](field-fly-integration.md)。当前推进5号道路单槽日托，原地图和规则候选就绪，Application接线进行中；不提前算完成。
+Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／飞玉虹实际链和独立Continue；短headless View另过4号道路中心自动起降与原声事件，原生屏幕和物理音频仍未验。见[field Fly当前边界](field-fly-integration.md)。当前推进5号道路单槽日托，地图／规则／Application／共享队伍UI已组合构建通过，实际寄存取回、Continue及短View正在验收；四岛繁殖独立实现中，不提前算完成。
 
 原代币盒／余额／换币柜台与三位普通赠币NPC已完成实际应用路线、独立Continue和短headless View；奖品三柜台／15项已接入，受控边界与实际三类兑换、独立Continue及短headless View均通过。原12处隐藏币已通过实际120→380续走与独立Continue；老虎机仍未完成。通信进化替代的具体接入仍待讨论。
 
-当前已加载组合为338地图、174可持有物种、196普通敌方定义、354招式、137普通物品、51机器和18导师定义。塔专用敌方另列；这些是数据与准入集合，不是地图交互、全部物种或招式表现的完工率。普通单打和原预设双打共享规则阶段已达到既定出口，76个有效特性身份及有边界的整回合／应用回归已建立；所有交互、获得途径与特殊模式仍分别验收。[战斗出口](battle-system-completion-matrix.md#2026-10-11-ordinary-core-closure-and-bounded-refactor)
+当前已加载组合为339地图、174可持有物种、196普通敌方定义、354招式、137普通物品、51机器和18导师定义。塔专用敌方另列；这些是数据与准入集合，不是地图交互、全部物种或招式表现的完工率。普通单打和原预设双打共享规则阶段已达到既定出口，76个有效特性身份及有边界的整回合／应用回归已建立；所有交互、获得途径与特殊模式仍分别验收。[战斗出口](battle-system-completion-matrix.md#2026-10-11-ordinary-core-closure-and-bounded-refactor)
 
 项目级深入重构R1–R4的有界结果已经交付：普通单／双打共用唯一frame与执行生命周期，旧执行器及桥接实体退休，Content只保留当前入口，普通训练家、场外遭遇和药品／进化石使用共享绑定。原始资源证明、特殊实验室／教学战和只读表现投影是实际保留边界。[重构范围](project-refactor-plan.md#2026-10-13-final-bounded-refactor-result)
 

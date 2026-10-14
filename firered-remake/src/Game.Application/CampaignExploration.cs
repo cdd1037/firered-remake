@@ -182,7 +182,7 @@ public sealed partial class CampaignSession
             if(legacySpecial&&tookStep)moved=ApplyEventIslandWalkingStep(ApplyRenewableHiddenItemWalkingStep(moved),before.MapId.Value);
             moved=EnterSurfConnectionMap(moved,moved.World.Player.Facing,legacySpecial);
             if(_content.FirstSeviiEnabled&&!legacySpecial&&tookStep)moved=moved with{EntryPrograms=moved.EntryPrograms.Add("@renewable-camera-step")};
-            moved=Pump(moved);
+            moved=PumpWithCameraStep(moved,()=>preempted=true);
         }
         else
         {
@@ -223,7 +223,7 @@ public sealed partial class CampaignSession
             if(moved.World.StepCount>state.World.StepCount)
             {
                 moved=ApplyFieldPoisonWalkingStep(ApplyWalkingFriendship(moved));
-                if(moved.FieldPoison is null)moved=ApplySafariWalkingStep(moved);
+                if(moved.FieldPoison is null)moved=ApplySafariWalkingStep(ApplyRoute5DayCareWalkingStep(moved));
                 if(moved.FieldPoison is null&&moved.Script.Completed)moved=ApplyRepelWalkingStep(moved);
             }
             // The expiration message owns this input. Dismissing it never replays the

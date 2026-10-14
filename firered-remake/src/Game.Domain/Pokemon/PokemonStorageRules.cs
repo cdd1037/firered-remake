@@ -111,7 +111,7 @@ public static class PokemonStorageRules
             box with { Slots = box.Slots.SetItem(address.SlotIndex, owned) }) };
     }
 
-    private static PartyPokemon ToBoxProjection(PokemonCatalog catalog, PartyPokemon owned)
+    internal static PartyPokemon ToBoxProjection(PokemonCatalog catalog, PartyPokemon owned)
     {
         var pokemon = owned.Pokemon;
         var species = catalog.Species[pokemon.Species];

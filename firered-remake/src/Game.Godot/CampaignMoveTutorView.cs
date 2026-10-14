@@ -43,7 +43,7 @@ public partial class CampaignView
             return null;
         }
     }
-    private bool MoveTutorActive => Teaching is not null;
+    private bool MoveTutorActive => Teaching is not null || DayCareChoosing;
     private MoveReminderCatalog ReminderCatalog => ((ICampaignCatalog)_catalog).MoveReminder!;
     private MoveDeleterCatalog DeleterCatalog => ((ICampaignCatalog)_catalog).MoveDeleter!;
     private static Rect2 TutorPartyRow(int index) => new(8, 6 + index * 18, 224, 18);
@@ -57,13 +57,14 @@ public partial class CampaignView
     {
         if (before?.MoveTutor?.Stage != after.MoveTutor?.Stage || before?.MoveTutor?.Page != after.MoveTutor?.Page ||
             before?.MoveReminder?.Stage != after.MoveReminder?.Stage || before?.MoveReminder?.Page != after.MoveReminder?.Page ||
-            before?.MoveDeleter?.Stage != after.MoveDeleter?.Stage)
+            before?.MoveDeleter?.Stage != after.MoveDeleter?.Stage || IsDayCareChoosing(before) != IsDayCareChoosing(after))
         {
             _held = null; _repeat = 0; ReleaseFieldTextInput(); _tutorCursor = 0; _tutorScroll = 0;
+            ResetDayCarePartyPresentation();
             _tutorTransitionFrame = Engine.GetProcessFrames();
         }
         bool oldActive = before?.MoveTutor is not null || before?.MoveReminder is { Stage: not CampaignMoveReminderStage.FieldScript } ||
-            before?.MoveDeleter is { Stage: not CampaignMoveDeleterStage.FieldScript };
+            before?.MoveDeleter is { Stage: not CampaignMoveDeleterStage.FieldScript } || IsDayCareChoosing(before);
         if (oldActive != MoveTutorActive) _fade = 16.0 / 60;
     }
 
@@ -84,9 +85,11 @@ public partial class CampaignView
 
     private bool MoveTutorInput(InputEventKey key)
     {
-        if (Teaching is not { } scene || key.Keycode is Key.F5 or Key.F9 or Key.F12) return false;
+        if (!MoveTutorActive || key.Keycode is Key.F5 or Key.F9 or Key.F12) return false;
         _held = null; _repeat = 0;
         if (!key.Pressed || key.Echo || _fade > 0) return true;
+        if (DayCareChoosing) return DayCarePartyInput(key);
+        var scene = Teaching!;
         bool confirm = key.Keycode is Key.Enter or Key.KpEnter or Key.A;
         bool cancel = key.Keycode is Key.Backspace or Key.Escape or Key.B;
         int count = TutorRowCount;
@@ -138,6 +141,7 @@ public partial class CampaignView
     }
     private bool NavigateMoveTutorPointer(Vector2 point, int direction)
     {
+        if (DayCareChoosing) return NavigateDayCarePartyPointer(point, direction);
         if (!MoveTutorActive) return false;
         int row = TutorPointerRow(point); if (row < 0) return false;
         if (direction != 0) return MouseNavigationKey(direction);
@@ -146,6 +150,7 @@ public partial class CampaignView
     }
     private bool MouseMoveTutor(Vector2 point)
     {
+        if (DayCareChoosing) return MouseDayCareParty(point);
         int row = TutorPointerRow(point);
         if (row >= 0) { _tutorCursor = row; MouseKey(Key.Enter); return true; }
         if (TutorRowCount == 0 && TutorMessageRect.HasPoint(point)) { MouseKey(Key.Enter); return true; }
@@ -154,6 +159,7 @@ public partial class CampaignView
 
     private bool DrawMoveTutor()
     {
+        if (DayCareChoosing) { DrawDayCareParty(); return true; }
         if (Teaching is not { } scene) return false;
         var state = _session.State;
         DrawRect(new(0, 0, 240, 160), new Color("e8f0d8"));

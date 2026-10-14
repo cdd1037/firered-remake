@@ -12,10 +12,12 @@ public sealed partial class CampaignSession
     private const string CenterPcScript="EventScript_PC";
     private const string CenterPcSource="data/scripts/pc.inc";
 
-    private ImmutableArray<PartyPokemon> OwnedPokemon(CampaignState state)=>
-        _content.PokemonStorageEnabled&&state.Storage is {} storage
-            ?state.Party.AddRange(storage.Boxes.SelectMany(b=>b.Slots).OfType<PartyPokemon>())
-            :state.Party;
+    private ImmutableArray<PartyPokemon> OwnedPokemon(CampaignState state)
+    {
+        var owned = _content.PokemonStorageEnabled && state.Storage is {} storage
+            ? state.Party.AddRange(storage.Boxes.SelectMany(b => b.Slots).OfType<PartyPokemon>()) : state.Party;
+        return state.Route5DayCare?.Resident is {} resident ? owned.Add(resident.Pokemon) : owned;
+    }
 
     private string? ValidateStorageState(CampaignState state)
     {

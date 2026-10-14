@@ -66,7 +66,8 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-field-fly.py', ['{reference}', '{project}', '{project}']),
  ('import-fly-map.py', ['--reference-repo', '{reference}']),
  ('import-field-fly-sound.py', ['--reference', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
- ('import-field-fly-travel.py', ['--reference-root', '{reference}'])]
+ ('import-field-fly-travel.py', ['--reference-root', '{reference}']),
+ ('import-route5-daycare.py', ['--reference-root', '{reference}', '--dependency-root', '{project}])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

@@ -60,7 +60,7 @@ public sealed partial class CampaignSession
             content.CinnabarEnabled && content.FirstSeviiEnabled && content.ViridianGymEnabled &&
             content.LeagueRivalEnabled && content.VictoryRoadEnabled && content.PokemonLeagueEnabled &&
             content.NationalDexEnabled && content.SeviiRubyEnabled && content.FourIslandEnabled &&
-            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled) ||
+            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled && content.Route5DayCareEnabled) ||
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
         if(content.NpcTrades is null||!ReferenceEquals(NpcTradePokemonCatalog.For(content.PokemonContent?.Catalog),content.NpcTrades))throw new InvalidDataException("current_npc_trade_proof_missing");

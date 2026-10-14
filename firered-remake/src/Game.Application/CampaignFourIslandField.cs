@@ -136,6 +136,7 @@ public sealed partial class CampaignSession
         state=ApplyRenewableHiddenItemWalkingStep(state);
         if(callbacks.AdvanceFriendship)state=ApplyWalkingFriendship(state);
         if(callbacks.AdvancePoison)state=ApplyFieldPoisonWalkingStep(state);
+        if(state.FieldPoison is null&&callbacks.AdvancePoison)state=ApplyRoute5DayCareWalkingStep(state);
         if(state.FieldPoison is null&&callbacks.AdvanceRepel)state=ApplyRepelWalkingStep(state);
         if(state.FieldPoison is null&&state.Repel is null&&state.Script.Completed&&state.Script.Wait is null&&callbacks.CheckStandardWildEncounter)
             state=CheckFieldEncounter(state,EncounterCheckTrigger.WalkingStepCompleted);

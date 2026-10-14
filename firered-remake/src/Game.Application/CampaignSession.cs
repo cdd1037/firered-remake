@@ -120,6 +120,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     public CampaignRocketElevator? RocketElevator{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public CampaignRocketSpin? RocketSpin{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public Route5DayCareState? Route5DayCare{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignRoute5DayCare? DayCareInteraction{get;init;}
     public long NextPokemonId{get;init;}=1;
     public CampaignMonPicture? MonPicture{get;init;}
     public CampaignNickname? Nickname{get;init;}
@@ -306,7 +308,7 @@ public sealed partial class CampaignSession
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
         if(s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.MagikarpRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
-        if(s.FossilMenu is not null||s.MailInteraction is not null)return "save_event_active";
+        if(s.FossilMenu is not null||s.MailInteraction is not null||s.DayCareInteraction is not null)return "save_event_active";
         if(s.PokemonLeagueCompletion is not null)return "save_pokemon_league_completion_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
         var escapeError=ValidateEscapeRopeState(s);if(escapeError is not null)return escapeError;
@@ -314,6 +316,7 @@ public sealed partial class CampaignSession
         var optionsError=ValidateOptionsState(s);if(optionsError is not null)return optionsError;
         var mailError=ValidateCampaignMail(s);if(mailError is not null)return mailError;
         var storageError=ValidateStorageState(s);if(storageError is not null)return storageError;
+        var daycareError=ValidateRoute5DayCare(s);if(daycareError is not null)return daycareError;
         var npcTradeError=ValidateNpcTradeHistory(s);if(npcTradeError is not null)return npcTradeError;
         var giftError=ValidateMagikarpGift(s);if(giftError is not null)return giftError;
         var eeveeError=ValidateEeveeGift(s);if(eeveeError is not null)return eeveeError;
@@ -441,6 +444,7 @@ public sealed partial class CampaignSession
         {
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);
             if(command.Kind=="field_fly")return StartFieldFly(state,command);
+            if(TryDecideRoute5DayCare(state,command,out var daycareDecision))return daycareDecision;
             if(TryDecideMagikarpRecord(state,command,out var magikarpRecordDecision))return magikarpRecordDecision;
             if(TryDecideMoveDeleter(state,command,out var moveDeleterDecision))return moveDeleterDecision;
             if(TryDecideMoveReminder(state,command,out var moveReminderDecision))return moveReminderDecision;
@@ -643,7 +647,9 @@ public sealed partial class CampaignSession
         if(definition.Programs.OnWarpTable is {} onWarp)queue.Add("@table:"+onWarp);
         return state with{IsSurfing=false,SurfEffect=null,Music=state.IsSurfing?definition.Music:state.Music,IsCycling=state.IsCycling&&_content.AllowsCycling(state.World.Player.MapId),ObjectSlots=state.ObjectSlots is null?null:EmptyObjectPool,Actors=actors,Script=state.Script with{Variables=variables,Flags=flags},EntryPrograms=queue.ToImmutable(),ArrivalFacing=arrival,LastTalked=null,PlayerVisible=true,MapEdits=_content.FiveIslandEnabled&&FiveIslandEditedMap(state.World.Player.MapId)?FiveIslandExpectedEdits(state):_content.CinnabarEnabled&&CinnabarFieldMap(state.World.Player.MapId)?CinnabarExpectedEdits(state):_content.RocketHideoutEnabled&&RocketMap(state.World.Player.MapId)?RocketExpectedEdits(state):null,MessagePointer=null};
     }
-    private CampaignState Pump(CampaignState state)
+    private CampaignState Pump(CampaignState state) => PumpWithCameraStep(state, null);
+
+    private CampaignState PumpWithCameraStep(CampaignState state, Action? onCameraStepPreempted)
     {
         for(int i=0;i<128;i++)
         {
@@ -656,6 +662,7 @@ public sealed partial class CampaignSession
             if(state.NameRater is not null)state=state with{NameRater=null};
             if(state.MoveReminder is not null)state=state with{MoveReminder=null};
             if(state.MoveDeleter is not null)state=state with{MoveDeleter=null};
+            if(state.DayCareInteraction is not null)state=state with{DayCareInteraction=null};
             if(state.MagikarpRecord is not null)state=state with{MagikarpRecord=null};
             if(_content.SupportsRegionalFlavor(state.World.Player.MapId)&&state.Dialogue is null&&!state.Script.Locked)state=state with{SignMessage=null};
             if(!state.EntryPrograms.IsEmpty)
@@ -665,11 +672,15 @@ public sealed partial class CampaignSession
                 if(next=="@renewable-camera-step")
                 {
                     state=CheckForestTrainerSight(state);
-                    if(state.ForestTrainerBattle is not null||state.DoubleBattle is not null)return state;
+                    if(state.ForestTrainerBattle is not null||state.DoubleBattle is not null){onCameraStepPreempted?.Invoke();return state;}
                     var frameTable=_content.MapDefinition(state.World.Player.MapId).Programs.OnFrameTable;
                     var frame=frameTable is null?null:_content.Conditions(frameTable).FirstOrDefault(c=>state.Script.Variables.GetValueOrDefault(c.Variable)==c.Expected);
-                    if(frame is not null){state=StartStory(state,frame.ScriptId);continue;}
-                    state=ApplyRenewableHiddenItemWalkingStep(state);continue;
+                    if(frame is not null){onCameraStepPreempted?.Invoke();state=StartStory(state,frame.ScriptId);continue;}
+                    state=ApplyRenewableHiddenItemWalkingStep(state);
+                    var p=state.World.Player;
+                    var coord=_content.MapDefinition(p.MapId).CoordTriggers.FirstOrDefault(t=>t.X==p.X&&t.Y==p.Y&&(t.Elevation==0||t.Elevation==p.Elevation)&&state.Script.Variables.GetValueOrDefault(t.Variable)==t.Expected);
+                    if(coord is not null){onCameraStepPreempted?.Invoke();state=StartStory(state,coord.ScriptId);}
+                    continue;
                 }
                 if(next=="@spawn"){state=RefreshActors(state);continue;}
                 if(next.StartsWith("@table:",StringComparison.Ordinal))
@@ -703,6 +714,7 @@ public sealed partial class CampaignSession
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
             if(TryApplyFieldFlyGiftEffect(state,effect,out var flyGiftState)){state=flyGiftState;continue;}
+            if(TryApplyRoute5DayCareEffect(state,effect,out var daycareState)){state=daycareState;continue;}
             if(TryApplyGameCornerPrizeEffect(state,effect,out var prizeState)){state=prizeState;continue;}
             if(TryApplyGameCornerCoinEffect(state,effect,out var coinState)){state=coinState;continue;}
             if(TryApplyDepartmentRooftopEffect(state,effect,out var rooftopState)){state=rooftopState;continue;}
@@ -783,7 +795,7 @@ public sealed partial class CampaignSession
             {
                 case "pokemart":state=OpenShop(state,effect);break;
                 case "lock":case "lockall":break;
-                case "release":case "releaseall":state=state with{Dialogue=null,SignMessage=null,MessagePointer=null,GiftDelivery=null,PrizeExchange=null,NameRater=null,NpcTrade=null,UltimateTutor=null,MoveReminder=null,MoveDeleter=null,MagikarpRecord=null,FossilMenu=null};break;
+                case "release":case "releaseall":state=state with{Dialogue=null,SignMessage=null,MessagePointer=null,GiftDelivery=null,PrizeExchange=null,NameRater=null,NpcTrade=null,UltimateTutor=null,MoveReminder=null,MoveDeleter=null,DayCareInteraction=null,MagikarpRecord=null,FossilMenu=null};break;
                 case "signmsg":state=state with{SignMessage=(state.SignMessage??new()) with{SignStyle=true}};break;
                 case "normalmsg":state=state with{SignMessage=state.SignMessage is {} signStyle?signStyle with{SignStyle=false}:null};break;
                 case "setrespawn":state=state with{LastHealingLocation=a[0]};break;
