@@ -35,7 +35,7 @@ public sealed partial class CampaignSession
             {
                 if(++steps>budget)throw new InvalidDataException("script_preflight_budget: "+program);
                 // These are already-owned application workflows with separate admission contracts.
-                if(probe.SeafoamMovement is not null||probe.RuinValleyCut is not null||probe.DottedHoleFall is not null||probe.FourIslandMovement is not null||probe.PokemonLeagueCompletion is not null||probe.Seagallop is not null||probe.Pc is not null||probe.Shop is not null||probe.DoubleBattle is not null||probe.ForestTrainerBattle is not null||probe.Battle is not null||probe.WildBattle is not null||probe.OldManTutorial is not null||probe.ItemMenu is not null||probe.Nickname is not null||probe.NpcTrade is not null||probe.NameRater is not null||probe.MoveTutor is not null)continue;
+                if(probe.SeafoamMovement is not null||probe.RuinValleyCut is not null||probe.DottedHoleFall is not null||probe.FourIslandMovement is not null||probe.PokemonLeagueCompletion is not null||probe.Seagallop is not null||probe.Pc is not null||probe.Shop is not null||probe.DoubleBattle is not null||probe.ForestTrainerBattle is not null||probe.Battle is not null||probe.WildBattle is not null||probe.OldManTutorial is not null||probe.ItemMenu is not null||probe.Nickname is not null||probe.NpcTrade is not null||probe.NameRater is not null||probe.MoveTutor is not null||probe.MoveReminder is not null)continue;
                 if(probe.Script.Completed&&probe.Script.Wait is null)continue;
                 if(probe.Script.Wait is not {} wait)throw new InvalidDataException("script_preflight_unstable: "+program);
                 bool billMenu=IsBillPreflightMenu(probe);

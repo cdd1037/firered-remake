@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "profile": "firered-move-reminder-v1",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "path": "data/maps/TwoIsland/map.json",
+      "bytes": 5469,
+      "sha256": "963a9c65a4db58d755f026e7c3247d58dabcd4904b04d214623d20373903b425",
+      "gitBlobSha1": "2f1f67ff0ad8e63d7d49fb3b2cf53df97d56eed3"
+    },
+    {
+      "path": "data/maps/TwoIsland_House/map.json",
+      "bytes": 1068,
+      "sha256": "e0b3d2dcc2983ccf260aca6ae3752c362361472476509cd84749a5d889180a0c",
+      "gitBlobSha1": "b8ebaf876870acabdd2b938ccb39c1500757ec64"
+    },
+    {
+      "path": "data/maps/TwoIsland_House/scripts.inc",
+      "bytes": 4095,
+      "sha256": "90552c52f1096ad37ab30de988882a7477eb2d99f72d1e9c22c989927ad89157",
+      "gitBlobSha1": "903e093c0478844369566ab85b28522627ac54c4"
+    },
+    {
+      "path": "data/maps/TwoIsland_House/text.inc",
+      "bytes": 1617,
+      "sha256": "f78fe4c5907dda5a70cd3a4d3874a05db50f3b4ddabddf60effe64b393642116",
+      "gitBlobSha1": "2f0a70c6732e424a5e613f6fb222e8bf27c8c259"
+    },
+    {
+      "path": "src/learn_move.c",
+      "bytes": 30375,
+      "sha256": "8a3f0eb4a475633477bda6d65396205dfbb29db04dabb9f5f0d99df9f0c1ef40",
+      "gitBlobSha1": "0529644fa3face25ae3cd04c4128925a591bbba9"
+    },
+    {
+      "path": "src/pokemon.c",
+      "bytes": 221865,
+      "sha256": "116a470cd9ebfa226aa8d85c2eb63591e176d726837c67baaa1ac6260d50f2ec",
+      "gitBlobSha1": "66a5c3d233e8b1b85fe5045aeb6667332cd61d4c"
+    },
+    {
+      "path": "src/party_menu.c",
+      "bytes": 211085,
+      "sha256": "8290dfd5b6444e743029ab76543ed5e4b5b32c1c2f475c686946545f934d5f9b",
+      "gitBlobSha1": "7f3a881e6c56773aee03da475c9a1adc50530223"
+    },
+    {
+      "path": "src/party_menu_specials.c",
+      "bytes": 3352,
+      "sha256": "72faa4aa41f1b8f4798a509250fe2180511809d429a47f2439d94520ce5561e5",
+      "gitBlobSha1": "d71c6a495783c49bf2006d7bf7ab686e7c92b11c"
+    },
+    {
+      "path": "src/pokemon_summary_screen.c",
+      "bytes": 171314,
+      "sha256": "855a17fb555f5497dbb47f90a8c1b8cf620532d3bff96e8196d0790515508583",
+      "gitBlobSha1": "b3e3c7763d3e1c9cf2185cd7344fdf49ba78ae85"
+    },
+    {
+      "path": "src/item.c",
+      "bytes": 17534,
+      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a",
+      "gitBlobSha1": "0587adf7db9feea06275fbe33dc1756adf23759a"
+    },
+    {
+      "path": "src/script_menu.c",
+      "bytes": 44041,
+      "sha256": "7b4771c440fd45f4c7c375308d45cc1bc88eba30c6c7ff9c634f838cf2bebad8",
+      "gitBlobSha1": "41eebd86e76e195f6dd14157994ee10c9fa3ce0a"
+    },
+    {
+      "path": "src/strings.c",
+      "bytes": 96631,
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1",
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600"
+    },
+    {
+      "path": "include/constants/flags.h",
+      "bytes": 95397,
+      "sha256": "45f31e4dc3d42c1054463974cd31b1173bdd4cb6d9f94b2cdbf2c88b0f745493",
+      "gitBlobSha1": "d800adf1e18d1e466a16bc543f6b3c52d60fc6aa"
+    },
+    {
+      "path": "include/constants/items.h",
+      "bytes": 12436,
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138",
+      "gitBlobSha1": "cfc42256c33bb6b807630deacadad8071a3eeee3"
+    },
+    {
+      "path": "include/constants/menu.h",
+      "bytes": 6143,
+      "sha256": "e741f81083d034b90d30ec4ea1fc1380b5304510d87d4e2ea6d0384732166ca4",
+      "gitBlobSha1": "7c36f3605918ee455321cade37d7c60877a36dde"
+    },
+    {
+      "path": "src/data/pokemon/level_up_learnsets.h",
+      "bytes": 182027,
+      "sha256": "d6563a88fa893d1433a02027cb13ba9574a6828a96b1a730b1d767fd7c5a0cc6",
+      "gitBlobSha1": "bdf1f9fbb9ad2791fcaec31826dc30d180fabbe0"
+    },
+    {
+      "path": "src/data/pokemon/level_up_learnset_pointers.h",
+      "bytes": 20597,
+      "sha256": "7a85513797da2a2ebdf7893ce58d94f99aee07deb1aec4f0d7a31422dc8040de",
+      "gitBlobSha1": "661458ce383ef517cea82c637bfb99536b6f65c3"
+    }
+  ]
+}

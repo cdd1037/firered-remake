@@ -111,3 +111,10 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 # Rebuildable NPC trade execution cohorts.
 /evidence/npc-trade-*/**/*.dll
 /evidence/npc-trade-*/**/*.pdb
+
+# Rebuildable Move Reminder host resources and binaries.
+/tests/Game.MoveReminderView.Tests/Assets/
+/tests/Game.MoveReminderView.Tests/*.cs.uid
+/evidence/move-reminder-*/**/*.dll
+/evidence/move-reminder-*/**/*.pdb
+/evidence/move-reminder-*/**/userdata/

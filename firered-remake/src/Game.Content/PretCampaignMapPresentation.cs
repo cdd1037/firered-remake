@@ -30,6 +30,7 @@ public static class PretCampaignMapPresentation
         Add(catalog.NpcTradeHaden.NewMaps.Keys,catalog.NpcTradeHaden.NpcSourcePath);
         Add(catalog.GoodRodService.NewMaps.Keys,catalog.GoodRodService.NpcSourcePath);
         Add(catalog.SeafoamRegion.NewMaps.Keys,catalog.SeafoamRegion.NpcSourcePath);
+        Add(catalog.MoveReminderHouse.NewMaps.Keys,catalog.MoveReminderHouse.NpcSourcePath);
         Add(catalog.TrainerTowerRegion.Maps.Keys,catalog.TrainerTowerRegion.NpcSourcePath);
         Add(catalog.PowerPlantRegion.NewMaps.Keys,catalog.PowerPlantRegion.NpcSourcePath);
         Add(catalog.EventIslandRegion.NewMaps.Keys,catalog.EventIslandRegion.NpcSourcePath);

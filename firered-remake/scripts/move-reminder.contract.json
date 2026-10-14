@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "profile": "firered-move-reminder-v1",
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "entry": "TwoIsland_House_EventScript_MoveManiac",
+  "map": "map.two-island-house",
+  "repeatable": true,
+  "permanentCompletionFlag": null,
+  "eligibility": {
+    "source": "src/pokemon.c:5741-5777,5791-5831",
+    "currentSpeciesOnly": true,
+    "maximumLevel": "current",
+    "sourceOrder": true,
+    "excludeKnown": true,
+    "deduplicate": true,
+    "eggAllowed": false,
+    "faintedAllowed": true,
+    "heldMushroomsCount": false
+  },
+  "callbacks": {
+    "ChooseMonForMoveRelearner": {
+      "selectedIndex": "VAR_0x8004",
+      "cancelIndex": 6,
+      "candidateCount": "VAR_0x8005",
+      "source": "src/party_menu.c:1198-1203"
+    },
+    "TeachMoveRelearnerMove": {
+      "success": "VAR_0x8004=1",
+      "giveUp": "VAR_0x8004=0",
+      "giveUpReturnsToParty": true
+    }
+  },
+  "payment": {
+    "afterSuccessfulLearningOnly": true,
+    "availableAtConversationStart": true,
+    "tinyMushrooms": 2,
+    "bigMushrooms": 1,
+    "bothChoiceOrder": [
+      "ITEM_TINY_MUSHROOM",
+      "ITEM_BIG_MUSHROOM"
+    ],
+    "bothChoiceCancelAllowed": false,
+    "bagSpaceRequired": false,
+    "source": "data/maps/TwoIsland_House/scripts.inc:23-93"
+  },
+  "teaching": {
+    "source": "src/learn_move.c:508-675",
+    "newMovePp": "base maximum",
+    "newMovePpUps": 0,
+    "protectHmReplacement": true,
+    "preserveOtherSlotsAndIdentity": true,
+    "rngDraws": 0,
+    "friendshipDelta": 0,
+    "freeSlotFanfareCalls": 1,
+    "replacementFanfareCalls": 2
+  },
+  "cancellation": {
+    "party": "end service without payment",
+    "noCandidatesOrEgg": "field refusal then party chooser",
+    "moveListCancel": "give-up question; yes returns party, no or B returns list",
+    "teachQuestionNoOrB": "move list",
+    "deleteQuestionNoOrB": "stop-learning question",
+    "summaryCancel": "stop-learning question",
+    "stopQuestionYes": "move list",
+    "stopQuestionNoOrB": "delete question"
+  },
+  "scope": "original mushroom reminder only; no link trade evolution substitute; Application/Godot admission separately owned"
+}

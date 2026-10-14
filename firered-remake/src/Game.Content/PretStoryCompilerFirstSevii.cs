@@ -45,6 +45,7 @@ public static partial class PretStoryCompiler
     private static bool IsFirstSeviiAssemblyData(PretSourceScriptFile file,string label,string[] body)
     {
         var mapHeader=(file.Path,file.SourceRef.Sha256,label) is
+            ("data/maps/TwoIsland_House/scripts.inc","90552c52f1096ad37ab30de988882a7477eb2d99f72d1e9c22c989927ad89157","TwoIsland_House_MapScripts") or
             ("data/maps/TwoIsland_Harbor/scripts.inc","db25781ed1af7789a32826b5402d8c197de26dcb19dbf8e8552274ad195c23ac","TwoIsland_Harbor_MapScripts") or
             ("data/maps/ThreeIsland_Harbor/scripts.inc","02e41f69d4f9f17320102f596a472402314b470b69a08390dad9b1f9133b4c4e","ThreeIsland_Harbor_MapScripts") or
             ("data/maps/ThreeIsland_Mart/scripts.inc","3d5ad7fc15eb6e3f879e875d36a7d461428f8f98811ad62322294d0bea38893d","ThreeIsland_Mart_MapScripts");
