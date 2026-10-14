@@ -215,6 +215,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;
     bool DepartmentRooftopEnabled=>false;
     bool GameCornerCoinsEnabled=>false;
+    GameCornerPrizeCatalog? GameCornerPrizes=>null;
     string? DeferredRegionalServiceReason(MapId map,string script)=>null;
     NameRaterSourceContent? NameRaterSource=>null;
     MoveTutorCatalog? MoveTutors=>null;

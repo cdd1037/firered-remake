@@ -46,13 +46,13 @@ public partial class CampaignView
     private void DrawGameCornerCoinsBox()
     {
         if (_session.State.CoinsBox is not {} box) return;
-        if (!_catalog.GameCornerCoinsEnabled || box.X != 0 || box.Y != 5 || box.Amount is < 0 or > GameCornerCoinSource.Maximum)
+        if (!_catalog.GameCornerCoinsEnabled || box.X != 0 || box.Y is not (0 or 5) || box.Amount is < 0 or > GameCornerCoinSource.Maximum)
             throw new InvalidDataException("game_corner_coin_box_view");
         // src/coins.c: 8x3 tile interior, x+1/y+1, normal label and small right-aligned amount.
-        _itemSkin.DrawStandardFrame(this, new(0, 40, 80, 40));
-        SourceText(_sourceNormal, new(8, 48), "COINS");
+        _itemSkin.DrawStandardFrame(this, new(box.X * 8, box.Y * 8, 80, 40));
+        SourceText(_sourceNormal, new(box.X * 8 + 8, box.Y * 8 + 8), "COINS");
         string amount = box.Amount.ToString(CultureInfo.InvariantCulture).PadLeft(4) + " COINS";
         float width = _sourceSmall.Font.GetStringSize(_sourceSmall.PrepareText(amount), fontSize: _sourceSmall.Size).X;
-        SourceText(_sourceSmall, new(72 - width, 60), amount);
+        SourceText(_sourceSmall, new(box.X * 8 + 72 - width, box.Y * 8 + 20), amount);
     }
 }

@@ -40,7 +40,7 @@ public sealed partial class CampaignSession
 
     private static void ValidateFossilLabCatalog(ICampaignCatalog content)
     {
-        var rootPokemon = StoneEvolutionOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor.Catalog ?? content.PokemonContent?.Catalog;
+        var rootPokemon = (GameCornerOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor ?? StoneEvolutionOwnedPokemonCatalog.For(content.PokemonContent?.Catalog))?.Predecessor.Catalog ?? content.PokemonContent?.Catalog;
         var rootMachines = content.PewterMachines is { } current ? DepartmentStoreMachineStock.BaseCatalog(current) : null;
         if (!content.FossilLabEnabled || content.FossilLabOwnership is not { } owned ||
             content.FossilLabOpponents is not { } opponents || content.FossilLabMachines is not { } machines ||

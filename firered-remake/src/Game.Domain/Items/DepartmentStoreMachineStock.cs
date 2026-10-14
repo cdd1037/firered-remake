@@ -100,6 +100,19 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
         stock.Validate(); Proofs.Add(machines, stock); return stock;
     }
 
+    // The sealed successor retains both the original six-item shelf and its rooftop predecessor proof.
+    internal static void BindGameCornerSuccessor(GameCornerMachineCatalog successor)
+    {
+        if (!ReferenceEquals(GameCornerMachineCatalog.For(successor.Catalog), successor) ||
+            !ReferenceEquals(For(successor.Predecessor.Machines), successor.Predecessor) ||
+            successor.Predecessor.RooftopPredecessor is null)
+            throw new ArgumentException("department_game_corner_successor_proof");
+        var stock = new DepartmentStoreMachineStock(successor.Predecessor.OriginalMachines,
+            successor.Catalog, successor.Pokemon.SharedBattle)
+        { RooftopPredecessor = successor.Predecessor.RooftopPredecessor };
+        stock.Validate(); Proofs.Add(stock.Machines, stock);
+    }
+
     public bool IsClerk(string mapId, string sourcePath, string script, string stockId) =>
         mapId == ExpectedMapId && sourcePath == ExpectedSourcePath && script == ExpectedClerkScript && stockId == Id;
 

@@ -115,7 +115,7 @@ public sealed partial class CampaignSession
             if (!acquisitions.Add(capture.InstanceId)) return "save_npc_trade_acquisition_duplicate";
         var gifts = new long?[] { state.MagikarpGift?.InstanceId, state.EeveeGift?.InstanceId,
             state.LaprasGift?.InstanceId, state.DojoGift?.InstanceId };
-        foreach (var id in gifts.OfType<long>().Concat(fossils.Select(f => f.InstanceId)).Concat(incoming))
+        foreach (var id in gifts.OfType<long>().Concat(fossils.Select(f => f.InstanceId)).Concat((state.PrizePokemon ?? []).Select(p => p.InstanceId)).Concat(incoming))
             if (!acquisitions.Add(id)) return "save_npc_trade_acquisition_duplicate";
         if (state.NextPokemonId != acquisitions.Count + 1L || acquisitions.Any(id => id < 1 || id >= state.NextPokemonId) ||
             !acquisitions.SetEquals(history.Select(p => p.InstanceId))) return "save_npc_trade_acquisition_missing";

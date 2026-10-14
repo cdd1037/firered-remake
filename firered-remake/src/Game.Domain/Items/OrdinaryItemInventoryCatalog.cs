@@ -68,6 +68,26 @@ public sealed class OrdinaryItemInventoryCatalog
         var proof = new OrdinaryItemInventoryCatalog(old.Predecessor, old.Additions.AddRange(additions));
         Proofs.Add(proof.Catalog, proof); return proof;
     }
+    public const string GameCornerPrizesSourceSha256 = "18a1cad842313f4081b44ccd4957cabd60b9080a2b5b069fb4e6838965a8435f";
+    public static ImmutableArray<ItemId> GameCornerPrizeItems { get; } = new[] {
+        "SMOKE_BALL", "MIRACLE_SEED", "CHARCOAL", "MYSTIC_WATER", "YELLOW_FLUTE"
+    }.Select(name => new ItemId("pret:ITEM_" + name)).ToImmutableArray();
+    /// <summary>Five original prizes. Existing item definitions and the one ordinary inventory owner are retained.</summary>
+    public static OrdinaryItemInventoryCatalog AppendGameCornerPrizes(EarlyShopCatalog predecessor,
+        ImmutableArray<EarlyShopItemDefinition> additions)
+    {
+        ArgumentNullException.ThrowIfNull(predecessor);
+        if (For(predecessor) is not { } old || old.Additions.Length != 3 || predecessor.Items.Length != 132 ||
+            !old.IsAddition(PpMaxId) || !old.IsAddition(RetroMailId) || !old.IsAddition(LemonadeId) ||
+            additions.IsDefault || additions.Length != 5 || additions.Any(i => i is null || i.Pocket != "POCKET_ITEMS" || i.Importance != 0 || i.EffectBytes.IsDefault) ||
+            !additions.Select(i => i.Id).SequenceEqual(GameCornerPrizeItems) ||
+            additions.Any(i => predecessor.Items.Any(before => before.Id == i.Id)) ||
+            CampaignSourceFingerprint.Compute(additions.ToArray()) != GameCornerPrizesSourceSha256)
+            throw new ArgumentException("ordinary_game_corner_prize_source");
+        var proof = new OrdinaryItemInventoryCatalog(old.Predecessor, old.Additions.AddRange(additions));
+        Proofs.Add(proof.Catalog, proof); return proof;
+    }
+
     public string? ValidateInventory(InventoryState? inventory)
     {
         if (inventory is null) return "inventory_missing";

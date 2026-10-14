@@ -42,6 +42,9 @@ public static partial class PretStoryCompiler
             var aliases=new Dictionary<string,string>(StringComparer.Ordinal);
             var blocks=new Dictionary<string,List<(int Line,string Text)>>(StringComparer.Ordinal);List<(int,string)>? current=null;
             var rawLines=file.Text.Replace("\r\n","\n",StringComparison.Ordinal).Split('\n');
+            // Edition selection is source-gated; unknown files retain explicit unsupported directives.
+            if (PretGameCornerPrizeRoom.IsOriginalScript(file))
+                rawLines = PretAssemblySourceSelection.SelectFireRedLines(file.Path, rawLines);
             var macros=new Dictionary<string,List<(int Line,string Text)>>(StringComparer.Ordinal);
             var sourceLines=new List<(int Line,string Text)>();
             for(int index=0;index<rawLines.Length;index++)
@@ -297,6 +300,8 @@ public static partial class PretStoryCompiler
                             (kind,min,max)=powerPlantShape;
                         if(includeSeafoam&&SeafoamInstructionShape(file,label,opcode,operands) is {} seafoamShape)
                             (kind,min,max)=seafoamShape;
+                        if(includeGameCornerCoins&&GameCornerPrizesInstructionShape(file,label,opcode,operands) is {} prizeShape)
+                            (kind,min,max)=prizeShape;
                         if(includeGameCornerCoins&&GameCornerCoinsInstructionShape(file,label,opcode,operands) is {} coinShape)
                             (kind,min,max)=coinShape;
                         if(includeCelio)
@@ -364,6 +369,25 @@ public static partial class PretStoryCompiler
             }
         }
         return new(programs.ToImmutable(),headers.ToImmutable(),conditions.ToImmutable(),movements.ToImmutable(),unsupported.ToImmutable(), (constants ?? new Dictionary<string,int>()).ToImmutableDictionary(StringComparer.Ordinal)){AssemblyData=assemblyData.ToImmutable()};
+    }
+    private static (StoryOp,int,int)? GameCornerPrizesInstructionShape(PretSourceScriptFile file, string label,
+        string opcode, ImmutableArray<string> operands)
+    {
+        if (!PretGameCornerPrizeRoom.IsOriginalScript(file)) return null;
+        const string prefix = "CeladonCity_GameCorner_PrizeRoom_EventScript_";
+        string? suffix = label.StartsWith(prefix, StringComparison.Ordinal) ? label[prefix.Length..] : null;
+        string[]? expected = (suffix, opcode) switch
+        {
+            ("PrizeClerkMons" or "PrizeClerkTMs" or "PrizeClerkItems", "showcoinsbox") => ["0", "0"],
+            ("EndPrizeExchange" or "PartyFull" or "BagFull", "hidecoinsbox") => ["0", "0"],
+            ("ConfirmPrizeMon" or "TryGivePrize", "checkcoins") => ["VAR_RESULT"],
+            ("ReceivedMonParty" or "ReceivedMonPC" or "TryGivePrize", "removecoins") => ["VAR_TEMP_2"],
+            ("ReceivedMonParty" or "ReceivedMonPC" or "TryGivePrize", "updatecoinsbox") => ["0", "5"],
+            _ => null
+        };
+        if (expected is null) return null;
+        if (!operands.SequenceEqual(expected)) throw ContentJson.Error("game_corner_prize_operands", file.Path + ":" + label, opcode);
+        return (StoryOp.Special, expected.Length, expected.Length);
     }
     private static (StoryOp,int,int)? GameCornerCoinsInstructionShape(PretSourceScriptFile file, string label,
         string opcode, ImmutableArray<string> operands)

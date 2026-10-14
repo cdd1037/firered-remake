@@ -1,0 +1,143 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-game-corner-prizes-v1",
+  "importerSha256": "93656c6bc0d6d103fbebaf4c619425982e26669cb1a8e87275edb54fedbf87f4",
+  "files": [
+    {
+      "path": "content/generated/game-corner-prizes/charcoal.png",
+      "byteLength": 449,
+      "sha256": "9a0de098999d51852591ef9ab903f467abcb485120436f67d3a39d9ef6a59275"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/charcoal.rgba",
+      "byteLength": 2304,
+      "sha256": "fe40ed25282a9349e1ec46f7efd8378b9a88857ec8a015e53697884bb5b7a462"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/items.json",
+      "byteLength": 13880,
+      "sha256": "5bd1eed67c18d170f6374fd6fe274ab16f13b11f681d6f3cbff1688932e32358"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/machines.json",
+      "byteLength": 483091,
+      "sha256": "c30c6f9ef42bef171aa4b618438c4646c32a99816ccd2893f4d12fcde118e2bf"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/miracle-seed.png",
+      "byteLength": 362,
+      "sha256": "6d81f40c546a06e8f5d82429b8b1ecd0808c8a22610a749b04003034946d867a"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/miracle-seed.rgba",
+      "byteLength": 2304,
+      "sha256": "7071b71fc5c5d74e74f5306de150c127602ee82dbee340d6fccc32769cdcf0fa"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/mystic-water.png",
+      "byteLength": 330,
+      "sha256": "9e0772c16e11060d6f2c27e71f0d1299c798bd95d91b014aaae738b534a5ae5f"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/mystic-water.rgba",
+      "byteLength": 2304,
+      "sha256": "77a4ad08750037e45fcbe43a0454d48df987519153f22b535ce53cb64dcf3194"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/prizes.json",
+      "byteLength": 17871,
+      "sha256": "24b7846094b584fdccbfeaad1b053822a1823c34ea77b4fd50d3c3f54b2f28dc"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/smoke-ball.png",
+      "byteLength": 461,
+      "sha256": "825baa7d2fffe59b3fcd0c6f9ddb0a4cad2492e482c3aab80daa493357d8fd21"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/smoke-ball.rgba",
+      "byteLength": 2304,
+      "sha256": "9ef2dbe6aeba504df317200c572b1b193d5ece663ba352231ce0ec1aab8d628d"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/source-input-hashes.json",
+      "byteLength": 11719,
+      "sha256": "c5928a910cc205c043d14e0f42b918bb8520ea57acf683dcdfbdcc0e3538a623"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/tm30.png",
+      "byteLength": 665,
+      "sha256": "9a22b0c6be613b796c358d765c5a5d4fc12078c74a7004acf32883b11b1cc86d"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/tm30.rgba",
+      "byteLength": 2304,
+      "sha256": "8a3942ceb55632da6910fadcdefb74e89f8cb30be1d8b9703ca6c86432e4e0f2"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/yellow-flute.png",
+      "byteLength": 503,
+      "sha256": "f4668a9c34acd1ff1fad078fba511be7de54bf75e1e9b06af27d4cd28ca74273"
+    },
+    {
+      "path": "content/generated/game-corner-prizes/yellow-flute.rgba",
+      "byteLength": 2304,
+      "sha256": "cb2388ac1642051f4f7efebcd66e599a7eaff55f6668b2938fc20c4ac2db0abc"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icon_palettes/charcoal.pal",
+      "byteLength": 152,
+      "sha256": "a8d970a78e26d584b46ecd3e4add79be33a728308be6cfc64f26e82ba86fe0e8"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icon_palettes/ghost_tm_hm.pal",
+      "byteLength": 197,
+      "sha256": "2983b0da3b44a5af719fa2dda30692bd957e797afd27a27e0c89c9ff6c793a8c"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icon_palettes/miracle_seed.pal",
+      "byteLength": 148,
+      "sha256": "4ead4d01f2d5d9849657252469aa1e5b22c241d5bd1f3d03bdb4453b9354634e"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icon_palettes/mystic_water.pal",
+      "byteLength": 153,
+      "sha256": "efff1ce21a679f79c8d861c0b899161bebf80b90e2f343618a97c3235063903e"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icon_palettes/smoke_ball.pal",
+      "byteLength": 175,
+      "sha256": "4407a0852c8fa87702488058bc60d7477dd47cef9f2058c4641a4f7f5a6615fa"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icon_palettes/yellow_flute.pal",
+      "byteLength": 170,
+      "sha256": "e99ddd3993ddf33cb006d0204cccbe0a80688a456a21b932c7186441d006c8c4"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icons/charcoal.png",
+      "byteLength": 267,
+      "sha256": "e659e74d4e4fb309d1af530f956da7e15e8adcfac05bde4a61eebe4895dea28e"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icons/flute.png",
+      "byteLength": 266,
+      "sha256": "a95fae52fc718c756edcba4282a2849c5ddbd6eaf595a75a027c519faffc6735"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icons/miracle_seed.png",
+      "byteLength": 253,
+      "sha256": "b3460de669c0047fde5a3e4e0ff9f06818fb702f8248285089b436e9e569f823"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icons/mystic_water.png",
+      "byteLength": 244,
+      "sha256": "a08cb87279c2201edc6cc5b8f7cbb0ce2e76587d383a3208034f95d57f2880c5"
+    },
+    {
+      "path": "content/raw/game-corner-prizes/graphics/items/icons/smoke_ball.png",
+      "byteLength": 269,
+      "sha256": "11c9497eb37c817a2c8329f58f8cca3eb39f3d0ff9eafa17785ddc3ab3a4cdb8"
+    }
+  ]
+}

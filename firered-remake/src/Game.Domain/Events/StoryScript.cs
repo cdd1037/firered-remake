@@ -59,6 +59,7 @@ public static class StoryRules
             if(program is not null&&index>=0&&index<program.Instructions.Length)
             {
                 var instruction=program.Instructions[index];
+                if(GameCornerPrizeSource.MenuKind(instruction) is not null)return choice==127||choice>=0&&choice<6;
                 if(GameCornerCoinSource.IsMenu(instruction))return choice is 0 or 1 or 2 or 127;
                 if(DepartmentRooftopSource.Menu(instruction) is {} roofMenu)return choice==127||choice>=0&&choice<roofMenu.Rows.Length;
                 if(instruction.Op==StoryOp.Multichoice&&instruction.Source.Path=="data/maps/TrainerTower_Lobby/scripts.inc"&&

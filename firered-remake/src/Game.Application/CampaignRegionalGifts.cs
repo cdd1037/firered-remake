@@ -17,9 +17,10 @@ public sealed partial class CampaignSession
         (_content.RegionalServicesEnabled && state.EeveeGift is not null ? 1 : 0) +
         (_content.SilphEnabled && state.LaprasGift is not null ? 1 : 0) +
         (_content.FightingDojoEnabled && state.DojoGift is not null ? 1 : 0) +
-        (_content.FossilLabEnabled ? (state.FossilRevivals ?? []).Length : 0);
+        (_content.FossilLabEnabled ? (state.FossilRevivals ?? []).Length : 0) + (state.PrizePokemon ?? []).Length;
     private IEnumerable<int> GiftSourceSpecies(CampaignState state)
     {
+        foreach (var prize in state.PrizePokemon ?? []) yield return prize.SourceSpeciesId;
         if (_content.MagikarpEnabled && state.MagikarpGift is not null) yield return 129;
         if (_content.RegionalServicesEnabled && state.EeveeGift is not null) yield return 133;
         if (_content.SilphEnabled && state.LaprasGift is not null) yield return 131;
@@ -31,6 +32,7 @@ public sealed partial class CampaignSession
     private string? ValidateGiftIdentityUniqueness(CampaignState state)
     {
         var gifts = new List<long>();
+        foreach (var prize in state.PrizePokemon ?? []) gifts.Add(prize.InstanceId);
         if (state.MagikarpGift is { } magikarp) gifts.Add(magikarp.InstanceId);
         if (state.EeveeGift is { } eevee) gifts.Add(eevee.InstanceId);
         if (state.LaprasGift is { } lapras) gifts.Add(lapras.InstanceId);
@@ -113,7 +115,7 @@ public sealed partial class CampaignSession
     /// <summary>The authenticated source gift currently owned by the shared nickname workflow.</summary>
     public long? PendingGiftInstanceId => State.GiftDelivery is null ? null : PendingScriptGiftInstanceId(State);
 
-    private long? PendingScriptGiftInstanceId(CampaignState state) => InFossilLabScript(state) ? PendingFossilGiftInstanceId(state) : InDojoGiftScript(state) ? state.DojoGift?.InstanceId : InLaprasScript(state) ? state.LaprasGift?.InstanceId : InEeveeScript(state) ? state.EeveeGift?.InstanceId :
+    private long? PendingScriptGiftInstanceId(CampaignState state) => InGameCornerPrizeScript(state) ? PendingPrizeGiftInstanceId(state) : InFossilLabScript(state) ? PendingFossilGiftInstanceId(state) : InDojoGiftScript(state) ? state.DojoGift?.InstanceId : InLaprasScript(state) ? state.LaprasGift?.InstanceId : InEeveeScript(state) ? state.EeveeGift?.InstanceId :
         _content.MagikarpEnabled && InMagikarpScript(state) ? state.MagikarpGift?.InstanceId : null;
 
     private bool TryApplySharedScriptGiftEffect(CampaignState state, StoryEffect effect, out CampaignState next)
@@ -122,7 +124,7 @@ public sealed partial class CampaignSession
         bool handles = effect.Opcode is "getpartysize" or "bufferboxname" or "subvar" ||
             effect.Opcode == "special" && a[0] == "ChangeBoxPokemonNickname" ||
             effect.Opcode == "specialvar" && a[1] is "ShouldShowBoxWasFullMessage" or "GetPCBoxToSendMon";
-        if (!handles || !(_content.MagikarpEnabled && InMagikarpScript(state) || InEeveeScript(state) || InLaprasScript(state) || InDojoGiftScript(state) || InFossilLabScript(state))) return false;
+        if (!handles || !(_content.MagikarpEnabled && InMagikarpScript(state) || InEeveeScript(state) || InLaprasScript(state) || InDojoGiftScript(state) || InFossilLabScript(state) || InGameCornerPrizeScript(state))) return false;
         if (state.GiftDelivery is null || PendingScriptGiftInstanceId(state) is not { } instanceId)
             throw new InvalidDataException("script_gift_pending_missing");
         int Value(string token) => int.TryParse(token, out int n) ? n : state.Script.Variables.TryGetValue(token, out int v) ? v :

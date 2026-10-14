@@ -25,7 +25,7 @@ public static partial class SourceWildBattlePolicy
             return SourceTableWildBattleContract.SourceInitialInstance(owned, sourceTable, mon) &&
                 opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.Seafoam is {} seafoam)
-            return (SeafoamOwnedPokemonCatalog.For(owned.Catalog) ?? (SuperRodOwnedPokemonCatalog.For(owned.Catalog) ?? StoneEvolutionOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor)?.Predecessor) is {} proof &&
+            return OwnedBattlePokemonCatalog.SourceAncestor(owned, SeafoamOwnedPokemonCatalog.For) is {} proof &&
                 SeafoamPokemonFactory.SourceInitialInstance(proof,seafoam,mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.Fishing is { } fishing)
             return FishingBattleContract.SourceInitialInstance(owned, fishing, mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";

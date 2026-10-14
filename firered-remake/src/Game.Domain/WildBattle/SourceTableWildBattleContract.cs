@@ -40,8 +40,8 @@ public static class SourceTableWildBattleContract
         return null;
     }
 
-    public static bool IsAdmittedProfile(string? profile) => profile == SuperRodOwnedPokemonCatalog.Profile ||
-        profile is not null && OwnedBattlePokemonCatalog.IsRegisteredSuccessorProfile(profile, SuperRodOwnedPokemonCatalog.Profile);
+    public static bool IsAdmittedProfile(string? profile) =>
+        OwnedBattlePokemonCatalog.IsRegisteredProfileOrSuccessor(profile, SuperRodOwnedPokemonCatalog.Profile);
 
     public static bool Matches(SourceTableWildOrigin? origin, PokemonInstance? pokemon) => pokemon is not null &&
         SourceSlot(origin) is { } slot && pokemon.Species == slot.Species &&

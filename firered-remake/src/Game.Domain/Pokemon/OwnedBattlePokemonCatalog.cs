@@ -123,6 +123,30 @@ public sealed class OwnedBattlePokemonCatalog
     internal static bool IsRegisteredSuccessorProfile(string? profile, string predecessor) =>
         profile is not null && SuccessorOwnedParentProfiles.TryGetValue(profile, out var parent) && parent == predecessor;
 
+    // Resolve a regional source proof through authenticated successor objects, stopping at
+    // the actual ancestor instead of replacing the current ownership root or guessing a name.
+    internal static T? SourceAncestor<T>(OwnedBattlePokemonCatalog? owned, Func<PokemonCatalog, T?> resolve) where T : class
+    {
+        while (owned is not null && ReferenceEquals(For(owned.Catalog), owned))
+        {
+            if (resolve(owned.Catalog) is { } source) return source;
+            var parent = owned.CampaignParent;
+            if (parent is null || !ReferenceEquals(parent.Mechanics, owned.Mechanics)) return null;
+            owned = parent;
+        }
+        return null;
+    }
+
+    internal static bool IsRegisteredProfileOrSuccessor(string? profile, string ancestor)
+    {
+        while (profile is not null)
+        {
+            if (profile == ancestor) return true;
+            profile = SuccessorOwnedParentProfiles.TryGetValue(profile, out var parent) ? parent : null;
+        }
+        return false;
+    }
+
     internal static string? InheritedWildProfile(string? profile)
     {
         while (profile is not null && SuccessorOwnedParentProfiles.TryGetValue(profile, out var predecessor)) profile = predecessor;

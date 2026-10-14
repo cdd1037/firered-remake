@@ -36,7 +36,7 @@ public sealed partial class PretCampaignCatalog
         new("map.celadon-city-department-store-5f"),new("map.celadon-city-department-store-roof"),
         new("map.celadon-city-department-store-elevator"),new("map.celadon-city-hotel"),
         new("map.celadon-city-house-1"),new("map.celadon-city-restaurant"),new("map.lavender-town-house-2")];
-    public bool IsRegionalServiceMap(MapId id) => RegionalServicesEnabled && (RegionalServiceMapIds.Contains(id)||RegionalInteriorServicesEnabled&&RegionalInteriorMapIds.Contains(id));
+    public bool IsRegionalServiceMap(MapId id) => RegionalServicesEnabled && (RegionalServiceMapIds.Contains(id)||RegionalInteriorServicesEnabled&&RegionalInteriorMapIds.Contains(id)||GameCornerPrizes is not null&&id==PretGameCornerPrizeRoom.MapId);
     public ImmutableArray<CampaignDepartmentElevatorFloor> DepartmentStoreElevatorFloors =>
         DepartmentStoreContract?.ElevatorFloors.Select(f=>new CampaignDepartmentElevatorFloor(f.MenuIndex,f.Label,f.SourceFloorValue,
             new(f.DestinationMapId),f.X,f.Y,SourceMaps[new(f.DestinationMapId)].GetSourceCell(f.X,f.Y)!.Elevation,f.DestinationWarpId)).ToImmutableArray() ?? [];

@@ -23,17 +23,19 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var owned = StoneEvolutionOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
-            ?? throw new InvalidDataException("current_stone_evolution_owned_proof_missing");
+        var owned = GameCornerOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
+            ?? throw new InvalidDataException("current_game_corner_owned_proof_missing");
         var battle = owned.SharedBattle;
-        var opponents = StoneEvolutionOpponentPokemonCatalog.For(owned);
+        var opponents = GameCornerOpponentPokemonCatalog.For(owned);
+        var stone = owned.Predecessor;
+        var stoneOpponents = opponents?.Predecessor;
         if (!ReferenceEquals(battle.Catalog, content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics, owned.Mechanics) ||
-            !ReferenceEquals(owned.Predecessor, content.SuperRodOwnership) ||
-            !ReferenceEquals(owned.Predecessor.Predecessor, content.SeafoamOwnership) ||
-            !ReferenceEquals(owned.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOwnership) || opponents is null ||
-            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.SuperRodOpponents) ||
-            !ReferenceEquals(opponents.Predecessor.Predecessor, content.SeafoamOpponents) ||
-            !ReferenceEquals(opponents.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOpponents))
+            !ReferenceEquals(stone.Predecessor, content.SuperRodOwnership) ||
+            !ReferenceEquals(stone.Predecessor.Predecessor, content.SeafoamOwnership) ||
+            !ReferenceEquals(stone.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOwnership) || opponents is null ||
+            !ReferenceEquals(opponents.Owned, owned) || stoneOpponents is null || !ReferenceEquals(stoneOpponents.Owned, stone) || !ReferenceEquals(stoneOpponents.Predecessor, content.SuperRodOpponents) ||
+            !ReferenceEquals(stoneOpponents.Predecessor.Predecessor, content.SeafoamOpponents) ||
+            !ReferenceEquals(stoneOpponents.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, owned.Catalog, battle);
     }
@@ -79,10 +81,13 @@ public sealed partial class CampaignSession
         if(content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
+        if (content.GameCornerPrizes is not {} prizes || !ReferenceEquals(prizes.Pokemon, content.PokemonContent?.Catalog) ||
+            !ReferenceEquals(prizes.Items, content.EarlyShop) || !ReferenceEquals(prizes.Machines, content.PewterMachines))
+            throw new InvalidDataException("current_prize_catalog_identity");
         if (!content.SuperRodEnabled || content.PewterMachines is not { } machines ||
             DepartmentStoreMachineStock.For(machines) is not { } machineStock ||
             StoneEvolutionMachineCatalog.For(DepartmentStoreMachineStock.RooftopBaseCatalog(machines)) is not { } currentMachines ||
-            !ReferenceEquals(currentMachines.Pokemon, StoneEvolutionOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)) ||
+            !ReferenceEquals(currentMachines.Pokemon, GameCornerOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor) ||
             !ReferenceEquals(currentMachines.Pokemon.Predecessor, content.SuperRodOwnership) ||
             !ReferenceEquals(SuperRodMachineCatalog.For(DepartmentStoreMachineStock.BaseCatalog(machines))?.Pokemon, content.SuperRodOwnership))
             throw new InvalidDataException("current_machine_proof_missing");

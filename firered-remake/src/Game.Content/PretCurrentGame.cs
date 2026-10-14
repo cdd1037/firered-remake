@@ -2419,7 +2419,7 @@ public sealed partial class PretCampaignCatalog
             SpeciesNames = pokemonContent.SpeciesNames.SetItem(211, oakPokedex.Entries[211].Name) };
         var departmentMachines = PretDepartmentStoreMachines.Load(projectRoot, departmentStore, superRodMachines.Catalog);
         var stoneOwned = PretStoneEvolutionSpecies.LoadOwned(projectRoot, superRodOwned);
-        _ = PretStoneEvolutionSpecies.LoadOpponents(projectRoot, superRodOpponents, stoneOwned);
+        var stoneOpponents = PretStoneEvolutionSpecies.LoadOpponents(projectRoot, superRodOpponents, stoneOwned);
         var stoneMachines = PretStoneEvolutionSpecies.LoadMachines(projectRoot, departmentMachines, stoneOwned);
         pokemonContent = pokemonContent with { Catalog = stoneOwned.Catalog,
             SpeciesNames = pokemonContent.SpeciesNames.SetItems(StoneEvolutionOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
@@ -2427,6 +2427,20 @@ public sealed partial class PretCampaignCatalog
                 return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
             })) };
         machines = PretDepartmentRooftopItems.LoadMachines(projectRoot, stoneMachines.Catalog).Machines;
+        PretGameCornerSpecies.ValidateSourceEvidence(projectRoot);
+        PretGameCornerPrizes.ValidateSourceEvidence(projectRoot);
+        var prizeOwned = PretGameCornerSpecies.LoadOwned(projectRoot, stoneOwned);
+        _ = PretGameCornerSpecies.LoadOpponents(projectRoot, stoneOpponents, prizeOwned);
+        earlyShop = earlyShop with { Catalog = PretGameCornerPrizes.LoadItems(projectRoot, earlyShop.Catalog).Catalog };
+        machines = PretGameCornerPrizes.LoadMachines(projectRoot, machines, prizeOwned).Catalog;
+        pokemonContent = pokemonContent with { Catalog = prizeOwned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.SetItems(GameCornerOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
+                int number = prizeOwned.Catalog.Species[id].SourceSpeciesId;
+                return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
+            })) };
+        var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, prizeOwned.Catalog, earlyShop.Catalog, machines);
+        hashes.AddRange(PretGameCornerSpecies.AdditionalSourceHashes);
+        hashes.AddRange(PretGameCornerPrizes.AdditionalSourceHashes);
         hashes.AddRange(PretStoneEvolutionSpecies.AdditionalSourceHashes);
         hashes.AddRange(PretSuperRodSpecies.AdditionalSourceHashes);
         hashes.AddRange(PretDepartmentStoreMachines.AdditionalSourceHashes);
@@ -2434,10 +2448,14 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(capeBrinkTutor.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, capeBrinkTutor.NewMaps);
         ValidateCapeBrinkComposition(capeBrinkTutor, maps, capeBrinkPreviousMaps, compiled, superRodService);
-        ValidateCapeBrinkEncounterSources(capeBrinkTutor, stoneOwned.Catalog, superRodService);
-        var moveReminder = PretMoveReminderService.Load(projectRoot, stoneOwned.Catalog);
+        var prizeRoom = PretGameCornerPrizeRoom.Load(regionalServices, maps);
+        maps = maps.AddRange(prizeRoom.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, prizeRoom.NewMaps);
+        hashes.AddRange(prizeRoom.AdditionalSourceHashes);
+        ValidateCapeBrinkEncounterSources(capeBrinkTutor, prizeOwned.Catalog, superRodService);
+        var moveReminder = PretMoveReminderService.Load(projectRoot, prizeOwned.Catalog);
         hashes.AddRange(moveReminder.AdditionalSourceHashes);
-        var moveTutors = PretMoveTutors.Load(projectRoot, stoneOwned.Catalog);
+        var moveTutors = PretMoveTutors.Load(projectRoot, prizeOwned.Catalog);
         hashes.AddRange(moveTutors.AdditionalSourceHashes);
         hashes.Add("npc-trade-owned:" + PretNpcTradeOwnedRules.PokemonSha256);
         hashes.Add("npc-trade-owned-machines:" + PretNpcTradeOwnedRules.MachinesSha256);
@@ -2496,6 +2514,7 @@ public sealed partial class PretCampaignCatalog
             vermilionGymTrainers: vermilionGymTrainers,
             cityServices: cityServices,
             gameCornerCoins: gameCornerCoins,
+            gameCornerPrizes: gameCornerPrizes,
             oldRod: oldRod,
             route11: route11,
             route11Pokemon: route11Pokemon,
