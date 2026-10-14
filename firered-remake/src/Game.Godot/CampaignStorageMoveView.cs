@@ -108,6 +108,13 @@ public partial class CampaignView
             int box = (_session.State.Storage!.CurrentBox + (key.Keycode == Key.Pagedown ? 1 : 13)) % 14;
             StorageMoveAction(new("storage_box", Choice: box)); return true;
         }
+        NavigateStorageWorkspace(key, ToggleStorageMoveParty);
+        if (key.Keycode == Key.Enter) ConfirmStorageMoveSlot();
+        return true;
+    }
+
+    private void NavigateStorageWorkspace(InputEventKey key, Action toggleParty)
+    {
         if (_storageMovePartyOpen)
         {
             if (key.Keycode == Key.Up) _storageMovePartyCursor = (_storageMovePartyCursor + 6) % 7;
@@ -117,7 +124,7 @@ public partial class CampaignView
             if (key.Keycode == Key.Right)
             {
                 if (_storageMovePartyCursor == 0) _storageMovePartyCursor = _storageMovePreviousPartyCursor;
-                else ToggleStorageMoveParty();
+                else toggleParty();
             }
         }
         else
@@ -127,8 +134,6 @@ public partial class CampaignView
             if (key.Keycode == Key.Up) _boxCursor = (_boxCursor + 24) % 30;
             if (key.Keycode == Key.Down) _boxCursor = (_boxCursor + 6) % 30;
         }
-        if (key.Keycode == Key.Enter) ConfirmStorageMoveSlot();
-        return true;
     }
 
     private bool MouseStorageMove(Vector2 point)
@@ -184,9 +189,36 @@ public partial class CampaignView
 
     private void DrawStorageMove()
     {
-        var storage = _session.State.Storage!;
         var held = _session.State.Pc!.MoveCursor?.Pokemon;
         var target = StorageMoveTarget;
+        Rect2 cursor = DrawStorageWorkspace();
+        DrawRect(cursor, new Color(held is null ? "f4db88" : "fff4b8"), filled: false, width: 1);
+        if (held is not null)
+        {
+            // A deliberately simple held marker, using the same authenticated icon
+            // as its party/box slot. The original animated hand is not yet restored.
+            var heldRect = new Rect2(cursor.Position + new Vector2(cursor.Size.X - 12, -7), new(16, 16));
+            DrawRect(heldRect, new Color("f4db88"));
+            DrawTextureRectRegion(PresentedOwnedIcon(held), heldRect, new(0, 0, 32, 32));
+        }
+        var displayed = held ?? target;
+        // Replace the embedded PKMN DATA caption before drawing this thin view's
+        // held-state label; never overlay two different words on the same pixels.
+        DrawRect(new(4, 1, 72, 13), new Color("b8b8c0"));
+        SourceText(_sourceSmall, new(6, 2), held is null ? "MOVE" : "HOLDING");
+        DrawStorageSelectedPokemon(displayed);
+        string action = _storageMovePartyOpen && _storageMovePartyCursor == 6 ? "CANCEL"
+            : held is null ? target is null ? "EMPTY" : PcText("gPCText_Move")
+            : target is null ? PcText("gPCText_Place") : PcText("gPCText_Shift");
+        SourceText(_sourceSmall, new(6, 132), "ENTER: " + action);
+        SourceText(_sourceSmall, new(6, 146), _storageMovePartyOpen ? "TAB: BOX" : "TAB: PARTY");
+        if (_pcNotice is not null) ItemMessageBox(_pcNotice);
+    }
+
+    // Shared source workspace pixels for creature MOVE and item MOVE.
+    private Rect2 DrawStorageWorkspace()
+    {
+        var storage = _session.State.Storage!;
         DrawTexture(_storageAssets["box-background"], Vector2.Zero);
         DrawTexture(_storageAssets["box-arrow-left"], new(88, 20));
         DrawTexture(_storageAssets["box-arrow-right"], new(224, 20));
@@ -206,23 +238,13 @@ public partial class CampaignView
                 if (i < _session.State.Party.Length) DrawTexture(PresentedOwnedIcon(_session.State.Party[i]), StorageMovePartyIconPosition(i));
             }
         }
-        Rect2 cursor = _storageMovePartyOpen
+        return _storageMovePartyOpen
             ? _storageMovePartyCursor == 6 ? StorageMovePartyCancel : StorageMovePartyRect(_storageMovePartyCursor)
             : StorageMoveBoxRect(_boxCursor);
-        DrawRect(cursor, new Color(held is null ? "f4db88" : "fff4b8"), filled: false, width: 1);
-        if (held is not null)
-        {
-            // A deliberately simple held marker, using the same authenticated icon
-            // as its party/box slot. The original animated hand is not yet restored.
-            var heldRect = new Rect2(cursor.Position + new Vector2(cursor.Size.X - 12, -7), new(16, 16));
-            DrawRect(heldRect, new Color("f4db88"));
-            DrawTextureRectRegion(PresentedOwnedIcon(held), heldRect, new(0, 0, 32, 32));
-        }
-        var displayed = held ?? target;
-        // Replace the embedded PKMN DATA caption before drawing this thin view's
-        // held-state label; never overlay two different words on the same pixels.
-        DrawRect(new(4, 1, 72, 13), new Color("b8b8c0"));
-        SourceText(_sourceSmall, new(6, 2), held is null ? "MOVE" : "HOLDING");
+    }
+
+    private void DrawStorageSelectedPokemon(PartyPokemon? displayed)
+    {
         if (displayed is not null)
         {
             if (displayed.IsEgg) DrawTexture(BreedingEggShell(), new(8, 16));
@@ -235,11 +257,6 @@ public partial class CampaignView
                 SourceText(_sourceSmall, new(10, 116), $"Lv{displayed.Pokemon.Level}");
             }
         }
-        string action = _storageMovePartyOpen && _storageMovePartyCursor == 6 ? "CANCEL"
-            : held is null ? target is null ? "EMPTY" : PcText("gPCText_Move")
-            : target is null ? PcText("gPCText_Place") : PcText("gPCText_Shift");
-        SourceText(_sourceSmall, new(6, 132), "ENTER: " + action);
-        SourceText(_sourceSmall, new(6, 146), _storageMovePartyOpen ? "TAB: BOX" : "TAB: PARTY");
-        if (_pcNotice is not null) ItemMessageBox(_pcNotice);
     }
+
 }

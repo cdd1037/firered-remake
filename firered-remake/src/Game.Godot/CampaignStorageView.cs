@@ -41,8 +41,9 @@ public partial class CampaignView
         if(view!=_pcView)
         {
             _pcView=view;_pcCursor=view==CampaignPcView.StorageMenu?_session.State.Pc!.StorageMenuSelection:0;
-            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();
+            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();ResetStorageItemPresentation();
         }
+        SynchronizeStorageItemPrompt();
         if(view is not null){_held=null;_repeat=0;}
         if(view==CampaignPcView.Deposit)_pcCursor=Math.Clamp(_pcCursor,0,_session.State.Party.Length);
     }
@@ -67,6 +68,7 @@ public partial class CampaignView
         if(key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape)return false;
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return HallPcInput(key);
         if(_session.State.Pc?.View==CampaignPcView.Move)return StorageMoveInput(key);
+        if(_session.State.Pc?.View==CampaignPcView.MoveItems)return StorageItemInput(key);
         if(!key.Pressed)return true;
         if(_storagePartyPeek){if(key.Keycode is Key.Enter or Key.Backspace)_storagePartyPeek=false;return true;}
         if(_pcNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace)_pcNotice=null;return true;}
@@ -113,6 +115,7 @@ public partial class CampaignView
     {
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return MouseHallPc(point);
         if(_session.State.Pc?.View==CampaignPcView.Move)return MouseStorageMove(point);
+        if(_session.State.Pc?.View==CampaignPcView.MoveItems)return MouseStorageItems(point);
         if(_storagePartyPeek)return new Rect2(0,140,80,20).HasPoint(point)&&MouseKey(Key.Backspace);
         if(_pcNotice is not null)return MouseConfirm(point,MouseMessage);
         var pc=_session.State.Pc!;
@@ -133,6 +136,7 @@ public partial class CampaignView
         var pc=_session.State.Pc!;if(pc.View==CampaignPcView.PlayerItems)return;
         if(pc.View==CampaignPcView.HallOfFame){DrawHallPc();return;}
         if(pc.View==CampaignPcView.Move){DrawStorageMove();return;}
+        if(pc.View==CampaignPcView.MoveItems){DrawStorageItems();return;}
         if(pc.View is CampaignPcView.Main or CampaignPcView.StorageMenu)
         {
             var labels=pc.View==CampaignPcView.Main?_session.PcMenuTextSymbols.ToArray():_catalog.PokemonStorageSource!.StorageMenu.Select(o=>o.TextSymbol).ToArray();

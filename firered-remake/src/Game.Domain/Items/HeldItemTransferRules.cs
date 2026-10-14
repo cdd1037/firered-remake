@@ -57,7 +57,7 @@ public static class HeldItemTransferRules
         return ReturnToBag(catalog, inventory, pokemon, machines);
     }
 
-    private static string? ValidateInventory(EarlyShopCatalog catalog, InventoryState inventory, PewterMachineCatalog? machines)
+    internal static string? ValidateInventory(EarlyShopCatalog catalog, InventoryState inventory, PewterMachineCatalog? machines)
     {
         if (machines is null) return EarlyShopInventoryRules.Validate(catalog, inventory);
         return PewterMachineRules.Validate(machines, inventory) ??
@@ -69,21 +69,27 @@ public static class HeldItemTransferRules
         HeldItemTransferResult No(string error) => new(inventory, pokemon, false, error);
         if (pokemon.IsEgg || pokemon.Mail != 255 || PokemonStorageRules.IsMailItem(pokemon.HeldItem)) return No("held_item_mail_or_egg_unsupported");
         if (pokemon.HeldItem == "ITEM_NONE") return No("held_item_none");
-        var id = new ItemId("pret:" + pokemon.HeldItem);
-        if (!CanHold(catalog, id, machines)) return No("held_item_not_holdable");
-        if (machines is not null && PewterMachineRules.Definition(machines, id) is not null)
-        {
-            var added = PewterMachineRules.AddMachine(machines, inventory, id);
-            return added.Succeeded ? new(added.State, pokemon with { HeldItem = "ITEM_NONE" }, true, null) : No(added.Error!);
-        }
-        var definition = EarlyShopInventoryRules.Find(catalog, id)!;
+        var added = ReturnItemToBag(catalog, inventory, new ItemId("pret:" + pokemon.HeldItem), machines);
+        return added.Succeeded ? new(added.State, pokemon with { HeldItem = "ITEM_NONE" }, true, null) : No(added.Error!);
+    }
+
+    /// <summary>Returns one already-owned held item to its source Bag pocket, including the TM CASE.
+    /// Shared by party TAKE and the transient PC item cursor; it never creates a Pokemon or item stock.</summary>
+    public static InventoryTransactionResult ReturnItemToBag(EarlyShopCatalog catalog, InventoryState inventory,
+        ItemId item, PewterMachineCatalog? machines = null)
+    {
+        InventoryTransactionResult No(string error) => new(inventory, false, error);
+        if (ValidateInventory(catalog, inventory, machines) is {} invalid) return No(invalid);
+        if (!CanHold(catalog, item, machines)) return No("held_item_not_holdable");
+        if (machines is not null && PewterMachineRules.Definition(machines, item) is not null)
+            return PewterMachineRules.AddMachine(machines, inventory, item);
+        var definition = EarlyShopInventoryRules.Find(catalog, item)!;
         var pocket = EarlyShopInventoryRules.Pocket(inventory, definition);
-        int count = OpeningInventoryRules.Quantity(pocket, id);
+        int count = OpeningInventoryRules.Quantity(pocket, item);
         if (count >= catalog.Limits.MaximumStack) return No("inventory_stack_full");
         int capacity = definition.Pocket switch { "POCKET_BERRY_POUCH" => SsAnneItemRules.BerrySlots,
             "POCKET_POKE_BALLS" => catalog.QuestLimits.BallSlots, _ => catalog.Limits.BagItemSlots };
         if (count == 0 && pocket.Length >= capacity) return No("inventory_destination_full");
-        return new(EarlyShopInventoryRules.SetQuantity(inventory, definition, count + 1),
-            pokemon with { HeldItem = "ITEM_NONE" }, true, null);
+        return new(EarlyShopInventoryRules.SetQuantity(inventory, definition, count + 1), true, null);
     }
 }
