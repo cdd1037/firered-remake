@@ -237,6 +237,8 @@ public interface ICampaignCatalog:IStoryCatalog
     RockTunnelTrainerCatalog? RockTunnelTrainers=>null;
     ImmutableArray<PewterMachineItem> CityServiceItems=>[];
     IReadOnlyDictionary<MapId,OldRodEncounterTable>? OldRodEncounters=>null;
+    bool GoodRodEnabled=>false;
+    ImmutableDictionary<MapId,OldRodEncounterTable> GoodRodEncounters=>ImmutableDictionary<MapId,OldRodEncounterTable>.Empty;
     int? TerrainAt(MapId map,int x,int y)=>null;
     bool AllowsCycling(MapId map)=>false;
     bool VermilionGymEnabled=>false;

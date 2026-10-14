@@ -21,6 +21,8 @@ public static partial class SourceWildBattlePolicy
     {
         var mon = opponent.Pokemon;
         if (!owned.Catalog.Species.ContainsKey(mon.Species) || OwnedBattlePokemonCatalog.SourceRoot(owned) is not { } source) return false;
+        if (context.Fishing is { } fishing)
+            return FishingBattleContract.SourceInitialInstance(owned, fishing, mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.CelioRoamer is { } roamer)
             return CelioSourceOwnership(owned) is not null && CelioRoamerBattleContract.MatchesIdentity(roamer, mon);
         var five = FiveIslandOwnedPokemonCatalog.For(source.Catalog) ?? CelioSourceOwnership(source)?.Predecessor;

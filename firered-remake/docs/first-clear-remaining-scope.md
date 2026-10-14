@@ -30,7 +30,7 @@
 | --- | --- | --- |
 | 已经过的城镇和道路 | 仍需逐区补齐普通／条件对白、隐藏物、侧室和剩余训练家；早期常青学校／民居、深灰博物馆购票和展览等回访闭包没有完整交付证明。不能从主线通过推定全部地方服务已完成。 | [逐区交互清单](regional-interaction-coverage.md)、[早期遗留范围](first-badge-followups.md) |
 | 玉虹百货及游戏城 | 百货 2F TM 柜台、3F 双倍奉还教学、4F 娃娃／信件／其他进化石销售及相应进化闭包、5F 维生素／战斗道具销售、楼顶饮料贩卖和饮料换 TM；代币盒、代币余额、老虎机和奖品兑换。现有普通 2F 商店、楼层／电梯、茶、伊布、姓名判定师已经分别接通。 | [分楼层边界](regional-interaction-coverage.md#accepted-bounded-regional-interiors-2026-10-10) |
-| 南路、金黄及可选设施 | 自行车道与另一条南行路线、未覆盖的浅红普通设施／拾取；金黄格斗道场及赠送二选一已在下述有界节点接通；道具探测器及五处脚下奖励的逻辑已接通，专属箭头／星光原生表现仍缺；好钓竿、厉害钓竿的正常取得和对应钓鱼流程。已有自行车、破旧钓竿、狩猎、Surf／Strength 不能替代这些独立服务。 | [浅红边界](fuchsia-arrival.md)、[金黄边界](saffron-gym-campaign.md)、[红莲边界](cinnabar-campaign.md) |
+| 南路、金黄及可选设施 | 自行车道与另一条南行路线、未覆盖的浅红普通设施／拾取；金黄格斗道场及赠送二选一已在下述有界节点接通；道具探测器及五处脚下奖励的逻辑已接通，专属箭头／星光原生表现仍缺；好钓竿原服务及22个已加载Kanto钓表已在下述节点接通；厉害钓竿、尚未开放区域的钓表仍缺。已有自行车、破旧钓竿、狩猎、Surf／Strength 不能替代这些独立服务。 | [浅红边界](fuchsia-arrival.md)、[金黄边界](saffron-gym-campaign.md)、[红莲边界](cinnabar-campaign.md) |
 | 海路、红莲和传说支线 | 双子岛／水流推石与急冻鸟尚未实现；当前四岛只复用了双子岛原 tileset，不是双子岛地图或事件接入。无人发电厂／闪电鸟及两个伪装顽皮雷弹已通过有界公共路线、捕获／存读和headless表现，原生视听与未列分支仍待验；红莲研究所三项原NPC交换已完成下述有界闭环，教学仍待做，三种化石复活已在文末分项收口。当前经 21 号道路到红莲的主线不证明另一条海路和这些服务已完成。 | [红莲范围](cinnabar-campaign.md)、[完整地区分母](full-scope-audit.md#4-关都全部地区与主线) |
 | 首次一至三岛支路 | 宝物海滩、灯火山顶和火焰鸟、岬边及终极招式教学、二岛蘑菇回忆招式等仍缺；灯火山道／温泉／红宝石洞窟至彩虹通行证已另行通过本轮11图公共路线，不能把这些已完成内容继续算作缺项。三岛港口城镇地图定位点仍缺；岛间浏览已经接通。 | [首次七岛边界](first-sevii-campaign.md#remaining-regional-boundaries) |
 | 联盟后可用的既有服务 | 初次记录／结尾协议与 PC 的名人堂回看是两项功能；当前 PC 回看仍明确返回未实现。冠军之路舍身冲撞教学也仍缺。 | [PC 实际入口](../src/Game.Application/CampaignPokemonStorage.cs)、[冠军之路边界](victory-road-campaign.md#explicit-remaining-regional-scope) |
@@ -43,7 +43,7 @@
 
 ## 菜单、专属表现和声音
 
-- **实用界面缺项**：PC 的 Move Pokémon／Move Items、放生与 HM 保护、箱子命名／壁纸／标记、信件；图鉴栖息地／搜索排序／分布／大小／叫声页面；训练家卡背面和真实持久游玩时长。普通 PC 存取、14×30 容量、数值图鉴和卡片正面已有功能；普通已接物品的给予／取回／交换及PC GIVE现已补齐，邮件和TM/HM给予仍缺。[携带物范围](held-item-transfers.md)、[PC 范围](pokemon-storage-contract.md)、[基本菜单](basic-menu-application.md)
+- **实用界面缺项**：PC 的 Move Pokémon／Move Items、放生与 HM 保护、箱子命名／壁纸／标记；图鉴栖息地／搜索排序／分布／大小／叫声页面；训练家卡背面和真实持久游玩时长。普通 PC 存取、14×30 容量、数值图鉴和卡片正面已有功能；普通已接物品的给予／取回／交换及PC GIVE现已补齐，Dontae原信件读取／邮箱转移／归还／抹正文已有实现与有界检查，其他信纸和写信编辑、TM/HM给予仍缺。[携带物范围](held-item-transfers.md)、[PC 范围](pokemon-storage-contract.md)、[基本菜单](basic-menu-application.md)
 - **选项和输入**：当前菜单能编辑文字速度、SHIFT／SET 和边框；Battle Scene、Sound、Button Mode 的玩家编辑入口仍提示不可用，保存字段或测试中的 Scene Off 路径不等于完整选项功能。地图鼠标移动／寻路后置；现有菜单鼠标与键盘操作已接通。[实际选项入口](../src/Game.Godot/CampaignOptionsView.cs)、[鼠标范围](menu-pointer-controls.md)
 - **招式动画**：最新矩阵与 trace 批次一致，为 **20／354 专属脚本，余 334 个未在该专属表现范围内**。复用通用效果不计专属还原；已有 20 个也各自有独立来源／主机／原生验收边界，不能写成全部逐帧一致。[动画矩阵](battle-system-completion-matrix.md)、[最近的 17→20 批次](source-trace-choreography.md)
 - **场景及物种表现**：原版片头／大木介绍、原版命名键盘、部分进化／捕获／狩猎专用演出和完整菜单动效仍缺；晃晃斑按 PID 生成斑点仍未实现。名人堂背景混色、纸屑轨迹、文本排布和部分过渡时长未完全还原；片尾虽保留 66 条原脚本及文字顺序，地图镜头／转场、宝可梦放大圆形构图和角色地面摆放仍简化，游玩时长显示 `--:--`。[联盟表现的明确差异](pokemon-league-presentation.md#verification-and-explicit-boundaries)、[物种表现边界](full-scope-audit.md#61-三个不同集合)
@@ -97,3 +97,5 @@
 
 
 Dontae 原邮件实现点已构建并通过共享规则／容量／历史与受控决策检查：当前319图／161持有／190敌方／127物品／41机器，9个原交易定义准入，真实完成仍8项。原PlayerPC空邮箱10命令53175→53185及新进程Continue已过；含信的第九交换完整存读与Mail UI仍待。既有真档没有Poliwag/Poliwhirl，下一步接原好钓竿、真实捕获和进化后再交换，不制造自然获取记录。原邮件的拍落／回收脱钩保护已按批准范围实施；写信编辑、其他信纸和通信仍未做。[准确边界](npc-trade-mail.md)
+
+好钓竿／第九原NPC交换现已完成真实供体链：320图，沿八交换53185档实际领取好钓竿，3次原垂钓／1球捕获Route6的Poliwag73 Lv15；随后16次真实野战（含Shadow Tag时实际捕获Wobbuffet而非绕过限制）获得经验至25级并公共进化。华蓝Dontae交换收到ZYNX25和原Fab Mail，全部9项原交换已各完成一次。最终55023严格存读及独立Continue完整相同；1838条最终谱系公共命令，地图外定位与受控League祖先明确披露，失败验收分支不混作连续谱系。Mail／交换headless表现104检查／27Draw通过，原生视听未验；专用通信交换动画、其他信纸和写信编辑仍待。[好钓竿范围](good-rod-campaign.md)、[原邮件范围](npc-trade-mail.md)

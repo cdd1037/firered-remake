@@ -5,7 +5,7 @@ using Game.Domain.Ids;
 namespace Game.Domain.Encounters;
 
 /// <summary>
-/// FireRed Task_Fishing, Old Rod, on-foot entry. SourceStep retains the original zero-based
+/// FireRed Task_Fishing, shared on-foot rod entry. SourceStep retains the original zero-based
 /// function index. Presentation callbacks and VBlank are not random gameplay draws.
 /// </summary>
 public static class OldRodFishingRules
@@ -19,7 +19,7 @@ public static class OldRodFishingRules
     public static bool CanCast(OldRodCastContext context)
     {
         ValidateContext(context);
-        return context.OwnsOldRod && !context.IsSurfing && !context.IsUnderwater &&
+        return (context.Rod == FishingRod.Old ? context.OwnsOldRod : context.OwnsGoodRod) && !context.IsSurfing && !context.IsUnderwater &&
             context.FrontMetatileBehavior != WaterfallBehavior && context.PlayerElevation == 3 &&
             context.FrontTerrain == WaterTerrain && context.FrontCollision == ElevationMismatchCollision;
     }
@@ -32,16 +32,18 @@ public static class OldRodFishingRules
         => StartCore(context, rng, cancelBeforeCast, cinnabarRules: false);
 
     internal static OldRodFishingResult StartCore(OldRodCastContext context, RngState rng,
-        bool cancelBeforeCast, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false)
+        bool cancelBeforeCast, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false, bool goodRodRules = false)
     {
         ValidateContext(context);
+        if (context.Rod != (goodRodRules ? FishingRod.Good : FishingRod.Old))
+            throw new ArgumentException("fishing_rod_profile");
         ValidateRng(rng);
-        bool hasMons = HasFishingMons(context.Map, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules);
+        bool hasMons = HasFishingMons(context.Map, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules,goodRodRules);
         var state = new OldRodFishingState(context.Map, hasMons, RulesVersion:
-            fiveIslandRules ? FiveIslandOldRodEncounterRules.RulesVersion : sixIslandRules ? SixIslandOldRodEncounterRules.RulesVersion : fourIslandRules ? FourIslandOldRodEncounterRules.RulesVersion : seviiRubyRules ? SeviiRubyOldRodEncounterRules.RulesVersion : victoryRoadRules ? VictoryRoadOldRodEncounterRules.RulesVersion : firstSeviiRules ? FirstSeviiOldRodEncounterRules.RulesVersion : cinnabarRules ? CinnabarOldRodEncounterRules.RulesVersion : RulesVersion);
+            goodRodRules ? GoodRodEncounterRules.RulesVersion : fiveIslandRules ? FiveIslandOldRodEncounterRules.RulesVersion : sixIslandRules ? SixIslandOldRodEncounterRules.RulesVersion : fourIslandRules ? FourIslandOldRodEncounterRules.RulesVersion : seviiRubyRules ? SeviiRubyOldRodEncounterRules.RulesVersion : victoryRoadRules ? VictoryRoadOldRodEncounterRules.RulesVersion : firstSeviiRules ? FirstSeviiOldRodEncounterRules.RulesVersion : cinnabarRules ? CinnabarOldRodEncounterRules.RulesVersion : RulesVersion) { Rod = context.Rod };
         if (cancelBeforeCast) return new(state with { Status = OldRodFishingStatus.Cancelled }, rng, []);
         if (!CanCast(context)) return new(state with { Status = OldRodFishingStatus.Rejected }, rng, []);
-        if (!IsAdmittedMap(context.Map, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules)) throw new NotSupportedException("Fishing on this map is outside the bounded Old Rod profile.");
+        if (!IsAdmittedMap(context.Map, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules,goodRodRules)) throw new NotSupportedException("Fishing on this map is outside the bounded Old Rod profile.");
         return new(state, rng, []);
     }
 
@@ -54,9 +56,9 @@ public static class OldRodFishingRules
         => AdvanceCore(state, input, rng, cinnabarRules: false);
 
     internal static OldRodFishingResult AdvanceCore(OldRodFishingState state, OldRodFrameInput input,
-        RngState rng, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false)
+        RngState rng, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false, bool goodRodRules = false)
     {
-        ValidateStateCore(state, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules);
+        ValidateStateCore(state, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules,goodRodRules);
         ArgumentNullException.ThrowIfNull(input);
         ValidateRng(rng);
         if (state.Status != OldRodFishingStatus.Running)
@@ -69,8 +71,8 @@ public static class OldRodFishingRules
         }
         switch (state.SourceStep)
         {
-            case 1: // Fishing2; Random()%1 is deliberately retained.
-                state = state with { MinimumRoundsRequired = 1 + Draw("fishing.minimum-rounds", 1), SourceStep = 2 };
+            case 1: // Fishing2; retain even Old Rod's mandatory Random()%1 draw.
+                state = state with { MinimumRoundsRequired = 1 + Draw("fishing.minimum-rounds", MinimumRoundsBound(state.Rod)), SourceStep = 2 };
                 break;
             case 2: // Fishing3 waits 60 task updates, not 60 arbitrary display frames.
                 int frames = state.FrameCounter + 1;
@@ -110,18 +112,18 @@ public static class OldRodFishingRules
             default:
                 throw new InvalidOperationException("Unreachable Old Rod fishing state.");
         }
-        ValidateStateCore(state, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules);
+        ValidateStateCore(state, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules,goodRodRules);
         return new(state, rng, traces.ToImmutable());
     }
 
     public static void ValidateState(OldRodFishingState state) => ValidateStateCore(state, cinnabarRules: false);
 
-    internal static void ValidateStateCore(OldRodFishingState state, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false)
+    internal static void ValidateStateCore(OldRodFishingState state, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false, bool goodRodRules = false)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.RulesVersion != (fiveIslandRules ? FiveIslandOldRodEncounterRules.RulesVersion : sixIslandRules ? SixIslandOldRodEncounterRules.RulesVersion : fourIslandRules ? FourIslandOldRodEncounterRules.RulesVersion : seviiRubyRules ? SeviiRubyOldRodEncounterRules.RulesVersion : victoryRoadRules ? VictoryRoadOldRodEncounterRules.RulesVersion : firstSeviiRules ? FirstSeviiOldRodEncounterRules.RulesVersion : cinnabarRules ? CinnabarOldRodEncounterRules.RulesVersion : RulesVersion)) throw new NotSupportedException("Unknown Old Rod rules version.");
+        if (state.Rod != (goodRodRules ? FishingRod.Good : FishingRod.Old) || state.RulesVersion != (goodRodRules ? GoodRodEncounterRules.RulesVersion : fiveIslandRules ? FiveIslandOldRodEncounterRules.RulesVersion : sixIslandRules ? SixIslandOldRodEncounterRules.RulesVersion : fourIslandRules ? FourIslandOldRodEncounterRules.RulesVersion : seviiRubyRules ? SeviiRubyOldRodEncounterRules.RulesVersion : victoryRoadRules ? VictoryRoadOldRodEncounterRules.RulesVersion : firstSeviiRules ? FirstSeviiOldRodEncounterRules.RulesVersion : cinnabarRules ? CinnabarOldRodEncounterRules.RulesVersion : RulesVersion)) throw new NotSupportedException("Unknown Old Rod rules version.");
         if (string.IsNullOrWhiteSpace(state.Map.Value) || !state.Map.Value.StartsWith("map.", StringComparison.Ordinal) ||
-            state.HasFishingMons != HasFishingMons(state.Map, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules) || !Enum.IsDefined(state.Status))
+            state.HasFishingMons != HasFishingMons(state.Map, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules,goodRodRules) || !Enum.IsDefined(state.Status))
             throw new ArgumentException("Fishing map or status differs from the bounded source profile.");
         if (state.Status is OldRodFishingStatus.Cancelled or OldRodFishingStatus.Rejected)
         {
@@ -129,17 +131,18 @@ public static class OldRodFishingRules
                 state.RoundsPlayed != 0 || state.MinimumRoundsRequired != 0) throw new ArgumentException("A non-started cast cannot contain fishing progress.");
             return;
         }
-        if (!IsAdmittedMap(state.Map, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules)) throw new NotSupportedException("Fishing map is not admitted.");
+        if (!IsAdmittedMap(state.Map, cinnabarRules,firstSeviiRules,victoryRoadRules,seviiRubyRules,fourIslandRules,sixIslandRules,fiveIslandRules,ceruleanCaveRules,sevenIslandRules,goodRodRules)) throw new NotSupportedException("Fishing map is not admitted.");
         if (state.SourceStep is not (1 or 2 or 3 or 4 or 5 or 9 or 10 or 14 or 15) ||
             state.FrameCounter is < 0 or > 60 || state.NumDots is < 0 or > 10 || state.DotsRequired is < 0 or > 10 ||
-            state.RoundsPlayed is < 0 or > 1 || state.MinimumRoundsRequired is < 0 or > 1)
+            state.RoundsPlayed is < 0 or > 1 || state.MinimumRoundsRequired < 0 || state.MinimumRoundsRequired > MinimumRoundsBound(state.Rod))
             throw new ArgumentException("Invalid or unreachable source fishing counters.");
         if (state.SourceStep == 1)
         {
             if (state.FrameCounter != 0 || state.NumDots != 0 || state.DotsRequired != 0 || state.RoundsPlayed != 0 || state.MinimumRoundsRequired != 0)
                 throw new ArgumentException("New cast counters differ.");
         }
-        else if (state.MinimumRoundsRequired != 1) throw new ArgumentException("Old Rod minimum rounds is exactly one.");
+        else if (state.MinimumRoundsRequired < 1 || state.MinimumRoundsRequired > MinimumRoundsBound(state.Rod))
+            throw new ArgumentException("Fishing minimum rounds differs from the selected rod.");
         if (state.SourceStep is 2 or 3)
         {
             if (state.NumDots != 0 || state.DotsRequired != 0 || state.RoundsPlayed != 0 ||
@@ -156,20 +159,23 @@ public static class OldRodFishingRules
             throw new ArgumentException("Terminal fishing phase differs.");
     }
 
-    private static bool HasFishingMons(MapId map, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false) =>
-        (sevenIslandRules ? SevenIslandOldRodEncounterRules.Tables : ceruleanCaveRules ? CeruleanCaveOldRodEncounterRules.Tables : fiveIslandRules ? FiveIslandOldRodEncounterRules.Tables : sixIslandRules ? SixIslandOldRodEncounterRules.Tables : fourIslandRules ? FourIslandOldRodEncounterRules.Tables : seviiRubyRules ? SeviiRubyOldRodEncounterRules.Tables : victoryRoadRules ? VictoryRoadOldRodEncounterRules.Tables : firstSeviiRules ? FirstSeviiOldRodEncounterRules.Tables : cinnabarRules ? CinnabarOldRodEncounterRules.Tables : OldRodEncounterRules.Tables).Any(t => t.Map == map);
+    private static bool HasFishingMons(MapId map, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false, bool goodRodRules = false) =>
+        (goodRodRules ? GoodRodEncounterRules.Tables : sevenIslandRules ? SevenIslandOldRodEncounterRules.Tables : ceruleanCaveRules ? CeruleanCaveOldRodEncounterRules.Tables : fiveIslandRules ? FiveIslandOldRodEncounterRules.Tables : sixIslandRules ? SixIslandOldRodEncounterRules.Tables : fourIslandRules ? FourIslandOldRodEncounterRules.Tables : seviiRubyRules ? SeviiRubyOldRodEncounterRules.Tables : victoryRoadRules ? VictoryRoadOldRodEncounterRules.Tables : firstSeviiRules ? FirstSeviiOldRodEncounterRules.Tables : cinnabarRules ? CinnabarOldRodEncounterRules.Tables : OldRodEncounterRules.Tables).Any(t => t.Map == map);
 
-    private static bool IsAdmittedMap(MapId map, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false) => sevenIslandRules ? SevenIslandOldRodEncounterRules.IsAdmittedMap(map) : ceruleanCaveRules ? CeruleanCaveOldRodEncounterRules.IsAdmittedMap(map) : fiveIslandRules ? FiveIslandOldRodEncounterRules.IsAdmittedMap(map) : sixIslandRules ? SixIslandOldRodEncounterRules.IsAdmittedMap(map) : fourIslandRules ? FourIslandOldRodEncounterRules.IsAdmittedMap(map) : seviiRubyRules ? SeviiRubyOldRodEncounterRules.IsAdmittedMap(map) : victoryRoadRules ? VictoryRoadOldRodEncounterRules.IsAdmittedMap(map) : firstSeviiRules ? FirstSeviiOldRodEncounterRules.IsAdmittedMap(map) : cinnabarRules
+    private static bool IsAdmittedMap(MapId map, bool cinnabarRules, bool firstSeviiRules = false, bool victoryRoadRules = false, bool seviiRubyRules = false, bool fourIslandRules = false, bool sixIslandRules = false, bool fiveIslandRules = false, bool ceruleanCaveRules = false, bool sevenIslandRules = false, bool goodRodRules = false) => goodRodRules ? GoodRodEncounterRules.IsAdmittedMap(map) : sevenIslandRules ? SevenIslandOldRodEncounterRules.IsAdmittedMap(map) : ceruleanCaveRules ? CeruleanCaveOldRodEncounterRules.IsAdmittedMap(map) : fiveIslandRules ? FiveIslandOldRodEncounterRules.IsAdmittedMap(map) : sixIslandRules ? SixIslandOldRodEncounterRules.IsAdmittedMap(map) : fourIslandRules ? FourIslandOldRodEncounterRules.IsAdmittedMap(map) : seviiRubyRules ? SeviiRubyOldRodEncounterRules.IsAdmittedMap(map) : victoryRoadRules ? VictoryRoadOldRodEncounterRules.IsAdmittedMap(map) : firstSeviiRules ? FirstSeviiOldRodEncounterRules.IsAdmittedMap(map) : cinnabarRules
         ? CinnabarOldRodEncounterRules.IsAdmittedMap(map) : OldRodEncounterRules.IsAdmittedMap(map);
 
     private static void ValidateContext(OldRodCastContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        if (string.IsNullOrWhiteSpace(context.Map.Value) || !context.Map.Value.StartsWith("map.", StringComparison.Ordinal) ||
+        if (!Enum.IsDefined(context.Rod) || string.IsNullOrWhiteSpace(context.Map.Value) || !context.Map.Value.StartsWith("map.", StringComparison.Ordinal) ||
             context.PlayerElevation is < 0 or > 15 || context.FrontTerrain is < 0 or > 31 ||
             context.FrontMetatileBehavior is < 0 or > 511 || context.FrontCollision is < 0 or > 15)
             throw new ArgumentException("Invalid source cast context.");
     }
+    private static int MinimumRoundsBound(FishingRod rod) => rod switch {
+        FishingRod.Old => 1, FishingRod.Good => 3, _ => throw new ArgumentOutOfRangeException(nameof(rod)) };
+
     private static void ValidateRng(RngState rng)
     {
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) throw new NotSupportedException("Unknown global RNG algorithm.");

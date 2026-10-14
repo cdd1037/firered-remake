@@ -23,12 +23,14 @@ public partial class CampaignView
 
     private void ExtendCityServicesQuestPocket(ref QuestItemUiDocument document)
     {
-        if(_catalog.CityServices is not {} services)return;
+        var items=_catalog.CityServiceItems;
+        if(items.IsDefaultOrEmpty)return;
+        var icons=(_catalog.CityServices?.Icons??[]).AddRange(_catalog.GoodRodService?.Icons??[]);
         string firstIcon=document.Items[0].Icon;
         var position=document.Assets.Single(a=>a.Id==firstIcon);
-        foreach(var item in services.Items)
+        foreach(var item in items)
         {
-            var icon=services.Icons.Single(a=>a.Item==item.Item.Id);
+            var icon=icons.Single(a=>a.Item==item.Item.Id);
             string id="city-service-"+item.Item.SourceItemSymbol;
             using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,PretPewterMachines.IconRgba(icon));
             _questPocketTextures.Add(id,ImageTexture.CreateFromImage(image));
@@ -93,7 +95,8 @@ public partial class CampaignView
 
     private bool TryCityServiceItem(string item)
     {
-        if(!_catalog.CityServicesEnabled||item is not ("pret:ITEM_BICYCLE" or "pret:ITEM_OLD_ROD"))return false;
+        if(!_catalog.CityServicesEnabled||item is not ("pret:ITEM_BICYCLE" or "pret:ITEM_OLD_ROD" or "pret:ITEM_GOOD_ROD"))return false;
+        if(item=="pret:ITEM_GOOD_ROD"&&_catalog.GoodRodService is null)return false;
         Apply(new(item=="pret:ITEM_BICYCLE"?"field_bicycle":"field_fish",Text:item));
         if(_session.State.ItemMenu is not null)
             _questPocketNotice=_questPocketUi!.Texts["gText_OakForbidsUseOfItemHere"].Replace("{PLAYER}",_session.State.PlayerName,StringComparison.Ordinal);

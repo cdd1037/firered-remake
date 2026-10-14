@@ -42,6 +42,7 @@ public sealed partial class PretCampaignCatalog
         var npcTradeElyssa = PretNpcTradeElyssa.Load(projectRoot);
         var npcTradeHaden = PretNpcTradeHaden.Load(projectRoot);
         var npcTradeMail = PretNpcTradeMail.Load(projectRoot);
+        var goodRodService = PretGoodRodService.Load(projectRoot);
         var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
         var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName), PretRocketHideoutRuntimeMaps.ManifestSha256);
@@ -1010,6 +1011,8 @@ public sealed partial class PretCampaignCatalog
         AppendNpcTradeSources(npcTrades, sources, textFiles, constants, hashes);
         AppendAuthenticatedRegionalSources(npcTradeHaden.Scripts, npcTradeHaden.TextSources.Values, npcTradeHaden.Constants,
             npcTradeHaden.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+        AppendAuthenticatedRegionalSources(goodRodService.Scripts, goodRodService.TextSources.Values, goodRodService.Constants,
+            goodRodService.AdditionalSourceHashes, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -2302,6 +2305,10 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(npcTrades.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTrades.NewMaps);
         ValidateNpcTradeComposition(npcTrades, maps, npcTradePreviousMaps, compiled);
+        var goodRodPreviousMaps = maps;
+        maps = maps.AddRange(goodRodService.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, goodRodService.NewMaps);
+        ValidateGoodRodComposition(goodRodService, maps, goodRodPreviousMaps, compiled);
         PretNpcTradeOwnedRules.ValidateSourceEvidence(projectRoot);
         var tradeOwned = PretNpcTradeOwnedRules.LoadOwned(projectRoot, fossilOwned);
         _ = PretNpcTradeOwnedRules.LoadOpponents(projectRoot, fossilOpponents, tradeOwned);
@@ -2489,7 +2496,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

@@ -78,7 +78,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public bool CityServicesEnabled => CityServices is not null;
     public PretOldRod? OldRod { get; }
     public IReadOnlyDictionary<MapId, OldRodEncounterTable> OldRodEncounters => SevenIslandOldRodEncounterRules.Tables.ToImmutableDictionary(t => t.Map);
-    public ImmutableArray<PewterMachineItem> CityServiceItems => CityServices?.Items ?? [];
+    public ImmutableArray<PewterMachineItem> CityServiceItems { get; }
     public PretVermilionGymRegion? VermilionGymRegion { get; }
     public VermilionGymTrainerCatalog? VermilionGymTrainers { get; }
     public bool VermilionGymEnabled => VermilionGymRegion is not null;
@@ -301,7 +301,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretFightingDojoRegion fightingDojo, FightingDojoOwnedPokemonCatalog dojoOwned,
         FightingDojoOpponentPokemonCatalog dojoOpponents, FightingDojoMachineCatalog dojoMachines, FightingDojoTrainerCatalog dojoTrainers,
         PretFossilLabRegion fossilLab, FossilLabOwnedPokemonCatalog fossilOwned,
-        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines, FossilLabShopCatalog fossilShop, PretNpcTrades npcTrades, PretNpcTradeElyssa npcTradeElyssa, PretNpcTradeHaden npcTradeHaden, PretNpcTradeMail npcTradeMail)
+        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines, FossilLabShopCatalog fossilShop, PretNpcTrades npcTrades, PretNpcTradeElyssa npcTradeElyssa, PretNpcTradeHaden npcTradeHaden, PretNpcTradeMail npcTradeMail, PretGoodRodService goodRodService)
     {
         NpcTradeContent = npcTrades; NpcTradeElyssa = npcTradeElyssa; NpcTradeHaden = npcTradeHaden; NpcTradeMail = npcTradeMail;
         NpcTradeMaps = ResolveNpcTradeMaps(npcTrades, maps);
@@ -446,6 +446,9 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         Route11Trainers = route11Trainers;
         CityServices = cityServices;
         OldRod = oldRod;
+        GoodRodService = goodRodService;
+        GoodRodEncounters = goodRodService.GoodRodTables.ToImmutableDictionary(table => table.Map);
+        CityServiceItems = cityServices.Items.AddRange(goodRodService.Items);
         VermilionGymRegion = vermilionGym;
         VermilionGymTrainers = vermilionGymTrainers;
         SsAnneRegion = ssAnne;
@@ -600,7 +603,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
         MetatileDefinitions = metatileDefinitions;
         Maps = Maps.ToImmutableDictionary().SetItem(new("map.viridian-city"), new ViridianGymCityFieldMap(maps[new("map.viridian-city")]));
-        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => npcTradeHaden.NewMaps.ContainsKey(x.Key) ? PretNpcTradeHaden.ConnectedMap(x.Value) : npcTradeElyssa.NewMaps.ContainsKey(x.Key) ? PretNpcTradeElyssa.ConnectedMap(x.Value) : npcTrades.NewMaps.ContainsKey(x.Key) ? PretNpcTrades.ConnectedMap(x.Value) : fossilLab.NewMaps.ContainsKey(x.Key) ? PretFossilLabRegion.ConnectedMap(x.Value) : fightingDojo.NewMaps.ContainsKey(x.Key) ? PretFightingDojoRegion.ConnectedMap(x.Value) : trainerTower.Maps.ContainsKey(x.Key) ? PretTrainerTowerRegion.ConnectedMap(x.Value) : powerPlant.NewMaps.ContainsKey(x.Key) ? PretPowerPlantRegion.ConnectedMap(x.Value) : eventIsland.NewMaps.ContainsKey(x.Key) ? PretEventIslandRegion.ConnectedMap(x.Value) : sevenIsland.NewMaps.ContainsKey(x.Key) ? PretSevenIslandRegion.ConnectedMap(x.Value) : ceruleanCave.NewMaps.ContainsKey(x.Key) ? CeruleanCaveConnectedMap(x.Value) : fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : (RegionalServiceMapIds.Contains(x.Key) || RegionalInteriorMapIds.Contains(x.Key)) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
+        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => goodRodService.NewMaps.ContainsKey(x.Key) ? PretGoodRodService.ConnectedMap(x.Value) : npcTradeHaden.NewMaps.ContainsKey(x.Key) ? PretNpcTradeHaden.ConnectedMap(x.Value) : npcTradeElyssa.NewMaps.ContainsKey(x.Key) ? PretNpcTradeElyssa.ConnectedMap(x.Value) : npcTrades.NewMaps.ContainsKey(x.Key) ? PretNpcTrades.ConnectedMap(x.Value) : fossilLab.NewMaps.ContainsKey(x.Key) ? PretFossilLabRegion.ConnectedMap(x.Value) : fightingDojo.NewMaps.ContainsKey(x.Key) ? PretFightingDojoRegion.ConnectedMap(x.Value) : trainerTower.Maps.ContainsKey(x.Key) ? PretTrainerTowerRegion.ConnectedMap(x.Value) : powerPlant.NewMaps.ContainsKey(x.Key) ? PretPowerPlantRegion.ConnectedMap(x.Value) : eventIsland.NewMaps.ContainsKey(x.Key) ? PretEventIslandRegion.ConnectedMap(x.Value) : sevenIsland.NewMaps.ContainsKey(x.Key) ? PretSevenIslandRegion.ConnectedMap(x.Value) : ceruleanCave.NewMaps.ContainsKey(x.Key) ? CeruleanCaveConnectedMap(x.Value) : fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : (RegionalServiceMapIds.Contains(x.Key) || RegionalInteriorMapIds.Contains(x.Key)) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
         _definitions = maps.ToImmutableDictionary(x => x.Key, x => Definition(x.Value));
     }
 
@@ -686,6 +689,11 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
     public FieldMetatileDefinition? MetatileDefinition(MapId map, int id)
     {
+        if (GoodRodService.NewMaps.TryGetValue(map, out var goodRodMap))
+        {
+            var cell = goodRodMap.Cells.Concat(goodRodMap.BorderCells).FirstOrDefault(c => c.MetatileId == id);
+            return cell is null ? null : new(id, cell.BehaviorId, cell.Terrain, cell.EncounterType, cell.LayerType);
+        }
         if (NpcTradeContent.NewMaps.TryGetValue(map, out var npcTradeMap) || NpcTradeElyssa.NewMaps.TryGetValue(map, out npcTradeMap) || NpcTradeHaden.NewMaps.TryGetValue(map, out npcTradeMap))
         {
             var cell = npcTradeMap.Cells.Concat(npcTradeMap.BorderCells).FirstOrDefault(c => c.MetatileId == id);

@@ -10,8 +10,9 @@ public sealed partial class CampaignSession
     private static readonly ItemId BikeVoucherId=new("pret:ITEM_BIKE_VOUCHER");
     private static readonly ItemId BicycleId=new("pret:ITEM_BICYCLE");
     private static readonly ItemId OldRodId=new("pret:ITEM_OLD_ROD");
+    private static readonly ItemId GoodRodId=new("pret:ITEM_GOOD_ROD");
     private const string BikeShopSource="data/maps/CeruleanCity_BikeShop/scripts.inc";
-    private static bool IsCityServiceItem(ItemId id)=>id==BikeVoucherId||id==BicycleId||id==OldRodId;
+    private static bool IsCityServiceItem(ItemId id)=>id==BikeVoucherId||id==BicycleId||id==OldRodId||id==GoodRodId;
     private InventoryState WithoutCityServiceItems(InventoryState inventory)
     {
         inventory=WithoutSafariKeyItems(WithoutRegionalTea(inventory));
@@ -21,7 +22,7 @@ public sealed partial class CampaignSession
     private string? ValidateCityServiceInventory(InventoryState inventory)
     {
         foreach(var stack in inventory.KeyItems??[])
-            if(stack is not null&&IsCityServiceItem(stack.Item)&&(!_content.CityServicesEnabled||stack.Quantity!=1))
+            if(stack is not null&&IsCityServiceItem(stack.Item)&&(!_content.CityServicesEnabled||stack.Item==GoodRodId&&!_content.GoodRodEnabled||stack.Quantity!=1))
                 return "inventory_city_service_item_invalid";
         return null;
     }
@@ -30,7 +31,10 @@ public sealed partial class CampaignSession
         bool voucher=state.Script.Flags.GetValueOrDefault("FLAG_GOT_BIKE_VOUCHER");
         bool bike=state.Script.Flags.GetValueOrDefault("FLAG_GOT_BICYCLE");
         bool rod=state.Script.Flags.GetValueOrDefault("FLAG_GOT_OLD_ROD");
+        bool goodRod=state.Script.Flags.GetValueOrDefault("FLAG_GOT_GOOD_ROD");
         int Count(ItemId id)=>OpeningInventoryRules.Quantity(state.Inventory?.KeyItems??[],id);
+        if(!_content.GoodRodEnabled&&(goodRod||Count(GoodRodId)!=0))return "save_good_rod_profile_missing";
+        if(_content.GoodRodEnabled&&Count(GoodRodId)!=(goodRod?1:0))return "save_good_rod_reward_mismatch";
         if(!_content.CityServicesEnabled)return voucher||bike||rod||Count(BikeVoucherId)!=0||Count(BicycleId)!=0||Count(OldRodId)!=0?"save_city_services_profile_missing":null;
         return bike&&!voucher||Count(BikeVoucherId)!=(voucher&&!bike?1:0)||Count(BicycleId)!=(bike?1:0)||Count(OldRodId)!=(rod?1:0)
             ?"save_city_services_reward_mismatch":null;
