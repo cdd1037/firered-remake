@@ -50,7 +50,7 @@ public partial class CampaignView
             if (right) _menuRightMousePressed = true; else _menuMousePressed = true;
         }
         if (mouse is { DoubleClick: true } || _menuMouseActionFrame == Engine.GetProcessFrames() ||
-            _session is null || _busy || _fade > 0 || (_session.State.ScreenIsBlack && !_session.State.TrainerTowerRecordsVisible) ||
+            _session is null || _busy || _fade > 0 || (_session.State.ScreenIsBlack && !_session.State.TrainerTowerRecordsVisible && !MoveTutorActive) ||
             _tracks.Any(t => t.Time < t.Duration)) return true;
 
         // Godot already removes viewport stretch/letterboxing before _UnhandledInput.

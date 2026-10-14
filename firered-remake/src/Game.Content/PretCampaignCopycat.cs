@@ -10,7 +10,7 @@ public sealed partial class PretCampaignCatalog
 {
     public PretCopycatHouse CopycatHouse { get; }
     public PokeDollShopStock? PokeDollShopStock =>
-        PokeDollInventoryCatalog.For(EarlyShop) is not null ? new() : null;
+        PokeDollInventoryCatalog.For(OrdinaryItemInventoryCatalog.BaseCatalog(EarlyShop!)) is not null ? new() : null;
 
     private static FieldPickupDefinition CopycatHiddenPickup(PretCopycatHouse house,
         EarlyShopCatalog shop, PretStoryCompilation scripts)
