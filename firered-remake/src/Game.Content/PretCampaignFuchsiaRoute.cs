@@ -12,6 +12,7 @@ public sealed partial class PretCampaignCatalog
     public bool FuchsiaRouteEnabled=>FuchsiaRouteRegion is not null;
     public FuchsiaRouteTrainerCatalog? FuchsiaRouteTrainers=>FuchsiaRoutePokemon?.Trainers;
     public bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>
+        map.Value=="map.fuchsia-city"&&sourceWarpId==10?MoveDeleter is not null:
         map.Value=="map.fuchsia-city"&&sourceWarpId is 7 or 8 or 9?GoodRodEnabled:
         SafariRegion is {} safari && Maps[map].FieldWarps.Any(w=>w.Index==sourceWarpId&&safari.SourceMaps.ContainsKey(w.DestinationMapId))?true:
         map.Value=="map.fuchsia-city"&&sourceWarpId==4?FuchsiaGymEnabled:FuchsiaRouteRegion is not {} region ||

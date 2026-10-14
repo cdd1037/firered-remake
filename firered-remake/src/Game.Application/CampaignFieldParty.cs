@@ -11,7 +11,7 @@ public sealed partial class CampaignSession
     private static bool IsStableFieldForParty(CampaignState state)=>
         state.Script.Completed&&!state.Script.Locked&&state.Script.Wait is null&&state.Script.Stack.IsEmpty&&state.Script.QuestLogState==0&&
         state.SeafoamMovement is null&&state.RuinValleyCut is null&&state.DottedHoleFall is null&&state.FourIslandMovement is null&&state.EntryPrograms.IsEmpty&&state.Dialogue is null&&state.SignMessage is null&&
-        state.MoveTutor is null&&state.MoveReminder is null&&state.NameRater is null&&state.Nickname is null&&state.MonPicture is null&&!state.ScreenIsBlack&&state.PlayerVisible&&
+        state.MoveTutor is null&&state.MoveReminder is null&&state.MoveDeleter is null&&state.NameRater is null&&state.Nickname is null&&state.MonPicture is null&&!state.ScreenIsBlack&&state.PlayerVisible&&
         state.PresentationTicks==0&&state.Motions.IsEmpty&&state.ArrivalFacing is null&&
         state.Battle is null&&state.WildBattle is null&&state.ForestTrainerBattle is null&&state.DoubleBattle is null&&state.SafariBattle is null&&
         state.OldManTutorial is null&&state.FieldPoison is null&&state.Evolution is null&&state.RareCandy is null&&state.EscapeRope is null&&

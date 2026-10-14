@@ -5,7 +5,7 @@ using Game.Domain.World;
 using Godot;
 
 /// <summary>Shared functional party/teaching surface. The source callbacks own all rules;
-/// these existing fonts and frames also present the Move Reminder's scrolling move list.</summary>
+/// these existing fonts and frames also present Reminder and Deleter selection.</summary>
 public partial class CampaignView
 {
     private int _tutorCursor;
@@ -13,7 +13,8 @@ public partial class CampaignView
     private ulong _tutorTransitionFrame = ulong.MaxValue;
     private sealed record TeachingPresentation(string Prefix, string Stage, int PartyIndex, long? InstanceId,
         bool Party, bool Replace, bool Moves, bool Payment, bool Choice, bool Learned,
-        ImmutableArray<string> Pages, int Page);
+        ImmutableArray<string> Pages, int Page)
+    { public bool Delete => Prefix == "move_deleter_"; }
     private TeachingPresentation? Teaching
     {
         get
@@ -32,11 +33,19 @@ public partial class CampaignView
                     reminder.Stage == CampaignMoveReminderStage.Learned,
                     reminder.Stage == CampaignMoveReminderStage.Payment ? _session.State.Dialogue?.Pages ?? [] : reminder.Pages,
                     reminder.Stage == CampaignMoveReminderStage.Payment ? _session.State.Dialogue?.Page ?? 0 : reminder.Page);
+            if (_session?.State.MoveDeleter is { Stage: not CampaignMoveDeleterStage.FieldScript } deleter)
+                return new("move_deleter_", deleter.Stage.ToString(), deleter.PartyIndex, deleter.InstanceId,
+                    deleter.Stage == CampaignMoveDeleterStage.Party, deleter.Stage == CampaignMoveDeleterStage.Moves,
+                    false, false, false, false,
+                    [DeleterCatalog.Texts["gText_PokeSum_PageName_KnownMoves"] + "\n" +
+                        DeleterCatalog.Texts["gText_PokeSum_Controls_PickDelete"].Replace("{DPAD_UPDOWN}", "↑↓ ", StringComparison.Ordinal)
+                            .Replace("{A_BUTTON}", "A ", StringComparison.Ordinal)], 0);
             return null;
         }
     }
     private bool MoveTutorActive => Teaching is not null;
     private MoveReminderCatalog ReminderCatalog => ((ICampaignCatalog)_catalog).MoveReminder!;
+    private MoveDeleterCatalog DeleterCatalog => ((ICampaignCatalog)_catalog).MoveDeleter!;
     private static Rect2 TutorPartyRow(int index) => new(8, 6 + index * 18, 224, 18);
     private static Rect2 TutorMoveRow(int index) => new(8, 12 + index * 18, 224, 18);
     private static Rect2 TutorCancelRow => new(8, 116, 224, 18);
@@ -47,12 +56,14 @@ public partial class CampaignView
     private void SynchronizeMoveTutorPresentation(CampaignState? before, CampaignState after)
     {
         if (before?.MoveTutor?.Stage != after.MoveTutor?.Stage || before?.MoveTutor?.Page != after.MoveTutor?.Page ||
-            before?.MoveReminder?.Stage != after.MoveReminder?.Stage || before?.MoveReminder?.Page != after.MoveReminder?.Page)
+            before?.MoveReminder?.Stage != after.MoveReminder?.Stage || before?.MoveReminder?.Page != after.MoveReminder?.Page ||
+            before?.MoveDeleter?.Stage != after.MoveDeleter?.Stage)
         {
             _held = null; _repeat = 0; ReleaseFieldTextInput(); _tutorCursor = 0; _tutorScroll = 0;
             _tutorTransitionFrame = Engine.GetProcessFrames();
         }
-        bool oldActive = before?.MoveTutor is not null || before?.MoveReminder is { Stage: not CampaignMoveReminderStage.FieldScript };
+        bool oldActive = before?.MoveTutor is not null || before?.MoveReminder is { Stage: not CampaignMoveReminderStage.FieldScript } ||
+            before?.MoveDeleter is { Stage: not CampaignMoveDeleterStage.FieldScript };
         if (oldActive != MoveTutorActive) _fade = 16.0 / 60;
     }
 
@@ -63,7 +74,7 @@ public partial class CampaignView
     }
 
     private int TutorRowCount => Teaching is not { } scene ? 0 : scene.Party ? _session.State.Party.Length + 1 :
-        scene.Replace ? 5 : scene.Moves ? _session.State.MoveReminder!.Moves.Length + 1 : scene.Choice || scene.Payment ? 2 : 0;
+        scene.Replace ? _session.State.Party[scene.PartyIndex].Pokemon.Moves.Length + 1 : scene.Moves ? _session.State.MoveReminder!.Moves.Length + 1 : scene.Choice || scene.Payment ? 2 : 0;
     private void TutorKeepCursorVisible()
     {
         if (Teaching?.Moves != true) return;
@@ -99,7 +110,7 @@ public partial class CampaignView
         else if (scene.Replace || scene.Moves)
         {
             if (cancel || _tutorCursor == count - 1) Apply(new(scene.Prefix + "cancel"));
-            else Apply(new(scene.Prefix + (scene.Replace ? "replace" : "move"), MoveSlot: _tutorCursor) { TargetInstanceId = scene.InstanceId });
+            else Apply(new(scene.Prefix + (scene.Replace && !scene.Delete ? "replace" : "move"), MoveSlot: _tutorCursor) { TargetInstanceId = scene.InstanceId });
         }
         else if (scene.Payment)
         {
@@ -163,12 +174,13 @@ public partial class CampaignView
                     { MoveTutorEligibility.Able => "gText_Able2", MoveTutorEligibility.AlreadyKnown => "gText_Learned", _ => "gText_NotAble" };
                     SourceText(_sourceSmall, new(157, y), catalog.Texts[label]);
                 }
-                else if (!mon.IsEgg)
+                else if (state.MoveReminder is not null && !mon.IsEgg)
                     SourceText(_sourceSmall, new(158, y), MoveReminderRules.Candidates(ReminderCatalog, mon).Moves.Length + " MOVES");
             }
             SourceText(_sourceNormal, new(20, 116), "CANCEL");
             SourceText(_sourceNormal, new(8, TutorRow(_tutorCursor).Position.Y), "▶");
-            SourceText(_sourceSmall, new(8, 140), (state.MoveTutor is null ? ReminderCatalog.Texts : _catalog.MoveTutors!.Texts)["gText_TeachWhichPokemon"]);
+            SourceText(_sourceSmall, new(8, 140), state.MoveDeleter is not null ? DeleterCatalog.Texts["gText_ChoosePokemon"]
+                : (state.MoveTutor is null ? ReminderCatalog.Texts : _catalog.MoveTutors!.Texts)["gText_TeachWhichPokemon"]);
         }
         else
         {
@@ -176,7 +188,7 @@ public partial class CampaignView
             if (scene.Replace || scene.Moves)
             {
                 _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
-                int start = scene.Moves ? _tutorScroll : 0, end = scene.Moves ? Math.Min(TutorRowCount, start + 6) : 5;
+                int start = scene.Moves ? _tutorScroll : 0, end = scene.Moves ? Math.Min(TutorRowCount, start + 6) : TutorRowCount;
                 for (int i = start; i < end; i++)
                 {
                     var row = TutorRow(i); bool back = i == TutorRowCount - 1;

@@ -216,6 +216,7 @@ public interface ICampaignCatalog:IStoryCatalog
     string? DeferredRegionalServiceReason(MapId map,string script)=>null;
     NameRaterSourceContent? NameRaterSource=>null;
     MoveTutorCatalog? MoveTutors=>null;
+    MoveDeleterCatalog? MoveDeleter=>null;
     MoveReminderCatalog? MoveReminder=>null;
     DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock=>null;
     ImmutableArray<CampaignDepartmentElevatorFloor> DepartmentStoreElevatorFloors=>[];

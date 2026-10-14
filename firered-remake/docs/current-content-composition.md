@@ -143,3 +143,16 @@ The single current composition adds the original Entrance and Experiment Room af
 ## Old Amber successor, 2026-10-13
 
 The same fossil package now adds Aerodactyl to159 owned species and item354 to125 inventory definitions; maps314 and ordinary opponents190 are unchanged. The separate Tower roster remains204. All41 machine rows retain identity, with205 fossil cells. The original Museum map/actor scripts are reused. Content fingerprint `86e36a116df5b2bf16abfa6b918f29c8862da35d551886d51c11a62d0b92fda2`. Museum acquisition and the second fossil receipt are covered by the [Old Amber route](old-amber-campaign.md).
+
+
+## Shared teaching-service rooms, 2026-10-14
+
+The sole current composition now includes the original Two Island Move Reminder
+house and Fuchsia Move Deleter house, for329 maps. Both reuse the authenticated
+single-room composition validator; map merging preserves predecessor objects,
+original reciprocal warps, and source actor/script identity. The final owned
+catalog binds deletion after resource loading. The shared teaching surface
+supports both services without adding a regional runtime profile. The current
+content fingerprint is `4ce9d194223a381fb2e8378a909e33ec2a2845a6a3d3845aacdb7020650d9697`.
+See [Reminder](move-reminder-flow.md) and [Deleter](move-deleter-flow.md) for their
+separate current-flow, strict-save and headless presentation evidence and limits.
