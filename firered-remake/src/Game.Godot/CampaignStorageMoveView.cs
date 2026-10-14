@@ -69,19 +69,7 @@ public partial class CampaignView
     private void ConfirmStorageMoveSlot()
     {
         if (_storageMovePartyOpen && _storageMovePartyCursor == 6) { ToggleStorageMoveParty(); return; }
-        var location = _storageMovePartyOpen
-            ? PokemonStorageMoveLocation.Party(_storageMovePartyCursor)
-            : PokemonStorageMoveLocation.Box(_session.State.Storage!.CurrentBox, _boxCursor);
-        var target = StorageMoveTarget;
-        var held = _session.State.Pc!.MoveCursor?.Pokemon;
-        if (held is null)
-        {
-            if (target is not null)
-                StorageMoveAction(new("storage_move_grab") { StorageLocation = location, TargetInstanceId = target.InstanceId });
-            return;
-        }
-        StorageMoveAction(new(target is null ? "storage_move_place" : "storage_move_shift")
-            { StorageLocation = location, HeldInstanceId = held.InstanceId, TargetInstanceId = target?.InstanceId });
+        OpenStorageCreatureActions();
     }
 
     private bool StorageMoveInput(InputEventKey key)
@@ -93,6 +81,7 @@ public partial class CampaignView
             if (key.Keycode is Key.Enter or Key.Backspace or Key.B) _pcNotice = null;
             return true;
         }
+        if (StorageCreatureInput(key)) return true;
         if (_busy) { _pcNotice = StorageMoveBusyNotice; return true; }
         if (key.Keycode is Key.Backspace or Key.B)
         {
@@ -139,6 +128,7 @@ public partial class CampaignView
     private bool MouseStorageMove(Vector2 point)
     {
         if (_pcNotice is not null) return MouseConfirm(point, MouseMessage);
+        if (StorageCreatureOverlayActive) return MouseStorageCreature(point);
         if (StorageMoveCloseButton.HasPoint(point))
         {
             _menuMouseActionFrame = Engine.GetProcessFrames();
@@ -163,6 +153,7 @@ public partial class CampaignView
     private bool NavigateStorageMovePointer(Vector2 point, int direction)
     {
         if (_pcNotice is not null) return false;
+        if (StorageCreatureOverlayActive) return NavigateStorageCreaturePointer(point, direction);
         if (_storageMovePartyOpen)
         {
             if (StorageMovePartyCancel.HasPoint(point))
@@ -210,8 +201,9 @@ public partial class CampaignView
         string action = _storageMovePartyOpen && _storageMovePartyCursor == 6 ? "CANCEL"
             : held is null ? target is null ? "EMPTY" : PcText("gPCText_Move")
             : target is null ? PcText("gPCText_Place") : PcText("gPCText_Shift");
-        SourceText(_sourceSmall, new(6, 132), "ENTER: " + action);
+        SourceText(_sourceSmall, new(6, 132), "ENTER: " + (action is "EMPTY" or "CANCEL" ? action : "MENU"));
         SourceText(_sourceSmall, new(6, 146), _storageMovePartyOpen ? "TAB: BOX" : "TAB: PARTY");
+        DrawStorageCreatureOverlay();
         if (_pcNotice is not null) ItemMessageBox(_pcNotice);
     }
 

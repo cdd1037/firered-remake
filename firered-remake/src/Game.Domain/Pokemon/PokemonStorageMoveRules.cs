@@ -138,11 +138,11 @@ public static class PokemonStorageMoveRules
         return !destination.IsParty && HasMail(cursor.Pokemon) ? new("storage_mail_unsupported") : null;
     }
 
-    private static bool HasMail(PartyPokemon pokemon) => pokemon.Mail != SourceMailState.NoMail || PokemonStorageRules.IsMailItem(pokemon.HeldItem);
+    internal static bool HasMail(PartyPokemon pokemon) => pokemon.Mail != SourceMailState.NoMail || PokemonStorageRules.IsMailItem(pokemon.HeldItem);
     private static bool Able(PartyPokemon pokemon) => !pokemon.IsEgg && pokemon.Pokemon.CurrentHp > 0;
-    private static bool OtherAble(ImmutableArray<PartyPokemon> party, int except) => party.Where((_, i) => i != except).Any(Able);
-    private static PokemonStorageAddress Address(PokemonStorageMoveLocation location) => new(location.BoxIndex, location.SlotIndex);
-    private static PartyPokemon? At(ImmutableArray<PartyPokemon> party, PokemonStorageState storage, PokemonStorageMoveLocation location) =>
+    internal static bool OtherAble(ImmutableArray<PartyPokemon> party, int except) => party.Where((_, i) => i != except).Any(Able);
+    internal static PokemonStorageAddress Address(PokemonStorageMoveLocation location) => new(location.BoxIndex, location.SlotIndex);
+    internal static PartyPokemon? At(ImmutableArray<PartyPokemon> party, PokemonStorageState storage, PokemonStorageMoveLocation location) =>
         location.IsParty ? location.SlotIndex < party.Length ? party[location.SlotIndex] : null : storage.Boxes[location.BoxIndex].Slots[location.SlotIndex];
 
     private static PokemonStorageDiagnostic? LocationError(PokemonStorageMoveLocation? location)
@@ -156,7 +156,7 @@ public static class PokemonStorageMoveRules
         return null;
     }
 
-    private static PokemonStorageDiagnostic? TargetError(PokemonStorageState storage, PokemonStorageMoveLocation location) =>
+    internal static PokemonStorageDiagnostic? TargetError(PokemonStorageState storage, PokemonStorageMoveLocation location) =>
         LocationError(location) ?? (!location.IsParty && location.BoxIndex != storage.CurrentBox
             ? new("storage_move_box_not_selected", BoxIndex: location.BoxIndex) : null);
 

@@ -6,9 +6,16 @@ using Game.Domain.Pokemon;
 namespace Game.Application;
 
 public enum CampaignPcView { Main, StorageMenu, Deposit, Withdraw, PlayerItems, HallOfFame, Move, MoveItems }
+/// <summary>Transient confirmation binding. Null Location means the currently held creature.
+/// The native confirmation opens at No; only an explicit Yes command may release this identity.</summary>
+public sealed record CampaignStorageReleaseTarget(PokemonStorageMoveLocation? Location, long InstanceId)
+{
+    [JsonIgnore] public int DefaultChoice => 1;
+}
 public sealed record CampaignPcState(CampaignPcView View,int StorageMenuSelection=0)
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignHallOfFamePc? HallOfFame { get; init; }
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignStorageReleaseTarget? ReleaseTarget { get; init; }
     // Native cursor ownership is transient: every open PC is already excluded from player saves.
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageMoveCursor? MoveCursor { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageItemCursor? ItemCursor { get; init; }
@@ -34,17 +41,18 @@ public sealed partial class CampaignSession
 
     private string? ValidateStorageState(CampaignState state)
     {
-        if(!_content.PokemonStorageEnabled)return state.Storage is not null||state.Pc is not null?"save_storage_profile_missing":null;
+        if(!_content.PokemonStorageEnabled)return state.Storage is not null||state.Pc is not null||state.ReleasedPokemon is not null?"save_storage_profile_missing":null;
         if(!_content.EarlyPartyEnabled)return "storage_requires_early_party_profile";
         if(state.Pc?.MoveCursor is not null&&state.Pc.View!=CampaignPcView.Move)return "storage_move_cursor_context";
         if(state.Pc is {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} && state.Pc.View!=CampaignPcView.MoveItems)return "storage_item_cursor_context";
+        if(state.Pc?.ReleaseTarget is not null&&state.Pc.View is not (CampaignPcView.Deposit or CampaignPcView.Withdraw or CampaignPcView.Move))return "storage_release_context";
         var error=PokemonStorageMoveRules.Validate(_content.PokemonContent,state.Party,state.Storage,state.Pc?.MoveCursor,state.NextPokemonId);
         if(error is not null)return error.Code;
         var owned=OwnedPokemon(state);
         if(owned.Select(p=>p.InstanceId).Distinct().Count()!=owned.Length)return "storage_duplicate_instance_id";
         if(owned.Any(p=>p.InstanceId>=state.NextPokemonId))return "storage_next_instance_id";
         if(state.Script.Variables.GetValueOrDefault("VAR_PC_BOX_TO_SEND_MON")>=PokemonStorageState.BoxCount)return "save_storage_delivery_box";
-        return null;
+        return ValidateReleasedPokemon(state);
     }
 
     // Native menu rows are indices into the visible list. The source script deliberately uses
@@ -92,8 +100,9 @@ public sealed partial class CampaignSession
         Decision<CampaignState> View(CampaignPcView view,int? selection=null)=>new(CommandStatus.Accepted,
             state with{Pc=pc with{View=view,StorageMenuSelection=selection??pc.StorageMenuSelection}});
         if(pc.View==CampaignPcView.HallOfFame)return DecideHallOfFamePc(state,command);
-        if(pc.View==CampaignPcView.Move||pc.MoveCursor is not null)return DecideStorageMove(state,command);
         if(pc.View==CampaignPcView.MoveItems||pc.ItemCursor is not null||pc.ItemPrompt is not null||pc.ItemBagTarget is not null)return DecideStorageItems(state,command);
+        if(pc.ReleaseTarget is not null||command.Kind is "storage_release" or "storage_release_prompt")return DecideStorageRelease(state,command);
+        if(pc.View==CampaignPcView.Move||pc.MoveCursor is not null)return DecideStorageMove(state,command);
         if(command.Kind=="pc_back")
         {
             if(pc.View is CampaignPcView.Deposit or CampaignPcView.Withdraw)return View(CampaignPcView.StorageMenu);
@@ -146,6 +155,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState> ResumePcScript(CampaignState state,int? result=null)
     {
+        if(state.Pc?.ReleaseTarget is not null)return new(CommandStatus.Rejected,state,"storage_release_prompt_active");
         if(state.Pc?.MoveCursor is not null)return new(CommandStatus.Rejected,state,"storage_move_holding");
         if(state.Pc?.ItemCursor is not null)return new(CommandStatus.Rejected,state,"storage_item_holding");
         if(state.Pc is null||state.Script.Wait is not {} wait||wait.Kind is not (StoryWaitKind.Presentation or StoryWaitKind.Inventory))

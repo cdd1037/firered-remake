@@ -21,9 +21,9 @@ public sealed record CampaignNpcTradeReceipt(int TradeId, int PartyIndex, PartyP
 public sealed partial class CampaignSession
 {
     // History resolution is deliberately separate from current gameplay ownership.
-    // ValidateNpcTradeHistory runs before callers may rely on these retired snapshots.
+    // ValidateStorageState checks released snapshots before acquisition/origin validation uses history.
     private ImmutableArray<PartyPokemon> HistoricalPokemon(CampaignState state) =>
-        OwnedPokemon(state).AddRange((state.NpcTrades ?? []).Select(t => t.Outgoing));
+        OwnedPokemon(state).AddRange((state.NpcTrades ?? []).Select(t => t.Outgoing)).AddRange(state.ReleasedPokemon ?? []);
 
     private static int NpcTradeCount(CampaignState state) => (state.NpcTrades ?? []).Length;
     private static IEnumerable<int> NpcTradeSourceSpecies(CampaignState state) =>
@@ -106,7 +106,7 @@ public sealed partial class CampaignSession
             return "save_npc_trade_ownership_duplicate";
         // Every ID is acquired exactly once and remains either live or retired exactly once.
         var acquisitions = new HashSet<long>();
-        if (!owned.IsEmpty) acquisitions.Add(1);
+        if (!history.IsEmpty) acquisitions.Add(1);
         var captures = state.Exploration?.Captured ?? [];
         var fossils = state.FossilRevivals ?? [];
         if (captures.IsDefault || fossils.IsDefault || captures.Any(c => c is null) || fossils.Any(f => f is null))

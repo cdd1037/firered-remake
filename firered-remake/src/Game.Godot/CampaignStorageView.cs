@@ -41,9 +41,10 @@ public partial class CampaignView
         if(view!=_pcView)
         {
             _pcView=view;_pcCursor=view==CampaignPcView.StorageMenu?_session.State.Pc!.StorageMenuSelection:0;
-            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();ResetStorageItemPresentation();
+            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();ResetStorageItemPresentation();ResetStorageCreaturePresentation();
         }
         SynchronizeStorageItemPrompt();
+        SynchronizeStorageReleasePrompt();
         if(view is not null){_held=null;_repeat=0;}
         if(view==CampaignPcView.Deposit)_pcCursor=Math.Clamp(_pcCursor,0,_session.State.Party.Length);
     }
@@ -69,11 +70,13 @@ public partial class CampaignView
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return HallPcInput(key);
         if(_session.State.Pc?.View==CampaignPcView.Move)return StorageMoveInput(key);
         if(_session.State.Pc?.View==CampaignPcView.MoveItems)return StorageItemInput(key);
-        if(!key.Pressed)return true;
+        if(!key.Pressed||key.Echo)return true;
         if(_storagePartyPeek){if(key.Keycode is Key.Enter or Key.Backspace)_storagePartyPeek=false;return true;}
-        if(_pcNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace)_pcNotice=null;return true;}
+        if(_pcNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace or Key.B)_pcNotice=null;return true;}
+        if(StorageCreatureInput(key))return true;
+        if(_busy){_pcNotice=StorageMoveBusyNotice;return true;}
         var pc=_session.State.Pc!;
-        if(key.Keycode==Key.Backspace){StorageAction(new("pc_back"));return true;}
+        if(key.Keycode is Key.Backspace or Key.B){StorageAction(new("pc_back"));return true;}
         if(pc.View is CampaignPcView.Main or CampaignPcView.StorageMenu)
         {
             int count=pc.View==CampaignPcView.Main?_session.PcMenuTextSymbols.Length:5;
@@ -97,7 +100,7 @@ public partial class CampaignView
             if(key.Keycode==Key.Enter)
             {
                 if(_pcCursor==_session.State.Party.Length)StorageAction(new("pc_back"));
-                else{var name=PresentedOwnedName(_session.State.Party[_pcCursor]);StorageAction(new("storage_deposit",PartyIndex:_pcCursor),"gText_PkmnWasDeposited",name);}
+                else OpenStorageCreatureActions();
             }
         }
         else if(pc.View==CampaignPcView.Withdraw)
@@ -107,7 +110,7 @@ public partial class CampaignView
             if(key.Keycode==Key.Up)_boxCursor=(_boxCursor+24)%30;
             if(key.Keycode==Key.Down)_boxCursor=(_boxCursor+6)%30;
             if(key.Keycode==Key.Enter)
-            {var owned=_session.State.Storage!.Boxes[_session.State.Storage.CurrentBox].Slots[_boxCursor];if(owned is not null)StorageAction(new("storage_withdraw",MoveSlot:_boxCursor),"gText_PkmnCameBack",PresentedOwnedName(owned));}
+            OpenStorageCreatureActions();
         }
         return true;
     }
@@ -118,6 +121,7 @@ public partial class CampaignView
         if(_session.State.Pc?.View==CampaignPcView.MoveItems)return MouseStorageItems(point);
         if(_storagePartyPeek)return new Rect2(0,140,80,20).HasPoint(point)&&MouseKey(Key.Backspace);
         if(_pcNotice is not null)return MouseConfirm(point,MouseMessage);
+        if(StorageCreatureOverlayActive)return MouseStorageCreature(point);
         var pc=_session.State.Pc!;
         if(pc.View is CampaignPcView.Main or CampaignPcView.StorageMenu)
             return MouseSelect(point,ref _pcCursor,pc.View==CampaignPcView.Main?_session.PcMenuTextSymbols.Length:5,8,8,184,16);
@@ -196,6 +200,7 @@ public partial class CampaignView
             }
             SourceText(_sourceNormal,new(8,142),"CANCEL");
         }
+        DrawStorageCreatureOverlay();
         if(_pcNotice is not null)ItemMessageBox(_pcNotice);
     }
 }

@@ -133,6 +133,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public FourIslandDayCareState? FourIslandDayCare{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignDayCareEggReceipt>? DayCareEggs{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEggHatch? EggHatch{get;init;}
+    // Final snapshots of released identities; absence preserves existing saves byte-for-byte.
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<PartyPokemon>? ReleasedPokemon{get;init;}
     public long NextPokemonId{get;init;}=1;
     public CampaignMonPicture? MonPicture{get;init;}
     public CampaignNickname? Nickname{get;init;}
@@ -463,7 +465,7 @@ public sealed partial class CampaignSession
         {
             // MOVE owns a removed creature or held item. Route before every other command family,
             // including field actions and timers, so none can bypass this native modal.
-            if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null})return DecidePc(state,command);
+            if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null})return DecidePc(state,command);
             if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);
