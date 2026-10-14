@@ -26,6 +26,7 @@ public partial class CampaignView
         if(_catalog.Route3Pokemon is {} route3)
             foreach(var icon in route3.Icons)_storageIcons.Add(new SpeciesId(icon.SpeciesId),Decode(route3.ReadIconTexture(new(icon.SpeciesId))));
         foreach(var id in new[]{"box-background","box-arrow-left","box-arrow-right","party-panel","party-slot-empty","party-slot-filled"})_storageAssets.Add(id,Decode(source.ReadAssetTexture(id)));
+        LoadStorageCustomizationPresentation();
     }
     private CampaignPcView? _pcView;
     private int _pcCursor, _boxCursor;
@@ -41,10 +42,11 @@ public partial class CampaignView
         if(view!=_pcView)
         {
             _pcView=view;_pcCursor=view==CampaignPcView.StorageMenu?_session.State.Pc!.StorageMenuSelection:0;
-            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();ResetStorageItemPresentation();ResetStorageCreaturePresentation();
+            _boxCursor=0;_pcNotice=null;_storagePartyPeek=false;ResetStorageMovePresentation();ResetStorageItemPresentation();ResetStorageCreaturePresentation();ResetStorageCustomizationPresentation();
         }
         SynchronizeStorageItemPrompt();
         SynchronizeStorageReleasePrompt();
+        SynchronizeStorageCustomization();
         if(view is not null){_held=null;_repeat=0;}
         if(view==CampaignPcView.Deposit)_pcCursor=Math.Clamp(_pcCursor,0,_session.State.Party.Length);
     }
@@ -66,8 +68,11 @@ public partial class CampaignView
     }
     private bool StorageInput(InputEventKey key)
     {
+        if(StorageBoxNaming&&key.Keycode==Key.Escape)return true;
         if(key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape)return false;
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return HallPcInput(key);
+        if(StorageCustomizationInput(key))return true;
+        if(key.Pressed&&!key.Echo&&_pcNotice is null&&!_busy&&StorageTitleInput(key))return true;
         if(_session.State.Pc?.View==CampaignPcView.Move)return StorageMoveInput(key);
         if(_session.State.Pc?.View==CampaignPcView.MoveItems)return StorageItemInput(key);
         if(!key.Pressed||key.Echo)return true;
@@ -117,6 +122,7 @@ public partial class CampaignView
     private bool MouseStorage(Vector2 point)
     {
         if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return MouseHallPc(point);
+        if(StorageCustomizationOverlayActive)return MouseStorageCustomization(point);
         if(_session.State.Pc?.View==CampaignPcView.Move)return MouseStorageMove(point);
         if(_session.State.Pc?.View==CampaignPcView.MoveItems)return MouseStorageItems(point);
         if(_storagePartyPeek)return new Rect2(0,140,80,20).HasPoint(point)&&MouseKey(Key.Backspace);
@@ -125,14 +131,16 @@ public partial class CampaignView
         var pc=_session.State.Pc!;
         if(pc.View is CampaignPcView.Main or CampaignPcView.StorageMenu)
             return MouseSelect(point,ref _pcCursor,pc.View==CampaignPcView.Main?_session.PcMenuTextSymbols.Length:5,8,8,184,16);
+        if(MouseStorageBoxTitle(point))return true;
         if(pc.View==CampaignPcView.Withdraw&&new Rect2(80,0,72,16).HasPoint(point)){_storagePartyPeek=true;_menuMouseActionFrame=Engine.GetProcessFrames();return true;}
         if(pc.View==CampaignPcView.Withdraw&&new Rect2(168,0,72,16).HasPoint(point))return MouseKey(Key.Backspace);
         if(new Rect2(pc.View==CampaignPcView.Withdraw?84:0,pc.View==CampaignPcView.Withdraw?16:0,24,24).HasPoint(point))return MouseKey(Key.Pageup);
         if(new Rect2(216,pc.View==CampaignPcView.Withdraw?16:0,24,24).HasPoint(point))return MouseKey(Key.Pagedown);
         if(new Rect2(pc.View==CampaignPcView.Withdraw?0:176,140,64,20).HasPoint(point))return MouseKey(Key.Backspace);
-        if(pc.View==CampaignPcView.Deposit)return MouseSelect(point,ref _pcCursor,_session.State.Party.Length+1,8,24,224,16);
+        if(pc.View==CampaignPcView.Deposit)
+        {if(new Rect2(8,24,224,(_session.State.Party.Length+1)*16).HasPoint(point))_storageTitleSelected=false;return MouseSelect(point,ref _pcCursor,_session.State.Party.Length+1,8,24,224,16);}
         if(pc.View==CampaignPcView.Withdraw&&new Rect2(88,32,144,120).HasPoint(point))
-        {_boxCursor=(int)((point.X-88)/24)+6*(int)((point.Y-32)/24);return MouseKey();}
+        {_storageTitleSelected=false;_boxCursor=(int)((point.X-88)/24)+6*(int)((point.Y-32)/24);return MouseKey();}
         return false;
     }
     private void DrawStorage()
@@ -153,7 +161,7 @@ public partial class CampaignView
         _battleSkin.DrawStandardFrame(this,new(0,0,240,160));
         var storage=_session.State.Storage!;var slots=storage.Boxes[storage.CurrentBox].Slots;
         if(pc.View==CampaignPcView.Deposit)
-        {DrawTexture(_storageAssets["box-arrow-left"],new(8,4));SourceText(_sourceNormal,new(92,5),"BOX"+(storage.CurrentBox+1));DrawTexture(_storageAssets["box-arrow-right"],new(220,4));SourceText(_sourceSmall,new(8,144),"PgUp/PgDn: BOX");SourceText(_sourceNormal,new(184,142),"CANCEL");}
+        {DrawTexture(_storageAssets["box-arrow-left"],new(8,4));SourceText(_sourceNormal,new(92,5),StorageBoxName(storage.CurrentBox));DrawTexture(_storageAssets["box-arrow-right"],new(220,4));SourceText(_sourceSmall,new(80,144),"Home: BOX");SourceText(_sourceNormal,new(184,142),"CANCEL");if(_storageTitleSelected)DrawRect(StorageBoxTitleRect,new Color("fff4b8"),filled:false);}
         if(pc.View==CampaignPcView.Deposit)
         {
             for(int i=0;i<_session.State.Party.Length;i++)
@@ -164,17 +172,16 @@ public partial class CampaignView
                 if(!owned.IsEgg){SourceText(_sourceSmall,new(114,26+i*16),$"Lv{owned.Pokemon.Level}   {owned.Pokemon.CurrentHp}/{owned.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(owned,new(208,26+i*16));}
             }
             SourceText(_sourceNormal,new(18,24+_session.State.Party.Length*16),"CANCEL");SourceText(_sourceNormal,new(6,24+_pcCursor*16),"▶");
+            DrawStorageMarkings(_pcCursor<_session.State.Party.Length?_session.State.Party[_pcCursor]:null);
         }
         else
         {
             DrawTexture(_storageAssets["box-background"],Vector2.Zero);
-            DrawTexture(_storageAssets["box-arrow-left"],new(88,20));DrawTexture(_storageAssets["box-arrow-right"],new(224,20));
-            string boxName="BOX"+(storage.CurrentBox+1);float width=_sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(boxName),fontSize:_sourceNormal.Size).X;
-            SourceText(_sourceNormal,new(160-(int)width/2,20),boxName);
+            DrawStorageWallpaperAndTitle();
             for(int i=0;i<30;i++)
             {
                 var rect=new Rect2(88+(i%6)*24,32+(i/6)*24,24,24);
-                if(i==_boxCursor)DrawRect(rect,new Color("f4db88"),filled:false,width:1);
+                if(i==_boxCursor&&!_storageTitleSelected)DrawRect(rect,new Color("f4db88"),filled:false,width:1);
                 var owned=slots[i];if(owned is not null)DrawTexture(PresentedOwnedIcon(owned),new(84+(i%6)*24,28+(i/6)*24));
             }
             var selected=slots[_boxCursor];
@@ -186,7 +193,7 @@ public partial class CampaignView
                 if(!selected.IsEgg){SourceText(_sourceSmall,new(6,102),_catalog.PokemonContent!.SpeciesNames[selected.Pokemon.SourceSpeciesId]);SourceText(_sourceSmall,new(10,116),$"Lv{selected.Pokemon.Level}");}
             }
             SourceText(_sourceSmall,new(6,132),$"{slots.Count(p=>p is not null)}/30 P{_session.State.Party.Length}");
-            SourceText(_sourceSmall,new(6,146),"BACK");
+            DrawStorageMarkings(selected);
         }
         if(_storagePartyPeek)
         {
@@ -201,6 +208,7 @@ public partial class CampaignView
             SourceText(_sourceNormal,new(8,142),"CANCEL");
         }
         DrawStorageCreatureOverlay();
+        DrawStorageCustomizationOverlay();
         if(_pcNotice is not null)ItemMessageBox(_pcNotice);
     }
 }

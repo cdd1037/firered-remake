@@ -61,7 +61,7 @@ public partial class CampaignView
         if (!GetViewport().GetVisibleRect().HasPoint(position)) return true;
         Vector2 point = GetGlobalTransformWithCanvas().AffineInverse() * position;
         if (!OpeningItemUiSkin.LogicalRect.HasPoint(point)) return true;
-        if (_session.State.Nickname is { Submitted: false } || CaptureNamingActive ||
+        if (_session.State.Nickname is { Submitted: false } || CaptureNamingActive || StorageBoxNaming ||
             _session.State.OldManTutorial is not null || _session.State.Evolution is not null ||
             _session.State.Repel?.Phase == CampaignRepelPhase.UseSound) return true;
 
@@ -170,18 +170,24 @@ public partial class CampaignView
         if (_session.State.Pc is { } pc)
         {
             if (_pcNotice is not null || _storagePartyPeek) return false;
+            if (StorageCustomizationOverlayActive) return NavigateStorageCustomizationPointer(point, direction);
             if (StorageCreatureOverlayActive) return NavigateStorageCreaturePointer(point, direction);
             if (pc.View == CampaignPcView.Move) return NavigateStorageMovePointer(point, direction);
             if (pc.View == CampaignPcView.MoveItems) return NavigateStorageItemPointer(point, direction);
             if (pc.View is CampaignPcView.Main or CampaignPcView.StorageMenu)
                 return PointerRows(point, direction, ref _pcCursor, pc.View == CampaignPcView.Main ? _session.PcMenuTextSymbols.Length : 5, 8, 8, 184);
-            if (pc.View == CampaignPcView.Deposit) return PointerRows(point, direction, ref _pcCursor, _session.State.Party.Length + 1, 8, 24, 224);
+            if (pc.View == CampaignPcView.Deposit)
+            {
+                if (!new Rect2(8, 24, 224, (_session.State.Party.Length + 1) * 16).HasPoint(point)) return false;
+                bool titleFocused = _storageTitleSelected; _storageTitleSelected = false;
+                return PointerRows(point, direction, ref _pcCursor, _session.State.Party.Length + 1, 8, 24, 224) || titleFocused;
+            }
             if (pc.View == CampaignPcView.Withdraw && new Rect2(88, 32, 144, 120).HasPoint(point))
             {
                 if (direction != 0) return MouseNavigationKey(direction);
                 int selected = (int)((point.X - 88) / 24) + 6 * (int)((point.Y - 32) / 24);
-                if (_boxCursor == selected) return false;
-                _boxCursor = selected; return true;
+                if (_boxCursor == selected && !_storageTitleSelected) return false;
+                _storageTitleSelected = false; _boxCursor = selected; return true;
             }
             return false;
         }

@@ -78,7 +78,17 @@ public partial class CampaignView
         string action = _storageCreatureActions[_storageCreatureChoice]; _storageCreatureActions = [];
         if (action == "Cancel" || !StorageCreatureSelectionIsCurrent()) return;
         var location = _storageCreatureLocation!;
-        if (action is "Summary" or "Mark" || _session.State.Pc!.View == CampaignPcView.Move && action is "Store" or "Withdraw")
+        if (action == "Mark")
+        {
+            StorageCustomizationAction(new("storage_mark_open")
+            {
+                StorageLocation = _storageCreatureHeldId is null ? location : null,
+                TargetInstanceId = _storageCreatureHeldId is null ? _storageCreatureTargetId : null,
+                HeldInstanceId = _storageCreatureHeldId
+            });
+            return;
+        }
+        if (action == "Summary" || _session.State.Pc!.View == CampaignPcView.Move && action is "Store" or "Withdraw")
         {
             _pcNotice = action is "Store" or "Withdraw" ? "Use DEPOSIT or WITHDRAW from\nthe storage menu for this option."
                 : "This PC option is not available yet.\nChoose another option or go back.";

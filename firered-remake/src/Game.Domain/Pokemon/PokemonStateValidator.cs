@@ -57,6 +57,7 @@ public static class PokemonStateValidator
     {
         if (owned is null) return "party_pokemon_missing";
         if (owned.InstanceId <= 0) return "party_instance_id";
+        if (owned.Markings is < 0 or > 15) return "party_markings";
         var instanceError = owned.IsEgg
             ? ValidateEggInstance(catalog, owned.Pokemon)
             : ValidateInstance(catalog, owned.Pokemon);

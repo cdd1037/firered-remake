@@ -129,7 +129,7 @@ public static class SourceEggRules
 
     /// <summary>CreatedHatchedMon + AddHatchedMonToParty: two discarded IV draws, then restored
     /// inherited IVs/moves and a fresh stat calculation. ScriptHatchMon uses this without shards.
-    /// Markings/Pokerus are outside the supported model and remain source default zero.</summary>
+    /// Markings survive hatch; Pokerus remains outside the supported model.</summary>
     public static SourceEggHatchResult Hatch(CampaignPokemonContent content, PartyPokemon egg,
         SourceEggTrainer trainer, string hatchLocation, RngState rng)
     {
@@ -147,7 +147,7 @@ public static class SourceEggRules
         var pokemon = created.Pokemon with { Ivs = old.Ivs, Stats = stats, CurrentHp = stats.MaxHp, Moves = moves, Friendship = 120 };
         var hatched = new PartyPokemon(egg.InstanceId, pokemon, content.SpeciesNames[pokemon.SourceSpeciesId],
             trainer.Name, trainer.Gender, trainer.Language, hatchLocation, 0, egg.MetGame, "ITEM_POKE_BALL", "ITEM_NONE")
-        { ModernFatefulEncounter = egg.ModernFatefulEncounter };
+        { ModernFatefulEncounter = egg.ModernFatefulEncounter, Markings = egg.Markings };
         if (PokemonStateValidator.ValidateParty(content, hatched) is { } invalid) throw new InvalidOperationException(invalid);
         return new(hatched, created.Rng, created.Trace);
     }

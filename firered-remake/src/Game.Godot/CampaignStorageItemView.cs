@@ -70,6 +70,7 @@ public partial class CampaignView
 
     private void ToggleStorageItemParty()
     {
+        _storageTitleSelected = false;
         _storageMovePartyOpen = !_storageMovePartyOpen;
         if (_storageMovePartyOpen) { _storageMovePartyCursor = 0; _storageMovePreviousPartyCursor = 1; }
     }
@@ -177,6 +178,7 @@ public partial class CampaignView
         if (_storageItemActions.Length != 0) return MouseSelect(point, ref _storageItemChoice, _storageItemActions.Length, 168, 40, 72);
         if (StorageItemBagOpen)
             return MouseSelect(point, ref _storageItemBagCursor, Math.Min(5, _storageItemBagStacks.Length + 1 - StorageItemBagStart), 8, 32, 224, 16, StorageItemBagStart);
+        if (!_storageMovePartyOpen && MouseStorageBoxTitle(point)) return true;
         if (StorageMoveCloseButton.HasPoint(point))
         { _menuMouseActionFrame = Engine.GetProcessFrames(); StorageItemAction(new("storage_item_close")); return true; }
         // Shared source cell geometry; synthetic keys return through MOVE ITEMS.
@@ -190,7 +192,7 @@ public partial class CampaignView
         if (new Rect2(84, 16, 24, 16).HasPoint(point)) return MouseKey(Key.Pageup);
         if (new Rect2(216, 16, 24, 16).HasPoint(point)) return MouseKey(Key.Pagedown);
         if (!new Rect2(88, 32, 144, 120).HasPoint(point)) return false;
-        _boxCursor = (int)((point.X - 88) / 24) + 6 * (int)((point.Y - 32) / 24); return MouseKey();
+        _storageTitleSelected = false; _boxCursor = (int)((point.X - 88) / 24) + 6 * (int)((point.Y - 32) / 24); return MouseKey();
     }
 
     private bool NavigateStorageItemPointer(Vector2 point, int direction)
@@ -226,7 +228,7 @@ public partial class CampaignView
         var held = _session.State.Pc!.ItemCursor?.Item;
         var target = StorageMoveTarget;
         Rect2 cursor = DrawStorageWorkspace();
-        DrawRect(cursor, new Color(held is null ? "f4db88" : "fff4b8"), filled: false, width: 1);
+        if (!_storageTitleSelected) DrawRect(cursor, new Color(held is null ? "f4db88" : "fff4b8"), filled: false, width: 1);
         if (held is { } item)
         {
             var marker = new Rect2(cursor.Position + new Vector2(cursor.Size.X - 12, -7), new(16, 16));
@@ -238,7 +240,6 @@ public partial class CampaignView
         string selected = held is { } heldItem ? StorageItemName(heldItem)
             : target is { HeldItem: not "ITEM_NONE" } ? StorageItemName(new("pret:" + target.HeldItem)) : "NO ITEM";
         SourceText(_sourceSmall, new(6, 132), selected);
-        SourceText(_sourceSmall, new(6, 146), _storageMovePartyOpen ? "TAB: BOX" : "TAB: PARTY");
         if (StorageItemBagOpen)
         {
             _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
@@ -279,6 +280,7 @@ public partial class CampaignView
             SourceText(_sourceNormal, new(192, 72), "YES"); SourceText(_sourceNormal, new(192, 88), "NO");
             SourceText(_sourceNormal, new(180, 72 + _storageItemPromptChoice * 16), "▶");
         }
+        DrawStorageCustomizationOverlay();
         if (_pcNotice is not null) ItemMessageBox(_pcNotice);
     }
 }

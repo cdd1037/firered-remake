@@ -53,6 +53,7 @@ public partial class CampaignView
 
     private void ToggleStorageMoveParty()
     {
+        _storageTitleSelected = false;
         if (_storageMovePartyOpen)
         {
             // Source Task_PokeStorageMain refuses hiding the party with held Mail.
@@ -129,6 +130,7 @@ public partial class CampaignView
     {
         if (_pcNotice is not null) return MouseConfirm(point, MouseMessage);
         if (StorageCreatureOverlayActive) return MouseStorageCreature(point);
+        if (!_storageMovePartyOpen && MouseStorageBoxTitle(point)) return true;
         if (StorageMoveCloseButton.HasPoint(point))
         {
             _menuMouseActionFrame = Engine.GetProcessFrames();
@@ -146,7 +148,7 @@ public partial class CampaignView
         if (new Rect2(216, 16, 24, 16).HasPoint(point)) return MouseKey(Key.Pagedown);
         if (new Rect2(0, 140, 80, 20).HasPoint(point)) return MouseKey(Key.Tab);
         if (!new Rect2(88, 32, 144, 120).HasPoint(point)) return false;
-        _boxCursor = (int)((point.X - 88) / 24) + 6 * (int)((point.Y - 32) / 24);
+        _storageTitleSelected = false; _boxCursor = (int)((point.X - 88) / 24) + 6 * (int)((point.Y - 32) / 24);
         return MouseKey();
     }
 
@@ -174,8 +176,8 @@ public partial class CampaignView
         if (!new Rect2(88, 32, 144, 120).HasPoint(point)) return false;
         if (direction != 0) return MouseNavigationKey(direction);
         int index = (int)((point.X - 88) / 24) + 6 * (int)((point.Y - 32) / 24);
-        if (_boxCursor == index) return false;
-        _boxCursor = index; return true;
+        if (_boxCursor == index && !_storageTitleSelected) return false;
+        _storageTitleSelected = false; _boxCursor = index; return true;
     }
 
     private void DrawStorageMove()
@@ -183,7 +185,7 @@ public partial class CampaignView
         var held = _session.State.Pc!.MoveCursor?.Pokemon;
         var target = StorageMoveTarget;
         Rect2 cursor = DrawStorageWorkspace();
-        DrawRect(cursor, new Color(held is null ? "f4db88" : "fff4b8"), filled: false, width: 1);
+        if (!_storageTitleSelected) DrawRect(cursor, new Color(held is null ? "f4db88" : "fff4b8"), filled: false, width: 1);
         if (held is not null)
         {
             // A deliberately simple held marker, using the same authenticated icon
@@ -202,8 +204,8 @@ public partial class CampaignView
             : held is null ? target is null ? "EMPTY" : PcText("gPCText_Move")
             : target is null ? PcText("gPCText_Place") : PcText("gPCText_Shift");
         SourceText(_sourceSmall, new(6, 132), "ENTER: " + (action is "EMPTY" or "CANCEL" ? action : "MENU"));
-        SourceText(_sourceSmall, new(6, 146), _storageMovePartyOpen ? "TAB: BOX" : "TAB: PARTY");
         DrawStorageCreatureOverlay();
+        DrawStorageCustomizationOverlay();
         if (_pcNotice is not null) ItemMessageBox(_pcNotice);
     }
 
@@ -212,11 +214,7 @@ public partial class CampaignView
     {
         var storage = _session.State.Storage!;
         DrawTexture(_storageAssets["box-background"], Vector2.Zero);
-        DrawTexture(_storageAssets["box-arrow-left"], new(88, 20));
-        DrawTexture(_storageAssets["box-arrow-right"], new(224, 20));
-        string boxName = "BOX" + (storage.CurrentBox + 1);
-        float width = _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(boxName), fontSize: _sourceNormal.Size).X;
-        SourceText(_sourceNormal, new(160 - (int)width / 2, 20), boxName);
+        DrawStorageWallpaperAndTitle();
         for (int i = 0; i < 30; i++)
             if (storage.Boxes[storage.CurrentBox].Slots[i] is { } mon)
                 DrawTexture(PresentedOwnedIcon(mon), new(84 + i % 6 * 24, 28 + i / 6 * 24));
@@ -237,6 +235,7 @@ public partial class CampaignView
 
     private void DrawStorageSelectedPokemon(PartyPokemon? displayed)
     {
+        DrawStorageMarkings(displayed);
         if (displayed is not null)
         {
             if (displayed.IsEgg) DrawTexture(BreedingEggShell(), new(8, 16));

@@ -36,6 +36,8 @@ public static class PokemonStorageValidator
         {
             var box = storage.Boxes[boxIndex];
             if (box is null) return new("storage_box_missing", BoxIndex: boxIndex);
+            if (PokemonStorageCustomizationRules.ValidateBoxMetadata(box) is { } metadataError)
+                return new(metadataError, BoxIndex: boxIndex);
             if (box.Slots.IsDefault || box.Slots.Length != PokemonStorageState.SlotsPerBox)
                 return new("storage_slot_count", BoxIndex: boxIndex);
             for (int slotIndex = 0; slotIndex < box.Slots.Length; slotIndex++)

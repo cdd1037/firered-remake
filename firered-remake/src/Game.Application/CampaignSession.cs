@@ -215,6 +215,7 @@ public sealed record CampaignCommand(string Kind,Direction Direction=Direction.S
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public long? TargetInstanceId{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageMoveLocation? StorageLocation{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? StorageBoxIndex{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public long? HeldInstanceId{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? HeldItemId{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? TargetHeldItemId{get;init;}
@@ -465,7 +466,7 @@ public sealed partial class CampaignSession
         {
             // MOVE owns a removed creature or held item. Route before every other command family,
             // including field actions and timers, so none can bypass this native modal.
-            if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null})return DecidePc(state,command);
+            if(state.Pc is {View:CampaignPcView.Move or CampaignPcView.MoveItems} or {MoveCursor:not null} or {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} or {ReleaseTarget:not null} or {Customization:not null})return DecidePc(state,command);
             if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);

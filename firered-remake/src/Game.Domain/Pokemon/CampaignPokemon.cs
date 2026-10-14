@@ -9,6 +9,9 @@ public sealed record PartyPokemon(long InstanceId,PokemonInstance Pokemon,string
     public bool ModernFatefulEncounter{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
     public bool ChampionRibbon{get;init;}
+    // Original PC marking bits: circle, square, triangle, heart. New creatures start unmarked.
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public int Markings{get;init;}
     public int Mail{get;init;}=255;
     public uint Status{get;init;}
     public bool IsEgg{get;init;}

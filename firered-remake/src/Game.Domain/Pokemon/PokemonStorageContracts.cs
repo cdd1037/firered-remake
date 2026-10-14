@@ -6,7 +6,14 @@ namespace Game.Domain.Pokemon;
 /// A fixed source box. Null is an empty slot; entries are canonical healthy party projections of
 /// BoxPokemon, not historical party snapshots. See PokemonStorageRules for the conversion contract.
 /// </summary>
-public sealed record PokemonStorageBox(ImmutableArray<PartyPokemon?> Slots);
+public sealed record PokemonStorageBox(ImmutableArray<PartyPokemon?> Slots)
+{
+    // Null retains the source reset value for this box index; old saves remain byte-identical.
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Name { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? WallpaperId { get; init; }
+}
 
 public sealed record PokemonStorageState(int CurrentBox, ImmutableArray<PokemonStorageBox> Boxes)
 {

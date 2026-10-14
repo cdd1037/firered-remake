@@ -16,6 +16,7 @@ public sealed record CampaignPcState(CampaignPcView View,int StorageMenuSelectio
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignHallOfFamePc? HallOfFame { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignStorageReleaseTarget? ReleaseTarget { get; init; }
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignStorageCustomization? Customization { get; init; }
     // Native cursor ownership is transient: every open PC is already excluded from player saves.
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageMoveCursor? MoveCursor { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public PokemonStorageItemCursor? ItemCursor { get; init; }
@@ -46,6 +47,7 @@ public sealed partial class CampaignSession
         if(state.Pc?.MoveCursor is not null&&state.Pc.View!=CampaignPcView.Move)return "storage_move_cursor_context";
         if(state.Pc is {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} && state.Pc.View!=CampaignPcView.MoveItems)return "storage_item_cursor_context";
         if(state.Pc?.ReleaseTarget is not null&&state.Pc.View is not (CampaignPcView.Deposit or CampaignPcView.Withdraw or CampaignPcView.Move))return "storage_release_context";
+        if(ValidateStorageCustomizationState(state) is {} customizationError)return customizationError;
         var error=PokemonStorageMoveRules.Validate(_content.PokemonContent,state.Party,state.Storage,state.Pc?.MoveCursor,state.NextPokemonId);
         if(error is not null)return error.Code;
         var owned=OwnedPokemon(state);
@@ -100,8 +102,12 @@ public sealed partial class CampaignSession
         Decision<CampaignState> View(CampaignPcView view,int? selection=null)=>new(CommandStatus.Accepted,
             state with{Pc=pc with{View=view,StorageMenuSelection=selection??pc.StorageMenuSelection}});
         if(pc.View==CampaignPcView.HallOfFame)return DecideHallOfFamePc(state,command);
-        if(pc.View==CampaignPcView.MoveItems||pc.ItemCursor is not null||pc.ItemPrompt is not null||pc.ItemBagTarget is not null)return DecideStorageItems(state,command);
-        if(pc.ReleaseTarget is not null||command.Kind is "storage_release" or "storage_release_prompt")return DecideStorageRelease(state,command);
+        if(pc.Customization is not null)return DecideStorageCustomization(state,command);
+        if(pc.ReleaseTarget is not null)return DecideStorageRelease(state,command);
+        if(pc.ItemPrompt is not null||pc.ItemBagTarget is not null)return DecideStorageItems(state,command);
+        if(IsStorageCustomizationCommand(command.Kind))return DecideStorageCustomization(state,command);
+        if(pc.View==CampaignPcView.MoveItems||pc.ItemCursor is not null)return DecideStorageItems(state,command);
+        if(command.Kind is "storage_release" or "storage_release_prompt")return DecideStorageRelease(state,command);
         if(pc.View==CampaignPcView.Move||pc.MoveCursor is not null)return DecideStorageMove(state,command);
         if(command.Kind=="pc_back")
         {
@@ -155,6 +161,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState> ResumePcScript(CampaignState state,int? result=null)
     {
+        if(state.Pc?.Customization is not null)return new(CommandStatus.Rejected,state,"storage_customization_active");
         if(state.Pc?.ReleaseTarget is not null)return new(CommandStatus.Rejected,state,"storage_release_prompt_active");
         if(state.Pc?.MoveCursor is not null)return new(CommandStatus.Rejected,state,"storage_move_holding");
         if(state.Pc?.ItemCursor is not null)return new(CommandStatus.Rejected,state,"storage_item_holding");
