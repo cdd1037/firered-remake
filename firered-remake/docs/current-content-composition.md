@@ -158,10 +158,19 @@ See [Reminder](move-reminder-flow.md) and [Deleter](move-deleter-flow.md) for th
 separate current-flow, strict-save and headless presentation evidence and limits.
 
 
-The subsequent existing-map tutor increment keeps329 maps and162 owned species,
+The first existing-map tutor increment keeps329 maps and162 owned species,
 and admits original indices1/5/11/13 through one generated actor-binding table
 and shared executor. The final authenticated source lock expands to16 files;
-its current fingerprint is `ac6087eb18d240b0d2574ddf3ea2ef8561ebdb71f678f35b38556d6f93a45e57`.
+its cohort fingerprint is `ac6087eb18d240b0d2574ddf3ea2ef8561ebdb71f678f35b38556d6f93a45e57`.
 The prior room fingerprint above identifies the separate Deleter proof cohort.
 Three real-party lessons and stable Continue are documented in
 [original tutor integration](original-move-tutors.md).
+
+
+The next eight existing-map tutors extend that same table to12 definitions and13
+actor bindings, including the Swords Dance clone, with25 locked source files.
+No new map/species or executor is added. Current fingerprint:
+`c1bba10c05d1f911bdc27144fd5c03dfd26b9d3f4e306f4dfc7467eaae2f08ea`.
+The real party completed seven lessons and Soft-Boiled refusal/cancel, then strict
+Continue at56301; controlled Chansey success belongs to the separate candidate.
+See [the current tutor cohort](original-move-tutors.md#eight-additional-existing-map-tutors-2026-10-14).

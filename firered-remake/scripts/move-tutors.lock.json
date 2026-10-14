@@ -97,6 +97,60 @@
       "bytes": 11751,
       "sha256": "668c7ede675ec83008984303faafef1d0b4d6ec5f11bcfb852e73a6280ad3cb8",
       "gitBlobSha1": "7aafaf7c3acf639833c485b62025de2a573295b1"
+    },
+    {
+      "path": "data/maps/Route4/map.json",
+      "bytes": 4770,
+      "sha256": "5b0b84cb73ecc6597470d01d5933ca36d5e4410cdda53dddb72922689e5653ac",
+      "gitBlobSha1": "9d00b28b6bb9f2cc113bae97d31542b0ed82da8c"
+    },
+    {
+      "path": "data/maps/VictoryRoad_2F/map.json",
+      "bytes": 7743,
+      "sha256": "4fc48795f3cf7a945e46bb0358dba23c50a6ede35c2875210f75b2195cc450d2",
+      "gitBlobSha1": "753eb93bb6646774965387844a1737c9ce3de735"
+    },
+    {
+      "path": "data/maps/PewterCity_Museum_1F/map.json",
+      "bytes": 5484,
+      "sha256": "be894d7df93066fd64dbdb847a32d1597c39cfe77294552b49250211747c4335",
+      "gitBlobSha1": "13d818f119d4f24974577ddbf2f196ffdc56a2b6"
+    },
+    {
+      "path": "data/maps/CeladonCity/map.json",
+      "bytes": 10506,
+      "sha256": "5d1891d99fdb71875373dbfaec5f3fce8840acb7e8c93beab93bd6baed0fe71c",
+      "gitBlobSha1": "99d4c3303ff38c057e7d9f2c609031cdbecd63bc"
+    },
+    {
+      "path": "data/maps/ViridianCity/map.json",
+      "bytes": 7211,
+      "sha256": "5ce922b65f76335556ace9a047feeb1968854b604c8469c39cbbd60985f61bc1",
+      "gitBlobSha1": "465d593cef4ceafc486be8b6ed5fe1b5b63cb140"
+    },
+    {
+      "path": "data/maps/MtEmber_Exterior/map.json",
+      "bytes": 11010,
+      "sha256": "cb4a7e698ecf72390f25ba902d2a23028abed3071f51bf15070451eb63b07f6b",
+      "gitBlobSha1": "ddf81679d42f958a544f192c4b0ba9dcd7856cfc"
+    },
+    {
+      "path": "data/maps/FuchsiaCity/map.json",
+      "bytes": 11054,
+      "sha256": "a13226ab375e13f781c4cf08dff498cce0e43c2c47fd6e6406bfc97ccc1b01a3",
+      "gitBlobSha1": "834806202ccdfe0d39f95634554aeca718ff3bb3"
+    },
+    {
+      "path": "data/maps/CeladonCity/scripts.inc",
+      "bytes": 2404,
+      "sha256": "73c4199f8fbe1dfc540694e4c01e351389c0c35a935db5119205956385e9976a",
+      "gitBlobSha1": "901a7a392e2193c4a84d1d9a58e18e97845db971"
+    },
+    {
+      "path": "data/maps/ViridianCity/scripts.inc",
+      "bytes": 6935,
+      "sha256": "2f23053443e399983324ed7461923bba1267ca3d3c8961ce33a6d10be140f72d",
+      "gitBlobSha1": "d6c71605bcf13a788d28426039ce9bd1f95e75f7"
     }
   ]
 }
