@@ -40,7 +40,7 @@ public static class NormalCharmanderCry
 }
 
 // Derived main-project extension: pret sound.c CRY_MODE_ENCOUNTER, bounded to
-// the admitted static encounter scenes, including Power Plant. Normal mode stays intact.
+// the admitted static encounter scenes, including Power Plant and Seafoam. Normal mode stays intact.
 public static class SourceEncounterCry
 {
     public const int Mode = 2;
@@ -48,7 +48,7 @@ public static class SourceEncounterCry
 
     public static (Song Song, byte[] Sequence) Build(Resources resources, NormalCryCatalog catalog, int species)
     {
-        if (species is not (101 or 131 or 143 or 145 or 150 or 249 or 250 or 410)) throw new NotSupportedException("Encounter cry species is outside the admitted source scenes");
+        if (species is not (101 or 131 or 143 or 144 or 145 or 150 or 249 or 250 or 410)) throw new NotSupportedException("Encounter cry species is outside the admitted source scenes");
         uint tone = catalog.Get(species).ToneAddress;
         var (_, bytes) = NormalCharmanderCry.BuildForTone(resources, tone);
         // m4a.c SetPokemonCryPitch adds 0x80, then writes key and fine tune;

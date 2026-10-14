@@ -51,9 +51,7 @@ public static class PokemonStateValidator
         if (owned.OriginalTrainerGender is not (0 or 1)) return "party_original_trainer_gender";
         // 6 is explicitly unused in the pinned source language list.
         if (owned.Language is not (1 or 2 or 3 or 4 or 5 or 7)) return "party_language";
-        if (!ValidSymbol(owned.MetLocation, "MAPSEC_") && owned.MetLocation != NpcTradePokemonOriginRules.MetLocation)
-            return "party_met_location";
-        if (NpcTradePokemonOriginRules.ValidateParty(content.Catalog, owned) is { } originError) return originError;
+        if (ValidateOriginMetadata(content.Catalog, owned) is { } originError) return originError;
         // Zero can describe a previously hatched/traded creature; this does not add an egg mechanic.
         if (owned.MetLevel < 0 || owned.MetLevel > owned.Pokemon.Level) return "party_met_level";
         // These are the named values in pinned include/constants/global.h. No unknown 4-bit IDs.
@@ -203,6 +201,13 @@ public static class PokemonStateValidator
             content.Catalog.Species.Values.Any(s => !content.SpeciesNames.TryGetValue(s.SourceSpeciesId, out var name) || !ValidName(name, 10)))
             return "pokemon_species_names";
         return null;
+    }
+
+    internal static string? ValidateOriginMetadata(PokemonCatalog catalog, PartyPokemon owned)
+    {
+        if (!ValidSymbol(owned.MetLocation, "MAPSEC_") && owned.MetLocation != NpcTradePokemonOriginRules.MetLocation)
+            return "party_met_location";
+        return NpcTradePokemonOriginRules.ValidateParty(catalog, owned);
     }
 
     private static bool ValidName(string? value, int maximumBytes) => !string.IsNullOrEmpty(value) &&
