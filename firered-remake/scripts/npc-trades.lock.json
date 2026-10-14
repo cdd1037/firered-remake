@@ -160,6 +160,7 @@
       "gitBlobSha1": "487c92fce4860ac0c6a1045c49a5a6c7bfce23e9",
       "path": "data/maps/Route11_EastEntrance_2F/scripts.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],
@@ -170,6 +171,7 @@
       "gitBlobSha1": "bdfa03e9c6bc2a890ab6e5d824d7522d064be36d",
       "path": "data/maps/Route11_EastEntrance_2F/text.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],
@@ -247,6 +249,7 @@
       "gitBlobSha1": "6719484491bbf7e6f745dfe0ea42cd439339261c",
       "path": "data/maps/UndergroundPath_NorthEntrance/scripts.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],

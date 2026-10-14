@@ -44,7 +44,7 @@ public sealed partial class CampaignSession
     private string? ValidateNpcTradeHistory(CampaignState state)
     {
         var receipts = state.NpcTrades ?? [];
-        if (receipts.IsDefault || receipts.Length > 3 || receipts.Any(t => t is null) ||
+        if (receipts.IsDefault || receipts.Any(t => t is null) ||
             state.EvolutionHistory is { IsDefault: true })
             return "save_npc_trade_history_invalid";
         var owned = OwnedPokemon(state);
@@ -52,6 +52,8 @@ public sealed partial class CampaignSession
         if (trades is null)
             return state.NpcTrades is not null || owned.Any(p => p.Pokemon.NpcTradeOrigin is not null)
                 ? "save_npc_trade_profile_missing" : null;
+        if (receipts.Length > trades.Definitions.Keys.Count(trades.IsEnabled))
+            return "save_npc_trade_history_invalid";
         foreach (var definition in trades.Definitions.Values)
             if (state.Script.Flags.GetValueOrDefault(definition.CompletionFlag) !=
                 receipts.Any(t => t.TradeId == definition.TradeId)) return "save_npc_trade_flag_inconsistent";

@@ -8,12 +8,12 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-/// <summary>Original FireRed NPC trades and the one new Lounge map. Runtime enablement is bounded to 6/7/8.</summary>
+/// <summary>Original FireRed NPC trades and the one new Lounge map. Runtime enablement is bounded to 2/4/6/7/8.</summary>
 public sealed class PretNpcTrades
 {
     public const string ResourceId = "firered-npc-trades-v1";
-    public const string ManifestSha256 = "f1b03d12d8c8ed92d7c6dc6d0bc93d41158a0ae11dc0a70c36c1163319ca6552";
-    public const string LockSha256 = "54deddb14c27869fcadff1830db01880db36e55084a012e668244c7227c82992";
+    public const string ManifestSha256 = "6385e2b2301c1cb390c8ec8c911503e3e19ef2beb190fe6ee755e6728e1a7194";
+    public const string LockSha256 = "9b5fa2c808e7d4e4ea9a30f81260b306843edcbafbfd3946b0a939ca6e45aff5";
     public const string FullSourceHash = "d34edcac7ca2b83d5e6f73360b3e1be983ad46bb558876768a26980507bd82be";
     public static MapId LoungeMapId { get; } = new("map.cinnabar-island-pokemon-lab-lounge");
     public NpcTradePokemonCatalog Trades { get; }
@@ -63,7 +63,7 @@ public sealed class PretNpcTrades
     {
         ArgumentNullException.ThrowIfNull(mechanics);
         var source = new SilphSourcePackage(projectRoot, "npc-trades", ResourceId,
-            "scripts/npc-trades.lock.json", LockSha256, 32145, ManifestSha256, 4033, 105, 17);
+            "scripts/npc-trades.lock.json", LockSha256, 32226, ManifestSha256, 4047, 105, 17);
         var catalog = source.Document("catalog.json");
         Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
             catalog.GetProperty("resourceId").GetString() == ResourceId &&
@@ -78,7 +78,9 @@ public sealed class PretNpcTrades
         var contracts = source.Document("contracts.json");
         foreach (var row in contracts.GetProperty("retainedMaps").EnumerateArray())
             _ = SafariSource.Read(projectRoot, row.GetProperty("path").GetString()!, row.GetProperty("sha256").GetString()!, row.GetProperty("byteLength").GetInt32());
-        Need(contracts.GetProperty("enabledTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual([6, 7, 8]) &&
+        Need(contracts.GetProperty("enabledTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual([2, 4, 6, 7, 8]) &&
+            contracts.GetProperty("deferredTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual([0, 1, 3, 5]) &&
+            contracts.GetProperty("retainedMaps").GetArrayLength() == 4 &&
             contracts.GetProperty("construction").GetProperty("metLocationValue").GetInt32() == 254 &&
             contracts.GetProperty("construction").GetProperty("discardedRandomIvDraws").GetInt32() == 2,
             "NPC trade construction/runtime boundary differs.");
@@ -127,9 +129,11 @@ public sealed class PretNpcTrades
         foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
         {
             string path = entry.GetString()!;
-            // Other six services remain evidence only. ExperimentRoom already owns its full script.
+            // Other four services remain evidence only. ExperimentRoom already owns its full script.
             if (path.StartsWith("data/maps/", StringComparison.Ordinal) &&
-                !path.StartsWith("data/maps/CinnabarIsland_PokemonLab_Lounge/", StringComparison.Ordinal)) continue;
+                !path.StartsWith("data/maps/CinnabarIsland_PokemonLab_Lounge/", StringComparison.Ordinal) &&
+                !path.StartsWith("data/maps/UndergroundPath_NorthEntrance/", StringComparison.Ordinal) &&
+                !path.StartsWith("data/maps/Route11_EastEntrance_2F/", StringComparison.Ordinal)) continue;
             string text = new UTF8Encoding(false, true).GetString(raw[path]);
             if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
             else
@@ -141,7 +145,9 @@ public sealed class PretNpcTrades
         }
         var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
             .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
-        Need(constants["INGAME_TRADE_ELECTRODE"] == 6 && constants["INGAME_TRADE_TANGELA"] == 7 && constants["INGAME_TRADE_SEEL"] == 8 &&
+        Need(constants["INGAME_TRADE_NIDORAN"] == 2 && constants["INGAME_TRADE_NIDORINOA"] == 4 &&
+            constants["FLAG_DID_MS_NIDO_TRADE"] == 587 && constants["FLAG_DID_NINA_TRADE"] == 593 &&
+            constants["INGAME_TRADE_ELECTRODE"] == 6 && constants["INGAME_TRADE_TANGELA"] == 7 && constants["INGAME_TRADE_SEEL"] == 8 &&
             constants["PARTY_SIZE"] == 6, "Original trade IDs/cancel constant differ.");
         return new(source, trades, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
     }

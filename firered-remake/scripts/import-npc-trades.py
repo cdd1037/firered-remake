@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Authenticate the nine original FireRed NPC trades and add only Cinnabar's Lounge.
 
-The pinned source is read as Git blobs, never executed. The initial runtime cohort
-is IDs 6/7/8; source evidence for the remaining six does not admit their services.
+The pinned source is read as Git blobs, never executed. Runtime IDs 2/4/6/7/8
+reuse the original maps; source evidence for the other four does not admit them.
 """
 import argparse
 import hashlib
@@ -20,10 +20,12 @@ RESOURCE_ID = 'firered-npc-trades-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
 FOSSIL_READER_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
-MANIFEST_SHA256 = 'f1b03d12d8c8ed92d7c6dc6d0bc93d41158a0ae11dc0a70c36c1163319ca6552'
-LOCK_SHA256 = '54deddb14c27869fcadff1830db01880db36e55084a012e668244c7227c82992'
+MANIFEST_SHA256 = '6385e2b2301c1cb390c8ec8c911503e3e19ef2beb190fe6ee755e6728e1a7194'
+LOCK_SHA256 = '9b5fa2c808e7d4e4ea9a30f81260b306843edcbafbfd3946b0a939ca6e45aff5'
 SEMANTIC_SHA256 = 'c259397a134f07268ae6d788ff7c7f2cb66d6d19755e07c3d525f4dec92c7414'
 MAPS = ['CinnabarIsland_PokemonLab_Lounge']
+LIVE_SCRIPT_MAPS = MAPS + ['UndergroundPath_NorthEntrance', 'Route11_EastEntrance_2F']
+ENABLED_TRADE_IDS = [2, 4, 6, 7, 8]
 TRADE_MAPS = ['Route2_House', 'CeruleanCity_House3', 'UndergroundPath_NorthEntrance',
               'VermilionCity_House2', 'Route11_EastEntrance_2F', 'Route18_EastEntrance_2F',
               'CinnabarIsland_PokemonLab_Lounge', 'CinnabarIsland_PokemonLab_ExperimentRoom']
@@ -155,11 +157,14 @@ def presentation_text(src):
 
 def retained_maps(src, current):
     docs = []
-    for name in ['CinnabarIsland_PokemonLab_Entrance','CinnabarIsland_PokemonLab_ExperimentRoom']:
-        directory = re.sub(r'([a-z])([A-Z])',r'\1-\2',name).replace('_','-').lower()
-        path='content/generated/fossil-lab-region/'+directory+'/runtime-map.json'
+    for name, relative in [
+        ('CinnabarIsland_PokemonLab_Entrance', 'fossil-lab-region/cinnabar-island-pokemon-lab-entrance'),
+        ('CinnabarIsland_PokemonLab_ExperimentRoom', 'fossil-lab-region/cinnabar-island-pokemon-lab-experiment-room'),
+        ('UndergroundPath_NorthEntrance', 'vermilion-region/underground-path-north-entrance'),
+        ('Route11_EastEntrance_2F', 'route11-region/route-11-east-entrance-2f')]:
+        path='content/generated/'+relative+'/runtime-map.json'
         raw=(current/path).read_bytes(); doc=json.loads(raw); events=src.json(f'data/maps/{name}/map.json')
-        need(doc['events']==events,'Retained Lab events differ')
+        need(doc['events']==events,'Retained original map events differ: '+name)
         docs.append(dict(path=path,sha256=sha(raw),byteLength=len(raw),map=doc['stableId'],sourceMap=events['id'],geometryChanges=[],eventChanges=[]))
     entrance=src.json('data/maps/CinnabarIsland_PokemonLab_Entrance/map.json')['warp_events'][3]
     need(entrance==dict(x=13,y=5,elevation=0,dest_map='MAP_CINNABAR_ISLAND_POKEMON_LAB_LOUNGE',dest_warp_id='0'),'Original lounge entrance differs')
@@ -186,8 +191,10 @@ def main():
     src.read('data/maps/map_groups.json','source-map-number-projection')
     links=reader.topology(src,worlds)
     need(len(links['warps'])==1 and links['warps'][0]['reciprocalIndex'],'Lounge reciprocal warp differs')
-    for name in MAPS:
-        for leaf in ['scripts.inc','text.inc']:src.read(f'data/maps/{name}/'+leaf,'live-map-script')
+    for name in LIVE_SCRIPT_MAPS:
+        for leaf in ['scripts.inc','text.inc']:
+            path=f'data/maps/{name}/'+leaf
+            if path in src.tree:src.read(path,'live-map-script')
     semantic=sha(compact(offers))
     if SEMANTIC_SHA256:need(semantic==SEMANTIC_SHA256,'Pinned trade semantics differ')
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE,shared.TILESETS=RESOURCE_ID,TILESETS
@@ -204,9 +211,9 @@ def main():
             data=converter.encode(doc);(stage/relative/'runtime-map.json').write_bytes(data);path.unlink()
             entries.append(dict(sourceName=world['sourceName'],stableId=world['stableId'],directory=relative,sourceMapSymbol=world['events']['id'],path=relative+'/runtime-map.json',sha256=sha(data),byteLength=len(data),sourceWorldSha256=sha(rich),sourceWorldByteLength=len(rich),fullSourceHash=source_hash))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
-        contracts=dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,enabledTradeIds=[6,7,8],retainedMaps=retained,
+        contracts=dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,enabledTradeIds=ENABLED_TRADE_IDS,retainedMaps=retained,
             mapTopology=links,construction=construction,numericRecords=numeric_records,
-            deferredTradeIds=list(range(6)),limitations=['Only Cinnabar IDs 6/7/8 are enabled. Other six original records are source evidence only.',
+            deferredTradeIds=[i for i in range(9) if i not in ENABLED_TRADE_IDS],limitations=['Only original IDs 2/4/6/7/8 are enabled. Other four original records are source evidence only.',
             'Jynx original Fab Mail/message is retained as evidence; no mail store or Jynx runtime admission.',
             'No source cutscene visual/audio timing parity is claimed by this content contract.'])
         docs={'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,maps=entries,inputFiles=lock['files'],tilesets=TILESETS),
@@ -216,7 +223,7 @@ def main():
         outputs=[dict(path=p.relative_to(stage).as_posix(),sha256=sha(p.read_bytes()),byteLength=p.stat().st_size) for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,lockSha256=sha(lock_bytes),
             readerSha256=READER_SHA,helperSha256=FOSSIL_READER_SHA,converterSha256=reader.HELPERS['_reviewed_runtime_converter.py'],rendererSha256=reader.HELPERS['_regional_service_shared.py'],
-            inputCount=len(src.entries),mapCount=1,cellCount=165,borderCellCount=4,objectCount=3,tradeCount=9,enabledTradeIds=[6,7,8],tradeSemanticSha256=semantic,
+            inputCount=len(src.entries),mapCount=1,cellCount=165,borderCellCount=4,objectCount=3,tradeCount=9,enabledTradeIds=ENABLED_TRADE_IDS,tradeSemanticSha256=semantic,
             reusedNpcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
         if MANIFEST_SHA256:need(sha(manifest_bytes)==MANIFEST_SHA256,'Pinned manifest differs')
