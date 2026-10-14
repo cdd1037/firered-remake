@@ -1,10 +1,10 @@
 # 首次主线后：当前剩余范围
 
-更新：2026-10-14，稳定节点为原隐藏代币与Fly实际公共路线、独立Continue及短headless View收尾（Fly实现`886197c`）。本页只维护当前状态和未完项；历史逐批数字、夹具、失败探针和精确执行身份保留在各模块报告及Git记录，不把旧段落的“下一步”当成今天的待办。
+更新：2026-10-14，稳定节点为Fly及Route5单槽日托实际公共路线、独立Continue和短headless View收尾。本页只维护当前状态和未完项；历史逐批数字、夹具、失败探针和精确执行身份保留在各模块报告及Git记录，不把旧段落的“下一步”当成今天的待办。
 
 ## 当前工作与统计边界
 
-Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／飞玉虹实际链和独立Continue；短headless View另过4号道路中心自动起降与原声事件，原生屏幕和物理音频仍未验。见[field Fly当前边界](field-fly-integration.md)。当前推进5号道路单槽日托，地图／规则／Application／共享队伍UI已组合构建通过，实际寄存取回、Continue及短View正在验收；四岛繁殖独立实现中，不提前算完成。
+Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／飞玉虹实际链和独立Continue；短headless View另过4号道路中心自动起降与原声事件，原生屏幕和物理音频仍未验。见[field Fly当前边界](field-fly-integration.md)。5号道路单槽日托已通过真实寄存／16有效步／100元取回、5档独立Continue和共享队伍短View；四岛两槽繁殖、蛋与孵化正在独立实现，不提前算完成。见[育屋接线](route5-daycare-integration.md)。
 
 原代币盒／余额／换币柜台与三位普通赠币NPC已完成实际应用路线、独立Continue和短headless View；奖品三柜台／15项已接入，受控边界与实际三类兑换、独立Continue及短headless View均通过。原12处隐藏币已通过实际120→380续走与独立Continue；老虎机仍未完成。通信进化替代的具体接入仍待讨论。
 
@@ -16,7 +16,7 @@ Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／�
 
 - 历史自然队伍停在generation41923，**没有自然首通**。明确准备的成型队／补给分支实际战胜后续联盟成员和原冠军，执行奖励，写出42922名人堂并在42943完成Credits→Reset；不是注入胜利，也不是自然新游戏首通。[联盟报告](pokemon-league-campaign.md)、[受控链](../tests/Game.PokemonLeagueControlledRoute.Tests/README.md)
 - 后续区域沿实际合法检查点推进，但有明示的源码站位、受控个体／资源或独立分支。各模块文档分别说明，不把不同分支合成一条自然旅行。
-- 2026-10-14磁盘恢复保留stage12真实52746档，并显式离线迁内容版本。旧58063／58103只剩历史报告，不能声称原始文件已经恢复。当前谱系为PP52786→5F维生素52894→4F三石52996→屋顶53266→代币53539→奖品53821→隐藏币53999。前几段的站位条件见各自报告；**屋顶、代币、奖品和隐藏币路线全程公共门／楼梯，没有新定位或物品注入**。[恢复后PP](pp-boost-field-integration.md#recovered-current-product-acceptance-2026-10-14)、[屋顶终档](department-rooftop-services.md#actual-route-and-representative-view-closure)
+- 2026-10-14磁盘恢复保留stage12真实52746档，并显式离线迁内容版本。旧58063／58103只剩历史报告，不能声称原始文件已经恢复。当前谱系为PP52786→5F维生素52894→4F三石52996→屋顶53266→代币53539→奖品53821→隐藏币53999→Fly54201→Route5日托54401。前几段的站位条件见各自报告；**屋顶、代币、奖品和隐藏币路线全程公共门／楼梯，没有新定位或物品注入**。[恢复后PP](pp-boost-field-integration.md#recovered-current-product-acceptance-2026-10-14)、[屋顶终档](department-rooftop-services.md#actual-route-and-representative-view-closure)
 - 最近的headless Draw、源素材和Dummy合成检查不等于原生窗口像素／实际听感。历史原生结果只适用于其固定源和运行批次，不自动覆盖后继代码。
 
 ## 已接通的主要单机模块
