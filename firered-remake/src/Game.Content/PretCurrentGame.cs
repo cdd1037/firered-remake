@@ -2052,6 +2052,13 @@ public sealed partial class PretCampaignCatalog
             bank[symbol] = value;
         }
 
+        // Bag and registered field-item callbacks share the same authenticated Oak refusal.
+        var questItemUi = PretQuestItemUi.Load(File.ReadAllText(Path.Combine(projectRoot,
+            "content/generated/quest-item-ui/quest-item-ui.json"), Encoding.UTF8));
+        bank.Add("gText_OakForbidsUseOfItemHere", questItemUi.Texts["gText_OakForbidsUseOfItemHere"]
+            .Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal).Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$");
+        hashes.Add("quest-item-common-text:" + PretQuestItemUi.GeneratedSha256);
+
         bank.Add("gText_CoinCase", gameCornerCoins.ItemUseText.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal)
             .Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$");
 
