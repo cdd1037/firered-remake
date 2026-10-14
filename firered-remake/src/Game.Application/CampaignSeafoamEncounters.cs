@@ -59,11 +59,16 @@ public sealed partial class CampaignSession
 
     private CampaignSeafoamReceipt? PrepareSeafoamReceipt(CampaignState state, Route1WildPokemonResult made,
         SeafoamWildOrigin? origin, CampaignSeafoamReceipt? receipt, RngState? generationRng,
-        bool scripted, bool surfing, bool fishing)
+        bool scripted, bool surfing, bool fishing, FishingEncounterOrigin? fishingOrigin = null)
     {
         if (origin is null)
         {
-            if (receipt is not null || IsSeafoamMap(state.World.Player.MapId))
+            // Super Rod retains its exact ordinary typed slot, including on Seafoam maps.
+            // Every other Seafoam entry still requires its existing generation receipt.
+            bool typedSuperRod = !scripted && !surfing && fishing && fishingOrigin is { Rod: FishingRod.Super } &&
+                fishingOrigin.Map == state.World.Player.MapId && IsTypedFishingOrigin(fishingOrigin) &&
+                FishingBattleContract.Matches(fishingOrigin, made.Pokemon);
+            if (receipt is not null || IsSeafoamMap(state.World.Player.MapId) && !typedSuperRod)
                 throw new InvalidDataException("seafoam_wild_missing_origin");
             return null;
         }

@@ -43,6 +43,7 @@ public sealed partial class PretCampaignCatalog
         var npcTradeHaden = PretNpcTradeHaden.Load(projectRoot);
         var npcTradeMail = PretNpcTradeMail.Load(projectRoot);
         var goodRodService = PretGoodRodService.Load(projectRoot);
+        var superRodService = PretSuperRodService.Load(projectRoot);
         var seafoam = PretSeafoamRegion.Load(projectRoot);
         var seafoamTrainers = PretSeafoamRules.LoadTrainers(projectRoot);
         var moveReminderHouse = PretMoveReminderHouse.Load(projectRoot);
@@ -1021,6 +1022,8 @@ public sealed partial class PretCampaignCatalog
             goodRodService.AdditionalSourceHashes, sources, textFiles, constants, hashes);
         AppendAuthenticatedRegionalSources(seafoam.Scripts, seafoam.TextSources.Values, seafoam.Constants,
             seafoam.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+        AppendAuthenticatedRegionalSources(superRodService.Scripts, superRodService.TextSources.Values, superRodService.Constants,
+            superRodService.AdditionalSourceHashes, sources, textFiles, constants, hashes);
 
         AppendAuthenticatedRegionalSources(moveReminderHouse.Scripts, moveReminderHouse.TextSources.Values, moveReminderHouse.Constants,
             moveReminderHouse.AdditionalSourceHashes, sources, textFiles, constants, hashes);
@@ -2379,9 +2382,21 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(copycatHouse.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, copycatHouse.NewMaps);
         ValidateCopycatHouseComposition(copycatHouse, maps, copycatPreviousMaps, compiled);
-        var moveReminder = PretMoveReminderService.Load(projectRoot, seafoamOwned.Catalog);
+        var superRodPreviousMaps = maps;
+        maps = maps.AddRange(superRodService.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, superRodService.NewMaps);
+        ValidateSuperRodComposition(superRodService, maps, superRodPreviousMaps, compiled);
+        PretSuperRodSpecies.ValidateSourceEvidence(projectRoot);
+        var superRodOwned = PretSuperRodSpecies.LoadOwned(projectRoot, seafoamOwned);
+        var superRodOpponents = PretSuperRodSpecies.LoadOpponents(projectRoot, seafoamOpponents, superRodOwned);
+        var superRodMachines = PretSuperRodSpecies.LoadMachines(projectRoot, seafoamMachines, superRodOwned);
+        pokemonContent = pokemonContent with { Catalog = superRodOwned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.SetItem(211, oakPokedex.Entries[211].Name) };
+        machines = superRodMachines.Catalog;
+        hashes.AddRange(PretSuperRodSpecies.AdditionalSourceHashes);
+        var moveReminder = PretMoveReminderService.Load(projectRoot, superRodOwned.Catalog);
         hashes.AddRange(moveReminder.AdditionalSourceHashes);
-        var moveTutors = PretMoveTutors.Load(projectRoot, seafoamOwned.Catalog);
+        var moveTutors = PretMoveTutors.Load(projectRoot, superRodOwned.Catalog);
         hashes.AddRange(moveTutors.AdditionalSourceHashes);
         hashes.Add("npc-trade-owned:" + PretNpcTradeOwnedRules.PokemonSha256);
         hashes.Add("npc-trade-owned-machines:" + PretNpcTradeOwnedRules.MachinesSha256);
@@ -2561,7 +2576,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

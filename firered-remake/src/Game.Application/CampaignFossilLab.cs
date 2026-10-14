@@ -44,10 +44,10 @@ public sealed partial class CampaignSession
             content.FossilLabOpponents is not { } opponents || content.FossilLabMachines is not { } machines ||
             !ReferenceEquals(FossilLabOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             !ReferenceEquals(owned.Predecessor, content.FightingDojoOwnership) ||
-            !ReferenceEquals(owned, (SeafoamOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor ?? NpcTradeOwnedPokemonCatalog.For(content.PokemonContent?.Catalog))?.Predecessor) ||
+            !ReferenceEquals(owned, ((SuperRodOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor ?? SeafoamOwnedPokemonCatalog.For(content.PokemonContent?.Catalog))?.Predecessor ?? NpcTradeOwnedPokemonCatalog.For(content.PokemonContent?.Catalog))?.Predecessor) ||
             !ReferenceEquals(FossilLabOpponentPokemonCatalog.For(owned), opponents) ||
             !ReferenceEquals(opponents.Predecessor, content.FightingDojoOpponents) ||
-            !ReferenceEquals((SeafoamMachineCatalog.For(content.PewterMachines)?.Predecessor ?? NpcTradeMachineCatalog.For(content.PewterMachines))?.Predecessor, machines) ||
+            !ReferenceEquals(((SuperRodMachineCatalog.For(content.PewterMachines)?.Predecessor ?? SeafoamMachineCatalog.For(content.PewterMachines))?.Predecessor ?? NpcTradeMachineCatalog.For(content.PewterMachines))?.Predecessor, machines) ||
             !ReferenceEquals(machines.Predecessor, content.FightingDojoMachines) || !ReferenceEquals(machines.Pokemon, owned))
             throw new InvalidDataException("fossil_lab_current_binding");
         // The locked region authenticates numeric IDs 0x4069/0x406A. Current

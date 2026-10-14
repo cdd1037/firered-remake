@@ -127,8 +127,7 @@ public sealed partial class CampaignSession
             (powerPlant is null?0:1)+(eventIsland is null?0:1)+(seven is null?0:1)+(cave is null?0:1)+(hypno is null?0:1)+(tower is null?0:1)+(snorlax?1:0);
         if (fishing is not null)
         {
-            if (origins != 0 || !_content.GoodRodEnabled || fishing.Rod != FishingRod.Good || fishing.Map != map ||
-                !_content.GoodRodEncounters!.ContainsKey(map) || !FishingBattleContract.Matches(fishing,pokemon))
+            if (origins != 0 || !IsTypedFishingOrigin(fishing) || fishing.Map != map || !FishingBattleContract.Matches(fishing,pokemon))
                 throw new InvalidDataException("canonical_fishing_origin");
             return new() { Fishing = fishing };
         }

@@ -17,6 +17,7 @@ public sealed partial class PretCampaignCatalog
         FuchsiaRouteEnabled&&map.Value=="map.route-12" || SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsFootDestination(map, x, y);
 
     public bool IsSnorlaxWarpAllowed(MapId map, int sourceWarpId) =>
+        map.Value == "map.route-12" && sourceWarpId == 0 ? SuperRodEnabled :
         SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsWarp(map, sourceWarpId);
 
     private static void AppendSnorlaxSources(PretSnorlaxRegion region, List<PretSourceScriptFile> sources,

@@ -187,7 +187,9 @@ public static partial class SourceWildBattlePolicy
         if (context.Fishing is { } fishing && (!FishingBattleContract.Matches(fishing, mon) ||
             frame.SourceCampaignRulesVersion is not { } fishingProfile || !OwnedBattlePokemonCatalog.ProfileAdmits(fishingProfile, mon.Species)))
             return "source_wild_fishing_origin";
-        if (context.Seafoam is {} seafoam && (frame.SourceCampaignRulesVersion != SeafoamOwnedPokemonCatalog.Profile ||
+        if (context.Seafoam is {} seafoam && (frame.SourceCampaignRulesVersion != SeafoamOwnedPokemonCatalog.Profile &&
+            !(frame.SourceCampaignRulesVersion == SuperRodOwnedPokemonCatalog.Profile &&
+              OwnedBattlePokemonCatalog.IsRegisteredSuccessorProfile(frame.SourceCampaignRulesVersion, SeafoamOwnedPokemonCatalog.Profile)) ||
             !SeafoamWildBattleContract.IsRuntimeKind(seafoam.Kind) || !SeafoamWildBattleContract.Matches(seafoam,mon)))
             return "source_wild_seafoam_origin";
         var sourceProfile = OwnedBattlePokemonCatalog.InheritedWildProfile(frame.SourceCampaignRulesVersion);

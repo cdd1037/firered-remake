@@ -20,19 +20,26 @@ public sealed partial class CampaignSession
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         if (!_content.CityServicesEnabled || _content.OldRodEncounters is null) return No("fishing_not_enabled");
         bool goodRod = command.Text == GoodRodId.Value;
+        bool superRod = command.Text == SuperRodId.Value;
+        var rod = superRod ? FishingRod.Super : goodRod ? FishingRod.Good : FishingRod.Old;
         if (goodRod && !_content.GoodRodEnabled) return No("good_rod_not_enabled");
-        if (command.Kind != "field_fish" || (command.Text != OldRodId.Value && !goodRod) ||
+        if (superRod && !_content.SuperRodEnabled) return No("super_rod_not_enabled");
+        if (command.Kind != "field_fish" || (command.Text != OldRodId.Value && !goodRod && !superRod) ||
             state.ItemMenu is not { Origin: "bag", View: "bag" }) return No("fishing_bag_context_invalid");
         if (state.Fishing is not null || !IsStableFieldForParty(state with { ItemMenu = null }) ||
             state.Pc is not null || state.TownMap is not null || state.Repel is not null || state.CutEffect is not null)
             return No("fishing_event_active");
         var error = ValidateCampaignInventory(state.Inventory);
         if (error is not null) return No(error);
-        if (OpeningInventoryRules.Quantity(state.Inventory!.KeyItems ?? [], goodRod ? GoodRodId : OldRodId) != 1)
-            return No(goodRod ? "good_rod_missing" : "old_rod_missing");
+        if (OpeningInventoryRules.Quantity(state.Inventory!.KeyItems ?? [], superRod ? SuperRodId : goodRod ? GoodRodId : OldRodId) != 1)
+            return No(superRod ? "super_rod_missing" : goodRod ? "good_rod_missing" : "old_rod_missing");
         if (state.Party.IsEmpty || state.Party.All(p => p.IsEgg || p.Pokemon.CurrentHp == 0)) return No("fishing_live_party_required");
         if (_content.ConnectedFieldMaps is null) return No("fishing_map_missing");
         var position = state.World.Player;
+        // Safari tables remain source-only. Reject unsupported maps before starting the task or drawing RNG.
+        if (superRod && !_content.SuperRodEncounters.ContainsKey(position.MapId) &&
+            !SuperRodEncounterRules.MapsWithoutFishingMons.Contains(position.MapId))
+            return No("fishing_map_not_admitted");
         var maps = EditedFieldMaps(state);
         if (!maps.TryGetValue(position.MapId, out var map)) return No("fishing_map_missing");
         var (dx, dy) = Delta(position.Facing);
@@ -50,15 +57,19 @@ public sealed partial class CampaignSession
             FishingBlocksEdge(front.SourceBehavior, FishingOpposite(position.Facing)) ? 2 :
             position.Elevation != 0 && front.Elevation is not (0 or 15) && front.Elevation != position.Elevation ? 3 :
             front.Occupied || VisibleActorAt(state, x, y) is not null ? 4 : 0;
-        var context = new OldRodCastContext(position.MapId, !goodRod, position.Elevation, terrain.Value,
-            front.SourceBehavior, collision) { Rod = goodRod ? FishingRod.Good : FishingRod.Old, OwnsGoodRod = goodRod };
+        var context = new OldRodCastContext(position.MapId, rod == FishingRod.Old, position.Elevation, terrain.Value,
+            front.SourceBehavior, collision)
+            { Rod = rod, OwnsGoodRod = goodRod, OwnsSuperRod = superRod };
         if (!OldRodFishingRules.CanCast(context)) return No("fishing_invalid_shore");
-        if (goodRod ? !GoodRodEncounterRules.IsAdmittedMap(position.MapId) :
-            !_content.OldRodEncounters.ContainsKey(position.MapId) && !SevenIslandOldRodEncounterRules.IsAdmittedMap(position.MapId))
+        if (!superRod && (goodRod ? !GoodRodEncounterRules.IsAdmittedMap(position.MapId) :
+            !_content.OldRodEncounters.ContainsKey(position.MapId) && !SevenIslandOldRodEncounterRules.IsAdmittedMap(position.MapId)))
             return No("fishing_map_not_admitted");
-        var result = goodRod
-            ? GoodRodEncounterRules.Start(SafariOrdinaryOwnership!, context, state.World.Rng)
-            : SevenIslandOldRodEncounterRules.Start(_content.SevenIslandOwnership!,context,state.World.Rng);
+        var result = rod switch
+        {
+            FishingRod.Super => SuperRodEncounterRules.Start(SafariOrdinaryOwnership!, context, state.World.Rng),
+            FishingRod.Good => GoodRodEncounterRules.Start(SafariOrdinaryOwnership!, context, state.World.Rng),
+            _ => SevenIslandOldRodEncounterRules.Start(_content.SevenIslandOwnership!, context, state.World.Rng)
+        };
         long sequence = checked(state.Script.EffectSequence + 1);
         return new(CommandStatus.Accepted, state with
         {
@@ -72,8 +83,8 @@ public sealed partial class CampaignSession
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         var fishing = state.Fishing ?? throw new InvalidDataException("fishing_state_missing");
-        bool goodRod = fishing.State.Rod == FishingRod.Good;
-        if (goodRod) GoodRodEncounterRules.ValidateState(SafariOrdinaryOwnership!, fishing.State);
+        if (fishing.State.Rod == FishingRod.Super) SuperRodEncounterRules.ValidateState(SafariOrdinaryOwnership!, fishing.State);
+        else if (fishing.State.Rod == FishingRod.Good) GoodRodEncounterRules.ValidateState(SafariOrdinaryOwnership!, fishing.State);
         else SevenIslandOldRodEncounterRules.ValidateState(_content.SevenIslandOwnership!,fishing.State);
         if (!_content.CityServicesEnabled || fishing.State.Map != state.World.Player.MapId ||
             fishing.State.Status != OldRodFishingStatus.Running || state.ItemMenu is not null ||
@@ -101,9 +112,12 @@ public sealed partial class CampaignSession
         }
         if (command.Kind != "fishing_tick") return No("fishing_active");
         var input = new OldRodFrameInput(MessageFinished:fishing.MessageFinished,NoCatchAnimationFinished:fishing.NoCatchAnimationFinished);
-        var result = goodRod
-            ? GoodRodEncounterRules.Advance(SafariOrdinaryOwnership!, fishing.State, input, state.World.Rng)
-            : SevenIslandOldRodEncounterRules.Advance(_content.SevenIslandOwnership!, fishing.State, input, state.World.Rng);
+        var result = fishing.State.Rod switch
+        {
+            FishingRod.Super => SuperRodEncounterRules.Advance(SafariOrdinaryOwnership!, fishing.State, input, state.World.Rng),
+            FishingRod.Good => GoodRodEncounterRules.Advance(SafariOrdinaryOwnership!, fishing.State, input, state.World.Rng),
+            _ => SevenIslandOldRodEncounterRules.Advance(_content.SevenIslandOwnership!, fishing.State, input, state.World.Rng)
+        };
         var next = state with
         {
             Fishing = fishing with { State = result.State },

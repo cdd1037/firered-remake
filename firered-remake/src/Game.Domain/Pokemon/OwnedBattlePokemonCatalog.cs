@@ -119,6 +119,10 @@ public sealed class OwnedBattlePokemonCatalog
         return owned;
     }
 
+    // This edge exists only after a sealed successor authenticated its predecessor and registered.
+    internal static bool IsRegisteredSuccessorProfile(string? profile, string predecessor) =>
+        profile is not null && SuccessorOwnedParentProfiles.TryGetValue(profile, out var parent) && parent == predecessor;
+
     internal static string? InheritedWildProfile(string? profile)
     {
         while (profile is not null && SuccessorOwnedParentProfiles.TryGetValue(profile, out var predecessor)) profile = predecessor;

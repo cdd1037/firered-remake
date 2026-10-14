@@ -204,3 +204,15 @@ Current fingerprint:
 The actual purchase/teaching terminal56575 and independent Continue, plus stable
 102-check/eight-Draw production headless probe, passed within the distinct
 [Copycat verification cohorts](copycat-mimic-campaign.md).
+
+
+## Super Rod implementation checkpoint, 2026-10-14
+
+Current composition is334 maps,163 owned species and192 ordinary opponents.
+The one-species Qwilfish successor preserves all162 inherited species objects,
+354 moves and41 existing machine rows, adding only the original Qwilfish cells.
+Current fingerprint is `0a58645c0a68412b01c6784e913fac5176256699ab2811027268f5c46a17c6de`.
+LoadCurrent/CreateCurrent and exact Copycat56575 payload admission passed after
+normal Godot compilation. Original house acquisition, record/capture route and
+production view acceptance are still pending at this recoverable point.
+See [the separate evidence boundaries](super-rod-campaign.md).

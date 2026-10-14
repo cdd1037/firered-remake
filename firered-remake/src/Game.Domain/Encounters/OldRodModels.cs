@@ -6,8 +6,8 @@ using Game.Domain.Randomness;
 
 namespace Game.Domain.Encounters;
 
-/// <summary>Original rod IDs. Super Rod is deliberately outside the admitted service.</summary>
-public enum FishingRod { Old = 0, Good = 1 }
+/// <summary>Original rod IDs; admission is authenticated independently from the shared task.</summary>
+public enum FishingRod { Old = 0, Good = 1, Super = 2 }
 
 public enum OldRodFishingStatus { Running, NotEvenANibble, EncounterReady, Cancelled, Rejected }
 
@@ -18,6 +18,7 @@ public sealed record OldRodCastContext(MapId Map, bool OwnsOldRod, int PlayerEle
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public FishingRod Rod { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool OwnsGoodRod { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool OwnsSuperRod { get; init; }
 }
 
 /// <summary>One Task_Fishing invocation; completion inputs acknowledge source presentation boundaries.</summary>

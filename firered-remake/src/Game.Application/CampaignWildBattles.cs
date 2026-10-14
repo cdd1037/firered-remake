@@ -102,7 +102,7 @@ public sealed partial class CampaignSession
             victoryRoadOrigin.Kind!=(surfPokemon is not null?VictoryRoadEncounterKind.Surf:fishingPokemon is not null?VictoryRoadEncounterKind.OldRod:VictoryRoadEncounterKind.Land)))
             throw new InvalidDataException("victory_road_wild_field_origin");
         seafoamReceipt=PrepareSeafoamReceipt(state,generated,seafoamOrigin,seafoamReceipt,seafoamGenerationRng,
-            scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null);
+            scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin);
         bool towerBattle=_content.PokemonTowerEnabled&&TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
         var kind=PokemonTowerBattleContract.Classify(scriptedMarowak,HasSilphScope(state));
         var encounterKind=surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land;

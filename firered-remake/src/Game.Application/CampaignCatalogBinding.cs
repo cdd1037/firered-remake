@@ -23,13 +23,13 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var owned = content.SeafoamOwnership ?? throw new InvalidDataException("current_seafoam_owned_proof_missing");
+        var owned = content.SuperRodOwnership ?? throw new InvalidDataException("current_super_rod_owned_proof_missing");
         var battle = owned.SharedBattle;
-        var opponents = content.SeafoamOpponents;
-        if (!ReferenceEquals(SeafoamOwnedPokemonCatalog.For(content.PokemonContent!.Catalog), owned) ||
+        var opponents = content.SuperRodOpponents;
+        if (!ReferenceEquals(SuperRodOwnedPokemonCatalog.For(content.PokemonContent!.Catalog), owned) ||
             !ReferenceEquals(battle.Catalog,content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics,owned.Mechanics) ||
-            !ReferenceEquals(owned.Predecessor.Predecessor,content.FossilLabOwnership) || opponents is null ||
-            !ReferenceEquals(opponents.Owned,owned) || !ReferenceEquals(opponents.Predecessor.Predecessor,content.FossilLabOpponents))
+            !ReferenceEquals(owned.Predecessor,content.SeafoamOwnership) || !ReferenceEquals(owned.Predecessor.Predecessor.Predecessor,content.FossilLabOwnership) || opponents is null ||
+            !ReferenceEquals(opponents.Owned,owned) || !ReferenceEquals(opponents.Predecessor,content.SeafoamOpponents) || !ReferenceEquals(opponents.Predecessor.Predecessor.Predecessor,content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, owned.Catalog, battle);
     }
@@ -75,7 +75,7 @@ public sealed partial class CampaignSession
         if(content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
-        if(!SeafoamMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
+        if(!content.SuperRodEnabled || SuperRodMachineCatalog.For(content.PewterMachines) is not {} currentMachines || !ReferenceEquals(currentMachines.Pokemon,content.SuperRodOwnership))throw new InvalidDataException("current_machine_proof_missing");
         if((PokeDollInventoryCatalog.For(content.EarlyShop)?.Predecessor ?? SeafoamShopCatalog.For(content.EarlyShop)) is not {} currentShop || !ReferenceEquals(currentShop.Predecessor.Predecessor, content.FossilLabShop))throw new InvalidDataException("current_shop_proof_missing");
         if(content.QuestItems?.Profile!=QuestItemRules.TownMapProfile)throw new InvalidDataException("current_quest_item_profile_missing");
         if(content.FieldPickups.IsDefaultOrEmpty||content.EarlyShop is null)throw new InvalidDataException("current_field_pickup_profile_missing");

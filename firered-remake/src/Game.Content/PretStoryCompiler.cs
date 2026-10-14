@@ -155,6 +155,9 @@ public static partial class PretStoryCompiler
                     (FirstSeviiSource(file, "data/maps/CinnabarIsland_PokemonLab_ResearchRoom/scripts.inc", PretOriginalTutorRooms.MetronomeScriptSha256) &&
                     label == "CinnabarIsland_PokemonLab_ResearchRoom_MapScripts")) && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
+                if (FirstSeviiSource(file, "data/maps/Route12_FishingHouse/scripts.inc", Game.Domain.Pokemon.MagikarpSizeRecordRules.ScriptSha256) &&
+                    label == "Route12_FishingHouse_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
+                { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
                 if (FirstSeviiSource(file, "data/maps/SaffronCity_CopycatsHouse_1F/scripts.inc", "41b7f68c5dfba496afa81cadd8be88bb649efaf2a2831b058818750f68c8c96d") &&
                     label == "SaffronCity_CopycatsHouse_1F_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }

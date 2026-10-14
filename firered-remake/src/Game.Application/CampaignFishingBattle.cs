@@ -6,7 +6,7 @@ public sealed partial class CampaignSession
 {
     private CampaignState BeginFishingWildBattle(CampaignState state,OldRodFishingState fishing)
     {
-        if (fishing.Rod == FishingRod.Good) return BeginGoodRodWildBattle(state, fishing);
+        if (fishing.Rod is FishingRod.Good or FishingRod.Super) return BeginTypedFishingWildBattle(state, fishing);
         if(!_content.CityServicesEnabled||state.Fishing is null||fishing.Status!=OldRodFishingStatus.EncounterReady||
             fishing.Map!=state.World.Player.MapId||!_content.OldRodEncounters!.TryGetValue(fishing.Map,out var table))
             throw new InvalidDataException("fishing_encounter_context_invalid");

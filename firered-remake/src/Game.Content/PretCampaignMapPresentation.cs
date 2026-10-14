@@ -29,6 +29,7 @@ public static class PretCampaignMapPresentation
         Add(catalog.NpcTradeElyssa.NewMaps.Keys,catalog.NpcTradeElyssa.NpcSourcePath);
         Add(catalog.NpcTradeHaden.NewMaps.Keys,catalog.NpcTradeHaden.NpcSourcePath);
         Add(catalog.GoodRodService.NewMaps.Keys,catalog.GoodRodService.NpcSourcePath);
+        Add(catalog.SuperRodService.NewMaps.Keys,catalog.SuperRodService.NpcSourcePath);
         Add(catalog.SeafoamRegion.NewMaps.Keys,catalog.SeafoamRegion.NpcSourcePath);
         Add(catalog.MoveReminderHouse.NewMaps.Keys,catalog.MoveReminderHouse.NpcSourcePath);
         Add(catalog.MoveDeleterHouse.NewMaps.Keys,catalog.MoveDeleterHouse.NpcSourcePath);

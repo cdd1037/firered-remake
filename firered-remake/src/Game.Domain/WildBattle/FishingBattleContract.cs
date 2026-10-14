@@ -18,7 +18,7 @@ public static class FishingBattleContract
     public static OldRodEncounterSlot? SourceSlot(FishingEncounterOrigin? origin)
     {
         if (origin is null || origin.RulesVersion != Version || !Enum.IsDefined(origin.Rod)) return null;
-        var tables = origin.Rod == FishingRod.Good ? GoodRodEncounterRules.Tables : SevenIslandOldRodEncounterRules.Tables;
+        var tables = origin.Rod == FishingRod.Super ? SuperRodEncounterRules.Tables : origin.Rod == FishingRod.Good ? GoodRodEncounterRules.Tables : SevenIslandOldRodEncounterRules.Tables;
         var table = tables.SingleOrDefault(t => t.Map == origin.Map);
         var slot = table?.Slots.SingleOrDefault(s => s.Index == origin.SlotIndex);
         return slot is not null && origin.Species == slot.Species && origin.Level >= slot.MinimumLevel &&
@@ -39,10 +39,12 @@ public static class FishingBattleContract
             pokemon.Moves.SequenceEqual(PokemonMoveRules.InitialMovesCore(owned.Mechanics.Catalog, source, pokemon.Level));
     }
 
-    /// <summary>The five admitted Good Rod species and Old Rod Magikarp have source NONE/NONE item pairs.</summary>
+    /// <summary>Original ordinary rod item pairs. The caller always consumes the source 0–99 draw, including NONE/NONE.</summary>
     public static string HeldItem(FishingEncounterOrigin origin, int roll)
     {
         if (SourceSlot(origin) is null || roll is < 0 or >= 100) throw new ArgumentException("fishing_held_source");
-        return "ITEM_NONE";
+        return origin.Rod == FishingRod.Super && origin.Species.Value == "pret:SPECIES_SHELLDER"
+            ? roll < 45 ? "ITEM_NONE" : roll < 95 ? "ITEM_PEARL" : "ITEM_BIG_PEARL"
+            : "ITEM_NONE";
     }
 }

@@ -25,7 +25,7 @@ public partial class CampaignView
     {
         var items=_catalog.CityServiceItems;
         if(items.IsDefaultOrEmpty)return;
-        var icons=(_catalog.CityServices?.Icons??[]).AddRange(_catalog.GoodRodService?.Icons??[]);
+        var icons=(_catalog.CityServices?.Icons??[]).AddRange(_catalog.GoodRodService?.Icons??[]).AddRange(_catalog.SuperRodService.Icons);
         string firstIcon=document.Items[0].Icon;
         var position=document.Assets.Single(a=>a.Id==firstIcon);
         foreach(var item in items)
@@ -95,7 +95,8 @@ public partial class CampaignView
 
     private bool TryCityServiceItem(string item)
     {
-        if(!_catalog.CityServicesEnabled||item is not ("pret:ITEM_BICYCLE" or "pret:ITEM_OLD_ROD" or "pret:ITEM_GOOD_ROD"))return false;
+        if(!_catalog.CityServicesEnabled||item is not ("pret:ITEM_BICYCLE" or "pret:ITEM_OLD_ROD" or "pret:ITEM_GOOD_ROD" or "pret:ITEM_SUPER_ROD"))return false;
+        if(item=="pret:ITEM_SUPER_ROD"&&!_catalog.SuperRodEnabled)return false;
         if(item=="pret:ITEM_GOOD_ROD"&&_catalog.GoodRodService is null)return false;
         Apply(new(item=="pret:ITEM_BICYCLE"?"field_bicycle":"field_fish",Text:item));
         if(_session.State.ItemMenu is not null)

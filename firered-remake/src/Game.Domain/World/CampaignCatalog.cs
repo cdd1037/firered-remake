@@ -247,6 +247,10 @@ public interface ICampaignCatalog:IStoryCatalog
     RockTunnelTrainerCatalog? RockTunnelTrainers=>null;
     ImmutableArray<PewterMachineItem> CityServiceItems=>[];
     IReadOnlyDictionary<MapId,OldRodEncounterTable>? OldRodEncounters=>null;
+    bool SuperRodEnabled=>false;
+    SuperRodOwnedPokemonCatalog? SuperRodOwnership=>null;
+    SuperRodOpponentPokemonCatalog? SuperRodOpponents=>null;
+    ImmutableDictionary<MapId,OldRodEncounterTable> SuperRodEncounters=>ImmutableDictionary<MapId,OldRodEncounterTable>.Empty;
     bool GoodRodEnabled=>false;
     ImmutableDictionary<MapId,OldRodEncounterTable> GoodRodEncounters=>ImmutableDictionary<MapId,OldRodEncounterTable>.Empty;
     int? TerrainAt(MapId map,int x,int y)=>null;
