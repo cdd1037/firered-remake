@@ -815,6 +815,7 @@ public sealed partial class CampaignSession
             if(TryApplyVictoryRoadGateEffect(state,effect,out var victoryGateState)){state=victoryGateState;continue;}
             if(TryApplyRoute22Effect(state,effect,out var route22State)){state=route22State;continue;}
             if(TryApplyNationalDexEffect(state,effect,out var nationalState)){state=nationalState;continue;}
+            if(TryApplyHallOfFamePcEffect(state,effect,out var hallPcState)){state=hallPcState;continue;}
             if(TryApplyOakRatingEffect(state,effect,out var oakState)){state=oakState;continue;}
             if(TryApplyOldManEffect(state,effect,out var tutorialState)){state=tutorialState;continue;}
             if(TryApplyPcEffect(state,effect,out var pcState)){state=pcState;continue;}

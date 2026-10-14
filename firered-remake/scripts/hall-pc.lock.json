@@ -1,0 +1,38 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "importerSha256": "8b92e0afbde425fb2f787469bed4c1e6fdcda08df569e2d3eb6665324eeddb32",
+  "outputSha256": "f3cbc6198aa5325028cd7ae750f34fa17a695419f3a88f964072ec89c56b0310",
+  "inputs": [
+    {
+      "path": "src/hall_of_fame.c",
+      "byteLength": 36837,
+      "sha256": "00dd00b63f3edf8e0ee617a09936d1a51306cc9dc33e6021da8f1042af5dd4ab"
+    },
+    {
+      "path": "src/hof_pc.c",
+      "byteLength": 1208,
+      "sha256": "f0ce6deb477619d988f39f4d3f9884e5f1c62beccd01c7b882bceec50a915673"
+    },
+    {
+      "path": "src/strings.c",
+      "byteLength": 96631,
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+    },
+    {
+      "path": "data/scripts/pc.inc",
+      "byteLength": 2483,
+      "sha256": "9e2d8abcd0e8e96ca1ac8b63c7021b552a6f441ea181e24471340a9d2f0b9e99"
+    },
+    {
+      "path": "include/constants/help_system.h",
+      "byteLength": 1861,
+      "sha256": "01d10a298364d262a01200af867d917971e52fd8493f81247fc0078b472da364"
+    },
+    {
+      "path": "src/save.c",
+      "byteLength": 28672,
+      "sha256": "24f0b70d72cc83c50f7b2d6d73cb211c9b1272ab5fa40dc1d553ad48d1f4511c"
+    }
+  ]
+}

@@ -1,11 +1,15 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 using Game.Domain.Events;
 using Game.Domain.Pokemon;
 
 namespace Game.Application;
 
-public enum CampaignPcView { Main, StorageMenu, Deposit, Withdraw, PlayerItems }
-public sealed record CampaignPcState(CampaignPcView View,int StorageMenuSelection=0);
+public enum CampaignPcView { Main, StorageMenu, Deposit, Withdraw, PlayerItems, HallOfFame }
+public sealed record CampaignPcState(CampaignPcView View,int StorageMenuSelection=0)
+{
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignHallOfFamePc? HallOfFame { get; init; }
+}
 
 public sealed partial class CampaignSession
 {
@@ -76,6 +80,7 @@ public sealed partial class CampaignSession
             state.Script.Wait is not {Kind:StoryWaitKind.Presentation})return No("pc_callback_context_invalid");
         Decision<CampaignState> View(CampaignPcView view,int? selection=null)=>new(CommandStatus.Accepted,
             state with{Pc=pc with{View=view,StorageMenuSelection=selection??pc.StorageMenuSelection}});
+        if(pc.View==CampaignPcView.HallOfFame)return DecideHallOfFamePc(state,command);
         if(command.Kind=="pc_back")
         {
             if(pc.View is CampaignPcView.Deposit or CampaignPcView.Withdraw)return View(CampaignPcView.StorageMenu);
@@ -93,7 +98,7 @@ public sealed partial class CampaignSession
                 if(!_content.OakRatingEnabled)return No("pc_oaks_rating_not_implemented");
                 if(!_preflightingStory)PreflightOakPcEntry(state,row);
             }
-            if(row==3&&clear)return No("pc_hall_of_fame_not_implemented");
+            if(row==3&&clear&&!HallOfFamePcEnabled)return No("pc_hall_of_fame_not_enabled");
             return ResumePcScript(state,row);
         }
         if(command.Kind=="storage_select"&&pc.View==CampaignPcView.StorageMenu)
@@ -130,7 +135,7 @@ public sealed partial class CampaignSession
     {
         if(state.Pc is null||state.Script.Wait is not {} wait||wait.Kind is not (StoryWaitKind.Presentation or StoryWaitKind.Inventory))
             return new(CommandStatus.Fault,state,"pc_callback_context_invalid");
-        var next=state with{Pc=null,ItemMenu=null,Dialogue=null,Motions=[],PresentationTicks=0,PresentationEffects=[]};
+        var next=state with{Pc=state.Pc.HallOfFame is {ReturnPending:true}?state.Pc:null,ItemMenu=null,Dialogue=null,Motions=[],PresentationTicks=0,PresentationEffects=[]};
         if(result is {} value)next=next with{Script=next.Script with{Variables=next.Script.Variables.SetItem("VAR_RESULT",value)}};
         return new(CommandStatus.Accepted,Pump(Advance(next,StoryRules.Continue(next.Script,wait.CorrelationId,_content))));
     }

@@ -36,6 +36,7 @@ public partial class CampaignView
         .Replace("{DYNAMIC 0x00}",name??"",StringComparison.Ordinal);
     private void SynchronizeStorage()
     {
+        SynchronizeHallPc();
         var view=_session.State.Pc?.View;
         if(view!=_pcView)
         {
@@ -64,6 +65,7 @@ public partial class CampaignView
     private bool StorageInput(InputEventKey key)
     {
         if(key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape)return false;
+        if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return HallPcInput(key);
         if(!key.Pressed)return true;
         if(_storagePartyPeek){if(key.Keycode is Key.Enter or Key.Backspace)_storagePartyPeek=false;return true;}
         if(_pcNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace)_pcNotice=null;return true;}
@@ -108,6 +110,7 @@ public partial class CampaignView
     }
     private bool MouseStorage(Vector2 point)
     {
+        if(_session.State.Pc?.View==CampaignPcView.HallOfFame)return MouseHallPc(point);
         if(_storagePartyPeek)return new Rect2(0,140,80,20).HasPoint(point)&&MouseKey(Key.Backspace);
         if(_pcNotice is not null)return MouseConfirm(point,MouseMessage);
         var pc=_session.State.Pc!;
@@ -126,6 +129,7 @@ public partial class CampaignView
     private void DrawStorage()
     {
         var pc=_session.State.Pc!;if(pc.View==CampaignPcView.PlayerItems)return;
+        if(pc.View==CampaignPcView.HallOfFame){DrawHallPc();return;}
         if(pc.View is CampaignPcView.Main or CampaignPcView.StorageMenu)
         {
             var labels=pc.View==CampaignPcView.Main?_session.PcMenuTextSymbols.ToArray():_catalog.PokemonStorageSource!.StorageMenu.Select(o=>o.TextSymbol).ToArray();
