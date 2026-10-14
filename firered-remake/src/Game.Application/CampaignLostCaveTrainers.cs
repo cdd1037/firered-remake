@@ -33,6 +33,9 @@ public sealed partial class CampaignSession
                 "lost_cave_trainer_source_occurrence");
             return;
         }
+        // trainerbattle_no_intro does not call SetMapVarsToTrainer. The source
+        // map scene therefore preserves any stale VAR_LAST_TALKED; actor identity
+        // comes from the authenticated local ID and completed source movements.
         var player = state.World.Player;
         if (!IsLostCaveTrainer(trainer) || trainer.Value != "pret:TRAINER_LADY_SELPHY" || !noIntro ||
             source.Mode != 3 || source.BattleTypeFlags != 8 || source.ScriptEntry != LostCaveSelphyScene ||
@@ -43,8 +46,7 @@ public sealed partial class CampaignSession
             state.Script.Flags.GetValueOrDefault("FLAG_HIDE_LOST_CAVE_SELPHY") || state.BattledTrainers.Contains(trainer.Value) ||
             state.LastTalked != LostCaveSelphyActor || !state.Actors.TryGetValue(LostCaveSelphyActor, out var actor) ||
             !actor.Active || actor.Invisible || actor.ScriptId != "0x0" || actor.SourceLocalId != 1 ||
-            actor.X != 5 || actor.Y != 7 || actor.Elevation != 3 || actor.Facing != Direction.South ||
-            state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED") != actor.SourceLocalId)
+            actor.X != 5 || actor.Y != 7 || actor.Elevation != 3 || actor.Facing != Direction.South)
             throw new InvalidDataException("lost_cave_selphy_source_occurrence");
     }
 
