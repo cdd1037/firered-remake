@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Authenticate the nine original FireRed NPC trades and add only Cinnabar's Lounge.
 
-The pinned source is read as Git blobs, never executed. Runtime IDs 0/2/4/6/7/8
-reuse the original maps; source evidence for the other three does not admit them.
+The pinned source is read as Git blobs, never executed. Runtime IDs 0/2/3/4/6/7/8
+reuse the original maps; source evidence for the other two does not admit them.
 """
 import argparse
 import hashlib
@@ -20,12 +20,12 @@ RESOURCE_ID = 'firered-npc-trades-v1'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 READER_SHA = '13a6129f2348d43716ad1c398bb7d797b9f6a22f23eb7bed93908fb0d18c407f'
 FOSSIL_READER_SHA = '00c8e1105f255e0895eebc5b52a18b5d199ba36a5aedb06ea3961e861b8440c8'
-MANIFEST_SHA256 = 'b8a7a2b17f7114ca74b2ec4a8a10b37bb5269cd71ef8c5439a9d3183345032cb'
-LOCK_SHA256 = '08c9ee2df1df83d49a2fd0a8b6f028cbea3659e239124b2c89264db646032c28'
+MANIFEST_SHA256 = '66e609b0e32ccf1bddae02940f6295af77c39ee8c6942a6de6e0ca2f64e8019d'
+LOCK_SHA256 = 'baf50c94b9185a9748576029223d77dbeba922e333762f3bd42584b16670ab1c'
 SEMANTIC_SHA256 = 'c259397a134f07268ae6d788ff7c7f2cb66d6d19755e07c3d525f4dec92c7414'
 MAPS = ['CinnabarIsland_PokemonLab_Lounge']
-LIVE_SCRIPT_MAPS = MAPS + ['UndergroundPath_NorthEntrance', 'Route11_EastEntrance_2F', 'Route2_House']
-ENABLED_TRADE_IDS = [0, 2, 4, 6, 7, 8]
+LIVE_SCRIPT_MAPS = MAPS + ['UndergroundPath_NorthEntrance', 'Route11_EastEntrance_2F', 'Route2_House', 'VermilionCity_House2']
+ENABLED_TRADE_IDS = [0, 2, 3, 4, 6, 7, 8]
 TRADE_MAPS = ['Route2_House', 'CeruleanCity_House3', 'UndergroundPath_NorthEntrance',
               'VermilionCity_House2', 'Route11_EastEntrance_2F', 'Route18_EastEntrance_2F',
               'CinnabarIsland_PokemonLab_Lounge', 'CinnabarIsland_PokemonLab_ExperimentRoom']
@@ -162,7 +162,8 @@ def retained_maps(src, current):
         ('CinnabarIsland_PokemonLab_ExperimentRoom', 'fossil-lab-region/cinnabar-island-pokemon-lab-experiment-room'),
         ('UndergroundPath_NorthEntrance', 'vermilion-region/underground-path-north-entrance'),
         ('Route11_EastEntrance_2F', 'route11-region/route-11-east-entrance-2f'),
-        ('Route2_House', 'route11-region/route-2-house')]:
+        ('Route2_House', 'route11-region/route-2-house'),
+        ('VermilionCity_House2', 'npc-trade-elyssa/vermilion-city-house2')]:
         path='content/generated/'+relative+'/runtime-map.json'
         raw=(current/path).read_bytes(); doc=json.loads(raw); events=src.json(f'data/maps/{name}/map.json')
         need(doc['events']==events,'Retained original map events differ: '+name)
@@ -214,7 +215,7 @@ def main():
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
         contracts=dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,enabledTradeIds=ENABLED_TRADE_IDS,retainedMaps=retained,
             mapTopology=links,construction=construction,numericRecords=numeric_records,
-            deferredTradeIds=[i for i in range(9) if i not in ENABLED_TRADE_IDS],limitations=['Only original IDs 0/2/4/6/7/8 are enabled. Other three original records are source evidence only.',
+            deferredTradeIds=[i for i in range(9) if i not in ENABLED_TRADE_IDS],limitations=['Only original IDs 0/2/3/4/6/7/8 are enabled. Other two original records are source evidence only.',
             'Jynx original Fab Mail/message is retained as evidence; no mail store or Jynx runtime admission.',
             'No source cutscene visual/audio timing parity is claimed by this content contract.'])
         docs={'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,sourceTree=reader.TREE,fullSourceHash=source_hash,maps=entries,inputFiles=lock['files'],tilesets=TILESETS),

@@ -75,7 +75,7 @@ public sealed class PretVermilionRegion
         "MAP_ROUTE11" => new("map.route-11"),
         "MAP_SSANNE_EXTERIOR" => new("map.ssanne-exterior"),
         "MAP_VERMILION_CITY_HOUSE1" => new("map.vermilion-city-house-1"),
-        "MAP_VERMILION_CITY_HOUSE2" => new("map.vermilion-city-house-2"),
+        "MAP_VERMILION_CITY_HOUSE2" => new("map.vermilion-city-house2"),
         "MAP_VERMILION_CITY_HOUSE3" => new("map.vermilion-city-house-3"),
         "MAP_VERMILION_CITY_POKEMON_FAN_CLUB" => new("map.vermilion-city-pokemon-fan-club"),
         "MAP_VERMILION_CITY_GYM" => new("map.vermilion-city-gym"),

@@ -59,15 +59,17 @@ public partial class CampaignView
         }
         catch{replacement.Dispose();throw;}
     }
-    private Dictionary<string,SpriteAsset> LoadRegionNpcs(string manifest,CampaignResourceCache.Owner owner,bool projectRelative=false)
+    private Dictionary<string,SpriteAsset> LoadRegionNpcs(string manifest,CampaignResourceCache.Owner owner)
     {
-        // PretViridianRegion authenticated this exact manifest and every PNG before exposing maps.
-        var root=projectRelative?_root:System.IO.Path.GetDirectoryName(manifest)!;using var doc=JsonDocument.Parse(System.IO.File.ReadAllBytes(manifest));var result=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
+        // Content authenticates each manifest and image before exposing its map binding.
+        var localRoot=System.IO.Path.GetDirectoryName(manifest)!;using var doc=JsonDocument.Parse(System.IO.File.ReadAllBytes(manifest));var result=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
         foreach(var e in doc.RootElement.GetProperty("graphics").EnumerateArray())
         {
             var path=e.GetProperty("texturePath").GetString()!;
             if(System.IO.Path.IsPathRooted(path)||path.Split('/').Contains(".."))throw new InvalidDataException("Region NPC path invalid.");
-            var full=System.IO.Path.Combine(root,path);
+            bool reused=e.TryGetProperty("reuseExisting",out var reuse)&&reuse.GetBoolean();
+            if(reused&&!path.StartsWith("content/generated/",StringComparison.Ordinal))throw new InvalidDataException("Reused region NPC path invalid.");
+            var full=System.IO.Path.Combine(reused?_root:localRoot,path);
             if(Convert.ToHexStringLower(SHA256.HashData(System.IO.File.ReadAllBytes(full)))!=e.GetProperty("sha256").GetString())throw new InvalidDataException("Region NPC image differs.");
             var texture=owner.Texture(full,expectedSha256:e.GetProperty("sha256").GetString()!);int w=e.GetProperty("frameWidth").GetInt32(),h=e.GetProperty("frameHeight").GetInt32(),count=e.GetProperty("frameCount").GetInt32();var anchor=e.GetProperty("tileCenterAnchor");
             if(texture.GetWidth()!=w*count||texture.GetHeight()!=h)throw new InvalidDataException("Region NPC sheet size invalid.");

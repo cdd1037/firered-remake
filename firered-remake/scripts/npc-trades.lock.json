@@ -271,6 +271,7 @@
       "gitBlobSha1": "2bd2400be6f4483ab085f7ccd67d4ae0fae5128b",
       "path": "data/maps/VermilionCity_House2/scripts.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],
@@ -281,6 +282,7 @@
       "gitBlobSha1": "339cd7d87cc7ea51224f34bfd1cdec26f6cdb2d5",
       "path": "data/maps/VermilionCity_House2/text.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],

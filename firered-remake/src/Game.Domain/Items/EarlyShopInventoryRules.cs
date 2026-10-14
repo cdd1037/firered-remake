@@ -25,6 +25,7 @@ public static class EarlyShopInventoryRules
     public static void ValidateCatalog(EarlyShopCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.Profile == NpcTradeShopCatalog.Profile) { NpcTradeShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == FossilLabShopCatalog.Profile) { FossilLabShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == TrainerTowerShopCatalog.Profile) { TrainerTowerShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == PowerPlantShopCatalog.Profile) { PowerPlantShopCatalog.ValidateCatalog(catalog); return; }
@@ -116,6 +117,7 @@ public static class EarlyShopInventoryRules
     public static string? Validate(EarlyShopCatalog catalog, InventoryState? state)
     {
         ValidateCatalog(catalog);
+        if (NpcTradeShopCatalog.For(catalog) is { } trade) return trade.ValidateInventory(state);
         if (FossilLabShopCatalog.For(catalog) is { } fossil) return fossil.ValidateInventory(state);
         if (TrainerTowerShopCatalog.For(catalog) is { } tower) return tower.ValidateInventory(state);
         if (PowerPlantShopCatalog.For(catalog) is { } plant) return plant.ValidateInventory(state);

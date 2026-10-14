@@ -123,7 +123,7 @@ public partial class CampaignView:Node2D
             Texture2D MapTexture(string path)=>owner.Texture(path,expectedSha256:source.Artifacts.FirstOrDefault(a=>System.IO.Path.Combine(source.DirectoryPath,a.Path)==path)?.Sha256);
             var npcs=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
             var binding=(_mapPresentation??=PretCampaignMapPresentation.Create(_catalog))[id];
-            if(binding.NpcSourcePath is {} npcSource)npcs=LoadRegionNpcs(npcSource,owner,(_catalog.FightingDojoEnabled&&npcSource==_catalog.FightingDojoRegion.NpcSourcePath)||(_catalog.FossilLabEnabled&&npcSource==_catalog.FossilLabRegion.NpcSourcePath)||npcSource==_catalog.NpcTradeContent.NpcSourcePath);
+            if(binding.NpcSourcePath is {} npcSource)npcs=LoadRegionNpcs(npcSource,owner);
             else
             {
             using var json=JsonDocument.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(source.DirectoryPath,"npc-sprites.json")));

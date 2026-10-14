@@ -26,6 +26,7 @@ public sealed record PokemonLeagueMartStock(string SourceCommit, ImmutableArray<
 
     public override void Validate(EarlyShopCatalog catalog)
     {
+        catalog = NpcTradeShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
         catalog = FossilLabShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
         catalog = TrainerTowerShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;
         catalog = PowerPlantShopCatalog.For(catalog)?.Predecessor.Catalog ?? catalog;

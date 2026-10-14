@@ -24,6 +24,12 @@ public partial class CampaignView
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretPewterMachines.IconRgba(icon));
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
+        foreach (var icon in _catalog.NpcTradeElyssa.Items.Icons)
+        {
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
+                _catalog.NpcTradeElyssa.IconFiles[icon.RgbaPath]);
+            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+        }
     }
     private EarlyShopItemDefinition? EarlyItem(ItemId id) => _catalog.EarlyShop?.Items.SingleOrDefault(i => i.Id == id);
     private FieldMedicineEffect FieldMedicineEffectFor(ItemId id) => _catalog.EarlyShop is {} shop
