@@ -8,6 +8,8 @@ namespace Game.Application;
 
 public sealed record CampaignItemMenu(string Origin,string View,string? MessageSymbol=null,string ReturnView="top",InventoryState? DisplayInventory=null)
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int Pocket{get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public CampaignBagToss? Toss{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<string>? SourceMessages{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] public int SourceMessageIndex{get;init;}
     [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] public long? TargetInstanceId{get;init;}
@@ -40,6 +42,8 @@ public sealed partial class CampaignSession
         Decision<CampaignState> No(string error)=>new(CommandStatus.Rejected,state,error);
         Decision<CampaignState> Menu(string view)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View=view,MessageSymbol=null,DisplayInventory=null,SourceMessages=null,SourceMessageIndex=0}});
         Decision<CampaignState> Message(string symbol,string returnView)=>new(CommandStatus.Accepted,state with{ItemMenu=menu with{View="message",MessageSymbol=symbol,ReturnView=returnView}});
+        if(command.Kind=="bag_pocket")return SelectBagPocket(state,command);
+        if(command.Kind=="bag_toss_open")return OpenBagToss(state,command);
         if(command.Kind is "field_give" or "field_take" or "held_bag_open" or "pc_give")return DecideHeldItem(state,command);
         if(menu.Origin=="bag"&&menu.TargetInstanceId is not null&&command.Kind is not ("menu_back" or "berry_open" or "machine_open"))return No("held_item_selection_active");
         if(command.Kind=="berry_open")

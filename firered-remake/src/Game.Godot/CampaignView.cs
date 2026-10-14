@@ -368,6 +368,7 @@ public partial class CampaignView:Node2D
         if(TryFieldMenuInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.OldManTutorial is not null&&TryOldManInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.Shop is not null&&ShopInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
+        if(_session.State.ItemMenu is not null&&BagTossInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.ItemMenu is not null&&MachineInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.ItemMenu is not null&&!_fieldMedicineTargetOpen&&TryQuestPocketInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
         if(_session.State.ItemMenu is not null&&ItemInput(key)){QueueRedraw();GetViewport().SetInputAsHandled();return;}
@@ -542,7 +543,7 @@ public partial class CampaignView:Node2D
             if(_status.StartsWith("nickname_",StringComparison.Ordinal))DrawString(_font,new(20,127),_status,fontSize:8,modulate:Colors.Red);
         }
         if(_session.State.Pc is not null)DrawStorage();
-        if(_session.State.ItemMenu is not null&&!DrawMachines()&&!DrawQuestPocket())DrawItemMenu();
+        if(_session.State.ItemMenu is not null&&!DrawBagToss()&&!DrawMachines()&&!DrawQuestPocket())DrawItemMenu();
         if(_session.State.Shop is not null){DrawShop();if(_shopNotice is not null)ItemMessageBox(_shopNotice);}
         if(FieldMenuOpen)DrawFieldMenu();
         DrawItemfinder();DrawVsSeekerMessage();

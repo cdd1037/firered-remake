@@ -89,11 +89,15 @@ public partial class CampaignView
     {
         if (HeldItemScreen || MailScreen)return false;
         if (!QuestPocketEnabled || key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape) return false;
+        // Old key-item return views preserve their visual pocket. Reconcile it
+        // on actual Bag input, never from a shared/Teachy TV drawing routine.
+        if(key.Pressed&&!key.Echo&&_session.State.ItemMenu is { View:"bag", Toss:null } menu&&menu.Pocket!=_questPocket)
+            Apply(new("bag_pocket",Choice:_questPocket));
         if (_questPocket == 0)
         {
             // The existing Potion popup, notice, quantity and command flow retain input ownership.
             if (_itemPopup || _itemQuantityOpen || _itemNotice is not null || key.Keycode is not (Key.Left or Key.Right)) return false;
-            if (key.Pressed && !key.Echo && key.Keycode == Key.Right) _questPocket = 1;
+            if (key.Pressed && !key.Echo && key.Keycode == Key.Right) SelectFieldBagPocket(1);
             return true;
         }
         if (!key.Pressed || key.Echo) return true;
@@ -127,6 +131,8 @@ public partial class CampaignView
                 { _questPocketNotice = "This item can't be held."; return true; }
                 if (_questPocket == 2 && _questPocketAction == 0)
                 { StartGiveItem(QuestPocketStacks[_questPocketCursor].Item); return true; }
+                if (_questPocket == 2 && actions[_questPocketAction] == _itemSkin.Text("gOtherText_Toss"))
+                { OpenBagToss(QuestPocketStacks[_questPocketCursor].Item); return true; }
                 if (_questPocket == 1 && _session.SupportsRegisteredKeyItem(QuestPocketStacks[_questPocketCursor].Item.Value) && _questPocketAction < 2)
                 {
                     string registeredId = QuestPocketStacks[_questPocketCursor].Item.Value;
@@ -148,14 +154,13 @@ public partial class CampaignView
                 if (_questPocketAction != actions.Length - 1)
                     _questPocketNotice = _questPocket == 1
                         ? QuestPocketStacks[_questPocketCursor].Item==BillItemRules.FameCheckerId?"FAME CHECKER viewing is not\nimplemented yet.":QuestPocketStacks[_questPocketCursor].Item==QuestItemRules.TeachyTvId?"TEACHY TV playback is not\nimplemented yet.":_questPocketUi!.Texts["gText_OakForbidsUseOfItemHere"].Replace("{PLAYER}", _session.State.PlayerName, StringComparison.Ordinal)
-                        : _questPocketAction == 0 ? "Giving POKé BALLs is not\nimplemented yet." : "Tossing POKé BALLs is not\nimplemented yet.";
+                        : "This action isn't available.";
             }
             return true;
         }
         if (key.Keycode is Key.Left or Key.Right)
         {
-            _questPocket = Math.Clamp(_questPocket + (key.Keycode == Key.Left ? -1 : 1), 0, 2);
-            _questPocketCursor = 0; _questPocketAction = 0;
+            SelectFieldBagPocket(Math.Clamp(_questPocket + (key.Keycode == Key.Left ? -1 : 1), 0, 2));
             return true;
         }
         if (key.Keycode == Key.Backspace) { Apply(new("menu_back")); return true; }
@@ -180,12 +185,12 @@ public partial class CampaignView
 
     private bool DrawQuestPocket()
     {
-        if (HeldItemScreen || !QuestPocketEnabled || _questPocket == 0) return false;
+        if (HeldItemScreen || MailScreen || !QuestPocketEnabled || _questPocket == 0) return false;
         DrawQuestPocketAsset(_questPocket == 1 ? "bag-key-items-background" : "bag-poke-balls-background");
         var title = _questPocketUi!.Texts[_questPocket == 1 ? "gText_KeyItems2" : "gText_PokeBalls2"];
         var width = _sourceWhite.Font.GetStringSize(_sourceWhite.PrepareText(title), fontSize: _sourceWhite.Size).X;
         SourceText(_sourceWhite, OpeningItemUiSkin.BagTitleCenter - new Vector2((int)Math.Ceiling(width / 2), 0), title);
-        if (_session.State.ItemMenu?.View != "message" && !_questPocketPopup && _questPocketNotice is null && _itemNotice is null)
+        if (_session.State.ItemMenu is { View:not "message", Toss:null } && !_questPocketPopup && _questPocketNotice is null && _itemNotice is null)
         {
             DrawQuestPocketAsset("pocket-left-arrow");
             if (_questPocket == 1) _itemSkin.DrawPocketRightArrow(this);

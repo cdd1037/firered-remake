@@ -10,7 +10,7 @@ public partial class CampaignView
     private long[] _heldTargetIds = [];
     private bool HeldItemScreen => _session.State.ItemMenu is { Origin: "party", View: "held" } || _heldGiveItem is not null;
     private int ItemActionCount => ItemActionLabels().Length;
-    private int ItemActionY => ItemActionCount == 3 ? 106 : 130;
+    private int ItemActionY => _session.State.ItemMenu?.Origin == "bag" ? 154 - ItemActionCount * 16 : ItemActionCount == 3 ? 106 : 130;
     private string[] ItemActionLabels()
     {
         var menu = _session.State.ItemMenu!;
@@ -18,6 +18,11 @@ public partial class CampaignView
         if (menu.View == "deposit") return ["DEPOSIT", "CANCEL"];
         bool holdable = _itemCursor < FieldItemStacks.Length && _session.CanGiveHeldItem(FieldItemStacks[_itemCursor].Item);
         if (menu.TargetInstanceId is not null) return holdable ? ["GIVE", "CANCEL"] : ["CANCEL"];
+        // Field action tables belong to the pocket, not an item's CanToss flag.
+        // Key Items and TM CASE use their own menus and never enter this branch.
+        if (menu.Origin == "bag" && menu.View is "bag" or "berries")
+            return [menu.View == "bag" && _itemCursor < FieldItemStacks.Length && _session.CanGiveMail(FieldItemStacks[_itemCursor].Item) ? "CHECK" : "USE",
+                "GIVE", "TOSS", menu.View == "berries" ? "EXIT" : "CANCEL"];
         return holdable ? ["USE", "GIVE", "CANCEL"] : ["USE", "CANCEL"];
     }
     private void OpenPartyHeldItems()

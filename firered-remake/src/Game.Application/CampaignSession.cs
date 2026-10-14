@@ -457,6 +457,7 @@ public sealed partial class CampaignSession
     {
         try
         {
+            if(state.ItemMenu?.Toss is not null)return state.MailComposer is not null?DecideMailComposer(state,command):DecideBagToss(state,command);
             if(state.SlotMachine is not null||command.Kind.StartsWith("slot_",StringComparison.Ordinal))return DecideSlotMachine(state,command);
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);
             if(command.Kind=="field_fly")return StartFieldFly(state,command);

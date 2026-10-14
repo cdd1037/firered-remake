@@ -130,3 +130,7 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /tests/Game.MailComposerView.Tests/*.cs.uid
 
 /tests/Game.MailPresentation.Tests/*.cs.uid
+
+/tests/Game.BagTossView.Tests/Assets/
+
+/tests/Game.BagTossView.Tests/*.cs.uid

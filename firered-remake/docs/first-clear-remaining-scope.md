@@ -74,7 +74,7 @@ Fly已完成原16号道路Cut／Lea-Jed双打／HM02赠送／教学／取消／�
 
 ## 菜单、专属表现和声音
 
-- 实用界面：PC Move Pokémon／Move Items、放生及HM保护、箱子命名／壁纸／标记、名人堂回看；图鉴栖息地／搜索排序／分布／大小／叫声页面；训练家卡背面和持久游玩时长。普通PC存取／14×30容量、数值图鉴和卡片正面已有功能。普通持物与50TM的给予／取回／交换及PC普通物品GIVE已接通；7HM按原重要物品规则禁止携带。普通背包TOSS入口仍缺。[PC](pokemon-storage-contract.md)、[携带物](held-item-transfers.md)、[菜单](basic-menu-application.md)
+- 实用界面：PC Move Pokémon／Move Items、放生及HM保护、箱子命名／壁纸／标记、名人堂回看；图鉴栖息地／搜索排序／分布／大小／叫声页面；训练家卡背面和持久游玩时长。普通PC存取／14×30容量、数值图鉴和卡片正面已有功能。普通持物与50TM的给予／取回／交换及PC普通物品GIVE已接通；7HM按原重要物品规则禁止携带。场外背包Items／Balls／Berry Pouch的TOSS已接通，取消、结果确认才扣量、最后栈压缩与真实存读／短View通过；战内Berry Pouch丢弃仍未接通。[PC](pokemon-storage-contract.md)、[携带物](held-item-transfers.md)、[菜单](basic-menu-application.md)
 - 选项：文字速度、SHIFT／SET、边框可编辑；Battle Scene、Sound、Button Mode的玩家入口仍提示不可用。测试Scene Off不等于完整设置功能。菜单鼠标／键盘已有实现，地图鼠标移动／寻路后置。[选项代码](../src/Game.Godot/CampaignOptionsView.cs)、[鼠标边界](menu-pointer-controls.md)
 - 专属动画：当前矩阵20／354，余334未纳入专属还原。通用效果不计专属；已有20也有各自源／主机／原生证据边界。[矩阵](battle-system-completion-matrix.md)、[trace批次](source-trace-choreography.md)
 - 场景与物种：原片头／大木介绍、原命名键盘、部分进化／捕获／狩猎演出和完整菜单动效仍缺；晃晃斑PID斑点未实现。Hall背景混色／纸屑／排布／过渡未全还原；片尾66条源脚本与顺序保留，地图镜头／放大构图等仍简化，时长显示--:--。[联盟表现差异](pokemon-league-presentation.md#verification-and-explicit-boundaries)、[物种边界](full-scope-audit.md#61-三个不同集合)

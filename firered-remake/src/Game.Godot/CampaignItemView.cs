@@ -22,6 +22,8 @@ public partial class CampaignView
                 && _itemMenuKey is "bag:bag" or "bag:message";
             if(!sameBag)ResetQuestPocketPresentation();_itemMenuKey=key;_itemCursor=0;_itemAction=0;_itemQuantity=1;_itemPopup=false;_itemQuantityOpen=false;_itemNotice=null;_fieldMedicineTargetOpen=false;_mtMoonMoveSlotOpen=false;}
         if(menu is not null)_held=null;
+        if(menu is { Origin:"bag", View:"bag" } or { Origin:"bag", View:"message", ReturnView:"bag" })_questPocket=menu.Pocket;
+        SynchronizeBagToss();
         SynchronizeMail();
     }
     private bool ItemInput(InputEventKey key)
@@ -54,6 +56,8 @@ public partial class CampaignView
                 if(_itemAction==count-1){_itemPopup=false;return true;}
                 if(ItemActionLabels()[_itemAction]=="GIVE")
                 {StartGiveItem((menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item,menu.View=="withdraw");return true;}
+                if(ItemActionLabels()[_itemAction]=="TOSS")
+                {OpenBagToss(FieldItemStacks[_itemCursor].Item);return true;}
                 if(menu.Origin=="bag"){_itemPopup=false;if(_catalog.EarlyShop is not null){var item=FieldItemStacks[_itemCursor].Item;if(item.Value=="pret:ITEM_SACRED_ASH"&&_session.SacredAshEnabled){Apply(new("field_sacred_ash",Text:item.Value));return true;}if(_session.CanGiveMail(item)){Apply(new("mail_preview_open",Text:item.Value));return true;}if(TryOpenMtMoonItem(item))return true;if(_catalog.MtMoonEnabled&&item==EscapeRopeRules.Item){var revision=_session.Revision;Apply(new("field_escape_rope",Text:item.Value));if(_session.Revision==revision)_itemNotice=FieldConsumableNotice(_status);return true;}if(_catalog.RepelEnabled&&(item==EarlyRepelRules.Item||_catalog.CeladonApproachEnabled&&item==LavenderItemRules.SuperRepelId||_catalog.SaffronGymEnabled&&item==PretSaffronGymItems.MaxRepelId)){var revision=_session.Revision;Apply(new("field_repel",Text:item.Value));if(_session.Revision==revision)_itemNotice=_status;return true;}if(!CanSelectFieldMedicine(item)){_itemNotice="This item's use is not\nimplemented yet.";return true;}_fieldMedicineTarget=0;_fieldMedicineTargetOpen=true;return true;}Apply(new("field_potion"));if(_session.State.ItemMenu?.View!="message")_itemNotice=_status;return true;}
                 var stacks=menu.View=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks;
                 if(stacks[_itemCursor].Item!=OpeningInventoryRules.PotionId){_itemPopup=false;_itemNotice="PC storage for this item is\nnot implemented yet.";return true;}
@@ -101,19 +105,20 @@ public partial class CampaignView
         if(_itemPopup)
         {
             var labels=ItemActionLabels();
-            DrawItemActionPopup(labels.Length==3,labels,_itemAction,InventoryName((view=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item));
+            DrawItemActionPopup(labels.Length==3,labels,_itemAction,InventoryName((view=="withdraw"?_session.State.Inventory!.PcItems:FieldItemStacks)[_itemCursor].Item),menu.Origin=="bag");
         }
         if(_itemQuantityOpen)ItemMessageBox(ItemText(view=="withdraw"?"gText_WithdrawHowMany":"gText_DepositHowManyStrVars1")+"   × "+_itemQuantity);
         if(_fieldMedicineTargetOpen){if(MtMoonTargetActive)DrawMtMoonTargets();else DrawFieldMedicineTargets();}
         if(_itemNotice is not null)ItemMessageBox(_itemNotice);
         NotePokemonTowerFluteMessage();
     }
-    private void DrawItemActionPopup(bool pc,string[] labels,int selected,string? itemName=null)
+    private void DrawItemActionPopup(bool pc,string[] labels,int selected,string? itemName=null,bool fieldBag=false)
     {
-        var frame=pc?OpeningItemUiSkin.PcActionFrame:OpeningItemUiSkin.BattleBagActionFrame;
+        int y=144-labels.Length*16;
+        var frame=fieldBag?new Rect2(168,y,72,labels.Length*16+16):pc?OpeningItemUiSkin.PcActionFrame:OpeningItemUiSkin.BattleBagActionFrame;
         _battleSkin.DrawStandardFrame(this,frame);
-        for(int i=0;i<labels.Length;i++)SourceText(_sourceNormal,pc?OpeningItemUiSkin.PcActionText(i):OpeningItemUiSkin.BattleBagActionText(i),labels[i]);
-        SourceText(_sourceNormal,pc?OpeningItemUiSkin.PcActionCursor(selected):OpeningItemUiSkin.BattleBagActionCursor(selected),_itemSkin.Text("gText_SelectorArrow2"));
+        for(int i=0;i<labels.Length;i++)SourceText(_sourceNormal,fieldBag?new Vector2(184,y+10+i*16):pc?OpeningItemUiSkin.PcActionText(i):OpeningItemUiSkin.BattleBagActionText(i),labels[i]);
+        SourceText(_sourceNormal,fieldBag?new Vector2(176,y+10+selected*16):pc?OpeningItemUiSkin.PcActionCursor(selected):OpeningItemUiSkin.BattleBagActionCursor(selected),_itemSkin.Text("gText_SelectorArrow2"));
         _itemSkin.DrawStandardFrame(this,OpeningItemUiSkin.PcSelectedFrame);
         ItemLines(_sourceNormal,OpeningItemUiSkin.PcSelectedText,_itemSkin.FormatText("gText_Var1IsSelected",itemName??_itemSkin.PotionName));
     }
@@ -129,7 +134,7 @@ public partial class CampaignView
         {
             var title=view=="berries"?_catalog.TextPages("gText_BerryPouch_2")[0]:_itemSkin.Text(view=="deposit"?"gText_DepositItem":"gText_Items2");var center=view=="deposit"?OpeningItemUiSkin.DepositTitleCenter:OpeningItemUiSkin.BagTitleCenter;
             var font=view=="deposit"?_sourceSmall:_sourceWhite;float width=font.Font.GetStringSize(font.PrepareText(title),fontSize:font.Size).X;SourceText(font,center-new Vector2((int)Math.Ceiling(width/2),0),title);
-            if(view is not ("deposit" or "berries"))_itemSkin.DrawPocketRightArrow(this);
+            if(view is not ("deposit" or "berries")&&!submenu&&message is null)_itemSkin.DrawPocketRightArrow(this);
         }
         var stacks=pc?inventory.PcItems:view=="berries"?inventory.Berries??[]:inventory.BagItems;
         cursor=Math.Clamp(cursor,0,stacks.Length);int start=Math.Max(0,cursor-5);

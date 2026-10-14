@@ -236,6 +236,7 @@ public partial class CampaignView
     private bool NavigateItemsPointer(Vector2 point, int direction)
     {
         var menu = _session.State.ItemMenu!;
+        if(menu.Toss is not null)return BagTossMouse(point,direction);
         if (_itemNotice is not null || menu.View == "message") return false;
         if (HeldItemScreen) return HeldItemMouse(point, direction);
         if (MachineActive)
@@ -365,6 +366,7 @@ public partial class CampaignView
     private bool MouseItems(Vector2 point)
     {
         var menu = _session.State.ItemMenu!;
+        if(menu.Toss is not null)return BagTossMouse(point);
         if (_itemNotice is not null) return MouseConfirm(point, MouseMessage);
         if (MailScreen) return MailMouse(point);
         if (HeldItemScreen) return HeldItemMouse(point);
