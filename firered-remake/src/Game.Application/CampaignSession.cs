@@ -43,6 +43,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingDefault)] public bool IsSurfing{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSurfEffect? SurfEffect{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFishing? Fishing{get;init;}
+    [JsonRequired] public int Coins { get; init; }
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCoinsBox? CoinsBox { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMoneyBox? MoneyBox{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMagikarpGift? MagikarpGift{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEeveeGift? EeveeGift{get;init;}
@@ -299,7 +301,7 @@ public sealed partial class CampaignSession
         if(s.Script.Variables.Any(x=>x.Value is <0 or >65535)||s.Script.Fame.Any(x=>x.Key is <0 or >15||x.Value is null||x.Value.PickState is <0 or >2||x.Value.FlavorFlags is <0 or >63)||s.Script.Revision<0||s.Script.EffectSequence<0)return "save_script_invalid";
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
-        if(s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.MagikarpRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
+        if(s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.MagikarpRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
         if(s.FossilMenu is not null||s.MailInteraction is not null)return "save_event_active";
         if(s.PokemonLeagueCompletion is not null)return "save_pokemon_league_completion_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
@@ -316,6 +318,7 @@ public sealed partial class CampaignSession
         var oldAmberError=ValidateOldAmberProgress(s);if(oldAmberError is not null)return oldAmberError;
         var fossilGiftError=ValidateFossilLabProgress(s);if(fossilGiftError is not null)return fossilGiftError;
         var giftIdentityError=ValidateGiftIdentityUniqueness(s);if(giftIdentityError is not null)return giftIdentityError;
+        var coinError=ValidateGameCornerCoins(s);if(coinError is not null)return coinError;
         var teaError=ValidateRegionalTeaProgress(s);if(teaError is not null)return teaError;
         var trainerTowerError=ValidateTrainerTowerProgress(s);if(trainerTowerError is not null)return trainerTowerError;
         var parcelError=ValidateParcelState(s);if(parcelError is not null)return parcelError;
@@ -508,6 +511,8 @@ public sealed partial class CampaignSession
                 {var preflight=PreflightStarterAcceptance(state);if(preflight is not null)return new(CommandStatus.Rejected,state,preflight);}
                 if(wait.Kind==StoryWaitKind.Choice&&command.Choice==1&&!_content.FirstSeviiEnabled&&CinnabarFerryChoice(state))
                     return new(CommandStatus.Rejected,state,"sevii_first_visit_not_yet_available");
+                if(GameCornerCoinSource.Pending(state.Script,_content) && command.Choice is not (0 or 1 or 2 or 127))
+                    return new(CommandStatus.Rejected,state,"game_corner_coin_choice_invalid");
                 if(DepartmentRooftopSource.Pending(state.Script,_content) is {} rooftopMenu && command.Choice is not 127 &&
                     (command.Choice is not {} roofChoice || roofChoice<0 || roofChoice>=rooftopMenu.Rows.Length))
                     return new(CommandStatus.Rejected,state,"department_rooftop_menu_choice_invalid");
@@ -686,6 +691,7 @@ public sealed partial class CampaignSession
             }
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
+            if(TryApplyGameCornerCoinEffect(state,effect,out var coinState)){state=coinState;continue;}
             if(TryApplyDepartmentRooftopEffect(state,effect,out var rooftopState)){state=rooftopState;continue;}
             if(TryApplyTrainerTowerElevatorEffect(state,effect,out var towerElevatorState)){state=towerElevatorState;continue;}
             if(TryApplyTrainerTowerEffect(state,effect,out var trainerTowerState)){state=trainerTowerState;continue;}

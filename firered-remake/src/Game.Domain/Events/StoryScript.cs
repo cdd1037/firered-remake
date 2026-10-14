@@ -59,6 +59,7 @@ public static class StoryRules
             if(program is not null&&index>=0&&index<program.Instructions.Length)
             {
                 var instruction=program.Instructions[index];
+                if(GameCornerCoinSource.IsMenu(instruction))return choice is 0 or 1 or 2 or 127;
                 if(DepartmentRooftopSource.Menu(instruction) is {} roofMenu)return choice==127||choice>=0&&choice<roofMenu.Rows.Length;
                 if(instruction.Op==StoryOp.Multichoice&&instruction.Source.Path=="data/maps/TrainerTower_Lobby/scripts.inc"&&
                     instruction.Args.Length==4&&instruction.Args[3]=="FALSE")
@@ -141,7 +142,7 @@ public static class StoryRules
         bool Compare(string op,int a,int b)=>op switch{"eq"=>a==b,"ne"=>a!=b,"lt"=>a<b,"le"=>a<=b,"gt"=>a>b,"ge"=>a>=b,_=>throw new InvalidDataException("Unknown comparison: "+op)};
         void Effect(StoryInstruction instruction,StoryWaitKind wait=StoryWaitKind.None)
         {
-            var seq=checked(state.EffectSequence+1);effects.Add(new(seq,instruction.Opcode,instruction.Args.Select((a,index)=>a.StartsWith("VAR_",StringComparison.Ordinal)&&!(instruction.Opcode=="getplayerxy"||instruction.Opcode is "specialvar" or "subvar" or "addvar"&&index==0)?Value(a).ToString(System.Globalization.CultureInfo.InvariantCulture):a).ToImmutableArray(),instruction.Source));state=state with{EffectSequence=seq};
+            var seq=checked(state.EffectSequence+1);effects.Add(new(seq,instruction.Opcode,instruction.Args.Select((a,index)=>a.StartsWith("VAR_",StringComparison.Ordinal)&&!(instruction.Opcode=="getplayerxy"||instruction.Opcode is "specialvar" or "subvar" or "addvar" or "checkcoins"&&index==0)?Value(a).ToString(System.Globalization.CultureInfo.InvariantCulture):a).ToImmutableArray(),instruction.Source));state=state with{EffectSequence=seq};
             if(wait!=StoryWaitKind.None)state=state with{Wait=new(wait,"event:"+seq)};
         }
         try

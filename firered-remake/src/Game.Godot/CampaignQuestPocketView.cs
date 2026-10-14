@@ -132,6 +132,8 @@ public partial class CampaignView
                     if (_questPocketAction == 1 && _session.State.RegisteredItem is not null) _questPocketNotice = "Registered. Press R in the field.";
                     return true;
                 }
+                if (_catalog.GameCornerCoinsEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_COIN_CASE")
+                { Apply(new("field_coin_case",Text:"pret:ITEM_COIN_CASE")); return true; }
                 if (_catalog.PokemonTowerEnabled && _questPocket == 1 && _questPocketAction == 0 && QuestPocketStacks[_questPocketCursor].Item.Value == "pret:ITEM_POKE_FLUTE")
                 { Apply(new("field_poke_flute",Text:"pret:ITEM_POKE_FLUTE")); return true; }
                 if (_questPocket == 1 && _questPocketAction == 0 && TryCityServiceItem(QuestPocketStacks[_questPocketCursor].Item.Value)) return true;

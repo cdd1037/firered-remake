@@ -13,7 +13,7 @@ public sealed partial class CampaignSession
     private static readonly ItemId GoodRodId=new("pret:ITEM_GOOD_ROD");
     private static readonly ItemId SuperRodId=new("pret:ITEM_SUPER_ROD");
     private const string BikeShopSource="data/maps/CeruleanCity_BikeShop/scripts.inc";
-    private static bool IsCityServiceItem(ItemId id)=>id==BikeVoucherId||id==BicycleId||id==OldRodId||id==GoodRodId||id==SuperRodId;
+    private static bool IsCityServiceItem(ItemId id)=>id==BikeVoucherId||id==BicycleId||id==OldRodId||id==GoodRodId||id==SuperRodId||id==GameCornerCoinSource.CoinCase;
     private InventoryState WithoutCityServiceItems(InventoryState inventory)
     {
         inventory=WithoutSafariKeyItems(WithoutRegionalTea(inventory));
@@ -23,7 +23,7 @@ public sealed partial class CampaignSession
     private string? ValidateCityServiceInventory(InventoryState inventory)
     {
         foreach(var stack in inventory.KeyItems??[])
-            if(stack is not null&&IsCityServiceItem(stack.Item)&&(!_content.CityServicesEnabled||stack.Item==GoodRodId&&!_content.GoodRodEnabled||stack.Item==SuperRodId&&!_content.SuperRodEnabled||stack.Quantity!=1))
+            if(stack is not null&&IsCityServiceItem(stack.Item)&&(!_content.CityServicesEnabled||stack.Item==GoodRodId&&!_content.GoodRodEnabled||stack.Item==SuperRodId&&!_content.SuperRodEnabled||stack.Item==GameCornerCoinSource.CoinCase&&!_content.GameCornerCoinsEnabled||stack.Quantity!=1))
                 return "inventory_city_service_item_invalid";
         return null;
     }

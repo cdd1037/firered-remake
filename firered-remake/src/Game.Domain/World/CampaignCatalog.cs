@@ -214,6 +214,7 @@ public interface ICampaignCatalog:IStoryCatalog
     FuchsiaGymTrainerCatalog? FuchsiaGymTrainerParties=>null;
     bool IsFuchsiaRouteWarpAllowed(MapId map,int sourceWarpId)=>true;
     bool DepartmentRooftopEnabled=>false;
+    bool GameCornerCoinsEnabled=>false;
     string? DeferredRegionalServiceReason(MapId map,string script)=>null;
     NameRaterSourceContent? NameRaterSource=>null;
     MoveTutorCatalog? MoveTutors=>null;

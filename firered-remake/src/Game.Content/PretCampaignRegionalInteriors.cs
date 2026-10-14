@@ -51,6 +51,7 @@ public sealed partial class PretCampaignCatalog
         if(DepartmentStoreContract is not {} c || distance is <1 or >4)throw new InvalidDataException("department_elevator_distance");
         return c.Document.GetProperty("elevator").GetProperty("windowTable")[distance].GetInt32();
     }
+    public bool GameCornerCoinsEnabled => GameCornerCoins is not null;
     public bool DepartmentRooftopEnabled => RegionalInteriorServicesEnabled &&
         DepartmentStoreMachineStock.HasRooftopRewards(PewterMachines) &&
         OrdinaryItemInventoryCatalog.For(EarlyShop)?.IsAddition(new("pret:ITEM_LEMONADE")) == true;
@@ -67,6 +68,8 @@ public sealed partial class PretCampaignCatalog
         if (map.Value == DepartmentStoreMachineStock.ExpectedMapId && script == DepartmentStoreMachineStock.ExpectedClerkScript &&
             DepartmentStoreMachineStock.For(PewterMachines) is not null) return null;
         if (DepartmentStoreCounterStock.StockForClerk(map.Value, script) is {} counter && DepartmentStoreCounter(counter) is not null) return null;
+        if(GameCornerCoinsEnabled && map.Value==Game.Domain.Events.GameCornerCoinSource.RestaurantMap &&
+            script==Game.Domain.Events.GameCornerCoinSource.CoinCaseMan)return null;
         if(map.Value=="map.celadon-city-restaurant"&&script=="CeladonCity_Restaurant_EventScript_CoinCaseMan")
             return "regional_service_unavailable: Coin Case service\nis not available yet.";
         var deferred=DepartmentStoreContract!.DeferredServices.FirstOrDefault(d=>d.MapId==map.Value&&d.Script==script);

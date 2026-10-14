@@ -152,6 +152,7 @@ public sealed partial class PretCampaignCatalog
         var route11Encounters = PretRoute11Encounters.Load(projectRoot);
         var route11Trainers = PretRoute11Trainers.Load(projectRoot);
         var cityServices = PretCityServices.Load(projectRoot, runtimeMaps);
+        var gameCornerCoins = PretGameCornerCoins.Load(projectRoot);
         var oldRod = PretOldRod.Load(projectRoot);
         var vermilionGym = PretVermilionGymRegion.Load(projectRoot, runtimeMaps);
         var vermilionGymTrainers = PretVermilionGymTrainers.Load(projectRoot);
@@ -1042,6 +1043,8 @@ public sealed partial class PretCampaignCatalog
             capeBrinkTutor.AdditionalSourceHashes, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
+        MergeRegionalServiceConstants(constants, gameCornerCoins.Constants);
+        hashes.AddRange(PretGameCornerCoins.AdditionalSourceHashes);
         {
             MergeRegionalServiceConstants(constants, departmentStore.Constants);
             MergeRegionalServiceConstants(constants, new Dictionary<string, int> { { "PARTY_SIZE", 6 }, { "SPECIES_EGG", 412 } });
@@ -1821,7 +1824,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         // Compile and validate the complete current script vocabulary.
-        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true);
+        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true, includeGameCornerCoins: true);
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
         {
@@ -2015,6 +2018,9 @@ public sealed partial class PretCampaignCatalog
                 throw new InvalidDataException("Conflicting fishing text: " + symbol);
             bank[symbol] = value;
         }
+
+        bank.Add("gText_CoinCase", gameCornerCoins.ItemUseText.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal)
+            .Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$");
 
         var repel = PretEarlyRepel.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/early-repel/early-repel.json"), Encoding.UTF8));
         {
@@ -2489,6 +2495,7 @@ public sealed partial class PretCampaignCatalog
             vermilionGym: vermilionGym,
             vermilionGymTrainers: vermilionGymTrainers,
             cityServices: cityServices,
+            gameCornerCoins: gameCornerCoins,
             oldRod: oldRod,
             route11: route11,
             route11Pokemon: route11Pokemon,

@@ -26,7 +26,7 @@ public sealed record PretStoryCompilation(
 /// <summary>Compiles source syntax to finite typed IR. Unsupported instructions remain explicit fault nodes.</summary>
 public static partial class PretStoryCompiler
 {
-    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false,bool includeEventIslands=false,bool includePowerPlant=false,bool includeTrainerTower=false,bool includeSeafoam=false)
+    public static PretStoryCompilation Compile(IEnumerable<PretSourceScriptFile> files, IReadOnlyDictionary<string,int>? constants = null,bool includeGiftOpcodes=false,bool includeRoute3Opcodes=false,bool includeMtMoonOpcodes=false,bool includeBillOpcodes=false,bool includeSsAnneOpcodes=false,bool includeVermilionGymOpcodes=false,bool includeRockTunnelOpcodes=false,bool includeRocketHideoutOpcodes=false,bool includePokemonTowerOpcodes=false,bool includeSnorlaxOpcodes=false,bool includePresetDoubleOpcodes=false,bool includeSafariOpcodes=false,bool includeSilphOpcodes=false,bool includeSaffronGymData=false,bool includeCinnabarData=false,bool includeFirstSevii=false,bool includeViridianGym=false,bool includeVictoryRoad=false,bool includePokemonLeague=false,bool includeSeviiRuby=false,bool includeFourIsland=false,bool includeSixIsland=false,bool includeFiveIsland=false,bool includeCelio=false,bool includeSevenIsland=false,bool includeEventIslands=false,bool includePowerPlant=false,bool includeTrainerTower=false,bool includeSeafoam=false,bool includeGameCornerCoins=false)
     {
         var programs=ImmutableDictionary.CreateBuilder<string,StoryProgram>(StringComparer.Ordinal);
         var headers=ImmutableDictionary.CreateBuilder<string,ImmutableArray<PretMapScriptHeader>>(StringComparer.Ordinal);
@@ -297,6 +297,8 @@ public static partial class PretStoryCompiler
                             (kind,min,max)=powerPlantShape;
                         if(includeSeafoam&&SeafoamInstructionShape(file,label,opcode,operands) is {} seafoamShape)
                             (kind,min,max)=seafoamShape;
+                        if(includeGameCornerCoins&&GameCornerCoinsInstructionShape(file,label,opcode,operands) is {} coinShape)
+                            (kind,min,max)=coinShape;
                         if(includeCelio)
                         {
                             var admitted=CelioInstructionShape(file,label,opcode,operands);
@@ -362,6 +364,27 @@ public static partial class PretStoryCompiler
             }
         }
         return new(programs.ToImmutable(),headers.ToImmutable(),conditions.ToImmutable(),movements.ToImmutable(),unsupported.ToImmutable(), (constants ?? new Dictionary<string,int>()).ToImmutableDictionary(StringComparer.Ordinal)){AssemblyData=assemblyData.ToImmutable()};
+    }
+    private static (StoryOp,int,int)? GameCornerCoinsInstructionShape(PretSourceScriptFile file, string label,
+        string opcode, ImmutableArray<string> operands)
+    {
+        if (!FirstSeviiSource(file, PretGameCornerCoins.ScriptPath, PretGameCornerCoins.ScriptsSha256)) return null;
+        const string prefix = "CeladonCity_GameCorner_EventScript_";
+        string? suffix = label.StartsWith(prefix, StringComparison.Ordinal) ? label[prefix.Length..] : null;
+        string[]? expected = (suffix, opcode) switch
+        {
+            ("CoinsClerk", "showcoinsbox") or ("BoughtCoins", "updatecoinsbox") or ("ClerkEnd", "hidecoinsbox") => ["0", "5"],
+            ("Buy50Coins" or "Buy500Coins" or "Fisher" or "Scientist" or "Gentleman", "checkcoins") => ["VAR_TEMP_1"],
+            ("Buy50Coins", "addcoins") => ["50"],
+            ("Buy500Coins", "addcoins") => ["500"],
+            ("Fisher", "addcoins") => ["10"],
+            ("Scientist" or "Gentleman", "addcoins") => ["20"],
+            _ => null
+        };
+        if (expected is null) return null;
+        if (!operands.SequenceEqual(expected))
+            throw ContentJson.Error("game_corner_coins_operands", file.Path + ":" + label, opcode);
+        return (StoryOp.Special, expected.Length, expected.Length);
     }
     private static bool IsSnorlaxEventSource(PretSourceScriptFile file,string label) =>
         file.SourceRef.Kind==SourceKind.Pret&&file.SourceRef.Repository=="pret/pokefirered"&&file.SourceRef.Commit==PretWorldMap.SourceCommit&&

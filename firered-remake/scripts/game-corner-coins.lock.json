@@ -1,0 +1,48 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-game-corner-coins-v1",
+  "importerSha256": "de40854397ab86dbb4e0bf8b6ffdda9fa3e0eb32480c2e92afef0404be9eb836",
+  "files": [
+    {
+      "path": "content/generated/game-corner-coins/coin-case.png",
+      "byteLength": 391,
+      "sha256": "29eb76c604901472dd1a87b46bb0551c015d3a65ec4357ff47107fb19ec39a48"
+    },
+    {
+      "path": "content/generated/game-corner-coins/items.json",
+      "byteLength": 5744,
+      "sha256": "4fbb252e764306ac9f52c620ddba15e041f35cbce5a5b17d8acffd4cb3652511"
+    },
+    {
+      "path": "content/generated/game-corner-coins/source-contract.json",
+      "byteLength": 28256,
+      "sha256": "4917bf28f9fbd64d3cb356e3e363e71bf72466f56943dd0da0e9244496561cb0"
+    },
+    {
+      "path": "content/generated/game-corner-coins/source-input-hashes.json",
+      "byteLength": 8464,
+      "sha256": "2aec56dc05142567222ecec017a8c33c228cfb4a836e5f009296f05da35187b1"
+    },
+    {
+      "path": "content/raw/game-corner-coins/graphics/items/icon_palettes/coin_case.pal",
+      "byteLength": 160,
+      "sha256": "2f09d313dc6f16a8213b369cd226f79d40665dfa96766ee2135644fa9e04faa4"
+    },
+    {
+      "path": "content/raw/game-corner-coins/graphics/items/icons/coin_case.png",
+      "byteLength": 265,
+      "sha256": "9725f5bb84ba2b460f3d9543fc14ff116103da26cdc56632c01d7d777dd00a75"
+    },
+    {
+      "path": "content/raw/game-corner-coins/include/constants/coins.h",
+      "byteLength": 123,
+      "sha256": "f11ff28d8840b347114d773fdd13d9354cce4b5ac007db24daa728daa7b4ad7a"
+    },
+    {
+      "path": "content/raw/game-corner-coins/src/coins.c",
+      "byteLength": 2755,
+      "sha256": "ac223117abbde9e09abd13d75810e5f84d0fa7b03723b7a103655b55d7096b7f"
+    }
+  ]
+}

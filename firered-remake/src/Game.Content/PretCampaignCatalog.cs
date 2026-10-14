@@ -75,6 +75,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public CeruleanCaveMachineCatalog CeruleanCaveMachines => CeruleanCavePokemon.Machines;
     public CeruleanCaveWaterEncounterCatalog CeruleanCaveWaterEncounters { get; }
     public PretCityServices? CityServices { get; }
+    public PretGameCornerCoins GameCornerCoins { get; }
     public bool CityServicesEnabled => CityServices is not null;
     public PretOldRod? OldRod { get; }
     public IReadOnlyDictionary<MapId, OldRodEncounterTable> OldRodEncounters { get; }
@@ -170,6 +171,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretVermilionGymRegion vermilionGym,
         VermilionGymTrainerCatalog vermilionGymTrainers,
         PretCityServices cityServices,
+        PretGameCornerCoins gameCornerCoins,
         PretOldRod oldRod,
         PretRoute11Region route11,
         PretRoute11Pokemon route11Pokemon,
@@ -454,6 +456,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         Route11Encounters = route11Encounters;
         Route11Trainers = route11Trainers;
         CityServices = cityServices;
+        GameCornerCoins = gameCornerCoins;
         OldRod = oldRod;
         SeafoamRegion = seafoam; SeafoamOwnership = seafoamOwned; SeafoamOpponents = seafoamOpponents;
         SeafoamMachines = seafoamMachines; SeafoamTrainers = seafoamTrainers;
@@ -463,7 +466,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         SuperRodEncounters = superRodService.SuperRodTables.Where(t => maps.ContainsKey(t.Map)).ToImmutableDictionary(t => t.Map);
         OldRodEncounters = SevenIslandOldRodEncounterRules.Tables.ToImmutableDictionary(table => table.Map);
         GoodRodEncounters = goodRodService.GoodRodTables.AddRange(SeafoamEncounterTables.GoodRod).AddRange(CapeBrinkEncounterTables.GoodRod).ToImmutableDictionary(table => table.Map);
-        CityServiceItems = cityServices.Items.AddRange(goodRodService.Items).AddRange(superRodService.Items);
+        CityServiceItems = cityServices.Items.AddRange(goodRodService.Items).AddRange(superRodService.Items).AddRange(gameCornerCoins.Items);
         VermilionGymRegion = vermilionGym;
         VermilionGymTrainers = vermilionGymTrainers;
         SsAnneRegion = ssAnne;

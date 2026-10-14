@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Game.Application;
 using Game.Content;
 
@@ -15,8 +16,6 @@ internal static class CurrentCheckpointConversion
         if (input == output || File.Exists(output) || Directory.Exists(output))
             throw new InvalidDataException("checkpoint_conversion_requires_new_destination");
 
-        var catalog = PretCampaignCatalog.LoadCurrent(root);
-        var validator = CampaignSession.CreateCurrent(catalog);
         byte[] original = File.ReadAllBytes(input);
         using var sourceDocument = JsonDocument.Parse(original);
         string sourceRules = sourceDocument.RootElement.GetProperty("RulesVersion").GetString()!;
@@ -25,7 +24,22 @@ internal static class CurrentCheckpointConversion
             throw new InvalidDataException("checkpoint_source_rules_unsupported");
         if (sourceContent.Length != 64 || sourceContent.Any(c => !char.IsAsciiHexDigit(c)))
             throw new InvalidDataException("checkpoint_source_content_invalid");
-        var prior = SaveCodec.Decode<CampaignState>(original, sourceRules,
+        byte[] admitted = original;
+        if (!sourceDocument.RootElement.GetProperty("Payload").TryGetProperty("Coins", out _))
+        {
+            // This is the explicit pre-wallet rooftop format, not a repair path for
+            // current saves. First validate the untouched envelope/checksum.
+            if (sourceRules != CurrentGameProfile.RulesVersion ||
+                sourceContent != "1549c2e7484d83969c34ff75550efa3faff4ef197dbd00d1ca543c02f742fa90")
+                throw new InvalidDataException("checkpoint_missing_coins_not_pre_wallet_format");
+            var checkedSource = SaveCodec.Decode<JsonElement>(original, sourceRules, sourceContent, input);
+            var payload = JsonNode.Parse(checkedSource.State.GetRawText())!.AsObject();
+            payload.Add("Coins", 0);
+            admitted = SaveCodec.Encode(payload, checkedSource.Generation, sourceRules, sourceContent);
+        }
+        var catalog = PretCampaignCatalog.LoadCurrent(root);
+        var validator = CampaignSession.CreateCurrent(catalog);
+        var prior = SaveCodec.Decode<CampaignState>(admitted, sourceRules,
             sourceContent, input, validator.ValidatePlayerSave);
         var current = CampaignSession.RestoreCurrent(catalog, prior.State, prior.Generation);
         byte[] converted = SaveCodec.Encode(current.State, current.Revision,

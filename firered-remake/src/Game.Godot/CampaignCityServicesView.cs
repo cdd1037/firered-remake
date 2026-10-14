@@ -25,7 +25,7 @@ public partial class CampaignView
     {
         var items=_catalog.CityServiceItems;
         if(items.IsDefaultOrEmpty)return;
-        var icons=(_catalog.CityServices?.Icons??[]).AddRange(_catalog.GoodRodService?.Icons??[]).AddRange(_catalog.SuperRodService.Icons);
+        var icons=(_catalog.CityServices?.Icons??[]).AddRange(_catalog.GoodRodService?.Icons??[]).AddRange(_catalog.SuperRodService.Icons).AddRange(_catalog.GameCornerCoins.Icons);
         string firstIcon=document.Items[0].Icon;
         var position=document.Assets.Single(a=>a.Id==firstIcon);
         foreach(var item in items)

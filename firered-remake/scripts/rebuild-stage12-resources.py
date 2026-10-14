@@ -57,7 +57,8 @@ STEPS = [('import-npc-trade-elyssa.py',
   ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
  ('import-department-rooftop-items.py', ['{reference}', '{project}', '{project}']),
  ('import-vending-sound.py',
-  ['--reference', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}'])]
+  ['--reference', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-game-corner-coins.py', ['{reference}', '{project}', '{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
