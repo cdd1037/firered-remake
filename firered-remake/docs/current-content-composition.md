@@ -174,3 +174,17 @@ No new map/species or executor is added. Current fingerprint:
 The real party completed seven lessons and Soft-Boiled refusal/cancel, then strict
 Continue at56301; controlled Chansey success belongs to the separate candidate.
 See [the current tutor cohort](original-move-tutors.md#eight-additional-existing-map-tutors-2026-10-14).
+
+
+The next increment adds original FourIsland_House1 and the Cinnabar ResearchRoom,
+for331 maps and14 original tutor definitions. Both use the same teaching-house
+map validator, authenticated current map/npc presentation resolver, and shared
+source tutor callback. The29-file tutor lock yields15 bindings. Existing-map
+objects and item/species catalogs retain identity. Actual entry/exit, two lessons,
+ordinary dialogue and independent Continue at56391 are recorded in
+[the two-room report](original-tutor-rooms.md#current-integration-2026-10-14).
+
+Current two-room fingerprint:
+`d830061eaac3ad4ab2135031fad341726dcc3d8a9905eccac003b9568202ac9d`.
+The production headless room/menu integration passed44 checks/four Draws with
+unchanged DLLs and no save mutations; native pixels/audio remain outside scope.

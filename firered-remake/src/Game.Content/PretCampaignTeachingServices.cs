@@ -7,6 +7,8 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
+    public PretOriginalTutorRooms OriginalTutorRooms { get; }
+
     public PretMoveReminderHouse MoveReminderHouse { get; }
     public MoveReminderCatalog? MoveReminder { get; }
 

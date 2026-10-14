@@ -151,6 +151,30 @@
       "bytes": 6935,
       "sha256": "2f23053443e399983324ed7461923bba1267ca3d3c8961ce33a6d10be140f72d",
       "gitBlobSha1": "d6c71605bcf13a788d28426039ce9bd1f95e75f7"
+    },
+    {
+      "path": "data/maps/FourIsland_House1/map.json",
+      "bytes": 1482,
+      "sha256": "bff11d44276ff5ff99ee4fae2d03b724e0e92c38a5ac4c0682304bfab0722749",
+      "gitBlobSha1": "d84c882d96744c8639048dd369a0fff9ebd65f00"
+    },
+    {
+      "path": "data/maps/FourIsland_House1/scripts.inc",
+      "bytes": 146,
+      "sha256": "3ace070d6b0f6a231625a273a85760ad0d65dc0e2e26ac8ff6894a8a0bcda878",
+      "gitBlobSha1": "dfecddd8d800ad19e7a77a4892d121914e7ac790"
+    },
+    {
+      "path": "data/maps/CinnabarIsland_PokemonLab_ResearchRoom/map.json",
+      "bytes": 2093,
+      "sha256": "829697b937b61884ea16d58b00004373468335966ce0bcc45494b24020e38eb4",
+      "gitBlobSha1": "462c7c7ddf018e80ff68565140e546158d163f48"
+    },
+    {
+      "path": "data/maps/CinnabarIsland_PokemonLab_ResearchRoom/scripts.inc",
+      "bytes": 628,
+      "sha256": "53e60afdf97c5beac11106402be91e6a34c81dc06d56ea973d769cd05a349f97",
+      "gitBlobSha1": "4a9f195509e92ffa059838c11f8dddee31cac666"
     }
   ]
 }

@@ -47,6 +47,7 @@ public sealed partial class PretCampaignCatalog
         var seafoamTrainers = PretSeafoamRules.LoadTrainers(projectRoot);
         var moveReminderHouse = PretMoveReminderHouse.Load(projectRoot);
         var moveDeleterHouse = PretMoveDeleterHouse.Load(projectRoot);
+        var originalTutorRooms = PretOriginalTutorRooms.Load(projectRoot);
         var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
         var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName), PretRocketHideoutRuntimeMaps.ManifestSha256);
@@ -1025,6 +1026,9 @@ public sealed partial class PretCampaignCatalog
 
         AppendAuthenticatedRegionalSources(moveDeleterHouse.Scripts, moveDeleterHouse.TextSources.Values, moveDeleterHouse.Constants,
             moveDeleterHouse.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+
+        AppendAuthenticatedRegionalSources(originalTutorRooms.Scripts, originalTutorRooms.TextSources.Values, originalTutorRooms.Constants,
+            originalTutorRooms.AdditionalSourceHashes, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -2352,6 +2356,16 @@ public sealed partial class PretCampaignCatalog
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, moveDeleterHouse.NewMaps);
         ValidateSourceHouseComposition("move_deleter", moveDeleterHouse.NewMaps, maps, deleterPreviousMaps, compiled,
             "map.fuchsia-city", 10, "data/maps/FuchsiaCity_House3/scripts.inc", "FuchsiaCity_House3_EventScript_MoveDeleter");
+        foreach (var (mapId, townId, townWarp, scriptPath, entry) in new[] {
+            (PretOriginalTutorRooms.BodySlamMapId, "map.four-island", 2, "data/maps/FourIsland_House1/scripts.inc", "FourIsland_House1_EventScript_BodySlamTutor"),
+            (PretOriginalTutorRooms.MetronomeMapId, "map.cinnabar-island-pokemon-lab-entrance", 4, "data/maps/CinnabarIsland_PokemonLab_ResearchRoom/scripts.inc", "CinnabarIsland_PokemonLab_ResearchRoom_EventScript_MetronomeTutor") })
+        {
+            var previous = maps;
+            var room = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(mapId, originalTutorRooms.NewMaps[mapId]);
+            maps = maps.AddRange(room);
+            celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, room);
+            ValidateSourceHouseComposition("original_tutor_room", room, maps, previous, compiled, townId, townWarp, scriptPath, entry);
+        }
         var moveReminder = PretMoveReminderService.Load(projectRoot, seafoamOwned.Catalog);
         hashes.AddRange(moveReminder.AdditionalSourceHashes);
         var moveTutors = PretMoveTutors.Load(projectRoot, seafoamOwned.Catalog);
@@ -2534,7 +2548,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

@@ -111,3 +111,6 @@ Dontae 原邮件实现点已构建并通过共享规则／容量／历史与受�
 
 
 原地图另外8项教学随后接入，原15项导师当前准入12项。实际56129档经8处明确源定位，7项学习及重复、Softboiled对现有超梦的不兼容／取消通过249检查与172命令至56301；独立Continue13检查保持全payload。Softboiled成功只在独立受控Chansey候选中验证，不冒称当前真档成功；其余身份／背包／PC／历史／RNG保持。329图／162可持有不变，共用教学View与执行器未改，原生视听无新增验收。BodySlam四岛House1、Metronome红莲ResearchRoom和Mimic模仿少女房间／原玩偶前提仍待；两房间独立候选并行，Mimic不能在没有真实玩偶来源时空放教学。[12项覆盖与来源](original-move-tutors.md#eight-additional-existing-map-tutors-2026-10-14)
+
+
+四岛BodySlam和红莲Metronome两原导师房间随后接入，当前331图／14原导师。实际56301队伍从两处明确源门外定位进屋，原门／39步／两教学／两次重复／另两NPC对话／出门通过94检查与90公共命令至56391，独立Continue13检查全payload相同。只加两教学flag，历史／道具／PC保留；原走路水君位置、10次RNG与Lapras友情+1如实记录。生产headless两房间／两菜单44检查、4Draw通过，原生视听未验。余Mimic的两层模仿少女房间和原PokeDoll来源并行准备；终极招式导师另列，不能把14项计为全部教学服务。[两房间范围](original-tutor-rooms.md)
