@@ -13,7 +13,15 @@ public partial class CampaignView
     private bool _mtMoonMoveSlotOpen;
     private int _mtMoonMoveSlot;
     private ItemId _mtMoonTargetItem;
+    private long _ppBoostTargetInstance, _ppBoostSelectionRevision;
+    private bool IsFieldPpBoost(ItemId item) => _catalog.EarlyShop is {} shop &&
+        SourceFieldPpBoostRules.Supports(shop, item);
+    private bool PpBoostSelectionStale => _mtMoonMoveSlotOpen && IsFieldPpBoost(_mtMoonTargetItem) &&
+        (_session.Revision != _ppBoostSelectionRevision || _fieldMedicineTarget < 0 ||
+         _fieldMedicineTarget >= _session.State.Party.Length ||
+         _session.State.Party[_fieldMedicineTarget].InstanceId != _ppBoostTargetInstance);
     private bool IsExtendedFieldTarget(ItemId item) =>
+        IsFieldPpBoost(item) ||
         FieldMedicineEffectFor(item) is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp or FieldMedicineEffect.RestoreAllPp ||
         _catalog.MtMoonEnabled && EarlyItem(item)?.UseSupport is EarlyShopUseSupport.SeparateEvolution or EarlyShopUseSupport.DeferredRareCandy;
     private bool MtMoonTargetActive => _fieldMedicineTargetOpen && IsExtendedFieldTarget(_mtMoonTargetItem);
@@ -96,6 +104,12 @@ public partial class CampaignView
 
     private bool MtMoonTargetInput(InputEventKey key)
     {
+        if (PpBoostSelectionStale)
+        {
+            _fieldMedicineTargetOpen = false; _mtMoonMoveSlotOpen = false;
+            _itemNotice = "The selected POKéMON changed.\nPlease choose again.";
+            return true;
+        }
         if (!_mtMoonMoveSlotOpen)
         {
             int cancel = _session.State.Party.Length;
@@ -104,8 +118,12 @@ public partial class CampaignView
             if (key.Keycode == Key.Backspace || key.Keycode == Key.Enter && _fieldMedicineTarget == cancel)
             { _fieldMedicineTargetOpen = false; return true; }
             if (key.Keycode != Key.Enter) return true;
-            if (FieldMedicineEffectFor(_mtMoonTargetItem) == FieldMedicineEffect.RestoreMovePp)
-            { _mtMoonMoveSlotOpen = true; _mtMoonMoveSlot = 0; return true; }
+            if (FieldMedicineEffectFor(_mtMoonTargetItem) == FieldMedicineEffect.RestoreMovePp || IsFieldPpBoost(_mtMoonTargetItem))
+            {
+                _ppBoostTargetInstance = _session.State.Party[_fieldMedicineTarget].InstanceId;
+                _ppBoostSelectionRevision = _session.Revision;
+                _mtMoonMoveSlotOpen = true; _mtMoonMoveSlot = 0; return true;
+            }
         }
         else
         {
@@ -117,9 +135,11 @@ public partial class CampaignView
             if (key.Keycode != Key.Enter) return true;
         }
         long revision = _session.Revision;
+        bool ppBoost = IsFieldPpBoost(_mtMoonTargetItem);
         bool evolution = EarlyItem(_mtMoonTargetItem)?.UseSupport == EarlyShopUseSupport.SeparateEvolution;
         Apply(new(evolution ? "field_evolution" : _mtMoonTargetItem.Value == "pret:ITEM_RARE_CANDY" ? "field_rare_candy" : "field_medicine", Text: _mtMoonTargetItem.Value,
-            PartyIndex: _fieldMedicineTarget, MoveSlot: _mtMoonMoveSlotOpen ? _mtMoonMoveSlot : -1));
+            PartyIndex: _fieldMedicineTarget, MoveSlot: _mtMoonMoveSlotOpen ? _mtMoonMoveSlot : -1)
+            { TargetInstanceId = ppBoost ? _ppBoostTargetInstance : null });
         _fieldMedicineTargetOpen = false; _mtMoonMoveSlotOpen = false;
         if (_session.Revision == revision) _itemNotice = FieldConsumableNotice(_status);
         _itemCursor = Math.Min(_itemCursor, _session.State.Inventory!.BagItems.Length);
@@ -136,19 +156,26 @@ public partial class CampaignView
 
     private void DrawMtMoonTargets()
     {
+        if (PpBoostSelectionStale)
+        { ItemMessageBox("The selected POKéMON changed.\nPlease choose again."); return; }
         if (!_mtMoonMoveSlotOpen) { DrawFieldMedicineTargets(); return; }
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
         var member = _session.State.Party[_fieldMedicineTarget];
+        bool ppBoost = IsFieldPpBoost(_mtMoonTargetItem);
+        var boostMoves = ppBoost ? SourceFieldPpBoostRules.SelectMoves(_catalog.EarlyShop!,
+            _catalog.PokemonContent!, member, _mtMoonTargetItem) : null;
         ItemLabel(new(16, 8), member.Nickname);
         for (int i = 0; i < member.Pokemon.Moves.Length; i++)
         {
             var move = member.Pokemon.Moves[i];
             ItemLabel(new(24, 26 + i * 16), MoveName(move.Move));
             ItemLabel(new(174, 26 + i * 16), $"{move.CurrentPp}/{move.MaximumPp}", 8);
+            if (boostMoves is { Succeeded: true } && !boostMoves.Moves[i].Eligible)
+                ItemLabel(new(156, 26 + i * 16), "×", 8);
         }
         ItemLabel(new(24, 26 + member.Pokemon.Moves.Length * 16), _itemSkin.Text("gFameCheckerText_Cancel"));
         ItemLabel(new(12, 26 + _mtMoonMoveSlot * 16), _itemSkin.Text("gText_SelectorArrow2"));
-        ItemMessageBox(_battleText["gText_RestoreWhichMove"]);
+        ItemMessageBox(ppBoost ? string.Join("\n", _catalog.TextPages("gText_BoostPp")) : _battleText["gText_RestoreWhichMove"]);
     }
     private bool MtMoonSilentEvent(CampaignWildBattle battle) => WildCurrentEvent(battle) is { } current && RockTunnelWildMessage(current) is null && MtMoonWildMessage(battle, current) is { Symbol.Length: 0 };
 

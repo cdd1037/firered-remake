@@ -1952,6 +1952,8 @@ public sealed partial class PretCampaignCatalog
             bank.Add(symbol, openingUiTexts[symbol] + "$");
         bank.Add("gText_BerryPouch_2", openingUiTexts["gText_BerryPouch_2"] + "$");
         bank.Add("gText_PPWasRestored", openingUiTexts["gText_PPWasRestored"].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
+        bank.Add("gText_MovesPPIncreased", openingUiTexts["gText_MovesPPIncreased"].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
+        bank.Add("gText_BoostPp", openingUiTexts["gText_BoostPp"] + "$");
         foreach (var symbol in new[]
         {
             "gText_ItemsPocket",

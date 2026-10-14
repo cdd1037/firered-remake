@@ -75,6 +75,9 @@ public static class PokemonMoveRules
         if (IsHiddenMachineMove(moves[slot].Move)) throw new NotSupportedException("Hidden Machine moves cannot be forgotten through ordinary learning.");
         return moves.SetItem(slot, NewSlot(definition));
     }
+    /// <summary>CalculatePPWithBonus from the fixed source; caller validates the source definition and 0–3 bonus.</summary>
+    internal static int MaximumPp(PokemonMoveDefinition move, int ppUps) => move.Pp + move.Pp * 20 * ppUps / 100;
+
     private static PokemonMoveSlot NewSlot(PokemonMoveDefinition move) => new(move.Id, move.Pp, move.Pp);
     private static void ValidateSlots(PokemonCatalog catalog, ImmutableArray<PokemonMoveSlot> moves)
     {
@@ -88,7 +91,7 @@ public static class PokemonMoveRules
         {
             if (slot is null || !seen.Add(slot.Move) || !catalog.Moves.TryGetValue(slot.Move, out var definition) ||
                 slot.PpUps is < 0 or > 3 || (!canonical && slot.PpUps != 0) ||
-                slot.MaximumPp != definition.Pp + definition.Pp * 20 * slot.PpUps / 100 ||
+                slot.MaximumPp != MaximumPp(definition, slot.PpUps) ||
                 slot.CurrentPp < 0 || slot.CurrentPp > slot.MaximumPp)
                 throw new ArgumentException(canonical ? "Invalid canonical move slots or PP bonuses." :
                     "Invalid move slots; PP Ups are not supported by this creation/learning profile.");

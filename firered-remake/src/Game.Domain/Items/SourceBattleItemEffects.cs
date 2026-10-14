@@ -119,14 +119,8 @@ public static class SourceBattleItemEffects
                 int amount = unchecked((sbyte)effect[arg++]);
                 if (band == (beforeFriendship < 100 ? 0 : beforeFriendship < 200 ? 1 : 2)) delta = amount;
             }
-            int adjustment = delta;
-            if (delta > 0)
-            {
-                if (WildBattleSourcePartyEffects.PersistentHeldItem(member) == "ITEM_SOOTHE_BELL") adjustment = 150 * delta / 100;
-                if (friendship!.Ball == "ITEM_LUXURY_BALL") adjustment++;
-                if (friendship.MetLocation == friendship.CurrentMapSection) adjustment++;
-            }
-            pokemon = pokemon with { Friendship = Math.Clamp(beforeFriendship + adjustment, 0, 255) };
+            pokemon = pokemon with { Friendship = SourceItemFriendshipRules.Apply(beforeFriendship, delta,
+                WildBattleSourcePartyEffects.PersistentHeldItem(member), friendship) };
         }
         next = next with { Parties = next.Parties.SetItem((int)target.Side, next.Party(target.Side) with {
             Members = next.Party(target.Side).Members.SetItem(target.Index, member with { Pokemon = pokemon, Status = status }) }) };

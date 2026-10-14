@@ -174,7 +174,7 @@ public static class PokemonStateValidator
             if (!seen.Add(slot.Move)) return "pokemon_move_duplicate";
             if (slot.PpUps is < 0 or > 3) return "pokemon_move_pp_ups";
             // src/pokemon.c:3898-3902: basePP + basePP * 20 * bonus / 100, integer floor.
-            int maximumPp = move.Pp + move.Pp * 20 * slot.PpUps / 100;
+            int maximumPp = PokemonMoveRules.MaximumPp(move, slot.PpUps);
             if (slot.MaximumPp != maximumPp) return "pokemon_move_maximum_pp";
             if (slot.CurrentPp < 0 || slot.CurrentPp > maximumPp) return "pokemon_move_current_pp";
         }
