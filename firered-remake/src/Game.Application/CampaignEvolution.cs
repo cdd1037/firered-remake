@@ -26,11 +26,17 @@ public sealed record CampaignEvolution(string? BattleId, ImmutableArray<LevelEvo
 }
 // The capture ledger always retains the originally caught species. This separate source-ordered
 // ledger proves every later species change, including intermediate evolutions no longer in party.
+public sealed record CampaignNormalEvolutionTrigger(
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Friendship = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Attack = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? Defense = null);
 public sealed record CampaignEvolutionHistory(long InstanceId, string? BattleId, int PreviousSpeciesId,
     int TargetSpeciesId, int LevelBeforeBattle, int Level)
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Item { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CampaignNormalEvolutionTrigger? NormalTrigger { get; init; }
 }
 
 public sealed partial class CampaignSession
@@ -148,7 +154,8 @@ public sealed partial class CampaignSession
                 foreach (var learned in result.LearnedMoves)
                     pages.Add($"{result.Pokemon.Nickname} learned\n{BattleContent.MoveNames[learned.Move.Value]}!");
                 var history = new CampaignEvolutionHistory(owned.InstanceId, scene.BattleId,
-                    owned.Pokemon.SourceSpeciesId, target, scene.Proposal.LevelBeforeBattle, scene.Proposal.Level) { Item = candyScene ? RareCandyItem : null };
+                    owned.Pokemon.SourceSpeciesId, target, scene.Proposal.LevelBeforeBattle, scene.Proposal.Level) { Item = candyScene ? RareCandyItem : null,
+                    NormalTrigger = NormalEvolutionTrigger(BattlePokemon.Species[owned.Pokemon.Species].Evolutions.Single(e => e.Target == result.TargetSpecies && e.Source == scene.Proposal.Source).Method, owned.Pokemon) };
                 var stats = state.GameStats ?? ImmutableSortedDictionary<string, int>.Empty.WithComparers(StringComparer.Ordinal);
                 next = state with
                 {
@@ -271,6 +278,21 @@ public sealed partial class CampaignSession
     private IEnumerable<int> EvolvedSpecies(CampaignState state) => _content.ForestEnabled && state.EvolutionHistory is { } history
         ? history.Where(e => e is not null).Select(e => e.TargetSpeciesId) : [];
 
+    private static CampaignNormalEvolutionTrigger? NormalEvolutionTrigger(PokemonEvolutionMethod method, PokemonInstance pokemon) =>
+        method == PokemonEvolutionMethod.Level ? null : method == PokemonEvolutionMethod.Friendship
+            ? new(Friendship: pokemon.Friendship) : new(Attack: pokemon.Stats.Attack, Defense: pokemon.Stats.Defense);
+
+    private static bool ValidNormalEvolutionTrigger(PokemonEvolution evolution, CampaignEvolutionHistory receipt)
+    {
+        if (evolution.Method == PokemonEvolutionMethod.Level)
+            return receipt.NormalTrigger is null && SourceLevelEvolutionProjection.Qualifies(evolution, receipt.Level, 0, 0, 0);
+        if (receipt.NormalTrigger is not {} trigger) return false;
+        if (evolution.Method == PokemonEvolutionMethod.Friendship
+            ? trigger.Friendship is not (>= 0 and <= 255) || trigger.Attack is not null || trigger.Defense is not null
+            : trigger.Friendship is not null || trigger.Attack is not (> 0 and <= 999) || trigger.Defense is not (> 0 and <= 999)) return false;
+        return SourceLevelEvolutionProjection.Qualifies(evolution, receipt.Level, trigger.Friendship ?? 0, trigger.Attack ?? 0, trigger.Defense ?? 0);
+    }
+
     private string? ValidateEvolutionHistory(CampaignState state)
     {
         if (!_content.ForestEnabled)
@@ -299,12 +321,12 @@ public sealed partial class CampaignSession
                 entry.Level > allOwned[partyIndex].Pokemon.Level || (item
                     ? entry.BattleId is not null || (entry.Item == RareCandyItem
                         ? entry.Level != entry.LevelBeforeBattle + 1 || !previous.Evolutions.Any(e =>
-                            e.Method == PokemonEvolutionMethod.Level && e.Target == target.Id && e.Level <= entry.Level)
-                        : entry.Level != entry.LevelBeforeBattle || !(entry.Item is { } stoneItem && stoneItem.StartsWith("pret:", StringComparison.Ordinal) && ItemEvolutionRules.SourceItemId(stoneItem[5..]) is not null &&
+                            e.Target == target.Id && ValidNormalEvolutionTrigger(e, entry))
+                        : entry.NormalTrigger is not null || entry.Level != entry.LevelBeforeBattle || !(entry.Item is { } stoneItem && stoneItem.StartsWith("pret:", StringComparison.Ordinal) && ItemEvolutionRules.SourceItemId(stoneItem[5..]) is not null &&
                             ItemEvolutionRules.SourceEvolution(_content.PokemonContent!, _binding.Ownership, previous.Id,
                                 stoneItem[5..])?.Target == target.Id))
                     : entry.Level <= entry.LevelBeforeBattle || !previous.Evolutions.Any(e =>
-                        e.Method == PokemonEvolutionMethod.Level && e.Target == target.Id && e.Level <= entry.Level)))
+                        e.Target == target.Id && ValidNormalEvolutionTrigger(e, entry))))
                 return "save_evolution_lineage_invalid";
             if (item)
             {

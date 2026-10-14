@@ -20,6 +20,7 @@ public static class EarlyShopMedicineRules
         if (!Enum.IsDefined(context)) return Fail("medicine_context_unsupported");
         error = PokemonStateValidator.ValidateParty(pokemonContent, pokemon);
         if (error is not null) return Fail(error);
+        if (pokemon.IsEgg) return Fail("medicine_egg_unsupported");
         var (definition, effect) = AuthenticatedFieldMedicine.Resolve(catalog, item);
         bool awakening = pokemonContent.AllowSleepStatus && effect == FieldMedicineEffect.CureSleep;
         if (definition is null || !awakening && effect is not (FieldMedicineEffect.HealHp or FieldMedicineEffect.CureStatus))

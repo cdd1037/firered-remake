@@ -34,6 +34,8 @@ public partial class CampaignView
     }
 
     private double _eggHatchElapsed;
+    private int _eggHatchCueFrame = -1;
+    private bool _eggHatchCryStarted;
     private ulong _eggHatchTransitionFrame = ulong.MaxValue;
     private const int EggHatchRevealFrame = 256, EggHatchEndFrame = 298;
     // daycare.c SpriteCB_Egg_0..5: fade/31 idle,21 shake,30+21 shake,
@@ -45,14 +47,22 @@ public partial class CampaignView
      (1152,-576),(-128,-1920),(256,-1152),(-640,-576),(640,-1920)];
     private int EggHatchFrame => (int)Math.Min(EggHatchEndFrame, Math.Floor(_eggHatchElapsed * 60));
     private bool EggHatchNaming => _session?.State.EggHatch?.Stage == CampaignEggHatchStage.Naming;
+    private bool EggHatchCryComplete => _sourceAudio is null || _audioFaulted || _sourceAudio.Snapshot().Cry is not { Playing: true };
+    private bool EggHatchFanfareComplete => _fanfareRemaining <= 0 && (_sourceAudio is null || _audioFaulted || _sourceAudio.Snapshot().FanfareToken is null);
 
     private void SynchronizeEggHatchPresentation(CampaignState? before, CampaignState after)
     {
-        if (before?.EggHatch?.InstanceId != after.EggHatch?.InstanceId) _eggHatchElapsed = 0;
+        if (before is null || before.EggHatch?.InstanceId != after.EggHatch?.InstanceId)
+        { _eggHatchElapsed = 0; _eggHatchCueFrame = -1; _eggHatchCryStarted = false; }
         if (before?.EggHatch?.Stage == after.EggHatch?.Stage && before?.EggHatch?.InstanceId == after.EggHatch?.InstanceId) return;
         _held = null; _repeat = 0; ReleaseFieldTextInput();
         _eggHatchTransitionFrame = Engine.GetProcessFrames();
         if (after.EggHatch is not null) ResetFieldMenu();
+        if (after.EggHatch?.Stage == CampaignEggHatchStage.Hatched)
+        {
+            SourceSound("MUS_EVOLVED", fanfare: true);
+            _fanfareRemaining = (_cues.CounterFor("MUS_EVOLVED") + 1) / 60.0;
+        }
     }
 
     private bool ProcessEggHatchPresentation(double delta)
@@ -63,8 +73,20 @@ public partial class CampaignView
         if (hatch.Stage == CampaignEggHatchStage.Animation && !_busy && !_lastCommandFault)
         {
             _eggHatchElapsed += delta;
-            if (EggHatchFrame >= EggHatchEndFrame) Apply(new("ack"));
+            int frame = EggHatchFrame;
+            if (_eggHatchCueFrame < 61 && frame >= 61) SourceMusic("MUS_EVOLUTION");
+            foreach (int tick in new[] { 62, 113, 164, 179 })
+                if (_eggHatchCueFrame < tick && frame >= tick) SourceSound("SE_BALL");
+            _eggHatchCueFrame = frame;
+            if (frame >= EggHatchEndFrame)
+            {
+                if (!_eggHatchCryStarted)
+                { _eggHatchCryStarted = true; SourceCry(_session.State.Party[hatch.PartyIndex].Pokemon); }
+                else if (EggHatchCryComplete) Apply(new("ack"));
+            }
         }
+        else if (hatch.Stage == CampaignEggHatchStage.Hatched && FieldTextComplete && EggHatchFanfareComplete && !_busy && !_lastCommandFault)
+            Apply(new("ack"));
         else if (hatch.Stage == CampaignEggHatchStage.Naming && _session.State.Nickname?.Submitted == true && !_busy && !_lastCommandFault)
             Apply(new("ack"));
         QueueRedraw(); return true;
@@ -104,6 +126,7 @@ public partial class CampaignView
             if (confirm || cancel) { _fieldTextHeld = true; _fieldTextNewPress = true; }
             return true;
         }
+        if (hatch.Stage == CampaignEggHatchStage.Hatched && !EggHatchFanfareComplete) return true;
         if (hatch.Stage == CampaignEggHatchStage.NicknameChoice)
         {
             if (confirm || cancel || keyInput.Keycode is Key.Up or Key.Down) SourceSound("SE_SELECT");

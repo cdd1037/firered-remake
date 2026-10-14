@@ -50,7 +50,7 @@ public static class VermilionPickupRules
         if(!Enum.IsDefined(outcome) || outcome==WildBattleOutcome.Ongoing)throw new ArgumentException("Pickup requires a terminal outcome.");
         if(rng.AlgorithmId!=Gen3Rng.AlgorithmId)throw new NotSupportedException("Unknown Pickup RNG.");
         foreach(var p in party)
-            if(PokemonStateValidator.Validate(catalog,p.Pokemon) is not null || string.IsNullOrEmpty(p.HeldItem) || p.InstanceId<=0)
+            if((p.IsEgg ? OwnedBattlePokemonCatalog.For(catalog) is {} owned ? SourcePokemonValidator.ValidatePartyMember(owned.Mechanics.Catalog, new(p.Pokemon,p.HeldItem,p.Status,true),owned) : "pokemon_egg_catalog" : PokemonStateValidator.Validate(catalog,p.Pokemon)) is not null || string.IsNullOrEmpty(p.HeldItem) || p.InstanceId<=0)
                 throw new ArgumentException("Invalid Pickup party member.");
         if(outcome!=WildBattleOutcome.Won)return new(party,rng,[],[]);
         var trace=ImmutableArray.CreateBuilder<RandomTrace>();var awards=ImmutableArray.CreateBuilder<VermilionPickupAward>();

@@ -49,6 +49,7 @@ public static class SourceFieldPpBoostRules
     {
         if (Resolve(catalog, item) is null) return new([], "pp_boost_effect_unsupported");
         if (PokemonStateValidator.ValidateParty(pokemonContent, pokemon) is { } error) return new([], error);
+        if (pokemon.IsEgg) return new([], "pp_boost_egg_unsupported");
         return new(pokemon.Pokemon.Moves.Select((move, index) =>
             new SourceFieldPpBoostMove(index, move, Eligible(move))).ToImmutableArray(), null);
     }
@@ -63,6 +64,7 @@ public static class SourceFieldPpBoostRules
         if (capability is null) return Fail("pp_boost_effect_unsupported");
         if (EarlyShopInventoryRules.Validate(catalog, inventory) is { } inventoryError) return Fail(inventoryError);
         if (PokemonStateValidator.ValidateParty(pokemonContent, pokemon) is { } pokemonError) return Fail(pokemonError);
+        if (pokemon.IsEgg) return Fail("pp_boost_egg_unsupported");
         if (moveSlot < 0 || moveSlot >= pokemon.Pokemon.Moves.Length) return Fail("pp_boost_move_slot");
         // Caller supplies the current map's authenticated region section, not its map ID or met data.
         if (string.IsNullOrEmpty(currentMapSection) || !currentMapSection.StartsWith("MAPSEC_", StringComparison.Ordinal) ||

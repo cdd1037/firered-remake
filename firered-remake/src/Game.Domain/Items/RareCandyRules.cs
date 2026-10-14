@@ -58,6 +58,8 @@ public static class RareCandyRules
         var before = owned.Pokemon;
         RareCandyResult Unchanged(RareCandyOutcome outcome, SpeciesId? target = null) => new(outcome, owned,
             before.Level, before.Experience, before.Stats, before.CurrentHp, before.Friendship, [], [], null, target);
+        // The source party selector excludes eggs before invoking any item callback.
+        if (owned.IsEgg) return Unchanged(RareCandyOutcome.NoEffect);
         // The party callback checks MAX_LEVEL before calling the generic item-effect executor.
         // Otherwise the item's revive flag could misleadingly make a level-100 target usable.
         if (before.Level == GrowthRules.MaximumLevel) return Unchanged(RareCandyOutcome.NoEffect);

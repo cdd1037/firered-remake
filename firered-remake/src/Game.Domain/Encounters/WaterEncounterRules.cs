@@ -212,7 +212,7 @@ public static class WaterEncounterRules
             globalRng.AlgorithmId != Gen3Rng.AlgorithmId || party.IsDefaultOrEmpty || party.Length > 6)
             throw new ArgumentException("water_check_scope");
         foreach (var member in party)
-            if (member is null || PokemonStateValidator.Validate(catalog,member.Pokemon) is not null ||
+            if (member is null || (member.IsEgg ? SourcePokemonValidator.ValidatePartyMember(mechanics.Catalog, new(member.Pokemon, member.HeldItem, member.Status, true), OwnedBattlePokemonCatalog.For(catalog)) : PokemonStateValidator.Validate(catalog, member.Pokemon)) is not null ||
                 !Game.Domain.Battle.SourceBattleAdmission.SupportsHeldItem(mechanics.Catalog,member.HeldItem))
                 throw new ArgumentException("water_party_source");
         var lead = party[0];

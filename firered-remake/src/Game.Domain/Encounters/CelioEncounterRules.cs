@@ -68,7 +68,7 @@ public static class CelioEncounterRules
         if (playerMap.Group is < 0 or > 255 || playerMap.Number is < 0 or > 255)
             throw new ArgumentOutOfRangeException(nameof(playerMap));
         if (party.IsDefaultOrEmpty || party.Length > 6 || party.Any(member => member is null ||
-            PokemonStateValidator.Validate(catalog, member.Pokemon) is not null ||
+            (member.IsEgg ? SourcePokemonValidator.ValidatePartyMember(mechanics.Catalog, new(member.Pokemon, member.HeldItem, member.Status, true), OwnedBattlePokemonCatalog.For(catalog)) : PokemonStateValidator.Validate(catalog, member.Pokemon)) is not null ||
             !SourceBattleAdmission.SupportsHeldItem(mechanics.Catalog, member.HeldItem)))
             throw new ArgumentException("celio_encounter_party");
         return new(roamer, playerMap, party.Select(member =>

@@ -211,12 +211,13 @@ public partial class CampaignView
         _audioSequence=_session.State.Script.EffectSequence;_audioTrainerOneShots.Clear();
     }
 
-    private static string AudioContext(CampaignState s)=>s.OldManTutorial is not null?"old-man":
+    private static string AudioContext(CampaignState s)=>s.EggHatch is not null?"egg-hatch":s.OldManTutorial is not null?"old-man":
         s.SafariBattle is {} safari?safari.Id:s.DoubleBattle is {Stage:not CampaignDoubleBattleStage.Intro} pair?pair.Id:s.Battle is {} lab?lab.Id:s.WildBattle is {} wild?wild.Id:
         s.ForestTrainerBattle is {Stage:not CampaignForestTrainerStage.Intro} trainer?trainer.Id:"field";
 
     private string DesiredSourceMusic(CampaignState s)
     {
+        if(s.EggHatch is {} hatch)return hatch.Stage==CampaignEggHatchStage.Animation&&EggHatchFrame<61?"MUS_EVOLUTION_INTRO":"MUS_EVOLUTION";
         if(PokemonLeagueMusic(s) is {} leagueMusic)return leagueMusic;
         if(s.OldManTutorial is not null)return s.Music;
         if(s.SafariBattle is {} safari)return safari.Capture is not null?"MUS_CAUGHT":"MUS_VS_WILD";

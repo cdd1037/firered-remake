@@ -127,7 +127,7 @@ public sealed partial class CampaignSession
         bool man = effect.Source.Path == FourDayCareTownSource && effect.Source.Symbol is
             "FourIsland_EventScript_DaycareMan" or "FourIsland_EventScript_DaycareEggWaiting" or "FourIsland_EventScript_DaycareAcceptEgg" or
             "FourIsland_EventScript_DaycareReceivedEgg" or "FourIsland_EventScript_CheckOnOneMon" or "FourIsland_EventScript_CheckOnTwoMons";
-        if (!_content.FourIslandDayCareEnabled || !woman && !man || effect.Opcode is not ("special" or "specialvar" or "waitstate" or "incrementgamestat")) return false;
+        if (!_content.FourIslandDayCareEnabled || !woman && !man || effect.Opcode is not ("special" or "specialvar" or "waitstate" or "waitbuttonpress" or "incrementgamestat")) return false;
         bool beforeLock = man && effect.Opcode == "special" && effect.Args.SequenceEqual(new[] { "QuestLog_CutRecording" });
         if (!InFourDayCareScript(state, woman, !beforeLock)) throw new InvalidDataException("daycare_source_context");
         var instruction = DayCareInstruction(state);
@@ -143,6 +143,13 @@ public sealed partial class CampaignSession
                 state.Script.Variables.GetValueOrDefault("VAR_0x8004", -1) != scene.PartyIndex || DayCareSelection(state, scene.PartyIndex, scene.InstanceId) is not null)
                 throw new InvalidDataException("daycare_selected_context");
             return state.Party[scene.PartyIndex];
+        }
+        if (effect.Opcode == "waitbuttonpress")
+        {
+            Require("FourIsland_EventScript_DaycareReceivedEgg", "FourIsland_EventScript_CheckOnTwoMons");
+            if (!effect.Args.IsEmpty || state.Script.Wait?.Kind != StoryWaitKind.ButtonPress || state.Dialogue is null)
+                throw new InvalidDataException("daycare_button_context");
+            return true;
         }
         if (effect.Opcode == "waitstate")
         {
@@ -235,7 +242,7 @@ public sealed partial class CampaignSession
             case "ShowFieldMessageStringVar4" when !returns:
                 Require("FourIsland_EventScript_CheckOnTwoMons");
                 string text = state.TextBuffers["STR_VAR_4"];
-                next = state with { Dialogue = new(text, _content.TextPages(text), 0, false, false) }; break;
+                next = state with { TextBuffers = state.TextBuffers.Remove("STR_VAR_4"), Dialogue = new(text, _content.TextPages(text), 0, false, false) }; break;
             case "GiveEggFromDaycare" when !returns:
                 Require("FourIsland_EventScript_DaycareReceivedEgg"); next = ReceiveDayCareEgg(state); break;
             case "RejectEggFromDayCare" when !returns:

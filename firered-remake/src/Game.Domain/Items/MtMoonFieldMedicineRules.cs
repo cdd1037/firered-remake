@@ -18,6 +18,7 @@ public static class MtMoonFieldMedicineRules
         if (error is not null) return Fail(error);
         error = PokemonStateValidator.ValidateParty(pokemonContent, pokemon);
         if (error is not null) return Fail(error);
+        if (pokemon.IsEgg) return Fail("medicine_egg_unsupported");
         var (definition, effect) = AuthenticatedFieldMedicine.Resolve(catalog, item);
         if (definition is null || effect is not (FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp or FieldMedicineEffect.RestoreAllPp))
             return Fail("medicine_effect_unsupported");

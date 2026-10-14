@@ -32,12 +32,17 @@ public static class SourceLevelEvolutionProjection
     internal static bool IsNormalMethod(PokemonEvolutionMethod method) => method is PokemonEvolutionMethod.Level or
         PokemonEvolutionMethod.Friendship or PokemonEvolutionMethod.LevelAttackGreaterDefense or
         PokemonEvolutionMethod.LevelAttackEqualDefense or PokemonEvolutionMethod.LevelAttackLessDefense;
-    internal static bool Qualifies(PokemonEvolution evolution, PokemonInstance pokemon) => evolution.Method switch {
-        PokemonEvolutionMethod.Level => evolution.Level <= pokemon.Level,
-        PokemonEvolutionMethod.Friendship => pokemon.Friendship >= 220,
-        PokemonEvolutionMethod.LevelAttackGreaterDefense => evolution.Level <= pokemon.Level && pokemon.Stats.Attack > pokemon.Stats.Defense,
-        PokemonEvolutionMethod.LevelAttackEqualDefense => evolution.Level <= pokemon.Level && pokemon.Stats.Attack == pokemon.Stats.Defense,
-        PokemonEvolutionMethod.LevelAttackLessDefense => evolution.Level <= pokemon.Level && pokemon.Stats.Attack < pokemon.Stats.Defense,
+    internal static bool Qualifies(PokemonEvolution evolution, PokemonInstance pokemon) =>
+        Qualifies(evolution, pokemon.Level, pokemon.Friendship, pokemon.Stats.Attack, pokemon.Stats.Defense);
+
+    /// <summary>Shared original trigger predicate for live level-up state and persisted trigger witnesses.
+    /// The caller authenticates the evolution definition and validates the represented values.</summary>
+    public static bool Qualifies(PokemonEvolution evolution, int level, int friendship, int attack, int defense) => evolution.Method switch {
+        PokemonEvolutionMethod.Level => evolution.Level <= level,
+        PokemonEvolutionMethod.Friendship => friendship >= 220,
+        PokemonEvolutionMethod.LevelAttackGreaterDefense => evolution.Level <= level && attack > defense,
+        PokemonEvolutionMethod.LevelAttackEqualDefense => evolution.Level <= level && attack == defense,
+        PokemonEvolutionMethod.LevelAttackLessDefense => evolution.Level <= level && attack < defense,
         _ => false
     };
 }

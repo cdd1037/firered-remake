@@ -160,7 +160,8 @@ public partial class CampaignView
             if(display.Current!=_leagueDisplayCue)
             {
                 _leagueDisplayCue=display.Current;
-                if(display.Current>=0&&display.Current<team.Members.Length)SourceCrySymbol(team.Members[display.Current].SpeciesOrEgg.ToString());
+                // hall_of_fame.c Task_Hof_PlayMonCryAndPrintInfo never cries for an Egg.
+                if(display.Current>=0&&display.Current<team.Members.Length&&team.Members[display.Current].SpeciesOrEgg!=412)SourceCrySymbol(team.Members[display.Current].SpeciesOrEgg.ToString());
                 else if(display.Current==team.Members.Length)SourceSound("SE_APPLAUSE");
             }
             return true;
@@ -259,6 +260,13 @@ public partial class CampaignView
         if(monitor>=0)DrawTextureRectRegion(_leagueTextures["hof-monitor"],new(112,17,16,16),new(0,monitor*16,16,16));
     }
     private CampaignHallOfFameTeam CurrentHallOfFameTeam()=>_session.State.HallOfFame?.Teams.LastOrDefault(t=>t.ChallengeNumber==LeagueCompletion?.ChallengeNumber)??throw new InvalidDataException("Recorded Hall of Fame team missing.");
+    private Texture2D HallPokemonTexture(CampaignHallOfFamePokemon mon)
+    {
+        if(mon.SpeciesOrEgg==412)return BreedingEggShell();
+        bool shiny=((mon.OriginalTrainerId&0xffff)^(mon.OriginalTrainerId>>16)^(mon.Personality&0xffff)^(mon.Personality>>16))<8;
+        return _battleArt.TryGetValue((SevenIslandRenderKeys.Species(mon.SpeciesOrEgg,mon.Personality),"front",shiny),out var sprite)
+            ? sprite.Texture : throw new InvalidDataException("Recorded Pokemon art missing.");
+    }
     private static readonly (int X,int Y,int EndX,int EndY)[] HallFull=[(120,210,120,40),(326,220,56,40),(-86,220,184,40),(120,-62,120,88),(-70,-92,200,88),(310,-92,40,88)];
     private static readonly (int X,int Y,int EndX,int EndY)[] HallHalf=[(120,234,120,64),(326,244,56,64),(-86,244,184,64)];
     private static (int Current,int Moving,int MotionTick,int ApplauseTick,int PlayerTick,bool Ready) HallDisplayPosition(int count,int tick)
@@ -293,17 +301,26 @@ public partial class CampaignView
         int shown=phase.Moving>=0?phase.Moving:Math.Min(team.Members.Length-1,phase.Current);
         for(int i=0;i<=shown;i++)
         {
-            var mon=team.Members[i];bool shiny=((mon.OriginalTrainerId&0xffff)^(mon.OriginalTrainerId>>16)^(mon.Personality&0xffff)^(mon.Personality>>16))<8;
-            if(!_battleArt.TryGetValue((SevenIslandRenderKeys.Species(mon.SpeciesOrEgg,mon.Personality),"front",shiny),out var sprite))throw new InvalidDataException("Recorded Pokemon art missing.");
+            var mon=team.Members[i];var texture=HallPokemonTexture(mon);
             var p=(team.Members.Length>3?HallFull:HallHalf)[i];Vector2 position=new(p.EndX,p.EndY);
             if(i==phase.Moving)position=new(Mathf.MoveToward(p.X,p.EndX,15*phase.MotionTick),Mathf.MoveToward(p.Y,p.EndY,10*phase.MotionTick));
-            DrawTexture(sprite.Texture,position-new Vector2(32,32),phase.PlayerTick>=0||i<phase.Current&&phase.Current<team.Members.Length?new Color(.65f,.68f,.75f):Colors.White);
+            DrawTexture(texture,position-new Vector2(32,32),phase.PlayerTick>=0||i<phase.Current&&phase.Current<team.Members.Length?new Color(.65f,.68f,.75f):Colors.White);
         }
         if(phase.Current>=0&&phase.Current<team.Members.Length&&phase.Moving<0)
         {
             var mon=team.Members[phase.Current];_battleSkin.DrawStandardFrame(this,new(0,112,240,48));
+            if(mon.SpeciesOrEgg==412)
+            {
+                // GetMonData(NICKNAME) returns EGG, not the internal Japanese Egg name.
+                // Source HallOfFame_PrintMonInfo omits dex/species/gender/level/ID entirely.
+                float width=_sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText("EGG"),fontSize:_sourceNormal.Size).X;
+                SourceText(_sourceNormal,new(128-width/2,118),"EGG");
+            }
+            else
+            {
             SourceText(_sourceSmall,new(8,118),"No."+mon.SpeciesOrEgg.ToString("D3")+" "+mon.Nickname+" / "+PresentedBattleSpeciesName(mon.SpeciesOrEgg));
             SourceText(_sourceNormal,new(24,136),"Lv. "+mon.Level+"     IDNo."+((ushort)mon.OriginalTrainerId).ToString("D5"));
+            }
         }
         else if(phase.ApplauseTick>=0)
         {

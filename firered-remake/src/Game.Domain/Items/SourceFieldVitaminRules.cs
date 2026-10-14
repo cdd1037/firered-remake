@@ -76,6 +76,7 @@ public static class SourceFieldVitaminRules
         if (capability is null) return Fail("vitamin_effect_unsupported");
         if (EarlyShopInventoryRules.Validate(catalog, inventory) is { } inventoryError) return Fail(inventoryError);
         if (PokemonStateValidator.ValidateParty(pokemonContent, pokemon) is { } pokemonError) return Fail(pokemonError);
+        if (pokemon.IsEgg) return Fail("vitamin_egg_unsupported");
         if (currentMapSection is null || currentMapSection.Length is <= 7 or > 128 ||
             !currentMapSection.StartsWith("MAPSEC_", StringComparison.Ordinal) ||
             !currentMapSection[7..].All(c => char.IsAsciiLetterUpper(c) || char.IsAsciiDigit(c) || c == '_'))
