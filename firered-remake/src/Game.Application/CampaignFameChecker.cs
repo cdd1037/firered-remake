@@ -44,8 +44,14 @@ public sealed partial class CampaignSession
     {
         var item = _content.EarlyShop?.Items.SingleOrDefault(i => i.Id.Value == id);
         if (item?.SourceMetadata is not { Registrability: 1, Pocket: "POCKET_KEY_ITEMS" }) return false;
-        return id == ItemfinderRules.Item.Value ? ItemfinderEnabled : id == BillItemRules.FameCheckerId.Value && FameCheckerEnabled;
+        return id == ItemfinderRules.Item.Value ? ItemfinderEnabled : id == VsSeekerItem.Value ? VsSeekerEnabled : id == BillItemRules.FameCheckerId.Value && FameCheckerEnabled;
     }
+
+    public string RegisteredKeyItemUseCommand(string id) => id switch {
+        "pret:ITEM_VS_SEEKER" when VsSeekerEnabled => "field_vs_seeker",
+        "pret:ITEM_ITEMFINDER" when ItemfinderEnabled => "field_itemfinder",
+        "pret:ITEM_FAME_CHECKER" when FameCheckerEnabled => "fame_checker_open",
+        _ => throw new ArgumentException("registered_item_unavailable", nameof(id)) };
 
     private string? ValidateRegisteredKeyItem(CampaignState state) => state.RegisteredItem is not {} id ? null :
         !SupportsRegisteredKeyItem(id) || OpeningInventoryRules.Quantity(state.Inventory?.KeyItems ?? [], new(id)) != 1
@@ -61,6 +67,7 @@ public sealed partial class CampaignSession
     }
 
     private Decision<CampaignState> UseRegisteredKeyItem(CampaignState state, CampaignCommand command) =>
+        state.RegisteredItem == VsSeekerItem.Value ? UseVsSeeker(state, command, registered: true) :
         state.RegisteredItem == ItemfinderRules.Item.Value ? UseItemfinder(state, command, registered: true) :
         state.RegisteredItem == BillItemRules.FameCheckerId.Value ? OpenFameChecker(state, command, registered: true) :
         new(CommandStatus.Rejected, state, "registered_item_unavailable");

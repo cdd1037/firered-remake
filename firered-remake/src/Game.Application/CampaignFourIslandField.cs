@@ -135,7 +135,12 @@ public sealed partial class CampaignSession
         if(coord is not null)return Pump(StartStory(state,coord.ScriptId));
         state=ApplyRenewableHiddenItemWalkingStep(state);
         if(callbacks.AdvanceFriendship)state=ApplyWalkingFriendship(state);
-        if(callbacks.AdvancePoison)state=ApplyFieldPoisonWalkingStep(state);
+        if(callbacks.AdvancePoison)
+        {
+            state=ApplyVsSeekerWalkingStep(state,out bool vsExpired);
+            if(vsExpired)return state;
+            state=ApplyFieldPoisonWalkingStep(state);
+        }
         if(state.FieldPoison is null&&callbacks.AdvancePoison)state=ApplyDayCareWalkingStep(state);
         if(state.FieldPoison is null&&state.Script.Completed&&callbacks.AdvanceRepel)state=ApplyRepelWalkingStep(state);
         if(state.FieldPoison is null&&state.Repel is null&&state.Script.Completed&&state.Script.Wait is null&&callbacks.CheckStandardWildEncounter)

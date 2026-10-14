@@ -43,6 +43,11 @@ public interface ICampaignCatalog:IStoryCatalog
 {
     string ContentVersion{get;}
     FameCheckerCatalog? FameChecker=>null;
+    VsSeekerCatalog? VsSeeker=>null;
+    VsSeekerTrainerCatalog? VsSeekerTrainers=>null;
+    ImmutableArray<VsSeekerBattleOccurrence> VsSeekerBattleOccurrences=>[];
+    ImmutableDictionary<string,string> VsSeekerTexts=>ImmutableDictionary<string,string>.Empty;
+    VsSeekerOpponentPokemonCatalog? VsSeekerOpponents=>null;
     bool RegionalFlavorEnabled=>false;
     bool SupportsRegionalFlavor(MapId map)=>false;
     CampaignPokemonContent? PokemonContent=>null;

@@ -50,6 +50,9 @@ public sealed partial class CampaignSession
             !ReferenceEquals(stoneOpponents.Predecessor.Predecessor, content.SeafoamOpponents) ||
             !ReferenceEquals(stoneOpponents.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
+        if (content.VsSeeker is not null && (content.VsSeekerOpponents is not {} vs ||
+            !ReferenceEquals(vs.Owned, battle) || !ReferenceEquals(vs.Predecessor, memorial.Catalog)))
+            throw new InvalidDataException("current_vs_seeker_opponent_identity");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, ordinary.Catalog, battle);
     }
 

@@ -17,6 +17,7 @@ public sealed partial class CampaignSession
     }
     private CampaignState RefreshSlottedActors(CampaignState state)
     {
+        state=CaptureVsSeekerObjectMovements(state);
         var player=state.World.Player;
         bool InView(int x,int y)=>x+7>=player.X-2&&x+7<=player.X+17&&y+7>=player.Y&&y+7<=player.Y+16;
         var actors=state.Actors;var slots=state.ObjectSlots!;
@@ -25,14 +26,15 @@ public sealed partial class CampaignSession
         {
             if(actor.Active||!InView(actor.TemplateX,actor.TemplateY)||(actor.HideFlag is not ("0" or "0x0")&&state.Script.Flags.GetValueOrDefault(actor.HideFlag)))continue;
             int free=Enumerable.Range(1,15).FirstOrDefault(i=>!slots.ContainsKey(i));if(free==0)continue;
-            slots=slots.Add(free,actor.LocalId);actors=actors.SetItem(actor.LocalId,actor with{Active=true,Invisible=false,X=actor.TemplateX,Y=actor.TemplateY,Facing=DirectionFromType(actor.MovementType)});
+            var movement=state.VsSeekerProgress?.TemplateMovements.TryGetValue(actor.SourceLocalId,out int sourceMovement)==true?VsMovementSymbol(sourceMovement):actor.MovementType;
+            slots=slots.Add(free,actor.LocalId);actors=actors.SetItem(actor.LocalId,actor with{Active=true,Invisible=false,X=actor.TemplateX,Y=actor.TemplateY,MovementType=movement,Facing=DirectionFromType(movement)});
         }
         foreach(var actor in actors.Values.Where(a=>a.Active).OrderBy(a=>a.SourceLocalId))
         {
             if(InView(actor.X,actor.Y)||InView(actor.TemplateX,actor.TemplateY))continue;
             actors=actors.SetItem(actor.LocalId,actor with{Active=false});var occupied=slots.SingleOrDefault(x=>x.Value==actor.LocalId);if(occupied.Key!=0)slots=slots.Remove(occupied.Key);
         }
-        return state with{Actors=actors,ObjectSlots=slots};
+        return CaptureVsSeekerObjectMovements(state with{Actors=actors,ObjectSlots=slots});
     }
     private static CampaignState SelectInteractedObject(CampaignState state,string actor)
     {

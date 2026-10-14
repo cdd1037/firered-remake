@@ -20,7 +20,7 @@ public sealed partial class CampaignSession
         if(!_content.IsRoute3StablePosition(p.MapId,p.X,p.Y))return "save_route3_boundary_invalid";
         // The current source program supports first battles and their post-battle branches.
         // VS Seeker acquisition/charging and rematch rosters are separate later content.
-        if(state.Inventory?.KeyItems?.Any(i=>i.Item.Value=="pret:ITEM_VS_SEEKER")==true)return "save_route3_vs_seeker_unsupported";
+        if(!VsSeekerEnabled&&state.Inventory?.KeyItems?.Any(i=>i.Item.Value=="pret:ITEM_VS_SEEKER")==true)return "save_route3_vs_seeker_unsupported";
         return null;
     }
 

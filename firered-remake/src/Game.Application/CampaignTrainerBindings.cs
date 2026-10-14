@@ -15,7 +15,7 @@ public sealed partial class CampaignSession
     // The Domain overloads retain catalog identity, owned/opponent and party checks.
     private enum TrainerRegion
     {
-        Forest, Pewter, Route22, Route3, MtMoon, Cerulean, Bill, Vermilion, SsAnne, VermilionGym, Route11, RockTunnel, CeladonApproach, CeladonGym, RocketHideout, PokemonTower, FuchsiaRoute, FuchsiaGym, Silph, SaffronGym, Cinnabar, FirstSevii, ViridianGym, LeagueRival, VictoryRoad, PokemonLeague, SeviiRuby, FourIsland, FiveIsland, SixIsland, SevenIsland, FightingDojo, Seafoam, MemorialPillar
+        Forest, Pewter, Route22, Route3, MtMoon, Cerulean, Bill, Vermilion, SsAnne, VermilionGym, Route11, RockTunnel, CeladonApproach, CeladonGym, RocketHideout, PokemonTower, FuchsiaRoute, FuchsiaGym, Silph, SaffronGym, Cinnabar, FirstSevii, ViridianGym, LeagueRival, VictoryRoad, PokemonLeague, SeviiRuby, FourIsland, FiveIsland, SixIsland, SevenIsland, FightingDojo, Seafoam, MemorialPillar, VsSeeker
     }
 
     private sealed record TrainerScriptBinding(TrainerRegion Region, ImmutableArray<ForestTrainerBattleDefinition> Sources,
@@ -221,6 +221,16 @@ public sealed partial class CampaignSession
             Add(TrainerRegion.MemorialPillar, memorial.Trainers.Values, memorial.BattlesByScript.Values.Select(ProjectTrainerScript),
                 (trainer, rng) => MemorialPillarTrainerPartyFactory.Create(memorial, _content.MemorialPillarOpponents!, trainer, rng),
                 "memorial-pillar-trainer", memorial.BattlesByScript.Values);
+        }
+        if (VsSeekerEnabled && _content.VsSeekerTrainers is { } vsSeeker)
+        {
+            // Existing first-battle bindings keep their regional occurrence policy. Newly
+            // admitted parties are reachable only through the authenticated rematch adapter.
+            var source = new TrainerScriptBinding(TrainerRegion.VsSeeker, [],
+                ImmutableDictionary<string, CeruleanTrainerBattleDefinition>.Empty);
+            foreach (var trainer in vsSeeker.Trainers.Values.Where(t => !t.DoubleBattle && !bindings.ContainsKey(t.Id)))
+                bindings.Add(trainer.Id, new(trainer, source,
+                    (id, rng) => VsSeekerTrainerPartyFactory.Create(vsSeeker, _binding.Ownership.Mechanics, id, rng), "vs-seeker-trainer"));
         }
         return bindings;
     }

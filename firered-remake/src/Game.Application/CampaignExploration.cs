@@ -224,7 +224,10 @@ public sealed partial class CampaignSession
         {
             if(moved.World.StepCount>state.World.StepCount)
             {
-                moved=ApplyFieldPoisonWalkingStep(ApplyWalkingFriendship(moved));
+                moved=ApplyWalkingFriendship(moved);
+                moved=ApplyVsSeekerWalkingStep(moved,out bool vsExpired);
+                if(vsExpired)return new(CommandStatus.Accepted,moved);
+                moved=ApplyFieldPoisonWalkingStep(moved);
                 if(moved.FieldPoison is null)moved=ApplyDayCareWalkingStep(moved);
                 if(moved.FieldPoison is null&&moved.Script.Completed)moved=ApplySafariWalkingStep(moved);
                 if(moved.FieldPoison is null&&moved.Script.Completed)moved=ApplyRepelWalkingStep(moved);

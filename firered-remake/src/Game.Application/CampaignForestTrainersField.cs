@@ -128,10 +128,15 @@ public sealed partial class CampaignSession
                 h.ExperienceGained < 0 || h.MoneyGained < 0 || h.MoneyMultiplier is not (null or 2) || h.MoneyMultiplier is not null && !_content.PresetDoublesEnabled || h.OpponentsSent.IsDefaultOrEmpty ||
                 h.OpponentsSent[0] != 0 || h.OpponentsSent.Length > OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length ||
                 h.OpponentsSent.Distinct().Count() != h.OpponentsSent.Length ||
-                h.OpponentsSent.Any(n => n < 0 || n >= OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length) || winners.Contains(h.TrainerId)&&!IsFirstSeviiBikerHistory(h)&&!IsPokemonLeagueTrainer(new(h.TrainerId)))
+                h.OpponentsSent.Any(n => n < 0 || n >= OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length) || winners.Contains(h.TrainerId)&&h.VsSeeker is null&&!IsFirstSeviiBikerHistory(h)&&!IsPokemonLeagueTrainer(new(h.TrainerId)))
                 return "save_forest_trainer_history_invalid";
-            if (IsMemorialPillarTrainer(new(h.TrainerId)) && !MemorialPillarTrainerHistoryOriginMatches(h)) return "save_memorial_pillar_trainer_origin";
-            if (IsFiveIslandTrainer(new(h.TrainerId)) && !FiveIslandTrainerHistoryOriginMatches(h)) return "save_five_island_trainer_origin";
+            if (h.VsSeeker is { } receipt && (!ValidVsSeekerHistory(state, receipt, h.TrainerId, h.Outcome,
+                h.MoneyGained, h.MoneyMultiplier, winners, false) || h.SourceScriptEntry != receipt.ScriptEntry || h.SourceScriptLine != receipt.SourceLine))
+                return "save_vs_seeker_single_history";
+            if (h.VsSeeker is null && OrdinaryBinding(new(h.TrainerId)).Scripts.Region == TrainerRegion.VsSeeker)
+                return "save_vs_seeker_single_origin";
+            if (h.VsSeeker is null && IsMemorialPillarTrainer(new(h.TrainerId)) && !MemorialPillarTrainerHistoryOriginMatches(h)) return "save_memorial_pillar_trainer_origin";
+            if (h.VsSeeker is null && IsFiveIslandTrainer(new(h.TrainerId)) && !FiveIslandTrainerHistoryOriginMatches(h)) return "save_five_island_trainer_origin";
             var trainer=OrdinaryTrainer(new TrainerId(h.TrainerId));
             if (h.OpponentsSent.Any(n => !state.SeenSpecies.Contains(trainer.Party[n].SourceSpeciesId)))
                 return "save_forest_trainer_seen_missing";

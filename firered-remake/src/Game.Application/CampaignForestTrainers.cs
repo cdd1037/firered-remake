@@ -18,6 +18,7 @@ public sealed record CampaignForestTrainerHistory(string Id, string TrainerId, W
 {
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? PokemonLeagueChallenge { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? MoneyMultiplier { get; init; }
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignVsSeekerBattleReceipt? VsSeeker { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? SourceScriptEntry { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? SourceScriptLine { get; init; }
 }
@@ -30,6 +31,7 @@ public sealed record CampaignForestTrainerBattle(string Id, TrainerId Trainer, s
 {
     [JsonIgnore] public SourceBattleFrame Frame { get => Presentation.Frame ?? throw new InvalidDataException("canonical_trainer_frame_missing"); init => Presentation = Presentation with { Frame = value }; }
     [JsonIgnore] public CampaignTrainerCombatView Combat => CampaignTrainerReadProjection.From(Frame);
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignVsSeekerBattleReceipt? VsSeeker { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public string? SourceScriptEntry { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? SourceScriptLine { get; init; }
     [JsonIgnore] public ForestTrainerCombatEvent? CurrentTrainerEvent => TrainerEventIndex < TrainerEvents.Length &&
@@ -403,7 +405,7 @@ public sealed partial class CampaignSession
         if (won)
         {
             pages.Add(new($"{state.PlayerName} defeated\n{OrdinaryTrainerClass(trainer.Trainer)} {(IsPokemonLeagueChampion(trainer.Trainer)||IsLeagueRivalTrainer(trainer.Trainer)||IsSilphRival(trainer.Trainer)||IsPokemonTowerRival(trainer.Trainer)||IsRoute22Trainer(trainer.Trainer)||IsCeruleanRival(trainer.Trainer)||IsSsAnneRival(trainer.Trainer)?state.RivalName:OrdinaryTrainer(trainer.Trainer).SourceTrainerName)}!"));
-            foreach (var text in _content.TextPages(OrdinaryTrainerScript(trainer.Trainer,trainer.SourceScriptEntry,trainer.SourceScriptLine).DefeatText)) pages.Add(new(text.Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal).Replace("{RIVAL}",state.RivalName,StringComparison.Ordinal)));
+            foreach (var text in _content.TextPages(trainer.VsSeeker is {} vsReceipt ? VsSeekerOccurrence(vsReceipt).Arguments[2] : OrdinaryTrainerScript(trainer.Trainer,trainer.SourceScriptEntry,trainer.SourceScriptLine).DefeatText)) pages.Add(new(text.Replace("{PLAYER}",state.PlayerName,StringComparison.Ordinal).Replace("{RIVAL}",state.RivalName,StringComparison.Ordinal)));
             pages.Add(new($"{state.PlayerName} got {award}\nfor winning!"));
         }
         else
@@ -416,7 +418,7 @@ public sealed partial class CampaignSession
                 pages.Add(new(page.Replace("{PLAYER}", state.PlayerName, StringComparison.Ordinal)));
         }
         var history = new CampaignForestTrainerHistory(trainer.Id, trainer.Trainer.Value, trainer.Frame.Outcome,
-            trainer.ExperienceGained, prize.Awarded, trainer.OpponentsSent){MoneyMultiplier=trainer.Frame.Field.MoneyMultiplier,PokemonLeagueChallenge=IsPokemonLeagueTrainer(trainer.Trainer)?PokemonLeagueChallenge(state):null,SourceScriptEntry=IsFightingDojoTrainer(trainer.Trainer)||IsMemorialPillarTrainer(trainer.Trainer)||IsSeafoamTrainer(trainer.Trainer)||IsSevenIslandTrainer(trainer.Trainer)||IsFiveIslandTrainer(trainer.Trainer)||IsSixIslandTrainer(trainer.Trainer)||IsFourIslandTrainer(trainer.Trainer)||IsSeviiRubyTrainer(trainer.Trainer)||IsPokemonLeagueTrainer(trainer.Trainer)||IsLeagueRivalTrainer(trainer.Trainer)||IsFirstSeviiTrainer(trainer.Trainer)?trainer.SourceScriptEntry:null,SourceScriptLine=trainer.SourceScriptLine};
+            trainer.ExperienceGained, prize.Awarded, trainer.OpponentsSent){VsSeeker=trainer.VsSeeker,MoneyMultiplier=trainer.Frame.Field.MoneyMultiplier,PokemonLeagueChallenge=IsPokemonLeagueTrainer(trainer.Trainer)?PokemonLeagueChallenge(state):null,SourceScriptEntry=trainer.VsSeeker is not null||IsFightingDojoTrainer(trainer.Trainer)||IsMemorialPillarTrainer(trainer.Trainer)||IsSeafoamTrainer(trainer.Trainer)||IsSevenIslandTrainer(trainer.Trainer)||IsFiveIslandTrainer(trainer.Trainer)||IsSixIslandTrainer(trainer.Trainer)||IsFourIslandTrainer(trainer.Trainer)||IsSeviiRubyTrainer(trainer.Trainer)||IsPokemonLeagueTrainer(trainer.Trainer)||IsLeagueRivalTrainer(trainer.Trainer)||IsFirstSeviiTrainer(trainer.Trainer)?trainer.SourceScriptEntry:null,SourceScriptLine=trainer.SourceScriptLine};
         if (_content.VermilionEnabled && won)
         {
             var payday = SourceBattleMoneyRules.SettlePayDay(money, trainer.Frame.Field.PayDayMoney, WildBattleOutcome.Won,trainer.Frame.Field.MoneyMultiplier);
@@ -428,9 +430,14 @@ public sealed partial class CampaignSession
             b = trainer.Presentation;
             b = b with { RandomTrace = pickup.Trace };
         }
-        return state with { Money = money, ForestTrainerHistory = (state.ForestTrainerHistory ?? []).Add(history),
+        var settled = state with { Money = money, ForestTrainerHistory = (state.ForestTrainerHistory ?? []).Add(history),
             ForestTrainerBattle = trainer with { Stage = CampaignForestTrainerStage.Finished,
                 Presentation = b with { Phase = CampaignBattlePhase.Results, Pages = pages.ToImmutable(), PageIndex = 0 } } };
+        // Original battle_main clears the matching rematch state before evolution and
+        // the win/loss callback, including its intentionally unused direction draws.
+        settled = ResetVsSeekerAfterBattle(settled, trainer.Trainer);
+        return settled with { ForestTrainerBattle = settled.ForestTrainerBattle! with {
+            Frame = settled.ForestTrainerBattle.Frame with { Rng = settled.World.Rng } } };
     }
 
     private CampaignState BeginForestTrainerEvolution(CampaignState state)
@@ -459,6 +466,7 @@ public sealed partial class CampaignSession
         next=next with { BattledTrainers = next.BattledTrainers.Add(trainer.Trainer.Value),
             Script = next.Script with { Variables = next.Script.Variables.SetItem("VAR_RESULT", 0) },
             Music = FieldTravelMusic(next), Exploration = ResetEncounterModifiers(next.Exploration!) };
+        if (trainer.VsSeeker is not null) return ClearVsSeekerLastTalked(next, trainer.VsSeeker);
         if((IsFourIslandTrainer(trainer.Trainer)||IsSeviiRubyTrainer(trainer.Trainer)||IsPokemonLeagueTrainer(trainer.Trainer)||IsLeagueRivalTrainer(trainer.Trainer)||IsFirstSeviiTrainer(trainer.Trainer)||IsCinnabarTrainer(trainer.Trainer)||IsSilphTrainer(trainer.Trainer)||IsPokemonTowerTrainer(trainer.Trainer)||IsRocketHideoutTrainer(trainer.Trainer)||IsMtMoonTrainer(trainer.Trainer)||IsCeruleanTrainer(trainer.Trainer)||IsBillTrainer(trainer.Trainer)||IsSsAnneTrainer(trainer.Trainer))&&OrdinaryTrainerScript(trainer.Trainer,trainer.SourceScriptEntry,trainer.SourceScriptLine).Mode==3)
         {
             var continuation=state.Script with{Variables=state.Script.Variables.SetItem("VAR_RESULT",0)};

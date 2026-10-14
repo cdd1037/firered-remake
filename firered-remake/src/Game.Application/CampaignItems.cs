@@ -47,6 +47,7 @@ public sealed partial class CampaignSession
             if(!_content.SsAnneEnabled||menu.Origin!="bag"||menu.View!="bag"||OpeningInventoryRules.Quantity(state.Inventory!.KeyItems??[],SsAnneItemRules.BerryPouchId)!=1)return No("berry_pouch_context_invalid");
             return Menu("berries");
         }
+        if(command.Kind=="field_vs_seeker")return UseVsSeeker(state,command);
         if(command.Kind=="field_itemfinder")return UseItemfinder(state,command);
         if(command.Kind=="item_register")return RegisterKeyItem(state,command);
         if(command.Kind=="field_sacred_ash"||command.Kind=="field_medicine"&&command.Text=="pret:ITEM_SACRED_ASH")return UseSacredAsh(state,command);

@@ -9,7 +9,7 @@ public sealed partial class CampaignSession
     }
 
     private static bool IsStableFieldForParty(CampaignState state)=>
-        state.FlyEffect is null&&state.Script.Completed&&!state.Script.Locked&&state.Script.Wait is null&&state.Script.Stack.IsEmpty&&state.Script.QuestLogState==0&&
+        state.VsSeekerEffect is null&&state.FameChecker is null&&state.FlyEffect is null&&state.Script.Completed&&!state.Script.Locked&&state.Script.Wait is null&&state.Script.Stack.IsEmpty&&state.Script.QuestLogState==0&&
         state.SeafoamMovement is null&&state.RuinValleyCut is null&&state.DottedHoleFall is null&&state.FourIslandMovement is null&&state.EntryPrograms.IsEmpty&&state.Dialogue is null&&state.SignMessage is null&&
         state.MoveTutor is null&&state.MoveReminder is null&&state.MoveDeleter is null&&state.MagikarpRecord is null&&state.NameRater is null&&state.Nickname is null&&state.MonPicture is null&&!state.ScreenIsBlack&&state.PlayerVisible&&
         state.PresentationTicks==0&&state.Motions.IsEmpty&&state.ArrivalFacing is null&&

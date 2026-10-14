@@ -60,6 +60,7 @@ public sealed partial class CampaignSession
         foreach(var h in state.ForestTrainerHistory??[])
         {
             if(h is null||h.TrainerId is null)continue;
+            if(h.VsSeeker is not null)continue; // The source rematch occurrence has its own replayed history proof.
             if(IsFightingDojoTrainer(new(h.TrainerId))){if(!FightingDojoTrainerHistoryOriginMatches(h))return "save_fighting_dojo_trainer_origin";continue;}
             if(IsMemorialPillarTrainer(new(h.TrainerId))){if(!MemorialPillarTrainerHistoryOriginMatches(h))return "save_memorial_pillar_trainer_origin";continue;}
             if(IsFiveIslandTrainer(new(h.TrainerId))){if(!FiveIslandTrainerHistoryOriginMatches(h))return "save_five_island_trainer_origin";continue;}

@@ -88,6 +88,21 @@ public sealed class OrdinaryItemInventoryCatalog
         Proofs.Add(proof.Catalog, proof); return proof;
     }
 
+    public static ItemId VsSeekerId { get; } = new("pret:ITEM_VS_SEEKER");
+    public const string VsSeekerSourceSha256 = "5d7afb5c124980aae7c90b2cf597b3f5bf8768b2340ffab9a6015a4369582926";
+    public static OrdinaryItemInventoryCatalog AppendVsSeeker(EarlyShopCatalog predecessor,
+        EarlyShopItemDefinition item)
+    {
+        ArgumentNullException.ThrowIfNull(predecessor);
+        if (For(predecessor) is not { } old || item is not { SourceItemId: 362, Pocket: "POCKET_KEY_ITEMS", Importance: 1 } ||
+            item.Id != VsSeekerId || item.SourceMetadata is not { Registrability: 1, CanGive: false, CanSell: false, CanToss: false } ||
+            predecessor.Items.Any(i => i.Id == item.Id) ||
+            CampaignSourceFingerprint.Compute(new[] { item }) != VsSeekerSourceSha256)
+            throw new ArgumentException("ordinary_vs_seeker_source");
+        var proof = new OrdinaryItemInventoryCatalog(old.Predecessor, old.Additions.Add(item));
+        Proofs.Add(proof.Catalog, proof); return proof;
+    }
+
     public string? ValidateInventory(InventoryState? inventory)
     {
         if (inventory is null) return "inventory_missing";
@@ -101,12 +116,18 @@ public sealed class OrdinaryItemInventoryCatalog
         }
         if (Pocket(inventory.BagItems, Catalog.Limits.BagItemSlots) is {} bag) return bag;
         if (Pocket(inventory.PcItems, Catalog.Limits.PcItemSlots) is {} pc) return pc;
-        foreach (var pocket in new[] { inventory.KeyItems, inventory.Balls, inventory.Berries, inventory.Machines })
+        var keys = inventory.KeyItems ?? [];
+        if (Pocket(keys, Catalog.QuestLimits.KeyItemSlots) is {} keyError) return keyError;
+        if (keys.Any(s => IsAddition(s.Item) && (s.Item != VsSeekerId || s.Quantity != 1)) ||
+            inventory.BagItems.Any(s => s.Item == VsSeekerId) || inventory.PcItems.Any(s => s.Item == VsSeekerId))
+            return "inventory_item_pocket";
+        foreach (var pocket in new[] { inventory.Balls, inventory.Berries, inventory.Machines })
             if (pocket is {} stacks && !stacks.IsDefault && stacks.Any(s => s is not null && IsAddition(s.Item)))
                 return "inventory_item_pocket";
         // Preserve original capacities and reject malformed full state before narrowing to the source proof.
         return EarlyShopInventoryRules.Validate(Predecessor, inventory with {
             BagItems = inventory.BagItems.RemoveAll(s => IsAddition(s.Item)),
-            PcItems = inventory.PcItems.RemoveAll(s => IsAddition(s.Item)) });
+            PcItems = inventory.PcItems.RemoveAll(s => IsAddition(s.Item)),
+            KeyItems = keys.RemoveAll(s => IsAddition(s.Item)) });
     }
 }

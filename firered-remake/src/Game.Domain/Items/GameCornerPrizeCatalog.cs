@@ -35,7 +35,9 @@ public sealed class GameCornerPrizeCatalog
             OwnedMachineCatalogBinding.SourceAncestor(machines, GameCornerMachineCatalog.For) is not { } teaching ||
             !ReferenceEquals(OwnedMachineCatalogBinding.For(machines), current) ||
             !ReferenceEquals(teaching.Pokemon, owned) || OrdinaryItemInventoryCatalog.For(items) is not { } ordinary ||
-            items.Items.Length != 137 || !OrdinaryItemInventoryCatalog.GameCornerPrizeItems.All(ordinary.IsAddition) ||
+            // The authenticated shared inventory may gain unrelated items. Prize admission
+            // depends on its exact source rewards, not the total number of catalog entries.
+            !OrdinaryItemInventoryCatalog.GameCornerPrizeItems.All(ordinary.IsAddition) ||
             counters.IsDefault || counters.Length != 3 || counters.Any(c => c is null || c.Prizes.IsDefault || c.Prizes.Length != 5) ||
             CampaignSourceFingerprint.Compute(counters.ToArray()) != CountersSourceSha256)
             throw new ArgumentException("game_corner_prize_owner_or_source");

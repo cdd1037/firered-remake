@@ -80,7 +80,10 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-slot-machine.py', ['{reference}', '{project}']),
  ('import-slot-machine-presentation.py', ['{reference}', '{project}', '--dependency', '{project}']),
  ('import-fame-checker.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/fame-checker']),
- ('import-fame-checker-presentation.py', ['{reference}','{project}'])]
+ ('import-fame-checker-presentation.py', ['{reference}','{project}']),
+ ('import-vs-seeker.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/vs-seeker']),
+ ('import-vs-seeker-parties.py', ['--source-root','{reference}','--dependency-root','{project}','--rules-root','{project}','--output-root','{project}']),
+ ('import-vs-seeker-presentation.py', ['{reference}','{project}','{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

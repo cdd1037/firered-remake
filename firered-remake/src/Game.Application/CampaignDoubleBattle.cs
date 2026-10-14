@@ -21,6 +21,10 @@ public sealed record CampaignDoubleBattle(string Id, TrainerId Trainer, string A
     ImmutableArray<WildBattleCombatant> DisplayedSlots, ImmutableArray<PartyMemberKey> DisplayedMembers,
     ImmutableArray<RandomTrace> Trace, ImmutableArray<string> FinishPages, int FinishPageIndex)
 {
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignVsSeekerBattleReceipt? VsSeeker { get; init; }
+    [JsonIgnore] public TrainerPartyCreationResult? VsSeekerParty { get; init; }
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public SourceTrainerItemInventory? VsSeekerInventory { get; init; }
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public MoveId? VsSeekerCurrentMove { get; init; }
     [JsonIgnore] public SourceBattleEvent? CurrentEvent => EventIndex < Events.Length ? Events[EventIndex] : null;
     [JsonIgnore] public int? SelectingSlot => Stage != CampaignDoubleBattleStage.Combat || CurrentEvent is not null ||
         Frame.FourTurn is not null ? null : new[] { 0, 2 }.Where(i => SourceFourMedicineRules.CanSelect(Frame,new(i)) && Frame.Get(new(i)).Registers.Turn?.Lock is null &&
@@ -32,6 +36,7 @@ public sealed record CampaignDoubleBattle(string Id, TrainerId Trainer, string A
 public sealed record CampaignDoubleBattleHistory(string Id, string TrainerId, WildBattleOutcome Outcome,
     int ExperienceGained, int MoneyGained, ImmutableArray<int> OpponentsSeen)
 {
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignVsSeekerBattleReceipt? VsSeeker { get; init; }
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? MoneyMultiplier { get; init; }
 }
 
@@ -56,7 +61,7 @@ public sealed partial class CampaignSession
         _content.FirstSeviiTrainerParties!.BattlesBySource.Values.Single(b=>b.ScriptEntry==script&&b.Mode==4);
     private bool IsTwinsScript(string script) => script is "Route8_EventScript_Eli" or "Route8_EventScript_Anne" || IsCinnabarDoubleScript(script) || IsFirstSeviiDoubleScript(script) || IsVictoryRoadDoubleScript(script) || IsSeviiRubyDoubleScript(script) || IsSixIslandDoubleScript(script) || IsSevenIslandDoubleScript(script) || IsSeafoamDoubleScript(script) || IsRoute16FlyDoubleScript(script);
     private TrainerId DoubleTrainerId(string script)=>IsRoute16FlyDoubleScript(script)?Route16FlyDoubleTrainerEncounter.TrainerId:IsSeafoamDoubleScript(script)?_content.SeafoamTrainers!.BattlesByScript[script].Trainer:IsSevenIslandDoubleScript(script)?_content.SevenIslandTrainers!.BattlesByScript[script].Trainer:IsSixIslandDoubleScript(script)?SixIslandDoubleTrainerEncounter.TrainerId:IsSeviiRubyDoubleScript(script)?SeviiRubyDoubleTrainerEncounter.TrainerId:IsVictoryRoadDoubleScript(script)?VictoryRoadDoubleTrainerEncounter.TrainerId:IsFirstSeviiDoubleScript(script)?FirstSeviiDoubleTrainerEncounter.TrainerId:IsCinnabarDoubleScript(script)?CinnabarDoubleTrainerEncounter.TrainerId:SourceTwinsTrainerEncounter.TrainerId;
-    private TrainerDefinition DoubleTrainer(TrainerId trainer)=>IsRoute16FlyDoubleTrainer(trainer)?_content.Route16FlyTrainers!.Trainers[trainer]:IsSeafoamDoubleTrainer(trainer)?_content.SeafoamTrainers!.Trainers[trainer]:IsSevenIslandDoubleTrainer(trainer)?_content.SevenIslandTrainers!.Trainers[trainer]:_content.SixIslandEnabled&&trainer==SixIslandDoubleTrainerEncounter.TrainerId?_content.SixIslandTrainers!.Trainers[trainer]:_content.SeviiRubyEnabled&&trainer==SeviiRubyDoubleTrainerEncounter.TrainerId?_content.SeviiRubyTrainers!.Trainers[trainer]:_content.VictoryRoadEnabled&&trainer==VictoryRoadDoubleTrainerEncounter.TrainerId?_content.VictoryRoadTrainerParties!.Trainers[trainer]:_content.FirstSeviiEnabled&&trainer==FirstSeviiDoubleTrainerEncounter.TrainerId?_content.FirstSeviiTrainerParties!.Trainers[trainer]:trainer==SourceTwinsTrainerEncounter.TrainerId?TwinsDefinition.Trainer:
+    private TrainerDefinition DoubleTrainer(TrainerId trainer)=>IsVsSeekerDouble(trainer)?_content.VsSeekerTrainers!.Trainers[trainer]:IsRoute16FlyDoubleTrainer(trainer)?_content.Route16FlyTrainers!.Trainers[trainer]:IsSeafoamDoubleTrainer(trainer)?_content.SeafoamTrainers!.Trainers[trainer]:IsSevenIslandDoubleTrainer(trainer)?_content.SevenIslandTrainers!.Trainers[trainer]:_content.SixIslandEnabled&&trainer==SixIslandDoubleTrainerEncounter.TrainerId?_content.SixIslandTrainers!.Trainers[trainer]:_content.SeviiRubyEnabled&&trainer==SeviiRubyDoubleTrainerEncounter.TrainerId?_content.SeviiRubyTrainers!.Trainers[trainer]:_content.VictoryRoadEnabled&&trainer==VictoryRoadDoubleTrainerEncounter.TrainerId?_content.VictoryRoadTrainerParties!.Trainers[trainer]:_content.FirstSeviiEnabled&&trainer==FirstSeviiDoubleTrainerEncounter.TrainerId?_content.FirstSeviiTrainerParties!.Trainers[trainer]:trainer==SourceTwinsTrainerEncounter.TrainerId?TwinsDefinition.Trainer:
         _content.CinnabarEnabled&&trainer==CinnabarDoubleTrainerEncounter.TrainerId?_content.CinnabarTrainerParties!.Trainers[trainer]:
         throw new InvalidDataException("preset_double_trainer_unsupported");
     private SourceTwinsBattleDefinition DoubleInteraction(TrainerId trainer,string script)
@@ -278,6 +283,19 @@ public sealed partial class CampaignSession
             if(unselected.Length>1)return new(CommandStatus.Accepted,state with{DoubleBattle=b with{PlayerSelections=selections}});
         }
         else if(command.Kind!="ack")return No("preset_double_forced_turn_ready");
+        if(b.VsSeekerParty is {} vsParty)
+        {
+            var prepared=SourcePresetTrainerEncounterEntry.PrepareEnemyActions(_content.PresetDoubleItems!,
+                _binding.Ownership.Mechanics,vsParty,frame,frame.Revision,
+                b.VsSeekerInventory??throw new InvalidDataException("vs_seeker_double_inventory"),
+                b.VsSeekerCurrentMove??SourceTrainerEncounterPolicy.NoMove,_binding.Ownership);
+            if(!prepared.Succeeded)return No(prepared.Fault!);
+            var started=SourceFourActionTurns.BeginActions(DoubleBattlePokemon,prepared.State,prepared.State.Revision,selections.AddRange(prepared.Selections));
+            if(!started.Succeeded)return No(started.Fault!);
+            return CommitDoubleResult(state with{DoubleBattle=b with{PlayerSelections=[],VsSeekerInventory=prepared.Inventory,
+                VsSeekerCurrentMove=prepared.SourceCurrentMove}},
+                started with{Events=prepared.Events.AddRange(started.Events),Trace=prepared.Trace.AddRange(started.Trace)});
+        }
         var ai=frame.TrainerTowerEncounter is not null
             ?TrainerTowerEnemyActions(frame)
             :IsRoute16FlyDoubleTrainer(b.Trainer)
@@ -307,6 +325,14 @@ public sealed partial class CampaignSession
     {
         if(!result.Succeeded)return new(CommandStatus.Rejected,state,result.Fault);
         var b=state.DoubleBattle!;var party=state.Party.ToBuilder();
+        if(b.VsSeekerParty is not null)
+        {
+            var current=b.VsSeekerCurrentMove??SourceTrainerEncounterPolicy.NoMove;
+            foreach(var e in result.Events)
+                if(e is SourceAttackStringEvent attack)current=attack.CurrentMove;
+                else if(e is SourceCalledPartySwitchedEvent)current=SourceTrainerEncounterPolicy.NoMove;
+            b=b with{VsSeekerCurrentMove=result.State.FourTurn is null?SourceTrainerEncounterPolicy.NoMove:current};
+        }
         var members=result.State.Party(BattleSide.Player).Members;
         if(members.Length!=party.Count)throw new InvalidDataException("preset_double_party_count");
         for(int i=0;i<party.Count;i++)
@@ -440,16 +466,16 @@ public sealed partial class CampaignSession
         var pages=ImmutableArray.CreateBuilder<string>();
         if(won)
         {
-            pages.Add($"{state.PlayerName} defeated\n{(IsRoute16FlyDoubleTrainer(b.Trainer)?"YOUNG COUPLE":IsSeafoamDoubleTrainer(b.Trainer)?SeafoamDoubleTrainerClass(b.Trainer):IsSevenIslandDoubleTrainer(b.Trainer)?SevenIslandDoubleTrainerClass(b.Trainer):b.Trainer==SeviiRubyDoubleTrainerEncounter.TrainerId?"CRUSH KIN":b.Trainer==VictoryRoadDoubleTrainerEncounter.TrainerId?"COOL COUPLE":b.Trainer==CinnabarDoubleTrainerEncounter.TrainerId?"SIS AND BRO":"TWINS")} {DoubleTrainer(b.Trainer).SourceTrainerName}!");
-            var def=DoubleInteraction(b.Trainer,state.Actors[b.ActorId].ScriptId);
-            pages.AddRange(_content.TextPages(def.DefeatText));pages.Add($"{state.PlayerName} got ¥{award}\nfor winning!");
+            pages.Add($"{state.PlayerName} defeated\n{(b.VsSeeker is not null?DoubleTrainer(b.Trainer).TrainerClass[14..].Replace('_',' '):IsRoute16FlyDoubleTrainer(b.Trainer)?"YOUNG COUPLE":IsSeafoamDoubleTrainer(b.Trainer)?SeafoamDoubleTrainerClass(b.Trainer):IsSevenIslandDoubleTrainer(b.Trainer)?SevenIslandDoubleTrainerClass(b.Trainer):b.Trainer==SeviiRubyDoubleTrainerEncounter.TrainerId?"CRUSH KIN":b.Trainer==VictoryRoadDoubleTrainerEncounter.TrainerId?"COOL COUPLE":b.Trainer==CinnabarDoubleTrainerEncounter.TrainerId?"SIS AND BRO":"TWINS")} {DoubleTrainer(b.Trainer).SourceTrainerName}!");
+            string defeat=b.VsSeeker is {} receipt?VsSeekerOccurrence(receipt).Arguments[2]:DoubleInteraction(b.Trainer,state.Actors[b.ActorId].ScriptId).DefeatText;
+            pages.AddRange(_content.TextPages(defeat));pages.Add($"{state.PlayerName} got ¥{award}\nfor winning!");
         }
         else
         {
             pages.Add($"{state.PlayerName} is out of usable\nPOKéMON!");
             int loss=WhiteOutLoss(state);pages.Add(state.Money==0?$"{state.PlayerName} whited out!":$"{state.PlayerName} panicked and lost\n{loss}...\n{state.PlayerName} whited out!");
         }
-        var history=new CampaignDoubleBattleHistory(b.Id,b.Trainer.Value,b.Frame.Outcome,b.ExperienceGained,prize.Awarded,[0,1]){MoneyMultiplier=b.Frame.Field.MoneyMultiplier};
+        var history=new CampaignDoubleBattleHistory(b.Id,b.Trainer.Value,b.Frame.Outcome,b.ExperienceGained,prize.Awarded,[0,1]){VsSeeker=b.VsSeeker,MoneyMultiplier=b.Frame.Field.MoneyMultiplier};
         if(won)
         {
             var payday=SourceBattleMoneyRules.SettlePayDay(money,b.Frame.Field.PayDayMoney,WildBattleOutcome.Won,b.Frame.Field.MoneyMultiplier);money=payday.Money;
@@ -459,8 +485,10 @@ public sealed partial class CampaignSession
             state=state with{Party=pickup.Party,World=state.World with{Rng=pickup.Rng}};
             b=b with{Frame=b.Frame with{Rng=pickup.Rng},Trace=pickup.Trace};
         }
-        return state with{Money=money,DoubleBattleHistory=(state.DoubleBattleHistory??[]).Add(history),
+        var settled=state with{Money=money,DoubleBattleHistory=(state.DoubleBattleHistory??[]).Add(history),
             DoubleBattle=b with{Stage=CampaignDoubleBattleStage.Finished,MoneyGained=history.MoneyGained,FinishPages=pages.ToImmutable(),FinishPageIndex=0}};
+        settled=ResetVsSeekerAfterBattle(settled,b.Trainer);
+        return settled with{DoubleBattle=settled.DoubleBattle! with{Frame=settled.DoubleBattle.Frame with{Rng=settled.World.Rng}}};
     }
 
     private CampaignState BeginDoubleEvolution(CampaignState state)
@@ -479,13 +507,15 @@ public sealed partial class CampaignSession
         var next=state with{DoubleBattle=null,Dialogue=null,Motions=[],PresentationTicks=0,
             Script=state.Script with{Stack=[],Wait=null,Completed=true,Locked=false}};
         if(b.Frame.Outcome!=WildBattleOutcome.Won)return WhiteOutFromRoute1(next);
+        next=ClearVsSeekerLastTalked(next,b.VsSeeker);
         return next with{BattledTrainers=next.BattledTrainers.Add(b.Trainer.Value),
             Script=next.Script with{Variables=next.Script.Variables.SetItem("VAR_RESULT",0)},
             Music=_content.MapDefinition(next.World.Player.MapId).Music,Exploration=ResetEncounterModifiers(next.Exploration!)};
     }
 
     private IEnumerable<TrainerId> SupportedDoubleTrainerIds => ExistingDoubleTrainerIds.Concat(
-        _content.PresetDoublesEnabled && _content.Route16FlyTrainers is not null ? [Route16FlyDoubleTrainerEncounter.TrainerId] : Array.Empty<TrainerId>());
+        _content.PresetDoublesEnabled && _content.Route16FlyTrainers is not null ? [Route16FlyDoubleTrainerEncounter.TrainerId] : Array.Empty<TrainerId>()).Concat(
+            VsSeekerEnabled && _content.VsSeekerTrainers is { } vs ? vs.Trainers.Values.Where(t=>t.DoubleBattle).Select(t=>t.Id) : []).Distinct();
     private IEnumerable<TrainerId> ExistingDoubleTrainerIds=>!_content.PresetDoublesEnabled?[]:
         _content.SeafoamEnabled?[SourceTwinsTrainerEncounter.TrainerId,CinnabarDoubleTrainerEncounter.TrainerId,FirstSeviiDoubleTrainerEncounter.TrainerId,VictoryRoadDoubleTrainerEncounter.TrainerId,SeviiRubyDoubleTrainerEncounter.TrainerId,SixIslandDoubleTrainerEncounter.TrainerId,..SevenIslandDoubleTrainerEncounter.TrainerIds,..SeafoamDoubleTrainerEncounter.TrainerIds]:
         _content.SevenIslandEnabled?[SourceTwinsTrainerEncounter.TrainerId,CinnabarDoubleTrainerEncounter.TrainerId,FirstSeviiDoubleTrainerEncounter.TrainerId,VictoryRoadDoubleTrainerEncounter.TrainerId,SeviiRubyDoubleTrainerEncounter.TrainerId,SixIslandDoubleTrainerEncounter.TrainerId,..SevenIslandDoubleTrainerEncounter.TrainerIds]:
@@ -504,7 +534,12 @@ public sealed partial class CampaignSession
         for(int i=0;i<history.Length;i++)
         {
             var h=history[i];
-            if(h is null||!ids.Contains(new TrainerId(h.TrainerId))||winners.Contains(h.TrainerId)||h.Id!="double-trainer-battle:"+(i+1))return "save_preset_double_history_invalid";
+            if(h is null||!ids.Contains(new TrainerId(h.TrainerId))||winners.Contains(h.TrainerId)&&h.VsSeeker is null||h.Id!="double-trainer-battle:"+(i+1))return "save_preset_double_history_invalid";
+            if(h.VsSeeker is {} receipt && !ValidVsSeekerHistory(state,receipt,h.TrainerId,h.Outcome,h.MoneyGained,h.MoneyMultiplier,winners,true))
+                return "save_vs_seeker_double_history";
+            if(h.VsSeeker is null && !ExistingDoubleTrainerIds.Contains(new(h.TrainerId)) &&
+                !(_content.Route16FlyTrainers is not null && h.TrainerId==Route16FlyDoubleTrainerEncounter.TrainerId.Value))
+                return "save_vs_seeker_double_origin";
             var trainer=DoubleTrainer(new(h.TrainerId));
             if(h.Outcome is not (WildBattleOutcome.Won or WildBattleOutcome.Lost or WildBattleOutcome.Draw)||h.ExperienceGained<0||
                 h.ExperienceGained>trainer.Party.Sum(p=>DoubleBattlePokemon.Species[p.Species].ExperienceYield*p.Level/7*150/100)||

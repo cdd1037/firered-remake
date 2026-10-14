@@ -52,6 +52,7 @@ public partial class CampaignView
             ExtendRegionalServicesQuestPocket(ref document);
             ExtendItemfinderQuestPocket(ref document);
             ExtendEventTicketQuestPocket(ref document);
+            ExtendVsSeekerQuestPocket(ref document);
             _questPocketUi = document;
         }
         catch
@@ -129,7 +130,7 @@ public partial class CampaignView
                 if (_questPocket == 1 && _session.SupportsRegisteredKeyItem(QuestPocketStacks[_questPocketCursor].Item.Value) && _questPocketAction < 2)
                 {
                     string registeredId = QuestPocketStacks[_questPocketCursor].Item.Value;
-                    Apply(new(_questPocketAction == 0 ? registeredId=="pret:ITEM_FAME_CHECKER"?"fame_checker_open":"field_itemfinder" : "item_register", Text: registeredId));
+                    Apply(new(_questPocketAction == 0 ? _session.RegisteredKeyItemUseCommand(registeredId) : "item_register", Text: registeredId));
                     if (_questPocketAction == 1 && _session.State.RegisteredItem is not null) _questPocketNotice = "Registered. Press R in the field.";
                     return true;
                 }
