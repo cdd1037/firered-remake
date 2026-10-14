@@ -48,9 +48,11 @@ public sealed partial class CampaignSession
 
     private TilePosition? FieldFlyArrival(FieldFlyDestination destination)
     {
-        if (!_content.Maps.TryGetValue(destination.MapId, out var map) ||
+        // Fly menu sections for Route4/10 Centers differ from their exterior route section.
+        // The authenticated destination fixes the exact map/coordinate; region identity is the map-level invariant.
+        if (_content.FieldFly is not {} fly || !_content.Maps.TryGetValue(destination.MapId, out var map) ||
             _content.MapDefinition(destination.MapId) is not { } definition || definition.SourceMapSymbol != destination.MapSymbol ||
-            definition.RegionMapSection != destination.SectionId || !FieldFlySourceRules.MapTypeAllowsFly(definition.MapType) ||
+            fly.RegionForSection(definition.RegionMapSection) != destination.Region || !FieldFlySourceRules.MapTypeAllowsFly(definition.MapType) ||
             map.GetTile(destination.X, destination.Y) is not { Blocked: false } tile)
             return null;
         return new(destination.MapId, destination.X, destination.Y, tile.Elevation, FieldFlySourceRules.ArrivalFacing);

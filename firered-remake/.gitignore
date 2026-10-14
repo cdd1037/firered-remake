@@ -118,3 +118,9 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /evidence/move-reminder-*/**/*.dll
 /evidence/move-reminder-*/**/*.pdb
 /evidence/move-reminder-*/**/userdata/
+
+# Rebuildable shared probe outputs and linked private View assets.
+/.build/
+/tests/Game.MoveDeleterView.Tests/Assets/
+/tests/Game.MoveDeleterView.Tests/*.cs.uid
+/evidence/field-fly-view-*/**/userdata/
