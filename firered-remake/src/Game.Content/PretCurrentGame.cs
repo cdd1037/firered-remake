@@ -1954,6 +1954,10 @@ public sealed partial class PretCampaignCatalog
         bank.Add("gText_PPWasRestored", openingUiTexts["gText_PPWasRestored"].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
         bank.Add("gText_MovesPPIncreased", openingUiTexts["gText_MovesPPIncreased"].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
         bank.Add("gText_BoostPp", openingUiTexts["gText_BoostPp"] + "$");
+        foreach (var symbol in new[] { "gText_PkmnBaseVar2StatIncreased", "gText_ItemEffect_HP",
+            "gText_ItemEffect_Attack", "gText_ItemEffect_Defense", "gText_ItemEffect_Speed",
+            "gText_ItemEffect_SpAtk", "gText_ItemEffect_SpDef" })
+            bank.Add(symbol, openingUiTexts[symbol].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
         foreach (var symbol in new[]
         {
             "gText_ItemsPocket",

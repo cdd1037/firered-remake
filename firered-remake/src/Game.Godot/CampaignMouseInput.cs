@@ -246,6 +246,7 @@ public partial class CampaignView
         }
         if (MailScreen) return MailMouse(point, direction);
         if (HeldItemScreen) return HeldItemMouse(point, direction);
+        if (MtMoonTargetActive && (PpBoostSelectionStale || VitaminSelectionStale)) return MouseKey();
         if (MtMoonTargetActive && _mtMoonMoveSlotOpen) return PointerRows(point, direction, ref _mtMoonMoveSlot, _session.State.Party[_fieldMedicineTarget].Pokemon.Moves.Length + 1, 12, 26, 220);
         if (_fieldMedicineTargetOpen) return PointerRows(point, direction, ref _fieldMedicineTarget, _session.State.Party.Length + 1, 8, 8, 224, 14);
         if (QuestPocketEnabled && _questPocket > 0)
@@ -365,6 +366,7 @@ public partial class CampaignView
         if (HeldItemScreen) return HeldItemMouse(point);
         if (MachineActive) return MouseMachines(point);
         if (menu.View == "message") return MouseConfirm(point, MouseMessage);
+        if (MtMoonTargetActive && (PpBoostSelectionStale || VitaminSelectionStale)) return MouseKey();
         if (MtMoonTargetActive && _mtMoonMoveSlotOpen) return MouseSelect(point, ref _mtMoonMoveSlot, _session.State.Party[_fieldMedicineTarget].Pokemon.Moves.Length + 1, 12, 26, 220);
         if (_fieldMedicineTargetOpen) return MouseSelect(point, ref _fieldMedicineTarget, _session.State.Party.Length + 1, 8, 8, 224, 14);
         if (QuestPocketEnabled && _questPocket > 0)

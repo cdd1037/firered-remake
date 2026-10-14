@@ -19,6 +19,17 @@ public sealed partial class PretCampaignCatalog
             PretDepartmentStoreContract.OrdinaryMapId,c.OrdinaryStock.ClerkScript,
             c.OrdinaryStock.Items.Select(i=>new DepartmentStoreOrdinaryItem(new ItemId(i.StableId),i.SourceItemId,i.Name,i.Price,i.Pocket)).ToImmutableArray(),
             new(c.OrdinaryStock.Source.Path,c.OrdinaryStock.Source.Symbol,c.OrdinaryStock.Source.LineStart,c.OrdinaryStock.Source.LineEnd,c.OrdinaryStock.Source.Sha256));
+    public DepartmentStoreCounterStock? DepartmentStoreCounter(string stockId)
+    {
+        if (!RegionalInteriorServicesEnabled || !DepartmentStoreCounterStock.IsStockId(stockId)) return null;
+        var source = DepartmentStoreContract!.Stocks.Single(s => s.Id == stockId);
+        var stock = new DepartmentStoreCounterStock(PretDepartmentStoreContract.SourceCommit, PretDepartmentStoreContract.ContractSha256,
+            DepartmentStoreCounterStock.ExpectedMapId, source.ClerkScript,
+            source.Items.Select(i => new DepartmentStoreOrdinaryItem(new(i.StableId), i.SourceItemId, i.Name, i.Price, i.Pocket)).ToImmutableArray(),
+            new(source.Source.Path, source.Source.Symbol, source.Source.LineStart, source.Source.LineEnd, source.Source.Sha256));
+        stock.Validate(EarlyShop!);
+        return stock;
+    }
     public static ImmutableArray<MapId> RegionalInteriorMapIds {get;} = [
         new("map.celadon-city-department-store-1f"),new("map.celadon-city-department-store-2f"),
         new("map.celadon-city-department-store-3f"),new("map.celadon-city-department-store-4f"),
@@ -50,6 +61,7 @@ public sealed partial class PretCampaignCatalog
         if(!RegionalInteriorServicesEnabled)return null;
         if (map.Value == DepartmentStoreMachineStock.ExpectedMapId && script == DepartmentStoreMachineStock.ExpectedClerkScript &&
             DepartmentStoreMachineStock.For(PewterMachines) is not null) return null;
+        if (DepartmentStoreCounterStock.StockForClerk(map.Value, script) is {} counter && DepartmentStoreCounter(counter) is not null) return null;
         if(map.Value=="map.celadon-city-restaurant"&&script=="CeladonCity_Restaurant_EventScript_CoinCaseMan")
             return "regional_service_unavailable: Coin Case service\nis not available yet.";
         var deferred=DepartmentStoreContract!.DeferredServices.FirstOrDefault(d=>d.MapId==map.Value&&d.Script==script);

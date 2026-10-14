@@ -98,6 +98,9 @@ public sealed partial class CampaignSession
             if (_content.EarlyShop is {} ppShop && !string.IsNullOrEmpty(command.Text) &&
                 SourceFieldPpBoostRules.Supports(ppShop, new(command.Text)))
                 return UseFieldPpBoost(state, command);
+            if (_content.EarlyShop is {} vitaminShop && !string.IsNullOrEmpty(command.Text) &&
+                SourceFieldVitaminRules.Supports(vitaminShop, new(command.Text)))
+                return UseFieldVitamin(state, command);
             var effect = _content.EarlyShop is {} fieldShop && !string.IsNullOrEmpty(command.Text)
                 ? AuthenticatedFieldMedicine.Resolve(fieldShop, new(command.Text)).Effect : FieldMedicineEffect.Unsupported;
             return effect is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp or FieldMedicineEffect.RestoreAllPp

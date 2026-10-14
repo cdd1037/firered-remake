@@ -21,6 +21,7 @@ public sealed partial class CampaignSession
         var catalog = ShopCatalog;
         string map = state.World.Player.MapId.Value;
         string stockId, sourcePath, clerkScript;
+        DepartmentStoreCounterStock? counter = null;
         if(_content.TrainerTowerEnabled && map==TrainerTowerLobby)
         { stockId=TrainerTowerShopCatalog.LobbyShopId;sourcePath="data/maps/TrainerTower_Lobby/scripts.inc";clerkScript="TrainerTower_Lobby_EventScript_MartClerk"; }
         else if (_content.PokemonLeagueEnabled && map == PokemonLeagueMartStock.ExpectedMapId)
@@ -55,6 +56,13 @@ public sealed partial class CampaignSession
                 stockId = stock.Id; sourcePath = stock.Source.Path; clerkScript = stock.ClerkScript;
             }
         }
+        else if (map == DepartmentStoreCounterStock.ExpectedMapId)
+        {
+            counter = effect.Args.Length == 1 ? DepartmentCounterStock(effect.Args[0]) : null;
+            if (counter is null || !counter.IsClerk(map, effect.Source.Path, effect.Source.Symbol, effect.Source.Line))
+                throw new InvalidDataException("shop_script_context_invalid");
+            stockId = counter.Id; sourcePath = counter.Source.Path; clerkScript = counter.ClerkScript;
+        }
         else
         {
             string sourceMap = map switch { "map.seven-island-mart" when _content.SevenIslandEnabled => "SevenIsland_Mart", "map.six-island-mart" when _content.SixIslandEnabled => "SixIsland_Mart", "map.four-island-mart" when _content.FourIslandEnabled => "FourIsland_Mart", "map.cinnabar-island-mart" when _content.CinnabarEnabled => "CinnabarIsland_Mart", "map.saffron-city-mart" when _content.SaffronGymEnabled => "SaffronCity_Mart", "map.lavender-town-mart" when _content.CeladonApproachEnabled => "LavenderTown_Mart", "map.vermilion-city-mart" when _content.VermilionEnabled => "VermilionCity_Mart", "map.viridian-mart" => "ViridianCity_Mart", "map.pewter-mart" => "PewterCity_Mart", "map.cerulean-city-mart" when _content.CeruleanEnabled => "CeruleanCity_Mart", _ => throw new InvalidDataException("shop_map_unsupported") };
@@ -68,10 +76,13 @@ public sealed partial class CampaignSession
             state.LastTalked is null || !state.Actors.TryGetValue(state.LastTalked, out var clerk) ||
             clerk.ScriptId != clerkScript || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))
             throw new InvalidDataException("shop_script_context_invalid");
-        if (stockId == DepartmentStoreMachineStock.ExpectedStockId &&
+        if ((stockId == DepartmentStoreMachineStock.ExpectedStockId || counter is not null) &&
             (!clerk.Active || !_content.MapDefinition(state.World.Player.MapId).Actors.Any(actor =>
                 actor.LocalId == state.LastTalked && actor.SourceLocalId == clerk.SourceLocalId &&
-                actor.ScriptId == clerkScript && actor.GraphicsId == clerk.GraphicsId && !actor.IsClone)))
+                actor.ScriptId == clerkScript && actor.GraphicsId == clerk.GraphicsId && !actor.IsClone &&
+                (counter is null || counter.IsSourceActor(actor) && clerk.LocalId == actor.LocalId &&
+                    clerk.X == actor.X && clerk.Y == actor.Y && clerk.TemplateX == actor.X && clerk.TemplateY == actor.Y &&
+                    clerk.Elevation == actor.Elevation && clerk.MovementType == actor.MovementType && clerk.HideFlag == actor.HideFlag))))
             throw new InvalidDataException("shop_script_context_invalid");
         var error = ValidateCampaignInventory(state.Inventory);
         if (error is not null) throw new InvalidDataException(error);
@@ -84,7 +95,7 @@ public sealed partial class CampaignSession
         get
         {
             if (State.Shop is not { } shop) return [];
-            if (shop.Mode == "buy") return DepartmentMachineStock(shop.ShopId)?.Items ?? PokeDollStock(shop.ShopId)?.Items ?? PokemonLeagueStock(shop.ShopId)?.Items ?? DepartmentStock(shop.ShopId)?.Items ?? ShopCatalog.Shops.Single(s => s.Id == shop.ShopId).Items;
+            if (shop.Mode == "buy") return DepartmentMachineStock(shop.ShopId)?.Items ?? OrdinaryStock(shop.ShopId)?.Items ?? ShopCatalog.Shops.Single(s => s.Id == shop.ShopId).Items;
             return State.Inventory!.BagItems.Concat(State.Inventory.Balls ?? []).Concat(State.Inventory.Machines ?? []).Select(s => s.Item).ToImmutableArray();
         }
     }
@@ -106,6 +117,15 @@ public sealed partial class CampaignSession
     }
     private bool IsShopMachine(ItemId item) => _content.PewterMachines is { } machines &&
         PewterMachineRules.Definition(machines, item) is not null;
+    private DepartmentStoreCounterStock? DepartmentCounterStock(string shopId)
+    {
+        if (!DepartmentStoreCounterStock.IsStockId(shopId)) return null;
+        var stock = _content.DepartmentStoreCounter(shopId) ?? throw new InvalidDataException("department_counter_not_admitted");
+        stock.Validate(ShopCatalog); return stock;
+    }
+    private AuthenticatedShopStock? OrdinaryStock(string shopId) =>
+        (AuthenticatedShopStock?)DepartmentCounterStock(shopId) ?? (AuthenticatedShopStock?)PokeDollStock(shopId) ??
+        (AuthenticatedShopStock?)PokemonLeagueStock(shopId) ?? DepartmentStock(shopId);
 
     // A single authenticated metadata path serves ordinary Bag rows and the TM CASE.
     public CampaignShopItem ShopItem(ItemId id)
@@ -147,22 +167,14 @@ public sealed partial class CampaignSession
             return EarlyShopRules.QuoteBuy(ShopCatalog, state.Inventory!, state.Money, machines, item);
         var inventory = ShopInventoryView(state.Inventory!);
         if (shop.Mode != "buy") return EarlyShopRules.QuoteSell(ShopCatalog, inventory, state.Money, item);
-        return PokeDollStock(shop.ShopId) is {} dolls
-            ? EarlyShopRules.QuoteBuy(ShopCatalog, inventory, state.Money, dolls, item)
-            : PokemonLeagueStock(shop.ShopId) is {} league
-            ? EarlyShopRules.QuoteBuy(ShopCatalog,inventory,state.Money,league,item)
-            : DepartmentStock(shop.ShopId) is { } stock
+        return OrdinaryStock(shop.ShopId) is { } stock
             ? EarlyShopRules.QuoteBuy(ShopCatalog, inventory, state.Money, stock, item)
             : EarlyShopRules.QuoteBuy(ShopCatalog, inventory, state.Money, shop.ShopId, item);
     }
     private EarlyShopTransactionResult BuyShop(CampaignState state, CampaignShop shop, ItemId item) =>
         DepartmentMachineStock(shop.ShopId) is { } machines
             ? EarlyShopRules.Buy(ShopCatalog, state.Inventory!, state.Money, machines, item, shop.Quantity)
-            : PokeDollStock(shop.ShopId) is {} dolls
-            ? EarlyShopRules.Buy(ShopCatalog, ShopInventoryView(state.Inventory!), state.Money, dolls, item, shop.Quantity)
-            : PokemonLeagueStock(shop.ShopId) is {} league
-            ? EarlyShopRules.Buy(ShopCatalog,ShopInventoryView(state.Inventory!),state.Money,league,item,shop.Quantity)
-            : DepartmentStock(shop.ShopId) is { } stock
+            : OrdinaryStock(shop.ShopId) is { } stock
             ? EarlyShopRules.Buy(ShopCatalog, ShopInventoryView(state.Inventory!), state.Money, stock, item, shop.Quantity)
             : EarlyShopRules.Buy(ShopCatalog, ShopInventoryView(state.Inventory!), state.Money, shop.ShopId, item, shop.Quantity);
 
