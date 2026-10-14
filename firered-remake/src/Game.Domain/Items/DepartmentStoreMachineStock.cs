@@ -58,6 +58,17 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
         stock.Validate(); Proofs.Add(machines, stock); return stock;
     }
 
+    // Only the sealed seven-species successor may reuse this exact source shelf.
+    internal static void BindStoneEvolutionSuccessor(StoneEvolutionMachineCatalog successor)
+    {
+        if (!ReferenceEquals(StoneEvolutionMachineCatalog.For(successor.Catalog), successor) ||
+            !ReferenceEquals(For(successor.Predecessor.Machines), successor.Predecessor))
+            throw new ArgumentException("department_machine_successor_proof");
+        var stock = new DepartmentStoreMachineStock(successor.Predecessor.OriginalMachines,
+            successor.Catalog, successor.Pokemon.SharedBattle);
+        stock.Validate(); Proofs.Add(stock.Machines, stock);
+    }
+
     public bool IsClerk(string mapId, string sourcePath, string script, string stockId) =>
         mapId == ExpectedMapId && sourcePath == ExpectedSourcePath && script == ExpectedClerkScript && stockId == Id;
 

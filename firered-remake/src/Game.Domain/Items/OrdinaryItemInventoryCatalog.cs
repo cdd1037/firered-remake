@@ -11,6 +11,8 @@ public sealed class OrdinaryItemInventoryCatalog
     public const string Profile = "firered-ordinary-item-supplement-v1";
     public const string AdditionalItemsSourceSha256 = "f20a8a5042374657bf7ef37efb7b6f9f474376f844aa7662b867af3a2366e9dd";
     public static ItemId PpMaxId { get; } = new("pret:ITEM_PP_MAX");
+    public static ItemId RetroMailId { get; } = new("pret:ITEM_RETRO_MAIL");
+    public const string RetroMailSourceSha256 = "dfae73ef6416331e3e2c4e2ce326dd25d7b3ac499b3cd2a5c0c8d514f876cf54";
     private static readonly ConditionalWeakTable<EarlyShopCatalog, OrdinaryItemInventoryCatalog> Proofs = new();
     public EarlyShopCatalog Catalog { get; }
     public EarlyShopCatalog Predecessor { get; }
@@ -35,6 +37,19 @@ public sealed class OrdinaryItemInventoryCatalog
             CampaignSourceFingerprint.Compute(additions.ToArray()) != AdditionalItemsSourceSha256)
             throw new ArgumentException("ordinary_item_inventory_source");
         var proof = new OrdinaryItemInventoryCatalog(predecessor, additions);
+        Proofs.Add(proof.Catalog, proof); return proof;
+    }
+    /// <summary>Extend the same ordinary proof, preserving its original predecessor and item identities.</summary>
+    public static OrdinaryItemInventoryCatalog AppendRetroMail(EarlyShopCatalog predecessor,
+        ImmutableArray<EarlyShopItemDefinition> additions)
+    {
+        ArgumentNullException.ThrowIfNull(predecessor);
+        if (For(predecessor) is not { } old || old.Additions.Length != 1 ||
+            additions.IsDefault || additions.Length != 1 || additions[0] is not { Pocket: "POCKET_ITEMS", Importance: 0 } item ||
+            item.Id != RetroMailId || item.EffectBytes.IsDefault || predecessor.Items.Any(i => i.Id == item.Id) ||
+            CampaignSourceFingerprint.Compute(additions.ToArray()) != RetroMailSourceSha256)
+            throw new ArgumentException("ordinary_retro_mail_source");
+        var proof = new OrdinaryItemInventoryCatalog(old.Predecessor, old.Additions.AddRange(additions));
         Proofs.Add(proof.Catalog, proof); return proof;
     }
     public bool IsAddition(ItemId item) => Additions.Any(i => i.Id == item);

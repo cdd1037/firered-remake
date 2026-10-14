@@ -194,7 +194,10 @@ public static partial class SourceWildBattlePolicy
             return "source_wild_fishing_origin";
         if (context.Seafoam is {} seafoam && (frame.SourceCampaignRulesVersion != SeafoamOwnedPokemonCatalog.Profile &&
             !(frame.SourceCampaignRulesVersion == SuperRodOwnedPokemonCatalog.Profile &&
-              OwnedBattlePokemonCatalog.IsRegisteredSuccessorProfile(frame.SourceCampaignRulesVersion, SeafoamOwnedPokemonCatalog.Profile)) ||
+              OwnedBattlePokemonCatalog.IsRegisteredSuccessorProfile(frame.SourceCampaignRulesVersion, SeafoamOwnedPokemonCatalog.Profile)) &&
+            !(frame.SourceCampaignRulesVersion == StoneEvolutionOwnedPokemonCatalog.Profile &&
+              OwnedBattlePokemonCatalog.IsRegisteredSuccessorProfile(frame.SourceCampaignRulesVersion, SuperRodOwnedPokemonCatalog.Profile) &&
+              OwnedBattlePokemonCatalog.IsRegisteredSuccessorProfile(SuperRodOwnedPokemonCatalog.Profile, SeafoamOwnedPokemonCatalog.Profile)) ||
             !SeafoamWildBattleContract.IsRuntimeKind(seafoam.Kind) || !SeafoamWildBattleContract.Matches(seafoam,mon)))
             return "source_wild_seafoam_origin";
         var sourceProfile = OwnedBattlePokemonCatalog.InheritedWildProfile(frame.SourceCampaignRulesVersion);

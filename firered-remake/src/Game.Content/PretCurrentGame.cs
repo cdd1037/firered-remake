@@ -2364,6 +2364,9 @@ public sealed partial class PretCampaignCatalog
         PretOrdinaryItemSupplement.ValidateSourceEvidence(projectRoot);
         earlyShop = earlyShop with { Catalog = PretOrdinaryItemSupplement.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
         hashes.AddRange(PretOrdinaryItemSupplement.AdditionalSourceHashes);
+        PretDepartmentFourthFloor.ValidateSourceEvidence(projectRoot);
+        earlyShop = earlyShop with { Catalog = PretDepartmentFourthFloor.LoadShop(projectRoot, earlyShop.Catalog).Catalog };
+        hashes.AddRange(PretDepartmentFourthFloor.AdditionalSourceHashes);
         var seafoamOwned = PretSeafoamRules.LoadOwned(projectRoot, tradeOwned);
         var seafoamOpponents = PretSeafoamRules.LoadOpponents(projectRoot, tradeOpponents, seafoamOwned);
         var seafoamMachines = PretSeafoamRules.LoadMachines(projectRoot, tradeMachines, seafoamOwned);
@@ -2406,17 +2409,26 @@ public sealed partial class PretCampaignCatalog
         pokemonContent = pokemonContent with { Catalog = superRodOwned.Catalog,
             SpeciesNames = pokemonContent.SpeciesNames.SetItem(211, oakPokedex.Entries[211].Name) };
         var departmentMachines = PretDepartmentStoreMachines.Load(projectRoot, departmentStore, superRodMachines.Catalog);
-        machines = departmentMachines.Machines;
+        var stoneOwned = PretStoneEvolutionSpecies.LoadOwned(projectRoot, superRodOwned);
+        _ = PretStoneEvolutionSpecies.LoadOpponents(projectRoot, superRodOpponents, stoneOwned);
+        var stoneMachines = PretStoneEvolutionSpecies.LoadMachines(projectRoot, departmentMachines, stoneOwned);
+        pokemonContent = pokemonContent with { Catalog = stoneOwned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.SetItems(StoneEvolutionOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
+                int number = stoneOwned.Catalog.Species[id].SourceSpeciesId;
+                return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
+            })) };
+        machines = stoneMachines.Catalog;
+        hashes.AddRange(PretStoneEvolutionSpecies.AdditionalSourceHashes);
         hashes.AddRange(PretSuperRodSpecies.AdditionalSourceHashes);
         hashes.AddRange(PretDepartmentStoreMachines.AdditionalSourceHashes);
         var capeBrinkPreviousMaps = maps;
         maps = maps.AddRange(capeBrinkTutor.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, capeBrinkTutor.NewMaps);
         ValidateCapeBrinkComposition(capeBrinkTutor, maps, capeBrinkPreviousMaps, compiled, superRodService);
-        ValidateCapeBrinkEncounterSources(capeBrinkTutor, superRodOwned.Catalog, superRodService);
-        var moveReminder = PretMoveReminderService.Load(projectRoot, superRodOwned.Catalog);
+        ValidateCapeBrinkEncounterSources(capeBrinkTutor, stoneOwned.Catalog, superRodService);
+        var moveReminder = PretMoveReminderService.Load(projectRoot, stoneOwned.Catalog);
         hashes.AddRange(moveReminder.AdditionalSourceHashes);
-        var moveTutors = PretMoveTutors.Load(projectRoot, superRodOwned.Catalog);
+        var moveTutors = PretMoveTutors.Load(projectRoot, stoneOwned.Catalog);
         hashes.AddRange(moveTutors.AdditionalSourceHashes);
         hashes.Add("npc-trade-owned:" + PretNpcTradeOwnedRules.PokemonSha256);
         hashes.Add("npc-trade-owned-machines:" + PretNpcTradeOwnedRules.MachinesSha256);

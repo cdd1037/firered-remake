@@ -23,13 +23,17 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var owned = content.SuperRodOwnership ?? throw new InvalidDataException("current_super_rod_owned_proof_missing");
+        var owned = StoneEvolutionOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
+            ?? throw new InvalidDataException("current_stone_evolution_owned_proof_missing");
         var battle = owned.SharedBattle;
-        var opponents = content.SuperRodOpponents;
-        if (!ReferenceEquals(SuperRodOwnedPokemonCatalog.For(content.PokemonContent!.Catalog), owned) ||
-            !ReferenceEquals(battle.Catalog,content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics,owned.Mechanics) ||
-            !ReferenceEquals(owned.Predecessor,content.SeafoamOwnership) || !ReferenceEquals(owned.Predecessor.Predecessor.Predecessor,content.FossilLabOwnership) || opponents is null ||
-            !ReferenceEquals(opponents.Owned,owned) || !ReferenceEquals(opponents.Predecessor,content.SeafoamOpponents) || !ReferenceEquals(opponents.Predecessor.Predecessor.Predecessor,content.FossilLabOpponents))
+        var opponents = StoneEvolutionOpponentPokemonCatalog.For(owned);
+        if (!ReferenceEquals(battle.Catalog, content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics, owned.Mechanics) ||
+            !ReferenceEquals(owned.Predecessor, content.SuperRodOwnership) ||
+            !ReferenceEquals(owned.Predecessor.Predecessor, content.SeafoamOwnership) ||
+            !ReferenceEquals(owned.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOwnership) || opponents is null ||
+            !ReferenceEquals(opponents.Owned, owned) || !ReferenceEquals(opponents.Predecessor, content.SuperRodOpponents) ||
+            !ReferenceEquals(opponents.Predecessor.Predecessor, content.SeafoamOpponents) ||
+            !ReferenceEquals(opponents.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, owned.Catalog, battle);
     }
@@ -77,8 +81,10 @@ public sealed partial class CampaignSession
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
         if (!content.SuperRodEnabled || content.PewterMachines is not { } machines ||
             DepartmentStoreMachineStock.For(machines) is not { } machineStock ||
-            SuperRodMachineCatalog.For(DepartmentStoreMachineStock.BaseCatalog(machines)) is not { } currentMachines ||
-            !ReferenceEquals(currentMachines.Pokemon, content.SuperRodOwnership))
+            StoneEvolutionMachineCatalog.For(machines) is not { } currentMachines ||
+            !ReferenceEquals(currentMachines.Pokemon, StoneEvolutionOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)) ||
+            !ReferenceEquals(currentMachines.Pokemon.Predecessor, content.SuperRodOwnership) ||
+            !ReferenceEquals(SuperRodMachineCatalog.For(DepartmentStoreMachineStock.BaseCatalog(machines))?.Pokemon, content.SuperRodOwnership))
             throw new InvalidDataException("current_machine_proof_missing");
         machineStock.Validate();
         var baseShop = OrdinaryItemInventoryCatalog.BaseCatalog(content.EarlyShop!);

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate the bounded stage12-to-PP resource additions from pinned local pret Git data.
+"""Regenerate the bounded stage12-to-department/stone resource additions from pinned local pret Git data.
 This executes project-authored importers only, never upstream scripts or gameplay.
 The complete stage12 resource base and reviewed tools/import-regional-service-maps
 must already exist. No networking, archive restore, or backup replay is performed.
@@ -12,7 +12,49 @@ import subprocess
 import sys
 import time
 
-STEPS = [('import-npc-trade-elyssa.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-npc-trade-haden.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-npc-trades.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-npc-trade-owned-rules.py', ['{reference}', '{project}', '{project}']), ('import-npc-trade-mail.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-good-rod-service.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-seafoam-rules.py', ['{reference}', '{project}', '{project}']), ('import-seafoam-items.py', ['{reference}', '{project}', '{project}']), ('import-seafoam-resources.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-seafoam-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-move-tutors.py', ['--source-git', '{reference}']), ('import-move-reminder.py', ['--source-git', '{reference}']), ('import-move-reminder-house.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-move-deleter.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-move-deleter-audio.py', ['--reference', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-original-tutor-rooms.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-poke-doll-items.py', ['{reference}', '{project}', '{project}']), ('import-copycat-house.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-super-rod-species.py', ['{reference}', '{project}', '{project}']), ('import-qwilfish-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-super-rod-service.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-cape-brink-tutor.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']), ('import-ordinary-item-supplement.py', ['{reference}', '{project}', '{project}']), ('import-department-machine-stock.py', ['--source', '{reference}', '--root', '{project}'])]
+STEPS = [('import-npc-trade-elyssa.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-npc-trade-haden.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-npc-trades.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-npc-trade-owned-rules.py', ['{reference}', '{project}', '{project}']),
+ ('import-npc-trade-mail.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-good-rod-service.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-seafoam-rules.py', ['{reference}', '{project}', '{project}']),
+ ('import-seafoam-items.py', ['{reference}', '{project}', '{project}']),
+ ('import-seafoam-resources.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-seafoam-presentation.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-move-tutors.py', ['--source-git', '{reference}']),
+ ('import-move-reminder.py', ['--source-git', '{reference}']),
+ ('import-move-reminder-house.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-move-deleter.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-move-deleter-audio.py',
+  ['--reference', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-original-tutor-rooms.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-poke-doll-items.py', ['{reference}', '{project}', '{project}']),
+ ('import-copycat-house.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-super-rod-species.py', ['{reference}', '{project}', '{project}']),
+ ('import-qwilfish-presentation.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-super-rod-service.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-cape-brink-tutor.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-ordinary-item-supplement.py', ['{reference}', '{project}', '{project}']),
+ ('import-department-machine-stock.py', ['--source', '{reference}', '--root', '{project}']),
+ ('import-department-fourth-floor.py', ['{reference}', '{project}', '{project}']),
+ ('import-stone-evolution-species.py', ['{reference}', '{project}', '{project}']),
+ ('import-stone-evolution-presentation.py',
+  ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

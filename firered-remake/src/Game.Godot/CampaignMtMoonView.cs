@@ -14,7 +14,12 @@ public partial class CampaignView
     private int _mtMoonMoveSlot;
     private ItemId _mtMoonTargetItem;
     private long _ppBoostTargetInstance, _ppBoostSelectionRevision;
-    private long _vitaminSelectionRevision;
+    private long _vitaminSelectionRevision, _evolutionSelectionRevision;
+    private long[] _evolutionPartyInstances = [];
+    private bool IsFieldEvolution(ItemId item) => _session.FieldEvolutionSupported(item);
+    private bool EvolutionSelectionStale => _fieldMedicineTargetOpen && IsFieldEvolution(_mtMoonTargetItem) &&
+        (_session.Revision != _evolutionSelectionRevision ||
+         !_session.State.Party.Select(p => p.InstanceId).SequenceEqual(_evolutionPartyInstances));
     private long[] _vitaminPartyInstances = [];
     private bool IsFieldPpBoost(ItemId item) => _catalog.EarlyShop is {} shop &&
         SourceFieldPpBoostRules.Supports(shop, item);
@@ -28,9 +33,9 @@ public partial class CampaignView
          _fieldMedicineTarget >= _session.State.Party.Length ||
          _session.State.Party[_fieldMedicineTarget].InstanceId != _ppBoostTargetInstance);
     private bool IsExtendedFieldTarget(ItemId item) =>
-        IsFieldPpBoost(item) || IsFieldVitamin(item) ||
+        IsFieldPpBoost(item) || IsFieldVitamin(item) || IsFieldEvolution(item) ||
         FieldMedicineEffectFor(item) is FieldMedicineEffect.Revive or FieldMedicineEffect.RestoreMovePp or FieldMedicineEffect.RestoreAllPp ||
-        _catalog.MtMoonEnabled && EarlyItem(item)?.UseSupport is EarlyShopUseSupport.SeparateEvolution or EarlyShopUseSupport.DeferredRareCandy;
+        _catalog.MtMoonEnabled && EarlyItem(item)?.UseSupport == EarlyShopUseSupport.DeferredRareCandy;
     private bool MtMoonTargetActive => _fieldMedicineTargetOpen && IsExtendedFieldTarget(_mtMoonTargetItem);
 
     private void LoadMtMoonPresentation()
@@ -106,6 +111,11 @@ public partial class CampaignView
         if (!IsExtendedFieldTarget(item)) return false;
         _mtMoonTargetItem = item; _fieldMedicineTarget = 0; _mtMoonMoveSlot = 0;
         _mtMoonMoveSlotOpen = false; _fieldMedicineTargetOpen = true;
+        if (IsFieldEvolution(item))
+        {
+            _evolutionSelectionRevision = _session.Revision;
+            _evolutionPartyInstances = _session.State.Party.Select(p => p.InstanceId).ToArray();
+        }
         if (IsFieldVitamin(item))
         {
             _vitaminSelectionRevision = _session.Revision;
@@ -116,7 +126,7 @@ public partial class CampaignView
 
     private bool MtMoonTargetInput(InputEventKey key)
     {
-        if (PpBoostSelectionStale || VitaminSelectionStale)
+        if (PpBoostSelectionStale || VitaminSelectionStale || EvolutionSelectionStale)
         {
             _fieldMedicineTargetOpen = false; _mtMoonMoveSlotOpen = false;
             _itemNotice = "The selected POKéMON changed.\nPlease choose again.";
@@ -148,10 +158,10 @@ public partial class CampaignView
         }
         long revision = _session.Revision;
         bool ppBoost = IsFieldPpBoost(_mtMoonTargetItem);
-        bool evolution = EarlyItem(_mtMoonTargetItem)?.UseSupport == EarlyShopUseSupport.SeparateEvolution;
+        bool evolution = IsFieldEvolution(_mtMoonTargetItem);
         Apply(new(evolution ? "field_evolution" : _mtMoonTargetItem.Value == "pret:ITEM_RARE_CANDY" ? "field_rare_candy" : "field_medicine", Text: _mtMoonTargetItem.Value,
             PartyIndex: _fieldMedicineTarget, MoveSlot: _mtMoonMoveSlotOpen ? _mtMoonMoveSlot : -1, Quantity: 1)
-            { TargetInstanceId = ppBoost ? _ppBoostTargetInstance :
+            { TargetInstanceId = evolution ? _evolutionPartyInstances[_fieldMedicineTarget] : ppBoost ? _ppBoostTargetInstance :
                 IsFieldVitamin(_mtMoonTargetItem) ? _vitaminPartyInstances[_fieldMedicineTarget] : null });
         _fieldMedicineTargetOpen = false; _mtMoonMoveSlotOpen = false;
         if (_session.Revision == revision) _itemNotice = FieldConsumableNotice(_status);
@@ -169,7 +179,7 @@ public partial class CampaignView
 
     private void DrawMtMoonTargets()
     {
-        if (PpBoostSelectionStale || VitaminSelectionStale)
+        if (PpBoostSelectionStale || VitaminSelectionStale || EvolutionSelectionStale)
         { ItemMessageBox("The selected POKéMON changed.\nPlease choose again."); return; }
         if (!_mtMoonMoveSlotOpen) { DrawFieldMedicineTargets(); return; }
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));

@@ -22,6 +22,7 @@ public sealed partial class CampaignSession
         string map = state.World.Player.MapId.Value;
         string stockId, sourcePath, clerkScript;
         DepartmentStoreCounterStock? counter = null;
+        PokeDollShopStock? fourthFloor = null;
         if(_content.TrainerTowerEnabled && map==TrainerTowerLobby)
         { stockId=TrainerTowerShopCatalog.LobbyShopId;sourcePath="data/maps/TrainerTower_Lobby/scripts.inc";clerkScript="TrainerTower_Lobby_EventScript_MartClerk"; }
         else if (_content.PokemonLeagueEnabled && map == PokemonLeagueMartStock.ExpectedMapId)
@@ -38,7 +39,7 @@ public sealed partial class CampaignSession
         }
         else if (map == PokeDollShopStock.ExpectedMapId)
         {
-            var stock = PokeDollStock(PokeDollShopStock.ExpectedStockId)!;
+            var stock = fourthFloor = PokeDollStock(PokeDollShopStock.ExpectedStockId)!;
             stockId = stock.Id; sourcePath = PokeDollShopStock.ExpectedSourcePath; clerkScript = PokeDollShopStock.ExpectedClerkScript;
         }
         else if (map == DepartmentStoreOrdinaryStock.ExpectedMapId)
@@ -76,6 +77,13 @@ public sealed partial class CampaignSession
             state.LastTalked is null || !state.Actors.TryGetValue(state.LastTalked, out var clerk) ||
             clerk.ScriptId != clerkScript || !state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))
             throw new InvalidDataException("shop_script_context_invalid");
+        if (fourthFloor is not null && (effect.Source.Line != 22 || !clerk.Active || clerk.Invisible ||
+            !_content.MapDefinition(state.World.Player.MapId).Actors.Any(actor => actor.LocalId == state.LastTalked &&
+                fourthFloor.IsSourceActor(actor) && clerk.SourceLocalId == actor.SourceLocalId &&
+                clerk.LocalId == actor.LocalId && clerk.GraphicsId == actor.GraphicsId &&
+                clerk.X == actor.X && clerk.Y == actor.Y && clerk.TemplateX == actor.X && clerk.TemplateY == actor.Y &&
+                clerk.Elevation == actor.Elevation && clerk.MovementType == actor.MovementType && clerk.HideFlag == actor.HideFlag)))
+            throw new InvalidDataException("shop_script_context_invalid");
         if ((stockId == DepartmentStoreMachineStock.ExpectedStockId || counter is not null) &&
             (!clerk.Active || !_content.MapDefinition(state.World.Player.MapId).Actors.Any(actor =>
                 actor.LocalId == state.LastTalked && actor.SourceLocalId == clerk.SourceLocalId &&
@@ -101,7 +109,7 @@ public sealed partial class CampaignSession
     }
     public EarlyShopQuote? CurrentShopQuote => State.Shop is { Item: { } item } shop ? QuoteShop(State, shop, item) : null;
     public string? ShopAvailabilityNotice => State.Shop?.ShopId == PokeDollShopStock.ExpectedStockId
-        ? "POKé DOLL available. Other 4F\nmerchandise is not available yet." : null;
+        ? "Mail writing and blank Mail\npreview are not available yet." : null;
     private PokeDollShopStock? PokeDollStock(string shopId)
     {
         if (shopId != PokeDollShopStock.ExpectedStockId) return null;

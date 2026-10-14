@@ -323,7 +323,7 @@ public partial class CampaignView
     {
         DisposeSourceMoveAnimation();
         _saffronGymTrainerPortraits.Clear(); _saffronGymTrainerClasses.Clear();
-        DisposeMailPresentation();DisposeQwilfishPresentation();DisposeSeafoamPresentation();DisposeFossilLabPresentation();DisposeFightingDojoPresentation();DisposePowerPlantPresentation();DisposeEventIslandPresentation();DisposeSevenIslandPresentation();DisposeLeagueRematchPresentation();DisposeMewtwoPresentation();DisposeCelioPresentation();DisposeFiveIslandPresentation();DisposeSixIslandPresentation();DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
+        DisposeMailPresentation();DisposeStoneEvolutionPresentation();DisposeQwilfishPresentation();DisposeSeafoamPresentation();DisposeFossilLabPresentation();DisposeFightingDojoPresentation();DisposePowerPlantPresentation();DisposeEventIslandPresentation();DisposeSevenIslandPresentation();DisposeLeagueRematchPresentation();DisposeMewtwoPresentation();DisposeCelioPresentation();DisposeFiveIslandPresentation();DisposeSixIslandPresentation();DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
         DisposeMapResources();
         _entryHeadingFont?.Dispose();foreach(var font in _entryGenderFonts.Values)font.Dispose();_entryGenderFonts.Clear();
         _femalePlayer?.Texture.Dispose();DisposeTownMapPresentation();DisposeCityServicesPresentation();

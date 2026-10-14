@@ -54,7 +54,7 @@ public static class StoneEvolutionCases
         Refuses(() => ItemEvolutionRules.Eligibility(content with { Catalog = content.Catalog with { } }, ownership, nidorino), "cloned owned catalog refused");
         Refuses(() => ItemEvolutionRules.Eligibility(content, OwnedBattlePokemonCatalog.For(catalog.SixIslandOwnership!.Catalog)!, nidorino), "mismatched authenticated predecessor proof refused");
         Refuses(() => ItemEvolutionRules.Eligibility(content with { Catalog = catalog.CelioOpponents!.Catalog }, ownership, nidorino), "opponent catalog cannot borrow ownership");
-        Refuses(() => ItemEvolutionRules.Eligibility(content, ownership, nidorino, "ITEM_FIRE_STONE"), "unexposed stone refused");
+        Refuses(() => ItemEvolutionRules.Eligibility(content, ownership, nidorino, "ITEM_KINGS_ROCK"), "trade evolution item refused");
         Refuses(() => ItemEvolutionRules.SourceEvolution(content, ownership, new("pret:SPECIES_SUNKERN"), ItemEvolutionRules.SunStone), "trainer-only Sunkern cannot use source edge as ownership");
         check(SixIslandItemEvolutionRules.SourceEdge(catalog.SixIslandOwnership!) is not null, "original Six source proof retained");
 

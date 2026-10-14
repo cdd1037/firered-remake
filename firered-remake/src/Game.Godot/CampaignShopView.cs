@@ -32,6 +32,11 @@ public partial class CampaignView
         }
         LoadPokeDollIcon();
         LoadOrdinarySupplementIcons();
+        if (OrdinaryItemInventoryCatalog.For(_catalog.EarlyShop)?.IsAddition(OrdinaryItemInventoryCatalog.RetroMailId) == true)
+        {
+            using var retroMail = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PretDepartmentFourthFloor.LoadIconRgba(_root));
+            _earlyItemIcons.Add(OrdinaryItemInventoryCatalog.RetroMailId, ImageTexture.CreateFromImage(retroMail));
+        }
         foreach (var icon in _catalog.NpcTradeMail.Items.Icons)
         {
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
@@ -189,10 +194,9 @@ public partial class CampaignView
             }
             var member = _session.State.Party[i];
             ItemLabel(new(20, 8 + 14 * i), member.Nickname);
-            if (MtMoonTargetActive && EarlyItem(_mtMoonTargetItem)?.UseSupport == EarlyShopUseSupport.SeparateEvolution)
-                ItemLabel(new(142,8+14*i),MachineText(!member.IsEgg && Game.Domain.Pokemon.ItemEvolutionRules.PartyMenuTarget(_catalog.PokemonContent!,
-                    Game.Domain.Pokemon.OwnedBattlePokemonCatalog.For(_catalog.PokemonContent!.Catalog)!, member,
-                    _mtMoonTargetItem.Value["pret:".Length..]) is not null ? "gText_Able2" : "gText_NotAble"));
+            if (MtMoonTargetActive && IsFieldEvolution(_mtMoonTargetItem))
+                ItemLabel(new(142,8+14*i),MachineText(_session.FieldEvolutionPartyTarget(member,
+                    _mtMoonTargetItem) is not null ? "gText_Able2" : "gText_NotAble"));
             else ItemLabel(new(112, 8 + 14 * i), member.Pokemon.CurrentHp + "/" + member.Pokemon.Stats.MaxHp);
             DrawForestPartyStatus(member, new(198, 11 + 14 * i));
         }

@@ -40,12 +40,13 @@ public sealed partial class CampaignSession
 
     private static void ValidateFossilLabCatalog(ICampaignCatalog content)
     {
+        var rootPokemon = StoneEvolutionOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor.Catalog ?? content.PokemonContent?.Catalog;
         var rootMachines = content.PewterMachines is { } current ? DepartmentStoreMachineStock.BaseCatalog(current) : null;
         if (!content.FossilLabEnabled || content.FossilLabOwnership is not { } owned ||
             content.FossilLabOpponents is not { } opponents || content.FossilLabMachines is not { } machines ||
             !ReferenceEquals(FossilLabOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             !ReferenceEquals(owned.Predecessor, content.FightingDojoOwnership) ||
-            !ReferenceEquals(owned, ((SuperRodOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor ?? SeafoamOwnedPokemonCatalog.For(content.PokemonContent?.Catalog))?.Predecessor ?? NpcTradeOwnedPokemonCatalog.For(content.PokemonContent?.Catalog))?.Predecessor) ||
+            !ReferenceEquals(owned, ((SuperRodOwnedPokemonCatalog.For(rootPokemon)?.Predecessor ?? SeafoamOwnedPokemonCatalog.For(rootPokemon))?.Predecessor ?? NpcTradeOwnedPokemonCatalog.For(rootPokemon))?.Predecessor) ||
             !ReferenceEquals(FossilLabOpponentPokemonCatalog.For(owned), opponents) ||
             !ReferenceEquals(opponents.Predecessor, content.FightingDojoOpponents) ||
             !ReferenceEquals(((SuperRodMachineCatalog.For(rootMachines)?.Predecessor ?? SeafoamMachineCatalog.For(rootMachines))?.Predecessor ?? NpcTradeMachineCatalog.For(rootMachines))?.Predecessor, machines) ||
