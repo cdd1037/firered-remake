@@ -43,6 +43,8 @@ public sealed partial class PretCampaignCatalog
         var npcTradeHaden = PretNpcTradeHaden.Load(projectRoot);
         var npcTradeMail = PretNpcTradeMail.Load(projectRoot);
         var goodRodService = PretGoodRodService.Load(projectRoot);
+        var seafoam = PretSeafoamRegion.Load(projectRoot);
+        var seafoamTrainers = PretSeafoamRules.LoadTrainers(projectRoot);
         var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
         var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName), PretRocketHideoutRuntimeMaps.ManifestSha256);
@@ -1013,6 +1015,8 @@ public sealed partial class PretCampaignCatalog
             npcTradeHaden.AdditionalSourceHashes, sources, textFiles, constants, hashes);
         AppendAuthenticatedRegionalSources(goodRodService.Scripts, goodRodService.TextSources.Values, goodRodService.Constants,
             goodRodService.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+        AppendAuthenticatedRegionalSources(seafoam.Scripts, seafoam.TextSources.Values, seafoam.Constants,
+            seafoam.AdditionalSourceHashes, sources, textFiles, constants, hashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         {
@@ -1794,7 +1798,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         // Compile and validate the complete current script vocabulary.
-        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true);
+        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true);
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
         {
@@ -2311,12 +2315,27 @@ public sealed partial class PretCampaignCatalog
         ValidateGoodRodComposition(goodRodService, maps, goodRodPreviousMaps, compiled);
         PretNpcTradeOwnedRules.ValidateSourceEvidence(projectRoot);
         var tradeOwned = PretNpcTradeOwnedRules.LoadOwned(projectRoot, fossilOwned);
-        _ = PretNpcTradeOwnedRules.LoadOpponents(projectRoot, fossilOpponents, tradeOwned);
+        var tradeOpponents = PretNpcTradeOwnedRules.LoadOpponents(projectRoot, fossilOpponents, tradeOwned);
         var tradeMachines = PretNpcTradeOwnedRules.LoadMachines(projectRoot, fossilMachines, tradeOwned);
         pokemonContent = pokemonContent with { Catalog = tradeOwned.Catalog,
             SpeciesNames = pokemonContent.SpeciesNames.SetItem(122, oakPokedex.Entries[122].Name).SetItem(124, oakPokedex.Entries[124].Name) };
         machines = tradeMachines.Catalog;
-        var moveTutors = PretMoveTutors.Load(projectRoot, tradeOwned.Catalog);
+        PretSeafoamItems.ValidateSourceEvidence(projectRoot);
+        earlyShop=earlyShop with { Catalog=PretSeafoamItems.LoadShop(projectRoot,NpcTradeShopCatalog.For(earlyShop.Catalog)!).Catalog };
+        hashes.AddRange(PretSeafoamItems.AdditionalSourceHashes);
+        var seafoamPreviousMaps = maps;
+        maps = maps.AddRange(seafoam.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, seafoam.NewMaps);
+        PretSeafoamRules.ValidateSourceEvidence(projectRoot);
+        var seafoamOwned = PretSeafoamRules.LoadOwned(projectRoot, tradeOwned);
+        var seafoamOpponents = PretSeafoamRules.LoadOpponents(projectRoot, tradeOpponents, seafoamOwned);
+        var seafoamMachines = PretSeafoamRules.LoadMachines(projectRoot, tradeMachines, seafoamOwned);
+        pokemonContent = pokemonContent with { Catalog = seafoamOwned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.SetItem(144, oakPokedex.Entries[144].Name) };
+        machines = seafoamMachines.Catalog;
+        ValidateSeafoamComposition(seafoam, maps, seafoamPreviousMaps, compiled);
+        AppendSeafoamRuleHashes(hashes);
+        var moveTutors = PretMoveTutors.Load(projectRoot, seafoamOwned.Catalog);
         hashes.AddRange(moveTutors.AdditionalSourceHashes);
         hashes.Add("npc-trade-owned:" + PretNpcTradeOwnedRules.PokemonSha256);
         hashes.Add("npc-trade-owned-machines:" + PretNpcTradeOwnedRules.MachinesSha256);
@@ -2496,7 +2515,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

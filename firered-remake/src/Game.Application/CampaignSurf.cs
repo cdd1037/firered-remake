@@ -28,8 +28,10 @@ public sealed partial class CampaignSession
     private static bool SurfWaterBehavior(int behavior)=>behavior is 0x10 or 0x15;
     private bool SurfRegionAllows(TilePosition p)=>(_content.Route22Enabled?_content.IsRoute22StablePosition(p.MapId,p.X,p.Y):true)&&
         (_content.Route3Enabled?_content.IsRoute3StablePosition(p.MapId,p.X,p.Y):true)&&(_content.SnorlaxEnabled?_content.IsSnorlaxStablePosition(p.MapId,p.X,p.Y):true);
-    private bool IsSurfWater(TilePosition p)=>_content.SurfEnabled&&SurfRegionAllows(p)&&_content.ConnectedFieldMaps?.TryGetValue(p.MapId,out var map)==true&&
-        map.CellAt(p.X,p.Y) is {Collision:0,Elevation:1} c&&SurfWaterBehavior(c.SourceBehavior)&&_content.TerrainAt(p.MapId,p.X,p.Y)==2&&p.Elevation==1;
+    private bool IsSurfWater(CampaignState state, TilePosition p)=>_content.SurfEnabled&&SurfRegionAllows(p)&&EditedFieldMaps(state).TryGetValue(p.MapId,out var map)&&
+        map.CellAt(p.X,p.Y) is {Collision:0,Elevation:1} c&&
+        (SurfWaterBehavior(c.SourceBehavior)&&_content.TerrainAt(p.MapId,p.X,p.Y)==2||_content.SeafoamEnabled&&SeafoamFieldRules.IsWaterFloor(p.MapId)&&
+            (SeafoamFieldRules.Surfable(c.SourceBehavior)||c.SourceBehavior==0x17))&&p.Elevation==1;
     private bool ActorOccupies(CampaignState state,int x,int y,int elevation)=>state.Actors.Values.Any(a=>a.Active&&a.X==x&&a.Y==y&&(a.Elevation==0||elevation==0||a.Elevation==elevation));
     private FieldHmCollision SurfFacingCollision(CampaignState state,TilePosition origin,Direction direction,out TilePosition destination,out ConnectedFieldCell? target)
     {
@@ -52,7 +54,7 @@ public sealed partial class CampaignSession
         if(cell?.SourceBehavior==FieldHmSourceRules.FastWaterBehavior)return "field_surf_fast_current";
         if(cell is null||!FieldHmSourceRules.FacesSurfableWater(state.World.Player.Elevation,collision,_content.TerrainAt(destination.MapId,destination.X,destination.Y)==2))return "field_surf_not_facing_water";
         if(!SurfRegionAllows(destination))return "field_surf_region_boundary_not_open";
-        return !IsSurfWater(destination)?"field_surf_water_mode_unsupported":null;
+        return !IsSurfWater(state,destination)?"field_surf_water_mode_unsupported":null;
     }
     private Decision<CampaignState> StartFieldSurf(CampaignState state,CampaignCommand command)
     {
@@ -78,7 +80,7 @@ public sealed partial class CampaignSession
     {
         var p=state.World.Player;var collision=SurfFacingCollision(state,p,p.Facing,out var destination,out var cell);
         if(index<0||index>=state.Party.Length||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.SurfBadge)||state.IsSurfing||state.SurfEffect is not null||
-            cell is null||!FieldHmSourceRules.CanStartSurf(state.Party[index],true,false,p.Elevation,cell.SourceBehavior,collision,_content.TerrainAt(destination.MapId,destination.X,destination.Y)==2)||!IsSurfWater(destination))
+            cell is null||!FieldHmSourceRules.CanStartSurf(state.Party[index],true,false,p.Elevation,cell.SourceBehavior,collision,_content.TerrainAt(destination.MapId,destination.X,destination.Y)==2)||!IsSurfWater(state,destination))
             throw new InvalidDataException("field_surf_effect_context");
         var mon=state.Party[index];long sequence=checked(state.Script.EffectSequence+1);
         return state with{IsSurfing=true,IsCycling=false,SavedMusic="",Music=SurfMusic(p.MapId),Dialogue=null,SignMessage=null,MessagePointer=null,
@@ -147,7 +149,7 @@ public sealed partial class CampaignSession
         if(effect.Phase is FieldSurfSourcePresentation.ShowMon or FieldSurfSourcePresentation.MountJump)
         {
             if(!state.IsSurfing||effect.PartyIndex<0||effect.PartyIndex>=state.Party.Length||state.Party[effect.PartyIndex].InstanceId!=effect.InstanceId||
-                !FieldHmSourceRules.Knows(state.Party[effect.PartyIndex],FieldHmSourceRules.SurfMove)||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.SurfBadge)||!IsSurfWater(effect.Destination))
+                !FieldHmSourceRules.Knows(state.Party[effect.PartyIndex],FieldHmSourceRules.SurfMove)||!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.SurfBadge)||!IsSurfWater(state,effect.Destination))
                 throw new InvalidDataException("field_surf_owner_context_changed");
             var collision=SurfFacingCollision(state,effect.Origin,effect.Origin.Facing,out var destination,out var cell);
             if(destination!=effect.Destination||!FieldHmSourceRules.FacesSurfableWater(effect.Origin.Elevation,collision,_content.TerrainAt(destination.MapId,destination.X,destination.Y)==2))
@@ -181,7 +183,7 @@ public sealed partial class CampaignSession
         if(state.SurfEffect is not null)return "save_field_surf_active";
         if(!state.IsSurfing)return null;
         if(!_content.SurfEnabled)return "save_field_surf_profile_missing";
-        if(!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.SurfBadge)||state.IsCycling||!IsSurfWater(state.World.Player))return "save_field_surf_position_invalid";
+        if(!state.Script.Flags.GetValueOrDefault(FieldHmSourceRules.SurfBadge)||state.IsCycling||!IsSurfWater(state,state.World.Player))return "save_field_surf_position_invalid";
         return ActorOccupies(state,state.World.Player.X,state.World.Player.Y,state.World.Player.Elevation)?"save_field_surf_actor_collision":null;
     }
 }

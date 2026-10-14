@@ -16,7 +16,7 @@ public sealed partial class CampaignSession
         shared with{RateRng=water.RateRng,PreviousMetatileBehavior=water.PreviousMetatileBehavior,EncounterRateBuff=water.EncounterRateBuff,StepsSinceLastEncounter=water.StepsSinceLastEncounter,Pending=null};
     private CampaignState CheckSurfWaterEncounter(CampaignState state,EncounterCheckTrigger trigger)
     {
-        if(!_content.SurfEnabled||_content.SurfOwnership is null||_content.WaterEncounters is not {} tables||!state.IsSurfing||!IsSurfWater(state.World.Player))
+        if(!_content.SurfEnabled||_content.SurfOwnership is null||_content.WaterEncounters is not {} tables||!state.IsSurfing||!IsSurfWater(state,state.World.Player))
             throw new InvalidDataException("surf_water_encounter_context");
         var p=state.World.Player;var exploration=state.Exploration??throw new InvalidDataException("exploration_missing");
         var shared=exploration.EarlyEncounter??throw new InvalidDataException("early_encounter_missing");
@@ -35,8 +35,10 @@ public sealed partial class CampaignSession
             return next with{Exploration=next.Exploration! with{EarlyEncounter=SharedWaterProcess(shared,CelioEncounterRules.CompleteRoamerCandidate(result,table))}};
         }
         if(result.Candidate is null)return next;
-        var generated=WaterEncounterRules.Generate(
-            _content.PowerPlantOwnership!,result.State,table,next.World.Rng,next.TrainerId);
+        var seafoamOrigin=IsSeafoamMap(p.MapId)?new Game.Domain.WildBattle.SeafoamWildOrigin(p.MapId,Game.Domain.WildBattle.SeafoamEncounterKind.Surf,result.Candidate.Slot):null;
+        var generated=seafoamOrigin is not null
+            ?SeafoamPokemonFactory.GenerateSourceSlot(_content.SeafoamOwnership!,seafoamOrigin,result.Candidate.Level,next.World.Rng,next.TrainerId)
+            :WaterEncounterRules.Generate(_content.PowerPlantOwnership!,result.State,table,next.World.Rng,next.TrainerId);
         if(state.SafariVisit is {Active:true})
         {
             var rng=generated.GlobalRng;var trace=generated.RandomTrace.ToBuilder();
@@ -45,10 +47,10 @@ public sealed partial class CampaignSession
             return BeginSafariBattle(next,generated.Pokemon,held.GlobalRng,trace.ToImmutable(),held.HeldItem,result.State);
         }
         next=next with{Exploration=next.Exploration! with{EarlyEncounter=SharedWaterProcess(shared,WaterEncounterRules.CompleteCandidate(result.State,table))}};
-        return BeginWildBattle(next,surfPokemon:generated,sevenIslandOrigin:SevenIslandEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.SevenIslandEncounterKind.Surf,result.Candidate.Slot):null,ceruleanCaveOrigin:CeruleanCaveEncounterTables.IsCave(p.MapId)?new(p.MapId,Game.Domain.WildBattle.CeruleanCaveEncounterKind.Surf,result.Candidate.Slot):null,victoryRoadOrigin:_content.VictoryRoadEnabled&&VictoryRoadEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.VictoryRoadEncounterKind.Surf,result.Candidate.Slot):null,seviiRubyOrigin:_content.SeviiRubyEnabled&&SeviiRubyEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.SeviiRubyEncounterKind.Surf,result.Candidate.Slot):null,fiveIslandOrigin:_content.FiveIslandEnabled&&FiveIslandEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.FiveIslandEncounterKind.Surf,result.Candidate.Slot):null,sixIslandOrigin:_content.SixIslandEnabled&&SixIslandEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.SixIslandEncounterKind.Surf,result.Candidate.Slot):null,fourIslandOrigin:_content.FourIslandEnabled&&FourIslandEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.FourIslandEncounterKind.Surf,result.Candidate.Slot):null);
+        return BeginWildBattle(next,surfPokemon:generated,seafoamOrigin:seafoamOrigin,sevenIslandOrigin:SevenIslandEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.SevenIslandEncounterKind.Surf,result.Candidate.Slot):null,ceruleanCaveOrigin:CeruleanCaveEncounterTables.IsCave(p.MapId)?new(p.MapId,Game.Domain.WildBattle.CeruleanCaveEncounterKind.Surf,result.Candidate.Slot):null,victoryRoadOrigin:_content.VictoryRoadEnabled&&VictoryRoadEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.VictoryRoadEncounterKind.Surf,result.Candidate.Slot):null,seviiRubyOrigin:_content.SeviiRubyEnabled&&SeviiRubyEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.SeviiRubyEncounterKind.Surf,result.Candidate.Slot):null,fiveIslandOrigin:_content.FiveIslandEnabled&&FiveIslandEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.FiveIslandEncounterKind.Surf,result.Candidate.Slot):null,sixIslandOrigin:_content.SixIslandEnabled&&SixIslandEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.SixIslandEncounterKind.Surf,result.Candidate.Slot):null,fourIslandOrigin:_content.FourIslandEnabled&&FourIslandEncounterTables.Water.Any(t=>t.Map==p.MapId)?new(p.MapId,Game.Domain.WildBattle.FourIslandEncounterKind.Surf,result.Candidate.Slot):null);
     }
     private bool SurfOriginSupported(int species,int level,string? region=null,bool safariOnly=false)=>_content.SurfEnabled&&
-        _content.WaterEncounters!.Values.Any(t=>(!SevenIslandMap(t.Map))&&(!CeruleanCaveEncounterTables.IsCave(t.Map))&&(!_content.FiveIslandEnabled||!FiveIslandEncounterTables.Water.Any(r=>r.Map==t.Map))&&(!_content.SixIslandEnabled||!SixIslandEncounterTables.Water.Any(r=>r.Map==t.Map))&&(!_content.FourIslandEnabled||!FourIslandEncounterTables.Water.Any(r=>r.Map==t.Map))&&(!_content.SeviiRubyEnabled||!SeviiRubyEncounterTables.Water.Any(r=>r.Map==t.Map))&&(!safariOnly||t.SourceMapSymbol.StartsWith("MAP_SAFARI_ZONE_",StringComparison.Ordinal))&&
+        _content.WaterEncounters!.Values.Any(t=>!IsSeafoamMap(t.Map)&&(!SevenIslandMap(t.Map))&&(!CeruleanCaveEncounterTables.IsCave(t.Map))&&(!_content.FiveIslandEnabled||!FiveIslandEncounterTables.Water.Any(r=>r.Map==t.Map))&&(!_content.SixIslandEnabled||!SixIslandEncounterTables.Water.Any(r=>r.Map==t.Map))&&(!_content.FourIslandEnabled||!FourIslandEncounterTables.Water.Any(r=>r.Map==t.Map))&&(!_content.SeviiRubyEnabled||!SeviiRubyEncounterTables.Water.Any(r=>r.Map==t.Map))&&(!safariOnly||t.SourceMapSymbol.StartsWith("MAP_SAFARI_ZONE_",StringComparison.Ordinal))&&
             (region is null||_content.MapDefinition(t.Map).RegionMapSection==region)&&
             t.Slots.Any(slot=>_content.PokemonContent!.Catalog.Species[slot.Species].SourceSpeciesId==species&&level>=slot.MinimumLevel&&level<=slot.MaximumLevel));
 }

@@ -27,6 +27,7 @@ public sealed partial class CampaignSession
             "ViridianCity_Gym" when _content.ViridianGymEnabled=>new("map.viridian-city-gym"),
             "VermilionCity_Gym" when _content.VermilionGymEnabled=>new("map.vermilion-city-gym"),
             _ when _content.PokemonTowerEnabled&&sourceMap.StartsWith("PokemonTower_",StringComparison.Ordinal)=>new("map.pokemon-tower-"+sourceMap.Split('_')[1].ToLowerInvariant()),
+            "Route19" or "Route20" when _content.SeafoamEnabled=>new("map.route-"+sourceMap[5..]),
             "Route22" when _content.LeagueRivalEnabled=>new("map.route-22"),
             "Route11" when _content.Route11Enabled=>new("map.route-11"),
             "Route12" or "Route13" or "Route14" or "Route15" when _content.FuchsiaRouteEnabled=>new("map.route-"+sourceMap[5..]),

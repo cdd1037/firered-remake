@@ -26,16 +26,17 @@ public partial class CampaignView
         if(state.MapEdits is not {Count:>0}){_art=original;ReleaseMapEdits();_mapEditKey=key;return;}
         var definitions=state.World.Player.MapId.Value=="map.vermilion-city-gym"
             ?_catalog.VermilionGymRegion?.BeamDefinitions:_catalog.MartMetatiles?.Definitions;
-        if(definitions is null&&!IsTrainerTowerPresentationMap(state.World.Player.MapId)&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(_catalog.VictoryRoadEnabled&&IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
+        if(definitions is null&&!IsSeafoamPatchedMap(state.World.Player.MapId)&&!IsTrainerTowerPresentationMap(state.World.Player.MapId)&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(_catalog.VictoryRoadEnabled&&IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
         var replacement=_mapResources.CreateOwner("map-edits");
         using var tiles=_mapResources.CreateOwner("map-edit-tiles");
         Texture2D Patch(Texture2D texture,int layer)
         {
             // Dummy/headless GetImage may return the same Image resource. Tower crops
             // read original layers, so their editable canvas must be a separate resource.
-            using var canvas=IsTrainerTowerPresentationMap(state.World.Player.MapId)?(Image)texture.GetImage().Duplicate():texture.GetImage();
+            using var canvas=IsTrainerTowerPresentationMap(state.World.Player.MapId)||IsSeafoamPatchedMap(state.World.Player.MapId)?(Image)texture.GetImage().Duplicate():texture.GetImage();
             foreach(var edit in state.MapEdits.Values)
             {
+                if(TrySeafoamPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryTrainerTowerPatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryCelioMachinePatch(canvas,edit,layer,state.World.Player.MapId))continue;
                 if(TryFiveIslandPatch(canvas,edit,layer,state.World.Player.MapId))continue;

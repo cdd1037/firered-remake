@@ -9,8 +9,10 @@ public sealed partial class CampaignSession
 {
     // Current construction authenticates the latest shop. These predecessors remain
     // typed source proofs and preserve each later key-item extension when narrowing.
-    private NpcTradeShopCatalog NpcTradeShopProof => NpcTradeShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("npc_trade_shop_proof_missing");
-    private InventoryState NpcTradePredecessorInventory(InventoryState inventory) => NpcTradeShopProof.InventoryForPredecessor(inventory);
+    private SeafoamShopCatalog SeafoamShopProof => SeafoamShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("seafoam_shop_proof_missing");
+    private InventoryState SeafoamPredecessorInventory(InventoryState inventory) => SeafoamShopProof.InventoryForPredecessor(inventory);
+    private NpcTradeShopCatalog NpcTradeShopProof => SeafoamShopProof.Predecessor;
+    private InventoryState NpcTradePredecessorInventory(InventoryState inventory) => NpcTradeShopProof.InventoryForPredecessor(SeafoamPredecessorInventory(inventory));
     private FossilLabShopCatalog? FossilLabShopProof => _content.FossilLabShop;
     private InventoryState FossilLabPredecessorInventory(InventoryState inventory) => FossilLabShopProof?.InventoryForPredecessor(NpcTradePredecessorInventory(inventory))??inventory;
     private TrainerTowerShopCatalog? TrainerTowerShopProof => FossilLabShopProof?.Predecessor ?? TrainerTowerShopCatalog.For(ShopCatalog);
@@ -48,7 +50,8 @@ public sealed partial class CampaignSession
         changed = PowerPlantShopProof.RestoreFromPredecessor(TrainerTowerPredecessorInventory(view), changed);
         if(TrainerTowerShopProof is {} tower)changed=tower.RestoreFromPredecessor(FossilLabPredecessorInventory(view),changed);
         if(FossilLabShopProof is {} fossil)changed=fossil.RestoreFromPredecessor(NpcTradePredecessorInventory(view),changed);
-        changed = NpcTradeShopProof.RestoreFromPredecessor(view, changed);
+        changed = NpcTradeShopProof.RestoreFromPredecessor(SeafoamPredecessorInventory(view), changed);
+        changed = SeafoamShopProof.RestoreFromPredecessor(view, changed);
         return MergeShopInventory(original, changed);
     }
     private bool TryApplyFirstSeviiItemEffect(CampaignState state,StoryEffect effect,out CampaignState next)

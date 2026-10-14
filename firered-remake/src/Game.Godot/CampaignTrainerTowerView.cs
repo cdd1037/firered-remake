@@ -29,9 +29,9 @@ public partial class CampaignView
     private int TrainerTowerMenuWidth => (int)_trainerTowerMenu!.Options.Max(t => _sourceNormal.Font.GetStringSize(_sourceNormal.PrepareText(t), fontSize: _sourceNormal.Size).X);
     private bool IsTrainerTowerPresentationMap(MapId map) => _catalog.TrainerTowerEnabled && _catalog.TrainerTowerRegion.Maps.ContainsKey(map);
     private string PresentationMapKey(MapId map) => IsTrainerTowerPresentationMap(map)
-        ? map.Value + ":" + _catalog.TrainerTowerRegion.LayoutId(map, (PretTrainerTowerLayoutFormat)_session.TrainerTowerLayout(map)) : map.Value;
+        ? map.Value + ":" + _catalog.TrainerTowerRegion.LayoutId(map, (PretTrainerTowerLayoutFormat)_session.TrainerTowerLayout(map)) : SeafoamPresentationMapKey(map);
     private PretWorldMap PresentationSourceMap(MapId map) => IsTrainerTowerPresentationMap(map)
-        ? (PretWorldMap)(_catalog.TrainerTowerMap(map, _session.TrainerTowerLayout(map)) ?? throw new InvalidDataException("Tower layout art missing.")) : _catalog.SourceMaps[map];
+        ? (PretWorldMap)(_catalog.TrainerTowerMap(map, _session.TrainerTowerLayout(map)) ?? throw new InvalidDataException("Tower layout art missing.")) : SeafoamPresentationSourceMap(map);
 
     private void LoadTrainerTowerPresentation()
     {

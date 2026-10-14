@@ -301,7 +301,9 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretFightingDojoRegion fightingDojo, FightingDojoOwnedPokemonCatalog dojoOwned,
         FightingDojoOpponentPokemonCatalog dojoOpponents, FightingDojoMachineCatalog dojoMachines, FightingDojoTrainerCatalog dojoTrainers,
         PretFossilLabRegion fossilLab, FossilLabOwnedPokemonCatalog fossilOwned,
-        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines, FossilLabShopCatalog fossilShop, PretNpcTrades npcTrades, PretNpcTradeElyssa npcTradeElyssa, PretNpcTradeHaden npcTradeHaden, PretNpcTradeMail npcTradeMail, PretGoodRodService goodRodService)
+        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines, FossilLabShopCatalog fossilShop, PretNpcTrades npcTrades, PretNpcTradeElyssa npcTradeElyssa, PretNpcTradeHaden npcTradeHaden, PretNpcTradeMail npcTradeMail, PretGoodRodService goodRodService,
+        PretSeafoamRegion seafoam, SeafoamOwnedPokemonCatalog seafoamOwned, SeafoamOpponentPokemonCatalog seafoamOpponents,
+        SeafoamMachineCatalog seafoamMachines, SeafoamTrainerCatalog seafoamTrainers)
     {
         NpcTradeContent = npcTrades; NpcTradeElyssa = npcTradeElyssa; NpcTradeHaden = npcTradeHaden; NpcTradeMail = npcTradeMail;
         NpcTradeMaps = ResolveNpcTradeMaps(npcTrades, maps);
@@ -446,8 +448,10 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         Route11Trainers = route11Trainers;
         CityServices = cityServices;
         OldRod = oldRod;
+        SeafoamRegion = seafoam; SeafoamOwnership = seafoamOwned; SeafoamOpponents = seafoamOpponents;
+        SeafoamMachines = seafoamMachines; SeafoamTrainers = seafoamTrainers;
         GoodRodService = goodRodService;
-        GoodRodEncounters = goodRodService.GoodRodTables.ToImmutableDictionary(table => table.Map);
+        GoodRodEncounters = goodRodService.GoodRodTables.AddRange(SeafoamEncounterTables.GoodRod).ToImmutableDictionary(table => table.Map);
         CityServiceItems = cityServices.Items.AddRange(goodRodService.Items);
         VermilionGymRegion = vermilionGym;
         VermilionGymTrainers = vermilionGymTrainers;
@@ -583,6 +587,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         FieldPickups = FieldPickups.AddRange(sevenItems.Pickups);
         LandEncounters = LandEncounters!.ToImmutableDictionary().AddRange(SevenIslandEncounterTables.Land.Select(t => KeyValuePair.Create(t.Map, t)));
         SevenIslandWaterEncounters = SevenIslandWaterEncounterCatalog.Authenticate(CeruleanCaveWaterEncounters, SevenIslandEncounterTables.Water);
+        SeafoamWaterEncounters = SeafoamWaterEncounterCatalog.Authenticate(SevenIslandWaterEncounters, SeafoamEncounterTables.Water);
         if (FieldPickups.Length != 257 || FieldPickups.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != 257)
             throw new InvalidDataException("seven_island_pickup_composition");
 
@@ -591,7 +596,10 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         if(FieldPickups.Select(p=>p.Id).Intersect(powerPickups.Select(p=>p.Id),StringComparer.Ordinal).Any())
             throw new InvalidDataException("power_plant_duplicate_pickup");
         FieldPickups=FieldPickups.AddRange(powerPickups);
+        FieldPickups=FieldPickups.AddRange(SourceRegionPickupDefinitions(seafoam.NewMaps,seafoam.Items,seafoam.Contracts,
+            PretSeafoamRegion.MapIdFromSourceSymbol,"seafoam",8,3,earlyShop.Catalog,scripts));
         LandEncounters=LandEncounters!.ToImmutableDictionary().Add(PowerPlantEncounterTables.Land.Map,PowerPlantEncounterTables.Land);
+        LandEncounters = LandEncounters.ToImmutableDictionary().AddRange(SeafoamEncounterTables.Land.Select(table => KeyValuePair.Create(table.Map, table)));
 
         var metatileDefinitions = metatiles.Definitions.ToDictionary(x => x.Key, x => new FieldMetatileDefinition(x.Key, x.Value.Behavior, x.Value.Terrain, x.Value.EncounterType, x.Value.LayerType));
         {
@@ -603,7 +611,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
         MetatileDefinitions = metatileDefinitions;
         Maps = Maps.ToImmutableDictionary().SetItem(new("map.viridian-city"), new ViridianGymCityFieldMap(maps[new("map.viridian-city")]));
-        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => goodRodService.NewMaps.ContainsKey(x.Key) ? PretGoodRodService.ConnectedMap(x.Value) : npcTradeHaden.NewMaps.ContainsKey(x.Key) ? PretNpcTradeHaden.ConnectedMap(x.Value) : npcTradeElyssa.NewMaps.ContainsKey(x.Key) ? PretNpcTradeElyssa.ConnectedMap(x.Value) : npcTrades.NewMaps.ContainsKey(x.Key) ? PretNpcTrades.ConnectedMap(x.Value) : fossilLab.NewMaps.ContainsKey(x.Key) ? PretFossilLabRegion.ConnectedMap(x.Value) : fightingDojo.NewMaps.ContainsKey(x.Key) ? PretFightingDojoRegion.ConnectedMap(x.Value) : trainerTower.Maps.ContainsKey(x.Key) ? PretTrainerTowerRegion.ConnectedMap(x.Value) : powerPlant.NewMaps.ContainsKey(x.Key) ? PretPowerPlantRegion.ConnectedMap(x.Value) : eventIsland.NewMaps.ContainsKey(x.Key) ? PretEventIslandRegion.ConnectedMap(x.Value) : sevenIsland.NewMaps.ContainsKey(x.Key) ? PretSevenIslandRegion.ConnectedMap(x.Value) : ceruleanCave.NewMaps.ContainsKey(x.Key) ? CeruleanCaveConnectedMap(x.Value) : fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : (RegionalServiceMapIds.Contains(x.Key) || RegionalInteriorMapIds.Contains(x.Key)) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
+        ConnectedFieldMaps = maps.ToImmutableDictionary(x => x.Key, x => seafoam.NewMaps.ContainsKey(x.Key) ? PretSeafoamRegion.ConnectedMap(x.Value) : goodRodService.NewMaps.ContainsKey(x.Key) ? PretGoodRodService.ConnectedMap(x.Value) : npcTradeHaden.NewMaps.ContainsKey(x.Key) ? PretNpcTradeHaden.ConnectedMap(x.Value) : npcTradeElyssa.NewMaps.ContainsKey(x.Key) ? PretNpcTradeElyssa.ConnectedMap(x.Value) : npcTrades.NewMaps.ContainsKey(x.Key) ? PretNpcTrades.ConnectedMap(x.Value) : fossilLab.NewMaps.ContainsKey(x.Key) ? PretFossilLabRegion.ConnectedMap(x.Value) : fightingDojo.NewMaps.ContainsKey(x.Key) ? PretFightingDojoRegion.ConnectedMap(x.Value) : trainerTower.Maps.ContainsKey(x.Key) ? PretTrainerTowerRegion.ConnectedMap(x.Value) : powerPlant.NewMaps.ContainsKey(x.Key) ? PretPowerPlantRegion.ConnectedMap(x.Value) : eventIsland.NewMaps.ContainsKey(x.Key) ? PretEventIslandRegion.ConnectedMap(x.Value) : sevenIsland.NewMaps.ContainsKey(x.Key) ? PretSevenIslandRegion.ConnectedMap(x.Value) : ceruleanCave.NewMaps.ContainsKey(x.Key) ? CeruleanCaveConnectedMap(x.Value) : fiveIsland.SourceMaps.ContainsKey(x.Key) ? PretFiveIslandRegion.ConnectedMap(x.Value) : sixIsland.SourceMaps.ContainsKey(x.Key) ? PretSixIslandRegion.ConnectedMap(x.Value) : fourIsland.SourceMaps.ContainsKey(x.Key) ? PretFourIslandRegion.ConnectedMap(x.Value) : seviiRuby.SourceMaps.ContainsKey(x.Key) ? PretSeviiRubyRegion.ConnectedMap(x.Value) : pokemonLeague.SourceMaps.ContainsKey(x.Key) ? PretPokemonLeagueRegion.ConnectedMap(x.Value) : victoryRoad.SourceMaps.ContainsKey(x.Key) ? PretVictoryRoadRegion.ConnectedMap(x.Value) : viridianGym.NewMaps.ContainsKey(x.Key) ? PretViridianGymRegion.ConnectedMap(x.Value) : firstSevii.NewMaps.ContainsKey(x.Key) ? PretFirstSeviiRegion.ConnectedMap(x.Value) : cinnabar.NewMaps.ContainsKey(x.Key) ? PretCinnabarRegion.ConnectedMap(x.Value) : saffronGym.NewMaps.ContainsKey(x.Key) ? PretSaffronGymRegion.ConnectedMap(x.Value) : silph.NewMaps.ContainsKey(x.Key) ? PretSilphRegion.ConnectedMap(x.Value) : safari.SourceMaps.ContainsKey(x.Key) ? PretSafariRegion.ConnectedMap(x.Value) : fuchsiaGym.NewMaps.ContainsKey(x.Key) ? PretFuchsiaGymRegion.ConnectedMap(x.Value) : (fuchsiaRoute.NewMaps.ContainsKey(x.Key) || x.Key.Value == "map.route-12") ? PretFuchsiaRouteRegion.ConnectedMap(x.Value) : (RegionalServiceMapIds.Contains(x.Key) || RegionalInteriorMapIds.Contains(x.Key)) ? RegionalServiceConnectedMap(x.Value) : snorlax.NewMaps.ContainsKey(x.Key) ? PretSnorlaxRegion.ConnectedMap(x.Value) : pokemonTower.NewMaps.ContainsKey(x.Key) ? PretPokemonTowerRegion.ConnectedMap(x.Value) : x.Key.Value == "map.vermilion-city-gym" ? PretVermilionGymRegion.ConnectedMap(x.Value) : PretRocketHideoutRegion.ConnectedMap(x.Value));
         _definitions = maps.ToImmutableDictionary(x => x.Key, x => Definition(x.Value));
     }
 
@@ -689,6 +697,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
 
     public FieldMetatileDefinition? MetatileDefinition(MapId map, int id)
     {
+        if (SeafoamRegion.NewMaps.ContainsKey(map)) return SeafoamRegion.MetatileDefinition(map, id);
         if (GoodRodService.NewMaps.TryGetValue(map, out var goodRodMap))
         {
             var cell = goodRodMap.Cells.Concat(goodRodMap.BorderCells).FirstOrDefault(c => c.MetatileId == id);
@@ -768,6 +777,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         if (symbol.StartsWith("MAP_CINNABAR_ISLAND_POKEMON_LAB_", StringComparison.Ordinal)) return PretFossilLabRegion.MapIdFromSourceSymbol(symbol);
         if (symbol == "MAP_SAFFRON_CITY_DOJO") return PretFightingDojoRegion.MapIdFromSourceSymbol(symbol);
         if (symbol.StartsWith("MAP_TRAINER_TOWER_", StringComparison.Ordinal)) return PretTrainerTowerRegion.MapIdFromSourceSymbol(symbol);
+        if(symbol is "MAP_ROUTE19" or "MAP_ROUTE20" || symbol.StartsWith("MAP_SEAFOAM_ISLANDS_",StringComparison.Ordinal)) return PretSeafoamRegion.MapIdFromSourceSymbol(symbol);
         if(symbol=="MAP_POWER_PLANT")return PretPowerPlantRegion.MapIdFromSourceSymbol(symbol);
         if (symbol.StartsWith("MAP_NAVEL_ROCK", StringComparison.Ordinal) || symbol.StartsWith("MAP_BIRTH_ISLAND", StringComparison.Ordinal)) return PretEventIslandRegion.MapIdFromSourceSymbol(symbol);
         if (symbol.StartsWith("MAP_SEVEN_ISLAND", StringComparison.Ordinal) || symbol == "MAP_TRAINER_TOWER_LOBBY") return PretSevenIslandRegion.MapIdFromSourceSymbol(symbol);

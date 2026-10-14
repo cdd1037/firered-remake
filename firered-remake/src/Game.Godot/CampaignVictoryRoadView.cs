@@ -82,7 +82,7 @@ public partial class CampaignView
     }
 
     // Names come from the already authenticated 386-entry dex, gated by the bounded opponent catalog.
-    private string PresentedBattleSpeciesName(int species) => TrainerTowerSpeciesName(species) ?? PowerPlantSpeciesName(species) ?? EventIslandSpeciesName(species) ?? SevenIslandSpeciesName(species) ?? LeagueRematchSpeciesName(species) ?? MewtwoSpeciesName(species) ?? CelioSpeciesName(species) ?? FiveIslandSpeciesName(species) ?? SixIslandSpeciesName(species) ?? PokemonLeagueSpeciesName(species) ?? (species is 87 or 103 &&
+    private string PresentedBattleSpeciesName(int species) => SeafoamSpeciesName(species) ?? TrainerTowerSpeciesName(species) ?? PowerPlantSpeciesName(species) ?? EventIslandSpeciesName(species) ?? SevenIslandSpeciesName(species) ?? LeagueRematchSpeciesName(species) ?? MewtwoSpeciesName(species) ?? CelioSpeciesName(species) ?? FiveIslandSpeciesName(species) ?? SixIslandSpeciesName(species) ?? PokemonLeagueSpeciesName(species) ?? (species is 87 or 103 &&
         _catalog.VictoryRoadOpponents?.Catalog.Species.Values.Any(s => s.SourceSpeciesId == species) == true
         ? (_pokedexMenu ?? throw new InvalidDataException("Victory Road species names missing.")).Entries[species].Name
         : _catalog.PresentedSpeciesName(species));

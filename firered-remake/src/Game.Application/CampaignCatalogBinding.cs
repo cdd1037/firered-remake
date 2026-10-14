@@ -23,14 +23,13 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var owned = NpcTradeOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
-            ?? throw new InvalidDataException("current_npc_trade_owned_proof_missing");
+        var owned = content.SeafoamOwnership ?? throw new InvalidDataException("current_seafoam_owned_proof_missing");
         var battle = owned.SharedBattle;
-        var opponents = NpcTradeOpponentPokemonCatalog.For(owned);
-        if (!ReferenceEquals(battle.Catalog, content.PokemonContent.Catalog) ||
-            !ReferenceEquals(battle.Mechanics, owned.Mechanics) ||
-            !ReferenceEquals(owned.Predecessor, content.FossilLabOwnership) ||
-            opponents is null || !ReferenceEquals(opponents.Predecessor, content.FossilLabOpponents))
+        var opponents = content.SeafoamOpponents;
+        if (!ReferenceEquals(SeafoamOwnedPokemonCatalog.For(content.PokemonContent!.Catalog), owned) ||
+            !ReferenceEquals(battle.Catalog,content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics,owned.Mechanics) ||
+            !ReferenceEquals(owned.Predecessor.Predecessor,content.FossilLabOwnership) || opponents is null ||
+            !ReferenceEquals(opponents.Owned,owned) || !ReferenceEquals(opponents.Predecessor.Predecessor,content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
         return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, owned.Catalog, battle);
     }
@@ -59,7 +58,7 @@ public sealed partial class CampaignSession
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
         if(content.NpcTrades is null||!ReferenceEquals(NpcTradePokemonCatalog.For(content.PokemonContent?.Catalog),content.NpcTrades))throw new InvalidDataException("current_npc_trade_proof_missing");
-        ValidateOldAmberCatalog(content);ValidateFossilLabCatalog(content);ValidateFightingDojoCatalog(content);ValidatePowerPlantCatalog(content);ValidateEventIslandCatalog(content);ValidateSevenIslandCatalog(content);ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
+        ValidateSeafoamEncounterCatalog(content);ValidateOldAmberCatalog(content);ValidateFossilLabCatalog(content);ValidateFightingDojoCatalog(content);ValidatePowerPlantCatalog(content);ValidateEventIslandCatalog(content);ValidateSevenIslandCatalog(content);ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
         if(content.CinnabarOwnership is null||content.CinnabarOpponents is null||content.CinnabarTrainerParties is null||
             !ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned))
             throw new InvalidDataException("cinnabar_source_profile_missing");
@@ -76,8 +75,8 @@ public sealed partial class CampaignSession
         if(content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
-        if(!NpcTradeMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
-        if(NpcTradeShopCatalog.For(content.EarlyShop) is not {} currentShop || !ReferenceEquals(currentShop.Predecessor, content.FossilLabShop))throw new InvalidDataException("current_shop_proof_missing");
+        if(!SeafoamMachineCatalog.IsAuthenticated(content.PewterMachines))throw new InvalidDataException("current_machine_proof_missing");
+        if(SeafoamShopCatalog.For(content.EarlyShop) is not {} currentShop || !ReferenceEquals(currentShop.Predecessor.Predecessor, content.FossilLabShop))throw new InvalidDataException("current_shop_proof_missing");
         if(content.QuestItems?.Profile!=QuestItemRules.TownMapProfile)throw new InvalidDataException("current_quest_item_profile_missing");
         if(content.FieldPickups.IsDefaultOrEmpty||content.EarlyShop is null)throw new InvalidDataException("current_field_pickup_profile_missing");
     }

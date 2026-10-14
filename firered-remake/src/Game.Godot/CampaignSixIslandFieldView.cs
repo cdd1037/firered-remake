@@ -15,21 +15,21 @@ public partial class CampaignView
     private SeagallopSourceMusicFade? _sixIslandMusicFade;
     private long _sixIslandShakeSequence=-1;
     private double _sixIslandShakeFrames=37;
-    private bool SixIslandFieldLocked => _session?.State.RuinValleyCut is not null || _session?.State.DottedHoleFall is not null;
+    private bool SixIslandFieldLocked => _session?.State.RuinValleyCut is not null || CommonFall(_session?.State) is not null;
     private int SixIslandFieldFrame => (int)Math.Floor(_sixIslandFieldFrames+1e-7);
-    private bool SixIslandLandingFixedPriority => _session?.State.DottedHoleFall?.Movement.Phase==DottedHoleFallPhase.Arrival && _sixIslandLanding?.FixedPriority==true;
+    private bool SixIslandLandingFixedPriority => CommonFall(_session?.State)?.Phase==DottedHoleFallPhase.Arrival && _sixIslandLanding?.FixedPriority==true;
     private Vector2 SixIslandCameraOffset => new(0,_sixIslandLanding?.CameraY ?? SixIslandSourcePresentation.SapphireShakeY((int)Math.Floor(_sixIslandShakeFrames+1e-7)));
 
     private void SynchronizeSixIslandPresentation(CampaignState after)
     {
-        string? id=after.RuinValleyCut?.Movement.PendingPresentationId.Value ?? after.DottedHoleFall?.Movement.PendingPresentationId.Value;
+        string? id=after.RuinValleyCut?.Movement.PendingPresentationId.Value ?? CommonFall(after)?.PresentationId;
         if (id!=_sixIslandFieldId)
         {
             ClearSixIslandPaletteTextures();
             _sixIslandFieldId=id; _sixIslandFieldFrames=0; _sixIslandProcessedFrames=0;
             _sixIslandCry=false; _sixIslandFallSound=false; _sixIslandLandSound=false;
             _sixIslandDeparture=null; _sixIslandLanding=null; _sixIslandMusicFade=null;
-            if (after.DottedHoleFall?.Movement.Phase==DottedHoleFallPhase.Arrival)
+            if (CommonFall(after)?.Phase==DottedHoleFallPhase.Arrival)
             {
                 var sprite=CurrentPlayerSprite;
                 _sixIslandLanding=new(80-(int)sprite.Anchor.Y+sprite.Height);
@@ -70,11 +70,11 @@ public partial class CampaignView
                 Apply(new("six_island_cut_ack",Text:cut.Movement.PendingPresentationId.Value));
             return true;
         }
-        var fall=state.DottedHoleFall!.Movement;
+        var fall=CommonFall(state) ?? throw new InvalidDataException("Common source fall owner missing.");
         if (fall.Phase==DottedHoleFallPhase.EntryStep)
         {
             if (!_busy && SixIslandFieldFrame>=state.PresentationTicks && _tracks.All(t=>t.Time+1e-9>=t.Duration))
-                Apply(new("dotted_hole_fall_ack",Text:fall.PendingPresentationId.Value));
+                Apply(new(fall.Command,Text:fall.PresentationId));
             return true;
         }
         while (_sixIslandProcessedFrames<SixIslandFieldFrame)
@@ -88,7 +88,7 @@ public partial class CampaignView
                 if (frame==delay)
                 {
                     _sixIslandDeparture=new();
-                    if (!state.Script.Flags.GetValueOrDefault("FLAG_DONT_TRANSITION_MUSIC") && (state.IsCycling || _audioMusic is not null && _audioMusic!="MUS_SEVII_DUNGEON"))
+                    if (!state.Script.Flags.GetValueOrDefault("FLAG_DONT_TRANSITION_MUSIC") && (state.IsCycling || _audioMusic is not null && _audioMusic!=_catalog.MapDefinition(fall.Destination).Music))
                     {
                         // Underground is not IsMapTypeIndoors: source speed4, identical m4a fade as Seagallop.
                         _sixIslandMusicFade=new();
@@ -106,7 +106,7 @@ public partial class CampaignView
         if (fall.Phase==DottedHoleFallPhase.Departure)
         {
             if (!_busy && _sixIslandDeparture is {Complete:true})
-                Apply(new("dotted_hole_fall_ack",Text:fall.PendingPresentationId.Value));
+                Apply(new(fall.Command,Text:fall.PresentationId));
             return true;
         }
         var landing=_sixIslandLanding!; var player=_poses["LOCALID_PLAYER"];
@@ -114,18 +114,18 @@ public partial class CampaignView
         if (landing.FallCue && !_sixIslandFallSound) { _sixIslandFallSound=true; SourceSound("SE_FALL"); }
         if (landing.LandingCue && !_sixIslandLandSound)
         { _sixIslandLandSound=true; SourceSound("SE_M_STRENGTH"); _cinnabarDustTile=state.World.Player; _cinnabarDustFrames=landing.LandingFrames; }
-        if (!_busy && landing.Complete) Apply(new("dotted_hole_fall_ack",Text:fall.PendingPresentationId.Value));
+        if (!_busy && landing.Complete) Apply(new(fall.Command,Text:fall.PresentationId));
         return true;
     }
     private double? SixIslandMotionSeconds(CampaignState after,string actor,string action)
     {
-        if (actor=="LOCALID_PLAYER" && after.DottedHoleFall?.Movement.Phase==DottedHoleFallPhase.EntryStep) return after.PresentationTicks/60d;
+        if (actor=="LOCALID_PLAYER" && CommonFall(after)?.Phase==DottedHoleFallPhase.EntryStep) return after.PresentationTicks/60d;
         if (!_catalog.SixIslandEnabled || after.World.Player.MapId.Value!="map.six-island-dotted-hole-sapphire-room") return null;
         return action=="slide_down"?2d/60:action.StartsWith("face_",StringComparison.Ordinal)?1d/60:null;
     }
     private float? SixIslandStepFraction(string actor,string action,double elapsed)
     {
-        if (actor!="LOCALID_PLAYER" || _session.State.DottedHoleFall?.Movement.Phase!=DottedHoleFallPhase.EntryStep) return null;
+        if (actor!="LOCALID_PLAYER" || CommonFall(_session.State)?.Phase!=DottedHoleFallPhase.EntryStep) return null;
         ImmutableArray<int> pixels=action.StartsWith("ride_water_current_",StringComparison.Ordinal)?FourIslandForcedMovementRules.Fast2Pixels:
             action.StartsWith("player_run_",StringComparison.Ordinal)?FourIslandForcedMovementRules.Fast1Pixels:Enumerable.Repeat(1,16).ToImmutableArray();
         int updates=Math.Clamp((int)Math.Floor(elapsed*60+1e-7),0,pixels.Length);

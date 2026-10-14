@@ -1,0 +1,38 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-seafoam-inventory-v1",
+  "importerSha256": "6f07afbf62cbb2247b7178b75f92d11caebf50b79344920a70e8fb1df070fef4",
+  "files": [
+    {
+      "path": "content/generated/seafoam-items/items.json",
+      "byteLength": 3249,
+      "sha256": "f603788e614d2744f8bac0613f8d178650b2e8fcd3b98575a14fae805eb47aff"
+    },
+    {
+      "path": "content/generated/seafoam-items/source-input-hashes.json",
+      "byteLength": 3267,
+      "sha256": "4ef16f32e5b196eed43d19099c367fccb6d87259b9a14c0108ec977cab845828"
+    },
+    {
+      "path": "content/generated/seafoam-items/water-stone.png",
+      "byteLength": 512,
+      "sha256": "8fc21d4c11f3669546aaef4d6fde4c90e0f194bc7725b8ee65da4b692ea4a826"
+    },
+    {
+      "path": "content/generated/seafoam-items/water-stone.rgba",
+      "byteLength": 2304,
+      "sha256": "ec0190916b618ca94bcc62e4f3ab2289415ba5e71b789381f93c2e1673b974ba"
+    },
+    {
+      "path": "content/raw/seafoam-items/graphics/items/icon_palettes/water_stone.pal",
+      "byteLength": 178,
+      "sha256": "959f9b64b963e223738c3b0113aa85fe339cce39d9c1a0b53c46b70727f87347"
+    },
+    {
+      "path": "content/raw/seafoam-items/graphics/items/icons/water_stone.png",
+      "byteLength": 305,
+      "sha256": "2681bbea57b043e62099893da7f9a882b9c46c96badc019b49f537e5f9b43bf0"
+    }
+  ]
+}

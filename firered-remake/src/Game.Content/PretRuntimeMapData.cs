@@ -219,6 +219,7 @@ public sealed class PretRuntimeMapData : IFieldMap
         Id = new(data.StableId);
         _mapIdFromSymbol = data.FullSourceHash switch
         {
+            PretSeafoamRegion.FullSourceHash => PretSeafoamRegion.MapIdFromSourceSymbol,
             PretEventIslandRegion.FullSourceHash => PretEventIslandRegion.MapIdFromSourceSymbol,
             PretSevenIslandRegion.FullSourceHash => PretSevenIslandRegion.MapIdFromSourceSymbol,
             PretCeruleanCaveRegion.FullSourceHash => PretCeruleanCaveRegion.MapIdFromSourceSymbol,

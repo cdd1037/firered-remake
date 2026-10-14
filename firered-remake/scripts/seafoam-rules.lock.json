@@ -1,0 +1,73 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-seafoam-rules-v1",
+  "importerSha256": "95f69235e43eb5aaf715d2e95ad79208ee578ca9ccaf94ac71eb2c097442848d",
+  "files": [
+    {
+      "path": "content/generated/seafoam-rules/machines.json",
+      "byteLength": 22899,
+      "sha256": "b4d08d47e03b25c5eda92f0ab53192f2dec08c3c47554be7a09f96eb23e752c0"
+    },
+    {
+      "path": "content/generated/seafoam-rules/pokemon.json",
+      "byteLength": 765,
+      "sha256": "7713707128f4c5d19883db77ef995938b798a848c1cee7ebf43750aaeb04af4d"
+    },
+    {
+      "path": "content/generated/seafoam-rules/rules.json",
+      "byteLength": 163690,
+      "sha256": "f4fc11dcaf72393b1928162340f90a4840124ca4921a6c77a02b4226ada1ab31"
+    },
+    {
+      "path": "content/generated/seafoam-rules/source-input-hashes.json",
+      "byteLength": 13315,
+      "sha256": "61b81604b2335162e9123f36ea596379bd5d22e9e10fe8bc78c4eb5cb8c7eff0"
+    },
+    {
+      "path": "content/generated/seafoam-rules/trainers.json",
+      "byteLength": 119718,
+      "sha256": "2643b67c8484d3bbf43b53b5b4756701debeda24076b6ad294a3f7b280d8ea8d"
+    },
+    {
+      "path": "content/raw/seafoam-rules/data/maps/SeafoamIslands_1F/map.json",
+      "byteLength": 2832,
+      "sha256": "76786fb01119319edbff73be801d687106b0a73e31815b51e9eb12a56552d7f4"
+    },
+    {
+      "path": "content/raw/seafoam-rules/data/maps/SeafoamIslands_B1F/map.json",
+      "byteLength": 3850,
+      "sha256": "222fb2c418959a1a7c7530ec2d32eb1d3765f18eb5b095521b9f66346b9b5946"
+    },
+    {
+      "path": "content/raw/seafoam-rules/data/maps/SeafoamIslands_B2F/map.json",
+      "byteLength": 3404,
+      "sha256": "155cbdbd34193d1d8cd9cbc6a0aeb2e117e12159a5c6a86991a971c0a3ed2b52"
+    },
+    {
+      "path": "content/raw/seafoam-rules/data/maps/SeafoamIslands_B3F/map.json",
+      "byteLength": 4602,
+      "sha256": "804c345bc4567176ebfc14f5bbaba324b955989316388f08f32865406695bd0b"
+    },
+    {
+      "path": "content/raw/seafoam-rules/data/maps/SeafoamIslands_B4F/map.json",
+      "byteLength": 4148,
+      "sha256": "34d63e32310a54b52f0e188f0c06a05e5a57f6e57a46598e24137d16af30df71"
+    },
+    {
+      "path": "content/raw/seafoam-rules/data/maps/SeafoamIslands_B4F/scripts.inc",
+      "byteLength": 6084,
+      "sha256": "f269137e533de5e32c2b90fe281a9b16017cdfbc5a1aa8cdf2754feff2b2bacd"
+    },
+    {
+      "path": "src/Game.Domain/Encounters/SeafoamEncounterTables.cs",
+      "byteLength": 10458,
+      "sha256": "5f7cf26d7d418fe89acfde5d8e9b50df51edf690ea114a954908fb9bbc9e08fe"
+    },
+    {
+      "path": "src/Game.Domain/Trainers/SeafoamTrainerSource.cs",
+      "byteLength": 5452,
+      "sha256": "1bc70eee987259feb5f5f63a4b1a737c107407d5ffa6a977f57e2bc9adbcaf05"
+    }
+  ]
+}

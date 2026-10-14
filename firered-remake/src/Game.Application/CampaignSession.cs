@@ -74,6 +74,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public IcefallIceState? IcefallIce{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignRuinValleyCut? RuinValleyCut{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignDottedHoleFall? DottedHoleFall{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSeafoamMovement? SeafoamMovement{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFourIslandMovement? FourIslandMovement{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public Direction? FourIslandMovementDirection{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCelioHandoff? CelioHandoff{get;init;}
@@ -118,6 +119,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSnorlaxPreparation? SnorlaxPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEventIslandPreparation? EventIslandPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEventIslandReturn? EventIslandReturn{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignArticunoPreparation? ArticunoPreparation{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public int? ArticunoReturn{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignPowerPlantPreparation? PowerPlantPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignPowerPlantReturn? PowerPlantReturn{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMewtwoPreparation? MewtwoPreparation{get;init;}
@@ -316,6 +319,7 @@ public sealed partial class CampaignSession
         var surfError=ValidateFieldSurfState(s);if(surfError is not null)return surfError;
         var victoryRoadFieldError=ValidateVictoryRoadFieldProgress(s);if(victoryRoadFieldError is not null)return victoryRoadFieldError;
         var eventIslandError=ValidateEventIslandField(s);if(eventIslandError is not null)return eventIslandError;
+        var seafoamFieldError=ValidateSeafoamField(s);if(seafoamFieldError is not null)return seafoamFieldError;
         var sevenFieldError=ValidateSevenIslandField(s);if(sevenFieldError is not null)return sevenFieldError;
         var strengthError=ValidateFieldStrengthState(s);if(strengthError is not null)return strengthError;
         var flashError=ValidateFieldFlashState(s);if(flashError is not null)return flashError;
@@ -352,7 +356,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidatePowerPlantProgress(s)??ValidateItemfinderProgress(s)??ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateSeafoamEncounterProgress(s)??ValidatePowerPlantProgress(s)??ValidateItemfinderProgress(s)??ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -374,7 +378,7 @@ public sealed partial class CampaignSession
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||NpcTradeSourceSpecies(state).Contains(n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
+            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenBySeafoam(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||NpcTradeSourceSpecies(state).Contains(n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
             var starter=_content.EarlyStarterEnabled?HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
@@ -429,6 +433,7 @@ public sealed partial class CampaignSession
                 return new(CommandStatus.Accepted,Pump(state));
             if(state.Seagallop is not null)return DecideSeagallop(state,command);
             if(state.RuinValleyCut is not null)return DecideRuinValleyCutAck(state,command);
+            if(state.SeafoamMovement is not null)return DecideSeafoamMovement(state,command);
             if(state.DottedHoleFall is not null)return DecideDottedHoleFallAck(state,command);
             if(state.FourIslandMovement is not null)return DecideFourIslandMovement(state,command);
             if(command.Kind=="field_waterfall")return StartFieldWaterfall(state,command);
@@ -484,7 +489,7 @@ public sealed partial class CampaignSession
                 return new(CommandStatus.Accepted,state with{Party=state.Party.SetItem(naming.PartyIndex,mon with{Nickname=name}),Nickname=naming with{Submitted=true},TextBuffers=state.TextBuffers.SetItem("STR_VAR_2",name),ScreenIsBlack=false,PresentationTicks=16,Script=state.Script with{Wait=wait with{Kind=StoryWaitKind.Presentation}}});
             }
             if(command.Kind is "sign_tick" or "sign_cancel")return DecideRegionalSignWalkaway(state,command);
-            if(command.Kind=="button_press")return PowerPlantButtonWait(state)?DecidePowerPlantButton(state,command):MewtwoButtonWait(state)?DecideMewtwoButton(state,command):SixIslandBrailleWait(state)?DecideSixIslandButton(state,command):FourIslandButtonWait(state)?DecideFourIslandButton(state,command):RubyButtonWait(state)?DecideRubyButton(state,command):IsTowerButton(state)?DecideTowerButton(state,command):IsRocketHideoutButton(state)?DecideRocketHideoutButton(state,command):IsBillRocketButton(state)?DecideBillRocketButton(state,command):IsBillButton(state)?DecideBillButton(state,command):IsMtMoonButton(state)?DecideMtMoonButton(state,command):IsRoute22GuardButton(state)?DecideRoute22GuardButton(state,command):DecideOakRatingButton(state,command);
+            if(command.Kind=="button_press")return ArticunoButtonWait(state)?DecideArticunoButton(state,command):PowerPlantButtonWait(state)?DecidePowerPlantButton(state,command):MewtwoButtonWait(state)?DecideMewtwoButton(state,command):SixIslandBrailleWait(state)?DecideSixIslandButton(state,command):FourIslandButtonWait(state)?DecideFourIslandButton(state,command):RubyButtonWait(state)?DecideRubyButton(state,command):IsTowerButton(state)?DecideTowerButton(state,command):IsRocketHideoutButton(state)?DecideRocketHideoutButton(state,command):IsBillRocketButton(state)?DecideBillRocketButton(state,command):IsBillButton(state)?DecideBillButton(state,command):IsMtMoonButton(state)?DecideMtMoonButton(state,command):IsRoute22GuardButton(state)?DecideRoute22GuardButton(state,command):DecideOakRatingButton(state,command);
             if(command.Kind=="ack")
             {
                 if(state.Script.Wait is not {} wait)return new(CommandStatus.Rejected,state,"no_pending_event");
@@ -669,12 +674,14 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
             if(TryApplyTrainerTowerElevatorEffect(state,effect,out var towerElevatorState)){state=towerElevatorState;continue;}
             if(TryApplyTrainerTowerEffect(state,effect,out var trainerTowerState)){state=trainerTowerState;continue;}
+            if(TryApplyArticunoEffect(state,effect,out var articunoState)){state=articunoState;continue;}
             if(TryApplyPowerPlantEffect(state,effect,out var powerPlantState)){state=powerPlantState;continue;}
             if(TryApplyEventIslandBattleEffect(state,effect,out var eventBattleState)){state=eventBattleState;continue;}
             if(TryApplyEventIslandFieldEffect(state,effect,out var eventIslandFieldState)){state=eventIslandFieldState;continue;}
             if(TryApplyCelioEffect(state,effect,out var celioState)){state=celioState;continue;}
             if(TryApplyFiveIslandFieldEffect(state,effect,out var fiveFieldState)){state=fiveFieldState;continue;}
             if(TryApplyFiveIslandItemEffect(state,effect,out var fiveItemState)){state=fiveItemState;continue;}
+            if(TryApplySeafoamFieldEffect(state,effect,out var seafoamFieldState)){state=seafoamFieldState;continue;}
             if(TryApplySevenIslandFieldEffect(state,effect,out var sevenFieldState)){state=sevenFieldState;continue;}
             if(TryApplySixIslandEffect(state,effect,out var sixIslandState)){state=sixIslandState;continue;}
             if(TryApplyFourIslandEffect(state,effect,out var fourIslandState)){state=fourIslandState;continue;}

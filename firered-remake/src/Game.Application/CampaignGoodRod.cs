@@ -13,22 +13,30 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("good_rod_encounter_context_invalid");
         var owner = SafariOrdinaryOwnership ?? throw new InvalidDataException("good_rod_owned_catalog");
         var candidate = GoodRodEncounterRules.GenerateCandidate(owner, table, fishing, state.World.Rng);
-        var generated = GoodRodEncounterRules.GeneratePokemon(owner, candidate.Candidate, candidate.GlobalRng, state.TrainerId);
+        var seafoamOrigin = IsSeafoamMap(fishing.Map) ? new SeafoamWildOrigin(fishing.Map, SeafoamEncounterKind.GoodRod, candidate.Candidate.SlotIndex) : null;
+        Route1WildPokemonResult generated;
+        if (seafoamOrigin is not null)
+            generated = SeafoamPokemonFactory.GenerateSourceSlot(_content.SeafoamOwnership!, seafoamOrigin, candidate.Candidate.Level, candidate.GlobalRng, state.TrainerId);
+        else
+        {
+            var ordinary = GoodRodEncounterRules.GeneratePokemon(owner, candidate.Candidate, candidate.GlobalRng, state.TrainerId);
+            generated = new(ordinary.Pokemon, ordinary.GlobalRng, ordinary.RandomTrace);
+        }
         var origin = new FishingEncounterOrigin(FishingRod.Good, fishing.Map, candidate.Candidate.SlotIndex,
             candidate.Candidate.Species, candidate.Candidate.Level);
         var stats = state.GameStats ?? ImmutableSortedDictionary<string,int>.Empty;
         var next = state with { Fishing = null, ItemMenu = null, Exploration = ResetEncounterModifiers(state.Exploration!),
             GameStats = stats.SetItem("GAME_STAT_FISHING_CAPTURES", Math.Min(0xffffff, stats.GetValueOrDefault("GAME_STAT_FISHING_CAPTURES") + 1)) };
-        return BeginWildBattle(next, new(generated.Pokemon, generated.GlobalRng, [..candidate.RandomTrace, ..generated.RandomTrace]), fishingOrigin: origin);
+        return BeginWildBattle(next, new(generated.Pokemon, generated.GlobalRng, [..candidate.RandomTrace, ..generated.RandomTrace]), fishingOrigin: seafoamOrigin is null ? origin : null, seafoamOrigin: seafoamOrigin, seafoamGenerationRng: candidate.GlobalRng);
     }
 
     private bool IsGoodRodHistory(CampaignWildHistory history)
     {
-        if (!_content.GoodRodEnabled || history.Fishing is not { Rod: FishingRod.Good } origin ||
+        if (!_content.GoodRodEnabled || history.Fishing is not { Rod: FishingRod.Good } origin || IsSeafoamMap(origin.Map) ||
             !_content.GoodRodEncounters!.ContainsKey(origin.Map) || FishingBattleContract.SourceSlot(origin) is null ||
             !_content.PokemonContent!.Catalog.Species.TryGetValue(origin.Species, out var species) ||
             species.SourceSpeciesId != history.SourceSpeciesId || origin.Level != history.Level) return false;
-        return history.PowerPlantReceipt is null && history.EventIslandReceipt is null && history.CelioRoamer is null &&
+        return history.SeafoamReceipt is null && history.PowerPlantReceipt is null && history.EventIslandReceipt is null && history.CelioRoamer is null &&
             history.CeruleanCaveOrigin is null && history.SevenIsland is null && history.SevenIslandReceipt is null &&
             history.MewtwoReceipt is null && history.FiveIsland is null && history.SixIsland is null &&
             history.FourIsland is null && history.SeviiRuby is null && history.VictoryRoad is null &&
@@ -38,7 +46,7 @@ public sealed partial class CampaignSession
     private bool IsGoodRodCapture(CampaignState state, CampaignCapturedPokemon capture)
     {
         var history = state.Exploration?.Battles.SingleOrDefault(h => h.Id == capture.BattleId);
-        return capture.Fishing is { } origin && capture.PowerPlant is null && capture.EventIsland is null &&
+        return capture.Fishing is { } origin && capture.Seafoam is null && capture.PowerPlant is null && capture.EventIsland is null &&
             capture.CeruleanCaveOrigin is null && capture.SevenIsland is null && capture.CelioRoamer is null &&
             capture.FiveIsland is null && capture.SixIsland is null && capture.FourIsland is null &&
             history is not null && history.Fishing == origin && IsGoodRodHistory(history) &&

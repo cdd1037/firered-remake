@@ -104,6 +104,13 @@ public interface ICampaignCatalog:IStoryCatalog
     ImmutableDictionary<string,int> TrainerTowerNpcGraphics(TrainerTowerBattleFormat format,TrainerTowerFloorTemplate template)=>throw new NotSupportedException("trainer_tower_not_enabled");
     int TrainerTowerTextGender(TrainerTowerFloorTemplate template,int trainerIndex,bool secondDoubleSpeaker)=>throw new NotSupportedException("trainer_tower_not_enabled");
     string TrainerTowerEncounterMusic(TrainerTowerFloorTemplate template,int trainerIndex)=>throw new NotSupportedException("trainer_tower_not_enabled");
+    bool SeafoamEnabled=>false;
+    SeafoamOwnedPokemonCatalog? SeafoamOwnership=>null;
+    SeafoamOpponentPokemonCatalog? SeafoamOpponents=>null;
+    SeafoamMachineCatalog? SeafoamMachines=>null;
+    SeafoamTrainerCatalog? SeafoamTrainers=>null;
+    IFieldMap? SeafoamMap(MapId map,bool stoppedCurrent)=>null;
+    ConnectedFieldMap? SeafoamConnectedMap(MapId map,bool stoppedCurrent)=>null;
     bool PowerPlantEnabled=>false;
     PowerPlantOwnedPokemonCatalog? PowerPlantOwnership=>null;
     PowerPlantOpponentPokemonCatalog? PowerPlantOpponents=>null;
