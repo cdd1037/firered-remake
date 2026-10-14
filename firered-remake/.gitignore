@@ -124,3 +124,9 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 /tests/Game.MoveDeleterView.Tests/Assets/
 /tests/Game.MoveDeleterView.Tests/*.cs.uid
 /evidence/field-fly-view-*/**/userdata/
+
+/tests/Game.MailComposerView.Tests/Assets/
+
+/tests/Game.MailComposerView.Tests/*.cs.uid
+
+/tests/Game.MailPresentation.Tests/*.cs.uid
