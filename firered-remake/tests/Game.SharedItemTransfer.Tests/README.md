@@ -1,5 +1,9 @@
 # Shared item ownership recipes
 
+The current Mail safeguard has a separate bounded entry point. Build this existing project with `-p:MailSafeguardOnly=true` to exclude the historical runner's retired APIs, then run:
+`dotnet tests/Game.SharedItemTransfer.Tests/bin/Debug/net10.0/Game.SharedItemTransfer.Tests.dll CONTENT_ROOT OUTPUT_JSON --mail-safeguard`.
+Use the authenticated current content, including its battle item pack. Twelve controlled actual Knock Off→Recycle cases cover both singles positions and all four doubles positions, with Retro Mail and an ordinary Choice Band control. The previous occupant’s consumed-item receipt is seeded; the move assignments are diagnostic combinations. They check PP, zero Recycle RNG, persistent item ownership, position receipts and diagnostic JSON restoration. Knock Off still temporarily removes Mail; Recycle then fails normally to protect the permanent attachment. This is an approved remake safeguard for original BUG-08, not original bug compatibility. This mode does not execute the historical cohort below or claim campaign/Mail UI acceptance.
+
 `FIRERED_TOOLCHAIN_ROOT=/path/to/official/toolchain bash tests/Game.SharedItemTransfer.Tests/run.sh PRODUCT_ROOT PINNED_PRET_ROOT NEW_EVIDENCE_DIRECTORY`
 
 The runner uses the candidate's isolated Domain/Content binaries, object files and tool home. `PRODUCT_ROOT` supplies only the authenticated local content and existing official local-only NuGet configuration. It does not build or launch Godot, edit the main content, or run an upstream build script. The original source must be precisely `037335f4c725d7c9aecdac87066f2002b4bd7e14`.

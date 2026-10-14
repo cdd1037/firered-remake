@@ -5,11 +5,11 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.Items;
 
-/// <summary>The 41 existing machines, with exact Mr. Mime cells appended to the fossil owner's rows.</summary>
+/// <summary>The 41 existing machines, with exact Mr. Mime and Jynx cells appended to the fossil owner's rows.</summary>
 public sealed class NpcTradeMachineCatalog
 {
     public const string Profile = "firered-npc-trade-teaching-v1";
-    public const string InheritedAdditionsSourceSha256 = "a0f2abfa301d1d010055f7021b82cabe0bc19fb3dc38f17cd434dd07b3355beb";
+    public const string InheritedAdditionsSourceSha256 = "ac628f79acf3b6efc79f396d120575c5462631a07cf69edd58a45675fe5e7110";
     private static readonly ConditionalWeakTable<PewterMachineCatalog, NpcTradeMachineCatalog> Proofs = new();
     public PewterMachineCatalog Catalog { get; }
     public FossilLabMachineCatalog Predecessor { get; }
@@ -34,11 +34,11 @@ public sealed class NpcTradeMachineCatalog
         var additions = new List<(ItemId Item, ImmutableArray<PewterMachineCompatibility> Compatibility)>();
         void Rows(ItemId item, ImmutableArray<PewterMachineCompatibility> rows, ImmutableArray<PewterMachineCompatibility> before)
         {
-            if (before.Length != 159 || rows.IsDefault || rows.Length != 160 || rows.Any(c => c is null) ||
+            if (before.Length != 159 || rows.IsDefault || rows.Length != 161 || rows.Any(c => c is null) ||
                 before.Where((cell, i) => !ReferenceEquals(cell, rows[i])).Any() ||
                 !rows.Select(c => c.Species).ToHashSet().SetEquals(pokemon.Catalog.Species.Keys))
                 throw new ArgumentException("npc_trade_machine_inherited_rows");
-            additions.Add((item, [rows[159]]));
+            additions.Add((item, [rows[159], rows[160]]));
         }
         Rows(old.Tm39.Item.Id, candidate.Compatibility, old.Compatibility);
         for (int i = 0; i < inherited.Length; i++)

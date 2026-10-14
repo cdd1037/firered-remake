@@ -10,7 +10,13 @@ namespace Game.Application;
 /// Fresh incoming IDs order acquisitions and retirement without reusing an identity.
 /// </summary>
 public sealed record CampaignNpcTradeReceipt(int TradeId, int PartyIndex, PartyPokemon Outgoing,
-    PartyPokemon Incoming, RngState RngBefore, RngState RngAfter);
+    PartyPokemon Incoming, RngState RngBefore, RngState RngAfter)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public SourceMailMessage? OutgoingMail { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public SourceMailMessage? IncomingMail { get; init; }
+}
 
 public sealed partial class CampaignSession
 {
@@ -78,6 +84,7 @@ public sealed partial class CampaignSession
                 receipt.Incoming.InstanceId >= state.NextPokemonId || !retired.Add(receipt.Outgoing.InstanceId) ||
                 !incoming.Add(receipt.Incoming.InstanceId) || owned.Any(p => p.InstanceId == receipt.Outgoing.InstanceId) ||
                 !OwnedHeldItemSupported(state, receipt.Outgoing)) return "save_npc_trade_retirement_invalid";
+            if (ValidateNpcTradeMailReceipt(receipt, definition) is {} mailError) return mailError;
             if (receipt.RngBefore.Cursor < lastCursor || receipt.RngAfter.Cursor > state.World.Rng.Cursor)
                 return "save_npc_trade_rng_invalid";
             try

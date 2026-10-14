@@ -31,7 +31,7 @@ internal static partial class SourceBattleItemRules
                 owned.Language is not (1 or 2 or 3 or 4 or 5 or 7) || !Symbol(owned.MetLocation,"MAPSEC_") ||
                 owned.MetLevel < 0 || owned.MetLevel > owned.Pokemon.Level || owned.MetGame is not (1 or 2 or 3 or 4 or 5 or 7 or 8 or 10 or 11 or 12 or 15) ||
                 owned.Ball is not ("ITEM_MASTER_BALL" or "ITEM_ULTRA_BALL" or "ITEM_GREAT_BALL" or "ITEM_POKE_BALL" or "ITEM_SAFARI_BALL" or "ITEM_NET_BALL" or "ITEM_DIVE_BALL" or "ITEM_NEST_BALL" or "ITEM_REPEAT_BALL" or "ITEM_TIMER_BALL" or "ITEM_LUXURY_BALL" or "ITEM_PREMIER_BALL") ||
-                !Symbol(owned.HeldItem,"ITEM_") || owned.Mail != 255 || !SourcePartyStatusRules.IsSupported(owned.Status,true,true,true))
+                !Symbol(owned.HeldItem,"ITEM_") || SourceMailRules.ValidateAttachmentReference(owned) is not null || !SourcePartyStatusRules.IsSupported(owned.Status,true,true,true))
                 return "source_item_owned_metadata";
         }
         return null;

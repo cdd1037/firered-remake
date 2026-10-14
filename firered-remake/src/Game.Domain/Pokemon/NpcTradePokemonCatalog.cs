@@ -23,7 +23,7 @@ public sealed class NpcTradePokemonCatalog
     public ImmutableDictionary<int, NpcTradePokemonDefinition> Definitions { get; }
     private NpcTradePokemonCatalog(SourceMechanicsCatalog mechanics, ImmutableArray<NpcTradePokemonDefinition> definitions)
     { Mechanics = mechanics; Definitions = definitions.ToImmutableDictionary(d => d.TradeId); }
-    public bool IsEnabled(int tradeId) => tradeId is 0 or 2 or 3 or 4 or 5 or 6 or 7 or 8;
+    public bool IsEnabled(int tradeId) => tradeId is >= 0 and <= 8;
 
     public static NpcTradePokemonCatalog Authenticate(SourceMechanicsCatalog mechanics,
         ImmutableArray<NpcTradePokemonDefinition> definitions)

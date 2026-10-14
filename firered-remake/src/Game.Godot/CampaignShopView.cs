@@ -30,6 +30,12 @@ public partial class CampaignView
                 _catalog.NpcTradeElyssa.IconFiles[icon.RgbaPath]);
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
+        foreach (var icon in _catalog.NpcTradeMail.Items.Icons)
+        {
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
+                _catalog.NpcTradeMail.AssetFiles[icon.RgbaPath]);
+            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+        }
     }
     private EarlyShopItemDefinition? EarlyItem(ItemId id) => _catalog.EarlyShop?.Items.SingleOrDefault(i => i.Id == id);
     private FieldMedicineEffect FieldMedicineEffectFor(ItemId id) => _catalog.EarlyShop is {} shop

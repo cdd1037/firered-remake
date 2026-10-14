@@ -55,11 +55,11 @@ public sealed class PretNpcTradeElyssa
         return new(map.Id, map.Width, map.Height,
             map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
     }
-    public NpcTradeShopCatalog ExtendShop(FossilLabShopCatalog predecessor)
+    public NpcTradeShopCatalog ExtendShop(FossilLabShopCatalog predecessor, PretNpcTradeMail mail)
     {
-        ArgumentNullException.ThrowIfNull(predecessor);
+        ArgumentNullException.ThrowIfNull(predecessor); ArgumentNullException.ThrowIfNull(mail);
         return NpcTradeShopCatalog.Authenticate(predecessor, predecessor.Catalog with {
-            Profile = NpcTradeShopCatalog.Profile, Items = predecessor.Catalog.Items.AddRange(Items.Additions) });
+            Profile = NpcTradeShopCatalog.Profile, Items = predecessor.Catalog.Items.AddRange(Items.Additions).AddRange(mail.Items.Additions) });
     }
     public static PretNpcTradeElyssa Load(string projectRoot)
     {

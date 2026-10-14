@@ -9,6 +9,10 @@ using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.Randomness;
 using Game.Domain.WildBattle;
+#if MAIL_SAFEGUARD_ONLY
+if(args.Length!=3||args[2]!="--mail-safeguard")throw new ArgumentException("CONTENT_ROOT OUTPUT --mail-safeguard");
+return MailSafeguard.Run(SourceMechanicsCatalogLoader.LoadAuthenticated(args[0]),args[1]);
+#else
 if(args.Length<2)throw new ArgumentException("CONTENT_ROOT OUTPUT [--capture]");
 var proof=SourceMechanicsCatalogLoader.LoadAuthenticated(args[0]);var catalog=proof.Catalog;
 string Json<T>(T x)=>JsonSerializer.Serialize(x);
@@ -192,3 +196,4 @@ Test("malformed party, used-item and choice receipts reject before spending",()=
 File.WriteAllText(args[1],Json(new{baseCommit="a51e8a633b36739e398e2e3ef95bab32f15d6a72",runtime=Environment.Version.ToString(),groups,checks,failures,actualTurns,singlesHashes=snapshots,results}));
 File.WriteAllText(args[1]+".four-actions.json",Json(turnEvidence));
 Console.WriteLine($"{groups} groups, {checks} assertions, {actualTurns} actual turns, {failures} failures");return failures==0?0:1;
+#endif

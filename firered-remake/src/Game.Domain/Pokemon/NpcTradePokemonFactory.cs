@@ -20,7 +20,9 @@ public static class NpcTradePokemonFactory
             throw new NotSupportedException("npc_trade_not_enabled");
         if (instanceId <= 0) throw new ArgumentOutOfRangeException(nameof(instanceId));
         if (offeredLevel is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(offeredLevel));
-        if (definition.Mail != 255) throw new NotSupportedException("npc_trade_mail_unsupported");
+        if (definition.Mail is not (0 or 255) ||
+            SourceMailRules.IsMailItem(definition.HeldItem) != (definition.Mail != 255))
+            throw new NotSupportedException("npc_trade_mail_definition");
         if (PokemonStateValidator.ValidatePartyCollection(content, [], 1) is { } contentError)
             throw new ArgumentException(contentError, nameof(content));
         if (!content.Catalog.Species.TryGetValue(definition.ReceivedSpecies, out var species) ||
@@ -45,7 +47,7 @@ public static class NpcTradePokemonFactory
         };
         var owned = new PartyPokemon(instanceId, pokemon, definition.Nickname, definition.OriginalTrainerName,
             definition.OriginalTrainerGender, 2, NpcTradePokemonOriginRules.MetLocation, offeredLevel, 4,
-            "ITEM_POKE_BALL", definition.HeldItem);
+            "ITEM_POKE_BALL", definition.HeldItem) { Mail = definition.Mail };
         if (PokemonStateValidator.ValidateParty(content, owned) is { } error)
             throw new InvalidOperationException(error);
         return new(owned, created.Rng, created.Trace);

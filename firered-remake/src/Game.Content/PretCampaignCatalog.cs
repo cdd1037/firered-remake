@@ -301,9 +301,10 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretFightingDojoRegion fightingDojo, FightingDojoOwnedPokemonCatalog dojoOwned,
         FightingDojoOpponentPokemonCatalog dojoOpponents, FightingDojoMachineCatalog dojoMachines, FightingDojoTrainerCatalog dojoTrainers,
         PretFossilLabRegion fossilLab, FossilLabOwnedPokemonCatalog fossilOwned,
-        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines, FossilLabShopCatalog fossilShop, PretNpcTrades npcTrades, PretNpcTradeElyssa npcTradeElyssa, PretNpcTradeHaden npcTradeHaden)
+        FossilLabOpponentPokemonCatalog fossilOpponents, FossilLabMachineCatalog fossilMachines, FossilLabShopCatalog fossilShop, PretNpcTrades npcTrades, PretNpcTradeElyssa npcTradeElyssa, PretNpcTradeHaden npcTradeHaden, PretNpcTradeMail npcTradeMail)
     {
-        NpcTradeContent = npcTrades; NpcTradeElyssa = npcTradeElyssa; NpcTradeHaden = npcTradeHaden;
+        NpcTradeContent = npcTrades; NpcTradeElyssa = npcTradeElyssa; NpcTradeHaden = npcTradeHaden; NpcTradeMail = npcTradeMail;
+        NpcTradeMaps = ResolveNpcTradeMaps(npcTrades, maps);
         FossilLabRegion = fossilLab; FossilLabOwnership = fossilOwned; FossilLabOpponents = fossilOpponents; FossilLabMachines = fossilMachines; FossilLabShop = fossilShop;
         FightingDojoRegion = fightingDojo; FightingDojoOwnership = dojoOwned; FightingDojoOpponents = dojoOpponents;
         FightingDojoMachines = dojoMachines; FightingDojoTrainers = dojoTrainers;

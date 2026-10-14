@@ -107,3 +107,7 @@ tests/Game.EarlyStarterCampaign.Tests/evidence/
 
 /evidence/npc-trades-view-*/**/userdata/
 /evidence/npc-trades-view-*/**/host.log
+
+# Rebuildable NPC trade execution cohorts.
+/evidence/npc-trade-*/**/*.dll
+/evidence/npc-trade-*/**/*.pdb

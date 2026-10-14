@@ -62,6 +62,7 @@
       "gitBlobSha1": "2e391369646c25398f0063256a5bb0d75a5050c1",
       "path": "data/maps/CeruleanCity_House3/scripts.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],
@@ -72,6 +73,7 @@
       "gitBlobSha1": "502551bfb017972445f210c824f076f5fa0bf3af",
       "path": "data/maps/CeruleanCity_House3/text.inc",
       "roles": [
+        "live-map-script",
         "script-label-closure",
         "source-dependency"
       ],

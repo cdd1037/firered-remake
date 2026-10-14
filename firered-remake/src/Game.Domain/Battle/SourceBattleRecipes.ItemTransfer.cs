@@ -24,7 +24,12 @@ internal abstract partial class SourceRecipeContext
         {
             SpendEarlyPartyPp(actor, actor, slot, move);
             var used = UsedHeldItem(actor);
-            if (used is null || Get(actor).HeldItem != "ITEM_NONE") { ItemTransferFailure(actor, actor, move, "no-recyclable-item"); return; }
+            var user = Get(actor);
+            // Remake safeguard for BUG-08: Knock Off leaves Mail permanently attached.
+            // A position's consumed-item receipt must not overwrite that Mail attachment.
+            if (used is null || user.HeldItem != "ITEM_NONE" ||
+                user.KnockedOffItem is { } knocked && PokemonStorageRules.IsMailItem(knocked))
+            { ItemTransferFailure(actor, actor, move, "no-recyclable-item"); return; }
             Set(actor, Get(actor) with { HeldItem = used });
             SetUsedHeldItem(actor, null);
             // The source controller writes the permanent item even when Knock Off's bit remains set.

@@ -83,6 +83,8 @@ public interface ICampaignCatalog:IStoryCatalog
     bool SafariEnabled=>false;
     bool PokemonLeagueEnabled=>false;
     NpcTradePokemonCatalog? NpcTrades=>null;
+    SourceMailMessage? NpcTradeMailMessage=>null;
+    MapId NpcTradeMap(int tradeId)=>NpcTrades!.Definitions[tradeId].Map;
     bool FossilLabEnabled=>false;
     FossilLabOwnedPokemonCatalog? FossilLabOwnership=>null;
     FossilLabOpponentPokemonCatalog? FossilLabOpponents=>null;

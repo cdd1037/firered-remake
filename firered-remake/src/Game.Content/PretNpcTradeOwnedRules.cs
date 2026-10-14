@@ -13,14 +13,14 @@ public sealed record NpcTradeMachineRows(ItemId Item, ImmutableArray<PewterMachi
 public sealed record NpcTradeMachinesDocument(string SourceCommit, string Profile, int PreviousSpeciesCount, int SpeciesCount,
     int MachineCount, ImmutableArray<NpcTradeMachineRows> Additions, string AdditionsSemanticSha256, ImmutableArray<ItemId> ItemsAdded);
 
-/// <summary>Thin, source-authenticated Mr. Mime ownership and machine additions; shared raw sources remain in their existing package.</summary>
+/// <summary>Thin, source-authenticated Mr. Mime and Jynx ownership and machine additions; shared raw sources remain in their existing package.</summary>
 public static class PretNpcTradeOwnedRules
 {
     public const string CatalogSha256 = PokemonSha256;
-    public const string PokemonSha256 = "fde280564af61126c9db55c59e497a63115a568c63f0d3115b234439514d99b3";
-    public const string MachinesSha256 = "15719f61782ea522d69479c15f6870911f319742cbe50df91b86a1eb382278cd";
+    public const string PokemonSha256 = "9d0dcf21a51db210326cfd511bfbc3a6276752fc412406e1870ace4cdfb368cd";
+    public const string MachinesSha256 = "5c4246cb14d9ca57ffb84e180d801e13225be59fce01feafb6bf1c1802ea9e85";
     public const string SourceInputsSha256 = "b2923cf0ea6277d9b3c8dfe1bbb6d19aa18034a360ffaf9d17840a0780d1e746";
-    public const string LockSha256 = "ec3a8ac32c5993d3a8656d3ee65d00227c5d5e9379197c77aac2ae6d004e3d72";
+    public const string LockSha256 = "f12ac5424f02db66c72b4345e88ebe2f5f0351dd649b6f5f2352a6357699821d";
 
     private static T Read<T>(string root, string file, string hash)
     {
@@ -40,10 +40,10 @@ public static class PretNpcTradeOwnedRules
             document.GetProperty("canonicalCatalogSha256").GetString() != PretCanonicalPokemonCatalog.CatalogSha256 ||
             document.GetProperty("predecessorCatalogSha256").GetString() != PretFossilLabRules.PokemonSha256 ||
             document.GetProperty("previousOwnedSpeciesCount").GetInt32() != 159 ||
-            document.GetProperty("ownedSpeciesCount").GetInt32() != 160 ||
+            document.GetProperty("ownedSpeciesCount").GetInt32() != 161 ||
             document.GetProperty("previousOpponentSpeciesCount").GetInt32() != 190 ||
             document.GetProperty("opponentSpeciesCount").GetInt32() != 190 ||
-            document.GetProperty("ownedSpeciesAdded").EnumerateArray().Select(p => p.GetString()).SequenceEqual(["SPECIES_MR_MIME"]) is false ||
+            document.GetProperty("ownedSpeciesAdded").EnumerateArray().Select(p => p.GetString()).SequenceEqual(["SPECIES_MR_MIME", "SPECIES_JYNX"]) is false ||
             document.GetProperty("opponentSpeciesAdded").GetArrayLength() != 0 || document.GetProperty("evolutions").GetArrayLength() != 0)
             throw new InvalidDataException("npc_trade_owned_pokemon_scope");
         return document;
@@ -52,9 +52,11 @@ public static class PretNpcTradeOwnedRules
     public static NpcTradeOwnedPokemonCatalog LoadOwned(string root, FossilLabOwnedPokemonCatalog predecessor)
     {
         _ = LoadPokemonDocument(root); ArgumentNullException.ThrowIfNull(predecessor);
-        var id = NpcTradeOwnedPokemonCatalog.MrMimeId;
+        var species = predecessor.Catalog.Species;
+        foreach (var id in NpcTradeOwnedPokemonCatalog.AdditionalSpecies)
+            species = species.Add(id, NpcTradeOwnedPokemonCatalog.ExpectedSpecies(predecessor, id));
         return NpcTradeOwnedPokemonCatalog.Authenticate(predecessor, predecessor.Catalog with {
-            Species = predecessor.Catalog.Species.Add(id, NpcTradeOwnedPokemonCatalog.ExpectedSpecies(predecessor, id))
+            Species = species
         });
     }
 
@@ -66,7 +68,7 @@ public static class PretNpcTradeOwnedRules
     {
         var document = Read<NpcTradeMachinesDocument>(root, "machines.json", MachinesSha256);
         if (document.SourceCommit != PokemonFactory.SourceCommit || document.Profile != NpcTradeMachineCatalog.Profile ||
-            document.PreviousSpeciesCount != 159 || document.SpeciesCount != 160 || document.MachineCount != 41 ||
+            document.PreviousSpeciesCount != 159 || document.SpeciesCount != 161 || document.MachineCount != 41 ||
             document.Additions.IsDefault || document.Additions.Length != 41 || document.ItemsAdded.IsDefault || !document.ItemsAdded.IsEmpty ||
             document.AdditionsSemanticSha256 != NpcTradeMachineCatalog.InheritedAdditionsSourceSha256)
             throw new InvalidDataException("npc_trade_owned_machines_scope");

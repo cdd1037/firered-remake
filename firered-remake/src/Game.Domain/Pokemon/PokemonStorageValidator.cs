@@ -42,6 +42,8 @@ public static class PokemonStorageValidator
             {
                 var owned = box.Slots[slotIndex];
                 if (owned is null) continue;
+                if (SourceMailRules.ValidateBoxedPokemon(owned) is {} mailError)
+                    return new("storage_boxed_mail", BoxIndex: boxIndex, SlotIndex: slotIndex, PokemonError: mailError);
                 var error = PokemonStateValidator.ValidateParty(content, owned);
                 if (error is not null)
                     return new("storage_box_pokemon", BoxIndex: boxIndex, SlotIndex: slotIndex, PokemonError: error);

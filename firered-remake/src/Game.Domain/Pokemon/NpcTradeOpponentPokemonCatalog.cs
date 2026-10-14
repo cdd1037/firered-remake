@@ -24,9 +24,9 @@ public sealed class NpcTradeOpponentPokemonCatalog
         if (!ReferenceEquals(FossilLabOpponentPokemonCatalog.For(predecessor.Catalog), predecessor) ||
             !ReferenceEquals(NpcTradeOwnedPokemonCatalog.For(owned.Catalog), owned) ||
             !ReferenceEquals(predecessor.Owned, owned.Predecessor) || predecessor.Catalog.Species.Count != 190 ||
-            owned.Catalog.Species.Count != 160 || !owned.Catalog.Species.Keys.All(predecessor.Catalog.Species.ContainsKey) ||
-            !SilphOwnedPokemonCatalog.MatchesSource(predecessor.Catalog.Species[NpcTradeOwnedPokemonCatalog.MrMimeId],
-                owned.Catalog.Species[NpcTradeOwnedPokemonCatalog.MrMimeId]))
+            owned.Catalog.Species.Count != 161 || !owned.Catalog.Species.Keys.All(predecessor.Catalog.Species.ContainsKey) ||
+            NpcTradeOwnedPokemonCatalog.AdditionalSpecies.Any(id =>
+                !SilphOwnedPokemonCatalog.MatchesSource(predecessor.Catalog.Species[id], owned.Catalog.Species[id])))
             throw new ArgumentException("npc_trade_opponent_predecessor");
         var proof = new NpcTradeOpponentPokemonCatalog(predecessor, owned);
         Proofs.Add(proof.Catalog, proof); Owners.GetValue(owned, _ => proof);

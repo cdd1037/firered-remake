@@ -243,6 +243,7 @@ public partial class CampaignView
             if (_machineMode == "replacement") return PointerRows(point, direction, ref _machineCursor, 5, 12, 26, 220);
             return false;
         }
+        if (MailScreen) return MailMouse(point, direction);
         if (HeldItemScreen) return HeldItemMouse(point, direction);
         if (MtMoonTargetActive && _mtMoonMoveSlotOpen) return PointerRows(point, direction, ref _mtMoonMoveSlot, _session.State.Party[_fieldMedicineTarget].Pokemon.Moves.Length + 1, 12, 26, 220);
         if (_fieldMedicineTargetOpen) return PointerRows(point, direction, ref _fieldMedicineTarget, _session.State.Party.Length + 1, 8, 8, 224, 14);
@@ -359,6 +360,7 @@ public partial class CampaignView
     {
         var menu = _session.State.ItemMenu!;
         if (_itemNotice is not null) return MouseConfirm(point, MouseMessage);
+        if (MailScreen) return MailMouse(point);
         if (HeldItemScreen) return HeldItemMouse(point);
         if (MachineActive) return MouseMachines(point);
         if (menu.View == "message") return MouseConfirm(point, MouseMessage);

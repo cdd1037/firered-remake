@@ -63,7 +63,7 @@ public static class PokemonStateValidator
             "ITEM_NEST_BALL" or "ITEM_REPEAT_BALL" or "ITEM_TIMER_BALL" or "ITEM_LUXURY_BALL" or "ITEM_PREMIER_BALL"))
             return "party_ball";
         if (!ValidSymbol(owned.HeldItem, "ITEM_")) return "party_held_item";
-        if (owned.Mail != 255) return "party_mail_unsupported";
+        if (SourceMailRules.ValidateAttachmentReference(owned) is {} mailError) return mailError;
         if (!SourcePartyStatusRules.IsSupported(owned.Status,content.AllowSleepStatus,content.AllowFreezeStatus,content.AllowToxicStatus)) return "party_status_unsupported";
         if (owned.IsEgg) return "party_egg_unsupported";
         return null;

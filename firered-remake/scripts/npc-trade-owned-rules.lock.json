@@ -2,17 +2,17 @@
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
   "profile": "firered-npc-trade-owned-rules-v1",
-  "importerSha256": "3e74d58dd456fe43b7086654b9d84989ec29d8d4765a28c57c9c94a5176d5036",
+  "importerSha256": "089ed80d5d87737b0e282b3365e91b67584f9f3b9cf3c404e63d337a61048cc4",
   "files": [
     {
       "path": "content/generated/npc-trade-owned-rules/machines.json",
-      "byteLength": 22815,
-      "sha256": "15719f61782ea522d69479c15f6870911f319742cbe50df91b86a1eb382278cd"
+      "byteLength": 40797,
+      "sha256": "5c4246cb14d9ca57ffb84e180d801e13225be59fce01feafb6bf1c1802ea9e85"
     },
     {
       "path": "content/generated/npc-trade-owned-rules/pokemon.json",
-      "byteLength": 707,
-      "sha256": "fde280564af61126c9db55c59e497a63115a568c63f0d3115b234439514d99b3"
+      "byteLength": 727,
+      "sha256": "9d0dcf21a51db210326cfd511bfbc3a6276752fc412406e1870ace4cdfb368cd"
     },
     {
       "path": "content/generated/npc-trade-owned-rules/source-input-hashes.json",

@@ -23,7 +23,7 @@ public sealed partial class CampaignSession
             !state.Actors.TryGetValue(id, out var actor) || !actor.Active || actor.Invisible ||
             state.Script.Variables.GetValueOrDefault("VAR_LAST_TALKED") != actor.SourceLocalId) return null;
         return catalog.Definitions.Values.SingleOrDefault(d => catalog.IsEnabled(d.TradeId) &&
-            d.Map == state.World.Player.MapId && d.LocalId == actor.SourceLocalId && d.ScriptLabel == actor.ScriptId);
+            _content.NpcTradeMap(d.TradeId) == state.World.Player.MapId && d.LocalId == actor.SourceLocalId && d.ScriptLabel == actor.ScriptId);
     }
     private bool NpcTradeSource(NpcTradePokemonDefinition definition, StorySource source, params string[] shared) =>
         source.Path == definition.ScriptSource.Path && source.Symbol == definition.ScriptLabel ||
@@ -151,12 +151,19 @@ public sealed partial class CampaignSession
                     prepared.PartyIndex < 0 || prepared.PartyIndex >= state.Party.Length ||
                     state.Party[prepared.PartyIndex] != sent || incoming.InstanceId != state.NextPokemonId || state.World.Rng != after)
                     throw new InvalidDataException("npc_trade_swap_context");
-                next = state with { Party = state.Party.SetItem(prepared.PartyIndex, incoming),
+                var incomingMail = definition.Mail == 255 ? null : _content.NpcTradeMailMessage
+                    ?? throw new InvalidDataException("npc_trade_mail_source_missing");
+                var exchange = SourceMailRules.ExchangePartyPokemon(state.Mail ?? SourceMailState.Empty,
+                    state.Party, prepared.PartyIndex, incoming, incomingMail);
+                if (!exchange.Succeeded) throw new InvalidDataException(exchange.Error);
+                incoming = exchange.Party[prepared.PartyIndex];
+                next = state with { Party = exchange.Party, Mail = state.Mail is null && incomingMail is null && exchange.OutgoingMail is null ? null : exchange.State,
                     NextPokemonId = checked(state.NextPokemonId + 1),
-                    NpcTrades = (state.NpcTrades ?? []).Add(new(definition.TradeId, prepared.PartyIndex, sent, incoming, before, after)),
+                    NpcTrades = (state.NpcTrades ?? []).Add(new(definition.TradeId, prepared.PartyIndex, sent, incoming, before, after) {
+                        OutgoingMail = exchange.OutgoingMail, IncomingMail = incomingMail }),
                     SeenSpecies = state.SeenSpecies.Add(incoming.Pokemon.SourceSpeciesId),
                     CaughtSpecies = state.CaughtSpecies.Add(incoming.Pokemon.SourceSpeciesId),
-                    NpcTrade = prepared with { Phase = CampaignNpcTradePhase.Presenting },
+                    NpcTrade = prepared with { Phase = CampaignNpcTradePhase.Presenting, Incoming = incoming },
                     Dialogue = null, ScreenIsBlack = false, PresentationTicks = NpcTradePresentationTicks };
                 break;
         }

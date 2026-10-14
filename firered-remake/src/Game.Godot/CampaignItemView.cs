@@ -22,6 +22,7 @@ public partial class CampaignView
                 && _itemMenuKey is "bag:bag" or "bag:message";
             if(!sameBag)ResetQuestPocketPresentation();_itemMenuKey=key;_itemCursor=0;_itemAction=0;_itemQuantity=1;_itemPopup=false;_itemQuantityOpen=false;_itemNotice=null;_fieldMedicineTargetOpen=false;_mtMoonMoveSlotOpen=false;}
         if(menu is not null)_held=null;
+        SynchronizeMail();
     }
     private bool ItemInput(InputEventKey key)
     {
@@ -29,6 +30,7 @@ public partial class CampaignView
         if(!key.Pressed)return true;
         var menu=_session.State.ItemMenu!;
         if(_itemNotice is not null){if(key.Keycode is Key.Enter or Key.Backspace)_itemNotice=null;return true;}
+        if(MailInput(key))return true;
         if(HeldItemInput(key))return true;
         if(_fieldMedicineTargetOpen)return MtMoonTargetActive?MtMoonTargetInput(key):FieldMedicineTargetInput(key);
         if(menu.View=="message"){if(key.Keycode is Key.Enter or Key.Backspace)Apply(new("menu_ack"));return true;}
@@ -84,6 +86,7 @@ public partial class CampaignView
     }
     private void DrawItemMenu()
     {
+        if(DrawMailScreen())return;
         if(DrawHeldItemScreen())return;
         var menu=_session.State.ItemMenu!;var view=menu.View=="message"?menu.ReturnView:menu.View;
         if(view is "top" or "storage")

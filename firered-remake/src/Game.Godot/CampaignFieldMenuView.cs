@@ -133,7 +133,7 @@ public partial class CampaignView
                 if (!_session.CanReorderFieldParty) _fieldMenuNotice = "At least two POKéMON are\nneeded to SWITCH positions.";
                 else { _fieldMenuMode = "switch"; _fieldSwapSource = _fieldPartyCursor; }
             }
-            else if(actions[_fieldPartyAction] == "ITEM") OpenPartyHeldItems();
+            else if(actions[_fieldPartyAction] is "ITEM" or "MAIL") OpenPartyHeldItems();
             else if(actions[_fieldPartyAction] == "CUT") UseFieldPartyCut();
             else if(actions[_fieldPartyAction] == "FLASH") UseFieldPartyFlash();
             else if(actions[_fieldPartyAction] == "STRENGTH") UseFieldPartyStrength();
@@ -175,7 +175,10 @@ public partial class CampaignView
                 else if(_catalog.SafariEnabled&&move.Move.Value=="pret:MOVE_STRENGTH")actions.Add("STRENGTH");
                 else if(_catalog.SurfEnabled&&move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");
                 else if(_catalog.FourIslandEnabled&&move.Move.Value=="pret:MOVE_WATERFALL")actions.Add("WATERFALL");
-        actions.Add("SWITCH");if(_catalog.EarlyShop is not null)actions.Add("ITEM");actions.Add("CANCEL");return actions.ToArray();
+        actions.Add("SWITCH");
+        if(_catalog.EarlyShop is not null)actions.Add(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&
+            SourceMailRules.IsMailItem(_session.State.Party[_fieldPartyCursor].HeldItem)?"MAIL":"ITEM");
+        actions.Add("CANCEL");return actions.ToArray();
     }
     private int FieldPartyActionTop => 152-FieldPartyActions().Length*16;
     private void UseFieldPartyCut()

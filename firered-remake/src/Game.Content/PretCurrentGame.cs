@@ -41,6 +41,7 @@ public sealed partial class PretCampaignCatalog
         var npcTrades = PretNpcTrades.Load(projectRoot, doubleMechanics);
         var npcTradeElyssa = PretNpcTradeElyssa.Load(projectRoot);
         var npcTradeHaden = PretNpcTradeHaden.Load(projectRoot);
+        var npcTradeMail = PretNpcTradeMail.Load(projectRoot);
         var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
         var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName), PretRocketHideoutRuntimeMaps.ManifestSha256);
@@ -2292,8 +2293,9 @@ public sealed partial class PretCampaignCatalog
         hashes.Add("fossil-lab-presentation-source-lock:" + PretFossilLabPresentation.LockSha256);
         maps = maps.AddRange(npcTradeElyssa.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTradeElyssa.NewMaps);
-        earlyShop = earlyShop with { Catalog = npcTradeElyssa.ExtendShop(fossilShop).Catalog };
+        earlyShop = earlyShop with { Catalog = npcTradeElyssa.ExtendShop(fossilShop, npcTradeMail).Catalog };
         hashes.AddRange(npcTradeElyssa.AdditionalSourceHashes);
+        hashes.AddRange(npcTradeMail.AdditionalSourceHashes);
         maps = maps.AddRange(npcTradeHaden.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, npcTradeHaden.NewMaps);
         var npcTradePreviousMaps = maps;
@@ -2305,7 +2307,7 @@ public sealed partial class PretCampaignCatalog
         _ = PretNpcTradeOwnedRules.LoadOpponents(projectRoot, fossilOpponents, tradeOwned);
         var tradeMachines = PretNpcTradeOwnedRules.LoadMachines(projectRoot, fossilMachines, tradeOwned);
         pokemonContent = pokemonContent with { Catalog = tradeOwned.Catalog,
-            SpeciesNames = pokemonContent.SpeciesNames.SetItem(122, oakPokedex.Entries[122].Name) };
+            SpeciesNames = pokemonContent.SpeciesNames.SetItem(122, oakPokedex.Entries[122].Name).SetItem(124, oakPokedex.Entries[124].Name) };
         machines = tradeMachines.Catalog;
         var moveTutors = PretMoveTutors.Load(projectRoot, tradeOwned.Catalog);
         hashes.AddRange(moveTutors.AdditionalSourceHashes);
@@ -2487,7 +2489,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,
