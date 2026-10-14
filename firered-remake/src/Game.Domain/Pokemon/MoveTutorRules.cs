@@ -47,7 +47,7 @@ public sealed class MoveTutorCatalog
             string symbol = entry.Groups[1].Value;
             if (symbol != entry.Groups[2].Value || !constants.TryGetValue("MOVETUTOR_" + symbol[5..], out int index))
                 throw new ArgumentException("move_tutor_table_source_invalid");
-            if (index is not (0 or 1 or 2 or 3 or 4 or 5 or 6 or 8 or 9 or 10 or 11 or 12 or 13 or 14)) continue;
+            if (index is < 0 or > 14) throw new ArgumentException("move_tutor_index_invalid");
             var move = new MoveId("pret:" + symbol);
             if (!owned.Moves.TryGetValue(move, out var definition) || definition.SourceMoveId != constants[symbol] ||
                 !PokemonMoveRules.IsLearningSupported(owned, move)) throw new ArgumentException("move_tutor_move_unsupported");
@@ -59,7 +59,7 @@ public sealed class MoveTutorCatalog
             }
             definitions.Add(index, new(index, move, definition.SourceMoveId, definition.Pp, compatibility.ToImmutable()));
         }
-        if (definitions.Count != 14) throw new ArgumentException("move_tutor_table_source_missing");
+        if (definitions.Count != 15) throw new ArgumentException("move_tutor_table_source_missing");
         var textSource = Encoding.UTF8.GetString(strings);
         var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
         foreach (string symbol in new[] { "gText_TeachWhichPokemon", "gText_PkmnCantLearnMove", "gText_PkmnAlreadyKnows",

@@ -46,6 +46,7 @@ public sealed partial class PretCampaignCatalog
             return "four_island_service_unavailable: Day Care and breeding are not available yet.";
         if(map.Value=="map.celadon-city-department-store-3f"&&script=="CeladonCity_DepartmentStore_3F_EventScript_CounterTutor"&&
             MoveTutors?.Definitions.ContainsKey(5)==true)return null;
+        if(map.Value==PokeDollShopStock.ExpectedMapId&&script==PokeDollShopStock.ExpectedClerkScript&&PokeDollShopStock is not null)return null;
         if(!RegionalInteriorServicesEnabled)return null;
         if(map.Value=="map.celadon-city-restaurant"&&script=="CeladonCity_Restaurant_EventScript_CoinCaseMan")
             return "regional_service_unavailable: Coin Case service\nis not available yet.";

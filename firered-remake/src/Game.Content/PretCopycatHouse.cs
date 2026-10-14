@@ -1,0 +1,176 @@
+using System.Collections.Immutable;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Game.Domain.Ids;
+using Game.Domain.World;
+
+namespace Game.Content;
+
+/// <summary>The original two-floor Saffron Copycat house; item and tutor admission are separate.</summary>
+public sealed class PretCopycatHouse
+{
+    public const string ResourceId = "firered-copycat-house-v1";
+    public const string ManifestSha256 = "97e0526ca84aa6c694a92ee65ee8c22b66d775f080dc861d9b9bfd5e128e456d";
+    public const string LockSha256 = "9c6138bb7963530f0d383cf5e6750126a8fc0a4e5263b746b58254d07c97d519";
+    public const string FullSourceHash = "f36d638c2720eb5dce4fede172eb5568a1c2f1b3d56e866fa308a98b4140326d";
+    public static MapId Floor1MapId { get; } = new("map.saffron-city-copycats-house-1f");
+    public static MapId Floor2MapId { get; } = new("map.saffron-city-copycats-house-2f");
+    public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
+    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
+    public ImmutableDictionary<string, string> TextSources { get; }
+    public ImmutableDictionary<string, int> Constants { get; }
+    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
+    public ImmutableArray<string> AdditionalSourceHashes { get; }
+    public JsonElement Catalog { get; }
+    public JsonElement Contracts { get; }
+    public JsonElement ScriptInventory { get; }
+    public JsonElement NpcSources { get; }
+    public string GeneratedDirectory { get; }
+    public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
+
+    private PretCopycatHouse(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
+        ImmutableArray<PretSourceScriptFile> scripts, ImmutableDictionary<string, string> texts,
+        ImmutableDictionary<string, int> constants)
+    {
+        NewMaps = maps; Scripts = scripts; TextSources = texts; Constants = constants; SourceFiles = source.Files;
+        GeneratedDirectory = source.Directory; Catalog = source.Document("catalog.json");
+        Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
+        NpcSources = source.Document("npc-source.json");
+        AdditionalSourceHashes = ["copycat-house-manifest:" + ManifestSha256, "copycat-house-lock:" + LockSha256,
+            .. source.Files.Select(f => "copycat-house:" + f.Path + ":" + f.Sha256)];
+    }
+
+    public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
+    {
+        "MAP_SAFFRON_CITY_COPYCATS_HOUSE_1F" => Floor1MapId,
+        "MAP_SAFFRON_CITY_COPYCATS_HOUSE_2F" => Floor2MapId,
+        "MAP_SAFFRON_CITY" => new("map.saffron-city"),
+        _ => throw new InvalidDataException("Unknown Copycat house map symbol: " + symbol)
+    };
+
+    public static ConnectedFieldMap ConnectedMap(PretWorldMap map)
+    {
+        Need((map.Id == Floor1MapId || map.Id == Floor2MapId) &&
+            map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null,
+            "Copycat house must retain its original disconnected indoor geometry.");
+        return new(map.Id, map.Width, map.Height,
+            map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
+    }
+
+    /// <summary>Load before campaign compilation. dependencyRoot supplies unchanged town and actor resources.</summary>
+    public static PretCopycatHouse Load(string projectRoot, string? dependencyRoot = null)
+    {
+        dependencyRoot ??= projectRoot;
+        var source = new SilphSourcePackage(projectRoot, "copycat-house", ResourceId,
+            "scripts/copycat-house.lock.json", LockSha256, 24949, ManifestSha256, 5205, 81, 24);
+        var graphics = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
+        {
+            string graphic = texture.GetProperty("graphicsId").GetString()!;
+            Need(graphics.Add(graphic) && texture.GetProperty("reuseExisting").GetBoolean() &&
+                graphic is "OBJ_EVENT_GFX_BALDING_MAN" or "OBJ_EVENT_GFX_WOMAN_3" or "OBJ_EVENT_GFX_CHANSEY" or
+                    "OBJ_EVENT_GFX_DODUO" or "OBJ_EVENT_GFX_PIKACHU" or "OBJ_EVENT_GFX_JIGGLYPUFF" or
+                    "OBJ_EVENT_GFX_LITTLE_GIRL" or "OBJ_EVENT_GFX_RED_NORMAL",
+                "Copycat house actors must reuse the original existing resources.");
+            _ = SafariSource.Read(dependencyRoot, texture.GetProperty("texturePath").GetString()!,
+                texture.GetProperty("sha256").GetString()!, texture.GetProperty("byteLength").GetInt32());
+        }
+        Need(graphics.Count == 8, "Copycat house actor collection differs.");
+        var catalog = source.Document("catalog.json");
+        Need(catalog.GetProperty("fullSourceHash").GetString() == FullSourceHash &&
+            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 2 &&
+            JsonElement.DeepEquals(catalog.GetProperty("inputFiles"), source.Lock.GetProperty("files")),
+            "Copycat house catalog identity differs.");
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, FullSourceHash,
+            "Local source evidence; redistribution rights are not inferred.",
+            "Original Saffron Copycat house; Mimic and Poke Doll service admission are separate.", ResourceId, source.Files);
+        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
+        var outputs = source.Manifest.GetProperty("outputs").EnumerateArray()
+            .ToDictionary(p => p.GetProperty("path").GetString()!, StringComparer.Ordinal);
+        var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
+        foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
+        {
+            string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
+            string path = spec.GetProperty("path").GetString()!, hash = spec.GetProperty("sha256").GetString()!;
+            Need((id == Floor1MapId.Value || id == Floor2MapId.Value) && path == relative + "/runtime-map.json" &&
+                hash == outputs[path].GetProperty("sha256").GetString() &&
+                spec.GetProperty("byteLength").GetInt32() == source.Outputs[path].Length,
+                "Copycat house compact map binding differs.");
+            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], new(id, path, source.Outputs[path].Length, hash,
+                relative + "/world.json", spec.GetProperty("sourceWorldByteLength").GetInt32(),
+                spec.GetProperty("sourceWorldSha256").GetString()!, FullSourceHash));
+            PretRuntimeMapIntegration.ValidateSource(runtime, metadata, raw, spec);
+            Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Copycat house map identity differs.");
+            foreach (var artifact in runtime.Artifacts)
+                Need(outputs[relative + "/" + artifact.Path].GetProperty("sha256").GetString() == artifact.Sha256,
+                    "Copycat house image binding differs.");
+            var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
+                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/city-services/npc/red-normal.png"), MapIdFromSourceSymbol);
+            Need(map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null &&
+                map.Events.GetProperty("coord_events").GetArrayLength() == 0, "Copycat house indoor event boundaries differ.");
+            maps.Add(map.Id, map);
+        }
+        var first = maps[Floor1MapId]; var second = maps[Floor2MapId];
+        Need(first.Width == 13 && first.Height == 10 && first.FieldWarps.Length == 4 &&
+            second.Width == 12 && second.Height == 9 && second.FieldWarps.Length == 1 &&
+            first.Events.GetProperty("object_events").GetArrayLength() == 3 &&
+            second.Events.GetProperty("object_events").GetArrayLength() == 4 &&
+            first.Events.GetProperty("bg_events").GetArrayLength() == 0 && second.Events.GetProperty("bg_events").GetArrayLength() == 3,
+            "Copycat house original map/event collection differs.");
+        ValidateTopology(source, dependencyRoot, first, second);
+        var inventory = source.Document("scripts.json");
+        Need(inventory.GetProperty("blocks").GetArrayLength() == 40 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
+            "Copycat house script closure differs.");
+        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
+        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
+        var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
+        foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
+        {
+            string sourcePath = entry.GetString()!, text = new UTF8Encoding(false, true).GetString(raw[sourcePath]);
+            if (sourcePath.EndsWith("/text.inc", StringComparison.Ordinal) || sourcePath.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(sourcePath, text);
+            else
+            {
+                string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
+                Need(label.Length > 0, "Missing Copycat house script label.");
+                scripts.Add(new(sourcePath, text, new(SourceKind.Pret, sourcePath, label, "pret/pokefirered", PretWorldMap.SourceCommit, files[sourcePath].Sha256)));
+            }
+        }
+        var constants = source.Document("constants.json").GetProperty("values").EnumerateObject()
+            .ToImmutableDictionary(p => p.Name, p => p.Value.GetProperty("value").GetInt32(), StringComparer.Ordinal);
+        Need(constants["MOVETUTOR_MIMIC"] == 7 && constants["ITEM_POKE_DOLL"] == 80 &&
+            constants["SPECIES_CHANSEY"] == 113 && constants["SPECIES_DODUO"] == 84,
+            "Copycat original tutor/item/cry constants differ.");
+        return new(source, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
+    }
+
+    private static void ValidateTopology(SilphSourcePackage source, string dependencyRoot, PretWorldMap first, PretWorldMap second)
+    {
+        var retained = source.Document("contracts.json").GetProperty("retainedTown");
+        string package = retained.GetProperty("currentPackage").GetString()!;
+        _ = SafariSource.Read(dependencyRoot, package + "/manifest.json", retained.GetProperty("currentManifestSha256").GetString()!,
+            retained.GetProperty("currentManifestByteLength").GetInt32());
+        var town = retained.GetProperty("currentResource");
+        var data = SilphSourcePackage.Json(SafariSource.Read(dependencyRoot, package + "/" + town.GetProperty("path").GetString(),
+            town.GetProperty("sha256").GetString()!, town.GetProperty("byteLength").GetInt32()));
+        Need(JsonElement.DeepEquals(data.GetProperty("events"), SilphSourcePackage.Json(source.Raw["data/maps/SaffronCity/map.json"])),
+            "Retained Saffron City events differ from the original source.");
+        var entrance = data.GetProperty("events").GetProperty("warp_events")[1];
+        Need(Warp(entrance, 22, 14, 0, "MAP_SAFFRON_CITY_COPYCATS_HOUSE_1F", "1"), "Original Saffron entrance differs.");
+        var exits = first.Events.GetProperty("warp_events");
+        for (int i = 0; i < 3; i++)
+            Need(Warp(exits[i], 3 + i, 8, 3, "MAP_SAFFRON_CITY", "1"), "Original three-tile house exit differs.");
+        Need(Warp(exits[3], 10, 2, 3, "MAP_SAFFRON_CITY_COPYCATS_HOUSE_2F", "0") &&
+            Warp(second.Events.GetProperty("warp_events")[0], 10, 2, 3, "MAP_SAFFRON_CITY_COPYCATS_HOUSE_1F", "3"),
+            "Original reciprocal Copycat stairs differ.");
+        Need(retained.GetProperty("geometryChanges").GetArrayLength() == 0 && retained.GetProperty("eventChanges").GetArrayLength() == 0,
+            "Copycat house must not rewrite its original town entrance.");
+    }
+
+    private static bool Warp(JsonElement value, int x, int y, int elevation, string map, string index) =>
+        value.GetProperty("x").GetInt32() == x && value.GetProperty("y").GetInt32() == y &&
+        value.GetProperty("elevation").GetInt32() == elevation && value.GetProperty("dest_map").GetString() == map &&
+        value.GetProperty("dest_warp_id").GetString() == index;
+
+    private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
+}

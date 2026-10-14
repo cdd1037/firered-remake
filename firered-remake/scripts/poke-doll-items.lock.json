@@ -1,0 +1,48 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-poke-doll-inventory-v1",
+  "importerSha256": "44e7766b4880348c220f1b4f40b66781d98c44a841c70d1cf34a8dd722bd586a",
+  "files": [
+    {
+      "path": "content/generated/poke-doll-items/items.json",
+      "byteLength": 2941,
+      "sha256": "571ea9b9b7a628cb539a27e15e0a7585fb5990b62fec5c9b06d0801cbe8bbed6"
+    },
+    {
+      "path": "content/generated/poke-doll-items/poke-doll.png",
+      "byteLength": 522,
+      "sha256": "87985a3668540ad68a80f142abb095eacbde87f536919fd9c96105e30172286a"
+    },
+    {
+      "path": "content/generated/poke-doll-items/poke-doll.rgba",
+      "byteLength": 2304,
+      "sha256": "dc9a4bc397201293b96f165071f6fcc6c286951cfb3364ac34c116d8f0df4f2e"
+    },
+    {
+      "path": "content/generated/poke-doll-items/source-contract.json",
+      "byteLength": 2630,
+      "sha256": "400f6d4213604801f0088c5c8e892c8135837b54293ba8b9b2ae911e448a8b0b"
+    },
+    {
+      "path": "content/generated/poke-doll-items/source-input-hashes.json",
+      "byteLength": 3073,
+      "sha256": "cc497de2e6542684b540a0c44707e457ed103bd62f6a38cffc81c7942e6f243e"
+    },
+    {
+      "path": "content/raw/poke-doll-items/data/maps/CeladonCity_DepartmentStore_4F/scripts.inc",
+      "byteLength": 926,
+      "sha256": "5b7518184e31879a034d326a9cf954fb8e081ec975895d3f441dd98de076c81a"
+    },
+    {
+      "path": "content/raw/poke-doll-items/graphics/items/icon_palettes/poke_doll.pal",
+      "byteLength": 147,
+      "sha256": "546fdee28670d77e1565b6e9b7519b35cc0464b5ed512cc55a950d8acad164d7"
+    },
+    {
+      "path": "content/raw/poke-doll-items/graphics/items/icons/poke_doll.png",
+      "byteLength": 298,
+      "sha256": "b90ae4c5cf3072b7407e412b21fd616b61aeed139f88e1c83f08be36a19aa879"
+    }
+  ]
+}

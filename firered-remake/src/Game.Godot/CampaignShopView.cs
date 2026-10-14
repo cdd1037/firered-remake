@@ -30,12 +30,19 @@ public partial class CampaignView
                 _catalog.NpcTradeElyssa.IconFiles[icon.RgbaPath]);
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
+        LoadPokeDollIcon();
         foreach (var icon in _catalog.NpcTradeMail.Items.Icons)
         {
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
                 _catalog.NpcTradeMail.AssetFiles[icon.RgbaPath]);
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
+    }
+    private void LoadPokeDollIcon()
+    {
+        if (_catalog.PokeDollShopStock is null) return;
+        using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PretPokeDollItems.LoadIconRgba(_root));
+        _earlyItemIcons.Add(PokeDollInventoryCatalog.PokeDollId, ImageTexture.CreateFromImage(image));
     }
     private EarlyShopItemDefinition? EarlyItem(ItemId id) => _catalog.EarlyShop?.Items.SingleOrDefault(i => i.Id == id);
     private FieldMedicineEffect FieldMedicineEffectFor(ItemId id) => _catalog.EarlyShop is {} shop
@@ -102,7 +109,7 @@ public partial class CampaignView
             string[] choices = ["gText_ShopBuy", "gText_ShopSell", "gText_ShopQuit"];
             for (int i = 0; i < 3; i++) ItemLabel(new(160, 8 + i * 16), _session.ShopText(choices[i]));
             ItemLabel(new(150, 8 + _shopCursor * 16), "▶");
-            ItemMessageBox(_session.ShopText(shop.MessageSymbol ?? "Text_MayIHelpYou"));
+            ItemMessageBox(shop.MessageSymbol is null && _session.ShopAvailabilityNotice is {} notice ? notice : _session.ShopText(shop.MessageSymbol ?? "Text_MayIHelpYou"));
             return;
         }
         _battleSkin.DrawStandardFrame(this, new(80, 0, 160, 112));

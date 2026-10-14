@@ -219,6 +219,7 @@ public interface ICampaignCatalog:IStoryCatalog
     MoveDeleterCatalog? MoveDeleter=>null;
     MoveReminderCatalog? MoveReminder=>null;
     DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock=>null;
+    PokeDollShopStock? PokeDollShopStock=>null;
     ImmutableArray<CampaignDepartmentElevatorFloor> DepartmentStoreElevatorFloors=>[];
     ImmutableArray<CampaignDepartmentElevatorEntrance> DepartmentStoreElevatorEntrances=>[];
     ImmutableArray<CampaignDepartmentDynamicExit> DepartmentStoreDynamicExits=>[];

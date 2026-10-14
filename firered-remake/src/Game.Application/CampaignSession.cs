@@ -709,6 +709,7 @@ public sealed partial class CampaignSession
             if(TryApplyTowerEffect(state,effect,out var towerState)){state=towerState;continue;}
             if(TryApplyMoveDeleterEffect(state,effect,out var moveDeleterState)){state=moveDeleterState;continue;}
             if(TryApplyMoveReminderEffect(state,effect,out var moveReminderState)){state=moveReminderState;continue;}
+            if(TryApplyCopycatItemEffect(state,effect,out var copycatItemState)){state=copycatItemState;continue;}
             if(TryApplyMoveTutorEffect(state,effect,out var moveTutorState)){state=moveTutorState;continue;}
             if(TryApplyNpcTradeEffect(state,effect,out var npcTradeState)){state=npcTradeState;continue;}
             if(TryApplyNameRaterEffect(state,effect,out var nameRaterState)){state=nameRaterState;continue;}

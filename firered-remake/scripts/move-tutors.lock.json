@@ -175,6 +175,18 @@
       "bytes": 628,
       "sha256": "53e60afdf97c5beac11106402be91e6a34c81dc06d56ea973d769cd05a349f97",
       "gitBlobSha1": "4a9f195509e92ffa059838c11f8dddee31cac666"
+    },
+    {
+      "path": "data/maps/SaffronCity_CopycatsHouse_2F/map.json",
+      "bytes": 3056,
+      "sha256": "b74fc683cf97f866814e7c84c111ad7ad95bfa647a7979504982201017e03a98",
+      "gitBlobSha1": "63bc01336fc686b6a99b92584967bf03a6b801fa"
+    },
+    {
+      "path": "data/maps/SaffronCity_CopycatsHouse_2F/scripts.inc",
+      "bytes": 1333,
+      "sha256": "b6be843b486aca59f577ec9cbec8cea1c529c655542ef6536b0e1ad0e47cef26",
+      "gitBlobSha1": "12f8ada3cbfda3af6fb550250c463503625a413c"
     }
   ]
 }

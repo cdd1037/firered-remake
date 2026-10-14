@@ -188,3 +188,19 @@ Current two-room fingerprint:
 `d830061eaac3ad4ab2135031fad341726dcc3d8a9905eccac003b9568202ac9d`.
 The production headless room/menu integration passed44 checks/four Draws with
 unchanged DLLs and no save mutations; native pixels/audio remain outside scope.
+
+
+## Copycat successor, 2026-10-14
+
+Current composition has333 maps,162 owned species,129 ordinary items and all15
+original one-time tutor definitions. Copycat's two floors retain original
+warps/actors/signs/hidden Nugget. The authenticated Poke Doll successor preserves
+128 inherited item objects. The4F shop explicitly exposes only its original
+¥1000 Doll row; other source merchandise remains unavailable. The31-file tutor
+lock produces16 actor bindings including the Swords Dance clone.
+
+Current fingerprint:
+`49d8ea075c1026a754266ae16fe3cfcd95ca1669b4fa54bb5cb3b82f7024ff5e`.
+The actual purchase/teaching terminal56575 and independent Continue, plus stable
+102-check/eight-Draw production headless probe, passed within the distinct
+[Copycat verification cohorts](copycat-mimic-campaign.md).

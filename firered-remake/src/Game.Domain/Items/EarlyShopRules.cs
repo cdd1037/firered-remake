@@ -24,7 +24,7 @@ public static class EarlyShopRules
         if (error is not null) return new(false, 0, 0, error);
         if (money < 0 || money > catalog.MaximumMoney) return new(false, 0, 0, "shop_money_invalid");
         ArgumentNullException.ThrowIfNull(stock);
-        if (stock is not (DepartmentStoreOrdinaryStock or PokemonLeagueMartStock))
+        if (stock is not (DepartmentStoreOrdinaryStock or PokemonLeagueMartStock or PokeDollShopStock))
             throw new NotSupportedException("shop_stock_authentication");
         stock.Validate(catalog);
         var definition = EarlyShopInventoryRules.Find(catalog, item);

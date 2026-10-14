@@ -7,7 +7,7 @@ namespace Game.Content;
 
 public sealed class PretMoveTutors
 {
-    public const string LockSha256 = "241d4e69750ce226aaa36c3bf7aac7d810610aee9d4cc75bb00835c1b41dd258";
+    public const string LockSha256 = "f27383c953489124f98ac655c0e83dafe11aa387e4829cb0798536491354e634";
     public MoveTutorCatalog Catalog { get; }
     public ImmutableArray<string> AdditionalSourceHashes { get; }
     private PretMoveTutors(MoveTutorCatalog catalog, ImmutableArray<string> hashes)
@@ -25,10 +25,10 @@ public sealed class PretMoveTutors
                 throw new InvalidDataException("move_tutor_source_hash");
             return bytes;
         }
-        using var document = JsonDocument.Parse(Read(Path.Combine(root, "scripts/move-tutors.lock.json"), 6888, LockSha256));
+        using var document = JsonDocument.Parse(Read(Path.Combine(root, "scripts/move-tutors.lock.json"), 7385, LockSha256));
         var doc = document.RootElement;
         if (doc.GetProperty("schemaVersion").GetInt32() != 1 || doc.GetProperty("commit").GetString() != PokemonFactory.SourceCommit ||
-            doc.GetProperty("files").GetArrayLength() != 29) throw new InvalidDataException("move_tutor_source_scope");
+            doc.GetProperty("files").GetArrayLength() != 31) throw new InvalidDataException("move_tutor_source_scope");
         var hashes = ImmutableArray.CreateBuilder<string>(); hashes.Add("move-tutors-lock:" + LockSha256);
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in doc.GetProperty("files").EnumerateArray())
