@@ -59,7 +59,7 @@ public sealed partial class CampaignSession
         if(!_content.ViridianCenterEnabled)return state.GameStats is not null||state.HealingEffect is not null?"save_center_profile_missing":null;
         if(state.HealingEffect is not null)return "save_center_healing_active";
         if(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"&&!HasCenterRespawn(state))return "save_heal_location_unsupported";
-        if(state.GameStats is {} stats&&stats.Any(x=>(x.Key!=CenterUsageStat&&(!_content.PokemonLeagueEnabled||x.Key is not ("GAME_STAT_ENTERED_HOF" or "GAME_STAT_RECEIVED_RIBBONS"))&&(!_content.CityServicesEnabled||x.Key!="GAME_STAT_FISHING_CAPTURES")&&(!_content.ForestEnabled||x.Key!=EvolutionCountStat)&&(!_content.VermilionGymEnabled||x.Key!=CutUsageStat)&&(!_content.Route5DayCareEnabled||x.Key!=DayCareUsageStat))||x.Value is <0 or >0xffffff))return "save_game_stat_invalid";
+        if(state.GameStats is {} stats&&stats.Any(x=>(x.Key!=CenterUsageStat&&(!_content.PokemonLeagueEnabled||x.Key is not ("GAME_STAT_ENTERED_HOF" or "GAME_STAT_RECEIVED_RIBBONS"))&&(!_content.CityServicesEnabled||x.Key!="GAME_STAT_FISHING_CAPTURES")&&(!_content.ForestEnabled||x.Key!=EvolutionCountStat)&&(_content.FieldRockSmash is null||x.Key!=Game.Domain.World.FieldRockSmashSourceRules.UsageStat)&&(!_content.VermilionGymEnabled||x.Key!=CutUsageStat)&&(!_content.Route5DayCareEnabled||x.Key!=DayCareUsageStat))||x.Value is <0 or >0xffffff))return "save_game_stat_invalid";
         return null;
     }
 }

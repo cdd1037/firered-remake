@@ -44,4 +44,27 @@ public sealed class BreedingSpeciesMetadataCatalog
                 throw new ArgumentException("breeding_metadata_references");
         return Proofs.GetValue(owned.Catalog, _ => new(owned.Catalog, rows, allMachineMoves));
     }
+    // Only a sealed, source-checked successor invokes this binding. Existing rows retain
+    // their exact immutable definition and compatibility-set references.
+    internal static BreedingSpeciesMetadataCatalog RegisterSuccessor(OwnedBattlePokemonCatalog owner,
+        BreedingSpeciesMetadataCatalog predecessor, ImmutableArray<SourceEggSpeciesRow> additions)
+    {
+        if (!ReferenceEquals(OwnedBattlePokemonCatalog.For(owner.Catalog), owner) ||
+            !ReferenceEquals(For(predecessor.Catalog), predecessor) ||
+            !ReferenceEquals(OwnedBattlePokemonCatalog.SourceAncestor(owner, c => ReferenceEquals(c, predecessor.Catalog) ? predecessor : null), predecessor) ||
+            !owner.Catalog.Species.Keys.Except(predecessor.Species.Keys).ToHashSet().SetEquals(additions.Select(r => r.Breeding.Species)))
+            throw new ArgumentException("breeding_metadata_successor_owner");
+        var proof = new BreedingSpeciesMetadataCatalog(owner.Catalog, predecessor, additions);
+        return Proofs.GetValue(owner.Catalog, _ => proof);
+    }
+    private BreedingSpeciesMetadataCatalog(PokemonCatalog catalog, BreedingSpeciesMetadataCatalog predecessor,
+        ImmutableArray<SourceEggSpeciesRow> additions)
+    {
+        Catalog = catalog; AllMachineMoves = predecessor.AllMachineMoves;
+        Species = predecessor.Species.AddRange(additions.Select(r => KeyValuePair.Create(r.Breeding.Species,
+            new SourceEggSpeciesDefinition(r.Breeding, r.BaseEggSpecies, r.EggMoves))));
+        MachineCompatibility = predecessor.MachineCompatibility.AddRange(additions.Select(r =>
+            KeyValuePair.Create(r.Breeding.Species, r.MachineMoves.ToImmutableHashSet())));
+    }
+
 }

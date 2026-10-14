@@ -10,10 +10,10 @@ public sealed partial class CampaignSession
     private WaterEncounterState WaterProcess(EarlyLandEncounterState shared)
     {
         if(shared.Pending is not null)throw new InvalidDataException("surf_land_candidate_pending");
-        return new(shared.RateRng,shared.PreviousMetatileBehavior,shared.EncounterRateBuff,shared.StepsSinceLastEncounter){RulesVersion=WaterEncounterRules.FiveIslandRulesVersion};
+        return new(shared.RateRng,shared.PreviousMetatileBehavior,shared.EncounterRateBuff,shared.StepsSinceLastEncounter){RulesVersion=WaterEncounterRules.FiveIslandRulesVersion,CachedLeadHasCleanseTag=shared.CachedLeadHasCleanseTag};
     }
     private static EarlyLandEncounterState SharedWaterProcess(EarlyLandEncounterState shared,WaterEncounterState water)=>
-        shared with{RateRng=water.RateRng,PreviousMetatileBehavior=water.PreviousMetatileBehavior,EncounterRateBuff=water.EncounterRateBuff,StepsSinceLastEncounter=water.StepsSinceLastEncounter,Pending=null};
+        shared with{RateRng=water.RateRng,PreviousMetatileBehavior=water.PreviousMetatileBehavior,EncounterRateBuff=water.EncounterRateBuff,StepsSinceLastEncounter=water.StepsSinceLastEncounter,Pending=null,CachedLeadHasCleanseTag=water.CachedLeadHasCleanseTag};
     private CampaignState CheckSurfWaterEncounter(CampaignState state,EncounterCheckTrigger trigger)
     {
         if(!_content.SurfEnabled||_content.SurfOwnership is null||_content.WaterEncounters is not {} tables||!state.IsSurfing||!IsSurfWater(state,state.World.Player))

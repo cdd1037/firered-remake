@@ -1,0 +1,26 @@
+using System.Collections.Immutable;
+namespace Game.Domain.Pokemon;
+
+/// <summary>Four-row source delta over the existing breeding metadata; no full metadata copy.</summary>
+public static class OrdinaryEvolutionSpeciesMetadataCatalog
+{
+    public const string SemanticSha256 = "cfc8991beb248a86e95af6a052e79d8d7db794ac08c149ff76e85fff3049b6f8";
+    public static BreedingSpeciesMetadataCatalog Authenticate(OrdinaryEvolutionOwnedPokemonCatalog owned,
+        ImmutableArray<SourceEggSpeciesRow> additions)
+    {
+        ArgumentNullException.ThrowIfNull(owned);
+        if (!ReferenceEquals(OrdinaryEvolutionOwnedPokemonCatalog.For(owned.Catalog), owned) ||
+            BreedingSpeciesMetadataCatalog.For(owned.Predecessor.Catalog) is not { } predecessor ||
+            additions.IsDefault || additions.Length != 4 || additions.Any(r => r is null || r.Breeding is null || r.EggMoves.IsDefault || r.MachineMoves.IsDefault) ||
+            !additions.Select(r => r.Breeding.Species).SequenceEqual(OrdinaryEvolutionOwnedPokemonCatalog.AdditionalSpecies) ||
+            CampaignSourceFingerprint.Compute(additions) != SemanticSha256)
+            throw new ArgumentException("ordinary_evolution_metadata_source_or_owner");
+        foreach (var row in additions)
+            if (!owned.Catalog.Species.ContainsKey(row.BaseEggSpecies) || row.Breeding.EggGroup1 is < 0 or > 15 ||
+                row.Breeding.EggGroup2 is < 0 or > 15 || row.Breeding.EggCycles == 0 ||
+                row.EggMoves.Concat(row.MachineMoves).Any(m => !owned.Catalog.Moves.ContainsKey(m)) ||
+                row.MachineMoves.Any(m => !predecessor.AllMachineMoves.Contains(m)))
+                throw new ArgumentException("ordinary_evolution_metadata_references");
+        return BreedingSpeciesMetadataCatalog.RegisterSuccessor(owned.SharedBattle, predecessor, additions);
+    }
+}

@@ -41,7 +41,13 @@ public sealed record EarlyLandEncounterState(
     ushort EncounterRateBuff = 0,
     byte StepsSinceLastEncounter = 0,
     PendingEarlyLandEncounter? Pending = null,
-    string RulesVersion = EarlyLandEncounterRules.RulesVersion);
+    string RulesVersion = EarlyLandEncounterRules.RulesVersion)
+{
+    // Source HandleWildEncounterCooldown caches the lead held item before its cooldown roll.
+    // RockSmashWildEncounter reads that cache without resampling the party.
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool CachedLeadHasCleanseTag { get; init; }
+}
 
 public sealed record EarlyLandEncounterResult(EarlyLandEncounterState State, RngState GlobalRng,
     EncounterCheckOutcome Outcome, EarlyLandEncounterCandidate? Candidate, int? RateThreshold,

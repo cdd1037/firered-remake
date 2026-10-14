@@ -74,6 +74,31 @@ public sealed class OwnedBattlePokemonCatalog
             !ReferenceEquals(catalog.Moves, predecessor.Catalog.Moves) ||
             predecessor.Catalog.Species.Any(p => !catalog.Species.TryGetValue(p.Key, out var value) || !ReferenceEquals(p.Value, value)))
             throw new ArgumentException("owned_successor_predecessor");
+        RegisterSuccessorCore(catalog, predecessor, profile);
+    }
+
+    // A sealed owner may close missing ordinary evolution edges without replacing any
+    // source stats, moves, ability slots or preexisting evolution. No arbitrary override.
+    internal static void RegisterEvolutionSuccessor(PokemonCatalog catalog, OwnedBattlePokemonCatalog predecessor, string profile)
+    {
+        if (!ReferenceEquals(For(predecessor.Catalog), predecessor) || catalog.SourceCommit != predecessor.Catalog.SourceCommit ||
+            !ReferenceEquals(catalog.Moves, predecessor.Catalog.Moves)) throw new ArgumentException("owned_evolution_successor_predecessor");
+        var targets = catalog.Species.Keys.ToImmutableHashSet();
+        foreach (var (id, before) in predecessor.Catalog.Species)
+        {
+            if (!catalog.Species.TryGetValue(id, out var after)) throw new ArgumentException("owned_evolution_successor_species");
+            if (ReferenceEquals(before, after)) continue;
+            var projected = SourceLevelEvolutionProjection.Project(predecessor.Mechanics, id, targets);
+            if (after with { Evolutions = before.Evolutions } != before || after.Evolutions.IsDefault ||
+                !after.Evolutions.SequenceEqual(projected) || projected.Length <= before.Evolutions.Length ||
+                before.Evolutions.Any(e => !projected.Contains(e)))
+                throw new ArgumentException("owned_evolution_successor_source");
+        }
+        RegisterSuccessorCore(catalog, predecessor, profile);
+    }
+
+    private static void RegisterSuccessorCore(PokemonCatalog catalog, OwnedBattlePokemonCatalog predecessor, string profile)
+    {
         var proof = new OwnedBattlePokemonCatalog(catalog, predecessor.Predecessor, predecessor.Mechanics, profile) { CampaignParent = predecessor };
         Authenticated.Add(catalog, proof);
         SuccessorSpecies[profile] = catalog.Species.Keys.ToImmutableHashSet();

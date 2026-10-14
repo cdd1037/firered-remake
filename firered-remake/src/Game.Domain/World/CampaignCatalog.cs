@@ -61,6 +61,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool RepelEnabled=>false;
     bool TownMapEnabled=>false;
     FieldFlyCatalog? FieldFly=>null;
+    FieldRockSmashCatalog? FieldRockSmash=>null;
     bool OakRatingEnabled=>false;
     bool Route22Enabled=>false;
     bool Route3Enabled=>false;

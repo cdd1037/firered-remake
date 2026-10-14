@@ -21,6 +21,9 @@ public static partial class SourceWildBattlePolicy
     {
         var mon = opponent.Pokemon;
         if (!owned.Catalog.Species.ContainsKey(mon.Species) || OwnedBattlePokemonCatalog.SourceRoot(owned) is not { } source) return false;
+        if (context.RockSmash is { } rock)
+            return RockSmashWildBattleContract.SourceInitialInstance(owned, rock, mon) &&
+                opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.SourceTable is { } sourceTable)
             return SourceTableWildBattleContract.SourceInitialInstance(owned, sourceTable, mon) &&
                 opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";

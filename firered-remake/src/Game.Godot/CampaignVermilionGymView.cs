@@ -32,12 +32,12 @@ public partial class CampaignView
             return blink<0 || blink<FieldCutSourcePresentation.TreeBlinkFrames && (blink&1)==1;
         }
     }
-    private int FieldCutBannerAge => (FieldFlyShowMonFrame ?? (_session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon}?FieldSurfFrame:FieldCutFrame))-FieldCutSourcePresentation.PlayerFrameDurations.Sum();
-    private Rect2 FieldCutBannerWindow
+    private int FieldMoveBannerAge => (FieldFlyShowMonFrame ?? (_session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon}?FieldSurfFrame:_session.State.RockSmashEffect is {Phase:FieldRockSmashSourcePresentation.ShowMon}?FieldRockSmashFrame:FieldCutFrame))-FieldCutSourcePresentation.PlayerFrameDurations.Sum();
+    private Rect2 FieldMoveBannerWindow
     {
         get
         {
-            int age=FieldCutBannerAge;
+            int age=FieldMoveBannerAge;
             if(age<0||age>=FieldCutSourcePresentation.ShowMonCueFrames-FieldCutSourcePresentation.PlayerFrameDurations.Sum())return new();
             if(age<FieldCutSourcePresentation.OutdoorBannerOpenFrames)
             {
@@ -52,11 +52,11 @@ public partial class CampaignView
             return new(0,y,240,end-y);
         }
     }
-    private int FieldCutMonX
+    private int FieldMoveMonX
     {
         get
         {
-            int slide=FieldCutBannerAge-FieldCutSourcePresentation.OutdoorBannerOpenFrames;
+            int slide=FieldMoveBannerAge-FieldCutSourcePresentation.OutdoorBannerOpenFrames;
             if(slide<0)return FieldCutSourcePresentation.MonStartX;
             if(slide<FieldCutSourcePresentation.MonSlideInFrames)
                 return Math.Max(FieldCutSourcePresentation.MonCenterX,FieldCutSourcePresentation.MonStartX-slide*FieldCutSourcePresentation.MonSlidePixelsPerFrame);
@@ -109,10 +109,11 @@ public partial class CampaignView
     private void DrawFieldCutActor(string id,SpriteAsset asset,Pose pose,Vector2 camera)
     {
         var cut=_session.State.CutEffect;
-        if((_session.State.RuinValleyCut is not null||cut?.Phase==FieldCutSourcePresentation.ShowMon||_session.State.FlashEffect?.Phase==FieldFlashSourcePresentation.ShowMon||_session.State.StrengthEffect?.Phase==FieldStrengthSourcePresentation.ShowMon||_session.State.SurfEffect?.Phase==FieldSurfSourcePresentation.ShowMon)&&id=="LOCALID_PLAYER")
+        if(DrawFieldRockSmashActor(id,asset,pose,camera))return;
+        if((_session.State.RuinValleyCut is not null||cut?.Phase==FieldCutSourcePresentation.ShowMon||_session.State.RockSmashEffect?.Phase==FieldRockSmashSourcePresentation.ShowMon||_session.State.FlashEffect?.Phase==FieldFlashSourcePresentation.ShowMon||_session.State.StrengthEffect?.Phase==FieldStrengthSourcePresentation.ShowMon||_session.State.SurfEffect?.Phase==FieldSurfSourcePresentation.ShowMon)&&id=="LOCALID_PLAYER")
         {
             var position=pose.Position.Floor()+new Vector2(8,8)-asset.Anchor-camera;
-            DrawTextureRectRegion(_session.State.PlayerGender==0?_fieldCutRed!:_fieldCutGreen!,new(position,new(16,32)),new((_session.State.SurfEffect is not null?FieldSurfPlayerFrame:_session.State.StrengthEffect is not null?FieldStrengthPlayerFrame:_session.State.FlashEffect is null?FieldCutPlayerFrame:FieldFlashPlayerFrame)*16,0,16,32));
+            DrawTextureRectRegion(_session.State.PlayerGender==0?_fieldCutRed!:_fieldCutGreen!,new(position,new(16,32)),new((_session.State.SurfEffect is not null?FieldSurfPlayerFrame:_session.State.StrengthEffect is not null?FieldStrengthPlayerFrame:_session.State.RockSmashEffect is not null?FieldRockSmashPlayerFrame:_session.State.FlashEffect is null?FieldCutPlayerFrame:FieldFlashPlayerFrame)*16,0,16,32));
             return;
         }
         if(cut?.Phase==FieldCutSourcePresentation.TreeCut&&id==cut.ActorId)
@@ -125,24 +126,25 @@ public partial class CampaignView
         DrawSsAnneActor(id,asset,pose,camera);
     }
 
-    private void DrawFieldCutBanner()
+    private void DrawFieldMoveBanner()
     {
         int partyIndex = FieldFlyShowMonPartyIndex >= 0 ? FieldFlyShowMonPartyIndex : _session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon} surf ? surf.PartyIndex :
-            _session.State.CutEffect is {Phase:FieldCutSourcePresentation.ShowMon} cut ? cut.PartyIndex : _session.State.RuinValleyCut is not null ? SixIslandCutPartyIndex() : -1;
+            _session.State.CutEffect is {Phase:FieldCutSourcePresentation.ShowMon} cut ? cut.PartyIndex :
+            _session.State.RockSmashEffect is {Phase:FieldRockSmashSourcePresentation.ShowMon} rock ? rock.PartyIndex : _session.State.RuinValleyCut is not null ? SixIslandCutPartyIndex() : -1;
         if(partyIndex < 0)return;
-        var window=FieldCutBannerWindow;if(window.Size.X<=0||window.Size.Y<=0)return;
+        var window=FieldMoveBannerWindow;if(window.Size.X<=0||window.Size.Y<=0)return;
         // Source BG0HOFS subtracts 16 every visual tick. Wrap at the original 256px tilemap width.
         int left=(int)window.Position.X,right=(int)window.End.X,y=(int)window.Position.Y,height=(int)window.Size.Y;
-        int scroll=FieldCutBannerAge*-16;
+        int scroll=FieldMoveBannerAge*-16;
         for(int x=left;x<right;)
         {
             int sourceX=((x+scroll)%256+256)%256;int width=Math.Min(right-x,256-sourceX);
             DrawTextureRectRegion(_fieldCutStreaks!,new(x,y,width,height),new(sourceX,y-40,width,height));x+=width;
         }
-        int monAge=FieldCutBannerAge-FieldCutSourcePresentation.OutdoorBannerOpenFrames;
+        int monAge=FieldMoveBannerAge-FieldCutSourcePresentation.OutdoorBannerOpenFrames;
         if(monAge<0||monAge>=FieldCutSourcePresentation.MonSlideInFrames+FieldCutSourcePresentation.MonHoldFrames+FieldCutSourcePresentation.MonSlideOutFrames)return;
         var mon=_session.State.Party[partyIndex].Pokemon;
         // The source OBJ is not clipped by the BG0 reveal window.
-        DrawTexture(_battleArt[(PresentedRenderSpecies(mon),"front",mon.IsShiny)].Texture,new(FieldCutMonX-32,FieldCutSourcePresentation.MonY-32));
+        DrawTexture(_battleArt[(PresentedRenderSpecies(mon),"front",mon.IsShiny)].Texture,new(FieldMoveMonX-32,FieldCutSourcePresentation.MonY-32));
     }
 }

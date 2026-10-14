@@ -120,11 +120,17 @@ public sealed partial class CampaignSession
 
     private SourceWildEncounterContext CanonicalWildEncounter(CampaignState state,PokemonInstance pokemon,FirstSeviiEncounterKind kind,
         VictoryRoadWildOrigin? victory,SeviiRubyWildOrigin? ruby,FourIslandWildOrigin? four,SixIslandWildOrigin? six,FiveIslandWildOrigin? five,CeruleanCaveWildOrigin? cave,SevenIslandWildOrigin? seven,
-        EventIslandWildOrigin? eventIsland,PowerPlantWildOrigin? powerPlant,CampaignLostelleHypnoReceipt? hypno,PokemonTowerBattleKind? tower,bool snorlax,FishingEncounterOrigin? fishing=null,SeafoamWildOrigin? seafoam=null,SourceTableWildOrigin? sourceTable=null)
+        EventIslandWildOrigin? eventIsland,PowerPlantWildOrigin? powerPlant,CampaignLostelleHypnoReceipt? hypno,PokemonTowerBattleKind? tower,bool snorlax,FishingEncounterOrigin? fishing=null,SeafoamWildOrigin? seafoam=null,SourceTableWildOrigin? sourceTable=null,RockSmashWildOrigin? rockSmash=null)
     {
         var map=state.World.Player.MapId;
         int origins=(sourceTable is null?0:1)+(seafoam is null?0:1)+(victory is null?0:1)+(ruby is null?0:1)+(four is null?0:1)+(six is null?0:1)+(five is null?0:1)+
             (powerPlant is null?0:1)+(eventIsland is null?0:1)+(seven is null?0:1)+(cave is null?0:1)+(hypno is null?0:1)+(tower is null?0:1)+(snorlax?1:0);
+        if (rockSmash is not null)
+        {
+            if (origins != 0 || fishing is not null || _content.FieldRockSmash is not {} rocks || rockSmash.Map != map ||
+                !RockSmashWildBattleContract.Matches(rocks, rockSmash, pokemon)) throw new InvalidDataException("canonical_rock_smash_origin");
+            return new() { RockSmash = rockSmash };
+        }
         if (fishing is not null)
         {
             if (origins != 0 || !IsTypedFishingOrigin(fishing) || fishing.Map != map || !FishingBattleContract.Matches(fishing,pokemon))

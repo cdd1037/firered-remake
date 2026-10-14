@@ -78,6 +78,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
     public PretGameCornerCoins GameCornerCoins { get; }
     public GameCornerPrizeCatalog GameCornerPrizes { get; }
     public FieldFlyCatalog FieldFly { get; }
+    public FieldRockSmashCatalog? FieldRockSmash { get; private init; }
     public PretFlyMap FlyMapPresentation { get; }
     public PretRoute16FlyHouse Route16FlyHouse { get; }
     public Route16FlyTrainerCatalog Route16FlyTrainers { get; }

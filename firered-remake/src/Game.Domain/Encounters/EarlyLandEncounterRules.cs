@@ -239,6 +239,7 @@ public static class EarlyLandEncounterRules
         if (check.Trigger is not (EncounterCheckTrigger.WalkingStepCompleted or EncounterCheckTrigger.TurnInPlaceCompleted))
             return Finish(EncounterCheckOutcome.NoCheck, false);
         if (check.EncounterType == EncounterTileType.None) return Finish(EncounterCheckOutcome.NoEncounterTerrain);
+        state = state with { CachedLeadHasCleanseTag = cleanseTag };
         // HandleWildEncounterCooldown retains 8-bit fixed point through held-item
         // then ability modifiers; truncating before Stench/Illuminate changes boundaries.
         int cooldown = (table.RawEncounterRate >= 80 ? 0 : table.RawEncounterRate < 10 ? 8 : 8 - table.RawEncounterRate / 10) * 256, bypass = 5 * 256;

@@ -12,7 +12,11 @@ public sealed record WaterEncounterCandidate(MapId Map, int Slot, SpeciesId Spec
 public sealed record PendingWaterEncounter(WaterEncounterCandidate Candidate, byte MetatileBehavior);
 public sealed record WaterEncounterState(EncounterRateRngState RateRng, ushort PreviousMetatileBehavior = 0,
     ushort EncounterRateBuff = 0, byte StepsSinceLastEncounter = 0, PendingWaterEncounter? Pending = null,
-    string RulesVersion = WaterEncounterRules.RulesVersion);
+    string RulesVersion = WaterEncounterRules.RulesVersion)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool CachedLeadHasCleanseTag { get; init; }
+}
 public sealed record WaterEncounterResult(WaterEncounterState State, RngState GlobalRng, EncounterCheckOutcome Outcome,
     WaterEncounterCandidate? Candidate, int? RateThreshold, ImmutableArray<EncounterRandomTrace> RandomTrace)
 {

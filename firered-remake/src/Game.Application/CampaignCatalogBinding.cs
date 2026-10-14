@@ -23,24 +23,27 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var owned = BreedingOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
-            ?? throw new InvalidDataException("current_breeding_owned_proof_missing");
-        var battle = owned.SharedBattle;
-        var opponents = BreedingOpponentPokemonCatalog.For(owned);
+        var ordinary = OrdinaryEvolutionOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
+            ?? throw new InvalidDataException("current_ordinary_evolution_owned_proof_missing");
+        var owned = ordinary.Predecessor;
+        var battle = ordinary.SharedBattle;
+        var ordinaryOpponents = OrdinaryEvolutionOpponentPokemonCatalog.For(ordinary);
+        var opponents = ordinaryOpponents?.Predecessor;
         var prize = owned.Predecessor;
         var prizeOpponents = opponents?.Predecessor;
         var stone = prize.Predecessor;
         var stoneOpponents = prizeOpponents?.Predecessor;
-        if (!ReferenceEquals(battle.Catalog, content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics, owned.Mechanics) ||
+        if (!ReferenceEquals(battle.Catalog, content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics, ordinary.Mechanics) ||
+            ordinaryOpponents is null || !ReferenceEquals(ordinaryOpponents.Owned, ordinary) ||
             !ReferenceEquals(stone.Predecessor, content.SuperRodOwnership) ||
             !ReferenceEquals(stone.Predecessor.Predecessor, content.SeafoamOwnership) ||
             !ReferenceEquals(stone.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOwnership) || opponents is null ||
             !ReferenceEquals(opponents.Owned, owned) || prizeOpponents is null || !ReferenceEquals(prizeOpponents.Owned, prize) ||
-            BreedingSpeciesMetadataCatalog.For(owned.Catalog) is null || stoneOpponents is null || !ReferenceEquals(stoneOpponents.Owned, stone) || !ReferenceEquals(stoneOpponents.Predecessor, content.SuperRodOpponents) ||
+            BreedingSpeciesMetadataCatalog.For(ordinary.Catalog) is null || stoneOpponents is null || !ReferenceEquals(stoneOpponents.Owned, stone) || !ReferenceEquals(stoneOpponents.Predecessor, content.SuperRodOpponents) ||
             !ReferenceEquals(stoneOpponents.Predecessor.Predecessor, content.SeafoamOpponents) ||
             !ReferenceEquals(stoneOpponents.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
-        return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, owned.Catalog, battle);
+        return new(CurrentGameProfile.RulesVersion, EarlyLandEncounterRules.FiveIslandRulesVersion, ordinary.Catalog, battle);
     }
 
     // Source validation is shared by New Game and Restore, and remains independent of rendering.

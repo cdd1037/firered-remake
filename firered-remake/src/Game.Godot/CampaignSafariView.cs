@@ -96,7 +96,7 @@ public partial class CampaignView
                 s.OldManTutorial is null && s.FieldPoison is null && s.Evolution is null && s.RareCandy is null &&
                 s.EscapeRope is null && s.HealingEffect is null && s.Shop is null && s.ItemMenu is null &&
                 s.Pc is null && !s.PcPoweredOn && s.Fishing is null && s.MoneyBox is null && s.GiftDelivery is null &&
-                s.TownMap is null && s.Repel is null && s.PokeFlute is null && s.CutEffect is null && s.FlashEffect is null && s.StrengthEffect is null && s.SurfEffect is null &&
+                s.TownMap is null && s.Repel is null && s.PokeFlute is null && s.CutEffect is null && s.RockSmashEffect is null && s.FlashEffect is null && s.StrengthEffect is null && s.SurfEffect is null &&
                 s.HelpContext == "map";
         }
     }

@@ -140,6 +140,7 @@ public partial class CampaignView
             else if(actions[_fieldPartyAction] is "ITEM" or "MAIL") OpenPartyHeldItems();
             else if(actions[_fieldPartyAction] == "FLY") UseFieldPartyFly();
             else if(actions[_fieldPartyAction] == "CUT") UseFieldPartyCut();
+            else if(actions[_fieldPartyAction] == "ROCK SMASH") UseFieldPartyRockSmash();
             else if(actions[_fieldPartyAction] == "FLASH") UseFieldPartyFlash();
             else if(actions[_fieldPartyAction] == "STRENGTH") UseFieldPartyStrength();
             else if(actions[_fieldPartyAction] == "SURF") UseFieldPartySurf();
@@ -183,6 +184,7 @@ public partial class CampaignView
                 else if(_catalog.SafariEnabled&&move.Move.Value=="pret:MOVE_STRENGTH")actions.Add("STRENGTH");
                 else if(_catalog.SurfEnabled&&move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");
                 else if(_catalog.FourIslandEnabled&&move.Move.Value=="pret:MOVE_WATERFALL")actions.Add("WATERFALL");
+                else if(_catalog.FieldRockSmash is not null&&move.Move.Value=="pret:MOVE_ROCK_SMASH")actions.Add("ROCK SMASH");
         actions.Add("SWITCH");
         if(_catalog.EarlyShop is not null)actions.Add(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&
             SourceMailRules.IsMailItem(_session.State.Party[_fieldPartyCursor].HeldItem)?"MAIL":"ITEM");

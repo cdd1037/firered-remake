@@ -223,12 +223,14 @@ public static class WaterEncounterRules
         // five-slot water tables and EncounterTileType.Water; no land admission is widened.
         var commonTable = new EarlyLandEncounterTable(table.Map,table.SourceCommit,table.SourcePath,table.SourceSymbol,
             table.SourceSha256,table.RawEncounterRate,table.Slots.Select(s => new EarlyLandEncounterSlot(s.Index,s.Species,s.MinimumLevel,s.MaximumLevel,s.Weight)).ToImmutableArray());
-        var commonState = new EarlyLandEncounterState(state.RateRng,state.PreviousMetatileBehavior,state.EncounterRateBuff,state.StepsSinceLastEncounter);
+        var commonState = new EarlyLandEncounterState(state.RateRng,state.PreviousMetatileBehavior,state.EncounterRateBuff,state.StepsSinceLastEncounter)
+            { CachedLeadHasCleanseTag = state.CachedLeadHasCleanseTag };
         var result = EarlyLandEncounterRules.CheckCore(commonState,commonTable,check,wildEncountersDisabled,globalRng,
             stench,illuminate,lead.HeldItem == "ITEM_CLEANSE_TAG",ChooseSlot,"encounter.water-slot",repelSteps,repelLevel,roamerGate,RoamerEncounterMethod.Surfing);
         var c = result.Candidate is { } candidate ? new WaterEncounterCandidate(candidate.Map,candidate.Slot,candidate.Species,candidate.Level) : null;
         return new(new(result.State.RateRng,result.State.PreviousMetatileBehavior,result.State.EncounterRateBuff,
-            result.State.StepsSinceLastEncounter,c is null ? null : new(c,check.MetatileBehavior),RulesVersion:state.RulesVersion),result.GlobalRng,result.Outcome,c,result.RateThreshold,result.RandomTrace)
+            result.State.StepsSinceLastEncounter,c is null ? null : new(c,check.MetatileBehavior),RulesVersion:state.RulesVersion)
+            { CachedLeadHasCleanseTag = result.State.CachedLeadHasCleanseTag },result.GlobalRng,result.Outcome,c,result.RateThreshold,result.RandomTrace)
             { RoamerCandidate = result.RoamerCandidate };
     }
     public static WaterEncounterState CompleteCandidate(WaterEncounterState state, WaterEncounterTable table)

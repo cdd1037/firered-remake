@@ -11,7 +11,7 @@ public partial class CampaignView
 
     private void LoadBreedingPresentation()
     {
-        if (BreedingOwnedPokemonCatalog.For(_catalog.PokemonContent?.Catalog) is not { } owned) return;
+        if (OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(_catalog.PokemonContent?.Catalog), BreedingOwnedPokemonCatalog.For) is not { } owned) return;
         if (!_session.IsCurrentGame || _gameCornerArt is null ||
             !ReferenceEquals(GameCornerOwnedPokemonCatalog.For(owned.Predecessor.Catalog), owned.Predecessor))
             throw new InvalidDataException("Breeding presentation requires its authenticated Game Corner predecessor.");

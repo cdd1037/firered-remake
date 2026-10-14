@@ -168,6 +168,8 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     public CampaignHealingEffect? HealingEffect{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public CampaignCutEffect? CutEffect{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignRockSmashEffect? RockSmashEffect{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignRockSmashPreparation? RockSmashPreparation{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
     public ImmutableSortedDictionary<int,int>? FieldEffectArguments{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
@@ -375,7 +377,7 @@ public sealed partial class CampaignSession
         else if(s.Inventory is not null)return "save_inventory_content_missing";
         if(s.HelpContext!="map")return "save_help_context_invalid";
         if(s.NextBattleId<1)return "save_battle_serial_invalid";
-        return ValidateSeafoamEncounterProgress(s)??ValidatePowerPlantProgress(s)??ValidateItemfinderProgress(s)??ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
+        return ValidateSeafoamEncounterProgress(s)??ValidatePowerPlantProgress(s)??ValidateItemfinderProgress(s)??ValidateEventIslandBattleProgress(s)??ValidateSevenIslandProgress(s)??ValidateUnownPokedex(s)??ValidateCeruleanCaveProgress(s)??ValidateCelioProgress(s)??ValidateFiveIslandProgress(s)??ValidateSixIslandProgress(s)??ValidateFourIslandProgress(s)??ValidateSeviiRubyProgress(s)??ValidateNationalDexProgress(s)??ValidatePokemonLeagueProgress(s)??ValidateVictoryRoadProgress(s)??ValidateViridianGymProgress(s)??ValidateFirstSeviiProgress(s)??ValidateFirstSeviiBattleProgress(s)??ValidateCinnabarProgress(s)??ValidateCinnabarFieldProgress(s)??ValidateSaffronGymProgress(s)??ValidateSilphFieldProgress(s)??ValidateSilphProgress(s)??ValidateDoubleBattleHistory(s)??ValidateFuchsiaGymProgress(s)??ValidateDepartmentElevatorProgress(s)??ValidateSnorlaxProgress(s)??ValidateTowerProgress(s)??ValidateRocketHideoutProgress(s)??ValidateCeladonGymProgress(s)??ValidateRockTunnelProgress(s)??ValidateRoute11Progress(s)??ValidateBicycleState(s)??ValidateCityServicesProgress(s)??ValidateFieldRockSmashState(s)??ValidateFieldCutState(s)??ValidateVermilionGymProgress(s)??ValidateSsAnneProgress(s)??ValidateVermilionProgress(s)??ValidateBillRocketProgress(s)??ValidateBillProgress(s)??ValidateCeruleanProgress(s)??ValidateMtMoonProgress(s)??ValidateRoute3Progress(s)??ValidateRoute22Progress(s)??ValidateTownMapProgress(s)??ValidatePewterProgress(s)??ValidateForestTrainerHistory(s)??ValidateFieldPoisonState(s)??ValidateEvolutionHistory(s)??ValidateOldManProgress(s)??ValidateObjectSlots(s)??ValidateCenterState(s)??ValidateCapturedParty(s)??ValidateStarterProgress(s);
     }
     private static bool ValidTrainerName(string? name)=>name is not null&&name.Length is >=1 and <=7&&name.Any(c=>c!=' ')&&name.All(PokemonStateValidator.NicknameAlphabet.Contains);
     private string? ValidateStarterProgress(CampaignState state)
@@ -397,7 +399,7 @@ public sealed partial class CampaignSession
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenBySeafoam(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||NpcTradeSourceSpecies(state).Contains(n)||HatchedEggSpecies(state).Contains(n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
+            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenByRockSmash(state,n)||SeenBySeafoam(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||NpcTradeSourceSpecies(state).Contains(n)||HatchedEggSpecies(state).Contains(n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
             var starter=_content.EarlyStarterEnabled?HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
@@ -486,6 +488,7 @@ public sealed partial class CampaignSession
             if(state.FlashEffect is not null)return DecideFieldFlash(state,command);
             if(command.Kind=="field_flash")return StartFieldFlash(state,command);
             if(state.Fishing is not null)return DecideFishing(state,command);
+            if(command.Kind=="field_rock_smash")return DecideFieldRockSmash(state,command);
             if(command.Kind=="field_cut")return DecideFieldCut(state,command);
             if(state.RareCandy is not null)return DecideRareCandy(state,command);
             if(state.EscapeRope is not null)return DecideEscapeRope(state,command);
@@ -547,6 +550,7 @@ public sealed partial class CampaignSession
                 var next=state with{ScreenIsBlack=state.TrainerTowerRecordsVisible?false:state.ScreenIsBlack,TrainerTowerMenu=null,TrainerTowerRecordsVisible=false,SeagallopMenu=null,FossilMenu=null,HealingEffect=wait.Kind==StoryWaitKind.Presentation&&state.PresentationEffects.Any(e=>e.Opcode=="waitfieldeffect")?null:state.HealingEffect,Nickname=state.Nickname?.Submitted==true?null:state.Nickname,Dialogue=state.Dialogue?.CloseOnCompletion==true&&wait.Kind is StoryWaitKind.Dialog or StoryWaitKind.Choice?null:state.Dialogue,Motions=[],PresentationTicks=0,PresentationEffects=[]};
                 next=CompleteNpcTradePresentation(state,next);
                 next=CompleteEventIslandPresentation(state,next);
+                next=CompleteFieldRockSmashPresentation(state,next);
                 next=CompleteFieldCutPresentation(state,next);
                 next=CompleteFieldStrengthPresentation(state,next);
                 next=ReleaseForestTrainerPostDialogue(state,next);
@@ -794,6 +798,7 @@ public sealed partial class CampaignSession
             if(TryApplyFieldSurfEffect(state,effect,out var surfState)){state=surfState;continue;}
             if(TryApplyFieldStrengthEffect(state,effect,out var strengthState)){state=strengthState;continue;}
             if(TryApplyFieldFlashEffect(state,effect,out var flashState)){state=flashState;continue;}
+            if(TryApplyFieldRockSmashEffect(state,effect,out var smashState)){state=smashState;continue;}
             if(TryApplyFieldCutEffect(state,effect,out var cutState)){state=cutState;continue;}
             if(TryApplyCenterEffect(state,effect,out var centerState)){state=centerState;continue;}
             if(TryApplyPewterGymEffect(state,effect,out var gymState)){state=gymState;continue;}
