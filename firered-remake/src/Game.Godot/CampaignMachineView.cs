@@ -54,6 +54,14 @@ public partial class CampaignView
             item.Item.Name, item.Description, MachineCaseIcon, item.Item.FieldUseFunction)) };
     }
 
+    private void LoadDepartmentMachineIcon()
+    {
+        if (DepartmentStoreMachineStock.For(_catalog.PewterMachines) is null) return;
+        if (!_earlyItemIcons.TryGetValue(PretDepartmentStoreMachines.ReusedTm15Icon, out var normalIcon))
+            throw new InvalidDataException("department_machine_normal_icon_missing");
+        _earlyItemIcons.Add(DepartmentStoreMachineStock.Tm15Id, normalIcon);
+    }
+
     private void SynchronizeMachines()
     {
         bool active = MachineActive;

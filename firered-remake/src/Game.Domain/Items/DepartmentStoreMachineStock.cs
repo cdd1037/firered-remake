@@ -1,0 +1,79 @@
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
+using Game.Domain.Ids;
+using Game.Domain.Pokemon;
+
+namespace Game.Domain.Items;
+
+/// <summary>The original six-TM shelf. It adds one source item to the existing owner, without a regional catalog chain.</summary>
+public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
+{
+    public const string ExpectedMapId = "map.celadon-city-department-store-2f";
+    public const string ExpectedStockId = "CeladonCity_DepartmentStore_2F_TMs";
+    public const string ExpectedClerkScript = "CeladonCity_DepartmentStore_2F_EventScript_ClerkTMs";
+    public const string ExpectedSourcePath = "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc";
+    public const string Tm15SourceSha256 = "94fd64f9d5f13c89be211e690e1d789aab6ce04ae2c25f4caec3c32a35c45a06";
+    public static ItemId Tm15Id { get; } = new("pret:ITEM_TM15");
+    public static OpeningItemSourceRef Source { get; } = new(ExpectedSourcePath, ExpectedStockId, 54, 63,
+        "3c3838130444cd6c1bbae4b21cdf7869d5d0fa585c8a5ded6343ba98b3fbf17e");
+    private static readonly (string Item, int Id, int Price, string Move, int MoveId, int Pp)[] Expected = [
+        ("TM05", 293, 1000, "ROAR", 46, 20), ("TM15", 303, 7500, "HYPER_BEAM", 63, 5),
+        ("TM28", 316, 2000, "DIG", 91, 10), ("TM31", 319, 3000, "BRICK_BREAK", 280, 15),
+        ("TM43", 331, 3000, "SECRET_POWER", 290, 20), ("TM45", 333, 3000, "ATTRACT", 213, 15)
+    ];
+    private static readonly ConditionalWeakTable<PewterMachineCatalog, DepartmentStoreMachineStock> Proofs = new();
+    public static DepartmentStoreMachineStock? For(PewterMachineCatalog? catalog) =>
+        catalog is not null && Proofs.TryGetValue(catalog, out var proof) ? proof : null;
+    public static PewterMachineCatalog BaseCatalog(PewterMachineCatalog catalog) => For(catalog)?.OriginalMachines ?? catalog;
+    public override string Id => ExpectedStockId;
+    public override ImmutableArray<ItemId> Items { get; } = Expected.Select(row => new ItemId("pret:ITEM_" + row.Item)).ToImmutableArray();
+    public override PewterMachineCatalog Machines { get; }
+    public PewterMachineCatalog OriginalMachines { get; }
+    private readonly OwnedBattlePokemonCatalog _owner;
+    private DepartmentStoreMachineStock(PewterMachineCatalog original, PewterMachineCatalog machines, OwnedBattlePokemonCatalog owner)
+    { OriginalMachines = original; Machines = machines; _owner = owner; }
+
+    public static DepartmentStoreMachineStock Authenticate(PewterMachineCatalog original, PewterAdditionalMachine tm15)
+    {
+        ArgumentNullException.ThrowIfNull(original); ArgumentNullException.ThrowIfNull(tm15);
+        PewterMachineRules.ValidateCatalog(original);
+        var owner = OwnedMachineCatalogBinding.For(original) ?? throw new ArgumentException("machine_stock_current_owner");
+        if (CampaignSourceFingerprint.Compute(tm15) != Tm15SourceSha256 ||
+            tm15.Compatibility.Length != owner.Catalog.Species.Count ||
+            !tm15.Compatibility.Select(row => row.Species).ToHashSet().SetEquals(owner.Catalog.Species.Keys) ||
+            tm15.Compatibility.Any(row => owner.Catalog.Species[row.Species].SourceSpeciesId != row.SourceSpeciesId) ||
+            !PokemonMoveRules.IsLearningSupported(owner.Catalog, tm15.Move))
+            throw new ArgumentException("department_machine_tm15_source");
+        if (For(original) is { } admitted) { admitted.Validate(); return admitted; }
+        // Compatibility and source move execution already belong to this exact current Pokemon owner.
+        // Inherited machine definitions and all inventory limits retain their original references/values.
+        var existing = PewterMachineRules.Definition(original, Tm15Id);
+        if (existing is not null && CampaignSourceFingerprint.Compute(existing) != Tm15SourceSha256)
+            throw new ArgumentException("department_machine_existing_tm15");
+        var machines = existing is not null ? original : original with {
+            AdditionalMachines = (original.AdditionalMachines ?? []).Add(tm15)
+        };
+        if (!ReferenceEquals(machines, original)) OwnedMachineCatalogBinding.Register(machines, owner);
+        var stock = new DepartmentStoreMachineStock(original, machines, owner);
+        stock.Validate(); Proofs.Add(machines, stock); return stock;
+    }
+
+    public bool IsClerk(string mapId, string sourcePath, string script, string stockId) =>
+        mapId == ExpectedMapId && sourcePath == ExpectedSourcePath && script == ExpectedClerkScript && stockId == Id;
+
+    public override void Validate()
+    {
+        if (!ReferenceEquals(OwnedMachineCatalogBinding.For(Machines), _owner))
+            throw new NotSupportedException("department_machine_owner");
+        foreach (var row in Expected)
+        {
+            var value = PewterMachineRules.Definition(Machines, new("pret:ITEM_" + row.Item));
+            var item = value?.Machine.Item;
+            if (item is null || item.SourceItemSymbol != "ITEM_" + row.Item || item.SourceItemId != row.Id ||
+                item.Name != row.Item || item.Price != row.Price || item.Pocket != "POCKET_TM_CASE" ||
+                item.Importance != 0 || !item.CanSell || value!.Move != new MoveId("pret:MOVE_" + row.Move) ||
+                value.SourceMoveId != row.MoveId || value.MovePp != row.Pp)
+                throw new NotSupportedException("department_machine_stock_definition");
+        }
+    }
+}

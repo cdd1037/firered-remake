@@ -40,6 +40,7 @@ public sealed partial class CampaignSession
 
     private static void ValidateFossilLabCatalog(ICampaignCatalog content)
     {
+        var rootMachines = content.PewterMachines is { } current ? DepartmentStoreMachineStock.BaseCatalog(current) : null;
         if (!content.FossilLabEnabled || content.FossilLabOwnership is not { } owned ||
             content.FossilLabOpponents is not { } opponents || content.FossilLabMachines is not { } machines ||
             !ReferenceEquals(FossilLabOwnedPokemonCatalog.For(owned.Catalog), owned) ||
@@ -47,7 +48,7 @@ public sealed partial class CampaignSession
             !ReferenceEquals(owned, ((SuperRodOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor ?? SeafoamOwnedPokemonCatalog.For(content.PokemonContent?.Catalog))?.Predecessor ?? NpcTradeOwnedPokemonCatalog.For(content.PokemonContent?.Catalog))?.Predecessor) ||
             !ReferenceEquals(FossilLabOpponentPokemonCatalog.For(owned), opponents) ||
             !ReferenceEquals(opponents.Predecessor, content.FightingDojoOpponents) ||
-            !ReferenceEquals(((SuperRodMachineCatalog.For(content.PewterMachines)?.Predecessor ?? SeafoamMachineCatalog.For(content.PewterMachines))?.Predecessor ?? NpcTradeMachineCatalog.For(content.PewterMachines))?.Predecessor, machines) ||
+            !ReferenceEquals(((SuperRodMachineCatalog.For(rootMachines)?.Predecessor ?? SeafoamMachineCatalog.For(rootMachines))?.Predecessor ?? NpcTradeMachineCatalog.For(rootMachines))?.Predecessor, machines) ||
             !ReferenceEquals(machines.Predecessor, content.FightingDojoMachines) || !ReferenceEquals(machines.Pokemon, owned))
             throw new InvalidDataException("fossil_lab_current_binding");
         // The locked region authenticates numeric IDs 0x4069/0x406A. Current

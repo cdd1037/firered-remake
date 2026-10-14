@@ -75,7 +75,12 @@ public sealed partial class CampaignSession
         if(content.FuchsiaGymTrainerParties is null||content.PokemonContent?.Catalog.Moves.Count!=354)
             throw new InvalidDataException("fuchsia_gym_requires_source_successor_profile");
         FuchsiaGymTrainerPartyFactory.ValidateCatalog(content.FuchsiaGymTrainerParties);
-        if(!content.SuperRodEnabled || SuperRodMachineCatalog.For(content.PewterMachines) is not {} currentMachines || !ReferenceEquals(currentMachines.Pokemon,content.SuperRodOwnership))throw new InvalidDataException("current_machine_proof_missing");
+        if (!content.SuperRodEnabled || content.PewterMachines is not { } machines ||
+            DepartmentStoreMachineStock.For(machines) is not { } machineStock ||
+            SuperRodMachineCatalog.For(DepartmentStoreMachineStock.BaseCatalog(machines)) is not { } currentMachines ||
+            !ReferenceEquals(currentMachines.Pokemon, content.SuperRodOwnership))
+            throw new InvalidDataException("current_machine_proof_missing");
+        machineStock.Validate();
         var baseShop = OrdinaryItemInventoryCatalog.BaseCatalog(content.EarlyShop!);
         if((PokeDollInventoryCatalog.For(baseShop)?.Predecessor ?? SeafoamShopCatalog.For(baseShop)) is not {} currentShop || !ReferenceEquals(currentShop.Predecessor.Predecessor, content.FossilLabShop))throw new InvalidDataException("current_shop_proof_missing");
         if(content.QuestItems?.Profile!=QuestItemRules.TownMapProfile)throw new InvalidDataException("current_quest_item_profile_missing");

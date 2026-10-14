@@ -48,6 +48,8 @@ public sealed partial class PretCampaignCatalog
             MoveTutors?.Definitions.ContainsKey(5)==true)return null;
         if(map.Value==PokeDollShopStock.ExpectedMapId&&script==PokeDollShopStock.ExpectedClerkScript&&PokeDollShopStock is not null)return null;
         if(!RegionalInteriorServicesEnabled)return null;
+        if (map.Value == DepartmentStoreMachineStock.ExpectedMapId && script == DepartmentStoreMachineStock.ExpectedClerkScript &&
+            DepartmentStoreMachineStock.For(PewterMachines) is not null) return null;
         if(map.Value=="map.celadon-city-restaurant"&&script=="CeladonCity_Restaurant_EventScript_CoinCaseMan")
             return "regional_service_unavailable: Coin Case service\nis not available yet.";
         var deferred=DepartmentStoreContract!.DeferredServices.FirstOrDefault(d=>d.MapId==map.Value&&d.Script==script);

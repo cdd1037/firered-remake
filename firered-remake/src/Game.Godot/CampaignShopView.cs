@@ -132,18 +132,17 @@ public partial class CampaignView
         {
             int row = i - start;
             if (i == items.Length) { ItemLabel(new(96, 8 + row * 16), _itemSkin.Text("gFameCheckerText_Cancel")); continue; }
-            var definition = EarlyItem(items[i])!;
+            var definition = _session.ShopItem(items[i]);
             ItemLabel(new(96, 8 + row * 16), definition.Name);
             ItemLabel(new(197, 8 + row * 16), "¥" + (shop.Mode == "buy" ? definition.Price : definition.Price / 2), 8);
         }
         ItemLabel(new(85, 8 + (selected - start) * 16), "▶");
         if (selected < items.Length)
         {
-            var inventory = _session.State.Inventory!;
-            var definition = EarlyItem(items[selected])!;
-            int count = OpeningInventoryRules.Quantity(definition.Pocket == "POCKET_ITEMS" ? inventory.BagItems : inventory.Balls ?? [], definition.Id);
-            ItemLabel(new(7, 43), "IN BAG: " + count, 8);
-            if (_earlyItemIcons.TryGetValue(definition.Id, out var icon)) DrawTexture(icon, new(24, 65));
+            var definition = _session.ShopItem(items[selected]);
+            ItemLabel(new(7, 43), "IN BAG: " + definition.Quantity, 8);
+            if (definition.Move is { } move) ItemLabel(new(7, 65), MoveName(move), 8);
+            else if (_earlyItemIcons.TryGetValue(definition.Id, out var icon)) DrawTexture(icon, new(24, 65));
         }
         if (shop.Stage == CampaignShopStage.Message) ItemMessageBox(_session.ShopText(shop.MessageSymbol!));
         else if (stage == CampaignShopStage.Quantity)
@@ -158,7 +157,7 @@ public partial class CampaignView
             _battleSkin.DrawStandardFrame(this, new(0, 64, 64, 48));
             ItemLabel(new(20, 73), "YES"); ItemLabel(new(20, 89), "NO"); ItemLabel(new(8, 73 + _shopConfirm * 16), "▶");
         }
-        else ItemMessageBox(selected < items.Length ? InventoryDescription(items[selected]) : _session.ShopText("gText_QuitShopping"));
+        else ItemMessageBox(selected < items.Length ? _session.ShopItem(items[selected]).Description.Replace("\\n", "\n", StringComparison.Ordinal).TrimEnd('$') : _session.ShopText("gText_QuitShopping"));
     }
     private bool FieldMedicineTargetInput(InputEventKey key)
     {

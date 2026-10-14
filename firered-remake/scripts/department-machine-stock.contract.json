@@ -1,0 +1,726 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "scope": "Original 2F six-TM shelf, one missing machine, reusable shop transactions. No maps, actors, species or ordinary inventory definitions added.",
+  "inputs": [
+    {
+      "path": "data/maps/CeladonCity_DepartmentStore_2F/scripts.inc",
+      "localPath": "content/raw/department-store/data/maps/CeladonCity_DepartmentStore_2F/scripts.inc",
+      "byteLength": 1430,
+      "sha256": "3c3838130444cd6c1bbae4b21cdf7869d5d0fa585c8a5ded6343ba98b3fbf17e"
+    },
+    {
+      "path": "src/data/items.json",
+      "localPath": "content/raw/department-store/src/data/items.json",
+      "byteLength": 194280,
+      "sha256": "d962ec3ea31391f9a30fa7d12bfb47f6519407bc2aad395c99baec52430c1489"
+    },
+    {
+      "path": "include/constants/items.h",
+      "localPath": "content/raw/department-store/include/constants/items.h",
+      "byteLength": 12436,
+      "sha256": "af17276346eaecc5a10ac60f14b22c33332ec8c6fb0ec82895bdc3649b678138"
+    },
+    {
+      "path": "src/data/pokemon/tmhm_learnsets.h",
+      "localPath": "content/raw/pewter-machines/src/data/pokemon/tmhm_learnsets.h",
+      "byteLength": 559340,
+      "sha256": "92bf603f90469ccae0398902db943770e2cb12cb910883b42a552cff07cff31f"
+    },
+    {
+      "path": "src/move_descriptions.c",
+      "localPath": "content/raw/pewter-machines/src/move_descriptions.c",
+      "byteLength": 62085,
+      "sha256": "1d6227e39ba85d694822a6b3a158c36b8ac3313ccf9e8d3264c67199bebaea0b"
+    },
+    {
+      "path": "include/constants/moves.h",
+      "localPath": "content/raw/pewter-machines/include/constants/moves.h",
+      "byteLength": 10249,
+      "sha256": "79d5b93423006c25e6ee47355b15f403b2534616fd6b638e1755e5886d378194"
+    },
+    {
+      "path": "src/data/battle_moves.h",
+      "localPath": "content/raw/pokemon/src/data/battle_moves.h",
+      "byteLength": 121457,
+      "sha256": "54e08c749547afaf73eb2f1e4f4e3023f4d8e186d2f608c29bd6419c291b5384"
+    },
+    {
+      "path": "src/shop.c",
+      "localPath": "content/raw/department-store/src/shop.c",
+      "byteLength": 34724,
+      "sha256": "d326d1498cad7fc610f483237a3ff17b0d27836dcf8213960b41bbd2b58844f8"
+    },
+    {
+      "path": "src/item.c",
+      "localPath": "content/raw/department-store/src/item.c",
+      "byteLength": 17534,
+      "sha256": "117c3d29617bd779db7c32332ab75fe5859f02ee6165a047508558977a88d01a"
+    },
+    {
+      "path": "src/tm_case.c",
+      "localPath": "content/raw/pewter-region/src/tm_case.c",
+      "byteLength": 56461,
+      "sha256": "3dad9224df99f5432f37ca80b752da0f41a0d60dabeddc839309588c188a324c"
+    },
+    {
+      "path": "src/data/item_icon_table.h",
+      "localPath": "content/raw/pewter-machines/src/data/item_icon_table.h",
+      "byteLength": 30370,
+      "sha256": "1953ce418ec5f56b84d6137240218b7bd03969603c2c9f9b243a9c992114391c"
+    }
+  ],
+  "ownedSpecies": [
+    {
+      "symbol": "SPECIES_BULBASAUR",
+      "sourceSpeciesId": 1
+    },
+    {
+      "symbol": "SPECIES_IVYSAUR",
+      "sourceSpeciesId": 2
+    },
+    {
+      "symbol": "SPECIES_VENUSAUR",
+      "sourceSpeciesId": 3
+    },
+    {
+      "symbol": "SPECIES_CHARMANDER",
+      "sourceSpeciesId": 4
+    },
+    {
+      "symbol": "SPECIES_CHARMELEON",
+      "sourceSpeciesId": 5
+    },
+    {
+      "symbol": "SPECIES_CHARIZARD",
+      "sourceSpeciesId": 6
+    },
+    {
+      "symbol": "SPECIES_SQUIRTLE",
+      "sourceSpeciesId": 7
+    },
+    {
+      "symbol": "SPECIES_WARTORTLE",
+      "sourceSpeciesId": 8
+    },
+    {
+      "symbol": "SPECIES_BLASTOISE",
+      "sourceSpeciesId": 9
+    },
+    {
+      "symbol": "SPECIES_CATERPIE",
+      "sourceSpeciesId": 10
+    },
+    {
+      "symbol": "SPECIES_METAPOD",
+      "sourceSpeciesId": 11
+    },
+    {
+      "symbol": "SPECIES_BUTTERFREE",
+      "sourceSpeciesId": 12
+    },
+    {
+      "symbol": "SPECIES_WEEDLE",
+      "sourceSpeciesId": 13
+    },
+    {
+      "symbol": "SPECIES_KAKUNA",
+      "sourceSpeciesId": 14
+    },
+    {
+      "symbol": "SPECIES_BEEDRILL",
+      "sourceSpeciesId": 15
+    },
+    {
+      "symbol": "SPECIES_PIDGEY",
+      "sourceSpeciesId": 16
+    },
+    {
+      "symbol": "SPECIES_PIDGEOTTO",
+      "sourceSpeciesId": 17
+    },
+    {
+      "symbol": "SPECIES_PIDGEOT",
+      "sourceSpeciesId": 18
+    },
+    {
+      "symbol": "SPECIES_RATTATA",
+      "sourceSpeciesId": 19
+    },
+    {
+      "symbol": "SPECIES_RATICATE",
+      "sourceSpeciesId": 20
+    },
+    {
+      "symbol": "SPECIES_PIKACHU",
+      "sourceSpeciesId": 25
+    },
+    {
+      "symbol": "SPECIES_RAICHU",
+      "sourceSpeciesId": 26
+    },
+    {
+      "symbol": "SPECIES_SANDSHREW",
+      "sourceSpeciesId": 27
+    },
+    {
+      "symbol": "SPECIES_SANDSLASH",
+      "sourceSpeciesId": 28
+    },
+    {
+      "symbol": "SPECIES_GEODUDE",
+      "sourceSpeciesId": 74
+    },
+    {
+      "symbol": "SPECIES_GRAVELER",
+      "sourceSpeciesId": 75
+    },
+    {
+      "symbol": "SPECIES_GOLEM",
+      "sourceSpeciesId": 76
+    },
+    {
+      "symbol": "SPECIES_ONIX",
+      "sourceSpeciesId": 95
+    },
+    {
+      "symbol": "SPECIES_STEELIX",
+      "sourceSpeciesId": 208
+    },
+    {
+      "symbol": "SPECIES_SPEAROW",
+      "sourceSpeciesId": 21
+    },
+    {
+      "symbol": "SPECIES_FEAROW",
+      "sourceSpeciesId": 22
+    },
+    {
+      "symbol": "SPECIES_MANKEY",
+      "sourceSpeciesId": 56
+    },
+    {
+      "symbol": "SPECIES_EKANS",
+      "sourceSpeciesId": 23
+    },
+    {
+      "symbol": "SPECIES_NIDORAN_F",
+      "sourceSpeciesId": 29
+    },
+    {
+      "symbol": "SPECIES_NIDORINA",
+      "sourceSpeciesId": 30
+    },
+    {
+      "symbol": "SPECIES_NIDORAN_M",
+      "sourceSpeciesId": 32
+    },
+    {
+      "symbol": "SPECIES_NIDORINO",
+      "sourceSpeciesId": 33
+    },
+    {
+      "symbol": "SPECIES_JIGGLYPUFF",
+      "sourceSpeciesId": 39
+    },
+    {
+      "symbol": "SPECIES_MAGIKARP",
+      "sourceSpeciesId": 129
+    },
+    {
+      "symbol": "SPECIES_GYARADOS",
+      "sourceSpeciesId": 130
+    },
+    {
+      "symbol": "SPECIES_ARBOK",
+      "sourceSpeciesId": 24
+    },
+    {
+      "symbol": "SPECIES_CLEFAIRY",
+      "sourceSpeciesId": 35
+    },
+    {
+      "symbol": "SPECIES_ZUBAT",
+      "sourceSpeciesId": 41
+    },
+    {
+      "symbol": "SPECIES_GOLBAT",
+      "sourceSpeciesId": 42
+    },
+    {
+      "symbol": "SPECIES_ODDISH",
+      "sourceSpeciesId": 43
+    },
+    {
+      "symbol": "SPECIES_PARAS",
+      "sourceSpeciesId": 46
+    },
+    {
+      "symbol": "SPECIES_PARASECT",
+      "sourceSpeciesId": 47
+    },
+    {
+      "symbol": "SPECIES_BELLSPROUT",
+      "sourceSpeciesId": 69
+    },
+    {
+      "symbol": "SPECIES_MAGNEMITE",
+      "sourceSpeciesId": 81
+    },
+    {
+      "symbol": "SPECIES_GRIMER",
+      "sourceSpeciesId": 88
+    },
+    {
+      "symbol": "SPECIES_VOLTORB",
+      "sourceSpeciesId": 100
+    },
+    {
+      "symbol": "SPECIES_KOFFING",
+      "sourceSpeciesId": 109
+    },
+    {
+      "symbol": "SPECIES_NIDOQUEEN",
+      "sourceSpeciesId": 31
+    },
+    {
+      "symbol": "SPECIES_NIDOKING",
+      "sourceSpeciesId": 34
+    },
+    {
+      "symbol": "SPECIES_CLEFABLE",
+      "sourceSpeciesId": 36
+    },
+    {
+      "symbol": "SPECIES_WIGGLYTUFF",
+      "sourceSpeciesId": 40
+    },
+    {
+      "symbol": "SPECIES_ABRA",
+      "sourceSpeciesId": 63
+    },
+    {
+      "symbol": "SPECIES_KADABRA",
+      "sourceSpeciesId": 64
+    },
+    {
+      "symbol": "SPECIES_MACHOP",
+      "sourceSpeciesId": 66
+    },
+    {
+      "symbol": "SPECIES_DROWZEE",
+      "sourceSpeciesId": 96
+    },
+    {
+      "symbol": "SPECIES_SHELLDER",
+      "sourceSpeciesId": 90
+    },
+    {
+      "symbol": "SPECIES_HORSEA",
+      "sourceSpeciesId": 116
+    },
+    {
+      "symbol": "SPECIES_GOLDEEN",
+      "sourceSpeciesId": 118
+    },
+    {
+      "symbol": "SPECIES_STARYU",
+      "sourceSpeciesId": 120
+    },
+    {
+      "symbol": "SPECIES_STARMIE",
+      "sourceSpeciesId": 121
+    },
+    {
+      "symbol": "SPECIES_SLOWPOKE",
+      "sourceSpeciesId": 79
+    },
+    {
+      "symbol": "SPECIES_GLOOM",
+      "sourceSpeciesId": 44
+    },
+    {
+      "symbol": "SPECIES_WEEPINBELL",
+      "sourceSpeciesId": 70
+    },
+    {
+      "symbol": "SPECIES_MEOWTH",
+      "sourceSpeciesId": 52
+    },
+    {
+      "symbol": "SPECIES_PERSIAN",
+      "sourceSpeciesId": 53
+    },
+    {
+      "symbol": "SPECIES_GROWLITHE",
+      "sourceSpeciesId": 58
+    },
+    {
+      "symbol": "SPECIES_PONYTA",
+      "sourceSpeciesId": 77
+    },
+    {
+      "symbol": "SPECIES_TENTACOOL",
+      "sourceSpeciesId": 72
+    },
+    {
+      "symbol": "SPECIES_DIGLETT",
+      "sourceSpeciesId": 50
+    },
+    {
+      "symbol": "SPECIES_DUGTRIO",
+      "sourceSpeciesId": 51
+    },
+    {
+      "symbol": "SPECIES_MAGNETON",
+      "sourceSpeciesId": 82
+    },
+    {
+      "symbol": "SPECIES_POLIWAG",
+      "sourceSpeciesId": 60
+    },
+    {
+      "symbol": "SPECIES_POLIWHIRL",
+      "sourceSpeciesId": 61
+    },
+    {
+      "symbol": "SPECIES_VULPIX",
+      "sourceSpeciesId": 37
+    },
+    {
+      "symbol": "SPECIES_CUBONE",
+      "sourceSpeciesId": 104
+    },
+    {
+      "symbol": "SPECIES_ELECTRODE",
+      "sourceSpeciesId": 101
+    },
+    {
+      "symbol": "SPECIES_HYPNO",
+      "sourceSpeciesId": 97
+    },
+    {
+      "symbol": "SPECIES_LICKITUNG",
+      "sourceSpeciesId": 108
+    },
+    {
+      "symbol": "SPECIES_MACHOKE",
+      "sourceSpeciesId": 67
+    },
+    {
+      "symbol": "SPECIES_MAROWAK",
+      "sourceSpeciesId": 105
+    },
+    {
+      "symbol": "SPECIES_PRIMEAPE",
+      "sourceSpeciesId": 57
+    },
+    {
+      "symbol": "SPECIES_RHYHORN",
+      "sourceSpeciesId": 111
+    },
+    {
+      "symbol": "SPECIES_SEADRA",
+      "sourceSpeciesId": 117
+    },
+    {
+      "symbol": "SPECIES_SEAKING",
+      "sourceSpeciesId": 119
+    },
+    {
+      "symbol": "SPECIES_TENTACRUEL",
+      "sourceSpeciesId": 73
+    },
+    {
+      "symbol": "SPECIES_VENOMOTH",
+      "sourceSpeciesId": 49
+    },
+    {
+      "symbol": "SPECIES_VENONAT",
+      "sourceSpeciesId": 48
+    },
+    {
+      "symbol": "SPECIES_WEEZING",
+      "sourceSpeciesId": 110
+    },
+    {
+      "symbol": "SPECIES_MUK",
+      "sourceSpeciesId": 89
+    },
+    {
+      "symbol": "SPECIES_VILEPLUME",
+      "sourceSpeciesId": 45
+    },
+    {
+      "symbol": "SPECIES_VICTREEBEL",
+      "sourceSpeciesId": 71
+    },
+    {
+      "symbol": "SPECIES_EXEGGCUTE",
+      "sourceSpeciesId": 102
+    },
+    {
+      "symbol": "SPECIES_TANGELA",
+      "sourceSpeciesId": 114
+    },
+    {
+      "symbol": "SPECIES_KANGASKHAN",
+      "sourceSpeciesId": 115
+    },
+    {
+      "symbol": "SPECIES_GASTLY",
+      "sourceSpeciesId": 92
+    },
+    {
+      "symbol": "SPECIES_HAUNTER",
+      "sourceSpeciesId": 93
+    },
+    {
+      "symbol": "SPECIES_SNORLAX",
+      "sourceSpeciesId": 143
+    },
+    {
+      "symbol": "SPECIES_EEVEE",
+      "sourceSpeciesId": 133
+    },
+    {
+      "symbol": "SPECIES_FARFETCHD",
+      "sourceSpeciesId": 83
+    },
+    {
+      "symbol": "SPECIES_DODUO",
+      "sourceSpeciesId": 84
+    },
+    {
+      "symbol": "SPECIES_DODRIO",
+      "sourceSpeciesId": 85
+    },
+    {
+      "symbol": "SPECIES_DITTO",
+      "sourceSpeciesId": 132
+    },
+    {
+      "symbol": "SPECIES_CHANSEY",
+      "sourceSpeciesId": 113
+    },
+    {
+      "symbol": "SPECIES_SCYTHER",
+      "sourceSpeciesId": 123
+    },
+    {
+      "symbol": "SPECIES_TAUROS",
+      "sourceSpeciesId": 128
+    },
+    {
+      "symbol": "SPECIES_PSYDUCK",
+      "sourceSpeciesId": 54
+    },
+    {
+      "symbol": "SPECIES_GOLDUCK",
+      "sourceSpeciesId": 55
+    },
+    {
+      "symbol": "SPECIES_LAPRAS",
+      "sourceSpeciesId": 131
+    },
+    {
+      "symbol": "SPECIES_KRABBY",
+      "sourceSpeciesId": 98
+    },
+    {
+      "symbol": "SPECIES_KINGLER",
+      "sourceSpeciesId": 99
+    },
+    {
+      "symbol": "SPECIES_RAPIDASH",
+      "sourceSpeciesId": 78
+    },
+    {
+      "symbol": "SPECIES_SLUGMA",
+      "sourceSpeciesId": 218
+    },
+    {
+      "symbol": "SPECIES_MAGCARGO",
+      "sourceSpeciesId": 219
+    },
+    {
+      "symbol": "SPECIES_SEEL",
+      "sourceSpeciesId": 86
+    },
+    {
+      "symbol": "SPECIES_DEWGONG",
+      "sourceSpeciesId": 87
+    },
+    {
+      "symbol": "SPECIES_WOOPER",
+      "sourceSpeciesId": 194
+    },
+    {
+      "symbol": "SPECIES_QUAGSIRE",
+      "sourceSpeciesId": 195
+    },
+    {
+      "symbol": "SPECIES_SWINUB",
+      "sourceSpeciesId": 220
+    },
+    {
+      "symbol": "SPECIES_PILOSWINE",
+      "sourceSpeciesId": 221
+    },
+    {
+      "symbol": "SPECIES_DELIBIRD",
+      "sourceSpeciesId": 225
+    },
+    {
+      "symbol": "SPECIES_SENTRET",
+      "sourceSpeciesId": 161
+    },
+    {
+      "symbol": "SPECIES_FURRET",
+      "sourceSpeciesId": 162
+    },
+    {
+      "symbol": "SPECIES_NATU",
+      "sourceSpeciesId": 177
+    },
+    {
+      "symbol": "SPECIES_XATU",
+      "sourceSpeciesId": 178
+    },
+    {
+      "symbol": "SPECIES_YANMA",
+      "sourceSpeciesId": 193
+    },
+    {
+      "symbol": "SPECIES_WOBBUFFET",
+      "sourceSpeciesId": 202
+    },
+    {
+      "symbol": "SPECIES_BELLOSSOM",
+      "sourceSpeciesId": 182
+    },
+    {
+      "symbol": "SPECIES_HOPPIP",
+      "sourceSpeciesId": 187
+    },
+    {
+      "symbol": "SPECIES_SKIPLOOM",
+      "sourceSpeciesId": 188
+    },
+    {
+      "symbol": "SPECIES_JUMPLUFF",
+      "sourceSpeciesId": 189
+    },
+    {
+      "symbol": "SPECIES_ENTEI",
+      "sourceSpeciesId": 244
+    },
+    {
+      "symbol": "SPECIES_RAIKOU",
+      "sourceSpeciesId": 243
+    },
+    {
+      "symbol": "SPECIES_SUICUNE",
+      "sourceSpeciesId": 245
+    },
+    {
+      "symbol": "SPECIES_MEWTWO",
+      "sourceSpeciesId": 150
+    },
+    {
+      "symbol": "SPECIES_PHANPY",
+      "sourceSpeciesId": 231
+    },
+    {
+      "symbol": "SPECIES_DONPHAN",
+      "sourceSpeciesId": 232
+    },
+    {
+      "symbol": "SPECIES_LARVITAR",
+      "sourceSpeciesId": 246
+    },
+    {
+      "symbol": "SPECIES_PUPITAR",
+      "sourceSpeciesId": 247
+    },
+    {
+      "symbol": "SPECIES_TYRANITAR",
+      "sourceSpeciesId": 248
+    },
+    {
+      "symbol": "SPECIES_SKARMORY",
+      "sourceSpeciesId": 227
+    },
+    {
+      "symbol": "SPECIES_UNOWN",
+      "sourceSpeciesId": 201
+    },
+    {
+      "symbol": "SPECIES_HO_OH",
+      "sourceSpeciesId": 250
+    },
+    {
+      "symbol": "SPECIES_LUGIA",
+      "sourceSpeciesId": 249
+    },
+    {
+      "symbol": "SPECIES_DEOXYS",
+      "sourceSpeciesId": 410
+    },
+    {
+      "symbol": "SPECIES_ELECTABUZZ",
+      "sourceSpeciesId": 125
+    },
+    {
+      "symbol": "SPECIES_JOLTEON",
+      "sourceSpeciesId": 135
+    },
+    {
+      "symbol": "SPECIES_ZAPDOS",
+      "sourceSpeciesId": 145
+    },
+    {
+      "symbol": "SPECIES_HITMONLEE",
+      "sourceSpeciesId": 106
+    },
+    {
+      "symbol": "SPECIES_HITMONCHAN",
+      "sourceSpeciesId": 107
+    },
+    {
+      "symbol": "SPECIES_OMANYTE",
+      "sourceSpeciesId": 138
+    },
+    {
+      "symbol": "SPECIES_OMASTAR",
+      "sourceSpeciesId": 139
+    },
+    {
+      "symbol": "SPECIES_KABUTO",
+      "sourceSpeciesId": 140
+    },
+    {
+      "symbol": "SPECIES_KABUTOPS",
+      "sourceSpeciesId": 141
+    },
+    {
+      "symbol": "SPECIES_AERODACTYL",
+      "sourceSpeciesId": 142
+    },
+    {
+      "symbol": "SPECIES_MR_MIME",
+      "sourceSpeciesId": 122
+    },
+    {
+      "symbol": "SPECIES_JYNX",
+      "sourceSpeciesId": 124
+    },
+    {
+      "symbol": "SPECIES_ARTICUNO",
+      "sourceSpeciesId": 144
+    },
+    {
+      "symbol": "SPECIES_QWILFISH",
+      "sourceSpeciesId": 211
+    }
+  ]
+}

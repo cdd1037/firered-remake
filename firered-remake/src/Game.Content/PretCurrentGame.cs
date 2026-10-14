@@ -2399,8 +2399,10 @@ public sealed partial class PretCampaignCatalog
         var superRodMachines = PretSuperRodSpecies.LoadMachines(projectRoot, seafoamMachines, superRodOwned);
         pokemonContent = pokemonContent with { Catalog = superRodOwned.Catalog,
             SpeciesNames = pokemonContent.SpeciesNames.SetItem(211, oakPokedex.Entries[211].Name) };
-        machines = superRodMachines.Catalog;
+        var departmentMachines = PretDepartmentStoreMachines.Load(projectRoot, departmentStore, superRodMachines.Catalog);
+        machines = departmentMachines.Machines;
         hashes.AddRange(PretSuperRodSpecies.AdditionalSourceHashes);
+        hashes.AddRange(PretDepartmentStoreMachines.AdditionalSourceHashes);
         var capeBrinkPreviousMaps = maps;
         maps = maps.AddRange(capeBrinkTutor.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, capeBrinkTutor.NewMaps);

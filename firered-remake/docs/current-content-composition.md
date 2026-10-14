@@ -233,3 +233,16 @@ strict independent Continue and213-check/eight-Draw headless view passed.
 The route uses build01; the fixed pointer view and fresh Continue use build02.
 [Implementation and evidence boundaries](cape-brink-campaign.md) retain this distinction.
 Fingerprint: `db86a57b6bfc2ab4d9e103f15b0c906ed4a76fcac7781401c60e38774cb96c97`.
+
+
+## Celadon 2F machine-stock accepted boundary, 2026-10-14
+
+The composition retains336 maps/163 owned species/192 ordinary opponents/130
+ordinary items/18 tutors and extends the existing machine catalog from41 to42.
+Original TM15 metadata and163 compatibility cells complete the six-item2F shelf;
+shared buy/sell transactions and metadata serve ordinary and machine pockets.
+No new art, maps or raw copies are added. Normal Godot build01 passed; the
+Application candidate's six purchases and independent Continue passed to58063.
+The20-check HM metadata correction and normal-main59-check/13-Draw view passed;
+original input was retained and no native pixels/audio are claimed. [Scope and source contract](department-machine-shop.md).
+Fingerprint: `ed0943c380d91af6e4572d53574698d64914f485e7d52ff038d3ef8d63657d16`.
