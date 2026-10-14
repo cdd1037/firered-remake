@@ -14,11 +14,11 @@ public sealed partial class PretCampaignCatalog
     public bool SnorlaxEnabled => SnorlaxRegion is not null;
 
     public bool IsSnorlaxStablePosition(MapId map, int x, int y) =>
-        Route16FlyHouse.AllowsAdditionalFootDestination(map,x,y) || FuchsiaRouteEnabled&&map.Value=="map.route-12" || SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsFootDestination(map, x, y);
+        IsCurrentStaticWarpCellResolved(map,x,y) || Route16FlyHouse.AllowsAdditionalFootDestination(map,x,y) || FuchsiaRouteEnabled&&map.Value=="map.route-12" || SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsFootDestination(map, x, y);
 
     public bool IsSnorlaxWarpAllowed(MapId map, int sourceWarpId) =>
-        Route16FlyHouse.AllowsWarp(map,sourceWarpId) || (map.Value == "map.route-12" ? IsCurrentStaticWarpResolved(map, sourceWarpId) :
-        SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) || region.AllowsWarp(map, sourceWarpId));
+        SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) ||
+        IsCurrentStaticWarpResolved(map, sourceWarpId);
 
     private static void AppendSnorlaxSources(PretSnorlaxRegion region, List<PretSourceScriptFile> sources,
         List<string> textFiles, Dictionary<string, int> constants, List<string> hashes)

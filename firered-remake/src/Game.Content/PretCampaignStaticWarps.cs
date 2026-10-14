@@ -4,6 +4,10 @@ namespace Game.Content;
 
 public sealed partial class PretCampaignCatalog
 {
+    private bool IsCurrentStaticWarpCellResolved(MapId map, int x, int y) =>
+        Maps.TryGetValue(map, out var source) && source.FieldWarps.Any(w =>
+            w.X == x && w.Y == y && IsCurrentStaticWarpResolved(map, w.Index));
+
     // Current source objects are authenticated during composition. Dynamic exits,
     // story gates, collision, direction and partial-region geometry stay with
     // their existing owners; this answers only static destination completeness.
