@@ -35,7 +35,7 @@ public static class SeafoamDoubleTrainerEncounter
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("seafoam_double_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("seafoam_double_player_party");
         foreach (var member in playerParty)
-            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePermanent(proof, member.Pokemon) is not null ||
+            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePartyMember(catalog, member, owned) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
@@ -98,10 +98,13 @@ public static class SeafoamDoubleTrainerEncounter
             return "seafoam_double_catalog";
         try { SeafoamTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "seafoam_double_source"; }
-        if (!TrainerIds.Contains(trainer) || frame is null || frame.SourceCampaignRulesVersion != SeafoamOpponentPokemonCatalog.Profile ||
+        if (!TrainerIds.Contains(trainer) || frame is null ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "seafoam_double_frame";
-        if (frame.Parties.SelectMany(p => p.Members).Any(m =>
-            SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "seafoam_double_pokemon";
+        if (frame.SourceCampaignRulesVersion != SeafoamOpponentPokemonCatalog.Profile &&
+            (OwnedBattlePokemonCatalog.ForMechanics(opponents.Mechanics.Catalog, frame.SourceCampaignRulesVersion) is not { } current ||
+             frame.SourceCampaignRulesVersion != current.TrainerOpponentProfile ||
+             !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(opponents.Owned.SharedBattle, current))) return "source_double_successor_owned";
+        if (SourcePokemonValidator.ValidateFrameParties(opponents.Mechanics.Catalog, frame) is not null) return "seafoam_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
         var expected = trainers.Trainers[trainer];
         if (members.Length != expected.Party.Length) return "seafoam_double_roster";

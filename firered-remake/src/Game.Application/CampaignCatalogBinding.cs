@@ -23,17 +23,20 @@ public sealed partial class CampaignSession
         ArgumentNullException.ThrowIfNull(content);
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
-        var owned = GameCornerOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
-            ?? throw new InvalidDataException("current_game_corner_owned_proof_missing");
+        var owned = BreedingOwnedPokemonCatalog.For(content.PokemonContent!.Catalog)
+            ?? throw new InvalidDataException("current_breeding_owned_proof_missing");
         var battle = owned.SharedBattle;
-        var opponents = GameCornerOpponentPokemonCatalog.For(owned);
-        var stone = owned.Predecessor;
-        var stoneOpponents = opponents?.Predecessor;
+        var opponents = BreedingOpponentPokemonCatalog.For(owned);
+        var prize = owned.Predecessor;
+        var prizeOpponents = opponents?.Predecessor;
+        var stone = prize.Predecessor;
+        var stoneOpponents = prizeOpponents?.Predecessor;
         if (!ReferenceEquals(battle.Catalog, content.PokemonContent.Catalog) || !ReferenceEquals(battle.Mechanics, owned.Mechanics) ||
             !ReferenceEquals(stone.Predecessor, content.SuperRodOwnership) ||
             !ReferenceEquals(stone.Predecessor.Predecessor, content.SeafoamOwnership) ||
             !ReferenceEquals(stone.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOwnership) || opponents is null ||
-            !ReferenceEquals(opponents.Owned, owned) || stoneOpponents is null || !ReferenceEquals(stoneOpponents.Owned, stone) || !ReferenceEquals(stoneOpponents.Predecessor, content.SuperRodOpponents) ||
+            !ReferenceEquals(opponents.Owned, owned) || prizeOpponents is null || !ReferenceEquals(prizeOpponents.Owned, prize) ||
+            BreedingSpeciesMetadataCatalog.For(owned.Catalog) is null || stoneOpponents is null || !ReferenceEquals(stoneOpponents.Owned, stone) || !ReferenceEquals(stoneOpponents.Predecessor, content.SuperRodOpponents) ||
             !ReferenceEquals(stoneOpponents.Predecessor.Predecessor, content.SeafoamOpponents) ||
             !ReferenceEquals(stoneOpponents.Predecessor.Predecessor.Predecessor.Predecessor, content.FossilLabOpponents))
             throw new InvalidDataException("current_battle_catalog_identity");
@@ -60,9 +63,10 @@ public sealed partial class CampaignSession
             content.CinnabarEnabled && content.FirstSeviiEnabled && content.ViridianGymEnabled &&
             content.LeagueRivalEnabled && content.VictoryRoadEnabled && content.PokemonLeagueEnabled &&
             content.NationalDexEnabled && content.SeviiRubyEnabled && content.FourIslandEnabled &&
-            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled && content.Route5DayCareEnabled) ||
+            content.SixIslandEnabled && content.FiveIslandEnabled && content.CelioEnabled && content.CeruleanCaveEnabled && content.LeagueRematchEnabled && content.SevenIslandEnabled && content.EventIslandsEnabled && content.PowerPlantEnabled && content.TrainerTowerEnabled && content.FightingDojoEnabled && content.FossilLabEnabled && content.Route5DayCareEnabled && content.FourIslandDayCareEnabled) ||
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
+        if (content.BreedingMetadata is not {} metadata || !ReferenceEquals(metadata, BreedingSpeciesMetadataCatalog.For(content.PokemonContent?.Catalog))) throw new InvalidDataException("current_breeding_metadata_missing");
         if(content.NpcTrades is null||!ReferenceEquals(NpcTradePokemonCatalog.For(content.PokemonContent?.Catalog),content.NpcTrades))throw new InvalidDataException("current_npc_trade_proof_missing");
         if (content.Route16FlyTrainers is {} route16) Route16FlyTrainerPartyFactory.ValidateCatalog(route16);
         ValidateSeafoamEncounterCatalog(content);ValidateOldAmberCatalog(content);ValidateFossilLabCatalog(content);ValidateFightingDojoCatalog(content);ValidatePowerPlantCatalog(content);ValidateEventIslandCatalog(content);ValidateSevenIslandCatalog(content);ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
@@ -88,7 +92,7 @@ public sealed partial class CampaignSession
         if (!content.SuperRodEnabled || content.PewterMachines is not { } machines ||
             DepartmentStoreMachineStock.For(machines) is not { } machineStock ||
             StoneEvolutionMachineCatalog.For(DepartmentStoreMachineStock.RooftopBaseCatalog(machines)) is not { } currentMachines ||
-            !ReferenceEquals(currentMachines.Pokemon, GameCornerOwnedPokemonCatalog.For(content.PokemonContent?.Catalog)?.Predecessor) ||
+            !ReferenceEquals(currentMachines.Pokemon, OwnedBattlePokemonCatalog.SourceAncestor(OwnedBattlePokemonCatalog.For(content.PokemonContent?.Catalog), GameCornerOwnedPokemonCatalog.For)?.Predecessor) ||
             !ReferenceEquals(currentMachines.Pokemon.Predecessor, content.SuperRodOwnership) ||
             !ReferenceEquals(SuperRodMachineCatalog.For(DepartmentStoreMachineStock.BaseCatalog(machines))?.Pokemon, content.SuperRodOwnership))
             throw new InvalidDataException("current_machine_proof_missing");

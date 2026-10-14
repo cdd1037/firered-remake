@@ -31,7 +31,7 @@ public static class SourceVictoryRewards
     public const string SourceCommit = PokemonFactory.SourceCommit;
 
     public static SourceRewardCalculation Calculate(SourceMechanicsCatalog mechanics, SourceBattleParty actualPlayerParty,
-        ImmutableArray<SourceRewardMetadata> metadata, SourceRewardDefeat defeat, SourceRewardContext context)
+        ImmutableArray<SourceRewardMetadata> metadata, SourceRewardDefeat defeat, SourceRewardContext context, OwnedBattlePokemonCatalog? ownership = null)
     {
         ArgumentNullException.ThrowIfNull(mechanics);
         ArgumentNullException.ThrowIfNull(actualPlayerParty);
@@ -47,7 +47,7 @@ public static class SourceVictoryRewards
         {
             if (metadata[i] is not { } facts || facts.Key != new PartyMemberKey(BattleSide.Player, i))
                 throw new ArgumentException("source_reward_metadata_identity", nameof(metadata));
-            ValidateMember(mechanics, party[i], facts);
+            ValidateMember(mechanics, party[i], facts, ownership);
         }
         var token = defeat.Occupant;
         var view = defeat.BattleView;
@@ -62,14 +62,14 @@ public static class SourceVictoryRewards
             defeat.Participants.Any(key => key.Side != BattleSide.Player || key.Index >= party.Length))
             throw new ArgumentException("source_reward_participants", nameof(defeat));
         var participants = defeat.Participants.ToHashSet();
-        int aliveParticipants = party.Where((m, i) => m.Pokemon.CurrentHp > 0 && participants.Contains(metadata[i].Key)).Count();
-        int aliveExpShareHolders = party.Count(m => m.Pokemon.CurrentHp > 0 && HeldItem(m) == "ITEM_EXP_SHARE");
+        int aliveParticipants = party.Where((m, i) => !m.IsEgg && m.Pokemon.CurrentHp > 0 && participants.Contains(metadata[i].Key)).Count();
+        int aliveExpShareHolders = party.Count(m => !m.IsEgg && m.Pokemon.CurrentHp > 0 && HeldItem(m) == "ITEM_EXP_SHARE");
         var results = ImmutableArray.CreateBuilder<SourceRewardMemberCalculation>();
         for (int i = 0; i < party.Length; i++)
         {
             var member = party[i]; var facts = metadata[i]; string held = HeldItem(member);
             bool participated = participants.Contains(facts.Key), share = held == "ITEM_EXP_SHARE";
-            if (member.Pokemon.CurrentHp == 0 || member.Pokemon.Level == 100 || !participated && !share) continue;
+            if (member.IsEgg || member.Pokemon.CurrentHp == 0 || member.Pokemon.Level == 100 || !participated && !share) continue;
             // IsOtherTrainer compares all 32 OT-ID bits and OT-name bytes until the OT EOS.
             // Language, gender and the player's trailing name bytes are not compared by this source.
             bool traded = member.Pokemon.OriginalTrainerId != context.PlayerTrainerId ||
@@ -89,12 +89,12 @@ public static class SourceVictoryRewards
         return new(token, results.ToImmutable());
     }
 
-    private static void ValidateMember(SourceMechanicsCatalog mechanics, WildBattleCalledPartyMember? member, SourceRewardMetadata facts)
+    private static void ValidateMember(SourceMechanicsCatalog mechanics, WildBattleCalledPartyMember? member, SourceRewardMetadata facts, OwnedBattlePokemonCatalog? ownership)
     {
         if (!Enum.IsDefined(facts.PokerusHistory) || facts.PokerusHistory == SourceRewardPokerusHistory.Unknown)
             throw new NotSupportedException("source_reward_pokerus_history_required");
         if (member?.Pokemon is null) throw new ArgumentException("source_reward_pokemon_missing", nameof(member));
-        if (SourcePokemonValidator.ValidatePermanent(mechanics, member.Pokemon) is { } error)
+        if (SourcePokemonValidator.ValidatePartyMember(mechanics.Catalog, member, ownership) is { } error)
             throw new ArgumentException(error, nameof(member));
         if (!ValidName(facts.OriginalTrainerName) ||
             !ValidRegion(facts.MetLocation) && facts.MetLocation != NpcTradePokemonOriginRules.MetLocation ||
@@ -104,7 +104,7 @@ public static class SourceVictoryRewards
                 "ITEM_SAFARI_BALL" or "ITEM_NET_BALL" or "ITEM_DIVE_BALL" or "ITEM_NEST_BALL" or "ITEM_REPEAT_BALL" or
                 "ITEM_TIMER_BALL" or "ITEM_LUXURY_BALL" or "ITEM_PREMIER_BALL"))
             throw new ArgumentException("source_reward_ownership_metadata", nameof(facts));
-        if (member.IsEgg || !SourcePartyStatusRules.IsSupported(member.Status, allowSleep: true, allowFreeze: true, allowToxic: true))
+        if (!SourcePartyStatusRules.IsSupported(member.Status, allowSleep: true, allowFreeze: true, allowToxic: true))
             throw new NotSupportedException("source_reward_party_metadata_unsupported");
         foreach (string? item in new[] { member.HeldItem, member.KnockedOffItem, member.PersistentHeldItemOverride })
             if (item is not null && !SupportsHeldItem(mechanics.Catalog, item))

@@ -64,7 +64,7 @@ public static class SourceTrainerTowerEncounter
             return Fail("source_tower_player_party");
         foreach (var member in playerParty)
             if (member?.Pokemon is null || !current.Catalog.Species.ContainsKey(member.Pokemon.Species) ||
-                SourcePokemonValidator.ValidatePermanent(proof.Mechanics, member.Pokemon) is not null ||
+                SourcePokemonValidator.ValidatePartyMember(catalog, member, current) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
@@ -165,10 +165,7 @@ public static class SourceTrainerTowerEncounter
         catch (ArgumentException) { return "source_tower_current_owned"; }
         if (frame.Party(BattleSide.Player).Members.Any(m => !frameOwner.Catalog.Species.ContainsKey(m.Pokemon.Species)))
             return "source_tower_player_member";
-        foreach (var party in frame.Parties)
-            foreach (var member in party.Members)
-                if (SourcePokemonValidator.ValidateForBattle(catalog, member.Pokemon,
-                    party.Side == BattleSide.Opponent ? proof : null) is not null) return "source_tower_party_pokemon";
+        if (SourcePokemonValidator.ValidateFrameParties(catalog, frame) is not null) return "source_tower_party_pokemon";
         return null;
     }
 

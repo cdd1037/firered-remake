@@ -36,12 +36,12 @@ public static class LevelEvolutionRules
         Validate(content, afterRewards);
         if (levelBeforeBattle < 1 || levelBeforeBattle > afterRewards.Pokemon.Level)
             throw new ArgumentOutOfRangeException(nameof(levelBeforeBattle));
-        if (!battleWon || levelBeforeBattle == afterRewards.Pokemon.Level || afterRewards.HeldItem == "ITEM_EVERSTONE")
+        if (afterRewards.IsEgg || !battleWon || levelBeforeBattle == afterRewards.Pokemon.Level || afterRewards.HeldItem == "ITEM_EVERSTONE")
             return null;
 
         // GetEvolutionTargetSpecies scans all entries; the last qualifying normal method wins.
         var evolution = content.Catalog.Species[afterRewards.Pokemon.Species].Evolutions.LastOrDefault(e =>
-            e.Method == PokemonEvolutionMethod.Level && e.Level <= afterRewards.Pokemon.Level);
+            SourceLevelEvolutionProjection.Qualifies(e, afterRewards.Pokemon));
         return evolution is null ? null : new(afterRewards.InstanceId, afterRewards.Pokemon.Species,
             evolution.Target, afterRewards.Pokemon.Level, levelBeforeBattle, evolution.Source);
     }
@@ -93,7 +93,8 @@ public static class LevelEvolutionRules
         // Source changes species without changing the stored ability bit. These bounded families
         // keep compatible ability slots and growth curves, unlike an arbitrary species replacement.
         bool authenticatedOwned = OwnedBattlePokemonCatalog.For(content.Catalog) is not null;
-        bool sourceExtendedFamily = authenticatedOwned &&
+        bool sourceExtendedFamily = authenticatedOwned && (
+            previous.Evolutions.Any(e => e.Target == targetSpecies && SourceLevelEvolutionProjection.IsNormalMethod(e.Method)) ||
             (before.Species.Value, targetSpecies.Value) is
                 ("pret:SPECIES_SLUGMA", "pret:SPECIES_MAGCARGO") or
                 ("pret:SPECIES_WOOPER", "pret:SPECIES_QUAGSIRE") or
@@ -102,7 +103,7 @@ public static class LevelEvolutionRules
                 ("pret:SPECIES_NATU", "pret:SPECIES_XATU") or
                 ("pret:SPECIES_GLOOM", "pret:SPECIES_BELLOSSOM") or
                 ("pret:SPECIES_HOPPIP", "pret:SPECIES_SKIPLOOM") or
-                ("pret:SPECIES_SKIPLOOM", "pret:SPECIES_JUMPLUFF");
+                ("pret:SPECIES_SKIPLOOM", "pret:SPECIES_JUMPLUFF"));
         if (NpcTradePokemonOriginRules.ValidateInstance(content.Catalog, before, out int? tradeAbilitySlot) is { } originError)
             throw new ArgumentException(originError, nameof(afterRewards));
         int targetAbilitySlot = tradeAbilitySlot ?? (target.Ability2 == "ABILITY_NONE" ? 0 : (int)(before.Personality & 1));

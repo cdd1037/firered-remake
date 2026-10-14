@@ -193,11 +193,11 @@ public partial class CampaignView
                 continue;
             }
             var member = _session.State.Party[i];
-            ItemLabel(new(20, 8 + 14 * i), member.Nickname);
+            ItemLabel(new(20, 8 + 14 * i), PresentedOwnedName(member));
             if (MtMoonTargetActive && IsFieldEvolution(_mtMoonTargetItem))
                 ItemLabel(new(142,8+14*i),MachineText(_session.FieldEvolutionPartyTarget(member,
                     _mtMoonTargetItem) is not null ? "gText_Able2" : "gText_NotAble"));
-            else ItemLabel(new(112, 8 + 14 * i), member.Pokemon.CurrentHp + "/" + member.Pokemon.Stats.MaxHp);
+            else if (!member.IsEgg) ItemLabel(new(112, 8 + 14 * i), member.Pokemon.CurrentHp + "/" + member.Pokemon.Stats.MaxHp);
             DrawForestPartyStatus(member, new(198, 11 + 14 * i));
         }
         ItemLabel(new(8, 8 + 14 * _fieldMedicineTarget), "▶");

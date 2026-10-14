@@ -53,6 +53,7 @@ public sealed partial class PretCampaignCatalog
         var capeBrinkTutor = PretCapeBrinkTutor.Load(projectRoot);
         var route16FlyHouse = PretRoute16FlyHouse.Load(projectRoot);
         var route5DayCare = PretRoute5DayCare.Load(projectRoot);
+        var fourIslandDayCare = PretFourIslandDayCare.Load(projectRoot);
         PretFieldFly.ValidateSourceEvidence(projectRoot);
         var fieldFly = PretFieldFly.Load(projectRoot);
         var flyMapPresentation = PretFlyMap.Load(projectRoot);
@@ -1048,6 +1049,8 @@ public sealed partial class PretCampaignCatalog
         AppendAuthenticatedRegionalSources(capeBrinkTutor.Scripts, capeBrinkTutor.TextSources.Values, capeBrinkTutor.Constants,
             capeBrinkTutor.AdditionalSourceHashes, sources, textFiles, constants, hashes);
 
+        AppendAuthenticatedRegionalSources(fourIslandDayCare.Scripts, fourIslandDayCare.TextSources.Values, fourIslandDayCare.Constants,
+            fourIslandDayCare.AdditionalSourceHashes, sources, textFiles, constants, hashes);
         AppendAuthenticatedRegionalSources(route5DayCare.Scripts, route5DayCare.TextSources.Values, route5DayCare.Constants,
             route5DayCare.AdditionalSourceHashes, sources, textFiles, constants, hashes);
         AppendAuthenticatedRegionalSources(route16FlyHouse.Scripts, route16FlyHouse.TextSources.Values, route16FlyHouse.Constants,
@@ -1841,6 +1844,7 @@ public sealed partial class PretCampaignCatalog
         var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true, includeGameCornerCoins: true);
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
+        compiled = CompleteFourIslandDayCareFallthrough(compiled);
         {
             var lab = maps.Values.Single(x => x.SourceMapSymbol == "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB");
             var objects = lab.Events.GetProperty("object_events").EnumerateArray().ToArray();
@@ -1881,6 +1885,8 @@ public sealed partial class PretCampaignCatalog
                 throw new InvalidDataException("Conflicting center UI text: " + symbol);
             bank[symbol] = text;
         }
+
+        AppendFourIslandDayCareTexts(fourIslandDayCare, bank);
 
         foreach (var text in textFiles)
         {
@@ -2454,7 +2460,20 @@ public sealed partial class PretCampaignCatalog
                 return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
             })) };
         machines = PretFieldFly.LoadMachines(projectRoot, machines).Catalog;
-        var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, prizeOwned.Catalog, earlyShop.Catalog, machines);
+        PretBreedingSpecies.ValidateSourceEvidence(projectRoot);
+        var breedingOwned = PretBreedingSpecies.LoadOwned(projectRoot, prizeOwned);
+        _ = PretBreedingSpecies.LoadOpponents(projectRoot, GameCornerOpponentPokemonCatalog.For(prizeOwned)!, breedingOwned);
+        machines = PretBreedingSpecies.LoadMachines(projectRoot, machines, breedingOwned).Catalog;
+        _ = PretBreedingSpecies.LoadMetadata(projectRoot, breedingOwned);
+        pokemonContent = pokemonContent with { Catalog = breedingOwned.Catalog,
+            SpeciesNames = pokemonContent.SpeciesNames.SetItems(BreedingOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
+                int number = breedingOwned.Catalog.Species[id].SourceSpeciesId;
+                return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
+            })) };
+        hashes.AddRange(PretBreedingSpecies.AdditionalSourceHashes);
+        hashes.Add(PretBreedingPresentation.LockSha256);
+        hashes.Add(PretBreedingPresentation.ManifestSha256);
+        var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, breedingOwned.Catalog, earlyShop.Catalog, machines);
         hashes.AddRange(PretGameCornerSpecies.AdditionalSourceHashes);
         hashes.AddRange(PretGameCornerPrizes.AdditionalSourceHashes);
         hashes.AddRange(PretStoneEvolutionSpecies.AdditionalSourceHashes);
@@ -2475,10 +2494,14 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(route5DayCare.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, route5DayCare.NewMaps);
         ValidateRoute5DayCareComposition(route5DayCare, maps, daycarePreviousMaps, compiled);
-        ValidateCapeBrinkEncounterSources(capeBrinkTutor, prizeOwned.Catalog, superRodService);
-        var moveReminder = PretMoveReminderService.Load(projectRoot, prizeOwned.Catalog);
+        var fourDaycarePreviousMaps = maps;
+        maps = maps.AddRange(fourIslandDayCare.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, fourIslandDayCare.NewMaps);
+        ValidateFourIslandDayCareComposition(fourIslandDayCare, maps, fourDaycarePreviousMaps, compiled);
+        ValidateCapeBrinkEncounterSources(capeBrinkTutor, breedingOwned.Catalog, superRodService);
+        var moveReminder = PretMoveReminderService.Load(projectRoot, breedingOwned.Catalog);
         hashes.AddRange(moveReminder.AdditionalSourceHashes);
-        var moveTutors = PretMoveTutors.Load(projectRoot, prizeOwned.Catalog);
+        var moveTutors = PretMoveTutors.Load(projectRoot, breedingOwned.Catalog);
         hashes.AddRange(moveTutors.AdditionalSourceHashes);
         hashes.Add("npc-trade-owned:" + PretNpcTradeOwnedRules.PokemonSha256);
         hashes.Add("npc-trade-owned-machines:" + PretNpcTradeOwnedRules.MachinesSha256);
@@ -2660,7 +2683,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

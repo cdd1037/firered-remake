@@ -67,7 +67,10 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-fly-map.py', ['--reference-repo', '{reference}']),
  ('import-field-fly-sound.py', ['--reference', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
  ('import-field-fly-travel.py', ['--reference-root', '{reference}']),
- ('import-route5-daycare.py', ['--reference-root', '{reference}', '--dependency-root', '{project}])]
+ ('import-route5-daycare.py', ['--reference-root', '{reference}', '--dependency-root', '{project}']),
+ ('import-four-island-daycare.py', ['--reference-root', '{reference}', '--dependency-root', '{project}']),
+ ('import-breeding-species.py', ['{reference}', '{project}', '{project}']),
+ ('import-breeding-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

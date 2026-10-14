@@ -487,8 +487,8 @@ public partial class CampaignView
         for(int i=0;i<_session.State.Party.Length;i++)
         {
             var member=b.Frame.Party(BattleSide.Player).Members[i];bool active=b.Frame.Slots.Any(s=>s.Member==new PartyMemberKey(BattleSide.Player,i));
-            SourceText(_battleMoveFont,new(24,7+14*i),_session.State.Party[i].Nickname);
-            SourceText(_battleMoveFont,new(124,7+14*i),$"Lv{member.Pokemon.Level} {member.Pokemon.CurrentHp}/{member.Pokemon.Stats.MaxHp}"+(active?" IN":""));
+            SourceText(_battleMoveFont,new(24,7+14*i),PresentedOwnedName(_session.State.Party[i]));
+            if(!_session.State.Party[i].IsEgg) SourceText(_battleMoveFont,new(124,7+14*i),$"Lv{member.Pokemon.Level} {member.Pokemon.CurrentHp}/{member.Pokemon.Stats.MaxHp}"+(active?" IN":""));
         }
         SourceText(_battleMoveFont,new(24,7+14*_session.State.Party.Length),"CANCEL");SourceText(_battleMenuFont,new(10,7+14*_doubleCursor),">");
         DoubleLines(_doubleNotice??(b.ReplacementSlot is not null?"Choose the next\nPOKéMON.":"Choose a POKéMON\nto switch in."));

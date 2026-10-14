@@ -109,10 +109,14 @@ public partial class CampaignView
         }
         if (_fieldMenuMode == "summary")
         {
-            if (key.Keycode == Key.Left) _fieldSummaryPage = (_fieldSummaryPage + 2) % 3;
-            if (key.Keycode == Key.Right) _fieldSummaryPage = (_fieldSummaryPage + 1) % 3;
+            if (!_session.State.Party[_fieldPartyCursor].IsEgg)
+            {
+                if (key.Keycode == Key.Left) _fieldSummaryPage = (_fieldSummaryPage + 2) % 3;
+                if (key.Keycode == Key.Right) _fieldSummaryPage = (_fieldSummaryPage + 1) % 3;
+            }
             if (key.Keycode == Key.Up) _fieldPartyCursor = (_fieldPartyCursor + _session.State.Party.Length - 1) % _session.State.Party.Length;
             if (key.Keycode == Key.Down) _fieldPartyCursor = (_fieldPartyCursor + 1) % _session.State.Party.Length;
+            if (_session.State.Party[_fieldPartyCursor].IsEgg) _fieldSummaryPage = 0;
             return true;
         }
         if (_fieldMenuMode == "start")
@@ -168,6 +172,8 @@ public partial class CampaignView
     // The source lists a known field move before checking its badge/context at selection.
     private string[] FieldPartyActions()
     {
+        if (_fieldPartyCursor >= 0 && _fieldPartyCursor < _session.State.Party.Length && _session.State.Party[_fieldPartyCursor].IsEgg)
+            return ["SUMMARY", "SWITCH", "CANCEL"];
         var actions=new List<string>{"SUMMARY"};
         if(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&!_session.State.Party[_fieldPartyCursor].IsEgg)
             foreach(var move in _session.State.Party[_fieldPartyCursor].Pokemon.Moves)
@@ -295,14 +301,17 @@ public partial class CampaignView
         {
             var owned = _session.State.Party[i]; var mon = owned.Pokemon; int y = 8 + i * 20;
             if (_fieldMenuMode == "switch" && i == _fieldSwapSource) DrawRect(new(14, y, 218, 20), new Color("e4e4c8"));
-            DrawTextureRectRegion(PresentedPokemonIcon(mon),new(18,y,16,16),new(0,0,32,32));
-            SourceText(_sourceSmall, new(36, y), owned.Nickname);
+            DrawTextureRectRegion(PresentedOwnedIcon(owned),new(18,y,16,16),new(0,0,32,32));
+            SourceText(_sourceSmall, new(36, y), PresentedOwnedName(owned));
+            if (!owned.IsEgg)
+            {
             SourceText(_sourceSmall, new(98, y), "Lv" + mon.Level);
             SourceText(_sourceSmall, new(134, y), $"{mon.CurrentHp}/{mon.Stats.MaxHp}");
             DrawRect(new(134, y + 12, 54, 3), new Color("94948c"));
             int hpWidth = mon.CurrentHp == 0 ? 0 : Math.Max(1, 52 * mon.CurrentHp / mon.Stats.MaxHp);
             DrawRect(new(135, y + 12, hpWidth, 2), mon.CurrentHp * 2 > mon.Stats.MaxHp ? new Color("50b080") : mon.CurrentHp * 5 > mon.Stats.MaxHp ? new Color("e8c050") : new Color("e87058"));
             DrawForestPartyStatus(owned, new(198, y + 3));
+            }
             if (i == _fieldPartyCursor) SourceText(_sourceSmall, new(8, y), "▶");
         }
         SourceText(_sourceNormal, new(18, 132), "CANCEL");
@@ -323,6 +332,7 @@ public partial class CampaignView
     private string[] PartySummaryLines(int partyIndex, int page)
     {
         var owned = _session.State.Party[partyIndex]; var mon = owned.Pokemon;
+        if (owned.IsEgg) return EggSummaryLines(owned);
         var species = _catalog.PokemonContent!.Catalog.Species[mon.Species];
         return page switch
         {
@@ -341,6 +351,7 @@ public partial class CampaignView
     private void DrawPartySummary(int partyIndex, int page)
     {
         var owned = _session.State.Party[partyIndex]; var mon = owned.Pokemon;
+        if (owned.IsEgg) { DrawEggSummary(owned); return; }
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
         SourceText(_sourceNormal, new(8, 8), new[] { "POKéMON INFO", "POKéMON SKILLS", "KNOWN MOVES" }[page]);
         SourceText(_sourceSmall, new(202, 10), $"{page + 1}/3");

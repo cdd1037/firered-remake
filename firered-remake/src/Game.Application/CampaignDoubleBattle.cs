@@ -72,7 +72,7 @@ public sealed partial class CampaignSession
     {
         if(!_content.PresetDoublesEnabled||!(state.World.Player.MapId.Value=="map.route-8"||state.World.Player.MapId.Value=="map.route-16"&&battleScript is not null&&IsRoute16FlyDoubleScript(battleScript)||battleScript is not null&&IsSeafoamDoubleScript(battleScript)&&SeafoamTrainerActorMap(state.World.Player.MapId,battleScript)||battleScript is not null&&IsSevenIslandDoubleScript(battleScript)&&SevenIslandTrainerActorMap(state.World.Player.MapId,battleScript)||_content.SixIslandEnabled&&state.World.Player.MapId.Value=="map.six-island-water-path"&&battleScript is not null&&IsSixIslandDoubleScript(battleScript)||_content.SeviiRubyEnabled&&state.World.Player.MapId.Value=="map.one-island-kindle-road"&&battleScript is not null&&IsSeviiRubyDoubleScript(battleScript)||_content.VictoryRoadEnabled&&state.World.Player.MapId.Value=="map.victory-road-3f"&&battleScript is not null&&IsVictoryRoadDoubleScript(battleScript)||_content.FirstSeviiEnabled&&state.World.Player.MapId.Value=="map.three-island-bond-bridge"&&battleScript is not null&&IsFirstSeviiDoubleScript(battleScript)||_content.CinnabarEnabled&&state.World.Player.MapId.Value=="map.route-21-north"&&battleScript is not null&&IsCinnabarDoubleScript(battleScript))||
             state.DoubleBattle is not null||state.ForestTrainerBattle is not null||state.WildBattle is not null||state.Battle is not null||
-            state.Party.Any(p=>p.IsEgg||!HasSupportedCampaignOriginalTrainer(state,p)))
+            state.Party.Any(p=>!HasSupportedCampaignOriginalTrainer(state,p)))
             throw new InvalidDataException("preset_double_entry_context");
         var party=state.Party.Select(p=>new WildBattleCalledPartyMember(p.Pokemon,p.HeldItem,p.Status,p.IsEgg)).ToImmutableArray();
         var entry=battleScript is not null&&IsRoute16FlyDoubleScript(battleScript)?
@@ -82,11 +82,11 @@ public sealed partial class CampaignSession
             battleScript is not null&&IsSeafoamDoubleScript(battleScript)?
             SeafoamDoubleTrainerEncounter.Begin(_content.SeafoamTrainers!,_content.SeafoamOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_binding.Ownership):
             battleScript is not null&&IsSevenIslandDoubleScript(battleScript)?
             SevenIslandDoubleTrainerEncounter.Begin(_content.SevenIslandTrainers!,_content.SevenIslandOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
-                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state)):
+                state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE07_GET"),CampaignBattleTerrain(state),successorOwned:_binding.Ownership):
             battleScript is not null&&IsSixIslandDoubleScript(battleScript)?
             SixIslandDoubleTrainerEncounter.Begin(_content.SixIslandTrainers!,_content.SixIslandOpponents!,battleScript,party,state.World.Rng,
                 state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),

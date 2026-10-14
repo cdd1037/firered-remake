@@ -15,7 +15,7 @@ public sealed record SixStats(int Hp, int Attack, int Defense, int Speed, int Sp
 }
 public sealed record PokemonSourceRef(string Path, string Symbol, int StartLine, int EndLine, string Sha256);
 public sealed record PokemonLevelUpMove(int Level, MoveId Move, PokemonSourceRef Source);
-public enum PokemonEvolutionMethod { Level = 0, Item = 1, Trade = 2, TradeItem = 3 }
+public enum PokemonEvolutionMethod { Level = 0, Item = 1, Trade = 2, TradeItem = 3, Friendship = 4, LevelAttackGreaterDefense = 5, LevelAttackEqualDefense = 6, LevelAttackLessDefense = 7 }
 public sealed record PokemonEvolution(int Level, SpeciesId Target, PokemonSourceRef Source)
 {
     // Missing fields retain the exact legacy level-evolution serialization.
@@ -55,7 +55,7 @@ public sealed record CreatePokemonRequest(SpeciesId Species, int Level, uint Ori
 public enum PokemonGender { Male = 0, Female = 254, Genderless = 255 }
 public sealed record PokemonMoveSlot(MoveId Move, int CurrentPp, int MaximumPp, int PpUps = 0);
 
-/// <summary>New, healthy, non-egg instance. Ownership is the full source 32-bit OT ID, not display TID alone.</summary>
+/// <summary>Permanent Pokemon data. Egg stat caches are explicitly marked. Ownership uses the full source 32-bit OT ID.</summary>
 public sealed record PokemonInstance(SpeciesId Species, int SourceSpeciesId, int Level, uint Experience,
     uint OriginalTrainerId, uint Personality, Nature Nature, SixStats Ivs, SixStats Evs,
     BattleStats Stats, int CurrentHp, PokemonGender Gender, int AbilitySlot, string AbilityId,
@@ -65,6 +65,12 @@ public sealed record PokemonInstance(SpeciesId Species, int SourceSpeciesId, int
     // Null preserves the existing representation: Stats were calculated from current Evs.
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SixStats? StatCalculationEvs { get; init; }
+
+    // CreateMon calculates party stats before InheritIVs writes the egg's final IVs.
+    // Non-null is an egg-only marker; ordinary instance/battle validation rejects it.
+    // BoxMonToMon recalculates stats and records the current IVs as the new basis.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SixStats? EggStatCalculationIvs { get; init; }
 
     // Serialized source identity, not an ownership receipt. The actual authenticated catalog
     // must resolve this descriptor before it can authorize a fixed in-game-trade ability bit.

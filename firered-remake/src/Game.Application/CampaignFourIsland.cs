@@ -58,7 +58,7 @@ public sealed partial class CampaignSession
             completed && Flag("FLAG_HIDE_LORELEI_IN_HER_HOUSE") && !CelioCompleted(state) || Flag("FLAG_HIDE_ICEFALL_CAVE_LORELEI") && !completed)
             return "save_four_island_lorelei_progress";
         if (hm && !Flag("FLAG_HIDE_FOUR_ISLAND_ICEFALL_CAVE_1F_HM07")) return "save_four_island_hm07_progress";
-        if (Flag("FLAG_PENDING_DAYCARE_EGG")) return "save_four_island_daycare_not_admitted";
+        if (!_content.FourIslandDayCareEnabled && Flag("FLAG_PENDING_DAYCARE_EGG")) return "save_four_island_daycare_not_admitted";
         return ValidateFourIslandField(state);
     }
 

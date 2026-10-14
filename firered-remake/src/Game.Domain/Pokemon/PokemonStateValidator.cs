@@ -7,7 +7,8 @@ using Game.Domain.WildBattle;
 namespace Game.Domain.Pokemon;
 
 /// <summary>
-/// Pure validation of persisted, non-egg state in the imported starter/Route 1 families. Returns the first stable error code,
+/// Pure validation of persisted owned state. Ordinary instances stay strict; party eggs require
+/// authenticated breeding metadata and their explicit initial-stat basis. Returns the first stable error code,
 /// or null. This validates represented state, not whether a battle, TM, trade or item action exists.
 /// Catalog authenticity and loading remain the composition/content layer's responsibility.
 /// </summary>
@@ -30,10 +31,10 @@ public static class PokemonStateValidator
     }
 
     /// <summary>
-    /// General ownership invariants in the current English-keyboard, non-egg profile. Source language
+    /// General ownership invariants in the current English-keyboard profile. Source language
     /// and game IDs, and the twelve Gen III balls, are recognized. Poison, burn and paralysis are
     /// represented; explicit content admits sleep counters1–5, freeze and canonical Toxic0x80.
-    /// Toxic battle counters, eggs and attached mail remain unsupported; injury/zero HP are supported.
+    /// Toxic battle counters remain unsupported; injury/zero HP and authenticated source eggs are supported.
     /// Geographic met-location/held-item symbols get syntax validation; the real in-game-trade met
     /// sentinel requires an authenticated fixed origin and its exact immutable ownership metadata.
     /// Call ValidateLocalStarterGift for the exact locally implemented gift checkpoint instead.
@@ -42,17 +43,31 @@ public static class PokemonStateValidator
     {
         var contentError = ValidateContent(content);
         if (contentError is not null) return contentError;
+        return ValidateOwned(content!.Catalog, owned, content.AllowSleepStatus, content.AllowFreezeStatus, content.AllowToxicStatus);
+    }
+
+    internal static string? ValidateOwnedForBattle(OwnedBattlePokemonCatalog ownership, PartyPokemon? owned)
+    {
+        if (!ReferenceEquals(OwnedBattlePokemonCatalog.For(ownership.Catalog), ownership)) return "pokemon_catalog_invalid";
+        return ValidateOwned(ownership.Catalog, owned, true, true, true);
+    }
+
+    private static string? ValidateOwned(PokemonCatalog catalog, PartyPokemon? owned,
+        bool allowSleep, bool allowFreeze, bool allowToxic)
+    {
         if (owned is null) return "party_pokemon_missing";
         if (owned.InstanceId <= 0) return "party_instance_id";
-        var instanceError = ValidateInstance(content!.Catalog, owned.Pokemon);
+        var instanceError = owned.IsEgg
+            ? ValidateEggInstance(catalog, owned.Pokemon)
+            : ValidateInstance(catalog, owned.Pokemon);
         if (instanceError is not null) return instanceError;
-        if (!ValidName(owned.Nickname, 10)) return "party_nickname";
+        if (owned.IsEgg ? owned.Nickname != SourceEggRules.JapaneseEggNickname : !ValidName(owned.Nickname, 10)) return "party_nickname";
         if (!ValidName(owned.OriginalTrainerName, 7)) return "party_original_trainer_name";
         if (owned.OriginalTrainerGender is not (0 or 1)) return "party_original_trainer_gender";
         // 6 is explicitly unused in the pinned source language list.
         if (owned.Language is not (1 or 2 or 3 or 4 or 5 or 7)) return "party_language";
-        if (ValidateOriginMetadata(content.Catalog, owned) is { } originError) return originError;
-        // Zero can describe a previously hatched/traded creature; this does not add an egg mechanic.
+        if (ValidateOriginMetadata(catalog, owned) is { } originError) return originError;
+        // Zero describes both source eggs and previously hatched/traded creatures.
         if (owned.MetLevel < 0 || owned.MetLevel > owned.Pokemon.Level) return "party_met_level";
         // These are the named values in pinned include/constants/global.h. No unknown 4-bit IDs.
         if (owned.MetGame is not (1 or 2 or 3 or 4 or 5 or 7 or 8 or 10 or 11 or 12 or 15)) return "party_met_game";
@@ -62,8 +77,10 @@ public static class PokemonStateValidator
             return "party_ball";
         if (!ValidSymbol(owned.HeldItem, "ITEM_")) return "party_held_item";
         if (SourceMailRules.ValidateAttachmentReference(owned) is {} mailError) return mailError;
-        if (!SourcePartyStatusRules.IsSupported(owned.Status,content.AllowSleepStatus,content.AllowFreezeStatus,content.AllowToxicStatus)) return "party_status_unsupported";
-        if (owned.IsEgg) return "party_egg_unsupported";
+        if (!SourcePartyStatusRules.IsSupported(owned.Status,allowSleep,allowFreeze,allowToxic)) return "party_status_unsupported";
+        if (owned.IsEgg && (owned.Language != 1 || owned.MetLevel != 0 || owned.Ball != "ITEM_POKE_BALL" ||
+            owned.HeldItem != "ITEM_NONE" || owned.Status != 0 || owned.Mail != 255 || owned.ChampionRibbon))
+            return "party_egg_metadata";
         return null;
     }
 
@@ -127,7 +144,31 @@ public static class PokemonStateValidator
         !ReferenceEquals(proof.Mechanics.Catalog, catalog) || !proof.MatchesIdentity(p)
             ? "pokemon_trainer_tower_identity" : ValidateInstanceCore(catalog, p, proof.Mechanics, p!.AbilitySlot);
 
-    private static string? ValidateInstanceCore(PokemonCatalog catalog, PokemonInstance? p, SourceMechanicsCatalog? mechanics, int? sourceAbilitySlot)
+    internal static string? ValidateEggInstance(PokemonCatalog catalog, PokemonInstance? p,
+        SourceMechanicsCatalog? mechanics = null)
+    {
+        if (p is null) return "pokemon_missing";
+        if (BreedingSpeciesMetadataCatalog.For(catalog) is not { } metadata ||
+            !metadata.Species.TryGetValue(p.Species, out var row)) return "pokemon_egg_catalog";
+        // Bound this path to offspring of supported breedable parents (and source incense
+        // fallback), rather than admitting arbitrary evolved or legendary egg instances.
+        if (!metadata.Species.Values.Any(parent => parent.Breeding.EggGroup1 is not
+                (FourIslandDayCareRules.DittoEggGroup or FourIslandDayCareRules.UndiscoveredEggGroup) &&
+                parent.BaseEggSpecies == p.Species) && p.Species.Value is not
+                ("pret:SPECIES_WOBBUFFET" or "pret:SPECIES_MARILL")) return "pokemon_egg_species";
+        if (p.EggStatCalculationIvs is null) return "pokemon_egg_stat_basis";
+        if (p.Level != SourceEggRules.HatchLevel || !catalog.Species.TryGetValue(p.Species, out var species) ||
+            p.Experience != GrowthRules.ExperienceAtLevel(species.GrowthRate, SourceEggRules.HatchLevel) ||
+            p.Friendship > row.Breeding.EggCycles || p.Evs != SixStats.Zero || p.StatCalculationEvs is not null ||
+            p.NpcTradeOrigin is not null || p.ContestConditions is not null ||
+            p.Stats is null || p.CurrentHp != p.Stats.MaxHp ||
+            p.Moves.IsDefaultOrEmpty || p.Moves.Any(m => m is null || m.PpUps != 0 || m.CurrentPp != m.MaximumPp))
+            return "pokemon_egg_state";
+        return ValidateInstanceCore(catalog, p, mechanics, null, isEgg: true);
+    }
+
+    private static string? ValidateInstanceCore(PokemonCatalog catalog, PokemonInstance? p, SourceMechanicsCatalog? mechanics,
+        int? sourceAbilitySlot, bool isEgg = false)
     {
         if (p is null) return "pokemon_missing";
         if (!ValidSymbol(p.Species.Value, "pret:SPECIES_") || !catalog.Species.TryGetValue(p.Species, out var species))
@@ -141,6 +182,9 @@ public static class PokemonStateValidator
             return "pokemon_experience";
         if (!Enum.IsDefined(p.Nature) || p.Nature != (Nature)(p.Personality % 25)) return "pokemon_nature";
         if (p.Ivs is null || p.Ivs.Values.Any(x => x is < 0 or > 31)) return "pokemon_ivs";
+        if (!isEgg && p.EggStatCalculationIvs is not null) return "pokemon_egg_instance";
+        if (isEgg && (p.EggStatCalculationIvs is null || p.EggStatCalculationIvs.Values.Any(x => x is < 0 or > 31)))
+            return "pokemon_egg_stat_basis";
         if (p.ContestConditions is { } conditions &&
             new[] { conditions.Cool, conditions.Beauty, conditions.Cute, conditions.Smart, conditions.Tough, conditions.Sheen }
                 .Any(value => value is < 0 or > 255)) return "pokemon_contest_conditions";
@@ -152,7 +196,8 @@ public static class PokemonStateValidator
         if (statEvs.Values.Any(x => x is < 0 or > 255) || statEvs.Values.Sum() > 510 ||
             statEvs.Values.Where((value, index) => value > p.Evs.Values[index]).Any())
             return "pokemon_stat_calculation_evs";
-        var expected = PokemonStatCalculation.Calculate(species, p.Level, p.Nature, p.Ivs, statEvs, mechanics);
+        var expected = PokemonStatCalculation.Calculate(species, p.Level, p.Nature,
+            isEgg ? p.EggStatCalculationIvs! : p.Ivs, statEvs, mechanics);
         if (p.Stats != expected) return "pokemon_stats";
         if (p.CurrentHp < 0 || p.CurrentHp > expected.MaxHp) return "pokemon_hp";
         if (!Enum.IsDefined(p.Gender) || p.Gender != PokemonFactory.GenderFromPersonality(species.GenderRatio, p.Personality))

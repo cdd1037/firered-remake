@@ -81,7 +81,7 @@ public static partial class SourceWildBattlePolicy
         SourceWildEncounterContext encounter, WildBattleTerrain terrain, bool oldRodFishing)
     {
         if (mechanics is null) return EntryFail("source_wild_mechanics");
-        if (SourceBattleAdmission.ValidateEntry(mechanics, BattleRulesProfile.CanonicalSourceSingles, players, active, opponent) is { } invalid)
+        if (SourceBattleAdmission.ValidateEntry(mechanics, BattleRulesProfile.CanonicalSourceSingles, players, active, opponent, owned) is { } invalid)
             return EntryFail(invalid);
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId || !Enum.IsDefined(terrain)) return EntryFail("source_wild_entry_options");
         if (players[active].Pokemon.CurrentHp == 0 || opponent.Pokemon.CurrentHp == 0) return EntryFail("wild_battle_entry_fainted");
@@ -89,7 +89,7 @@ public static partial class SourceWildBattlePolicy
         {
             var neutral = new WildBattleCombatant(mon.Pokemon, HeldItem: mon.HeldItem, Status: mon.Status,
                 AttackBadgeBoost: mon.AttackBadgeBoost) { DefenseBadgeBoost = mon.DefenseBadgeBoost,
-                SpeedBadgeBoost = mon.SpeedBadgeBoost, SpecialBadgeBoost = mon.SpecialBadgeBoost };
+                SpeedBadgeBoost = mon.SpeedBadgeBoost, SpecialBadgeBoost = mon.SpecialBadgeBoost, IsEgg = mon.IsEgg };
             if (mon != neutral) return EntryFail("source_wild_entry_volatile");
             if (WildBattleSourceFieldEffects.IsValidToxic(mon.Status) && mon.Status != WildBattleSourceFieldEffects.ResetToxicCounter(mon.Status))
                 return EntryFail("source_wild_entry_status");
@@ -104,7 +104,7 @@ public static partial class SourceWildBattlePolicy
             encounter.TowerBattleKind is not (PokemonTowerBattleKind.DisguisedMarowak or PokemonTowerBattleKind.RevealedMarowak) && !(encounter.FirstSeviiWild
             ? FirstSeviiWildPokemonFactory.WildSpecies.Contains(opponent.Pokemon.Species) : owned.SupportsOrdinaryWildOpponent(opponent.Pokemon)))
             return EntryFail("wild_battle_opponent_species_unsupported");
-        WildBattleCalledPartyMember Member(WildBattleCombatant mon) => new(mon.Pokemon, mon.HeldItem, mon.Status);
+        WildBattleCalledPartyMember Member(WildBattleCombatant mon) => new(mon.Pokemon, mon.HeldItem, mon.Status, mon.IsEgg);
         var frame = new SourceBattleFrame {
             Layout = SourceBattleLayout.Singles, KoReplacementTiming = KoReplacementTiming.SourceImmediate,
             SourceMechanicsRulesVersion = SourceBattleKernel.Version, SourceCampaignRulesVersion = owned?.RulesVersion,

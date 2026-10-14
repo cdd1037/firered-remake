@@ -30,7 +30,7 @@ public static class Route16FlyDoubleTrainerEncounter
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("route16_double_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("route16_double_player_party");
         foreach (var member in playerParty)
-            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePermanent(proof, member.Pokemon) is not null ||
+            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePartyMember(catalog, member, owned) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
@@ -97,8 +97,7 @@ public static class Route16FlyDoubleTrainerEncounter
         if (trainer != TrainerId || frame is null || frame.SourceCampaignRulesVersion != owned.TrainerOpponentProfile ||
             frame.Layout != SourceBattleLayout.PresetDoubles || frame.KoReplacementTiming != KoReplacementTiming.EndOfTurn ||
             SourceFourActionTurns.ValidateCapability(owned.Mechanics.Catalog, frame) is { }) return "route16_double_frame";
-        if (frame.Parties.SelectMany(p => p.Members).Any(m =>
-            SourcePokemonValidator.ValidatePermanent(owned.Mechanics,m.Pokemon) is not null)) return "route16_double_pokemon";
+        if (SourcePokemonValidator.ValidateFrameParties(owned.Mechanics.Catalog, frame) is not null) return "route16_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
         var expected = trainers.Trainers[trainer];
         if (members.Length != expected.Party.Length) return "route16_double_roster";

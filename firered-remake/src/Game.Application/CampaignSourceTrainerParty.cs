@@ -29,11 +29,11 @@ public sealed partial class CampaignSession
 
     private ImmutableArray<WildBattleCombatant> SourceTrainerEntryParty(CampaignState state)
     {
-        if (state.Party.IsDefaultOrEmpty || state.Party.Length > 6 || state.Party.Any(p => p.IsEgg ||
-            !HasSupportedCampaignOriginalTrainer(state, p)))
+        if (state.Party.IsDefaultOrEmpty || state.Party.Length > 6 || state.Party.Any(p => !HasSupportedCampaignOriginalTrainer(state, p)))
             throw new InvalidDataException("source_trainer_owned_entry_identity");
         return state.Party.Select(p => new WildBattleCombatant(p.Pokemon, HeldItem: p.HeldItem, Status: p.Status)
         {
+            IsEgg = p.IsEgg,
             AttackBadgeBoost = state.Script.Flags.GetValueOrDefault("FLAG_BADGE01_GET"),
             SpeedBadgeBoost = state.Script.Flags.GetValueOrDefault("FLAG_BADGE03_GET"),
             DefenseBadgeBoost = state.Script.Flags.GetValueOrDefault("FLAG_BADGE05_GET"),
@@ -44,7 +44,7 @@ public sealed partial class CampaignSession
     private SourceTrainerEncounterEntryResult PrepareCanonicalTrainerBattle(CampaignState state, TrainerId trainer)
     {
         var party = SourceTrainerEntryParty(state);
-        int active = Enumerable.Range(0, party.Length).First(i => party[i].Pokemon.CurrentHp > 0);
+        int active = Enumerable.Range(0, party.Length).First(i => !party[i].IsEgg && party[i].Pokemon.CurrentHp > 0);
         var binding = OrdinaryBinding(trainer);
         var setup = SourceTrainerEncounterEntry.Prepare(state.World.Rng, binding.TracePrefix);
         if (!setup.Succeeded) throw new InvalidDataException(setup.Fault);
@@ -66,7 +66,7 @@ public sealed partial class CampaignSession
         current.OriginalTrainerId == owned.OriginalTrainerId && current.Personality == owned.Personality &&
         current.Nature == owned.Nature && current.Ivs == owned.Ivs && current.Gender == owned.Gender &&
         current.AbilitySlot == owned.AbilitySlot && current.AbilityId == owned.AbilityId &&
-        current.NpcTradeOrigin == owned.NpcTradeOrigin && current.ContestConditions == owned.ContestConditions;
+        current.EggStatCalculationIvs == owned.EggStatCalculationIvs && current.NpcTradeOrigin == owned.NpcTradeOrigin && current.ContestConditions == owned.ContestConditions;
 
     private static bool SameSourceOwnedPokemon(PokemonInstance a, PokemonInstance b) =>
         a with { Moves = b.Moves } == b && !a.Moves.IsDefault && !b.Moves.IsDefault && a.Moves.SequenceEqual(b.Moves);

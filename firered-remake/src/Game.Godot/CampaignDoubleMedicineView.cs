@@ -134,8 +134,8 @@ public partial class CampaignView
             if(medicine is not null&&owned.InstanceId==medicine.TargetInstanceId)
                 owned=owned with{Pokemon=owned.Pokemon with{CurrentHp=DoubleMedicineHp(medicine)},Status=DoubleMedicineStatus(medicine)};
             bool active=battle.Frame.Slots.Any(s=>s.Member==new PartyMemberKey(BattleSide.Player,i));
-            SourceText(_battleMoveFont,new(24,7+14*i),(active?">":" ")+owned.Nickname);
-            SourceText(_sourceSmall,new(122,8+14*i),$"L{owned.Pokemon.Level} {owned.Pokemon.CurrentHp}/{owned.Pokemon.Stats.MaxHp}");
+            SourceText(_battleMoveFont,new(24,7+14*i),(active?">":" ")+PresentedOwnedName(owned));
+            if(!owned.IsEgg) SourceText(_sourceSmall,new(122,8+14*i),$"L{owned.Pokemon.Level} {owned.Pokemon.CurrentHp}/{owned.Pokemon.Stats.MaxHp}");
             DrawForestPartyStatus(owned,new(198,10+14*i));
         }
         if(medicine is null)

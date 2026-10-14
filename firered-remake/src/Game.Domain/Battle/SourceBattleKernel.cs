@@ -45,10 +45,8 @@ public static class SourceBattleKernel
         if (SourceTrainerTowerEncounter.Validate(catalog, frame) is { } towerError) return towerError;
         if (frame.SourceMechanicsRulesVersion == Version && SourceMechanicsCatalog.For(catalog) is null)
             return "source_kernel_authenticated_catalog_required";
-        foreach (var party in frame.Parties)
-            foreach (var member in party.Members)
-                if (SourcePokemonValidator.ValidateForBattle(catalog, member.Pokemon, party.Side == BattleSide.Opponent ? frame.TrainerTowerEncounter?.Receipt : null) is not null)
-                    return "source_kernel_party_pokemon";
+        if (SourcePokemonValidator.ValidateFrameParties(catalog, frame) is not null)
+            return "source_kernel_party_pokemon";
         if (frame.SourceMechanicsRulesVersion == Version && SourceItemTransferRules.Validate(catalog, frame) is { } itemError) return itemError;
         if (frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion) return "source_kernel_profile";
         if (action.Revision != frame.Revision || !frame.IsCurrent(action.Actor)) return "source_kernel_stale_action";

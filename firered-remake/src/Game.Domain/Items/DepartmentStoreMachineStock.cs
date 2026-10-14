@@ -123,6 +123,17 @@ public sealed class DepartmentStoreMachineStock : AuthenticatedMachineShopStock
         stock.Validate(); Proofs.Add(stock.Machines, stock);
     }
 
+    internal static void BindBreedingSuccessor(BreedingMachineCatalog successor)
+    {
+        if (!ReferenceEquals(BreedingMachineCatalog.For(successor.Catalog), successor) ||
+            For(successor.Predecessor) is not { } before ||
+            !ReferenceEquals(before._owner, successor.Pokemon.Predecessor.SharedBattle))
+            throw new ArgumentException("department_breeding_successor_proof");
+        var stock = new DepartmentStoreMachineStock(before.OriginalMachines, successor.Catalog, successor.Pokemon.SharedBattle)
+        { RooftopPredecessor = before.RooftopPredecessor };
+        stock.Validate(); Proofs.Add(stock.Machines, stock);
+    }
+
     public bool IsClerk(string mapId, string sourcePath, string script, string stockId) =>
         mapId == ExpectedMapId && sourcePath == ExpectedSourcePath && script == ExpectedClerkScript && stockId == Id;
 

@@ -24,11 +24,14 @@ public partial class CampaignView
         {
             var owned = _session.State.Party[i]; var mon = owned.Pokemon; var row = ServicePartyRow(i); float y = row.Position.Y;
             if (i == cursor) DrawRect(row, new Color("e4e4c8"));
-            DrawTextureRectRegion(PresentedPokemonIcon(mon), new(18, y, 16, 16), new(0, 0, 32, 32));
-            SourceText(_sourceSmall, new(36, y), owned.Nickname);
+            DrawTextureRectRegion(PresentedOwnedIcon(owned), new(18, y, 16, 16), new(0, 0, 32, 32));
+            SourceText(_sourceSmall, new(36, y), PresentedOwnedName(owned));
+            if (!owned.IsEgg)
+            {
             SourceText(_sourceSmall, new(112, y), "Lv" + mon.Level);
             SourceText(_sourceSmall, new(147, y), $"{mon.CurrentHp}/{mon.Stats.MaxHp}");
             DrawForestPartyStatus(owned, new(207, y + 2));
+            }
             if (i == cursor) SourceText(_sourceSmall, new(8, y), "▶");
         }
         if (cursor == _session.State.Party.Length) SourceText(_sourceNormal, new(8, ServicePartyCancelRow.Position.Y), "▶");

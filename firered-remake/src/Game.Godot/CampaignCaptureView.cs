@@ -282,8 +282,8 @@ public partial class CampaignView
         {
             var owned = _session.State.Party[i]; var pokemon = i == battle.ActivePartyIndex ? battle.DisplayPlayer : owned.Pokemon;
             string prefix = i == battle.ActivePartyIndex ? ">" : " ";
-            SourceText(_sourceNormal, new(20, 8 + i * rowHeight), prefix + owned.Nickname);
-            SourceText(_sourceSmall, new(130, 9 + i * rowHeight), $"L{pokemon.Level} {pokemon.CurrentHp}/{pokemon.Stats.MaxHp}");
+            SourceText(_sourceNormal, new(20, 8 + i * rowHeight), prefix + PresentedOwnedName(owned));
+            if (!owned.IsEgg) SourceText(_sourceSmall, new(130, 9 + i * rowHeight), $"L{pokemon.Level} {pokemon.CurrentHp}/{pokemon.Stats.MaxHp}");
             DrawForestPartyStatus(owned, new(198, 11 + i * rowHeight));
             if (selecting && i == _wildCursor) SourceText(_sourceNormal, new(8, 8 + i * rowHeight), "▶");
         }

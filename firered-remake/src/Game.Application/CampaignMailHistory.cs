@@ -12,7 +12,7 @@ public sealed partial class CampaignSession
     {
         var mail = state.Mail ?? SourceMailState.Empty;
         if (SourceMailRules.Validate(mail, state.Party, state.Storage) is {} error) return error;
-        var messages = mail.Attached.Concat(mail.Mailbox).Append(state.Route5DayCare?.Resident?.Mail).OfType<SourceMailMessage>().ToArray();
+        var messages = mail.Attached.Concat(mail.Mailbox).Append(state.Route5DayCare?.Resident?.Mail).Append(state.FourIslandDayCare?.First?.Mail).Append(state.FourIslandDayCare?.Second?.Mail).OfType<SourceMailMessage>().ToArray();
         if (messages.Any(m => !IsAuthenticatedReceivedMail(m))) return "save_mail_source_invalid";
         var receipts = state.NpcTrades ?? [];
         if (receipts.IsDefault || receipts.Any(r => r is null)) return "save_mail_history_invalid";

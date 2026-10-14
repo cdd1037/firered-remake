@@ -57,6 +57,7 @@ public static class SourceFourRewards
             cursor.Defeats.FirstOrDefault(d => d.RequiresExperience) is not { } defeat ||
             defeat.Occupant != pending.Defeated || defeat.FaintEventSequence != pending.FaintEventSequence ||
             pending.Recipient.Side != BattleSide.Player || pending.Recipient.Index >= playerCount ||
+            frame.Party(BattleSide.Player).Members[pending.Recipient.Index].IsEgg ||
             pending.NextPartyIndex != pending.Recipient.Index + 1 || pending.Moves.IsDefaultOrEmpty || pending.Moves.Length > 64 ||
             pending.Moves.Any(m => m is null || m.Level is < 2 or > 100 || m.Level > frame.Party(BattleSide.Player).Members[pending.Recipient.Index].Pokemon.Level) ||
             pending.Moves.Zip(pending.Moves.Skip(1)).Any(pair => pair.First.Level > pair.Second.Level)))
@@ -151,7 +152,8 @@ public static class SourceFourRewards
             // Recalculation after a learning pause reads current permanent state. Earlier recipients
             // are skipped, and remain in the source living denominators even after reaching level100.
             var calculation = SourceVictoryRewards.Calculate(SourceMechanicsCatalog.For(catalog)!, next.Party(BattleSide.Player),
-                rewards.Metadata, new(defeat.Occupant, next.Get(defeat.Occupant.Slot).Body!, participants), rewards.Context!);
+                rewards.Metadata, new(defeat.Occupant, next.Get(defeat.Occupant.Slot).Body!, participants), rewards.Context!,
+                OwnedBattlePokemonCatalog.ForMechanics(catalog, next.SourceCampaignRulesVersion));
             foreach (var recipient in calculation.Members.Where(m => m.Key.Index >= fromIndex))
             {
                 Project(recipient.Key, recipient.Reward.Pokemon);

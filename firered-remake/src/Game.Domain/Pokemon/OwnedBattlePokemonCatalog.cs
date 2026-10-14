@@ -125,7 +125,7 @@ public sealed class OwnedBattlePokemonCatalog
 
     // Resolve a regional source proof through authenticated successor objects, stopping at
     // the actual ancestor instead of replacing the current ownership root or guessing a name.
-    internal static T? SourceAncestor<T>(OwnedBattlePokemonCatalog? owned, Func<PokemonCatalog, T?> resolve) where T : class
+    public static T? SourceAncestor<T>(OwnedBattlePokemonCatalog? owned, Func<PokemonCatalog, T?> resolve) where T : class
     {
         while (owned is not null && ReferenceEquals(For(owned.Catalog), owned))
         {

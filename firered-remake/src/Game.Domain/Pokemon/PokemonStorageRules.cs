@@ -136,6 +136,7 @@ public static class PokemonStorageRules
                 Level = level,
                 Stats = stats,
                 StatCalculationEvs = null,
+                EggStatCalculationIvs = owned.IsEgg ? pokemon.Ivs : null,
                 CurrentHp = stats.MaxHp,
                 Moves = pokemon.Moves.Select(move => move with { CurrentPp = move.MaximumPp }).ToImmutableArray()
             }

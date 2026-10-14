@@ -122,6 +122,9 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     public CampaignRocketSpin? RocketSpin{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public Route5DayCareState? Route5DayCare{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignRoute5DayCare? DayCareInteraction{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public FourIslandDayCareState? FourIslandDayCare{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignDayCareEggReceipt>? DayCareEggs{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEggHatch? EggHatch{get;init;}
     public long NextPokemonId{get;init;}=1;
     public CampaignMonPicture? MonPicture{get;init;}
     public CampaignNickname? Nickname{get;init;}
@@ -308,7 +311,7 @@ public sealed partial class CampaignSession
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
         if(s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.MagikarpRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
-        if(s.FossilMenu is not null||s.MailInteraction is not null||s.DayCareInteraction is not null)return "save_event_active";
+        if(s.FossilMenu is not null||s.MailInteraction is not null||s.DayCareInteraction is not null||s.EggHatch is not null)return "save_event_active";
         if(s.PokemonLeagueCompletion is not null)return "save_pokemon_league_completion_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
         var escapeError=ValidateEscapeRopeState(s);if(escapeError is not null)return escapeError;
@@ -316,7 +319,7 @@ public sealed partial class CampaignSession
         var optionsError=ValidateOptionsState(s);if(optionsError is not null)return optionsError;
         var mailError=ValidateCampaignMail(s);if(mailError is not null)return mailError;
         var storageError=ValidateStorageState(s);if(storageError is not null)return storageError;
-        var daycareError=ValidateRoute5DayCare(s);if(daycareError is not null)return daycareError;
+        var daycareError=ValidateRoute5DayCare(s)??ValidateFourIslandDayCare(s);if(daycareError is not null)return daycareError;
         var npcTradeError=ValidateNpcTradeHistory(s);if(npcTradeError is not null)return npcTradeError;
         var giftError=ValidateMagikarpGift(s);if(giftError is not null)return giftError;
         var eeveeError=ValidateEeveeGift(s);if(eeveeError is not null)return eeveeError;
@@ -363,9 +366,9 @@ public sealed partial class CampaignSession
         {
             if(!_content.ForestEnabled&&s.Party.Any(p=>p.Status!=0))return "party_status_unsupported";
             var partyError=PokemonStateValidator.ValidatePartyCollection(_content.PokemonContent,s.Party,s.NextPokemonId);if(partyError is not null)return partyError;
-            if(allOwned.Any(p=>!s.CaughtSpecies.Contains(p.Pokemon.SourceSpeciesId)))return "save_party_dex_invalid";
+            if(allOwned.Any(p=>!p.IsEgg&&!s.CaughtSpecies.Contains(p.Pokemon.SourceSpeciesId)))return "save_party_dex_invalid";
             // Held items are mutable ownership; the original trainer/met/capture identity remains fixed.
-            if(allOwned.Any(p=>!HasSupportedCampaignOriginalTrainer(s,p)||p.Language!=2||p.MetGame!=4||((!_content.CaptureEnabled||p.InstanceId==1)&&(p.MetLocation!="MAPSEC_PALLET_TOWN"||p.MetLevel!=5))||(p.Ball!="ITEM_POKE_BALL"&&!(p.InstanceId!=1&&(AdditionalCaptureBallSupported(p.Ball)||p.Ball=="ITEM_SAFARI_BALL"&&_content.SafariEnabled)))||!OwnedHeldItemSupported(s,p)))return "save_party_origin_not_supported";
+            if(allOwned.Any(p=>!HasSupportedCampaignOriginalTrainer(s,p)||p.Language!=(p.IsEgg?1:2)||p.MetGame!=4||((!_content.CaptureEnabled||p.InstanceId==1)&&(p.MetLocation!="MAPSEC_PALLET_TOWN"||p.MetLevel!=5))||(p.Ball!="ITEM_POKE_BALL"&&!(p.InstanceId!=1&&(AdditionalCaptureBallSupported(p.Ball)||p.Ball=="ITEM_SAFARI_BALL"&&_content.SafariEnabled)))||!OwnedHeldItemSupported(s,p)))return "save_party_origin_not_supported";
         }
         else if(s.NextPokemonId<1)return "save_party_serial_invalid";
         if(_content.OpeningItems is {} items){var inventoryError=ValidateCampaignInventory(s.Inventory);if(inventoryError is not null)return inventoryError;}
@@ -394,11 +397,11 @@ public sealed partial class CampaignSession
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenBySeafoam(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||NpcTradeSourceSpecies(state).Contains(n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
+            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenBySeafoam(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||NpcTradeSourceSpecies(state).Contains(n)||HatchedEggSpecies(state).Contains(n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
             // Field Switch changes slots only in the normal early-starter profile. The gift and
             // its first-battle history remain attached to instance 1, including after evolution.
             var starter=_content.EarlyStarterEnabled?HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
-            if(starter is null||!EvolutionSpeciesMatchesOrigin(state,starter,selected.SourceSpeciesId)||starter.InstanceId!=1||state.NextPokemonId!=(_content.CaptureEnabled?2L+(state.Exploration!.Captured?.Length??0)+GiftCount(state)+NpcTradeCount(state):2)||!seenValid||!state.CaughtSpecies.SetEquals(new[]{selected.SourceSpeciesId}.Concat(_content.CaptureEnabled?state.Exploration!.Captured!.Value.Select(c=>c.SourceSpeciesId):[]).Concat(GiftSourceSpecies(state)).Concat(NpcTradeSourceSpecies(state)).Concat(EvolvedSpecies(state))))return "save_starter_identity_inconsistent";
+            if(starter is null||!EvolutionSpeciesMatchesOrigin(state,starter,selected.SourceSpeciesId)||starter.InstanceId!=1||state.NextPokemonId!=(_content.CaptureEnabled?2L+(state.Exploration!.Captured?.Length??0)+GiftCount(state)+NpcTradeCount(state)+DayCareEggCount(state):2)||!seenValid||!state.CaughtSpecies.SetEquals(new[]{selected.SourceSpeciesId}.Concat(_content.CaptureEnabled?state.Exploration!.Captured!.Value.Select(c=>c.SourceSpeciesId):[]).Concat(GiftSourceSpecies(state)).Concat(NpcTradeSourceSpecies(state)).Concat(HatchedEggSpecies(state)).Concat(EvolvedSpecies(state))))return "save_starter_identity_inconsistent";
             if(scene>=4)
             {
                 var trainer=_content.BattleContent!.Trainers.Trainers.Values.Single(t=>t.Party.Single().SourceSpeciesId==selected.RivalSourceSpeciesId).Id.Value;
@@ -444,6 +447,8 @@ public sealed partial class CampaignSession
         {
             if(state.FlyEffect is not null)return state.TownMap is not null?DecideTownMap(state,command):DecideFieldFly(state,command);
             if(command.Kind=="field_fly")return StartFieldFly(state,command);
+            if(TryDecideFourIslandDayCare(state,command,out var fourDaycareDecision))return fourDaycareDecision;
+            if(TryDecideEggHatch(state,command,out var eggHatchDecision))return eggHatchDecision;
             if(TryDecideRoute5DayCare(state,command,out var daycareDecision))return daycareDecision;
             if(TryDecideMagikarpRecord(state,command,out var magikarpRecordDecision))return magikarpRecordDecision;
             if(TryDecideMoveDeleter(state,command,out var moveDeleterDecision))return moveDeleterDecision;
@@ -714,6 +719,8 @@ public sealed partial class CampaignSession
             if((effect.Opcode=="applymovement"&&a.Length>2)||(effect.Opcode is "addobject" or "removeobject"&&a.Length>1))
                 throw new InvalidDataException("cross_map_effect_not_supported: "+effect.Opcode);
             if(TryApplyFieldFlyGiftEffect(state,effect,out var flyGiftState)){state=flyGiftState;continue;}
+            if(TryApplyFourIslandDayCareEffect(state,effect,out var fourDaycareState)){state=fourDaycareState;continue;}
+            if(TryApplyEggHatchEffect(state,effect,out var eggHatchState)){state=eggHatchState;continue;}
             if(TryApplyRoute5DayCareEffect(state,effect,out var daycareState)){state=daycareState;continue;}
             if(TryApplyGameCornerPrizeEffect(state,effect,out var prizeState)){state=prizeState;continue;}
             if(TryApplyGameCornerCoinEffect(state,effect,out var coinState)){state=coinState;continue;}

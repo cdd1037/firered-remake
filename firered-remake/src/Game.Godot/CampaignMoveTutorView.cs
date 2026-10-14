@@ -57,7 +57,7 @@ public partial class CampaignView
     {
         if (before?.MoveTutor?.Stage != after.MoveTutor?.Stage || before?.MoveTutor?.Page != after.MoveTutor?.Page ||
             before?.MoveReminder?.Stage != after.MoveReminder?.Stage || before?.MoveReminder?.Page != after.MoveReminder?.Page ||
-            before?.MoveDeleter?.Stage != after.MoveDeleter?.Stage || IsDayCareChoosing(before) != IsDayCareChoosing(after))
+            before?.MoveDeleter?.Stage != after.MoveDeleter?.Stage || before?.DayCareInteraction?.Stage != after.DayCareInteraction?.Stage || IsDayCareChoosing(before) != IsDayCareChoosing(after))
         {
             _held = null; _repeat = 0; ReleaseFieldTextInput(); _tutorCursor = 0; _tutorScroll = 0;
             ResetDayCarePartyPresentation();
@@ -159,6 +159,7 @@ public partial class CampaignView
 
     private bool DrawMoveTutor()
     {
+        if (DayCareResidentsChoosing) return false;
         if (DayCareChoosing) { DrawDayCareParty(); return true; }
         if (Teaching is not { } scene) return false;
         var state = _session.State;
@@ -170,9 +171,9 @@ public partial class CampaignView
             {
                 var mon = state.Party[i]; var row = TutorPartyRow(i); float y = row.Position.Y;
                 if (_tutorCursor == i) DrawRect(row, new Color("e4e4c8"));
-                DrawTextureRectRegion(PresentedPokemonIcon(mon.Pokemon), new(18, y, 16, 16), new(0, 0, 32, 32));
-                SourceText(_sourceSmall, new(36, y), mon.Nickname);
-                SourceText(_sourceSmall, new(113, y), "Lv" + mon.Pokemon.Level);
+                DrawTextureRectRegion(PresentedOwnedIcon(mon), new(18, y, 16, 16), new(0, 0, 32, 32));
+                SourceText(_sourceSmall, new(36, y), PresentedOwnedName(mon));
+                if (!mon.IsEgg) SourceText(_sourceSmall, new(113, y), "Lv" + mon.Pokemon.Level);
                 if (state.MoveTutor is { } tutor)
                 {
                     var catalog = _catalog.MoveTutors!;

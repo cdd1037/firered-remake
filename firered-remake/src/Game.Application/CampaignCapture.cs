@@ -141,8 +141,8 @@ public sealed partial class CampaignSession
     private string? ValidateCapturedParty(CampaignState state)
     {
         if(!_content.CaptureEnabled)return state.Exploration?.Captured is null?null:"save_capture_profile_missing";
-        var allOwned=HistoricalPokemon(state);int gifts=GiftCount(state), trades=NpcTradeCount(state);
-        if(state.Exploration?.Captured is not {} captures||captures.IsDefault||captures.Length>(_content.PokemonStorageEnabled?PokemonStorageState.Capacity+5+(_content.Route5DayCareEnabled?1:0):5)||state.NextPokemonId!=(allOwned.IsEmpty?1:captures.Length+gifts+trades+2L)||allOwned.Length!=(allOwned.IsEmpty?0:captures.Length+gifts+trades+1))return "save_capture_party_count";
+        var allOwned=HistoricalPokemon(state);int gifts=GiftCount(state), trades=NpcTradeCount(state), eggs=DayCareEggCount(state);
+        if(state.Exploration?.Captured is not {} captures||captures.IsDefault||captures.Length>(_content.PokemonStorageEnabled?PokemonStorageState.Capacity+5+(_content.Route5DayCareEnabled?1:0)+(_content.FourIslandDayCareEnabled?2:0):5)||state.NextPokemonId!=(allOwned.IsEmpty?1:captures.Length+gifts+trades+eggs+2L)||allOwned.Length!=(allOwned.IsEmpty?0:captures.Length+gifts+trades+eggs+1))return "save_capture_party_count";
         if(captures.Length>0&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))return "save_capture_before_pokedex";
         var ids=new HashSet<long>();var battles=new HashSet<string>(StringComparer.Ordinal);
         foreach(var capture in captures)

@@ -59,8 +59,6 @@ public sealed partial class PretCampaignCatalog
     {
         if(DepartmentRooftopEnabled && map.Value==Game.Domain.Events.DepartmentRooftopSource.Map &&
             script is Game.Domain.Events.DepartmentRooftopSource.Girl or Game.Domain.Events.DepartmentRooftopSource.Vending)return null;
-        if(FourIslandEnabled&&map.Value=="map.four-island"&&script=="FourIsland_EventScript_DaycareMan")
-            return "four_island_service_unavailable: Day Care and breeding are not available yet.";
         if(map.Value=="map.celadon-city-department-store-3f"&&script=="CeladonCity_DepartmentStore_3F_EventScript_CounterTutor"&&
             MoveTutors?.Definitions.ContainsKey(5)==true)return null;
         if(map.Value==PokeDollShopStock.ExpectedMapId&&script==PokeDollShopStock.ExpectedClerkScript&&PokeDollShopStock is not null)return null;

@@ -1,0 +1,47 @@
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
+using Game.Domain.Ids;
+namespace Game.Domain.Pokemon;
+
+public sealed record SourceEggSpeciesDefinition(SourceBreedingSpecies Breeding, SpeciesId BaseEggSpecies,
+    ImmutableArray<MoveId> EggMoves);
+public sealed record SourceEggSpeciesRow(SourceBreedingSpecies Breeding, SpeciesId BaseEggSpecies,
+    ImmutableArray<MoveId> EggMoves, ImmutableArray<MoveId> MachineMoves);
+
+/// <summary>Exact owned-species breeding projection from the shared canonical 386 metadata.
+/// The original 58 TM/HM inheritance mask does not depend on current machine acquisition.</summary>
+public sealed class BreedingSpeciesMetadataCatalog
+{
+    public const string SemanticSha256 = "931f88ab37bbaf801f97b9641da146359d28c5d28d0bb78bc2d7d20f68978d09";
+    private static readonly ConditionalWeakTable<PokemonCatalog, BreedingSpeciesMetadataCatalog> Proofs = new();
+    public PokemonCatalog Catalog { get; }
+    public ImmutableDictionary<SpeciesId, SourceEggSpeciesDefinition> Species { get; }
+    public ImmutableArray<MoveId> AllMachineMoves { get; }
+    public ImmutableDictionary<SpeciesId, ImmutableHashSet<MoveId>> MachineCompatibility { get; }
+    private BreedingSpeciesMetadataCatalog(PokemonCatalog catalog, ImmutableArray<SourceEggSpeciesRow> rows, ImmutableArray<MoveId> moves)
+    {
+        Catalog = catalog; AllMachineMoves = moves;
+        Species = rows.ToImmutableDictionary(r => r.Breeding.Species, r => new SourceEggSpeciesDefinition(r.Breeding, r.BaseEggSpecies, r.EggMoves));
+        MachineCompatibility = rows.ToImmutableDictionary(r => r.Breeding.Species, r => r.MachineMoves.ToImmutableHashSet());
+    }
+    public static BreedingSpeciesMetadataCatalog? For(PokemonCatalog? catalog) =>
+        catalog is not null && Proofs.TryGetValue(catalog, out var proof) ? proof : null;
+    public static BreedingSpeciesMetadataCatalog Authenticate(BreedingOwnedPokemonCatalog owned,
+        ImmutableArray<SourceEggSpeciesRow> rows, ImmutableArray<MoveId> allMachineMoves)
+    {
+        ArgumentNullException.ThrowIfNull(owned);
+        if (!ReferenceEquals(BreedingOwnedPokemonCatalog.For(owned.Catalog), owned) || rows.IsDefault || rows.Length != 182 ||
+            rows.Any(r => r is null || r.Breeding is null || r.EggMoves.IsDefault || r.MachineMoves.IsDefault) ||
+            allMachineMoves.IsDefault || allMachineMoves.Length != 58 || allMachineMoves.Distinct().Count() != 58 ||
+            !rows.Select(r => r.Breeding.Species).ToHashSet().SetEquals(owned.Catalog.Species.Keys) ||
+            CampaignSourceFingerprint.Compute(new { AllMachineMoves = allMachineMoves, Species = rows }) != SemanticSha256)
+            throw new ArgumentException("breeding_metadata_source_or_owner");
+        foreach (var row in rows)
+            if (!owned.Catalog.Species.ContainsKey(row.BaseEggSpecies) || row.Breeding.EggGroup1 is < 0 or > 15 ||
+                row.Breeding.EggGroup2 is < 0 or > 15 || row.Breeding.EggCycles == 0 ||
+                row.EggMoves.Concat(row.MachineMoves).Any(m => !owned.Catalog.Moves.ContainsKey(m)) ||
+                row.MachineMoves.Any(m => !allMachineMoves.Contains(m)))
+                throw new ArgumentException("breeding_metadata_references");
+        return Proofs.GetValue(owned.Catalog, _ => new(owned.Catalog, rows, allMachineMoves));
+    }
+}

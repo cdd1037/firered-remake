@@ -58,6 +58,8 @@ public static class PokemonStorageValidator
                     return new("storage_boxed_health", BoxIndex: boxIndex, SlotIndex: slotIndex);
                 if (pokemon.StatCalculationEvs is not null)
                     return new("storage_boxed_stat_cache", BoxIndex: boxIndex, SlotIndex: slotIndex);
+                if (owned.IsEgg && pokemon.EggStatCalculationIvs != pokemon.Ivs)
+                    return new("storage_boxed_egg_stat_cache", BoxIndex: boxIndex, SlotIndex: slotIndex);
                 if (pokemon.Moves.Any(move => move.CurrentPp != move.MaximumPp))
                     return new("storage_boxed_pp", BoxIndex: boxIndex, SlotIndex: slotIndex);
             }

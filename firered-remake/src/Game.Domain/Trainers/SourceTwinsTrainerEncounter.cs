@@ -76,22 +76,14 @@ public static class SourceTwinsTrainerEncounter
         SourceTwinsEncounterResult Fail(string code) => new(null, rng, [], [], code);
         if (ValidateDefinition(definition) is { } error) return Fail(error);
         if (SourceMechanicsCatalog.For(catalog) is not { } proof) return Fail("source_twins_catalog_proof");
-        if (successorOwned is not null && (!ReferenceEquals(OwnedBattlePokemonCatalog.For(successorOwned.Catalog),successorOwned) ||
-            !ReferenceEquals(successorOwned.Mechanics,proof) ||
-            !(PowerPlantOwnedPokemonCatalog.For(successorOwned.Catalog) is {} plant && PowerPlantOpponentPokemonCatalog.For(plant) is not null ||
-              EventIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} events && EventIslandOpponentPokemonCatalog.For(events) is not null ||
-              SevenIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} seven && SevenIslandOpponentPokemonCatalog.For(seven) is not null ||
-              CeruleanCaveOwnedPokemonCatalog.For(successorOwned.Catalog) is {} cave && CeruleanCaveOpponentPokemonCatalog.For(cave) is not null ||
-              SeviiRubyOwnedPokemonCatalog.For(successorOwned.Catalog) is {} ruby && SeviiRubyOpponentPokemonCatalog.For(ruby) is not null ||
-              FourIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} four && FourIslandOpponentPokemonCatalog.For(four) is not null ||
-              SixIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} six && SixIslandOpponentPokemonCatalog.For(six) is not null ||
-              FiveIslandOwnedPokemonCatalog.For(successorOwned.Catalog) is {} five && FiveIslandOpponentPokemonCatalog.For(five) is not null ||
-              CelioOwnedPokemonCatalog.For(successorOwned.Catalog) is {} celio && CelioOpponentPokemonCatalog.For(celio) is not null)))
+        if (successorOwned is not null && (!ReferenceEquals(OwnedBattlePokemonCatalog.For(successorOwned.Catalog), successorOwned) ||
+            !ReferenceEquals(successorOwned.Mechanics, proof) ||
+            !ReferenceEquals(OwnedBattlePokemonCatalog.ForMechanics(catalog, successorOwned.TrainerOpponentProfile), successorOwned)))
             return Fail("source_twins_successor_owned");
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("source_twins_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("source_twins_player_party");
         foreach (var member in playerParty)
-            if (member?.Pokemon is null || successorOwned is not null && !successorOwned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePermanent(proof, member.Pokemon) is not null ||
+            if (member?.Pokemon is null || successorOwned is not null && !successorOwned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePartyMember(catalog, member, successorOwned) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&

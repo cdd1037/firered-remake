@@ -223,7 +223,8 @@ public sealed partial class CampaignSession
             if(moved.World.StepCount>state.World.StepCount)
             {
                 moved=ApplyFieldPoisonWalkingStep(ApplyWalkingFriendship(moved));
-                if(moved.FieldPoison is null)moved=ApplySafariWalkingStep(ApplyRoute5DayCareWalkingStep(moved));
+                if(moved.FieldPoison is null)moved=ApplyDayCareWalkingStep(moved);
+                if(moved.FieldPoison is null&&moved.Script.Completed)moved=ApplySafariWalkingStep(moved);
                 if(moved.FieldPoison is null&&moved.Script.Completed)moved=ApplyRepelWalkingStep(moved);
             }
             // The expiration message owns this input. Dismissing it never replays the

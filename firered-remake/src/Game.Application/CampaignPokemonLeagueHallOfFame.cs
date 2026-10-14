@@ -47,6 +47,7 @@ public sealed partial class CampaignSession
         // English revision-0 charmap, the existing ten-character naming alphabet.
         // Owned strings do not retain unused raw storage bytes; normalize that tail
         // to EOS while preserving all ten visible character bytes exactly.
+        if(nickname == SourceEggRules.JapaneseEggNickname) return ImmutableArray.Create<byte>(0x60,0x6f,0x8b,255,255,255,255,255,255,255);
         if(nickname.Length is <1 or >10)throw new InvalidDataException("pokemon_league_nickname_length");
         var bytes=Enumerable.Repeat((byte)255,10).ToArray();
         for(int i=0;i<nickname.Length;i++)bytes[i]=nickname[i] switch
@@ -187,8 +188,8 @@ public sealed partial class CampaignSession
                 var m=team.Members[i];var p=HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==m.InstanceId);
                 if(p is null||m.PartySlot!=i||m.SpeciesOrEgg is <1 or >412||m.OriginalTrainerId!=p.Pokemon.OriginalTrainerId||
                     m.Personality!=p.Pokemon.Personality||m.Level is <1 or >100||m.Level>p.Pokemon.Level||m.Nickname is null||
-                    m.Nickname.Length is <1 or >10||m.Nickname.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c))||m.NicknameBytes.IsDefault||
-                    m.SpeciesOrEgg!=NameRaterRules.SpeciesOrEgg(p)&&!(state.EvolutionHistory??[]).Any(e=>e.InstanceId==p.InstanceId&&e.PreviousSpeciesId==m.SpeciesOrEgg&&e.Level>=m.Level)||
+                    m.Nickname.Length is <1 or >10||(m.SpeciesOrEgg==412?m.Nickname!=SourceEggRules.JapaneseEggNickname:m.Nickname.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c)))||m.NicknameBytes.IsDefault||
+                    m.SpeciesOrEgg!=NameRaterRules.SpeciesOrEgg(p)&&!(m.SpeciesOrEgg==412&&(state.DayCareEggs??[]).Any(e=>e.InstanceId==p.InstanceId&&e.Hatch is not null))&&!(state.EvolutionHistory??[]).Any(e=>e.InstanceId==p.InstanceId&&e.PreviousSpeciesId==m.SpeciesOrEgg&&e.Level>=m.Level)||
                     !m.NicknameBytes.SequenceEqual(PokemonLeagueNicknameBytes(m.Nickname))||m.SpeciesOrEgg!=412&&!p.ChampionRibbon)
                     return "save_pokemon_league_hof_member";
             }

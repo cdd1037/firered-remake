@@ -104,7 +104,7 @@ public partial class CampaignView
         if (_heldGiveItem is not null && !_heldExchange)
         {
             for (int i = 0; i < _session.State.Party.Length; i++)
-            { SourceText(_sourceNormal, new(24, 8 + i * 17), _session.State.Party[i].Nickname); }
+            { SourceText(_sourceNormal, new(24, 8 + i * 17), PresentedOwnedName(_session.State.Party[i])); }
             SourceText(_sourceNormal, new(24, 8 + _session.State.Party.Length * 17), "CANCEL");
             SourceText(_sourceNormal, new(12, 8 + _heldTarget * 17), "▶");
             ItemMessageBox("Give to which POKéMON?");

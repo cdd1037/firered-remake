@@ -174,7 +174,7 @@ public partial class CampaignView
         if (pending.Phase == CampaignMailPhase.MailboxGive)
         {
             _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 160));
-            DrawMailRows([.. _session.State.Party.Select(p => p.Nickname), MailText("gFameCheckerText_Cancel")], 24, 8, 14);
+            DrawMailRows([.. _session.State.Party.Select(PresentedOwnedName), MailText("gFameCheckerText_Cancel")], 24, 8, 14);
             ItemMessageBox(MailText("gText_GiveToWhichPokemon")); return;
         }
         var slots = MailboxSlots;

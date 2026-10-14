@@ -222,7 +222,7 @@ public partial class CampaignView
     // functional layout, while the indicator pixels are the distinct source party art.
     private void DrawForestPartyStatus(PartyPokemon owned, Vector2 origin)
     {
-        if (!_catalog.ForestEnabled) return;
+        if (!_catalog.ForestEnabled || owned.IsEgg) return;
         var battle = PresentedWildBattle;
         uint status = battle is not null && owned.InstanceId == battle.OwnedBefore.InstanceId
             ? ForestDisplayedStatus(battle, WildBattleSide.Player) : owned.Status;

@@ -224,6 +224,9 @@ public interface ICampaignCatalog:IStoryCatalog
     MoveDeleterCatalog? MoveDeleter=>null;
     MoveReminderCatalog? MoveReminder=>null;
     bool Route5DayCareEnabled=>false;
+    bool FourIslandDayCareEnabled=>false;
+    BreedingSpeciesMetadataCatalog? BreedingMetadata=>null;
+    IReadOnlyDictionary<int,string> DayCareCompatibilityTextSymbols=>ImmutableDictionary<int,string>.Empty;
     DepartmentStoreOrdinaryStock? DepartmentStoreOrdinaryStock=>null;
     DepartmentStoreCounterStock? DepartmentStoreCounter(string stockId)=>null;
     PokeDollShopStock? PokeDollShopStock=>null;

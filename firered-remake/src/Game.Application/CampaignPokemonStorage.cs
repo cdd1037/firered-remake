@@ -16,7 +16,10 @@ public sealed partial class CampaignSession
     {
         var owned = _content.PokemonStorageEnabled && state.Storage is {} storage
             ? state.Party.AddRange(storage.Boxes.SelectMany(b => b.Slots).OfType<PartyPokemon>()) : state.Party;
-        return state.Route5DayCare?.Resident is {} resident ? owned.Add(resident.Pokemon) : owned;
+        if (state.Route5DayCare?.Resident is {} resident) owned = owned.Add(resident.Pokemon);
+        if (state.FourIslandDayCare?.First is {} first) owned = owned.Add(first.Pokemon);
+        if (state.FourIslandDayCare?.Second is {} second) owned = owned.Add(second.Pokemon);
+        return owned;
     }
 
     private string? ValidateStorageState(CampaignState state)

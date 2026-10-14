@@ -34,7 +34,7 @@ public static class SeviiRubyDoubleTrainerEncounter
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("sevii_ruby_double_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("sevii_ruby_double_player_party");
         foreach (var member in playerParty)
-            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePermanent(proof, member.Pokemon) is not null ||
+            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePartyMember(catalog, member, owned) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
@@ -97,19 +97,13 @@ public static class SeviiRubyDoubleTrainerEncounter
             return "sevii_ruby_double_catalog";
         try { SeviiRubyTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "sevii_ruby_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion != SeviiRubyOpponentPokemonCatalog.Profile && frame.SourceCampaignRulesVersion != FourIslandOpponentPokemonCatalog.Profile && frame.SourceCampaignRulesVersion is not (SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile) ||
+        if (frame is null ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "sevii_ruby_double_frame";
-        if (frame.SourceCampaignRulesVersion == FourIslandOpponentPokemonCatalog.Profile &&
-            (FourIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } successor ||
-             !ReferenceEquals(successor.Owned.Predecessor,opponents.Owned))) return "source_double_successor_owned";
-        if (frame.SourceCampaignRulesVersion == SixIslandOpponentPokemonCatalog.Profile &&
-            (SixIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } sixSuccessor ||
-             !ReferenceEquals(sixSuccessor.Owned.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
-        if (frame.SourceCampaignRulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
-            (FiveIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } fiveSuccessor ||
-             !ReferenceEquals(fiveSuccessor.Owned.Predecessor.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
-        if (frame.Parties.SelectMany(p => p.Members).Any(m =>
-            SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "sevii_ruby_double_pokemon";
+        if (frame.SourceCampaignRulesVersion != SeviiRubyOpponentPokemonCatalog.Profile &&
+            (OwnedBattlePokemonCatalog.ForMechanics(opponents.Mechanics.Catalog, frame.SourceCampaignRulesVersion) is not { } current ||
+             frame.SourceCampaignRulesVersion != current.TrainerOpponentProfile ||
+             !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(opponents.Owned, current))) return "source_double_successor_owned";
+        if (SourcePokemonValidator.ValidateFrameParties(opponents.Mechanics.Catalog, frame) is not null) return "sevii_ruby_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
         var expected = SeviiRubyTrainerPartyFactory.Expected[TrainerId];
         if (members.Length != expected.Party.Length) return "sevii_ruby_double_roster";

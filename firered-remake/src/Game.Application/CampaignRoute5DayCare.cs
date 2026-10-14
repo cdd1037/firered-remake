@@ -5,10 +5,17 @@ using Game.Domain.Pokemon;
 
 namespace Game.Application;
 
-public enum CampaignRoute5DayCareStage { FieldScript, Party }
+public enum CampaignRoute5DayCareStage { FieldScript, Party, Residents }
+public enum CampaignDayCareService { Route5, FourIsland }
+public sealed record CampaignDayCareResidentRow(int Slot, long InstanceId, string Nickname, int SourceSpeciesId, int Level, int LevelsGained);
 public sealed record CampaignRoute5DayCare(CampaignRoute5DayCareStage Stage, int PartyIndex = -1,
     long? InstanceId = null, SourceDayCareQuote? Quote = null, bool Deposited = false,
-    bool UsageCounted = false, bool Withdrawn = false, bool PaymentAcknowledged = false);
+    bool UsageCounted = false, bool Withdrawn = false, bool PaymentAcknowledged = false)
+{
+    public CampaignDayCareService Service { get; init; }
+    public int ResidentSlot { get; init; } = -1;
+    public ImmutableArray<CampaignDayCareResidentRow> Residents { get; init; } = [];
+}
 
 /// <summary>The original Route 5 script owns text, questions, cry and refusal order.
 /// This single-slot service never evolves, breeds, hatches or allocates an owned identity.</summary>
@@ -73,6 +80,7 @@ public sealed partial class CampaignSession
     {
         Decision<CampaignState> No(string error) => new(CommandStatus.Rejected, state, error);
         decision = No("daycare_not_pending");
+        if (state.DayCareInteraction is { Service: CampaignDayCareService.FourIsland }) return false;
         if (state.DayCareInteraction is not {} scene) return command.Kind.StartsWith("daycare_", StringComparison.Ordinal);
         if (!InRoute5DayCareScript(state)) { decision = No("daycare_callback_context"); return true; }
         if (scene.Stage == CampaignRoute5DayCareStage.FieldScript)

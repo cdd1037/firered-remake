@@ -74,13 +74,14 @@ public static class SourceBattleAdmission
         if (owned is null || !ReferenceEquals(OwnedBattlePokemonCatalog.For(owned.Catalog), owned)) return "source_campaign_admission";
         if (players.IsDefaultOrEmpty || players.Length > 6 || activeIndex < 0 || activeIndex >= players.Length)
             return "source_campaign_party";
+        if (players[activeIndex]?.IsEgg != false) return "source_campaign_active_egg";
         foreach (var member in players)
         {
             if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species))
                 return "source_campaign_species_unsupported";
-            if (SourcePokemonValidator.ValidatePermanent(owned.Mechanics, member.Pokemon) is not null)
+            if (SourcePokemonValidator.ValidatePartyMember(owned.Mechanics.Catalog, new(member.Pokemon, member.HeldItem, member.Status, member.IsEgg), owned) is not null)
                 return "source_mechanics_pokemon";
-            if (ValidatePokemonCapabilities(owned.Mechanics.Catalog, member.Pokemon) is { } error) return error;
+            if (!member.IsEgg && ValidatePokemonCapabilities(owned.Mechanics.Catalog, member.Pokemon) is { } error) return error;
         }
         return null;
     }
@@ -130,17 +131,18 @@ public static class SourceBattleAdmission
     }
 
     public static string? ValidateEntry(SourceMechanicsCatalog catalog, BattleRulesProfile profile,
-        ImmutableArray<WildBattleCombatant> players, int activeIndex, WildBattleCombatant opponent)
+        ImmutableArray<WildBattleCombatant> players, int activeIndex, WildBattleCombatant opponent, OwnedBattlePokemonCatalog? ownership = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         if (!ReferenceEquals(profile, BattleRulesProfile.CanonicalSourceSingles)) return "source_mechanics_rules_profile";
         if (players.IsDefaultOrEmpty || players.Length > 6 || activeIndex < 0 || activeIndex >= players.Length || opponent?.Pokemon is null)
             return "source_mechanics_party";
+        if (players[activeIndex]?.IsEgg != false || opponent.IsEgg) return "source_mechanics_active_egg";
         foreach (var mon in players.Append(opponent))
         {
-            if (mon?.Pokemon is null || SourcePokemonValidator.ValidatePermanent(catalog, mon.Pokemon) is not null)
+            if (mon?.Pokemon is null || SourcePokemonValidator.ValidatePartyMember(catalog.Catalog, new(mon.Pokemon, mon.HeldItem, mon.Status, mon.IsEgg), ownership) is not null)
                 return "source_mechanics_pokemon";
-            if (ValidatePokemonCapabilities(catalog.Catalog, mon.Pokemon) is { } error) return error;
+            if (!mon.IsEgg && ValidatePokemonCapabilities(catalog.Catalog, mon.Pokemon) is { } error) return error;
         }
         return null;
     }

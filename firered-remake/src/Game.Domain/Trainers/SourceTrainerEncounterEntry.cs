@@ -65,12 +65,12 @@ public static class SourceTrainerEncounterEntry
             created.Trace[0].Cursor - 1 != setup.Rng.Cursor) return Fail("source_trainer_entry_rng_chain");
         if (!Enum.IsDefined(terrain) || playerParty.IsDefaultOrEmpty || playerParty.Length > 6 ||
             playerIndex < 0 || playerIndex >= playerParty.Length || playerParty.Any(m => m?.Pokemon is null) ||
-            playerParty[playerIndex].Pokemon.CurrentHp == 0) return Fail("source_trainer_entry_player_party");
+            playerParty[playerIndex].Pokemon.CurrentHp == 0 || playerParty[playerIndex].IsEgg) return Fail("source_trainer_entry_player_party");
         foreach (var mon in playerParty)
         {
             var permanent = new WildBattleCombatant(mon.Pokemon, HeldItem: mon.HeldItem, Status: mon.Status,
                 AttackBadgeBoost: mon.AttackBadgeBoost) { DefenseBadgeBoost = mon.DefenseBadgeBoost,
-                SpeedBadgeBoost = mon.SpeedBadgeBoost, SpecialBadgeBoost = mon.SpecialBadgeBoost };
+                SpeedBadgeBoost = mon.SpeedBadgeBoost, SpecialBadgeBoost = mon.SpecialBadgeBoost, IsEgg = mon.IsEgg };
             if (mon != permanent || WildBattleSourceFieldEffects.IsToxic(mon.Status) && mon.Status != 0x80)
                 return Fail("source_trainer_entry_player_volatile");
         }
@@ -80,7 +80,7 @@ public static class SourceTrainerEncounterEntry
             return Fail("source_trainer_entry_campaign_admission");
         try
         {
-            var players = playerParty.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem, m.Status)).ToImmutableArray();
+            var players = playerParty.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem, m.Status, m.IsEgg)).ToImmutableArray();
             var enemies = created.Party.Select(m => new WildBattleCalledPartyMember(m.Pokemon, m.HeldItem)).ToImmutableArray();
             var frame = new SourceBattleFrame {
                 Layout = SourceBattleLayout.Singles, KoReplacementTiming = KoReplacementTiming.SourceImmediate,

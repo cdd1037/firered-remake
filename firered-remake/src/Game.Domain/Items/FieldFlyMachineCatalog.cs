@@ -32,7 +32,7 @@ public sealed class FieldFlyMachineCatalog
         PewterMachineRules.ValidateCatalog(predecessor);
         var candidate = predecessor with { AdditionalMachines = before.Add(hm02) };
         var proof = new FieldFlyMachineCatalog(candidate, predecessor, owner);
-        OwnedMachineCatalogBinding.Register(candidate, owner); Proofs.Add(candidate, proof);
+        OwnedMachineCatalogBinding.Register(candidate, owner, predecessor); Proofs.Add(candidate, proof);
         DepartmentStoreMachineStock.BindFieldFlySuccessor(proof);
         return proof;
     }

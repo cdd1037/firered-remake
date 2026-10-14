@@ -15,12 +15,21 @@ internal static partial class SourceBattleItemRules
         var actual = frame.Party(BattleSide.Player).Members;
         if (party.IsDefaultOrEmpty || party.Length != actual.Length) return "source_item_party_context";
         var identities = new HashSet<long>();
+        var ownership = OwnedBattlePokemonCatalog.ForMechanics(mechanics.Catalog, frame.SourceCampaignRulesVersion);
         for (int i = 0; i < party.Length; i++)
         {
             var owned = party[i]; var member = actual[i];
             if (owned?.Pokemon is null || !WildBattleSourcePartyEffects.SamePokemon(owned.Pokemon, member.Pokemon) ||
                 owned.Status != member.Status || owned.IsEgg != member.IsEgg ||
                 owned.HeldItem != WildBattleSourcePartyEffects.PersistentHeldItem(member)) return "source_item_party_projection";
+            if (owned.IsEgg)
+            {
+                if (ownership is null || PokemonStateValidator.ValidateOwnedForBattle(ownership, owned) is not null ||
+                    SourcePokemonValidator.ValidatePartyMember(mechanics.Catalog, member, ownership) is not null)
+                    return "source_item_egg_reserve";
+                if (owned.InstanceId <= 0 || !identities.Add(owned.InstanceId)) return "source_item_duplicate_identity";
+                continue;
+            }
             if (SourcePokemonValidator.ValidatePermanent(mechanics, owned.Pokemon) is { } error) return error;
             if (owned.InstanceId <= 0 || !identities.Add(owned.InstanceId)) return "source_item_duplicate_identity";
             bool Name(string value, int max) => !string.IsNullOrEmpty(value) && value.Length <= max &&

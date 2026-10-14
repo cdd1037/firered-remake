@@ -52,6 +52,7 @@ public static partial class SourceFourActionTurns
             frame.RulesVersion != WildBattleRules.FuchsiaRulesVersion || SourceMechanicsCatalog.For(catalog) is null)
             return "source_four_action_capability";
         if (SourceTrainerTowerEncounter.Validate(catalog, frame) is { } towerError) return towerError;
+        if (SourcePokemonValidator.ValidateFrameParties(catalog, frame) is { } partyError) return partyError;
         if (SourceItemTransferRules.Validate(catalog, frame) is { } itemError) return itemError;
         if (frame.Layout == SourceBattleLayout.PresetDoubles ? frame.BattleKind != WildBattleCalledBattleKind.Trainer
             : frame.KoReplacementTiming != KoReplacementTiming.SourceImmediate ||

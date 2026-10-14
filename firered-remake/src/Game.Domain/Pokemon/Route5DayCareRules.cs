@@ -117,6 +117,7 @@ public static class Route5DayCareRules
     internal static string? ValidateResident(CampaignPokemonContent content, SourceDayCareResident resident)
     {
         if (resident.Pokemon is null) return "daycare_pokemon_missing";
+        if (resident.Pokemon.IsEgg) return "daycare_egg";
         if (PokemonStateValidator.ValidateParty(content, resident.Pokemon) is { } error) return error;
         if (SourceMailRules.ValidateBoxedPokemon(resident.Pokemon) is { } mailError) return mailError;
         var p = resident.Pokemon.Pokemon;

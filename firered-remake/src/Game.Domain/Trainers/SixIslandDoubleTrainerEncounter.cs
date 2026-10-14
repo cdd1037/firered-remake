@@ -34,7 +34,7 @@ public static class SixIslandDoubleTrainerEncounter
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("six_island_double_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("six_island_double_player_party");
         foreach (var member in playerParty)
-            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePermanent(proof, member.Pokemon) is not null ||
+            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePartyMember(catalog, member, owned) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
@@ -97,13 +97,13 @@ public static class SixIslandDoubleTrainerEncounter
             return "six_island_double_catalog";
         try { SixIslandTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "six_island_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion is not (SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile) ||
+        if (frame is null ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "six_island_double_frame";
-        if (frame.SourceCampaignRulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
-            (FiveIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } fiveSuccessor ||
-             !ReferenceEquals(fiveSuccessor.Owned.Predecessor, opponents.Owned))) return "source_double_successor_owned";
-        if (frame.Parties.SelectMany(p => p.Members).Any(m =>
-            SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "six_island_double_pokemon";
+        if (frame.SourceCampaignRulesVersion != SixIslandOpponentPokemonCatalog.Profile &&
+            (OwnedBattlePokemonCatalog.ForMechanics(opponents.Mechanics.Catalog, frame.SourceCampaignRulesVersion) is not { } current ||
+             frame.SourceCampaignRulesVersion != current.TrainerOpponentProfile ||
+             !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(opponents.Owned, current))) return "source_double_successor_owned";
+        if (SourcePokemonValidator.ValidateFrameParties(opponents.Mechanics.Catalog, frame) is not null) return "six_island_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
         var expected = SixIslandTrainerPartyFactory.Expected[TrainerId];
         if (members.Length != expected.Party.Length) return "six_island_double_roster";

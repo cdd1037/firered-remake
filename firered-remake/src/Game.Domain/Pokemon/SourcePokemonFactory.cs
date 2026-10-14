@@ -38,6 +38,31 @@ public static class SourcePokemonValidator
             ? PokemonStateValidator.ValidateTrainerTowerInstance(catalog!, pokemon, tower) :
         ValidateOrdinaryForBattle(catalog, pokemon);
 
+    // Reserve eggs need exact owned metadata. A mechanics catalog alone grants no egg admission.
+    internal static string? ValidatePartyMember(PokemonCatalog catalog, WildBattleCalledPartyMember? member,
+        OwnedBattlePokemonCatalog? ownership = null, SourceTrainerTowerPartyReceipt? tower = null)
+    {
+        if (member?.Pokemon is null) return "pokemon_missing";
+        if (!member.IsEgg) return ValidateForBattle(catalog, member.Pokemon, tower);
+        if (tower is not null || ownership is null ||
+            !ReferenceEquals(OwnedBattlePokemonCatalog.For(ownership.Catalog), ownership) ||
+            !ReferenceEquals(ownership.Mechanics.Catalog, catalog)) return "pokemon_egg_catalog";
+        if (member.Status != 0 || member.HeldItem != "ITEM_NONE" || member.KnockedOffItem is not null ||
+            member.PersistentHeldItemOverride is not null) return "pokemon_egg_battle_metadata";
+        return PokemonStateValidator.ValidateEggInstance(ownership.Catalog, member.Pokemon, ownership.Mechanics);
+    }
+
+    internal static string? ValidateFrameParties(PokemonCatalog catalog, SourceBattleFrame frame)
+    {
+        var ownership = OwnedBattlePokemonCatalog.ForMechanics(catalog, frame.SourceCampaignRulesVersion);
+        foreach (var party in frame.Parties)
+            foreach (var member in party.Members)
+                if (ValidatePartyMember(catalog, member, party.Side == BattleSide.Player ? ownership : null,
+                    party.Side == BattleSide.Opponent ? frame.TrainerTowerEncounter?.Receipt : null) is { } error)
+                    return error;
+        return null;
+    }
+
     private static string? ValidateOrdinaryForBattle(PokemonCatalog? catalog, PokemonInstance? pokemon) =>
         SourceMechanicsCatalog.For(catalog) is { } mechanics
             ? ValidatePermanent(mechanics, pokemon) : PokemonStateValidator.Validate(catalog, pokemon);

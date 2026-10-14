@@ -92,7 +92,7 @@ public partial class CampaignView
             if(key.Keycode==Key.Enter)
             {
                 if(_pcCursor==_session.State.Party.Length)StorageAction(new("pc_back"));
-                else{var name=_session.State.Party[_pcCursor].Nickname;StorageAction(new("storage_deposit",PartyIndex:_pcCursor),"gText_PkmnWasDeposited",name);}
+                else{var name=PresentedOwnedName(_session.State.Party[_pcCursor]);StorageAction(new("storage_deposit",PartyIndex:_pcCursor),"gText_PkmnWasDeposited",name);}
             }
         }
         else if(pc.View==CampaignPcView.Withdraw)
@@ -102,7 +102,7 @@ public partial class CampaignView
             if(key.Keycode==Key.Up)_boxCursor=(_boxCursor+24)%30;
             if(key.Keycode==Key.Down)_boxCursor=(_boxCursor+6)%30;
             if(key.Keycode==Key.Enter)
-            {var owned=_session.State.Storage!.Boxes[_session.State.Storage.CurrentBox].Slots[_boxCursor];if(owned is not null)StorageAction(new("storage_withdraw",MoveSlot:_boxCursor),"gText_PkmnCameBack",owned.Nickname);}
+            {var owned=_session.State.Storage!.Boxes[_session.State.Storage.CurrentBox].Slots[_boxCursor];if(owned is not null)StorageAction(new("storage_withdraw",MoveSlot:_boxCursor),"gText_PkmnCameBack",PresentedOwnedName(owned));}
         }
         return true;
     }
@@ -142,7 +142,12 @@ public partial class CampaignView
         if(pc.View==CampaignPcView.Deposit)
         {
             for(int i=0;i<_session.State.Party.Length;i++)
-            {var owned=_session.State.Party[i];SourceText(_sourceNormal,new(18,24+i*16),owned.Nickname);SourceText(_sourceSmall,new(114,26+i*16),$"Lv{owned.Pokemon.Level}   {owned.Pokemon.CurrentHp}/{owned.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(owned,new(208,26+i*16));}
+            {
+                var owned=_session.State.Party[i];
+                DrawTextureRectRegion(PresentedOwnedIcon(owned),new(18,24+i*16,16,16),new(0,0,32,32));
+                SourceText(_sourceNormal,new(36,24+i*16),PresentedOwnedName(owned));
+                if(!owned.IsEgg){SourceText(_sourceSmall,new(114,26+i*16),$"Lv{owned.Pokemon.Level}   {owned.Pokemon.CurrentHp}/{owned.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(owned,new(208,26+i*16));}
+            }
             SourceText(_sourceNormal,new(18,24+_session.State.Party.Length*16),"CANCEL");SourceText(_sourceNormal,new(6,24+_pcCursor*16),"▶");
         }
         else
@@ -155,13 +160,15 @@ public partial class CampaignView
             {
                 var rect=new Rect2(88+(i%6)*24,32+(i/6)*24,24,24);
                 if(i==_boxCursor)DrawRect(rect,new Color("f4db88"),filled:false,width:1);
-                var owned=slots[i];if(owned is not null)DrawTexture(PresentedPokemonIcon(owned.Pokemon),new(84+(i%6)*24,28+(i/6)*24));
+                var owned=slots[i];if(owned is not null)DrawTexture(PresentedOwnedIcon(owned),new(84+(i%6)*24,28+(i/6)*24));
             }
             var selected=slots[_boxCursor];
             if(selected is not null)
             {
-                if(_battleArt.TryGetValue((PresentedRenderSpecies(selected.Pokemon),"front",selected.Pokemon.IsShiny),out var art))DrawTexture(art.Texture,new(8,16));
-                SourceText(_sourceSmall,new(6,88),selected.Nickname);SourceText(_sourceSmall,new(6,102),_catalog.PokemonContent!.SpeciesNames[selected.Pokemon.SourceSpeciesId]);SourceText(_sourceSmall,new(10,116),$"Lv{selected.Pokemon.Level}");
+                if(selected.IsEgg) DrawTexture(BreedingEggShell(),new(8,16));
+                else if(_battleArt.TryGetValue((PresentedRenderSpecies(selected.Pokemon),"front",selected.Pokemon.IsShiny),out var art))DrawTexture(art.Texture,new(8,16));
+                SourceText(_sourceSmall,new(6,88),PresentedOwnedName(selected));
+                if(!selected.IsEgg){SourceText(_sourceSmall,new(6,102),_catalog.PokemonContent!.SpeciesNames[selected.Pokemon.SourceSpeciesId]);SourceText(_sourceSmall,new(10,116),$"Lv{selected.Pokemon.Level}");}
             }
             SourceText(_sourceSmall,new(6,132),$"{slots.Count(p=>p is not null)}/30 P{_session.State.Party.Length}");
             SourceText(_sourceSmall,new(6,146),"BACK");
@@ -170,7 +177,12 @@ public partial class CampaignView
         {
             _battleSkin.DrawStandardFrame(this,new(0,0,240,160));
             for(int i=0;i<_session.State.Party.Length;i++)
-            {var mon=_session.State.Party[i];SourceText(_sourceNormal,new(12,10+i*20),mon.Nickname);SourceText(_sourceSmall,new(110,12+i*20),$"Lv{mon.Pokemon.Level}  {mon.Pokemon.CurrentHp}/{mon.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(mon,new(210,12+i*20));}
+            {
+                var mon=_session.State.Party[i];
+                DrawTextureRectRegion(PresentedOwnedIcon(mon),new(12,10+i*20,16,16),new(0,0,32,32));
+                SourceText(_sourceNormal,new(30,10+i*20),PresentedOwnedName(mon));
+                if(!mon.IsEgg){SourceText(_sourceSmall,new(110,12+i*20),$"Lv{mon.Pokemon.Level}  {mon.Pokemon.CurrentHp}/{mon.Pokemon.Stats.MaxHp}");DrawForestPartyStatus(mon,new(210,12+i*20));}
+            }
             SourceText(_sourceNormal,new(8,142),"CANCEL");
         }
         if(_pcNotice is not null)ItemMessageBox(_pcNotice);

@@ -33,15 +33,6 @@ public static partial class PretStoryCompiler
     private static (StoryOp, int, int)? FourIslandInstructionShape(PretSourceScriptFile file, string label, string opcode,
         ImmutableArray<string> operands)
     {
-        // Loading authentic source closure never admits breeding or Egg state. Mark every
-        // instruction of each deferred entry as a fault, including the otherwise shared prefix.
-        if (file.Path == "data/maps/FourIsland/scripts.inc" && label is
-            "FourIsland_EventScript_DaycareMan" or "FourIsland_EventScript_DaycareEggWaiting" or
-            "FourIsland_EventScript_DaycareAcceptEgg" or "FourIsland_EventScript_DaycareReceivedEgg" or
-            "FourIsland_EventScript_CheckOnOneMon" or "FourIsland_EventScript_CheckOnTwoMons")
-            return (StoryOp.Unsupported, 0, int.MaxValue);
-        if (file.Path == "data/maps/FourIsland/scripts.inc" && label == "FourIsland_EventScript_TrySetDayCareManPos" &&
-            opcode == "setobjectxyperm") return (StoryOp.Unsupported, 0, int.MaxValue);
         if (!IsFourIslandMapSource(file)) return null;
         if (opcode == "trainerbattle_no_intro" && label == "FourIsland_IcefallCave_Back_EventScript_LoreleiRocketsScene")
         {

@@ -34,7 +34,7 @@ public static class VictoryRoadDoubleTrainerEncounter
         if (rng.AlgorithmId != Gen3Rng.AlgorithmId) return Fail("victory_road_double_rng");
         if (playerParty.IsDefault || playerParty.Length is < 2 or > 6) return Fail("victory_road_double_player_party");
         foreach (var member in playerParty)
-            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePermanent(proof, member.Pokemon) is not null ||
+            if (member?.Pokemon is null || !owned.Catalog.Species.ContainsKey(member.Pokemon.Species) || SourcePokemonValidator.ValidatePartyMember(catalog, member, owned) is not null ||
                 member.KnockedOffItem is not null || member.PersistentHeldItemOverride is not null ||
                 !SourceFrameBerryItems.SupportsHeldItem(member.HeldItem, catalog) ||
                 member.Status is not (WildBattleStatus.None or WildBattleStatus.Poison or WildBattleStatus.Burn or WildBattleStatus.Freeze or WildBattleStatus.Paralysis) &&
@@ -97,22 +97,13 @@ public static class VictoryRoadDoubleTrainerEncounter
             return "victory_road_double_catalog";
         try { VictoryRoadTrainerPartyFactory.ValidateCatalog(trainers); }
         catch (Exception e) when (e is ArgumentException or NotSupportedException) { return "victory_road_double_source"; }
-        if (frame is null || frame.SourceCampaignRulesVersion is not (CinnabarOpponentPokemonCatalog.Profile or SeviiRubyOpponentPokemonCatalog.Profile or FourIslandOpponentPokemonCatalog.Profile or SixIslandOpponentPokemonCatalog.Profile or FiveIslandOpponentPokemonCatalog.Profile) ||
+        if (frame is null ||
             SourceFourActionTurns.ValidateCapability(opponents.Mechanics.Catalog, frame) is { }) return "victory_road_double_frame";
-        if (frame.SourceCampaignRulesVersion == SeviiRubyOpponentPokemonCatalog.Profile &&
-            (SeviiRubyOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } successor ||
-             !ReferenceEquals(successor.Owned.Predecessor, opponents.Owned))) return "source_double_successor_owned";
-        if (frame.SourceCampaignRulesVersion == FourIslandOpponentPokemonCatalog.Profile &&
-            (FourIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } fourSuccessor ||
-             !ReferenceEquals(fourSuccessor.Owned.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
-        if (frame.SourceCampaignRulesVersion == SixIslandOpponentPokemonCatalog.Profile &&
-            (SixIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } sixSuccessor ||
-             !ReferenceEquals(sixSuccessor.Owned.Predecessor.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
-        if (frame.SourceCampaignRulesVersion == FiveIslandOpponentPokemonCatalog.Profile &&
-            (FiveIslandOpponentPokemonCatalog.ForMechanics(opponents.Mechanics.Catalog) is not { } fiveSuccessor ||
-             !ReferenceEquals(fiveSuccessor.Owned.Predecessor.Predecessor.Predecessor.Predecessor, opponents.Owned))) return "source_double_successor_owned";
-        if (frame.Parties.SelectMany(p => p.Members).Any(m =>
-            SourcePokemonValidator.ValidatePermanent(opponents.Mechanics,m.Pokemon) is not null)) return "victory_road_double_pokemon";
+        if (frame.SourceCampaignRulesVersion != CinnabarOpponentPokemonCatalog.Profile &&
+            (OwnedBattlePokemonCatalog.ForMechanics(opponents.Mechanics.Catalog, frame.SourceCampaignRulesVersion) is not { } current ||
+             frame.SourceCampaignRulesVersion != current.TrainerOpponentProfile ||
+             !OwnedBattlePokemonCatalog.IsCampaignSuccessorOf(opponents.Owned, current))) return "source_double_successor_owned";
+        if (SourcePokemonValidator.ValidateFrameParties(opponents.Mechanics.Catalog, frame) is not null) return "victory_road_double_pokemon";
         var members = frame.Party(BattleSide.Opponent).Members;
         var expected = VictoryRoadTrainerPartyFactory.Expected[TrainerId];
         if (members.Length != expected.Party.Length) return "victory_road_double_roster";

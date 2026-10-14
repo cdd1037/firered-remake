@@ -118,7 +118,7 @@ public static class SourceBattleIdentityRules
                     return "source_frame_party_binding";
                 if (!active.Add(key)) return "source_frame_duplicate_active_member";
                 var member = frame.Party(key.Side).Members[key.Index];
-                if (member.IsEgg || !MatchesPermanent(member, cell.Body)) return "source_frame_active_party_mismatch";
+                if (member.IsEgg || cell.Body.IsEgg || !MatchesPermanent(member, cell.Body)) return "source_frame_active_party_mismatch";
                 if (HasLegacyPointers(cell.Body)) return "source_frame_competing_legacy_registers";
                 if (cell.Body.CalledVolatile?.SnatchOrderIndex is { } snatch && (snatch < 0 || snatch >= frame.BattlerCount - 1)) return "source_frame_snatch_order";
                 if ((cell.Body.BindTurnsRemaining > 0) != (cell.Registers.WrappedBy is not null)) return "source_frame_wrapped_source";

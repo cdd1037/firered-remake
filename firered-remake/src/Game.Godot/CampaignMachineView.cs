@@ -234,7 +234,7 @@ public partial class CampaignView
         {
             for (int i = 0; i < _session.State.Party.Length; i++)
             {
-                SourceText(_sourceNormal, new(24, 8 + i * 14), _session.State.Party[i].Nickname);
+                SourceText(_sourceNormal, new(24, 8 + i * 14), PresentedOwnedName(_session.State.Party[i]));
                 SourceText(_sourceSmall, new(148, 8 + i * 14), MachineText(MachineCompatibility(_session.State.Party[i])));
             }
             SourceText(_sourceNormal, new(24, 8 + _session.State.Party.Length * 14), _itemSkin.Text("gFameCheckerText_Cancel"));

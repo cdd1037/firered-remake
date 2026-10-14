@@ -115,7 +115,7 @@ public sealed partial class CampaignSession
             if (!acquisitions.Add(capture.InstanceId)) return "save_npc_trade_acquisition_duplicate";
         var gifts = new long?[] { state.MagikarpGift?.InstanceId, state.EeveeGift?.InstanceId,
             state.LaprasGift?.InstanceId, state.DojoGift?.InstanceId };
-        foreach (var id in gifts.OfType<long>().Concat(fossils.Select(f => f.InstanceId)).Concat((state.PrizePokemon ?? []).Select(p => p.InstanceId)).Concat(incoming))
+        foreach (var id in gifts.OfType<long>().Concat(fossils.Select(f => f.InstanceId)).Concat((state.PrizePokemon ?? []).Select(p => p.InstanceId)).Concat(incoming).Concat((state.DayCareEggs ?? []).Select(e => e.InstanceId)))
             if (!acquisitions.Add(id)) return "save_npc_trade_acquisition_duplicate";
         if (state.NextPokemonId != acquisitions.Count + 1L || acquisitions.Any(id => id < 1 || id >= state.NextPokemonId) ||
             !acquisitions.SetEquals(history.Select(p => p.InstanceId))) return "save_npc_trade_acquisition_missing";
@@ -124,7 +124,7 @@ public sealed partial class CampaignSession
             if (!HasSupportedCampaignOriginalTrainer(state, pokemon)) return "save_npc_trade_origin_missing";
             // Retirement does not relax the campaign metadata contract previously applied to
             // every living party/box entry. General Domain syntax alone admits other games/languages.
-            if (pokemon.Language != 2 || pokemon.MetGame != 4 ||
+            if (pokemon.Language != (pokemon.IsEgg ? 1 : 2) || pokemon.MetGame != 4 ||
                 ((!_content.CaptureEnabled || pokemon.InstanceId == 1) &&
                     (pokemon.MetLocation != "MAPSEC_PALLET_TOWN" || pokemon.MetLevel != 5)) ||
                 pokemon.Ball != "ITEM_POKE_BALL" && !(pokemon.InstanceId != 1 &&
