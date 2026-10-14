@@ -1,0 +1,43 @@
+{
+  "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "sourceTree": "7515cd4067ea55f8cdbc73624478afd2736c58b9",
+  "profile": "firered-ordinary-item-supplement-v1",
+  "importerSha256": "dcab8eb2988726724cdd7fe0c445442adab74ec70a2312068a97efbda149b354",
+  "files": [
+    {
+      "path": "content/generated/ordinary-item-supplement/items.json",
+      "byteLength": 3210,
+      "sha256": "cafeee34bd8d22354aa1904f67205804dae8e4fd46b673f16b0b2e1c451deba5"
+    },
+    {
+      "path": "content/generated/ordinary-item-supplement/pp-max.png",
+      "byteLength": 429,
+      "sha256": "aca14c7336fd4952d65985aa41d0970857885a8b427140931d444c8705c2f793"
+    },
+    {
+      "path": "content/generated/ordinary-item-supplement/pp-max.rgba",
+      "byteLength": 2304,
+      "sha256": "70bcb43a44db6af794465f2f439f59e617c1d390a33896c60359b613c96016bf"
+    },
+    {
+      "path": "content/generated/ordinary-item-supplement/source-contract.json",
+      "byteLength": 990,
+      "sha256": "866bd4fc3251a1594b2d9d81978db5af218b331081bee693696002136ac7c9e3"
+    },
+    {
+      "path": "content/generated/ordinary-item-supplement/source-input-hashes.json",
+      "byteLength": 3192,
+      "sha256": "f9b0148355277ae08fa01e7940e8d1858b811700b83f794833c013c8b4e97ace"
+    },
+    {
+      "path": "content/raw/ordinary-item-supplement/graphics/items/icon_palettes/pp_max.pal",
+      "byteLength": 198,
+      "sha256": "8d7b63774bd8ad020c01b5484c0f8b9ef2882fa10a6c309dc2cbf2ef2407f6a6"
+    },
+    {
+      "path": "content/raw/ordinary-item-supplement/graphics/items/icons/pp_max.png",
+      "byteLength": 270,
+      "sha256": "833ac361efd63837f0d0469ebbaf647ceb443d8dc54f8a6d4263695869fbee67"
+    }
+  ]
+}

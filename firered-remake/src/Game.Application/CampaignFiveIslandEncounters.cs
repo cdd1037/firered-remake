@@ -6,6 +6,7 @@ public sealed partial class CampaignSession
 {
     private EarlyLandWildPokemonResult GenerateCurrentLand(CampaignState state,
         EarlyLandEncounterTable table,EarlyLandEncounterState encounter) =>
+        IsSourceTableMap(table.Map) ? EarlyLandWildPokemonFactory.Generate(_binding.Ownership,table,encounter,state.World.Rng,state.TrainerId) :
         IsSeafoamMap(table.Map) ? GenerateSeafoamLand(state,encounter) :
         table.Map==PowerPlantEncounterTables.Land.Map
             ? GeneratePowerPlantLand(state,encounter)

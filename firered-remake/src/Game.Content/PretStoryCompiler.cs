@@ -150,6 +150,11 @@ public static partial class PretStoryCompiler
                 if (FirstSeviiSource(file, "data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc", "8afc38f502fd909a1bb220a919ac107ce8b39e98e29731d654f6edef749828ce") &&
                     label == "CinnabarIsland_PokemonLab_ExperimentRoom_MapScripts" && body.Count == 1 && body[0].Text == ".byte 0")
                 { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
+                if (((FirstSeviiSource(file, "data/maps/TwoIsland_CapeBrink/scripts.inc", PretCapeBrinkTutor.CapeScriptSha256) &&
+                    label == "TwoIsland_CapeBrink_MapScripts") ||
+                    (FirstSeviiSource(file, "data/maps/TwoIsland_CapeBrink_House/scripts.inc", PretCapeBrinkTutor.HouseScriptSha256) &&
+                    label == "TwoIsland_CapeBrink_House_MapScripts")) && body.Count == 1 && body[0].Text == ".byte 0")
+                { headers.Add(label, []); assemblyData.Add(label, [".byte 0"]); continue; }
                 if (((FirstSeviiSource(file, "data/maps/FourIsland_House1/scripts.inc", PretOriginalTutorRooms.BodySlamScriptSha256) &&
                     label == "FourIsland_House1_MapScripts") ||
                     (FirstSeviiSource(file, "data/maps/CinnabarIsland_PokemonLab_ResearchRoom/scripts.inc", PretOriginalTutorRooms.MetronomeScriptSha256) &&
@@ -207,6 +212,14 @@ public static partial class PretStoryCompiler
                         }
                         bool snorlaxSource=includeSnorlaxOpcodes&&IsSnorlaxEventSource(file,label);
                         var (kind,min,max)=Shape(opcode,includeGiftOpcodes,includeRoute3Opcodes,includeMtMoonOpcodes,includeBillOpcodes,includeSsAnneOpcodes,includeVermilionGymOpcodes,includeRockTunnelOpcodes,includeRocketHideoutOpcodes,includePokemonTowerOpcodes,snorlaxSource);
+                        if (opcode == "bufferleadmonspeciesname" &&
+                            FirstSeviiSource(file, "data/scripts/move_tutors.inc", Game.Domain.Pokemon.CapeBrinkTutorCatalog.ScriptsSha256) &&
+                            label == "TwoIsland_CapeBrink_House_EventScript_StarterTutor")
+                        {
+                            if (!operands.SequenceEqual(new[] { "STR_VAR_1" }))
+                                throw ContentJson.Error("cape_brink_lead_buffer_operands", $"{file.Path}:{lineNumber}", opcode);
+                            (kind, min, max) = (StoryOp.Special, 1, 1);
+                        }
                         if(includeSafariOpcodes&&opcode=="setwarp"&&file.Path=="data/scripts/safari_zone.inc"&&label=="SafariZone_EventScript_OutOfBallsMidBattle")
                         {
                             if(!operands.SequenceEqual(new[]{"MAP_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE","4","1"}))

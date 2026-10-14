@@ -16,7 +16,7 @@ public sealed record MoveTutorResult(PartyPokemon Pokemon, string? Error, int Le
 
 /// <summary>Reusable teaching catalog bound to an authenticated owned catalog. Only the
 /// bounded original tutor definitions are admitted; actor bindings separately enable field NPCs.</summary>
-public sealed class MoveTutorCatalog
+public sealed partial class MoveTutorCatalog
 {
     public const string LearnsetsSha256 = "d09053c6fa423a6838fa1eb2c5c28701305e3895ee6b894dc46113be57019e76";
     public const string StringsSha256 = "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1";

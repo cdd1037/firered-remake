@@ -35,6 +35,7 @@ public static class PretCampaignMapPresentation
         Add(catalog.MoveDeleterHouse.NewMaps.Keys,catalog.MoveDeleterHouse.NpcSourcePath);
         Add(catalog.OriginalTutorRooms.NewMaps.Keys,catalog.OriginalTutorRooms.NpcSourcePath);
         Add(catalog.CopycatHouse.NewMaps.Keys,catalog.CopycatHouse.NpcSourcePath);
+        Add(catalog.CapeBrinkTutor.NewMaps.Keys,catalog.CapeBrinkTutor.NpcSourcePath);
         Add(catalog.TrainerTowerRegion.Maps.Keys,catalog.TrainerTowerRegion.NpcSourcePath);
         Add(catalog.PowerPlantRegion.NewMaps.Keys,catalog.PowerPlantRegion.NpcSourcePath);
         Add(catalog.EventIslandRegion.NewMaps.Keys,catalog.EventIslandRegion.NpcSourcePath);

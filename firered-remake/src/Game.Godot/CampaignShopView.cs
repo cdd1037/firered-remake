@@ -31,10 +31,21 @@ public partial class CampaignView
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
         LoadPokeDollIcon();
+        LoadOrdinarySupplementIcons();
         foreach (var icon in _catalog.NpcTradeMail.Items.Icons)
         {
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
                 _catalog.NpcTradeMail.AssetFiles[icon.RgbaPath]);
+            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+        }
+    }
+    private void LoadOrdinarySupplementIcons()
+    {
+        if (OrdinaryItemInventoryCatalog.For(_catalog.EarlyShop) is null) return;
+        foreach (var icon in PretOrdinaryItemSupplement.LoadDocument(_root).Icons)
+        {
+            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
+                PretOrdinaryItemSupplement.LoadIconRgba(_root));
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
     }

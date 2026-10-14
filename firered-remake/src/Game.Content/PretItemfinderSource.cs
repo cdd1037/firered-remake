@@ -38,5 +38,5 @@ public static class PretItemfinderSource
 public sealed partial class PretCampaignCatalog:IItemfinderSourceCatalog
 {
     public PretItemfinderDocument? ItemfinderDocument {get;internal set;}
-    public ItemfinderSourceContract? ItemfinderSource=>ItemfinderDocument is {} source?new(source.Underfoot,source.Texts):null;
+    public ItemfinderSourceContract? ItemfinderSource=>ItemfinderDocument is {} source?new(source.Underfoot.AddRange(CapeBrinkUnderfootItems),source.Texts):null;
 }

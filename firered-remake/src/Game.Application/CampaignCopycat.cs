@@ -62,19 +62,21 @@ public sealed partial class CampaignSession
 
     // Old source-specific helpers remain responsible for their known item subset. Keep the
     // authenticated current addition around that boundary without another regional ladder.
+    private bool IsSeafoamSupplementItem(ItemId item) => item == PokeDollInventoryCatalog.PokeDollId ||
+        OrdinaryItemInventoryCatalog.For(ShopCatalog)?.IsAddition(item) == true;
     private InventoryState SeafoamInventoryView(InventoryState inventory)
     {
         if (EarlyShopInventoryRules.Validate(ShopCatalog, inventory) is {} error) throw new InvalidDataException(error);
-        return inventory with { BagItems = inventory.BagItems.RemoveAll(s => s.Item == PokeDollInventoryCatalog.PokeDollId),
-            PcItems = inventory.PcItems.RemoveAll(s => s.Item == PokeDollInventoryCatalog.PokeDollId) };
+        return inventory with { BagItems = inventory.BagItems.RemoveAll(s => IsSeafoamSupplementItem(s.Item)),
+            PcItems = inventory.PcItems.RemoveAll(s => IsSeafoamSupplementItem(s.Item)) };
     }
     private InventoryState RestoreSeafoamInventory(InventoryState original, InventoryState changed)
     {
-        static ImmutableArray<InventoryStack> Restore(ImmutableArray<InventoryStack> before, ImmutableArray<InventoryStack> after)
+        ImmutableArray<InventoryStack> Restore(ImmutableArray<InventoryStack> before, ImmutableArray<InventoryStack> after)
         {
             var rest = after.ToDictionary(s => s.Item); var output = ImmutableArray.CreateBuilder<InventoryStack>();
             foreach (var stack in before)
-                if (stack.Item == PokeDollInventoryCatalog.PokeDollId) output.Add(stack);
+                if (IsSeafoamSupplementItem(stack.Item)) output.Add(stack);
                 else if (rest.Remove(stack.Item, out var updated)) output.Add(updated);
             foreach (var stack in after) if (rest.ContainsKey(stack.Item)) output.Add(stack);
             return output.ToImmutable();

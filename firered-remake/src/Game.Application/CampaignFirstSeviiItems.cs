@@ -9,7 +9,8 @@ public sealed partial class CampaignSession
 {
     // Current construction authenticates the latest shop. These predecessors remain
     // typed source proofs and preserve each later key-item extension when narrowing.
-    private SeafoamShopCatalog SeafoamShopProof => PokeDollInventoryCatalog.For(ShopCatalog)?.Predecessor ?? SeafoamShopCatalog.For(ShopCatalog) ?? throw new InvalidDataException("seafoam_shop_proof_missing");
+    private EarlyShopCatalog BaseShopCatalog => OrdinaryItemInventoryCatalog.BaseCatalog(ShopCatalog);
+    private SeafoamShopCatalog SeafoamShopProof => PokeDollInventoryCatalog.For(BaseShopCatalog)?.Predecessor ?? SeafoamShopCatalog.For(BaseShopCatalog) ?? throw new InvalidDataException("seafoam_shop_proof_missing");
     private InventoryState SeafoamPredecessorInventory(InventoryState inventory) => SeafoamShopProof.InventoryForPredecessor(SeafoamInventoryView(inventory));
     private NpcTradeShopCatalog NpcTradeShopProof => SeafoamShopProof.Predecessor;
     private InventoryState NpcTradePredecessorInventory(InventoryState inventory) => NpcTradeShopProof.InventoryForPredecessor(SeafoamPredecessorInventory(inventory));

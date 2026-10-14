@@ -219,3 +219,15 @@ The narrow production headless view passed90 checks/eight Draw calls. Build04 th
 consolidated the affected static door admission, preserving all41 decisions, and
 strictly restored the same final payload in a new process; the long route was not rerun.
 See [the separate evidence boundaries](super-rod-campaign.md).
+
+## Cape Brink implementation checkpoint, 2026-10-14
+
+The current source composition adds Cape Brink and its house:336 maps,163 owned
+species,192 ordinary opponents,18 shared tutor definitions,130 ordinary items
+and40 loaded original Super Rod tables. Land/Surf/Old/Good tables preserve all
+13 source species. PP Max is a source-authenticated ordinary-item supplement
+with original icon and pickup/storage support; its field use remains unavailable.
+Normal build01 and strict envelope-only admission of SuperRod57854 passed.
+Actual tutor route and view acceptance remain in progress, with separate
+[implementation and evidence boundaries](cape-brink-campaign.md).
+Fingerprint: `db86a57b6bfc2ab4d9e103f15b0c906ed4a76fcac7781401c60e38774cb96c97`.

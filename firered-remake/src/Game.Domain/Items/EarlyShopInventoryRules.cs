@@ -25,6 +25,7 @@ public static class EarlyShopInventoryRules
     public static void ValidateCatalog(EarlyShopCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.Profile == OrdinaryItemInventoryCatalog.Profile) { OrdinaryItemInventoryCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == PokeDollInventoryCatalog.Profile) { PokeDollInventoryCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == SeafoamShopCatalog.Profile) { SeafoamShopCatalog.ValidateCatalog(catalog); return; }
         if (catalog.Profile == NpcTradeShopCatalog.Profile) { NpcTradeShopCatalog.ValidateCatalog(catalog); return; }
@@ -119,6 +120,7 @@ public static class EarlyShopInventoryRules
     public static string? Validate(EarlyShopCatalog catalog, InventoryState? state)
     {
         ValidateCatalog(catalog);
+        if (OrdinaryItemInventoryCatalog.For(catalog) is { } supplement) return supplement.ValidateInventory(state);
         if (PokeDollInventoryCatalog.For(catalog) is { } doll) return doll.ValidateInventory(state);
         if (SeafoamShopCatalog.For(catalog) is { } seafoam) return seafoam.ValidateInventory(state);
         if (NpcTradeShopCatalog.For(catalog) is { } trade) return trade.ValidateInventory(state);

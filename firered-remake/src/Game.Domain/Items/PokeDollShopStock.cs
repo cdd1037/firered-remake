@@ -15,6 +15,7 @@ public sealed record PokeDollShopStock : AuthenticatedShopStock
     public override ImmutableArray<ItemId> Items => [PokeDollInventoryCatalog.PokeDollId];
     public override void Validate(EarlyShopCatalog catalog)
     {
+        catalog = OrdinaryItemInventoryCatalog.BaseCatalog(catalog);
         PokeDollInventoryCatalog.ValidateCatalog(catalog);
         var item = EarlyShopInventoryRules.Find(catalog, PokeDollInventoryCatalog.PokeDollId);
         if (item is not { SourceItemId: 80, Price: 1000, Pocket: "POCKET_ITEMS", Importance: 0 } ||

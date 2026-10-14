@@ -21,6 +21,9 @@ public static partial class SourceWildBattlePolicy
     {
         var mon = opponent.Pokemon;
         if (!owned.Catalog.Species.ContainsKey(mon.Species) || OwnedBattlePokemonCatalog.SourceRoot(owned) is not { } source) return false;
+        if (context.SourceTable is { } sourceTable)
+            return SourceTableWildBattleContract.SourceInitialInstance(owned, sourceTable, mon) &&
+                opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";
         if (context.Seafoam is {} seafoam)
             return (SeafoamOwnedPokemonCatalog.For(owned.Catalog) ?? SuperRodOwnedPokemonCatalog.For(owned.Catalog)?.Predecessor) is {} proof &&
                 SeafoamPokemonFactory.SourceInitialInstance(proof,seafoam,mon) && opponent.Status == 0 && opponent.HeldItem == "ITEM_NONE";

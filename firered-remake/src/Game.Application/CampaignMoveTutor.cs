@@ -22,6 +22,7 @@ public sealed partial class CampaignSession
 
     private bool TryMoveTutorContext(CampaignState state, out MoveTutorDefinition tutor)
     {
+        if (state.UltimateTutor is not null) return TryUltimateTutorContext(state, out tutor);
         tutor = null!;
         if (_content.MoveTutors is not { } catalog || !ReferenceEquals(catalog.Pokemon, _content.PokemonContent?.Catalog) ||
             state.LastTalked is not { } actor || !state.Actors.TryGetValue(actor, out var npc) ||
@@ -85,15 +86,7 @@ public sealed partial class CampaignSession
             if (error is not null) { decision = Reject(error); return true; }
             var mon = state.Party[command.PartyIndex];
             if (mon.IsEgg) { decision = Reject("move_tutor_egg"); return true; }
-            scene = scene with { PartyIndex = command.PartyIndex, InstanceId = mon.InstanceId };
-            var eligibility = MoveTutorRules.Eligibility(tutor, mon);
-            result = eligibility switch
-            {
-                MoveTutorEligibility.Incompatible => Message(CampaignMoveTutorStage.Notice, "gText_PkmnCantLearnMove", mon),
-                MoveTutorEligibility.AlreadyKnown => Message(CampaignMoveTutorStage.Notice, "gText_PkmnAlreadyKnows", mon),
-                _ when mon.Pokemon.Moves.Length == 4 => Message(CampaignMoveTutorStage.ReplaceQuestion, "gText_PkmnNeedsToReplaceMove", mon),
-                _ => LearnTutorMove(state with { MoveTutor = scene }, null)
-            };
+            result = StartTutorLesson(state, scene with { PartyIndex = command.PartyIndex, InstanceId = mon.InstanceId });
             decision = new(CommandStatus.Accepted, result); return true;
         }
         string? targetError = MoveTutorRules.ValidateSelection(state.Party, scene.PartyIndex, scene.InstanceId);
@@ -145,12 +138,33 @@ public sealed partial class CampaignSession
         decision = Reject("move_tutor_command_not_allowed"); return true;
     }
 
+    private CampaignState StartTutorLesson(CampaignState state, CampaignMoveTutor scene)
+    {
+        var mon = state.Party[scene.PartyIndex];
+        var tutor = _content.MoveTutors!.Definitions[scene.TutorIndex];
+        var eligibility = MoveTutorRules.Eligibility(tutor, mon);
+        string? symbol = eligibility switch
+        {
+            MoveTutorEligibility.Incompatible => "gText_PkmnCantLearnMove",
+            MoveTutorEligibility.AlreadyKnown => "gText_PkmnAlreadyKnows",
+            MoveTutorEligibility.Egg => throw new InvalidDataException("move_tutor_egg"),
+            _ when mon.Pokemon.Moves.Length == 4 => "gText_PkmnNeedsToReplaceMove",
+            _ => null
+        };
+        if (symbol is null) return LearnTutorMove(state with { MoveTutor = scene }, null);
+        return state with { MoveTutor = TutorMessage(scene,
+            eligibility == MoveTutorEligibility.Able ? CampaignMoveTutorStage.ReplaceQuestion : CampaignMoveTutorStage.Notice, symbol, mon),
+            TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname)
+                .SetItem("STR_VAR_2", BattleContent.MoveNames[tutor.Move.Value]) };
+    }
+
     private CampaignState LearnTutorMove(CampaignState state, int? slot)
     {
         var scene = state.MoveTutor!; var mon = state.Party[scene.PartyIndex];
         var result = MoveTutorRules.Teach(_content.MoveTutors!, _content.PokemonContent!.Catalog, mon, scene.TutorIndex, slot);
         if (!result.Succeeded) throw new InvalidDataException(result.Error);
         return TutorSound(state with { Party = state.Party.SetItem(scene.PartyIndex, result.Pokemon),
+            UltimateTutor = state.UltimateTutor is { } ultimate ? ultimate with { Learned = true } : null,
             TextBuffers = state.TextBuffers.SetItem("STR_VAR_1", mon.Nickname).SetItem("STR_VAR_2", BattleContent.MoveNames[_content.MoveTutors!.Definitions[scene.TutorIndex].Move.Value]),
             MoveTutor = TutorMessage(scene, CampaignMoveTutorStage.Learned, "gText_PkmnLearnedMove3", result.Pokemon) }, "playfanfare", "MUS_LEVEL_UP");
     }
@@ -180,6 +194,8 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("move_tutor_native_context");
             next = state with { MoveTutor = new(tutor.Index, CampaignMoveTutorStage.Party),
                 Script = state.Script with { Variables = state.Script.Variables.SetItem("VAR_RESULT", 0) } };
+            if (state.UltimateTutor is { } ultimate)
+                next = StartTutorLesson(next, new(tutor.Index, CampaignMoveTutorStage.Notice, ultimate.PartyIndex, ultimate.InstanceId));
             return true;
         }
         if (effect.Opcode != "waitstate" || state.MoveTutor is null) return false;

@@ -120,10 +120,10 @@ public sealed partial class CampaignSession
 
     private SourceWildEncounterContext CanonicalWildEncounter(CampaignState state,PokemonInstance pokemon,FirstSeviiEncounterKind kind,
         VictoryRoadWildOrigin? victory,SeviiRubyWildOrigin? ruby,FourIslandWildOrigin? four,SixIslandWildOrigin? six,FiveIslandWildOrigin? five,CeruleanCaveWildOrigin? cave,SevenIslandWildOrigin? seven,
-        EventIslandWildOrigin? eventIsland,PowerPlantWildOrigin? powerPlant,CampaignLostelleHypnoReceipt? hypno,PokemonTowerBattleKind? tower,bool snorlax,FishingEncounterOrigin? fishing=null,SeafoamWildOrigin? seafoam=null)
+        EventIslandWildOrigin? eventIsland,PowerPlantWildOrigin? powerPlant,CampaignLostelleHypnoReceipt? hypno,PokemonTowerBattleKind? tower,bool snorlax,FishingEncounterOrigin? fishing=null,SeafoamWildOrigin? seafoam=null,SourceTableWildOrigin? sourceTable=null)
     {
         var map=state.World.Player.MapId;
-        int origins=(seafoam is null?0:1)+(victory is null?0:1)+(ruby is null?0:1)+(four is null?0:1)+(six is null?0:1)+(five is null?0:1)+
+        int origins=(sourceTable is null?0:1)+(seafoam is null?0:1)+(victory is null?0:1)+(ruby is null?0:1)+(four is null?0:1)+(six is null?0:1)+(five is null?0:1)+
             (powerPlant is null?0:1)+(eventIsland is null?0:1)+(seven is null?0:1)+(cave is null?0:1)+(hypno is null?0:1)+(tower is null?0:1)+(snorlax?1:0);
         if (fishing is not null)
         {
@@ -131,6 +131,10 @@ public sealed partial class CampaignSession
                 throw new InvalidDataException("canonical_fishing_origin");
             return new() { Fishing = fishing };
         }
+        if(sourceTable is not null&&(!IsSourceTableMap(map)||sourceTable.Map!=map||
+            (int)sourceTable.Kind!=(int)kind||!SourceTableWildBattleContract.Matches(sourceTable,pokemon)))
+            throw new InvalidDataException("source_table_wild_origin");
+        if(sourceTable is null&&IsSourceTableMap(map))throw new InvalidDataException("source_table_wild_missing_origin");
         if(seafoam is not null&&(!_content.SeafoamEnabled||seafoam.Map!=map||!SeafoamWildBattleContract.Matches(seafoam,pokemon)))throw new InvalidDataException("seafoam_wild_origin");
         if(seafoam is null&&IsSeafoamMap(map))throw new InvalidDataException("seafoam_wild_missing_origin");
         if(powerPlant is not null&&(!_content.PowerPlantEnabled||powerPlant.Map!=map||!PowerPlantWildBattleContract.Matches(powerPlant,pokemon)))throw new InvalidDataException("power_plant_wild_origin");
@@ -162,6 +166,6 @@ public sealed partial class CampaignSession
                 FirstSeviiEncounterKind.OldRod=>FirstSeviiOldRodEncounterRules.SourceAdditions.FirstOrDefault(t=>t.Map==map)?.Slots.Any(s=>Match(s.Species,s.MinimumLevel,s.MaximumLevel))==true,_=>false};
             if(!admitted)throw new InvalidDataException("first_sevii_wild_source_slot");
         }
-        return new(){Seafoam=seafoam,PowerPlant=powerPlant,EventIsland=eventIsland,SevenIsland=seven,CeruleanCave=cave,VictoryRoad=victory,SeviiRuby=ruby,FourIsland=four,SixIsland=six,FiveIsland=five,TowerBattleKind=tower,ScriptedSnorlax=snorlax,FirstSeviiWild=hypno is not null||IsFirstSeviiWildMap(map),LostelleHypno=hypno is not null};
+        return new(){SourceTable=sourceTable,Seafoam=seafoam,PowerPlant=powerPlant,EventIsland=eventIsland,SevenIsland=seven,CeruleanCave=cave,VictoryRoad=victory,SeviiRuby=ruby,FourIsland=four,SixIsland=six,FiveIsland=five,TowerBattleKind=tower,ScriptedSnorlax=snorlax,FirstSeviiWild=hypno is not null||IsFirstSeviiWildMap(map),LostelleHypno=hypno is not null};
     }
 }

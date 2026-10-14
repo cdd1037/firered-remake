@@ -7,11 +7,11 @@ namespace Game.Application;
 public sealed partial class CampaignSession
 {
     private static bool PostgameGroundMap(MapId map) => map.Value is SevenIslandCanyonMap or
-        "map.seven-island-sevault-canyon-entrance" or "map.seven-island-tanoby-ruins" or "map.seven-island-trainer-tower" or "map.birth-island-exterior";
+        "map.seven-island-sevault-canyon-entrance" or "map.seven-island-tanoby-ruins" or "map.seven-island-trainer-tower" or "map.birth-island-exterior" or "map.two-island-cape-brink";
     private static bool PostgameGroundBehavior(MapId map, int? behavior) => (map.Value, behavior) is
         (SevenIslandCanyonMap, 0x0c) or ("map.seven-island-sevault-canyon-entrance", 0x0c) or
         ("map.seven-island-tanoby-ruins", 0x0c or 0x17) or ("map.seven-island-trainer-tower", 0x17) or
-        ("map.birth-island-exterior", 0x0c);
+        ("map.birth-island-exterior", 0x0c) or ("map.two-island-cape-brink", 0x0c);
     private IReadOnlyDictionary<MapId, ConnectedFieldMap> PostgameWalkingMaps(IReadOnlyDictionary<MapId, ConnectedFieldMap> maps)
     {
         if (!_content.SevenIslandEnabled) return maps;
