@@ -83,7 +83,10 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-fame-checker-presentation.py', ['{reference}','{project}']),
  ('import-vs-seeker.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/vs-seeker']),
  ('import-vs-seeker-parties.py', ['--source-root','{reference}','--dependency-root','{project}','--rules-root','{project}','--output-root','{project}']),
- ('import-vs-seeker-presentation.py', ['{reference}','{project}','{project}'])]
+ ('import-vs-seeker-presentation.py', ['{reference}','{project}','{project}']),
+ ('import-teachy-tv.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/teachy-tv','--raw-output','{project}/content/raw/teachy-tv']),
+ ('import-teachy-tv-art.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/teachy-tv-art']),
+ ('import-teachy-tv-audio.py', ['{reference}','{project}','--dependency','{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

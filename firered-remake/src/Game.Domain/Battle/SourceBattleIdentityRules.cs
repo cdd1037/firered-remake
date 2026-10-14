@@ -126,6 +126,7 @@ public static class SourceBattleIdentityRules
             }
             if (ValidateRegisters(frame, cell) is { } registerError) return registerError;
         }
+        if (SourcePokedudeBattle.ValidateFrame(frame) is { } pokedudeError) return pokedudeError;
         if (SourceWildBattlePolicy.ValidateFrame(frame) is { } wildPolicyError) return wildPolicyError;
         if (SourceFourEntryAbilities.ValidateState(frame) is { } entryError) return entryError;
         if (frame.Reservations.IsDefault || frame.Queue.IsDefault || frame.PendingSwitches.IsDefault) return "source_frame_collections";

@@ -84,6 +84,7 @@ internal abstract partial class SourceRecipeContext
 
     private bool FixedDamageAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, bool thunderWeather = false)
     {
+        if (PokedudeBattle) return true;
         var user = Get(actor); var defender = Get(target);
         if (defender.Protected && move.Flags.Contains("FLAG_PROTECT_AFFECTED")) return false;
         if (CalledSureHit(actor, target)) return true;

@@ -131,6 +131,7 @@ public sealed record SourceBattleFrame
     public string RulesVersion { get; init; } = WildBattleRules.FuchsiaRulesVersion;
     public string? SourceMechanicsRulesVersion { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? SourceCampaignRulesVersion { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public SourcePokedudeContext? Pokedude { get; init; }
     public SourceBattleLayout Layout { get; init; }
     public KoReplacementTiming KoReplacementTiming { get; init; }
     public ImmutableArray<SourceBattleParty> Parties { get; init; } = [];

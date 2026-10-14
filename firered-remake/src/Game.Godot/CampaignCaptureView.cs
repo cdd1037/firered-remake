@@ -278,9 +278,9 @@ public partial class CampaignView
         // uses the event-time display so an acknowledged hit never jumps ahead.
         _battleSkin.DrawStandardFrame(this, new(0, 0, 240, 112));
         int rowHeight = cancellable ? 14 : 16;
-        for (int i = 0; i < _session.State.Party.Length; i++)
+        for (int i = 0; i < PresentedBattlePlayerParty.Length; i++)
         {
-            var owned = _session.State.Party[i]; var pokemon = i == battle.ActivePartyIndex ? battle.DisplayPlayer : owned.Pokemon;
+            var owned = PresentedBattlePlayerParty[i]; var pokemon = i == battle.ActivePartyIndex ? battle.DisplayPlayer : owned.Pokemon;
             string prefix = i == battle.ActivePartyIndex ? ">" : " ";
             SourceText(_sourceNormal, new(20, 8 + i * rowHeight), prefix + PresentedOwnedName(owned));
             if (!owned.IsEgg) SourceText(_sourceSmall, new(130, 9 + i * rowHeight), $"L{pokemon.Level} {pokemon.CurrentHp}/{pokemon.Stats.MaxHp}");
@@ -289,9 +289,9 @@ public partial class CampaignView
         }
         if (cancellable)
         {
-            int y = 8 + _session.State.Party.Length * rowHeight;
+            int y = 8 + PresentedBattlePlayerParty.Length * rowHeight;
             SourceText(_sourceNormal, new(20, y), "CANCEL");
-            if (_wildCursor == _session.State.Party.Length) SourceText(_sourceNormal, new(8, y), "▶");
+            if (_wildCursor == PresentedBattlePlayerParty.Length) SourceText(_sourceNormal, new(8, y), "▶");
         }
     }
 

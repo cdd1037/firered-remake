@@ -198,30 +198,8 @@ public partial class CampaignView
     }
 
 
-    private void DrawMtMoonMachineList()
-    {
-        DrawTexture(_questPocketTextures[MachineCaseIcon], new(8, 8));
-        SourceText(_sourceNormal, new(40, 12), MachineText("gText_TMCase"));
-        var stacks = MachineStacks;
-        int start = MachineListStart;
-        for (int i = start; i < Math.Min(stacks.Length, start + MachineListVisibleCount); i++)
-        {
-            var definition = PewterMachineRules.Definition(_catalog.PewterMachines!, stacks[i].Item)!;
-            SourceText(_sourceNormal, new(118, 40 + (i - start) * 16), definition.Machine.Item.Name + " " + MoveName(definition.Move));
-        }
-        if (stacks.Length < start + MachineListVisibleCount) SourceText(_sourceNormal, new(118, 40 + (stacks.Length - start) * 16), MachineText("gText_Close"));
-        int selected = Math.Min(_machineCursor, stacks.Length);
-        SourceText(_sourceNormal, new(106, 40 + (selected - start) * 16), _itemSkin.Text("gText_SelectorArrow2"));
-        if (selected < stacks.Length)
-        {
-            var stack = stacks[selected];
-            if (_earlyItemIcons.TryGetValue(stack.Item, out var icon)) DrawTexture(icon, new(8, 40));
-            else DrawTexture(_questPocketTextures[MachineIcon], new(8, 40));
-            SourceText(_sourceSmall, new(44, 50), _itemSkin.FormatText("gText_TimesStrVar1", stack.Quantity.ToString()));
-            ItemLines(_sourceSmall, new(8, 80), PewterMachineRules.Definition(_catalog.PewterMachines!, stack.Item)!.Machine.Description, 13);
-        }
-        else ItemLines(_sourceSmall, new(8, 128), MachineText("gText_TMCaseWillBePutAway"), 13);
-    }
+    private void DrawMtMoonMachineList() =>
+        DrawMachineList(MachineStacks, _machineCursor, MachineListStart, MachineListVisibleCount);
 
     private bool DrawMachines()
     {

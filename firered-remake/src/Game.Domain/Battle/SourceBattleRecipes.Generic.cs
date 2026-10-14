@@ -175,6 +175,11 @@ internal abstract partial class SourceRecipeContext
             // Cmd_seteffectwithchance consumes this draw even for a zero effect byte or immunity.
             var secondary = SecondaryEffect(side, move, purpose, damage == 0);
             if (!secondary.Apply) return;
+            // SetMoveEffect suppresses the actual effect after seteffectwithchance draws.
+            var effectTarget = move.Effect == "EFFECT_ATTACK_UP_HIT" ? side : targetSide;
+            // This generic secondary family has no sleep effect; primary sleep is separate.
+            // SecondaryEffectSelection.Effect is a presence marker, not the source effect ID.
+            if (PokedudeBattle && effectTarget.Side == BattleSide.Opponent) return;
             switch (move.Effect)
             {
                 case "EFFECT_SECRET_POWER": ApplySecretPowerSecondary(catalog, side, targetSide, move, purpose, secondary.Certain); break;

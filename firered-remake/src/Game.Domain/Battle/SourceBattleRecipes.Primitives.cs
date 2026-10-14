@@ -9,6 +9,8 @@ internal abstract partial class SourceRecipeContext
 {
     internal bool EarlyPartyAccuracy(BattlerSlot actor, BattlerSlot target, PokemonMoveDefinition move, string purpose, bool reportMiss, bool? sandstorm = null)
     {
+        // Cmd_accuracycheck exits before its random draw in Pokedude battles.
+        if (PokedudeBattle) return true;
         if (CalledSureHit(actor, target)) return true;
         if (BillUnderground(actor,target,move)) { if(reportMiss)SourceGenericMiss(actor,target,move);return false; }
         int accuracy = WildBattleDamage.Accuracy(move.Accuracy, Get(actor).AccuracyStage, Get(target).Identified ? 6 : Get(target).EvasionStage);
@@ -25,7 +27,7 @@ internal abstract partial class SourceRecipeContext
         return hit;
     }
     internal bool CeruleanCritical(WildBattleCombatant actor, WildBattleCombatant target, string effect, string purpose, int denominator) =>
-        WildBattleEffective.Ability(target) is not ("ABILITY_SHELL_ARMOR" or "ABILITY_BATTLE_ARMOR") && Draw($"{purpose}.critical", denominator) % denominator == 0;
+        WildBattleEffective.Ability(target) is not ("ABILITY_SHELL_ARMOR" or "ABILITY_BATTLE_ARMOR") && Draw($"{purpose}.critical", denominator) % denominator == 0 && !PokedudeBattle;
     internal void ReportPewterEffectiveness(PokemonCatalog catalog, BattlerSlot actor, BattlerSlot target, MoveId move)
     {
         if (catalog.Moves[move].Type == "TYPE_GROUND" && WildBattleEffective.Ability(Get(target)) == "ABILITY_LEVITATE")

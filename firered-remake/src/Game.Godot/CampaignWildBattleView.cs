@@ -68,7 +68,7 @@ public partial class CampaignView
             ? _mtMoonTerrain ?? throw new InvalidDataException("MtMoon cave terrain was not loaded.")
             : _wildTerrain;
     }
-    private Texture2D CurrentWildBattleTerrain => WildBattleTerrainForMap(_session.State.World.Player.MapId);
+    private Texture2D CurrentWildBattleTerrain => TeachyBattle is not null ? _wildTerrain : WildBattleTerrainForMap(_session.State.World.Player.MapId);
     private string? _wildPresentationKey, _wildNotice, _wildNoticeReturn;
     private string _wildMenu = "actions";
     private ImmutableArray<string> _wildPages = [];
@@ -149,7 +149,7 @@ public partial class CampaignView
         WildCurrentEvent(b) is WildBattlePlayerSwitchedEvent && !SourcePlayerBatonSwitch(b) && _wildPage == 0;
     private PokemonInstance WildDisplayPlayer(CampaignWildBattle b) => WildWithdrawing(b)
         ? ((WildBattlePlayerSwitchedEvent)WildCurrentEvent(b)!).Previous.Pokemon : b.DisplayPlayer;
-    private PartyPokemon WildRewardRecipient(CampaignWildBattle b) => _session.State.Party[b.RewardPartyIndex];
+    private PartyPokemon WildRewardRecipient(CampaignWildBattle b) => PresentedBattlePlayerParty[b.RewardPartyIndex];
     private string WildName(WildBattleSide side) => side == WildBattleSide.Player
         ? WildWithdrawing(PresentedWildBattle!) ? PresentedWildBattle!.LastSwitch!.Outgoing.Nickname : SsAnnePendingPlayerForceOut(PresentedWildBattle!) is {} forced ? _session.State.Party[forced.PreviousIndex].Nickname : PresentedWildBattle!.OwnedBefore.Nickname
         : TowerOpponentAppearance()?.Name ?? PresentedBattleSpeciesName(PresentedWildBattle!.DisplayOpponent.SourceSpeciesId);
@@ -232,7 +232,7 @@ public partial class CampaignView
                     Source("gText_PkmnHPRestoredByVar2", ("STR_VAR_1", WildName(potion.Side)), ("STR_VAR_2", potion.HpRestored.ToString())); break;
                 case WildBattleMedicineAppliedEvent medicine when SingleMedicinePages(medicine,Source): break;
                 case WildBattleMedicineAppliedEvent medicine:
-                    string targetName=_session.State.Party.Single(p=>p.InstanceId==medicine.TargetInstanceId).Nickname;
+                    string targetName=PresentedBattlePlayerParty.Single(p=>p.InstanceId==medicine.TargetInstanceId).Nickname;
                     string medicineText=medicine.HpAfter>medicine.HpBefore?"gText_PkmnHPRestoredByVar2":
                         WildBattleStatus.IsSleeping(medicine.StatusBefore)?"gText_PkmnWokeUp2":ForestPresentationStatus(medicine.StatusBefore) switch
                         {WildBattleStatus.Poison=>"gText_PkmnCuredOfPoison",WildBattleStatus.Burn=>"gText_PkmnBurnHealed",WildBattleStatus.Freeze=>"gText_PkmnThawedOut",WildBattleStatus.Paralysis=>"gText_PkmnCuredOfParalysis",_=>throw new InvalidDataException("Unsupported medicine result message.")};
@@ -553,6 +553,7 @@ public partial class CampaignView
         bool defeatedTrainer = DrawForestTrainerDefeatPortrait(b);
         foreach (var (side, mon) in new[] { (WildBattleSide.Opponent, b.DisplayOpponent), (WildBattleSide.Player, WildDisplayPlayer(b)) })
         {
+            if (side == WildBattleSide.Opponent && TeachyTvHidesCaughtOpponent) continue;
             if (portrait || defeatedTrainer && side == WildBattleSide.Opponent || ForestTrainerHidePlayer(b, side) || PokemonTowerHidePlayer(b,side)) continue;
             if (side == WildBattleSide.Opponent && b.Phase == CampaignBattlePhase.Events &&
                 b.Events.Take(b.EventIndex + 1).OfType<WildBattleCaptureResultEvent>().Any(c => c.Outcome == CaptureOutcome.Caught)) continue;

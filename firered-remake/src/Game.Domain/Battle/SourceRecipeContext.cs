@@ -8,6 +8,7 @@ namespace Game.Domain.Battle;
 /// canonical kernel or the explicitly singles-only historical boundary bridge.</summary>
 internal abstract partial class SourceRecipeContext : SourceStatRecipeContext
 {
+    internal virtual bool PokedudeBattle => false;
     internal virtual bool SourceDoubleBattle => false;
     internal virtual int SourceDefenderCount(BattlerSlot target) => 1;
     internal virtual bool SourcePlusMinusBoost(WildBattleCombatant actor)

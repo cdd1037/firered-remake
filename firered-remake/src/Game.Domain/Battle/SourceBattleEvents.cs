@@ -33,6 +33,7 @@ namespace Game.Domain.Battle;
 [JsonDerivedType(typeof(SourceCalledSpikesChangedEvent), "SourceCalledSpikesChangedEvent")]
 [JsonDerivedType(typeof(SourceCallerSelectionEvent), "SourceCallerSelectionEvent")]
 [JsonDerivedType(typeof(SourceCaptureResultEvent), "SourceCaptureResultEvent")]
+[JsonDerivedType(typeof(SourcePokedudeCaughtEvent), "SourcePokedudeCaughtEvent")]
 [JsonDerivedType(typeof(SourceConfusionChangedEvent), "SourceConfusionChangedEvent")]
 [JsonDerivedType(typeof(SourceConfusionSelfHitEvent), "SourceConfusionSelfHitEvent")]
 [JsonDerivedType(typeof(SourceCriticalHitEvent), "SourceCriticalHitEvent")]
@@ -140,6 +141,7 @@ public sealed record SourceCalledPartySwitchedEvent(long Sequence, int Turn, Bat
 }
 public sealed record SourceCalledSpikesChangedEvent(long Sequence, int Turn, BattleSide Side, int Before, int After) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCallerSelectionEvent(long Sequence, int Turn, BattlerSlot Actor, MoveId Caller, MoveId? Result, ImmutableArray<int> CandidateSourceMoveIds, ulong RngCursor) : SourceBattleEvent(Sequence, Turn);
+public sealed record SourcePokedudeCaughtEvent(long Sequence, int Turn, CaptureBall Ball, int AnimationCode, string Message) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceCaptureResultEvent(long Sequence, int Turn, CaptureBall Ball, CaptureOutcome Outcome, CaptureDecisionBranch Branch, CaptureCalculation Calculation, int ChecksPassed, int AnimationCode) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceConfusionChangedEvent(long Sequence, int Turn, BattlerSlot Side, int Before, int After, string Reason) : SourceBattleEvent(Sequence, Turn);
 public sealed record SourceConfusionSelfHitEvent(long Sequence, int Turn, BattlerSlot Side, MoveId SelectedMove, int HpBefore, int HpAfter, int Damage, int RandomPercent) : SourceBattleEvent(Sequence, Turn);
@@ -421,6 +423,7 @@ public static class SourceBattleEventHooks
             SourceCalledSpikesChangedEvent x => [],
             SourceCallerSelectionEvent x => [x.Actor],
             SourceCaptureResultEvent x => [],
+            SourcePokedudeCaughtEvent x => [],
             SourceConfusionChangedEvent x => [x.Side],
             SourceConfusionSelfHitEvent x => [x.Side],
             SourceCriticalHitEvent x => [x.Actor, x.Target],

@@ -99,7 +99,7 @@ public partial class CampaignView
             return true;
         }
         source("sText_PlayerUsedItem",[("B_LAST_ITEM",SingleBattleItemName(item.Item))]);
-        string name=_session.State.Party.Single(p=>p.InstanceId==item.TargetInstanceId).Nickname;
+        string name=PresentedBattlePlayerParty.Single(p=>p.InstanceId==item.TargetInstanceId).Nickname;
         if(item.HpAfter>item.HpBefore)source("gText_PkmnHPRestoredByVar2",[("STR_VAR_1",name),("STR_VAR_2",(item.HpAfter-item.HpBefore).ToString())]);
         else if(item.StatusBefore!=item.StatusAfter&&item.StatusAfter==0)source("gText_PkmnBecameHealthy",[("STR_VAR_1",name)]);
         if(item.PpRecovery is {IsEmpty:false})source("gText_PPWasRestored",[]);

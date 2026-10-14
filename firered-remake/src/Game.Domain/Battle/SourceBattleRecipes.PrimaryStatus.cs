@@ -27,6 +27,7 @@ internal abstract partial class SourceRecipeContext
         if (!SourceGenericAccuracy(actorSlot, targetSlot, move, purpose))
         { SourceGenericMiss(actorSlot, targetSlot, move); return; }
         if (SourceCalledSafeguardBlocks(actorSlot, targetSlot, move.Id)) return;
+        if (PokedudeBattle && targetSlot.Side == BattleSide.Opponent && move.Effect != "EFFECT_SLEEP") return;
         if (move.Effect == "EFFECT_POISON") { ChangeStatus(targetSlot, WildBattleStatus.Poison, "move"); SynchronizeStatus(catalog, targetSlot, WildBattleStatus.Poison); }
         else ChangeStatus(targetSlot, (uint)((Draw($"{purpose}.sleep-duration", 4) & 3) + 2), "move");
     }

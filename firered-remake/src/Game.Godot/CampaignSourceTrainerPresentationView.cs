@@ -37,7 +37,8 @@ public partial class CampaignView
     {
         var frame = PresentedCanonicalFrame(battle);
         var owned = OwnedBattlePokemonCatalog.For(_catalog.PokemonContent!.Catalog);
-        return owned is not null && (frame.TrainerEncounter is null
+        return owned is not null && (frame.Pokedude is not null
+            ? SourceFourActionTurns.ValidateCapability(owned.Mechanics.Catalog, frame) is null : frame.TrainerEncounter is null
             ? frame.SourceCampaignRulesVersion == owned.RulesVersion
             : SourceTrainerEncounterPolicy.Validate(owned.Mechanics.Catalog, frame) is null)
             ? owned.Mechanics.Catalog
@@ -74,7 +75,7 @@ public partial class CampaignView
         string PartyName(WildBattleSide side, int index)
         {
             if (side == WildBattleSide.Player)
-                return index >= 0 && index < _session.State.Party.Length ? _session.State.Party[index].Nickname
+                return index >= 0 && index < PresentedBattlePlayerParty.Length ? PresentedBattlePlayerParty[index].Nickname
                     : throw new InvalidDataException("Source player party display index differs.");
             if (_session.State.ForestTrainerBattle is { } trainer)
             {

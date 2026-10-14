@@ -123,7 +123,7 @@ public partial class CampaignView
     {
         var b=PresentedWildBattle!;
         var decision=CampaignMoveAnimationPresentation.AtAttackText(b,SourceTrainerPresentationActive(b),_session.EffectiveOptions.BattleScene);
-        if(decision.Dispatch is not {} dispatch){Apply(new("ack"));return;}
+        if(decision.Dispatch is not {} dispatch){AcknowledgePresentedSingleBattle();return;}
         if(SourceAnimationBlocking)return;
         EnsureSourceMoveAssets();var (assets,battlers)=CreateSourceAnimationScene(false);
         StartSourceMoveAnimation(dispatch,assets,battlers,false);
@@ -196,7 +196,7 @@ public partial class CampaignView
         var script=SourceTraceAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceTraceScripts![dispatch.SourceMoveId]:SourceExplosionAnimationCatalog.Supports(dispatch.SourceMoveId)?_sourceExplosionScripts![dispatch.SourceMoveId]:SourceStatMoveCatalog.Supports(dispatch.SourceMoveId)?_sourceStatMoveScripts![dispatch.SourceMoveId]:SourceHitAnimationCatalog.Script(_sourceMoveManifest!,dispatch.SourceMoveId);
         var cue=new CommittedMoveAnimation(dispatch.BattleId,dispatch.Sequence,dispatch.SourceMoveId,new(dispatch.Actor.Value),new(dispatch.Target.Value));
         _sourceMoveSound=_sourceAudio is SynthSourceAudioPlayer synth&&!_audioFaulted?new(synth,c=>Write("sourceMoveAnimationSound",new{dispatch.BattleId,dispatch.Sequence,c.Id,c.Frame,c.Pan,panningImplemented=_sourceMoveSound?.PanningImplemented==true})):null;
-        if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){Apply(new("ack"));return;}
+        if(!_sourceMoveAnimationGate.TryStart(cue,()=>new(script,cue,battlers,doubles,(ISourceAnimationAudio?)_sourceMoveSound??new SilentMoveAudio()))){AcknowledgePresentedSingleBattle();return;}
         _sourceMoveComposer=new(assets,battlers.ToArray(),metallicMaterial:_sourceMetallicMaterial);_sourceMoveContinuation=dispatch;_sourceMoveSession=_session;_sourceMoveRevision=_session.Revision;_sourceMoveRemainder=0;_sourceMoveDoubles=doubles;
         PresentSourceMoveFrame(_sourceMoveAnimationGate.Current!.Tick());
         Write("sourceMoveAnimationStarted",new{dispatch,doubles,revision=_sourceMoveRevision,actors=battlers.Select(x=>new{slot=x.Slot.Value,x.Asset,x.YOffset,x.Elevation,x.SourceWidth,x.SourceHeight,x.DisplayCenter,x.Visible}),sourceAudioAvailable=_sourceMoveSound is not null,sourcePanApplied=_sourceMoveSound?.PanningImplemented==true});QueueRedraw();
@@ -229,7 +229,7 @@ public partial class CampaignView
             // sees no pending continuation; the gameplay move transaction is never replayed.
             _sourceMoveContinuation=null;_sourceMoveSession=null;_sourceMoveComposer=null;_sourceMoveSound=null;
             Write("sourceMoveAnimationFinished",new{pending.BattleId,pending.Sequence,sourceFrame=_sourceMoveAnimationGate.Current!.Snapshot().Frame});
-            Apply(new("ack"));
+            AcknowledgePresentedSingleBattle();
         }
         QueueRedraw();return true;
     }

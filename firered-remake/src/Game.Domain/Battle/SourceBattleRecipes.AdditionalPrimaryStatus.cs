@@ -68,6 +68,7 @@ internal abstract partial class SourceRecipeContext
             if (body.Pokemon.CurrentHp == 0) return;
             PreparePrimaryToxicStorage();
         }
+        if (PokedudeBattle && target.Side == BattleSide.Opponent) return;
         ChangeStatus(target, status, "move");
         SynchronizeStatus(catalog, target, status == WildBattleSourceFieldEffects.ToxicPoison ? WildBattleStatus.Poison : status);
     }

@@ -9,6 +9,7 @@ namespace Game.Domain.Battle;
 
 internal sealed partial class FrameRecipeContext : SourceRecipeContext
 {
+    internal override bool PokedudeBattle => Frame.Pokedude is not null;
     internal override bool CancellerInfatuationEnabled => !SourceWildBattlePolicy.Disguised(Frame);
     internal override bool BideInCanceller => !SourceWildBattlePolicy.Disguised(Frame);
     internal override bool CancellerLateMoveThawEnabled => !SourceWildBattlePolicy.Disguised(Frame);

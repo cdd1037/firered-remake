@@ -43,7 +43,10 @@ public sealed partial class CampaignSession
     public bool SupportsRegisteredKeyItem(string id)
     {
         var item = _content.EarlyShop?.Items.SingleOrDefault(i => i.Id.Value == id);
-        if (item?.SourceMetadata is not { Registrability: 1, Pocket: "POCKET_KEY_ITEMS" }) return false;
+        var questItem = _content.QuestItems?.Items.SingleOrDefault(i => i.Id.Value == id);
+        if (item?.SourceMetadata is not { Registrability: 1, Pocket: "POCKET_KEY_ITEMS" } &&
+            (questItem is null || !KeyItemRegistrationRules.CanRegister(questItem))) return false;
+        if (id == QuestItemRules.TeachyTvId.Value) return TeachyTvEnabled;
         return id == ItemfinderRules.Item.Value ? ItemfinderEnabled : id == VsSeekerItem.Value ? VsSeekerEnabled : id == BillItemRules.FameCheckerId.Value && FameCheckerEnabled;
     }
 
@@ -51,6 +54,7 @@ public sealed partial class CampaignSession
         "pret:ITEM_VS_SEEKER" when VsSeekerEnabled => "field_vs_seeker",
         "pret:ITEM_ITEMFINDER" when ItemfinderEnabled => "field_itemfinder",
         "pret:ITEM_FAME_CHECKER" when FameCheckerEnabled => "fame_checker_open",
+        "pret:ITEM_TEACHY_TV" when TeachyTvEnabled => "teachy_tv_open",
         _ => throw new ArgumentException("registered_item_unavailable", nameof(id)) };
 
     private string? ValidateRegisteredKeyItem(CampaignState state) => state.RegisteredItem is not {} id ? null :
@@ -67,6 +71,7 @@ public sealed partial class CampaignSession
     }
 
     private Decision<CampaignState> UseRegisteredKeyItem(CampaignState state, CampaignCommand command) =>
+        state.RegisteredItem == QuestItemRules.TeachyTvId.Value ? OpenTeachyTv(state, command, registered: true) :
         state.RegisteredItem == VsSeekerItem.Value ? UseVsSeeker(state, command, registered: true) :
         state.RegisteredItem == ItemfinderRules.Item.Value ? UseItemfinder(state, command, registered: true) :
         state.RegisteredItem == BillItemRules.FameCheckerId.Value ? OpenFameChecker(state, command, registered: true) :

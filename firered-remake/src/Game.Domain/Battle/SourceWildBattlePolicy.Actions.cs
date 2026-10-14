@@ -35,6 +35,7 @@ public static partial class SourceWildBattlePolicy
         long expectedRevision, SourceActionSelection player)
     {
         if (SourceFourActionTurns.ValidateCapability(catalog, frame) is { } invalid) return Fail(frame, invalid);
+        if (frame.Pokedude is not null) return Fail(frame, "pokedude_controller_selection_required");
         if (frame.WildEncounter is null || frame.FourTurn is not null || !frame.Queue.IsEmpty || frame.Outcome != WildBattleOutcome.Ongoing)
             return Fail(frame, "source_wild_selection_phase");
         if (frame.Revision != expectedRevision || player is null || player.Actor.Slot.Value != 0 || !frame.IsCurrent(player.Actor))
@@ -85,6 +86,9 @@ public static partial class SourceWildBattlePolicy
 
     internal static string? ValidatePolicySelection(PokemonCatalog catalog, SourceBattleFrame frame, SourceActionSelection choice)
     {
+        if (frame.Pokedude is { } demonstration && (choice.Kind == SourceActionKind.Run ||
+            choice.Kind == SourceActionKind.Capture && (demonstration.LessonId != 3 || choice.Capture?.Ball != CaptureBall.Poke)))
+            return "pokedude_source_selection_unsupported";
         if (choice.Kind is not (SourceActionKind.Run or SourceActionKind.Capture))
             return choice.Capture is null ? null : "source_wild_selection_mixed_payload";
         if (frame.WildEncounter is null || frame.Layout != SourceBattleLayout.Singles || frame.BattleKind != WildBattleCalledBattleKind.Wild)
@@ -126,6 +130,15 @@ public static partial class SourceWildBattlePolicy
         {
             next = next with { Revision = checked(frame.Revision + 1) };
             Publish(ref next, events, (n, t) => new SourceTowerBallDodgedEvent(n, t, selection.Ball));
+            return new(next, events.ToImmutable(), [], null);
+        }
+        if (next.Pokedude is not null)
+        {
+            // Cmd_handleballthrow / BattleScript_OldMan_Pokedude_CaughtMessage: no catch
+            // formula, shake RNG, givecaughtmon or dex registration.
+            next = SourceBattleOutcomeRules.SetOutcome(next with { Revision = checked(frame.Revision + 1) }, WildBattleOutcome.Caught);
+            Publish(ref next, events, (n, t) => new SourcePokedudeCaughtEvent(n, t, selection.Ball, 4, "STRINGID_GOTCHAPKMNCAUGHT2"));
+            Publish(ref next, events, (n, t) => new SourceEndedEvent(n, t, WildBattleOutcome.Caught));
             return new(next, events.ToImmutable(), [], null);
         }
         var target = next.Get(new(1)).Body!; var pokemon = target.Pokemon;

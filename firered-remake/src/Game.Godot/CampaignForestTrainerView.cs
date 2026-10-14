@@ -9,7 +9,7 @@ using Godot;
 /// combat, experience, replacement, inventory and RNG; sprites are static source frames.</summary>
 public partial class CampaignView
 {
-    private CampaignWildBattle? PresentedWildBattle => _session.State.ForestTrainerBattle?.Presentation ?? _session.State.WildBattle;
+    private CampaignWildBattle? PresentedWildBattle => _session.TeachyTvBattlePresentation ?? _session.State.ForestTrainerBattle?.Presentation ?? _session.State.WildBattle;
     private TrainerDefinition VisibleOrdinaryTrainer()
     {
         var id=_session.State.ForestTrainerBattle!.Trainer;
