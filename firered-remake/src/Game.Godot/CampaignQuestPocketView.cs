@@ -87,7 +87,7 @@ public partial class CampaignView
 
     private bool TryQuestPocketInput(InputEventKey key)
     {
-        if (HeldItemScreen)return false;
+        if (HeldItemScreen || MailScreen)return false;
         if (!QuestPocketEnabled || key.Keycode is Key.F5 or Key.F9 or Key.F12 or Key.Escape) return false;
         if (_questPocket == 0)
         {

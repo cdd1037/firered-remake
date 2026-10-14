@@ -41,6 +41,7 @@ public partial class CampaignView
     // Called before the key-only guard so an actual joypad Start works too.
     private bool TryFieldMenuToggle(InputEvent input)
     {
+        if (_session?.State.MailComposer is not null) return false;
         bool start = input is InputEventKey { Keycode: Key.Tab, Echo: false } ||
             input is InputEventJoypadButton { ButtonIndex: JoyButton.Start };
         if (!start) return false;

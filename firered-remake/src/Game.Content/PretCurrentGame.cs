@@ -50,6 +50,8 @@ public sealed partial class PretCampaignCatalog
         var npcTradeElyssa = PretNpcTradeElyssa.Load(projectRoot);
         var npcTradeHaden = PretNpcTradeHaden.Load(projectRoot);
         var npcTradeMail = PretNpcTradeMail.Load(projectRoot);
+        var mailComposer = PretMailComposer.Load(projectRoot);
+        var mailPresentation = PretMailPresentation.Load(projectRoot);
         var goodRodService = PretGoodRodService.Load(projectRoot);
         var superRodService = PretSuperRodService.Load(projectRoot);
         var seafoam = PretSeafoamRegion.Load(projectRoot);
@@ -2477,6 +2479,7 @@ public sealed partial class PretCampaignCatalog
         var vsSeekerItem = vsSeekerPresentation.ItemDefinition.Deserialize<EarlyShopItemDefinition>(new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
             ?? throw new InvalidDataException("vs_seeker_item_missing");
         earlyShop = earlyShop with { Catalog = OrdinaryItemInventoryCatalog.AppendVsSeeker(earlyShop.Catalog, vsSeekerItem).Catalog };
+        earlyShop = earlyShop with { Catalog = mailPresentation.AppendInventory(earlyShop.Catalog).Catalog };
         machines = PretGameCornerPrizes.LoadMachines(projectRoot, machines, prizeOwned).Catalog;
         pokemonContent = pokemonContent with { Catalog = prizeOwned.Catalog,
             SpeciesNames = pokemonContent.SpeciesNames.SetItems(GameCornerOwnedPokemonCatalog.AdditionalSpecies.Select(id => {
@@ -2561,6 +2564,8 @@ public sealed partial class PretCampaignCatalog
         hashes.Add("slot-machine-rules:" + SlotMachineRules.RulesSha256);
         hashes.Add("slot-machine-policy:" + SlotMachineSessionContract.ApprovedProductionPolicyId);
 
+        hashes.AddRange(mailComposer.AdditionalSourceHashes);
+        hashes.AddRange(mailPresentation.AdditionalSourceHashes);
         hashes.Add("teachy-tv:" + PretTeachyTv.GeneratedSha256);
         hashes.AddRange(fameChecker.AdditionalSourceHashes);
         hashes.AddRange(vsSeeker.AdditionalSourceHashes);
@@ -2742,7 +2747,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare, originalTmAcquisition: originalTmAcquisition) { TeachyTv = teachyTv, VsSeeker = vsSeeker.Catalog, VsSeekerTexts = vsSeekerPresentation.EncodedTexts, VsSeekerTrainers = vsSeekerTrainers, VsSeekerBattleOccurrences = vsSeekerOccurrences, VsSeekerOpponents = vsSeekerOpponents, FameChecker = fameChecker.Catalog, GameCornerSlots = SlotMachineSessionContract.CreateApprovedProduction(slotRules), ItemfinderDocument = itemfinder, FieldRockSmash = fieldRockSmash, MemorialPillarTrainers = memorialTrainers, MemorialPillarOpponents = memorialOpponents };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare, originalTmAcquisition: originalTmAcquisition) { MailPresentation = mailPresentation, MailComposer = mailComposer.Catalog, TeachyTv = teachyTv, VsSeeker = vsSeeker.Catalog, VsSeekerTexts = vsSeekerPresentation.EncodedTexts, VsSeekerTrainers = vsSeekerTrainers, VsSeekerBattleOccurrences = vsSeekerOccurrences, VsSeekerOpponents = vsSeekerOpponents, FameChecker = fameChecker.Catalog, GameCornerSlots = SlotMachineSessionContract.CreateApprovedProduction(slotRules), ItemfinderDocument = itemfinder, FieldRockSmash = fieldRockSmash, MemorialPillarTrainers = memorialTrainers, MemorialPillarOpponents = memorialOpponents };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

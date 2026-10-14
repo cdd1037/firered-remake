@@ -43,6 +43,7 @@ public partial class CampaignView
                 _catalog.NpcTradeMail.AssetFiles[icon.RgbaPath]);
             _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
         }
+        LoadMailStationeryIcons();
     }
     private void LoadOrdinarySupplementIcons()
     {

@@ -103,6 +103,38 @@ public sealed class OrdinaryItemInventoryCatalog
         Proofs.Add(proof.Catalog, proof); return proof;
     }
 
+    public const string MailStationerySourceSha256 = "f9c0763bdfeed31a3156b5dddc89cfd90acfda7861d883ff289567024c203b19";
+    /// <summary>Authenticate all twelve source papers, retain Dream/Fab/Retro identities, and append only the nine missing definitions.</summary>
+    public static OrdinaryItemInventoryCatalog AppendMailStationery(EarlyShopCatalog predecessor,
+        ImmutableArray<EarlyShopItemDefinition> papers)
+    {
+        ArgumentNullException.ThrowIfNull(predecessor);
+        if (For(predecessor) is not { } old || papers.IsDefault || papers.Length != 12 ||
+            papers.Any(p => p is null || p.EffectBytes.IsDefault || p.SourceMetadata is null) ||
+            CampaignSourceFingerprint.Compute(papers.ToArray()) != MailStationerySourceSha256)
+            throw new ArgumentException("ordinary_mail_stationery_source");
+        var additions = ImmutableArray.CreateBuilder<EarlyShopItemDefinition>();
+        foreach (var paper in papers)
+        {
+            var prior = predecessor.Items.SingleOrDefault(p => p.Id == paper.Id);
+            if (paper.SourceItemId < 130)
+            {
+                if (prior is not null) throw new ArgumentException("ordinary_mail_stationery_duplicate");
+                additions.Add(paper);
+            }
+            else
+            {
+                if (prior?.SourceMetadata is not { } metadata ||
+                    prior with { Source = paper.Source, SourceMetadata = paper.SourceMetadata, EffectBytes = paper.EffectBytes } != paper ||
+                    metadata with { Source = paper.SourceMetadata!.Source } != paper.SourceMetadata)
+                    throw new ArgumentException("ordinary_mail_stationery_predecessor");
+            }
+        }
+        if (additions.Count != 9) throw new ArgumentException("ordinary_mail_stationery_scope");
+        var proof = new OrdinaryItemInventoryCatalog(old.Predecessor, old.Additions.AddRange(additions));
+        Proofs.Add(proof.Catalog, proof); return proof;
+    }
+
     public string? ValidateInventory(InventoryState? inventory)
     {
         if (inventory is null) return "inventory_missing";

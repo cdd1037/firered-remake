@@ -84,7 +84,7 @@ public sealed partial class CampaignSession
                 receipt.Incoming.InstanceId >= state.NextPokemonId || !retired.Add(receipt.Outgoing.InstanceId) ||
                 !incoming.Add(receipt.Incoming.InstanceId) || owned.Any(p => p.InstanceId == receipt.Outgoing.InstanceId) ||
                 !OwnedHeldItemSupported(state, receipt.Outgoing)) return "save_npc_trade_retirement_invalid";
-            if (ValidateNpcTradeMailReceipt(receipt, definition) is {} mailError) return mailError;
+            if (ValidateNpcTradeMailReceipt(state, receipt, definition) is {} mailError) return mailError;
             if (receipt.RngBefore.Cursor < lastCursor || receipt.RngAfter.Cursor > state.World.Rng.Cursor)
                 return "save_npc_trade_rng_invalid";
             try

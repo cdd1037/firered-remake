@@ -42,6 +42,7 @@ public sealed record CampaignDepartmentDynamicExit(int WarpIndex,int X,int Y,int
 public interface ICampaignCatalog:IStoryCatalog
 {
     string ContentVersion{get;}
+    Game.Domain.Pokemon.SourceEasyChatCatalog? MailComposer=>null;
     Game.Domain.Tutorials.TeachyTvCatalog? TeachyTv=>null;
     FameCheckerCatalog? FameChecker=>null;
     VsSeekerCatalog? VsSeeker=>null;

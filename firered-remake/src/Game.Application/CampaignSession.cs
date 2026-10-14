@@ -61,6 +61,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignNpcTradeReceipt>? NpcTrades{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public SourceMailState? Mail{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMailInteraction? MailInteraction{get;init;}
+    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignMailComposer? MailComposer{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignFossilMenu? FossilMenu{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignSilphElevator? SilphElevator{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignCinnabarFall? CinnabarFall{get;init;}
@@ -321,7 +322,7 @@ public sealed partial class CampaignSession
         var renewableError=ValidateRenewableHiddenItems(s);if(renewableError is not null)return renewableError;
         var safariError=ValidateSafariProgress(s);if(safariError is not null)return safariError;
         if(s.TeachyTv is not null||s.VsSeekerEffect is not null||s.FameChecker is not null||s.SlotMachine is not null||s.FlyEffect is not null||s.Seagallop is not null||s.SeagallopMenu is not null||s.LostelleHypnoPreparation is not null||s.NpcTrade is not null||s.NameRater is not null||s.MoveTutor is not null||s.UltimateTutor is not null||s.MoveReminder is not null||s.MoveDeleter is not null||s.MagikarpRecord is not null||s.PokeFlute is not null||s.Fishing is not null||s.RareCandy is not null||s.MoneyBox is not null||s.CoinsBox is not null||s.PrizeExchange is not null||s.GiftDelivery is not null||s.TownMap is not null||s.Pc is not null||s.Shop is not null||s.DoubleBattle is not null||s.ForestTrainerBattle is not null||s.FieldPoison is not null||s.Evolution is not null||s.SignMessage is not null||s.ItemMenu is not null||s.PcPoweredOn||s.Battle is not null||s.WildBattle is not null||s.OldManTutorial is not null||!s.Script.Completed||s.Script.Locked||!s.Script.Stack.IsEmpty||s.Script.Wait is not null||s.Dialogue is not null||s.Nickname is not null||s.MonPicture is not null||s.ScreenIsBlack||!s.EntryPrograms.IsEmpty)return "save_event_active";
-        if(s.FossilMenu is not null||s.MailInteraction is not null||s.DayCareInteraction is not null||s.EggHatch is not null)return "save_event_active";
+        if(s.MailComposer is not null||s.FossilMenu is not null||s.MailInteraction is not null||s.DayCareInteraction is not null||s.EggHatch is not null)return "save_event_active";
         if(s.PokemonLeagueCompletion is not null)return "save_pokemon_league_completion_active";
         var oakError=ValidateOakRatingState(s);if(oakError is not null)return oakError;
         var escapeError=ValidateEscapeRopeState(s);if(escapeError is not null)return escapeError;
@@ -488,6 +489,8 @@ public sealed partial class CampaignSession
             if(state.SafariBattle is not null)return DecideSafariBattle(state,command);
             if(TryDecideUltimateTutor(state,out var ultimateTutorDecision))return ultimateTutorDecision;
             if(TryDecideMoveTutor(state,command,out var moveTutorDecision))return moveTutorDecision;
+            if(state.MailComposer is not null||command.Kind.StartsWith("mail_compose_",StringComparison.Ordinal))return DecideMailComposer(state,command);
+            if(command.Kind=="mail_preview_open")return OpenMailComposer(state,command,true);
             if(TryDecideMail(state,command,out var mailDecision))return mailDecision;
             if(TryDecideNpcTrade(state,command,out var npcTradeDecision))return npcTradeDecision;
             if(TryDecideNameRater(state,command,out var nameRaterDecision))return nameRaterDecision;

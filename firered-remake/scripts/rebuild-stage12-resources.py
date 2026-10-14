@@ -86,7 +86,9 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-vs-seeker-presentation.py', ['{reference}','{project}','{project}']),
  ('import-teachy-tv.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/teachy-tv','--raw-output','{project}/content/raw/teachy-tv']),
  ('import-teachy-tv-art.py', ['--git-dir','{reference}/.git','--output','{project}/content/generated/teachy-tv-art']),
- ('import-teachy-tv-audio.py', ['{reference}','{project}','--dependency','{project}'])]
+ ('import-teachy-tv-audio.py', ['{reference}','{project}','--dependency','{project}']),
+ ('import-mail-composer.py', ['--reference-root','{reference}','--dependency-root','{project}','--project-root','{project}']),
+ ('import-mail-presentation.py', ['--reference-root','{reference}','--dependency-root','{project}','--project-root','{project}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

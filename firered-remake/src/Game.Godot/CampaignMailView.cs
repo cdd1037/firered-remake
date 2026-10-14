@@ -9,9 +9,7 @@ public partial class CampaignView
     private int _mailCursor;
     private string? _mailScreenKey;
     private long[] _mailPartyIds = [];
-    private readonly Dictionary<int, Texture2D> _mailBackgrounds = [];
-    private SourceGameFont? _mailFont;
-    private bool MailScreen => _session.State.MailInteraction is not null ||
+    private bool MailScreen => _session.State.MailComposer is not null || _session.State.MailInteraction is not null ||
         _session.State.ItemMenu is { Origin: "party", View: "held", TargetPartyIndex: { } index } &&
         index >= 0 && index < _session.State.Party.Length && SourceMailRules.IsMailItem(_session.State.Party[index].HeldItem);
     private string MailText(string symbol) => _catalog.NpcTradeMail!.Texts[symbol]
@@ -23,6 +21,7 @@ public partial class CampaignView
         .Select((message, index) => (message, index)).Where(pair => pair.message is not null).Select(pair => pair.index).ToArray();
     private void SynchronizeMail()
     {
+        SynchronizeMailComposer();
         var pending = _session.State.MailInteraction;
         string? key = pending is null ? MailScreen ? "party:held" : null :
             $"{pending.Origin}:{pending.Phase}:{pending.PartyIndex}:{pending.TargetInstanceId}:{pending.MailboxSlot}";
@@ -55,6 +54,7 @@ public partial class CampaignView
     private bool MailInput(InputEventKey key)
     {
         if (!MailScreen) return false;
+        if (_session.State.MailComposer is not null) return MailComposerInput(key);
         if (!key.Pressed || key.Echo) return true;
         var pending = _session.State.MailInteraction;
         if (pending?.Phase is CampaignMailPhase.Reader or CampaignMailPhase.Message)
@@ -94,50 +94,25 @@ public partial class CampaignView
         }
         return true;
     }
-    private void DisposeMailPresentation()
+    private SourceMailScreen? _mailSourceScreen;
+    private SourceMailScreen MailSourceScreen => _mailSourceScreen ??= new(_catalog.MailPresentation ?? PretMailPresentation.Load(_root),
+        System.IO.Path.Combine(_root, "content/generated/source-font"));
+    private void DisposeMailPresentation() { _mailSourceScreen?.Dispose(); _mailSourceScreen = null; }
+    private Texture2D? MailSpeciesIcon(int renderSpecies)
     {
-        foreach (var texture in _mailBackgrounds.Values) texture.Dispose();
-        _mailBackgrounds.Clear(); _mailFont?.Dispose(); _mailFont = null;
-    }
-    private void LoadMailReader()
-    {
-        var source = _catalog.NpcTradeMail ?? throw new InvalidDataException("Authenticated Mail artwork is missing.");
-        if (_mailFont is null)
-        {
-            var layout = source.ReadLayout;
-            _mailFont = SourceGameFont.Load(System.IO.Path.Combine(_root, "content/generated/source-font"),
-                foreground: Color.Color8(layout.TextRgb[0], layout.TextRgb[1], layout.TextRgb[2]),
-                shadow: Color.Color8(layout.ShadowRgb[0], layout.ShadowRgb[1], layout.ShadowRgb[2]));
-        }
-        int gender = _session.State.PlayerGender;
-        if (_mailBackgrounds.ContainsKey(gender)) return;
-        var asset = source.BackgroundFor(gender);
-        using var image = new Image();
-        if (image.LoadPngFromBuffer(source.AssetFiles[asset.PngPath]) != Error.Ok || image.GetWidth() != asset.Width ||
-            image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8 ||
-            Convert.ToHexStringLower(SHA256.HashData(image.GetData())) != asset.RgbaSha256)
-            throw new InvalidDataException("Authenticated Fab Mail pixels differ.");
-        _mailBackgrounds.Add(gender, ImageTexture.CreateFromImage(image));
+        if (renderSpecies == 201 || renderSpecies is >= 413 and <= 439) return _unownIcons.GetValueOrDefault(renderSpecies);
+        var species = _catalog.PokemonContent?.Catalog.Species.Values.SingleOrDefault(s => s.SourceSpeciesId == renderSpecies);
+        return species is null ? null : _storageIcons.GetValueOrDefault(species.Id);
     }
     private bool DrawMailScreen()
     {
         if (!MailScreen) return false;
+        if (_session.State.MailComposer is not null) return DrawMailComposerScreen();
         var pending = _session.State.MailInteraction;
         if (pending?.Phase == CampaignMailPhase.Reader)
         {
-            LoadMailReader();
             var mail = _session.MailReader ?? throw new InvalidDataException("Mail reader no longer owns its message.");
-            var content = _catalog.NpcTradeMail!; var layout = content.ReadLayout;
-            DrawTexture(_mailBackgrounds[_session.State.PlayerGender], Vector2.Zero);
-            int word = 0;
-            for (int row = 0; row < layout.WordsPerLine.Length; row++)
-            {
-                string line = string.Join(" ", mail.Words.Skip(word).Take(layout.WordsPerLine[row])
-                    .Select(value => content.Words.Single(entry => entry.Value == value).Text));
-                SourceText(_mailFont!, new(layout.MessageX, layout.MessageY + row * layout.LineHeight), line);
-                word += layout.WordsPerLine[row];
-            }
-            SourceText(_mailFont!, new(layout.AuthorX, layout.AuthorY), layout.AuthorPrefix + mail.AuthorName);
+            MailSourceScreen.DrawReader(this, mail.ItemId, _session.State.PlayerGender, mail, _session.MailWordText, MailSpeciesIcon);
         }
         else if (pending?.Origin == "pc") DrawMailbox(pending);
         else
@@ -196,6 +171,7 @@ public partial class CampaignView
     }
     private bool MailMouse(Vector2 point, int? direction = null)
     {
+        if (_session.State.MailComposer is not null) return MailComposerMouse(point, direction);
         var phase = _session.State.MailInteraction?.Phase;
         if (phase is CampaignMailPhase.Reader) return direction is null && MouseConfirm(point, new(0, 0, 240, 160));
         if (phase is CampaignMailPhase.Message) return direction is null && MouseConfirm(point, MouseMessage);
