@@ -13,26 +13,27 @@ public sealed record SourceTableWildOrigin(MapId Map, SourceTableEncounterKind K
 }
 public sealed record SourceTableWildSlot(SpeciesId Species, byte MinimumLevel, byte MaximumLevel);
 
-/// <summary>Ordinary exact-table provenance without regional ownership inheritance. Currently admits Cape Brink only.</summary>
+/// <summary>Ordinary exact-table provenance without regional ownership inheritance. Admits Cape Brink and original Route16 grass.</summary>
 public static class SourceTableWildBattleContract
 {
     public const string Version = "firered-source-table-wild-entry-v1";
 
     public static SourceTableWildSlot? SourceSlot(SourceTableWildOrigin? origin)
     {
-        if (origin is null || origin.RulesVersion != Version || origin.Map != CapeBrinkEncounterTables.Map || origin.Slot < 0)
+        if (origin is null || origin.RulesVersion != Version || origin.Slot < 0)
             return null;
-        if (origin.Kind == SourceTableEncounterKind.Land)
+        if (origin.Kind == SourceTableEncounterKind.Land && (origin.Map == CapeBrinkEncounterTables.Map || origin.Map == Route16LandEncounterTables.Map))
         {
-            var slot = CapeBrinkEncounterTables.Land[0].Slots.SingleOrDefault(s => s.Index == origin.Slot);
+            var table = origin.Map == Route16LandEncounterTables.Map ? Route16LandEncounterTables.Route16 : CapeBrinkEncounterTables.Land[0];
+            var slot = table.Slots.SingleOrDefault(s => s.Index == origin.Slot);
             return slot is null ? null : new(slot.Species, slot.MinimumLevel, slot.MaximumLevel);
         }
-        if (origin.Kind == SourceTableEncounterKind.Surf)
+        if (origin.Kind == SourceTableEncounterKind.Surf && origin.Map == CapeBrinkEncounterTables.Map)
         {
             var slot = CapeBrinkEncounterTables.Water[0].Slots.SingleOrDefault(s => s.Index == origin.Slot);
             return slot is null ? null : new(slot.Species, slot.MinimumLevel, slot.MaximumLevel);
         }
-        if (origin.Kind == SourceTableEncounterKind.OldRod)
+        if (origin.Kind == SourceTableEncounterKind.OldRod && origin.Map == CapeBrinkEncounterTables.Map)
         {
             var slot = CapeBrinkEncounterTables.OldRod[0].Slots.SingleOrDefault(s => s.Index == origin.Slot);
             return slot is null ? null : new(slot.Species, slot.MinimumLevel, slot.MaximumLevel);

@@ -134,6 +134,7 @@ public partial class CampaignView
                 else { _fieldMenuMode = "switch"; _fieldSwapSource = _fieldPartyCursor; }
             }
             else if(actions[_fieldPartyAction] is "ITEM" or "MAIL") OpenPartyHeldItems();
+            else if(actions[_fieldPartyAction] == "FLY") UseFieldPartyFly();
             else if(actions[_fieldPartyAction] == "CUT") UseFieldPartyCut();
             else if(actions[_fieldPartyAction] == "FLASH") UseFieldPartyFlash();
             else if(actions[_fieldPartyAction] == "STRENGTH") UseFieldPartyStrength();
@@ -171,6 +172,7 @@ public partial class CampaignView
         if(_fieldPartyCursor>=0&&_fieldPartyCursor<_session.State.Party.Length&&!_session.State.Party[_fieldPartyCursor].IsEgg)
             foreach(var move in _session.State.Party[_fieldPartyCursor].Pokemon.Moves)
                 if(_catalog.VermilionGymEnabled&&move.Move.Value=="pret:MOVE_CUT")actions.Add("CUT");
+                else if(_catalog.FieldFly is not null&&move.Move.Value=="pret:MOVE_FLY")actions.Add("FLY");
                 else if(_catalog.RockTunnelEnabled&&move.Move.Value=="pret:MOVE_FLASH")actions.Add("FLASH");
                 else if(_catalog.SafariEnabled&&move.Move.Value=="pret:MOVE_STRENGTH")actions.Add("STRENGTH");
                 else if(_catalog.SurfEnabled&&move.Move.Value=="pret:MOVE_SURF")actions.Add("SURF");

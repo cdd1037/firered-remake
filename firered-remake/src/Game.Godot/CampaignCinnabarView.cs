@@ -1,6 +1,7 @@
 using Game.Application;
 using Game.Content;
 using Game.Domain.Ids;
+using Game.Domain.Trainers;
 using Game.Domain.World;
 using Godot;
 
@@ -75,9 +76,11 @@ public partial class CampaignView
     }
     private string? VisibleCinnabarTrainerClass() => _session.State.ForestTrainerBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : null;
     private string? VisibleCinnabarTrainerPortrait() => _session.State.ForestTrainerBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerPortraits[trainer.TrainerPic] : null;
-    private string DoubleTrainerClass => TrainerTowerTrainerText("className") ?? SeafoamDoubleTrainerText("className") ?? SevenIslandDoubleText("className") ?? SixIslandDoubleText("className") ?? SeviiRubyDoubleText("className") ?? VictoryRoadDoubleTrainer?.ClassName ?? FirstSeviiDoubleTrainer?.ClassName ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : "TWINS");
-    private string DoubleTrainerName => TrainerTowerTrainerText("name") ?? SeafoamDoubleTrainerText("name") ?? SevenIslandDoubleText("name") ?? SixIslandDoubleText("name") ?? SeviiRubyDoubleText("name") ?? VictoryRoadDoubleTrainer?.Name ?? FirstSeviiDoubleTrainer?.Name ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? trainer.SourceTrainerName : "ELI & ANNE");
-    private Texture2D DoubleTrainerPortrait => TrainerTowerTrainerPortrait ?? SeafoamDoubleTrainerPortrait ?? SevenIslandDoublePortrait ?? SixIslandDoublePortrait ?? SeviiRubyDoublePortrait ?? VictoryRoadDoublePortrait ?? FirstSeviiDoublePortrait ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _forestTrainerPortraits[_cinnabarTrainerPortraits[trainer.TrainerPic]] : _doubleTextures["twins-front"]);
+    private TrainerDefinition? Route16FlyDoubleTrainer => _session.State.DoubleBattle is { } battle &&
+        _catalog.Route16FlyTrainers?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? trainer : null;
+    private string DoubleTrainerClass => Route16FlyDoubleTrainer is not null ? "YOUNG COUPLE" : TrainerTowerTrainerText("className") ?? SeafoamDoubleTrainerText("className") ?? SevenIslandDoubleText("className") ?? SixIslandDoubleText("className") ?? SeviiRubyDoubleText("className") ?? VictoryRoadDoubleTrainer?.ClassName ?? FirstSeviiDoubleTrainer?.ClassName ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : "TWINS");
+    private string DoubleTrainerName => Route16FlyDoubleTrainer?.SourceTrainerName ?? TrainerTowerTrainerText("name") ?? SeafoamDoubleTrainerText("name") ?? SevenIslandDoubleText("name") ?? SixIslandDoubleText("name") ?? SeviiRubyDoubleText("name") ?? VictoryRoadDoubleTrainer?.Name ?? FirstSeviiDoubleTrainer?.Name ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? trainer.SourceTrainerName : "ELI & ANNE");
+    private Texture2D DoubleTrainerPortrait => Route16FlyDoubleTrainer is not null ? _forestTrainerPortraits["young-couple-front"] : TrainerTowerTrainerPortrait ?? SeafoamDoubleTrainerPortrait ?? SevenIslandDoublePortrait ?? SixIslandDoublePortrait ?? SeviiRubyDoublePortrait ?? VictoryRoadDoublePortrait ?? FirstSeviiDoublePortrait ?? ( _session.State.DoubleBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _forestTrainerPortraits[_cinnabarTrainerPortraits[trainer.TrainerPic]] : _doubleTextures["twins-front"]);
     private bool TryCinnabarPatch(Image canvas,FieldMetatileEdit edit,int layer,MapId map)
     {
         if(!_catalog.CinnabarEnabled||_catalog.CinnabarRegion?.NewMaps.ContainsKey(map)!=true)return false;

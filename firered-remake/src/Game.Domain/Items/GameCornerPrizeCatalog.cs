@@ -30,7 +30,7 @@ public sealed class GameCornerPrizeCatalog
         ImmutableArray<GameCornerPrizeCounter> counters)
     {
         ArgumentNullException.ThrowIfNull(pokemon); ArgumentNullException.ThrowIfNull(items); ArgumentNullException.ThrowIfNull(machines);
-        if (GameCornerOwnedPokemonCatalog.For(pokemon) is not { } owned || GameCornerMachineCatalog.For(machines) is not { } teaching ||
+        if (GameCornerOwnedPokemonCatalog.For(pokemon) is not { } owned || GameCornerMachineCatalog.For(FieldFlyMachineCatalog.BaseCatalog(machines)) is not { } teaching ||
             !ReferenceEquals(teaching.Pokemon, owned) || OrdinaryItemInventoryCatalog.For(items) is not { } ordinary ||
             items.Items.Length != 137 || !OrdinaryItemInventoryCatalog.GameCornerPrizeItems.All(ordinary.IsAddition) ||
             counters.IsDefault || counters.Length != 3 || counters.Any(c => c is null || c.Prizes.IsDefault || c.Prizes.Length != 5) ||

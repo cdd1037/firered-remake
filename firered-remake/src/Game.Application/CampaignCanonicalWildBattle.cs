@@ -134,7 +134,7 @@ public sealed partial class CampaignSession
         if(sourceTable is not null&&(!IsSourceTableMap(map)||sourceTable.Map!=map||
             (int)sourceTable.Kind!=(int)kind||!SourceTableWildBattleContract.Matches(sourceTable,pokemon)))
             throw new InvalidDataException("source_table_wild_origin");
-        if(sourceTable is null&&IsSourceTableMap(map))throw new InvalidDataException("source_table_wild_missing_origin");
+        if(sourceTable is null&&IsSourceTableMap(map)&&!(snorlax&&_content.SnorlaxEnabled&&map.Value=="map.route-16"))throw new InvalidDataException("source_table_wild_missing_origin");
         if(seafoam is not null&&(!_content.SeafoamEnabled||seafoam.Map!=map||!SeafoamWildBattleContract.Matches(seafoam,pokemon)))throw new InvalidDataException("seafoam_wild_origin");
         if(seafoam is null&&IsSeafoamMap(map))throw new InvalidDataException("seafoam_wild_missing_origin");
         if(powerPlant is not null&&(!_content.PowerPlantEnabled||powerPlant.Map!=map||!PowerPlantWildBattleContract.Matches(powerPlant,pokemon)))throw new InvalidDataException("power_plant_wild_origin");

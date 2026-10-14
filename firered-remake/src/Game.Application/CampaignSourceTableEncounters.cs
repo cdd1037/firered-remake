@@ -13,18 +13,20 @@ public sealed record CampaignSourceTableReceipt(SourceTableWildOrigin Origin, Rn
 public sealed partial class CampaignSession
 {
     private bool IsSourceTableMap(MapId map) => _content.Maps.ContainsKey(map) &&
-        CapeBrinkEncounterTables.Land.Any(t => t.Map == map);
+        (CapeBrinkEncounterTables.Land.Any(t => t.Map == map) || _content.Route16FlyTrainers is not null && map == Route16LandEncounterTables.Map);
 
     private CampaignSourceTableReceipt? PrepareSourceTableReceipt(CampaignState state, Route1WildPokemonResult made,
         SourceTableWildOrigin? origin, RngState? generationRng, bool scripted, bool surfing, bool fishing,
-        FishingEncounterOrigin? fishingOrigin)
+        FishingEncounterOrigin? fishingOrigin, bool scriptedSnorlax = false)
     {
         if (origin is null)
         {
             bool typedFishing = !scripted && !surfing && fishing && fishingOrigin is { Rod: FishingRod.Good or FishingRod.Super } &&
                 fishingOrigin.Map == state.World.Player.MapId && IsTypedFishingOrigin(fishingOrigin) &&
                 FishingBattleContract.Matches(fishingOrigin, made.Pokemon);
-            if (IsSourceTableMap(state.World.Player.MapId) && !typedFishing)
+            // Route16 retains the separately authenticated scripted Snorlax encounter.
+            bool route16Snorlax = scriptedSnorlax && _content.SnorlaxEnabled && state.World.Player.MapId == Route16LandEncounterTables.Map;
+            if (IsSourceTableMap(state.World.Player.MapId) && !typedFishing && !route16Snorlax)
                 throw new InvalidDataException("source_table_wild_missing_origin");
             return null;
         }

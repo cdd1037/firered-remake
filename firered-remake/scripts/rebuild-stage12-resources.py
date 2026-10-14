@@ -61,7 +61,12 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-game-corner-coins.py', ['{reference}', '{project}', '{project}']),
  ('import-game-corner-species.py', ['{reference}', '{project}', '{project}']),
  ('import-game-corner-prizes.py', ['{reference}', '{project}', '{project}']),
- ('import-game-corner-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}'])]
+ ('import-game-corner-presentation.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-route16-fly-house.py', ['--reference-root', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-field-fly.py', ['{reference}', '{project}', '{project}']),
+ ('import-fly-map.py', ['--reference-repo', '{reference}']),
+ ('import-field-fly-sound.py', ['--reference', '{reference}', '--dependency-root', '{project}', '--project-root', '{project}']),
+ ('import-field-fly-travel.py', ['--reference-root', '{reference}'])]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

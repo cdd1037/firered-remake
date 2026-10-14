@@ -3,7 +3,7 @@ using Game.Domain.Items;
 
 namespace Game.Application;
 
-/// <summary>Field Bag callback only; cursor and original artwork belong to the adapter.</summary>
+/// <summary>Shared Bag/Fly map callback; cursor and original artwork belong to the adapter.</summary>
 public sealed record CampaignTownMap(string Origin = "bag");
 
 public sealed partial class CampaignSession
@@ -48,6 +48,7 @@ public sealed partial class CampaignSession
 
     private Decision<CampaignState> DecideTownMap(CampaignState state, CampaignCommand command)
     {
+        if (state.TownMap?.Origin == "fly") return DecideFieldFly(state, command);
         if (command.Kind != "town_map_close") return new(CommandStatus.Rejected, state, "town_map_active");
         if (!_content.TownMapEnabled || state.TownMap?.Origin != "bag" || state.ItemMenu is not { Origin: "bag", View: "bag" })
             return new(CommandStatus.Fault, state, "town_map_callback_context_invalid");

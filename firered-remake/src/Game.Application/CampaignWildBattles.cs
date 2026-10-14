@@ -107,7 +107,7 @@ public sealed partial class CampaignSession
         seafoamReceipt=PrepareSeafoamReceipt(state,generated,seafoamOrigin,seafoamReceipt,seafoamGenerationRng,
             scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin);
         var sourceTableReceipt=PrepareSourceTableReceipt(state,generated,sourceTableOrigin,sourceTableGenerationRng,
-            scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin);
+            scriptedPokemon is not null,surfPokemon is not null,fishingPokemon is not null,fishingOrigin,scriptedSnorlax:scriptedSnorlaxRoute==16);
         bool towerBattle=_content.PokemonTowerEnabled&&TowerMap(state.World.Player.MapId.Value)&&fishingPokemon is null||scriptedMarowak;
         var kind=PokemonTowerBattleContract.Classify(scriptedMarowak,HasSilphScope(state));
         var encounterKind=surfPokemon is not null?FirstSeviiEncounterKind.Surf:fishingPokemon is not null?FirstSeviiEncounterKind.OldRod:FirstSeviiEncounterKind.Land;

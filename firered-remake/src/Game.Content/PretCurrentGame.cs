@@ -51,6 +51,10 @@ public sealed partial class PretCampaignCatalog
         var originalTutorRooms = PretOriginalTutorRooms.Load(projectRoot);
         var copycatHouse = PretCopycatHouse.Load(projectRoot);
         var capeBrinkTutor = PretCapeBrinkTutor.Load(projectRoot);
+        var route16FlyHouse = PretRoute16FlyHouse.Load(projectRoot);
+        PretFieldFly.ValidateSourceEvidence(projectRoot);
+        var fieldFly = PretFieldFly.Load(projectRoot);
+        var flyMapPresentation = PretFlyMap.Load(projectRoot);
         var doubleItems = Game.Domain.Battle.SourceHeldItemCatalog.For(doubleMechanics.Catalog) ?? throw new InvalidDataException("Preset doubles requires the authenticated battle item catalog.");
         var magikarp = PretMagikarpContract.Load(projectRoot);
         var runtimeMaps = PretRuntimeMapCatalog.Load(Path.Combine(projectRoot, PretRocketHideoutRuntimeMaps.DirectoryName), PretRocketHideoutRuntimeMaps.ManifestSha256);
@@ -1042,6 +1046,11 @@ public sealed partial class PretCampaignCatalog
 
         AppendAuthenticatedRegionalSources(capeBrinkTutor.Scripts, capeBrinkTutor.TextSources.Values, capeBrinkTutor.Constants,
             capeBrinkTutor.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+
+        AppendAuthenticatedRegionalSources(route16FlyHouse.Scripts, route16FlyHouse.TextSources.Values, route16FlyHouse.Constants,
+            route16FlyHouse.AdditionalSourceHashes, sources, textFiles, constants, hashes);
+        hashes.AddRange(PretFieldFly.AdditionalSourceHashes);
+        hashes.AddRange(flyMapPresentation.AdditionalSourceHashes);
 
         hashes.AddRange(firstSeviiPresentation.AdditionalSourceHashes);
         MergeRegionalServiceConstants(constants, gameCornerCoins.Constants);
@@ -2071,6 +2080,7 @@ public sealed partial class PretCampaignCatalog
         ValidateRegionalFlavorComposition(regionalInteriorCompositionMaps, compiled, bank);
         ValidateFuchsiaRouteComposition(fuchsiaRoute, fuchsiaRouteCompositionMaps, regionalInteriorCompositionMaps, fuchsiaRouteCompositionPokemon);
         ValidateFuchsiaGymComposition(fuchsiaGym, fuchsiaGymCompositionMaps, fuchsiaRouteCompositionMaps, fuchsiaGymCompositionPokemon.Catalog, fuchsiaRouteCompositionPokemon.Catalog, fuchsiaGymTrainers, compiled);
+        hashes.Add("route16-shared-encounters:" + Route16FlyDoubleTrainerEncounter.Version + ":" + Convert.ToHexStringLower(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(Route16LandEncounterTables.Route16))));
         hashes.Add("preset-doubles:" + PresetDoublesContentProfile + ":" + PretRoute8Twins.GeneratedSha256 + ":" + Game.Domain.Battle.SourceBattleKernel.Version);
         ValidateFirstSeviiComposition(firstSevii, viridianGymPredecessorMaps, firstSeviiPredecessorMaps, cinnabarOwned, cinnabarOpponents, firstSeviiTrainers, compiled, bank);
         ValidateViridianGymComposition(viridianGym, victoryRoadPredecessorMaps, viridianGymPredecessorMaps, viridianGymTrainers, compiled, victoryRoadPredecessorMachines, cinnabarOwned);
@@ -2440,6 +2450,7 @@ public sealed partial class PretCampaignCatalog
                 int number = prizeOwned.Catalog.Species[id].SourceSpeciesId;
                 return KeyValuePair.Create(number, oakPokedex.Entries[number].Name);
             })) };
+        machines = PretFieldFly.LoadMachines(projectRoot, machines).Catalog;
         var gameCornerPrizes = PretGameCornerPrizes.LoadCatalog(projectRoot, prizeOwned.Catalog, earlyShop.Catalog, machines);
         hashes.AddRange(PretGameCornerSpecies.AdditionalSourceHashes);
         hashes.AddRange(PretGameCornerPrizes.AdditionalSourceHashes);
@@ -2454,6 +2465,9 @@ public sealed partial class PretCampaignCatalog
         maps = maps.AddRange(prizeRoom.NewMaps);
         celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, prizeRoom.NewMaps);
         hashes.AddRange(prizeRoom.AdditionalSourceHashes);
+        route16FlyHouse.ValidateReusedMaps(maps);
+        maps = maps.AddRange(route16FlyHouse.NewMaps);
+        celioRoamerMaps = PretCelioMapNumbers.ExtendAuthenticatedMaps(projectRoot, maps, celioRoamerMaps, route16FlyHouse.NewMaps);
         ValidateCapeBrinkEncounterSources(capeBrinkTutor, prizeOwned.Catalog, superRodService);
         var moveReminder = PretMoveReminderService.Load(projectRoot, prizeOwned.Catalog);
         hashes.AddRange(moveReminder.AdditionalSourceHashes);
@@ -2639,7 +2653,7 @@ public sealed partial class PretCampaignCatalog
             sevenIsland: sevenIsland, sevenOwned: sevenOwned, sevenOpponents: sevenOpponents,
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
-            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor) { ItemfinderDocument = itemfinder };
+            fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse) { ItemfinderDocument = itemfinder };
     }
 
     private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,

@@ -64,6 +64,7 @@ public sealed partial class CampaignSession
             content.ConnectedFieldMaps is null || content.OpeningItems is null)
             throw new InvalidDataException("current_capabilities_missing");
         if(content.NpcTrades is null||!ReferenceEquals(NpcTradePokemonCatalog.For(content.PokemonContent?.Catalog),content.NpcTrades))throw new InvalidDataException("current_npc_trade_proof_missing");
+        if (content.Route16FlyTrainers is {} route16) Route16FlyTrainerPartyFactory.ValidateCatalog(route16);
         ValidateSeafoamEncounterCatalog(content);ValidateOldAmberCatalog(content);ValidateFossilLabCatalog(content);ValidateFightingDojoCatalog(content);ValidatePowerPlantCatalog(content);ValidateEventIslandCatalog(content);ValidateSevenIslandCatalog(content);ValidateCeruleanCaveCatalog(content);ValidateCelioCatalog(content);ValidateFiveIslandCatalog(content);ValidateSixIslandCatalog(content);ValidateFourIslandCatalog(content);ValidateSeviiRubyCatalog(content);ValidateViridianGymCatalog(content);
         if(content.CinnabarOwnership is null||content.CinnabarOpponents is null||content.CinnabarTrainerParties is null||
             !ReferenceEquals(content.CinnabarOwnership,content.CinnabarOpponents.Owned))

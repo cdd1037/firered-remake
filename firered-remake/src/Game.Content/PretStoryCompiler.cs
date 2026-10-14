@@ -236,6 +236,14 @@ public static partial class PretStoryCompiler
                                 throw ContentJson.Error("preset_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
                             (kind,min,max)=(StoryOp.TrainerBattle,4,4);
                         }
+                        if(includePresetDoubleOpcodes && opcode is "trainerbattle_double" or "trainerbattle_rematch_double" &&
+                            file.Path=="data/scripts/trainers.inc" && file.SourceRef.Sha256=="d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945" &&
+                            label is "Route16_EventScript_Lea" or "Route16_EventScript_Jed" or "Route16_EventScript_LeaRematch" or "Route16_EventScript_JedRematch")
+                        {
+                            if(operands.Length!=4 || operands[0]!="TRAINER_YOUNG_COUPLE_LEA_JED")
+                                throw ContentJson.Error("route16_double_script_operands",$"{file.Path}:{lineNumber}",opcode);
+                            (kind,min,max)=(StoryOp.TrainerBattle,4,4);
+                        }
                         if(includeCinnabarData&&includePresetDoubleOpcodes&&opcode is "trainerbattle_double" or "trainerbattle_rematch_double"&&
                             file.Path=="data/scripts/trainers.inc"&&file.SourceRef.Sha256=="d145a6d45e4143e3b215fdff82de07b78fd361aa695855e4065c043ffba36945"&&
                             label is "Route21_North_EventScript_Lil" or "Route21_North_EventScript_Ian" or "Route21_North_EventScript_LilRematch" or "Route21_North_EventScript_IanRematch")

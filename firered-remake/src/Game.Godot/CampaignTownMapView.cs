@@ -2,7 +2,7 @@ using Game.Content;
 using Game.Domain.Items;
 using Godot;
 
-/// <summary>Bounded Kanto and unlocked first-Sevii atlas browsing. It never moves the field player or grants Fly.</summary>
+/// <summary>Shared atlas browser and original region-local Fly destination selector. Application owns travel.</summary>
 public partial class CampaignView
 {
     private readonly Dictionary<string, ImageTexture> _townMapTextures = new(StringComparer.Ordinal);
@@ -70,7 +70,7 @@ public partial class CampaignView
     {
         foreach (var texture in _townMapTextures.Values) texture.Dispose();
         foreach (var font in _townMapFonts.Values) font.Dispose();
-        _townMapTextures.Clear(); _townMapFonts.Clear(); _firstSeviiTownMap = null; _townMapSmallFont?.Dispose(); _townMapSmallFont = null;
+        _townMapTextures.Clear(); _townMapFonts.Clear(); _firstSeviiTownMap = null; _flyMap = null; _townMapSmallFont?.Dispose(); _townMapSmallFont = null;
     }
 
     private void SynchronizeTownMapPresentation()
@@ -79,7 +79,8 @@ public partial class CampaignView
         if (active && !_townMapWasActive)
         {
             LoadTownMapPresentation(); var p = _session.State.World.Player;
-            var projected = InitializeFirstSeviiTownMap(p.MapId.Value, p.X, p.Y);
+            _townMapWasFly = FlyMapActive;
+            var projected = FlyMapActive ? InitializeFlyMap() : InitializeFirstSeviiTownMap(p.MapId.Value, p.X, p.Y);
             _townMapPlayer = _townMapCursor = new(projected.X, projected.Y);
             _townMapElapsed = 0; _townMapSnap = 0; _townMapNotice = null;
             _townMapMoving = false; _townMapHeld = null; _held = null; _repeat = 0;
@@ -87,6 +88,11 @@ public partial class CampaignView
         if (!active && _townMapWasActive)
         {
             _townMapHeld = null; _townMapMoving = false; _townMapNotice = null; _townMapSwitchMenu = false;
+            if (_townMapWasFly)
+            {
+                if (_session.State.FlyEffect is null) { _fieldMenuMode = "party"; _fieldPartyAction = 0; }
+                else ResetFieldMenu();
+            }
             _questPocket = 1; _questPocketPopup = false;
             _questPocketCursor = Math.Max(0, Enumerable.Range(0, QuestPocketStacks.Length)
                 .FirstOrDefault(i => QuestPocketStacks[i].Item == QuestItemRules.TownMapId, 0));
@@ -149,6 +155,7 @@ public partial class CampaignView
             if (TownMapCursorOnSwitch) { OpenTownMapSwitchMenu(); return true; }
             if (_townMapCursor == new Vector2I(map.Layout.Cancel.X, map.Layout.Cancel.Y))
             { SourceSound("SE_M_HYPER_BEAM2"); CloseTownMap(); }
+            else if (TrySelectFlyDestination()) { }
             else if (CurrentTownMapIcons.Any(i => i.SectionId == CurrentTownMapCell.DungeonSectionId &&
                 _session.State.Script.Flags.GetValueOrDefault(i.VisitedFlag)))
                 _townMapNotice = "Detailed guide pages are not\navailable yet.";
@@ -186,6 +193,7 @@ public partial class CampaignView
         var flags = _session.State.Script.Flags.Where(f => f.Value).Select(f => f.Key).ToHashSet(StringComparer.Ordinal);
         foreach (var icon in CurrentTownMapIcons.Where(i => i.VisibleFlag is null || flags.Contains(i.VisibleFlag)))
             DrawTexture(_townMapTextures[flags.Contains(icon.VisitedFlag) ? "dungeon-visited" : "dungeon-unvisited"], new(icon.CenterX - 4, icon.CenterY - 4));
+        DrawFlyDestinations();
         var player = map.CursorCenter(_townMapPlayer.X, _townMapPlayer.Y);
         if (_townMapPlayerKnown && _townMapPage == _townMapPlayerPage)
             DrawTexture(_townMapTextures[_session.State.PlayerGender == 1 ? "player-leaf" : "player-red"], new(player.X - 8, player.Y - 8));
@@ -221,6 +229,7 @@ public partial class CampaignView
             DrawTexture(_townMapTextures["keypad-a"], new(layout.TopBarRight.X, layout.TopBarRight.Y));
             SourceText(_townMapSmallFont!, new(layout.TopBarRight.X + 8, layout.TopBarRight.Y), "SWITCH");
         }
+        DrawFlyMapAction();
         if (_townMapNotice is not null) ItemMessageBox(_townMapNotice);
         return true;
     }

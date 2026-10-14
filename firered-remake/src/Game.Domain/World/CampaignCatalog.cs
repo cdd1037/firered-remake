@@ -60,6 +60,7 @@ public interface ICampaignCatalog:IStoryCatalog
     bool PokemonStorageEnabled=>false;
     bool RepelEnabled=>false;
     bool TownMapEnabled=>false;
+    FieldFlyCatalog? FieldFly=>null;
     bool OakRatingEnabled=>false;
     bool Route22Enabled=>false;
     bool Route3Enabled=>false;
@@ -109,6 +110,7 @@ public interface ICampaignCatalog:IStoryCatalog
     SeafoamOpponentPokemonCatalog? SeafoamOpponents=>null;
     SeafoamMachineCatalog? SeafoamMachines=>null;
     SeafoamTrainerCatalog? SeafoamTrainers=>null;
+    Route16FlyTrainerCatalog? Route16FlyTrainers=>null;
     IFieldMap? SeafoamMap(MapId map,bool stoppedCurrent)=>null;
     ConnectedFieldMap? SeafoamConnectedMap(MapId map,bool stoppedCurrent)=>null;
     bool PowerPlantEnabled=>false;

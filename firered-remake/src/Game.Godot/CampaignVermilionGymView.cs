@@ -32,7 +32,7 @@ public partial class CampaignView
             return blink<0 || blink<FieldCutSourcePresentation.TreeBlinkFrames && (blink&1)==1;
         }
     }
-    private int FieldCutBannerAge => (_session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon}?FieldSurfFrame:FieldCutFrame)-FieldCutSourcePresentation.PlayerFrameDurations.Sum();
+    private int FieldCutBannerAge => (FieldFlyShowMonFrame ?? (_session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon}?FieldSurfFrame:FieldCutFrame))-FieldCutSourcePresentation.PlayerFrameDurations.Sum();
     private Rect2 FieldCutBannerWindow
     {
         get
@@ -127,7 +127,7 @@ public partial class CampaignView
 
     private void DrawFieldCutBanner()
     {
-        int partyIndex = _session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon} surf ? surf.PartyIndex :
+        int partyIndex = FieldFlyShowMonPartyIndex >= 0 ? FieldFlyShowMonPartyIndex : _session.State.SurfEffect is {Phase:FieldSurfSourcePresentation.ShowMon} surf ? surf.PartyIndex :
             _session.State.CutEffect is {Phase:FieldCutSourcePresentation.ShowMon} cut ? cut.PartyIndex : _session.State.RuinValleyCut is not null ? SixIslandCutPartyIndex() : -1;
         if(partyIndex < 0)return;
         var window=FieldCutBannerWindow;if(window.Size.X<=0||window.Size.Y<=0)return;

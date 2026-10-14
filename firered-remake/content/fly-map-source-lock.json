@@ -1,0 +1,119 @@
+{
+  "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
+  "files": [
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "08eefa04c35e9b6a496f7e066c2ac123aca7c8b5",
+      "path": "graphics/region_map/background.bin",
+      "sha256": "67f4de4dfe5930312482c4a54ef4809ffed8e360078ae86792d9e4bb30579591"
+    },
+    {
+      "byteLength": 144,
+      "gitBlobSha1": "ae1447db6e6f89a3dcaca08f4a86fac25c772cd1",
+      "path": "graphics/region_map/background.png",
+      "sha256": "bd4dc43b7b5e6eea379c3f1a57b474d17917aabb0bdac0504cfa514859bdcee7"
+    },
+    {
+      "byteLength": 205,
+      "gitBlobSha1": "a7da4e17d08091f21c8cfdb79deabb8108f98ca2",
+      "path": "graphics/region_map/fly_icon.png",
+      "sha256": "d10d4fe0e0d5c1e86ee48b752ca7156e9db9b209c733796e228f77aecf7fc497"
+    },
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "a8b0c176e37939a04dcfc489cf4d251725edd5c2",
+      "path": "graphics/region_map/kanto.bin",
+      "sha256": "c9f38c5d52099958c18efe737a45ba04ce8101b0eb349e9d2243bf8324d82b49"
+    },
+    {
+      "byteLength": 189,
+      "gitBlobSha1": "b473d15778cc8781b34a1ee29ab06972dcb22168",
+      "path": "graphics/region_map/misc_icon.pal",
+      "sha256": "ed6725811f9239e1f64406d875fed50e2c05f4851a43dd2f08fc2f0fa5babc5c"
+    },
+    {
+      "byteLength": 855,
+      "gitBlobSha1": "b223aac5e3b4c16f5376f528821a2a2bca2738f8",
+      "path": "graphics/region_map/region_map.pal",
+      "sha256": "9151a87908033522cf4c3ae2b54cf65f77f7609c353ac73ceae402a386245bc8"
+    },
+    {
+      "byteLength": 3846,
+      "gitBlobSha1": "4e2d06c82cd140eac48898614bb254a728378e47",
+      "path": "graphics/region_map/region_map.png",
+      "sha256": "7c402c5461d5547191cbfefb279727964e19c6dd60d33f5b0bb052ea20545184"
+    },
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "f850a7383c2ead2e9bf3aac1ef3ead34727d9bc9",
+      "path": "graphics/region_map/sevii_123.bin",
+      "sha256": "72c0b2615eaf061f5490779a3caf0470dbb88b08dd010c4887b8ed6d61eac124"
+    },
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "10097326ea3e5a0ca8288224432de01712deed0e",
+      "path": "graphics/region_map/sevii_45.bin",
+      "sha256": "cd68b8a70e21ac1f53344160234d1eabb7221040c62102c3a648faa550eb40db"
+    },
+    {
+      "byteLength": 1200,
+      "gitBlobSha1": "da57de37c2a69722e0508839e040198866b88484",
+      "path": "graphics/region_map/sevii_67.bin",
+      "sha256": "2d0f7a665f88f15d28c213f7e490c232c3eeea8ffc12156aafce32499caa2400"
+    },
+    {
+      "byteLength": 177,
+      "gitBlobSha1": "dfa6902cbd2ede755d06bbcf37387bd3d59cdb31",
+      "path": "graphics/region_map/top_bar.pal",
+      "sha256": "a521e6d7e5224fcfdc3579cb5ae38f32f370602961fd03b5221fbb5ba6bd71f6"
+    },
+    {
+      "byteLength": 9549,
+      "gitBlobSha1": "80fb433eb8cb0ad52898d373ed10d6a0a8d4f49b",
+      "path": "src/data/region_map/region_map_layout_kanto.h",
+      "sha256": "62b8f2e60891a97cb44bb16f52c2a1fb45be5f2caff5f0db86dd36dbe3b5c194"
+    },
+    {
+      "byteLength": 9187,
+      "gitBlobSha1": "2a5c0fbe0b20e28ae5cf67033ac75ce070a647a8",
+      "path": "src/data/region_map/region_map_layout_sevii_123.h",
+      "sha256": "fecd5ea843efb1a83d31fdd63bef09bcb5934f3f23526b6cd3b389110d0523a7"
+    },
+    {
+      "byteLength": 9186,
+      "gitBlobSha1": "01709819bb5bb4c5f53b4c4654d13a5e92d7a4cb",
+      "path": "src/data/region_map/region_map_layout_sevii_45.h",
+      "sha256": "1ba1927f2ce698f62afa8101b5c6f2f30d228ee1a5d7005d627b6278094ca524"
+    },
+    {
+      "byteLength": 9308,
+      "gitBlobSha1": "f09475fd33bc98f79eadd55640e32dccaa9410d4",
+      "path": "src/data/region_map/region_map_layout_sevii_67.h",
+      "sha256": "e49a96d1704876948558f27e050fd80838520f6496e631c634bee1e9b9657819"
+    },
+    {
+      "byteLength": 19656,
+      "gitBlobSha1": "601bff65d4a69b6ea03b0e13b3b5354038adf1ed",
+      "path": "src/data/region_map/region_map_sections.json",
+      "sha256": "82e456cbe86a57ebc4bd0d88d6e000e83e28340895ac038079c38d415bc6de5f"
+    },
+    {
+      "byteLength": 138368,
+      "gitBlobSha1": "d65f99fefa2c3a4bff11a69e674894bfd9a51374",
+      "path": "src/region_map.c",
+      "sha256": "b761f02803a1c5aada4465b9a93bf2b02c5ef1118432e677a30a5a4a4b78e0cb"
+    },
+    {
+      "byteLength": 96631,
+      "gitBlobSha1": "c09955503495e79c237d7f6d5164c666c7502600",
+      "path": "src/strings.c",
+      "sha256": "08e3799f20dd90ae937808be25721d28c3465b4f2ebaba2e71321e52f72465c1"
+    }
+  ],
+  "gameEdition": "FIRERED",
+  "profile": "firered-fly-map-v1",
+  "repository": "pret/pokefirered",
+  "romRevision": 0,
+  "schemaVersion": 1,
+  "tree": "7515cd4067ea55f8cdbc73624478afd2736c58b9"
+}
