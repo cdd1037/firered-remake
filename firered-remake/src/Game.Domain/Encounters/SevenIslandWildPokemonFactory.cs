@@ -24,6 +24,8 @@ public static class SevenIslandWildPokemonFactory
             throw new ArgumentException("seven_island_wild_profile");
         EarlyLandEncounterRules.ValidateState(encounter, table);
         var candidate = encounter.Pending?.Candidate ?? throw new InvalidOperationException("seven_island_wild_pending");
+        if (!owned.Catalog.Species.ContainsKey(candidate.Species))
+            throw new NotSupportedException("land_candidate_species_not_owned");
         var result = SevenIslandEncounterTables.Land.Any(t => t.Map == table.Map)
             ? GenerateSourceSlot(owned, new(candidate.Map, SevenIslandEncounterKind.Land, candidate.Slot), candidate.Level, rng, playerTrainerId)
             : Route1WildPokemonFactory.GenerateOrdinary(owned.Catalog, candidate.Species, candidate.Level, rng, playerTrainerId);

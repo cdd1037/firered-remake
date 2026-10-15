@@ -1,11 +1,15 @@
 #!/bin/sh
 set -eu
+PACK=${1:?Pass pack and normal-cry catalog paths}
+CATALOG=${2:?Pass normal-cry catalog path}
+PACK=$(realpath "$PACK")
+CATALOG=$(realpath "$CATALOG")
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
 export DEMO_RESULTS_GROUP=phase6-godot DEMO_CASE=headless-verification
 mkdir -p results/phase6-godot
 ./demo/build.sh > results/phase6-godot/build.log
-./demo/start.sh --headless --audio-driver Dummy --verbose > results/phase6-godot/headless-verification.log 2>&1
+./demo/start.sh --headless --audio-driver Dummy --verbose -- "$PACK" "$CATALOG" > results/phase6-godot/headless-verification.log 2>&1
 python3 - <<'PY'
 import json,math,pathlib
 p=pathlib.Path('results/phase6-godot')

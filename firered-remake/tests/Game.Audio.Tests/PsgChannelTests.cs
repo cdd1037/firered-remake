@@ -7,7 +7,7 @@ namespace FireRed.Tests.Audio;
 [TestClass, TestCategory("Audio")]
 public sealed class PsgChannelTests
 {
-    private FireRedAudio.Resources real = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "../firered-audio-player/resources/firered.pack"))));
+    private FireRedAudio.Resources real = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "content/generated/audio/synth/firered.pack"))));
     static Resources Fixture(Resources real, (int Type, uint Data, int Length)[] tones)
     {
         var bytes = new byte[Resources.End - Resources.Base];

@@ -7,7 +7,7 @@ namespace FireRed.Tests.Audio;
 [TestClass]
 public abstract class SequenceFixture
 {
-    private protected FireRedAudio.Resources real = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "../firered-audio-player/resources/firered.pack"))));
+    private protected FireRedAudio.Resources real = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "content/generated/audio/synth/firered.pack"))));
     private protected static Resources Fixture(byte[] sequence, int parentType = 0, int leafType = 0, bool invalidChildAddress = false)
     {
         var bytes = new byte[Resources.End - Resources.Base];

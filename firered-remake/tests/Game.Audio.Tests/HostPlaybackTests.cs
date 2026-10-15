@@ -7,7 +7,7 @@ namespace FireRed.Tests.Audio;
 [TestClass, TestCategory("Audio")]
 public sealed class HostPlaybackTests
 {
-    private FireRedAudio.Resources real = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "../firered-audio-player/resources/firered.pack"))));
+    private FireRedAudio.Resources real = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "content/generated/audio/synth/firered.pack"))));
     static (long Tick, uint Cursor, int Wait, long TrackTick, int LfoPhase) State(Player player)
     {
         var track = player.Tracks[0];

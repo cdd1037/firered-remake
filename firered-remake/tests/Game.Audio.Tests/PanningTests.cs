@@ -7,7 +7,7 @@ namespace FireRed.Tests.Audio;
 [TestClass, TestCategory("Audio")]
 public sealed class PanningTests
 {
-    private FireRedAudio.Resources real = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "../firered-audio-player/resources/firered.pack"))));
+    private FireRedAudio.Resources real = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "content/generated/audio/synth/firered.pack"))));
     internal static Resources Fixture()
     {
         var b = new byte[Resources.End - Resources.Base];

@@ -6,7 +6,7 @@ namespace FireRed.Tests.Audio;
 [TestClass, TestCategory("Audio")]
 public sealed class DriverProfileTests
 {
-    private FireRedAudio.Resources resources = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "../firered-audio-player/resources/firered.pack"))));
+    private FireRedAudio.Resources resources = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "content/generated/audio/synth/firered.pack"))));
     static void CheckFinite(double left, double right)
     {
         if (!double.IsFinite(left) || !double.IsFinite(right))

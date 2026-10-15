@@ -8,7 +8,7 @@ namespace FireRed.Tests.Audio;
 [TestClass, TestCategory("Audio")]
 public sealed class CryPlaybackTests
 {
-    private FireRedAudio.Resources resources = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "../firered-audio-player/resources/firered.pack"))));
+    private FireRedAudio.Resources resources = TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "content/generated/audio/synth/firered.pack"))));
     [TestMethod]
     public void DPCM_all7134_samples_match_independent_original_WAV_oracle()
     {

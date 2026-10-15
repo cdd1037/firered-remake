@@ -24,6 +24,15 @@ public sealed partial class CampaignSession
         if(!content.LeagueRematchEnabled)throw new InvalidDataException("current_requires_league_rematch_catalog");
         ValidateCampaignCatalog(content);
         var battle = content.PokemonContent!.Pokemon;
+        if (content.LandEncounters is null || content.LandEncounters.Count == 0)
+            throw new InvalidDataException("current_land_encounters_missing");
+        foreach (var (map, table) in content.LandEncounters)
+        {
+            EarlyLandEncounterRules.ValidateTable(table);
+            if (map != table.Map || !content.Maps.ContainsKey(map) ||
+                table.Slots.Any(slot => !battle.Catalog.Species.ContainsKey(slot.Species)))
+                throw new InvalidDataException("current_land_encounter_reference");
+        }
         if (content.MemorialPillarTrainers is { } memorialTrainers)
             MemorialPillarTrainerPartyFactory.ValidateCatalog(memorialTrainers);
         if (content.LostCaveEnabled && content.LostCaveTrainers is { } lostCaveTrainers)

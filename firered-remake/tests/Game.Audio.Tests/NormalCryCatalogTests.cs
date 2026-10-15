@@ -4,8 +4,8 @@ namespace FireRed.Tests.Audio;
 [TestClass, TestCategory("Audio")]
 public sealed class NormalCryCatalogTests
 {
-    private static string CatalogPath => Path.GetFullPath(Path.Combine(TestAssets.Root, "../firered-audio-player/resources/normal-cries.bin"));
-    private static Resources Resources => TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "../firered-audio-player/resources/firered.pack"))));
+    private static string CatalogPath => Path.GetFullPath(Path.Combine(TestAssets.Root, "content/generated/audio/synth/normal-cries.bin"));
+    private static Resources Resources => TestAssets.Cached(() => FireRedAudio.Resources.FromPack(Path.GetFullPath(Path.Combine(TestAssets.Root, "content/generated/audio/synth/firered.pack"))));
     private static NormalCryCatalog Catalog => TestAssets.Cached(() => NormalCryCatalog.FromFile(CatalogPath));
     public static IEnumerable<object[]> Species => Enumerable.Range(1, 251).Concat(Enumerable.Range(277, 135)).Select(id => new object[] { id });
 

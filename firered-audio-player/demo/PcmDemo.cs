@@ -46,8 +46,11 @@ public partial class PcmDemo : Node
                 resultPath = Path.Combine(root, "results", outputGroup, testCase + ".json");
             }
             Directory.CreateDirectory(Path.GetDirectoryName(resultPath)!);
-            var resources = Resources.FromPack(Path.Combine(root, "resources/firered.pack"));
-            var catalog = NormalCryCatalog.FromFile(Path.Combine(root, "resources/normal-cries.bin"));
+            string[] resourcePaths = OS.GetCmdlineUserArgs();
+            if (resourcePaths.Length != 2)
+                throw new ArgumentException("Pass -- /absolute/path/to/firered.pack /absolute/path/to/normal-cries.bin");
+            var resources = Resources.FromPack(resourcePaths[0]);
+            var catalog = NormalCryCatalog.FromFile(resourcePaths[1]);
             synth = new Synth(resources, AudioProfile.SourceFiltered, catalog) { EnableTrace = true };
             synth.PrepareNormalCry(124);
             synth.Start(0x086dd844, 0);

@@ -8,8 +8,8 @@ using Game.Domain.Randomness;
 namespace Game.Domain.Encounters;
 
 /// <summary>
-/// Bounded FireRed land encounters with separately admitted Route 22, Route 3 and Mt. Moon walking.
-/// Content authenticates table bytes; a candidate remains pending until generation and battle start commit.
+/// FireRed land encounters with explicit map and walking-profile admission.
+/// Ordinary table values come from content; a candidate remains pending until generation and battle start commit.
 /// </summary>
 public static class EarlyLandEncounterRules
 {
@@ -133,7 +133,7 @@ public static class EarlyLandEncounterRules
         if (globalRng.AlgorithmId != Gen3Rng.AlgorithmId) throw new NotSupportedException("Unknown global RNG algorithm.");
         if (check.Map != table.Map) throw new ArgumentException("The current map and authenticated land table disagree.");
         if (!Enum.IsDefined(check.Trigger) || !Enum.IsDefined(check.EncounterType)) throw new NotSupportedException("Unknown field check or encounter terrain.");
-        bool caveAttributes = state.RulesVersion == FiveIslandRulesVersion && IsCurrentCaveMap(table.Map) || state.RulesVersion is FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && FourIslandEncounterTables.IsCave(table.Map) || state.RulesVersion is SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && SeviiRubyEncounterTables.IsCave(table.Map) || state.RulesVersion is VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && VictoryRoadEncounterTables.IsCave(table.Map) || state.RulesVersion is CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && CinnabarLandEncounterTables.IsCave(table.Map) || state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && (MtMoonLandEncounterTables.IsCave(table.Map) || state.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && Route11LandEncounterTables.IsCave(table.Map) || state.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && RockTunnelLandEncounterTables.IsCave(table.Map) || state.RulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && PokemonTowerLandEncounterTables.IsCave(table.Map));
+        bool caveAttributes = IsCaveMap(table.Map, state.RulesVersion);
         if (check.EncounterType == EncounterTileType.Water ||
             (!caveAttributes && check.EncounterType == EncounterTileType.Land && check.MetatileBehavior != TallGrassBehavior))
             throw new NotSupportedException("Only admitted source cave land, tall-grass land and non-encounter tiles are supported.");
@@ -258,26 +258,23 @@ public static class EarlyLandEncounterRules
     {
         ArgumentNullException.ThrowIfNull(table);
         // Map IDs determine admission; table labels and build provenance do not affect encounters.
-        var mtMoonTable = MtMoonLandEncounterTables.All.Concat(BillLandEncounterTables.All).Concat(VermilionLandEncounterTables.All).Concat(Route11LandEncounterTables.All).Concat(RockTunnelLandEncounterTables.All).Concat(CeladonApproachLandEncounterTables.All).Concat(PokemonTowerLandEncounterTables.All).Concat(FuchsiaRouteLandEncounterTables.All).Concat(SafariLandEncounterTables.All).Concat(CinnabarLandEncounterTables.All).Concat(FirstSeviiEncounterTables.Land).Concat(VictoryRoadEncounterTables.Land).Concat(SeviiRubyEncounterTables.Land).Concat(FourIslandEncounterTables.Land).Concat(SixIslandEncounterTables.Land).Concat(FiveIslandEncounterTables.Land).Concat(CeruleanCaveEncounterTables.Land).Concat(SevenIslandEncounterTables.Land).Append(PowerPlantEncounterTables.Land).Concat(SeafoamEncounterTables.Land).Concat(SourceTableEncounterRegistry.Land).FirstOrDefault(t => t.Map == table.Map);
-        if (mtMoonTable is null && table.Map.Value is not
+        RegisteredLandDefinitions.SourceTables.TryGetValue(table.Map, out var registeredTable);
+        if (registeredTable is null && table.Map.Value is not
             ("map.route-1" or "map.route-2" or "map.viridian-forest" or "map.route-22" or "map.route-3"))
             throw new NotSupportedException("The land table map is not registered.");
         if (table.RawEncounterRate is < 1 or > 255 || table.Slots.IsDefault || table.Slots.Length != 12)
             throw new ArgumentException("Invalid source land rate or slot count.");
-        if (table.Map == Route22Table.Map || table.Map == Route3Table.Map || mtMoonTable is not null)
-        {
-            var expected = mtMoonTable ?? (table.Map == Route3Table.Map ? Route3Table : Route22Table);
-            // New map profiles admit only these exact source tables, not later maps or levels.
-            if (table.RawEncounterRate != expected.RawEncounterRate ||
-                !table.Slots.SequenceEqual(expected.Slots))
-                throw new ArgumentException("Extended maps require their exact pinned FireRed land tables.");
-            return;
-        }
+        // Special origin/receipt consumers still require their source definitions.
+        // Ordinary regions consume the supplied table throughout candidate generation.
+        bool ordinary = RegisteredLandDefinitions.OrdinaryMaps.Contains(table.Map);
+        if (!ordinary && registeredTable is not null &&
+            (table.RawEncounterRate != registeredTable.RawEncounterRate || !table.Slots.SequenceEqual(registeredTable.Slots)))
+            throw new ArgumentException("Special encounter origins require their source land tables.");
         for (int i = 0; i < table.Slots.Length; i++)
         {
             var slot = table.Slots[i];
-            if (slot is null || slot.Index != i || slot.Weight != SlotWeights[i] || !WildSpecies.Contains(slot.Species) ||
-                slot.MinimumLevel is < 1 or > 100 || slot.MaximumLevel is < 1 or > 100)
+            if (slot is null || slot.Index != i || slot.Weight != SlotWeights[i] || string.IsNullOrWhiteSpace(slot.Species.Value) ||
+                slot.MinimumLevel is < 1 or > 100 || slot.MaximumLevel < slot.MinimumLevel || slot.MaximumLevel > 100)
                 throw new ArgumentException("Invalid early land slot metadata.");
         }
     }
@@ -292,8 +289,8 @@ public static class EarlyLandEncounterRules
         if (state.PreviousMetatileBehavior > byte.MaxValue || state.StepsSinceLastEncounter > (state.RulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion ? 21 : state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion ? 16 : 8))
             throw new ArgumentException("Encounter state is outside the bounded walking profile.");
         if (state.Pending is {} pending && (pending.Candidate is null ||
-            (pending.MetatileBehavior != TallGrassBehavior && !(state.RulesVersion == FiveIslandRulesVersion && IsCurrentCaveMap(pending.Candidate.Map)) && !(state.RulesVersion is FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && FourIslandEncounterTables.IsCave(pending.Candidate.Map)) && !(state.RulesVersion is SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && SeviiRubyEncounterTables.IsCave(pending.Candidate.Map)) && !(state.RulesVersion is VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && VictoryRoadEncounterTables.IsCave(pending.Candidate.Map)) && !(state.RulesVersion is CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && CinnabarLandEncounterTables.IsCave(pending.Candidate.Map)) && !(state.RulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && (MtMoonLandEncounterTables.IsCave(pending.Candidate.Map) || state.RulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && Route11LandEncounterTables.IsCave(pending.Candidate.Map) || state.RulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && RockTunnelLandEncounterTables.IsCave(pending.Candidate.Map) || state.RulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && PokemonTowerLandEncounterTables.IsCave(pending.Candidate.Map)))) ||
-            pending.Candidate.Slot is < 0 or >= 12 || !IsAdmittedCandidate(pending.Candidate, state.RulesVersion) ||
+            string.IsNullOrWhiteSpace(pending.Candidate.Map.Value) || string.IsNullOrWhiteSpace(pending.Candidate.Species.Value) ||
+            pending.Candidate.Slot is < 0 or >= 12 ||
             pending.Candidate.Level is < 1 or > 100))
             throw new ArgumentException("Invalid pending early land candidate.");
     }
@@ -335,6 +332,8 @@ public static class EarlyLandEncounterRules
             throw new NotSupportedException("Extended maps require explicit encounter-profile admission.");
         if (state.Pending is not {} pending) return;
         var candidate = pending.Candidate;
+        if (pending.MetatileBehavior != TallGrassBehavior && !IsCaveMap(table.Map, state.RulesVersion))
+            throw new ArgumentException("Pending candidate requires grass or an admitted cave map.");
         var slot = table.Slots[candidate.Slot];
         if (candidate.Map != table.Map || candidate.Species != slot.Species ||
             candidate.Level < Math.Min(slot.MinimumLevel, slot.MaximumLevel) ||
@@ -397,40 +396,84 @@ public static class EarlyLandEncounterRules
             throw new NotSupportedException("Unsupported early land process version.");
     }
 
+    // Deferred as a group: source table constructors themselves read SlotWeights.
+    // Keeping this cache outside the outer type initializer avoids a static-init cycle.
+    private static class RegisteredLandDefinitions
+    {
+        internal static readonly ImmutableDictionary<MapId, EarlyLandEncounterTable> SourceTables = BuildSourceTables();
+        internal static readonly ImmutableHashSet<MapId> OrdinaryMaps =
+            MtMoonLandEncounterTables.All
+                .Concat(BillLandEncounterTables.All)
+                .Concat(VermilionLandEncounterTables.All)
+                .Concat(Route11LandEncounterTables.All)
+                .Concat(RockTunnelLandEncounterTables.All)
+                .Concat(CeladonApproachLandEncounterTables.All)
+                .Concat(FuchsiaRouteLandEncounterTables.All)
+                .Concat(CinnabarLandEncounterTables.All)
+                .Select(table => table.Map)
+                .Concat(new MapId[] { new("map.route-1"), new("map.route-2"), new("map.viridian-forest"),
+                    new("map.route-22"), new("map.route-3") })
+                .ToImmutableHashSet();
+
+        private static ImmutableDictionary<MapId, EarlyLandEncounterTable> BuildSourceTables()
+        {
+            var tables = MtMoonLandEncounterTables.All
+                .Concat(BillLandEncounterTables.All)
+                .Concat(VermilionLandEncounterTables.All)
+                .Concat(Route11LandEncounterTables.All)
+                .Concat(RockTunnelLandEncounterTables.All)
+                .Concat(CeladonApproachLandEncounterTables.All)
+                .Concat(PokemonTowerLandEncounterTables.All)
+                .Concat(FuchsiaRouteLandEncounterTables.All)
+                .Concat(SafariLandEncounterTables.All)
+                .Concat(CinnabarLandEncounterTables.All)
+                .Concat(FirstSeviiEncounterTables.Land)
+                .Concat(VictoryRoadEncounterTables.Land)
+                .Concat(SeviiRubyEncounterTables.Land)
+                .Concat(FourIslandEncounterTables.Land)
+                .Concat(SixIslandEncounterTables.Land)
+                .Concat(FiveIslandEncounterTables.Land)
+                .Concat(CeruleanCaveEncounterTables.Land)
+                .Concat(SevenIslandEncounterTables.Land)
+                .Append(PowerPlantEncounterTables.Land)
+                .Concat(SeafoamEncounterTables.Land)
+                .Concat(SourceTableEncounterRegistry.Land);
+            var result = ImmutableDictionary.CreateBuilder<MapId, EarlyLandEncounterTable>();
+            // Preserve the previous ordered FirstOrDefault lookup even if families overlap.
+            foreach (var table in tables)
+                if (!result.ContainsKey(table.Map)) result.Add(table.Map, table);
+            return result.ToImmutable();
+        }
+    }
+
     private static bool IsCurrentCaveMap(MapId map) => LostCaveEncounterTables.Land.Any(t => t.Map == map) ||
         SeafoamEncounterTables.Land.Any(t => t.Map == map) || CeruleanCaveEncounterTables.IsCave(map) ||
         SevenIslandEncounterTables.IsChamber(map) || map == PowerPlantEncounterTables.Map;
 
-    private static bool IsAdmittedCandidate(EarlyLandEncounterCandidate candidate, string rulesVersion)
-    {
-        if (candidate.Map.Value is "map.route-1" or "map.route-2" or "map.viridian-forest")
-            return WildSpecies.Contains(candidate.Species);
-        EarlyLandEncounterTable table;
-        if (rulesVersion == FiveIslandRulesVersion && SourceTableEncounterRegistry.Land.FirstOrDefault(t => t.Map == candidate.Map) is {} sourceTable) table = sourceTable;
-        else if (rulesVersion == FiveIslandRulesVersion && SeafoamEncounterTables.Land.FirstOrDefault(t=>t.Map==candidate.Map) is {} seafoamTable) table=seafoamTable;
-        else if (rulesVersion == FiveIslandRulesVersion && candidate.Map == PowerPlantEncounterTables.Map) table = PowerPlantEncounterTables.Land;
-        else if (rulesVersion == FiveIslandRulesVersion && SevenIslandEncounterTables.Land.FirstOrDefault(t => t.Map == candidate.Map) is { } sevenTable) table = sevenTable;
-        else if (rulesVersion == FiveIslandRulesVersion && CeruleanCaveEncounterTables.Land.FirstOrDefault(t => t.Map == candidate.Map) is { } caveTable) table = caveTable;
-        else if (rulesVersion == FiveIslandRulesVersion && FiveIslandEncounterTables.Land.FirstOrDefault(t=>t.Map==candidate.Map) is {} fiveTable) table = fiveTable;
-        else if (rulesVersion is SixIslandRulesVersion or FiveIslandRulesVersion && SixIslandEncounterTables.Land.FirstOrDefault(t=>t.Map==candidate.Map) is {} sixTable) table = sixTable;
-        else if (rulesVersion is FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && FourIslandEncounterTables.Land.FirstOrDefault(t=>t.Map==candidate.Map) is {} fourTable) table = fourTable;
-        else if (rulesVersion is SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && SeviiRubyEncounterTables.Land.FirstOrDefault(t=>t.Map==candidate.Map) is {} rubyTable) table = rubyTable;
-        else if (rulesVersion is VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && VictoryRoadEncounterTables.Land.FirstOrDefault(t=>t.Map==candidate.Map) is {} victoryTable) table = victoryTable;
-        else if (rulesVersion is FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && FirstSeviiEncounterTables.Land.FirstOrDefault(t => t.Map == candidate.Map) is { } seviiTable) table = seviiTable;
-        else if (rulesVersion is CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && CinnabarLandEncounterTables.All.FirstOrDefault(t => t.Map == candidate.Map) is { } cinnabarTable) table = cinnabarTable;
-        else if(rulesVersion is SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && SafariLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} safariTable)table=safariTable;
-        else if(rulesVersion is FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && FuchsiaRouteLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} fuchsiaTable)table=fuchsiaTable;
-        else if (rulesVersion is Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && candidate.Map == Route3Table.Map) table = Route3Table;
-        else if (rulesVersion is Route22RulesVersion or Route3RulesVersion or MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && candidate.Map == Route22Table.Map) table = Route22Table;
-        else if (rulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && MtMoonLandEncounterTables.All.FirstOrDefault(t => t.Map == candidate.Map) is {} mtMoonTable) table = mtMoonTable;
-        else if (rulesVersion is BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && BillLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} billTable) table=billTable;
-        else if (rulesVersion is VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && VermilionLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} vermilionTable) table=vermilionTable;
-        else if (rulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && Route11LandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} route11Table) table=route11Table;
-        else if (rulesVersion is CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && CeladonApproachLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} celadonTable) table=celadonTable;
-        else if (rulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && RockTunnelLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} rockTable) table=rockTable;
-        else if(rulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && PokemonTowerLandEncounterTables.All.FirstOrDefault(t=>t.Map==candidate.Map) is {} towerTable) table=towerTable;
-        else return false;
-        var slot = table.Slots[candidate.Slot];
-        return candidate.Species == slot.Species && candidate.Level == slot.MinimumLevel;
-    }
+    private static bool IsCaveMap(MapId map, string rulesVersion) =>
+        rulesVersion == FiveIslandRulesVersion && IsCurrentCaveMap(map) ||
+        rulesVersion is FourIslandRulesVersion or SixIslandRulesVersion
+            or FiveIslandRulesVersion && FourIslandEncounterTables.IsCave(map) ||
+        rulesVersion is SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion
+            or FiveIslandRulesVersion && SeviiRubyEncounterTables.IsCave(map) ||
+        rulesVersion is VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion or SixIslandRulesVersion
+            or FiveIslandRulesVersion && VictoryRoadEncounterTables.IsCave(map) ||
+        rulesVersion is CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion
+            or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && CinnabarLandEncounterTables.IsCave(map) ||
+        rulesVersion is MtMoonRulesVersion or BillRulesVersion or VermilionRulesVersion or SsAnneRulesVersion or Route11RulesVersion
+            or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion
+            or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion
+            or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion
+            or SixIslandRulesVersion or FiveIslandRulesVersion && (MtMoonLandEncounterTables.IsCave(map) ||
+        rulesVersion is Route11RulesVersion or RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion
+            or RocketHideoutRulesVersion or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion
+            or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion
+            or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && Route11LandEncounterTables.IsCave(map) ||
+        rulesVersion is RockTunnelRulesVersion or CeladonApproachRulesVersion or CeladonGymRulesVersion or RocketHideoutRulesVersion
+            or PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion or CinnabarRulesVersion
+            or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion or FourIslandRulesVersion
+            or SixIslandRulesVersion or FiveIslandRulesVersion && RockTunnelLandEncounterTables.IsCave(map) ||
+        rulesVersion is PokemonTowerRulesVersion or SnorlaxRulesVersion or FuchsiaRulesVersion or SafariRulesVersion
+            or CinnabarRulesVersion or FirstSeviiRulesVersion or VictoryRoadRulesVersion or SeviiRubyRulesVersion
+            or FourIslandRulesVersion or SixIslandRulesVersion or FiveIslandRulesVersion && PokemonTowerLandEncounterTables.IsCave(map));
 }

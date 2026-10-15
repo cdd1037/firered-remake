@@ -1,8 +1,11 @@
 #!/bin/sh
 set -eu
+PACK=${1:?Usage: verify-phase2.sh /absolute/path/to/firered.pack}
+PACK=$(realpath "$PACK")
+shift
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-PACK="$ROOT/resources/firered.pack"
 OUT="$ROOT/results/phase2"
+mkdir -p "$OUT"
 "$ROOT/build.sh" > "$OUT/build.log"
 dotnet test "$ROOT/../firered-remake/tests/Game.Audio.Tests/Game.Audio.Tests.csproj" --filter TestCategory=Audio > "$OUT/tests.txt"
 for profile in modern-dry source-gain source-linear source-pitch source-envelope source-reverb source-bandlimited source-filtered; do

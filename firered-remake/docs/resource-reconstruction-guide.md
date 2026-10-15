@@ -91,3 +91,5 @@ Celadon approach 遇敌表由 `python scripts/imports/story/import-celadon-appro
 共享地图属性表使用当前schema3地图及raw的src/data/tilesets/headers.h、metatiles.h和实际属性bin再生。运行import-field-tilesets.py后用--check核对；不能仅保留旧地图文件名对应的layout。
 
 音频从零恢复是独立输入合同：主pack需要现有pack或合法自备ROM，旧normal-cries目录生成还需要对应inventory及其ROM/ELF/map来源。目前八份早期cue配方缺失；在这些闭包补齐前保留现有私有音频资源，不宣称完整冷重建。
+
+音频工程现只保留 `content/generated/audio/synth/firered.pack` 与 `normal-cries.bin` 一套运行素材。独立播放器/研究入口显式接收pack/catalog路径，不再要求audio-player/resources的重复副本；Core不依赖主游戏路径。当前入口见 [音频工程说明](../../firered-audio-player/README.md)，历史phase报告不是当前重建入口。
