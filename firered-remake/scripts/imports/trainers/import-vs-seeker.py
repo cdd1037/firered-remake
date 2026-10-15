@@ -106,9 +106,8 @@ def extract( sources):
                        itemSymbol='ITEM_VS_SEEKER', flagSetBeforeGiveItem=True, initialChargeSteps=0)
     events = sources['data/event_scripts.s']
     need(re.search(r'setflag FLAG_GOT_VS_SEEKER\s*\n\s*giveitem ITEM_VS_SEEKER', events) is not None, 'vs_seeker_acquisition_order')
-    # Roster requirements are source metadata only: battle adapters still own party construction.
+    # Validate referenced declarations without publishing a duplicate import recipe.
     trainers_source = sources['src/data/trainers.h']
-    roster_requirements = []
     all_trainers = sorted({p for r in rematches for p in r['trainers'] if p not in ('SKIP', 'TRAINER_NONE')}, key=trainer_ids.get)
     for symbol in all_trainers:
         m = re.search(r'\[' + symbol + r'\]\s*=\s*\{(.*?)\n    \},', trainers_source, re.S)
@@ -117,12 +116,10 @@ def extract( sources):
         party = re.search(r'\.party = (\w+)\((\w+)\)', body)
         double = re.search(r'\.doubleBattle = (TRUE|FALSE)', body)
         need(party and double, 'vs_seeker_party_metadata:' + symbol)
-        roster_requirements.append(dict(trainerSymbol=symbol, sourceId=trainer_ids[symbol], partyMacro=party[1], partySymbol=party[2],
-                                        doubleBattle=double[1] == 'TRUE'))
     return dict(schemaVersion=1,
                 rematches=rematches, actorBindings=bindings, acquisition=acquisition,
                 runningMovementByGraphics={str(graphics[k]): v for k, v in sorted(behavior.items())},
-                defaultRunningMovement=default, rosterRequirements=roster_requirements,
+                defaultRunningMovement=default,
                 progressFlags=['', 'FLAG_GOT_VS_SEEKER', 'FLAG_WORLD_MAP_CELADON_CITY', 'FLAG_WORLD_MAP_FUCHSIA_CITY', 'FLAG_SYS_GAME_CLEAR', 'FLAG_SYS_CAN_LINK_WITH_RS'],
                 excludedMaps=['MAP_VIRIDIAN_FOREST', 'MAP_MT_EMBER_EXTERIOR', 'MAP_THREE_ISLAND_BERRY_FOREST', 'MAP_SIX_ISLAND_PATTERN_BUSH'])
 
@@ -139,7 +136,7 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(raw)
     print(json.dumps(dict(profile=PROFILE, rematches=len(catalog['rematches']), actorBindings=len(catalog['actorBindings']),
-                         rosterRequirements=len(catalog['rosterRequirements']), bytes=len(raw))))
+                         bytes=len(raw))))
 
 
 if __name__ == '__main__':

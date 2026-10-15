@@ -10,13 +10,12 @@ public sealed record VsSeekerActorBinding(string SourceMap, int TemplateIndex, i
     int GraphicsSourceId, int X, int Y, string MovementSymbol, string Flag);
 public sealed record VsSeekerAcquisition(string SourceMap, int TemplateIndex, int LocalId, int X, int Y,
     string ScriptLabel, string SourcePath, string OwnershipFlag, string ItemSymbol, bool FlagSetBeforeGiveItem, int InitialChargeSteps);
-public sealed record VsSeekerRosterRequirement(string TrainerSymbol, int SourceId, string PartyMacro, string PartySymbol, bool DoubleBattle);
 
 /// <summary>Source-derived data, with stable source symbols. SourceMap on a rematch is unused original metadata;
 /// ActorBindings identifies the actual map (several Route21 rows belong to Route21_South).</summary>
 public sealed record VsSeekerCatalog(ImmutableArray<VsSeekerRematch> Rematches, ImmutableArray<VsSeekerActorBinding> ActorBindings,
     VsSeekerAcquisition Acquisition, ImmutableDictionary<int, int> RunningMovementByGraphics,
-    int DefaultRunningMovement, ImmutableArray<VsSeekerRosterRequirement> RosterRequirements,
+    int DefaultRunningMovement,
     ImmutableArray<string> ProgressFlags, ImmutableArray<string> ExcludedMaps)
 {
     public VsSeekerRematch? FindBase(string trainer) => Rematches.FirstOrDefault(r => r.Trainers[0] == trainer);

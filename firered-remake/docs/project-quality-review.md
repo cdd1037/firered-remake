@@ -204,6 +204,8 @@ Route11/RockTunnel 的实际 JSON 编辑已贯穿候选生成、公开进入/结
 
 MtMoon依赖产物已停写无运行消费者的moves/species/items重复声明：141,978→58,481字节，净减83,497字节；其余11个根字段逐值不变。导入期源解析与损坏输入拒绝保留，移除无用列表/出处构造。真实raw再生3项、脚本布局8项、Content定向17项、当前v3代表存档往返1项通过，原档不变。generated产物不进Git，下一次普通工程备份应包含精简后的文件。
 
+VS Seeker名册配方rosterRequirements已移出运行JSON、Content及Domain；队伍导入器直接从rematches引用和原始trainer声明再生，不新增配方副本。351名训练家/849队员及招式投影不变，三个party产物逐字节一致，移除现存manifest中生产者早已停写的五个无用证明字段。运行JSON净减54,864字节；坏输入拒绝、Content/重战7项、v3代表档往返和布局检查通过。源验证使用只读raw适配，未验证pinned Git读取路径；当前新代码需配套精简后的generated，旧ZIP仍是独立的旧版本基线。
+
 音频pack/catalog仅保留主游戏 generated/audio/synth 的canonical副本，库与CLI仍接受显式外部路径。删除两个无当前消费者的旧导出/验证入口；历史研究规格保留为历史，不假装缺失基线已恢复。两份重复素材减少2,571,624字节；移出前后Audio574项通过，CLI/demo构建通过，等参数短PCM字节一致。没有真实设备听测结论。
 
 ## 显式图形资源退出清理

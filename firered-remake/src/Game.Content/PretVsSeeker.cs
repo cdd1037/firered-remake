@@ -25,20 +25,20 @@ public sealed class PretVsSeeker
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         }) ?? throw new InvalidDataException("vs_seeker_catalog_empty");
         if (doc.SchemaVersion != 1 || doc.Rematches.IsDefaultOrEmpty || doc.ActorBindings.IsDefaultOrEmpty ||
-            doc.RosterRequirements.IsDefaultOrEmpty || doc.ProgressFlags.IsDefaultOrEmpty || doc.ExcludedMaps.IsDefault ||
+            doc.ProgressFlags.IsDefaultOrEmpty || doc.ExcludedMaps.IsDefault ||
             doc.Acquisition is null || doc.RunningMovementByGraphics is null ||
             !doc.Rematches.Select(r => r.Index).SequenceEqual(Enumerable.Range(0, doc.Rematches.Length)) ||
             doc.Rematches.Any(r => r.Trainers.IsDefault || r.Trainers.Length != 6 ||
                 r.TrainerSourceIds.IsDefault || r.TrainerSourceIds.Length != 6))
             throw new InvalidDataException("vs_seeker_catalog_shape");
         var catalog = new VsSeekerCatalog(doc.Rematches, doc.ActorBindings, doc.Acquisition, doc.RunningMovementByGraphics,
-            doc.DefaultRunningMovement, doc.RosterRequirements, doc.ProgressFlags, doc.ExcludedMaps);
+            doc.DefaultRunningMovement, doc.ProgressFlags, doc.ExcludedMaps);
         return new(catalog);
     }
 
     private sealed record Document(int SchemaVersion, ImmutableArray<VsSeekerRematch> Rematches,
         ImmutableArray<VsSeekerActorBinding> ActorBindings, VsSeekerAcquisition Acquisition,
         ImmutableDictionary<int, int> RunningMovementByGraphics, int DefaultRunningMovement,
-        ImmutableArray<VsSeekerRosterRequirement> RosterRequirements, ImmutableArray<string> ProgressFlags,
+        ImmutableArray<string> ProgressFlags,
         ImmutableArray<string> ExcludedMaps);
 }

@@ -84,16 +84,23 @@ def generate(reference, dependency, rules_root):
         return result
 
     trainers, resolved = [], []
-    requirements = rules['rosterRequirements']
-    need(len(requirements) == 351 and len({r['trainerSymbol'] for r in requirements}) == 351, 'Exact Vs Seeker roster scope')
-    for requirement in requirements:
-        symbol = requirement['trainerSymbol']; path = 'src/data/trainers.h'
+    source_ids = {}
+    for row in rules['rematches']:
+        need(len(row['trainers']) == len(row['trainerSourceIds']) == 6, 'Rematch slots differ')
+        for symbol, source_id in zip(row['trainers'], row['trainerSourceIds']):
+            expected_id = 65535 if symbol == 'SKIP' else number('include/constants/opponents.h', symbol)
+            need(type(source_id) is int and source_id == expected_id, 'Rematch source identity differs: ' + symbol)
+            if symbol in ('SKIP', 'TRAINER_NONE'): continue
+            need(symbol not in source_ids or source_ids[symbol] == source_id, 'Conflicting rematch trainer ID')
+            source_ids[symbol] = source_id
+    need(source_ids and len(set(source_ids.values())) == len(source_ids), 'Empty or conflicting rematch roster')
+    for symbol in sorted(source_ids, key=source_ids.get):
+        path = 'src/data/trainers.h'
         match = one(path, r'^    \[' + symbol + r'\] = \{\n(.*?)^    \},')
         f = fields(match[1]); need(set(f) == {'trainerClass', 'encounterMusic_gender', 'trainerPic', 'trainerName', 'items', 'doubleBattle', 'aiFlags', 'party'}, 'Trainer fields differ')
         shape, party_symbol = re.fullmatch(r'((?:NO_ITEM|ITEM)_(?:DEFAULT|CUSTOM)_MOVES)\((\w+)\)', f['party']).groups()
         custom, held = 'CUSTOM' in shape, shape.startswith('ITEM_')
-        need((shape, party_symbol, f['doubleBattle'] == 'TRUE', number('include/constants/opponents.h', symbol)) ==
-             (requirement['partyMacro'], requirement['partySymbol'], requirement['doubleBattle'], requirement['sourceId']), 'Rules/party source identity differs')
+        need(f['doubleBattle'] in ('TRUE', 'FALSE'), 'Unsupported doubleBattle value')
         pp = 'src/data/trainer_parties.h'
         party = one(pp, r'^static const struct TrainerMon' + ('Item' if held else 'NoItem') + ('Custom' if custom else 'Default') + 'Moves ' + party_symbol + r'\[\] = \{\n(.*?)^\};')
         rows = list(re.finditer(r'    \{\n(.*?)    \},\n', party[1], re.S))
@@ -120,11 +127,11 @@ def generate(reference, dependency, rules_root):
         need(len(items) <= 4, 'Trainer inventory size'); items += ['ITEM_NONE'] * (4 - len(items))
         money = one('src/battle_main.c', r'^\s*\{' + f['trainerClass'] + r', (\d+)\},$')
         ai = f['aiFlags'].split(' | ')
-        trainer = dict(id=identity(symbol), sourceTrainerId=requirement['sourceId'], trainerClass=f['trainerClass'],
+        trainer = dict(id=identity(symbol), sourceTrainerId=source_ids[symbol], trainerClass=f['trainerClass'],
             sourceTrainerClass=number('include/constants/trainers.h', f['trainerClass']), trainerPic=f['trainerPic'],
             sourceTrainerPic=number('include/constants/trainers.h', f['trainerPic']), sourceTrainerName=name, encodedTrainerName=encode(name),
             encounterMusicGender=sum(number('include/constants/trainers.h', v) if not v.isdigit() else int(v) for v in f['encounterMusic_gender'].split(' | ')),
-            items=items, doubleBattle=requirement['doubleBattle'], partyFlags=int(custom) | (int(held) << 1),
+            items=items, doubleBattle=f['doubleBattle'] == 'TRUE', partyFlags=int(custom) | (int(held) << 1),
             aiFlags=sum(number('include/constants/battle_ai.h', a) for a in ai), aiFlagSymbols=ai, baseMoney=int(money[1]),
             party=members, source=ref(path, symbol, match), moneySource=ref('src/battle_main.c', f['trainerClass'], money))
         trainers.append(trainer); resolved.append(dict(trainer=identity(symbol), partyMoves=expected))
