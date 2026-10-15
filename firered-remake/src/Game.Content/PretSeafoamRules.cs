@@ -37,7 +37,6 @@ public static class PretSeafoamRules
         var result = new SeafoamTrainerCatalog(document.Trainers.ToImmutableDictionary(t => t.Id), document.Battles.ToImmutableDictionary(b => b.ScriptEntry, StringComparer.Ordinal));
         SeafoamTrainerPartyFactory.ValidateCatalog(result); return result;
     }
-    public static JsonElement LoadRules(string root) => Read<JsonElement>(root,"rules.json");
     public static SeafoamWaterEncounterCatalog LoadWater(SevenIslandWaterEncounterCatalog predecessor) =>
         SeafoamWaterEncounterCatalog.Authenticate(predecessor, SeafoamEncounterTables.Water);
 }

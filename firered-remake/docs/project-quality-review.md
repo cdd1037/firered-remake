@@ -206,6 +206,8 @@ MtMoon依赖产物已停写无运行消费者的moves/species/items重复声明�
 
 VS Seeker名册配方rosterRequirements已移出运行JSON、Content及Domain；队伍导入器直接从rematches引用和原始trainer声明再生，不新增配方副本。351名训练家/849队员及招式投影不变，三个party产物逐字节一致，移除现存manifest中生产者早已停写的五个无用证明字段。运行JSON净减54,864字节；坏输入拒绝、Content/重战7项、v3代表档往返和布局检查通过。源验证使用只读raw适配，未验证pinned Git读取路径；当前新代码需配套精简后的generated，旧ZIP仍是独立的旧版本基线。
 
+Seafoam已停写80,208字节无人读取的rules报告及同生成器自算的PID/随机向量，删除无调用LoadRules，不把报告搬入测试。清除pokemon产物中已停写的94字节来源hash；两个实际Domain源文件不变，生成器同步现有ImmutableHashSet语法后可逐字节再生。其余业务输出不变，导入4项、Content3项、Articuno/代表档2项、布局8项通过。单次导入0.643→0.557秒仅作观察，不作为性能结论。
+
 音频pack/catalog仅保留主游戏 generated/audio/synth 的canonical副本，库与CLI仍接受显式外部路径。删除两个无当前消费者的旧导出/验证入口；历史研究规格保留为历史，不假装缺失基线已恢复。两份重复素材减少2,571,624字节；移出前后Audio574项通过，CLI/demo构建通过，等参数短PCM字节一致。没有真实设备听测结论。
 
 ## 显式图形资源退出清理

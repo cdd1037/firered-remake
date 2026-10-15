@@ -7,6 +7,16 @@ namespace FireRed.Tests.Content;
 public sealed class GeneratedRegionBoundaryTests
 {
     [TestMethod]
+    public void SeafoamLoadsTrainerBusinessDataWithoutUnusedRulesReport()
+    {
+        Assert.IsFalse(File.Exists(Path.Combine(TestAssets.Root, "content/generated/data/regions/seafoam/rules.json")));
+        var document = PretSeafoamRules.LoadDocument(TestAssets.Root);
+        Assert.AreEqual(21, document.Trainers.Length);
+        Assert.AreEqual(22, document.Battles.Length);
+        Assert.IsNotNull(PretSeafoamRules.LoadTrainers(TestAssets.Root));
+    }
+
+    [TestMethod]
     public void MtMoonLoadsBusinessDefinitionsWithoutDuplicateSharedCatalogs()
     {
         var region = PretMtMoonRegion.Load(TestAssets.Root);

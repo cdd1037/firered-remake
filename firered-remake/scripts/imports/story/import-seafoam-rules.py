@@ -124,7 +124,7 @@ def generate(reference, dependency):
     need(len(species)==386,'Complete shared source mechanics')
     original=species[additions[0]]; meta=metadata[additions[0]]
     need(original['sourceSpeciesId']==144 and not original['evolutions'] and not meta['sourceEvolutions'],'Terminal Articuno source')
-    battles=[];actors=[];script_path='data/scripts/trainers.inc'
+    battles=[];script_path='data/scripts/trainers.inc'
     for mapname in ['Route19','Route20']:
         mapping=json.loads(read('data/maps/'+mapname+'/map.json'))
         for local_id,actor in enumerate(mapping['object_events'],1):
@@ -137,19 +137,11 @@ def generate(reference, dependency):
             row=dict(trainer=identity(args[0]),mode=number('include/constants/battle_setup.h','TRAINER_BATTLE_DOUBLE' if double else 'TRAINER_BATTLE_SINGLE'),rivalFlags=0,battleTypeFlags=9 if double else 8,scriptEntry=label,introText=args[1],defeatText=args[2],victoryText='',postBattleText=post[1],entryScript='EventScript_TryDoDoubleTrainerBattle' if double else 'EventScript_TryDoNormalTrainerBattle',callback='CB2_EndTrainerBattle',source=ref(script_path,label,block),postBattleScript=None,musicOption=None)
             if double: row['notEnoughMonsText']=args[3]
             battles.append(row)
-            actors.append(dict(map=dict(value=MAPS[mapname]),sourceMap=mapping['id'],localId=local_id,x=actor['x'],y=actor['y'],movementType=actor['movement_type'],sight=actor['trainer_sight_or_berry_tree_id'],script=label,trainer=identity(args[0])))
     need(len(trainers)==21 and len(battles)==22 and sum(t['doubleBattle'] for t in trainers)==1,'21 complete first-battle teams, 22 entries, one double')
     need(all(t['partyFlags']==0 and t['items']==['ITEM_NONE']*4 for t in trainers),'Default-move no-item original teams')
     need(all(m['heldItem']=='ITEM_NONE' for t in trainers for m in t['party']),'Original held items')
-    identities=[]
-    for trainer,sets in zip(trainers,resolved):
-        h=0;members=[]
-        for member,moves in zip(trainer['party'],sets['party']):
-            h=(h+sum(trainer['encodedTrainerName'])+sum(member['encodedSpeciesName']))&0xffffffff
-            pid=((0x80 if trainer['doubleBattle'] else 0x78 if trainer['encounterMusicGender']&0x80 else 0x88)+(h<<8))&0xffffffff
-            p=species[member['species']['value'][5:]];ratio=p['genderRatio']
-            members.append(dict(species=member['species'],level=member['level'],fixedIv=member['sourceIv']*31//255,personality=pid,nature=pid%25,abilitySlot=pid&1,ability=p['ability2'] if pid&1 and p['ability2']!='ABILITY_NONE' else p['ability1'],gender='genderless' if ratio==255 else 'female' if ratio==254 or ratio!=0 and (pid&255)<ratio else 'male',heldItem=member['heldItem'],moves=[identity(m) for m in moves['moves']]))
-        identities.append(dict(trainer=trainer['id'],members=members,basePrize=(8 if trainer['doubleBattle'] else 4)*trainer['baseMoney']*trainer['party'][-1]['level']))
+    need(all(member['species']['value'][5:] in species for trainer in trainers for member in trainer['party']),
+         'Missing canonical trainer species')
     wildpath='src/data/wild_encounters.json';wild=json.loads(read(wildpath))
     by_symbol={json.loads(read('data/maps/'+n+'/map.json'))['id']:MAPS[n] for n in MAPS}
     entries=[e for g in wild['wild_encounter_groups'] for e in g.get('encounters',[]) if e['map'] in by_symbol and e['base_label'].endswith('_FireRed')]
@@ -170,52 +162,30 @@ def generate(reference, dependency):
     need([len(tables[k]) for k in tables]==[5,4,4,4,4],'Exact land/surf/rod scope')
     wild_species=sorted({s['species']['value'][5:] for group in tables.values() for t in group for s in t['slots']}|{'SPECIES_ARTICUNO'})
     held=[dict(species=identity(s),common=metadata[s]['itemCommon'],rare=metadata[s]['itemRare']) for s in wild_species]
-    initial_moves=[]
     pairs={(s['species']['value'][5:],lv) for group in tables.values() for t in group for s in t['slots'] for lv in range(min(s['minimumLevel'],s['maximumLevel']),max(s['minimumLevel'],s['maximumLevel'])+1)}|{('SPECIES_ARTICUNO',50)}
-    for s,level in sorted(pairs):initial_moves.append(dict(species=identity(s),level=level,moves=[identity(m) for m in natural_moves(s,level)]))
+    for s,level in sorted(pairs): natural_moves(s,level)
     need(natural_moves('SPECIES_ARTICUNO',50)==['MOVE_MIST','MOVE_AGILITY','MOVE_MIND_READER','MOVE_ICE_BEAM'],'Original Articuno50 moves')
     art_path='data/maps/SeafoamIslands_B4F/scripts.inc';art=one(art_path,r'^SeafoamIslands_B4F_EventScript_Articuno::\n((?:(?!^\w+::).)*)')
     need('setwildbattle SPECIES_ARTICUNO, 50' in art[1] and 'special StartLegendaryBattle' in art[1],'Original static command')
     creation_path='src/script_pokemon_util.c';creation=one(creation_path,r'^void CreateScriptedWildMon\([^\n]+\)\n\{\n.*?^\}')
     need('CreateMon(&gEnemyParty[0], species, level, 32, 0, 0, OT_ID_PLAYER_ID, 0);' in creation[0],'Original static player OT random PID/IV')
-    static=dict(map=dict(value=MAPS['SeafoamIslands_B4F']),localId=3,x=9,y=2,elevation=4,species=identity('SPECIES_ARTICUNO'),level=50,heldItem='ITEM_NONE',modernFatefulEncounter=False,shinyLocked=False,generationDraws=4,source=ref(art_path,'SeafoamIslands_B4F_EventScript_Articuno',art),creationSource=ref(creation_path,'CreateScriptedWildMon',creation))
     cells=compatibility_additions(dependency, 'content/generated/data/regions/seafoam/machines.json')
     for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/wild_encounter.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h','include/random.h','include/constants/pokemon.h','include/constants/flags.h','include/constants/items.h']:read(path)
     need('if (!(gBattleTypeFlags & (BATTLE_TYPE_POKEDUDE | BATTLE_TYPE_LEGENDARY | BATTLE_TYPE_TRAINER)))' in read('src/pokemon.c'),'Legendary held assignment bypass')
-    def draw(seed):
-        seed=(seed*1103515245+24691)&0xffffffff;return seed,seed>>16
-    cases=[]
-    for team in identities:
-        pid=team['members'][0]['personality']
-        shiny_seed=next(seed for seed in range(1000000) if (draw(draw(seed)[0])[1]^draw(seed)[1]^(pid>>16)^(pid&65535))<8)
-        for initial in [42,shiny_seed]:
-            seed=initial;raw_draws=[];ots=[]
-            for member in team['members']:
-                while True:
-                    seed,lo=draw(seed);seed,hi=draw(seed);raw_draws.extend([lo,hi]);pid=member['personality']
-                    if hi^lo^(pid>>16)^(pid&65535)>=8:break
-                ots.append(lo|(hi<<16))
-            cases.append(dict(trainer=team['trainer'],initialSeed=initial,finalSeed=seed,draws=len(raw_draws),rawDraws=raw_draws,originalTrainerIds=ots))
-    static_cases=[]
-    shiny=next(seed for seed in range(1000000) if (draw(draw(seed)[0])[1]^draw(seed)[1]^42)<8)
-    for initial,ot in [(42,42),(shiny,42),(0xffffffff,0x12345678)]:
-        seed=initial;values=[]
-        for _ in range(4):seed,value=draw(seed);values.append(value)
-        pid=values[0]|values[1]<<16
-        static_cases.append(dict(initialSeed=initial,finalSeed=seed,originalTrainerId=ot,draws=4,rawDraws=values,personality=pid,nature=pid%25,ivs=[values[2]&31,values[2]>>5&31,values[2]>>10&31,values[3]&31,values[3]>>5&31,values[3]>>10&31],isShiny=(ot>>16^ot&65535^pid>>16^pid&65535)<8))
     docs={
       'trainers.json':dict(completeSourceRoster=False,trainers=trainers,battles=battles,resolvedMoves=resolved),
       'pokemon.json':dict(previousOwnedSpeciesCount=161,ownedSpeciesCount=162,previousOpponentSpeciesCount=190,opponentSpeciesCount=191,ownedSpeciesAdded=additions,opponentSpeciesAdded=additions,trainerOnlySpeciesAdded=[],evolutions=[]),
-      'rules.json':dict(identities=identities,generationCases=cases,trainerActors=actors,staticEncounter=static,staticGenerationCases=static_cases,initialMoves=initial_moves,heldItems=held,**tables,generationOrder='Static player OT; random PID low16/high16 then two packed IV draws. No shiny rejection, legendary skips held-item draw. Ordinary slots use nature rejection then packed IVs and a separate held-item draw. Original target-compiler Random32 operand ordering remains unverified.',deferred=['Super Rod acquisition/runtime','VS Seeker rematch teams']),
       'machines.json':dict(previousSpeciesCount=161,speciesCount=162,machineCount=41,additions=cells,itemsAdded=[]),
     }
 
     code='using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Trainers;\n\n// Generated from the 21 pinned Route19/20 first-battle teams and 22 source actor entries.\npublic static partial class SeafoamTrainerPartyFactory\n{\n'
     for name,rows in [('TrainerIds',[t['id']['value'] for t in trainers]),('BattleScripts',[b['scriptEntry'] for b in battles])]:
         trainer=name=='TrainerIds';typ='TrainerId' if trainer else 'string'
-        code+=f'    public static readonly ImmutableHashSet<{typ}> {name} = new HashSet<{typ}> {{\n'
-        for key in rows:code+=f'        {"new(" if trainer else ""}"{key}"{")" if trainer else ""},\n'
-        code+='    }.ToImmutableHashSet('+('' if trainer else 'StringComparer.Ordinal')+');\n'
+        code+=f'    public static readonly ImmutableHashSet<{typ}> {name} = '+(
+            'ImmutableHashSet.CreateRange<TrainerId>([\n' if trainer else 'ImmutableHashSet.Create<string>(StringComparer.Ordinal,\n')
+        for index,key in enumerate(rows):
+            code+=f'        {"new(" if trainer else ""}"{key}"{")" if trainer else ""}'
+            code+=(',\n' if index < len(rows)-1 else (']);\n' if trainer else ');\n'))
     code+='}\n'
     files={'src/Game.Domain/Trainers/SeafoamTrainerSource.cs':code.encode()}
     code='using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\npublic sealed record SeafoamHeldItemSource(SpeciesId Species, string Common, string Rare);\npublic static class SeafoamEncounterTables\n{\n'

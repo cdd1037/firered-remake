@@ -29,6 +29,46 @@ def load(name):
 
 
 class RuntimeProofRetirementTests(unittest.TestCase):
+    def test_seafoam_outputs_keep_business_data_without_unused_rules_report(self):
+        module = load('imports/story/import-seafoam-rules.py')
+
+        def read_source(command, **kwargs):
+            self.assertEqual(['git', 'show'], command[:2])
+            self.assertEqual(3, len(command))
+            commit, path = command[2].split(':', 1)
+            self.assertEqual(module.COMMIT, commit)
+            self.assertFalse(Path(path).is_absolute())
+            self.assertNotIn('..', Path(path).parts)
+            return (ROOT / module.RAW / path).read_bytes()
+
+        with patch.object(module.subprocess, 'check_output', side_effect=read_source):
+            documents, _, files = module.generate(ROOT, ROOT)
+        self.assertEqual({'trainers.json', 'pokemon.json', 'machines.json'}, documents.keys())
+        self.assertFalse((ROOT / module.BASE / 'rules.json').exists())
+        for name, document in documents.items():
+            if name == 'trainers.json':
+                document = json.loads(module.trainer_json(ROOT / 'content/generated', document, check=True))
+            self.assertEqual(json.loads((ROOT / module.BASE / name).read_bytes()), document, name)
+        for path, data in files.items():
+            self.assertEqual((ROOT / path).read_bytes(), data, path)
+        for damaged in ('static-command', 'learnset'):
+            def broken_source(command, **kwargs):
+                data = read_source(command, **kwargs)
+                if damaged == 'static-command' and command[2].endswith('data/maps/SeafoamIslands_B4F/scripts.inc'):
+                    return data.replace(b'setwildbattle SPECIES_ARTICUNO, 50', b'setwildbattle SPECIES_ARTICUNO, 49')
+                if damaged == 'learnset' and command[2].endswith('src/data/pokemon/level_up_learnsets.h'):
+                    return data.replace(b'LEVEL_UP_MOVE(', b'INVALID_MOVE(')
+                return data
+            # Let the malformed learnset reach its parser, rather than stop at
+            # the shared-byte consistency check against the unmodified raw file.
+            shared = {path: value for path, value in module.SHARED_INPUTS.items()
+                      if path != 'src/data/pokemon/level_up_learnsets.h'}
+            with self.subTest(damaged=damaged), patch.object(module.subprocess, 'check_output', side_effect=broken_source), \
+                 patch.dict(module.SHARED_INPUTS, shared, clear=True):
+                message = 'Original static command' if damaged == 'static-command' else 'Expected source natural moves'
+                with self.assertRaisesRegex(ValueError, message):
+                    module.generate(ROOT, ROOT)
+
     def test_mtmoon_dependencies_keep_business_values_and_source_validation(self):
         module = load('imports/maps/import-mtmoon-region.py')
         source = module.Source(ROOT / 'content/raw/pokefirered/037335f4')
