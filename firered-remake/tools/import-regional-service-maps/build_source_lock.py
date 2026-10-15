@@ -91,7 +91,7 @@ def build(reference):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('reference',type=Path);p.add_argument('--write',action='store_true');a=p.parse_args()
-    raw=build(a.reference);target=ROOT/'content/sources/regional-service-maps.lock.json'
+    raw=build(a.reference);target=ROOT/'scripts/import-config/regional-service-maps.json'
     if a.write:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(raw)
     elif target.read_bytes()!=raw:raise ValueError('Fixed source lock does not reproduce')
     print(json.dumps(dict(inputCount=len(json.loads(raw)['files']))))

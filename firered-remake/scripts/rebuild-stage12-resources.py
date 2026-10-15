@@ -91,6 +91,14 @@ STEPS = [('import-npc-trade-elyssa.py',
  ('import-mail-presentation.py', ['--reference-root','{reference}','--dependency-root','{project}','--project-root','{project}']),
  ('import-hall-pc.py', ['{reference}', '{project}'])]
 
+# Machine producers emit direct shared references. Compile the one raw source
+# catalog first; the final pass only validates/canonicalizes those same compact
+# views and never expands a predecessor catalog.
+STEPS = [('import-machine-catalog.py', ['--project-root', '{project}', '--references-only'])] + STEPS + [
+    ('import-machine-catalog.py', ['--project-root', '{project}', '--references-only']),
+    ('import-machine-catalog.py', ['--project-root', '{project}', '--references-only', '--check']),
+]
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project-root', type=Path, default=Path(__file__).resolve().parents[1])

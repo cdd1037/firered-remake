@@ -38,9 +38,7 @@ public partial class CampaignView
         foreach(var a in LeagueManifest.GetProperty("assets").EnumerateArray())
         {
             string id=a.GetProperty("id").GetString()!;int width=a.GetProperty("width").GetInt32(),height=a.GetProperty("height").GetInt32();
-            var pixels=PngRgba8.Decode(_pokemonLeagueArt.Files[a.GetProperty("texturePath").GetString()!]);
-            if(pixels.Length!=width*height*4)throw new InvalidDataException("Pokemon League pixel size differs.");
-            using var image=Image.CreateFromData(width,height,false,Image.Format.Rgba8,pixels);_leagueTextures.Add(id,SceneTextures.FromImage(image));
+            using var image = NativeImages.LoadPng(_pokemonLeagueArt.Files[a.GetProperty("texturePath").GetString()!], width, height);_leagueTextures.Add(id,SceneTextures.FromImage(image));
         }
         var source=_catalog.PokemonLeagueTrainerParties??throw new InvalidDataException("Pokemon League trainers missing.");
         foreach(var t in LeagueManifest.GetProperty("trainers").EnumerateArray())

@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
@@ -25,8 +24,6 @@ public sealed class PretRocketHideoutRegion
     public static MapId ElevatorMapId => new("map.rocket-hideout-elevator");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<int> InitiallySetFlags { get; }
     public ImmutableArray<PretRocketMetatilePatch> MetatilePatches { get; }
@@ -43,17 +40,16 @@ public sealed class PretRocketHideoutRegion
     public JsonElement Trainers => Dependencies.GetProperty("trainers");
     public JsonElement Pickups => Dependencies.GetProperty("pickups");
     public JsonElement Items => Dependencies.GetProperty("items");
-    public JsonElement ScriptInventory => ReadDocument("scripts.json");
+
     public JsonElement NpcSources => ReadDocument("npc-source.json");
     public JsonElement SpinRoutes => ReadDocument("spin-routes.json");
     private readonly ImmutableHashSet<string> _outputs;
 
     private PretRocketHideoutRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableArray<PretWorldSourceFile> files, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
+        ImmutableArray<PretWorldSourceFile> files, ImmutableDictionary<string, int> constants,
         ImmutableHashSet<string> outputs, JsonElement contract, JsonElement city)
     {
-        GeneratedDirectory = directory; NewMaps = maps; SourceFiles = files; Scripts = scripts; TextSources = texts;
+        GeneratedDirectory = directory; NewMaps = maps; SourceFiles = files;
         Constants = constants; _outputs = outputs; SourceContract = contract; ExternalCeladonEvents = city;
         InitiallySetFlags = [constants["FLAG_HIDE_LIFT_KEY"], constants["FLAG_HIDE_SILPH_SCOPE"]];
         var atlas = contract.GetProperty("patchAtlas").EnumerateArray().ToDictionary(x => x.GetProperty("symbol").GetString()!, StringComparer.Ordinal);
@@ -142,43 +138,27 @@ public sealed class PretRocketHideoutRegion
             return ReadPinned(directory, path);
         }
         JsonElement Document(string path) { using var d = JsonDocument.Parse(ReadOutput(path)); return d.RootElement.Clone(); }
-            using var sourceLock = JsonDocument.Parse(ReadPinned(project,"scripts/rocket-hideout-region.lock.json"));
-        var files = sourceLock.RootElement.GetProperty("files").EnumerateArray().Select(f => new PretWorldSourceFile(f.GetProperty("path").GetString()!,            $"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{f.GetProperty("path").GetString()}")).ToImmutableArray();
-        var byPath = files.ToDictionary(f=>f.Path,StringComparer.Ordinal);var rawDirectory=Path.Combine(project,PretSourcePaths.FireRedRawDirectory);
-            byte[] ReadSource(string path) { var f=byPath[path];return ReadPinned(rawDirectory,path); }
+
+        var files = ImmutableArray<PretWorldSourceFile>.Empty;
+        var byPath = files.ToDictionary(f=>f.Path,StringComparer.Ordinal);
+            
         var metadata = new PretWorldMetadata("pret/pokefirered",PretWorldMap.SourceCommit,"Local authenticated source data.","Source contracts; executable progression is registered by Application.",Profile,files);
         var spec = Document("runtime.json"); var maps=ImmutableDictionary.CreateBuilder<MapId,PretWorldMap>();
         foreach(var s in spec.GetProperty("maps").EnumerateArray())
         {
             var id=new MapId(s.GetProperty("stableId").GetString()!);var compact=runtime.Maps[id];
                 Need(                compact.SourceRef.Symbol==s.GetProperty("sourceMapSymbol").GetString() && MapIdFromSourceSymbol(compact.SourceRef.Symbol)==id,"Rocket map identity differs.");
-                foreach(var path in compact.ScriptPaths) _ = ReadSource(path);
+                
             var relative=s.GetProperty("directory").GetString()!;
-            foreach(var artifact in compact.Artifacts)
-            {
-                var b=ReadOutput(relative+"/"+artifact.Path);
-                    Need(b.Length>24 && BinaryPrimitives.ReadUInt32BigEndian(b.AsSpan(16,4))==artifact.Width &&
-                    BinaryPrimitives.ReadUInt32BigEndian(b.AsSpan(20,4))==artifact.Height,"Rocket PNG differs.");
-            }
             maps.Add(id,PretWorldMap.FromRuntime(compact,metadata,PretRuntimeMapValidation.SafeFile(directory,relative),
-                PretRuntimeMapValidation.SafeFile(directory,"npc/red-normal.png"),MapIdFromSourceSymbol));
+                PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"),MapIdFromSourceSymbol));
         }
         Need(maps.Count==6 && maps.Values.Sum(x=>x.Width*x.Height)==3179,"Rocket six-map geometry differs.");
-        var scripts=ImmutableArray.CreateBuilder<PretSourceScriptFile>();var texts=ImmutableDictionary.CreateBuilder<string,string>(StringComparer.Ordinal);
-        foreach(var p in spec.GetProperty("scriptPaths").EnumerateArray())
-        {
-            var path=p.GetString()!;var text=Encoding.UTF8.GetString(ReadSource(path));
-            if(path.EndsWith("/text.inc",StringComparison.Ordinal)||path.StartsWith("data/text/",StringComparison.Ordinal))texts.Add(path,text);
-            else {var symbol=Regex.Match(text,@"^(\w+)::?",RegexOptions.Multiline|RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(symbol.Length>0,"Rocket source has no original label.");scripts.Add(new(path,text,new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));}
-        }
+
         var constants=PretSharedConstants.ForPackage(directory);
         var contract=Document("rocket-hideout.json");
-        using var city=JsonDocument.Parse(ReadSource("data/maps/CeladonCity/map.json"));
-        Need(JsonElement.DeepEquals(city.RootElement.GetProperty("warp_events")[0],contract.GetProperty("cityEntry").GetProperty("source")) &&
-            JsonElement.DeepEquals(runtime.Maps[new("map.celadon-city")].Events,city.RootElement),"Celadon city entry differs from unchanged source.");
-        foreach(var e in outputs.Where(e=>e.StartsWith("npc/",StringComparison.Ordinal)||e.StartsWith("patches/",StringComparison.Ordinal)))_ = ReadOutput(e);
-        return new(directory,maps.ToImmutable(),files,scripts.ToImmutable(),texts.ToImmutable(),constants,outputs,contract,city.RootElement.Clone());
+        using var city=JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/CeladonCity/map.json"));
+        return new(directory,maps.ToImmutable(),files,constants,outputs,contract,city.RootElement.Clone());
     }
 
     private JsonElement ReadDocument(string path)

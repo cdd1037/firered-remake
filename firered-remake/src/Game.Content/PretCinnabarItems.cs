@@ -7,7 +7,7 @@ namespace Game.Content;
 
 public sealed record PretCinnabarItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<PretBillSourceItem> Items, EarlyShopStock Mart,
-    ImmutableArray<OpeningItemSourceRef> RulesSources, ImmutableArray<string> Limitations)
+    ImmutableArray<string> Limitations)
 {
     [JsonIgnore] public CinnabarMachinesDocument Machines { get; internal init; } = null!;
 }
@@ -27,11 +27,11 @@ public static class PretCinnabarItems
 
     public static PretCinnabarItemsDocument LoadProject(string root)
     {
-        var source = new SilphSourcePackage(root,"cinnabar-items",            "scripts/cinnabar-items.lock.json");
+        var source = new SilphSourcePackage(root,"cinnabar-items");
         var items = source.Parse<PretCinnabarItemsDocument>("items.json");
         SilphSourcePackage.Need(items.SchemaVersion == 1 && !items.Items.IsDefault &&
             items.Items.Select(i => i.Metadata.Item.Id).SequenceEqual([SecretKeyId, Tm14Id, Tm22Id, Tm38Id]) &&
-            !items.RulesSources.IsDefaultOrEmpty && !items.Limitations.IsDefaultOrEmpty,
+            !items.Limitations.IsDefaultOrEmpty,
             "Cinnabar item declaration scope differs.");
         foreach (var item in items.Items)
         {

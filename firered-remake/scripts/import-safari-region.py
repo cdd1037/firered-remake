@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Import twelve authenticated Safari maps and preserve the Fuchsia entrance identity.
 
-No upstream scripts are executed. Reviewed map/compact converters are pinned by
-SHA-256. Session, quest rewards, encounters and field-action boundaries are retained as source contracts.
+No upstream scripts are executed. Map and compact-data converters run only during import. Session, quest rewards, encounters and field-action boundaries are retained as source contracts.
 """
 import sys as _constant_sys
 from pathlib import Path as _ConstantPath
@@ -15,9 +14,9 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 from pathlib import Path
-import argparse, base64, collections,  importlib.util, json, os, re, struct, subprocess, sys, tempfile
+import argparse, collections,  importlib.util, json, os, re, struct, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT = ROOT
@@ -161,23 +160,7 @@ def topology(src,worlds):
             warps.append(dict(sourceMap=m['id'],sourceIndex=i,source=e,destinationMap=d['id'],destinationIndex=j,destination=end))
     return dict(connections=connections,warps=warps)
 
-def geometry_inventory(worlds):
-    out=[]
-    for w in worlds:
-        rows=collections.defaultdict(list)
-        for c in w['cells']:rows[c['behaviorName']].append([c['x'],c['y']])
-        out.append(dict(sourceName=w['sourceName'],stableId=w['stableId'],width=w['width'],height=w['height'],layout=w['layout'],events=w['events'],sourceRef=w['sourceRef'],behaviorCounts={k:len(v) for k,v in sorted(rows.items())},specialBehaviorCells={k:v for k,v in sorted(rows.items()) if k!='MB_NORMAL'},originalGridBase64=base64.b64encode(struct.pack('<'+str(len(w['cells']))+'H',*[x['rawBlock'] for x in w['cells']])).decode(),attributes=sorted({(x['metatileId'],x['rawAttributes']) for x in w['cells']})))
-    return out
 
-def trainers(worlds,script_doc):
-    blocks={b['label']:b for b in script_doc['blocks']};out=[]
-    for w in worlds:
-        for i,o in enumerate(w['events']['object_events'],1):
-            if o.get('trainer_type')!='TRAINER_TYPE_NORMAL':continue
-            b=blocks[o['script']];t=next(r['text'].strip() for r in b['lines'] if r['text'].strip().startswith('trainerbattle_'))
-            op,args=t.split(None,1)
-            out.append(dict(sourceMap=w['events']['id'],localId=i,declaration=o,sourceRef=b['sourceRef'],opcode=op,arguments=[x.strip() for x in args.split(',')],trainer=args.split(',')[0].strip(),isSouthOfSnorlax=w['sourceName']!='Route12' or o['y']>70))
-    return out
 
 def load_helper(name):
     p=PRODUCT/('scripts' if name == 'export-runtime-maps.py' else 'tools/import-regional-service-maps')/name;b=p.read_bytes()
@@ -254,13 +237,13 @@ def main():
     ap.add_argument('--output-root',type=Path,default=ROOT,help='Independent package destination')
     ap.add_argument('--check',action='store_true')
     a=ap.parse_args();ROOT=a.output_root.absolute();PRODUCT=a.project_root.absolute()
-    out=ROOT/'content/generated/safari-region';raw=ROOT/'content/raw/pokefirered/037335f4';source_lock_path=ROOT/'content/sources/safari-region.lock.json'
+    out=ROOT/'content/generated/safari-region';raw=ROOT/'content/raw/pokefirered/037335f4'
     if ROOT==a.reference_root.absolute() or ROOT.is_relative_to(a.reference_root.absolute()) or a.reference_root.absolute().is_relative_to(ROOT):raise ValueError('Reference/output overlap')
-    for target in (out,raw,source_lock_path):
+    for target in (out,raw):
         if target.is_symlink() or any(p.is_symlink() for p in target.parents):raise ValueError('Output root symlink denied')
     out.mkdir(parents=True,exist_ok=True)
     src=Source(a.reference_root);worlds=[decode(src,n) for n in CORE]
-    doc=scripts(src,worlds);links=topology(src,worlds)
+    doc=scripts(src,worlds);topology(src,worlds)
     doc['profile']=PROFILE;doc['sourcePaths']=sorted({b['sourceRef']['path'] for b in doc['blocks']})
     for p in ['src/safari_zone.c','src/wild_encounter.c','src/pokemon.c','src/data/pokemon/species_info.h','src/data/items.json','src/overworld.c','src/fieldmap.c','src/new_menu_helpers.c','include/fieldmap.h','src/field_player_avatar.c','src/field_control_avatar.c','src/field_effect.c','src/event_object_movement.c','tools/mapjson/mapjson.cpp','src/data/wild_encounters.json','asm/macros/event.inc','data/scripts/field_moves.inc']:
         src.read(p,'rule-reference')
@@ -288,18 +271,17 @@ def main():
             catalog.append(dict(sourceName=n,stableId='map.'+d,directory=d,sourceMapSymbol=next(w['events']['id'] for w in worlds if w['sourceName']==n),path=d+'/runtime-map.json'))
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE,optionalSourceOnlyMaps=OPTIONAL)
         lock_data=canonical(lock)
-        inventory=dict(schemaVersion=1,profile=PROFILE,productBaseline=PRODUCT_COMMIT,sourceCommit=COMMIT,runtimeIntegrated=False,completeGame=False,coreMaps=CORE,optionalMaps=OPTIONAL,reusedMaps=['FuchsiaCity'],newMapCount=len(CORE),maps=geometry_inventory(worlds),**links)
         main_catalog=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,reusedMaps=[reused],tilesets=TILESETS,inputFiles=lock['files'],connections=links['connections'],warps=links['warps'])
         objects=[dict(map=w['stableId'],sourceMap=w['events']['id'],localId=i+1,sourceObjectIndex=i,declaration=o,sourceRef=w['sourceRef']) for w in worlds for i,o in enumerate(w['events']['object_events'])]
         availability=dict(schemaVersion=1,profile=PROFILE,runtimeIntegrated=False,completeGame=False,enabledServices=[],loadedMapSymbols=[w['events']['id'] for w in worlds],reusedMapSymbols=['MAP_FUCHSIA_CITY'],deferredDestinations=[],deferredConnections=[],notes=['Full original map grids, events, warp offsets, water and grass are retained.', 'All four areas, four rest houses, Secret House, Entrance, Office and Warden house require explicit successor application admission.', 'Water traversal, fishing and Strength boulder use are separate field capabilities; HM rewards do not authorize a movement shortcut.'])
-        docs=package_documents(out.parent, constants, {'safari-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=2,profile=PROFILE,converterVersion=converter.VERSION,sourceCommit=COMMIT,maps=catalog),'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability,'route-inventory.json':inventory,'contracts.json':contracts,'encounters.json':encounters}, check=a.check)
+        docs=package_documents(out.parent, constants, {'safari-region-catalog.json':main_catalog,'runtime-catalog.json':dict(schemaVersion=2,profile=PROFILE,converterVersion=converter.VERSION,sourceCommit=COMMIT,maps=catalog),'scripts.json':doc,'npc-source.json':npcs,'objects.json':dict(objects=objects),'availability.json':availability,'contracts.json':contracts,'encounters.json':encounters}, check=a.check)
         for filename,value in docs.items():(stage/filename).write_bytes(canonical(value))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(CORE),reusedMapCount=1,cellCount=sum(w['width']*w['height'] for w in worlds),borderCellCount=sum(len(w['borderBlocks']) for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),objectCount=len(objects),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_data=canonical(manifest)
         (stage/'manifest.json').write_bytes(manifest_data)
         raw_manifest=canonical(dict(schemaVersion=1,commit=COMMIT,inputCount=len(src.entries)))
-        writes=[(source_lock_path,lock_data),(raw_metadata_directory(raw, 'safari-region')/'manifest.json',raw_manifest)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for target,data in writes:
             if target.is_symlink() or any(p.is_symlink() for p in target.parents):raise ValueError('Output symlink denied: '+str(target))
             if a.check:

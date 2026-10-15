@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+from machine_catalog import admission_species, compatibility_additions, load_catalog
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -16,10 +17,8 @@ BASE = 'content/generated/breeding-species/'
 DEPENDENCIES = (
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/game-corner-species/pokemon.json',
-    'content/generated/game-corner-prizes/machines.json',
-    'content/generated/field-fly/hm02.json',
 )
-SHARED_INPUTS = {'include/constants/pokemon.h': 'content/raw/pokefirered/037335f4/include/constants/pokemon.h', 'src/data/party_menu.h': 'content/raw/pokefirered/037335f4/src/data/party_menu.h', 'src/data/pokemon/evolution.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/evolution.h', 'src/data/pokemon/level_up_learnset_pointers.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnset_pointers.h', 'src/data/pokemon/level_up_learnsets.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnsets.h', 'src/data/pokemon/pokedex_entries.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/species_info.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h', 'src/data/pokemon/tmhm_learnsets.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h', 'src/daycare.c': 'content/raw/pokefirered/037335f4/src/daycare.c', 'src/pokemon.c': 'content/raw/pokefirered/037335f4/src/pokemon.c'}
+SHARED_INPUTS = {'include/constants/pokemon.h': 'content/raw/pokefirered/037335f4/include/constants/pokemon.h', 'src/data/party_menu.h': 'content/raw/pokefirered/037335f4/src/data/party_menu.h', 'src/data/pokemon/evolution.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/evolution.h', 'src/data/pokemon/level_up_learnset_pointers.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnset_pointers.h', 'src/data/pokemon/level_up_learnsets.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/level_up_learnsets.h', 'src/data/pokemon/pokedex_entries.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/pokedex_entries.h', 'src/data/pokemon/species_info.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h', 'src/daycare.c': 'content/raw/pokefirered/037335f4/src/daycare.c', 'src/pokemon.c': 'content/raw/pokefirered/037335f4/src/pokemon.c'}
 IDENTITIES = [('PICHU',172), ('CLEFFA',173), ('IGGLYBUFF',174), ('TYROGUE',236), ('SMOOCHUM',238), ('ELEKID',239), ('WYNAUT',360), ('HITMONTOP',237)]
 
 
@@ -34,8 +33,10 @@ def generate(reference, dependency):
         data = (dependency / path).read_bytes()
         dependencies.append(dict(path=path))
         return json.loads(data)
-    canonical, previous, machines, fly = [dependent(p) for p in DEPENDENCIES]
-    need(previous['ownedSpeciesCount'] == 174 and previous['opponentSpeciesCount'] == 196 and machines['machineCount'] == 50, 'Exact predecessor')
+    canonical, previous = [dependent(p) for p in DEPENDENCIES]
+    dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
+    catalog = load_catalog(dependency)
+    need(previous['ownedSpeciesCount'] == 174 and previous['opponentSpeciesCount'] == 196, 'Exact predecessor')
     identities = IDENTITIES
     definitions = []
     for name, number in identities:
@@ -58,24 +59,9 @@ def generate(reference, dependency):
         definition, metadata = row['definition'], row['metadata']
         for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [m['source'] for m in definition['levelUpMoves']] + [e['source'] for e in metadata['sourceEvolutions']]:
             read(sr['path'])
-    tm = 'src/data/pokemon/tmhm_learnsets.h'
-    text = read(tm)
-    machine_ids = sorted([r['item']['value'][5:] for r in machines['inherited']] + [r['machine']['item']['id']['value'][5:] for r in machines['additions']] + ['ITEM_HM02'])
-    need(len(machine_ids) == len(set(machine_ids)) == 51, 'Exactly 51 inherited machines')
-    cells = []
-    for item in machine_ids:
-        compatibility = []
-        for name, number in identities:
-            symbol = 'SPECIES_' + name
-            matches = list(re.finditer(r'^    \[' + symbol + r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),', text, re.M | re.S))
-            need(len(matches) == 1, 'Exact machine row: ' + symbol)
-            row = matches[0]
-            source = dict(path=tm, symbol=symbol, startLine=text.count('\n', 0, row.start()) + 1,
-                          endLine=text.count('\n', 0, row.end()) + 1)
-            compatibility.append(dict(species=dict(value='pret:' + symbol), sourceSpeciesId=number,
-                canLearn=bool(re.search(r'TMHM\(' + item[5:] + r'_', row[1])), source=source))
-        cells.append(dict(item=dict(value='pret:' + item), compatibility=compatibility))
-    old_owned = [r['species']['value'] for r in machines['additions'][0]['compatibility']]
+    cells = compatibility_additions(dependency, BASE + 'machines.json')
+    need(len(cells) == 51, 'Exactly 51 admitted machines')
+    old_owned = list(admission_species(dependency, 'content/generated/game-corner-prizes/machines.json', '/additions/0'))
     owned = old_owned + ['pret:SPECIES_' + n for n, _ in identities]
     metadata_by_id = {r['id']['value']: r for r in canonical['metadata']}
     sorted_species = sorted(canonical['species'], key=lambda r:r['sourceSpeciesId'])
@@ -95,12 +81,11 @@ def generate(reference, dependency):
     rows = []
     for species in owned:
         original = metadata_by_id[species]['originalFields']
-        expression = re.search(r'^    \['+species[5:]+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),',text,re.M|re.S)[1]
         compatible = []
-        for kind, number, move in re.findall(r'TMHM\((TM|HM)(\d+)_(\w+)\)',expression):
-            index = int(number)-1+(50 if kind == 'HM' else 0)
-            need(all_moves[index]=='MOVE_'+move, 'Original machine index binding')
-            compatible.append(dict(value='pret:MOVE_'+move))
+        for item in catalog.species[species]['compatibleItems']:
+            machine = item['value'].removeprefix('pret:ITEM_')
+            index = int(machine[2:])-1+(50 if machine.startswith('HM') else 0)
+            compatible.append(dict(value='pret:'+all_moves[index]))
         rows.append(dict(breeding=dict(species=dict(value=species),eggGroup1=groups[original['eggGroups'].split(',')[0].strip().strip('{} ').strip()],eggGroup2=groups[original['eggGroups'].split(',')[1].strip().strip('{} ').strip()],eggCycles=int(original['eggCycles'])),
             baseEggSpecies=dict(value=base_species(species)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(species[13:],[])],machineMoves=compatible))
     read('src/daycare.c');read('src/pokemon.c')
@@ -137,7 +122,6 @@ def main():
     lock = dict(sourceCommit=COMMIT,  profile='firered-breeding-species-v1',
 
         files=[dict(path=p) for p, data in sorted(files.items())])
-    files['scripts/breeding-species.lock.json'] = encode(lock)
     for name, data in {**files, **raw}.items():
         path = args.output / name
         if args.check: need(path.read_bytes() == data, 'Regeneration differs: ' + name)

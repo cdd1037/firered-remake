@@ -7,10 +7,13 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse,base64,copy,importlib.util,json,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
+import sys
+sys.path.insert(0, str(ROOT / "scripts"))
+from machine_catalog import load_catalog, machine_reference, compatibility_reference, admission_view, admission_species
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-celadon-gym-pokemon-v1'
@@ -188,19 +191,9 @@ def item_outputs(lock,sources,project):
     def ident(s):return dict(value='pret:'+s)
     def constant(path,symbol):
         m=match(path,r'^#define '+symbol+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');rules.append(ref(path,symbol,m));return int(m[1])
-    def compatibility(symbol,tm):
-        path='src/data/pokemon/tmhm_learnsets.h';m=match(path,r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),');tokens=re.findall(r'TMHM\((\w+)\)',m[1])
-        if re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]) or len(tokens)!=len(set(tokens)):raise ValueError('Unknown machine compatibility syntax')
-        return dict(species=ident(symbol),sourceSpeciesId=constant('include/constants/species.h',symbol),canLearn=tm in tokens,source=ref(path,symbol,m))
-    predecessor=read_json(project/'content/generated/celadon-approach-items/celadon-approach-machines.json')
-    values=copy.deepcopy(predecessor['machines'])
-    symbols=[r['species']['value'][5:] for r in values[0]['compatibility']]+['SPECIES_'+n.upper() for n in NEW_SPECIES]
-    if len(symbols)!=98 or len(set(symbols))!=98 or len(values)!=14:raise ValueError('Predecessor machine scope differs')
-    for value in values:
-        token=value['machine']['item']['name']+'_'+value['move']['value'][10:]
-        rows=[compatibility(s,token) for s in symbols]
-        if rows[:94]!=value['compatibility']:raise ValueError('Inherited machine source row differs')
-        value['compatibility']=rows
+    target='content/generated/celadon-gym-items/celadon-gym-machines.json'
+    values=[admission_view(project,target,'/machines/'+str(index)) for index in range(15)]
+    symbols=[species[5:] for species in admission_species(project,target,'/machines/0')]
     i=next(x for x in json.loads(text['src/data/items.json'])['items'] if x['itemId']=='ITEM_TM19');path='src/data/items.json'
     m=match(path,r'^    \{\n      "english": "TM19",.*?^    \}');source=ref(path,'ITEM_TM19',m)
     definition=dict(id=ident('ITEM_TM19'),sourceItemSymbol='ITEM_TM19',sourceItemId=constant('include/constants/items.h','ITEM_TM19'),name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
@@ -208,7 +201,6 @@ def item_outputs(lock,sources,project):
     wrapped=dict(item=definition,description=json.loads(m[1]),declarationDescription=i['description_english'].replace('\\n','\n'),descriptionSource=ref(path,'gMoveDescription_GigaDrain',m))
     path='src/data/party_menu.h';m=match(path,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'\bMOVE_\w+\b',m[1]);rules.append(ref(path,'sTMHMMoves',m))
     if len(mapping)!=58 or mapping[18]!='MOVE_GIGA_DRAIN':raise ValueError('TM19 source move mapping differs')
-    values.append(dict(machine=wrapped,move=ident('MOVE_GIGA_DRAIN'),sourceMoveId=constant('include/constants/moves.h','MOVE_GIGA_DRAIN'),movePp=5,compatibility=[compatibility(s,'TM19_GIGA_DRAIN') for s in symbols]))
     path='src/data/battle_moves.h';m=match(path,r'^    \[MOVE_GIGA_DRAIN\] =\n    \{(.*?)^    \},');rules.append(ref(path,'MOVE_GIGA_DRAIN',m))
     if not re.search(r'\.pp = 5,',m[1]):raise ValueError('Giga Drain source PP differs')
     path='src/data/item_icon_table.h';m=match(path,r'^    \[ITEM_TM19\][ \t]*= \{(\w+), (\w+)\},');binding=ref(path,'ITEM_TM19',m);icon_symbols=m.groups();paths=[]
@@ -220,8 +212,8 @@ def item_outputs(lock,sources,project):
     icon=dict(item=ident('ITEM_TM19'),width=w,height=h,pngPath='item_tm19.png',source=ref(image,icon_symbols[0]),paletteSource=ref(palette,icon_symbols[1]),bindingSource=binding)
     for path,symbol,pattern in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','RemoveBagItem',r'^bool8 RemoveBagItem\(.*?^\}'),('src/party_menu.c','Task_LearnedMove',r'^static void Task_LearnedMove\([^;]*?\n\{.*?^\}'),('src/pokemon.c','CanMonLearnTMHM',r'^u32 CanMonLearnTMHM\([^;]*?\n\{.*?^\}'),('data/maps/CeladonCity_Gym/scripts.inc','CeladonCity_Gym_EventScript_GiveTM19',r'^CeladonCity_Gym_EventScript_GiveTM19::.*?^\tend$')]:rules.append(ref(path,symbol,match(path,pattern)))
     limitations=['Exactly one TM19 item extends the unchanged 45-item predecessor; all five shop stocks remain unchanged.','Fifteen original machines have exactly 98 source compatibility rows; inherited14x94 records are identical.','TM19 is source Giga Drain, consumed once after successful teaching. No Leaf Stone or department-store stock is introduced.','Catalog metadata alone does not activate rewards, battle effects, field moves or application profiles.']
-    return {'celadon-gym-items.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-items-v1',sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,items=[dict(metadata=wrapped,effectBytes=[],effectSource=None)],icons=[icon],limitations=limitations)),
-      'celadon-gym-machines.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-machines-v1',sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,machines=values,icons=[icon],limitations=limitations)),'item_tm19.png':png}
+    return {'celadon-gym-items.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-items-v1',sourceCommit=COMMIT,inputs=lock['files'],items=[dict(metadata=wrapped,effectBytes=[],effectSource=None)],icons=[icon],limitations=limitations)),
+      'celadon-gym-machines.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-machines-v1',sourceCommit=COMMIT,inputs=lock['files'],machines=values,icons=[icon],limitations=limitations)),'item_tm19.png':png}
 
 def configure(project):
     global rock,battle,learn_rows
@@ -229,8 +221,7 @@ def configure(project):
     recipe=json.loads(recipe_bytes,object_pairs_hook=unique_pairs)
     rock=load_module(project/'scripts/import-rocktunnel-pokemon.py','celadon_gym_existing_pokemon_helpers')
     rock.ROOT=project;rock.PROFILE=rock.base.PROFILE=PROFILE;rock.NEW_SPECIES=rock.base.NEW_SPECIES=NEW_SPECIES;rock.ART_SPECIES=rock.base.ART_SPECIES=ART_SPECIES
-    machines=read_json(project/'content/generated/celadon-approach-items/celadon-approach-machines.json')
-    rock.base.LEGACY_SPECIES=tuple(r['species']['value'][13:] for r in machines['machines'][0]['compatibility'])
+    rock.base.LEGACY_SPECIES=tuple(species[13:] for species in admission_species(project,'content/generated/celadon-gym-items/celadon-gym-machines.json','/machines/0') if species[13:] not in {name.upper() for name in NEW_SPECIES})
     return recipe
 
 def load_sources(stem,raw,repo,recipe):
@@ -283,7 +274,7 @@ def materialize(project,target,repo=None,check=False):
         manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,inputCount=len(sources),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
         outputs['manifest.json']=manifest;raw_manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,inputCount=len(sources)))
         materials={(out,p):b for p,b in outputs.items()}
-        if repo is not None:materials.update({(raw,p):b for p,b in sources.items()});materials[(raw_metadata_directory(raw, stem),'manifest.json')]=raw_manifest
+        if repo is not None:materials.update({(raw,p):b for p,b in sources.items()})
         if check:
             for (root,path),data in materials.items():
                 if safe(root,path).read_bytes()!=data:raise ValueError('Materialized output differs: '+path)

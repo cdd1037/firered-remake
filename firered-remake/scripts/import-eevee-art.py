@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 """Rebuild authenticated Eevee normal/shiny battle art, party icon and footprint."""
-import argparse,binascii,importlib.util,io,json,pathlib,re,struct,sys,zlib
+import argparse, importlib.util, io, json, pathlib, re, sys
 from PIL import Image
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('eevee_metadata',ROOT/'scripts/import-eevee-pokemon.py');meta=importlib.util.module_from_spec(spec);spec.loader.exec_module(meta)
 COMMIT=meta.COMMIT
-def png(w,h,pixels):
- def chunk(tag,b):return struct.pack('>I',len(b))+tag+b+struct.pack('>I',binascii.crc32(tag+b)&0xffffffff)
- assert len(pixels)==w*h*4
- scan=b''.join(b'\0'+pixels[y*w*4:(y+1)*w*4] for y in range(h));blocks=[]
- for start in range(0,len(scan),65535):
-  block=scan[start:start+65535];n=len(block);blocks.append(bytes([int(start+n==len(scan))])+struct.pack('<HH',n,n^65535)+block)
- stream=b'\x78\x01'+b''.join(blocks)+struct.pack('>I',zlib.adler32(scan)&0xffffffff)
- return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0,0))+chunk(b'IDAT',stream)+chunk(b'IEND',b'')
+from image_io import png as encode_rgba_png
+
+png = encode_rgba_png
 def build(root):
  lock,s=meta.authenticated(root);inventory={r['path']:r for r in lock['files']};out={};sprites=[];icons=[];footprints=[]
  def need(v,m):
@@ -45,7 +40,7 @@ def build(root):
  path='graphics/pokemon/eevee/icon.png';indices=image(path,(32,64))[:1024];palpath='graphics/pokemon/icon_palettes/icon_palette_2.pal';pal,pal555=palette(palpath);asset=add('icons/eevee',32,32,rgba(indices,pal));icons.append(dict(speciesId='pret:SPECIES_EEVEE',sourceSpeciesId=133,sourceFrameIndex=0,sourceFrameCount=2,paletteIndex=2,paletteVariant='shared-normal-shiny',transparentIndex=0,paletteRgb555=pal555,sourceRefs=[small(path,'gMonIcon_Eevee'),small(palpath,'gMonIconPalettes'),small('src/pokemon_icon.c','gMonIconPaletteIndices[SPECIES_EEVEE]',pm),small('src/pokemon_icon.c','gMonIconTable[SPECIES_EEVEE]',im)],**asset))
  path='graphics/pokemon/eevee/footprint.png';need('[SPECIES_EEVEE] = gMonFootprint_Eevee,' in s['src/data/pokemon_graphics/footprint_table.h'].decode(),'Footprint binding differs');im=Image.open(io.BytesIO(s[path]));need(im.mode=='1' and im.size==(16,16),'Footprint shape differs');indices=bytes(1 if x==0 else 0 for x in im.get_flattened_data());pal,_=palette('graphics/pokedex/kanto_dex_bgpals.pal');asset=add('eevee-footprint',16,16,rgba(indices,pal[:16]));footprints.append(dict(sourceSpeciesId=133,source=small(path,'gMonFootprint_Eevee'),**asset))
  path='src/data/pokemon/pokedex_entries.h';dm=re.search(r'\[NATIONAL_DEX_EEVEE\]\s*=\s*\{(.*?)\n    \}',s[path].decode(),re.S);need(dm is not None,'Dex entry missing');f=dict(re.findall(r'\.(\w+) = (.*?),\n',dm[1]));need(f['categoryName']=='_("EVOLUTION")' and f['description']=='gEeveePokedexText','Dex identities differ')
- dp='src/data/pokemon/pokedex_text_fr.h';dt=re.search(r'const u8 gEeveePokedexText\[\] = _\(\n(.*?)\);',s[dp].decode(),re.S);description=''.join(json.loads(x) for x in re.findall(r'"(?:[^"\\]|\\.)*"',dt[1]));dex=dict(sourceSpeciesId=133,name='EEVEE',category='EVOLUTION',heightDecimeters=int(f['height']),weightHectograms=int(f['weight']),description=description,source=source(path,'NATIONAL_DEX_EEVEE',dm,'source'),descriptionSource=source(dp,'gEeveePokedexText',dt,'source'))
+ dp='src/data/pokemon/pokedex_text_fr.h';dt=re.search(r'const u8 gEeveePokedexText\[\] = _\(\n(.*?)\);',s[dp].decode(),re.S);description=''.join(json.loads(x) for x in re.findall(r'"(?:[^"\\]|\\.)*"',dt[1]));dex=dict(sourceSpeciesId=133,name='EEVEE',category='EVOLUTION',heightDecimeters=int(f['height']),weightHectograms=int(f['weight']),description=description)
  manifest=dict(schemaVersion=1,profile='firered-eevee-art-v1',sourceCommit=COMMIT,sprites=sprites,icons=icons,footprints=footprints,dex=dex,limits=['Party icon is source frame0; normal and shiny share the icon palette.','No move animations, overworld sprites or audio are in this art package.','Pixels use the existing catalog floor(rgb5 * 255 / 31) display convention.'],outputs=[dict(path=p) for p,b in sorted(out.items())]);out['manifest.json']=meta.canonical(manifest);return out
 
 def run(root=ROOT,check=False):

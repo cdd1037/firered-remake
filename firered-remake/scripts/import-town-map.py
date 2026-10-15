@@ -7,8 +7,8 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
-import argparse,  importlib.util, json, os, pathlib, re, struct, subprocess, sys, zlib
+
+import argparse, importlib.util, json, os, pathlib, re, struct, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -77,6 +77,8 @@ _spec=importlib.util.spec_from_file_location('town_map_pixels',ROOT/'scripts/imp
 pixels=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(pixels)
 
 
+from image_io import png as encode_rgba_png
+
 def canonical(value):
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
@@ -107,7 +109,7 @@ def safe(root, relative=None):
 
 
 def load_lock(path=None):
-    path = path or ROOT / 'content/town-map-source-lock.json'
+    path = path or ROOT / 'scripts/import-config/town-map.json'
     data = safe(path).read_bytes()
     lock = json.loads(data, object_pairs_hook=unique_pairs)
     if (lock.get('schemaVersion'), lock.get('repository'), lock.get('commit'), lock.get('profile'), lock.get('gameEdition'), lock.get('romRevision')) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
@@ -117,10 +119,6 @@ def load_lock(path=None):
     return lock
 
 
-def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
-
-                          inputCount=len(lock['files'])))
 
 
 def read_sources(lock, raw, repository=None):
@@ -154,11 +152,7 @@ def palette(data, count):
     return pixels.colors(rows)
 
 
-def compressed_png(w,h,rgba):
-    # Reuse PNG framing / CRC rules; standard DEFLATE avoids duplicating 150 KiB per static frame.
-    scan=b''.join(b'\0'+rgba[y*w*4:(y+1)*w*4] for y in range(h))
-    return (b'\x89PNG\r\n\x1a\n'+pixels.chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0,0))
-            +pixels.chunk(b'IDAT',zlib.compress(scan,9))+pixels.chunk(b'IEND',b''))
+compressed_png = encode_rgba_png
 
 
 def render_tilemap(tiles, entries, palettes):
@@ -395,7 +389,6 @@ def import_content(raw,out,repository=None,lock_path=None):
             raise ValueError('Materialization must not overlap the reference repository')
     lock=load_lock(lock_path);sources=read_sources(lock,raw,repository);outputs=convert(sources)
     material={(raw,p):b for p,b in sources.items()} if repository is not None else {}
-    if repository is not None:material[(raw_metadata_directory(raw, 'town-map'),'manifest.json')]=raw_manifest(lock)
     material.update({(out,p):b for p,b in outputs.items()})
     targets=[(safe(root,p),safe(root,p+'.tmp'),b) for (root,p),b in material.items()]
     if any(p.exists() and not p.is_file() for target,stage,_ in targets for p in (target,stage)):
@@ -412,7 +405,7 @@ def main():
     parser.add_argument('--reference-repo',type=pathlib.Path,default=os.environ.get('FIRERED_ORIGINAL_REFERENCE'))
     parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/town-map')
-    parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'content/town-map-source-lock.json')
+    parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/import-config/town-map.json')
     args=parser.parse_args();print(json.dumps(import_content(args.raw,args.out,args.reference_repo,args.lock),sort_keys=True))
 
 if __name__=='__main__':main()

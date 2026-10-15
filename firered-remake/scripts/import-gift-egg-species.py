@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+from machine_catalog import compatibility_additions, load_catalog
 
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -14,11 +15,10 @@ IDENTITIES=[('TOGEPI',175),('TOGETIC',176)]
 DEPENDENCIES=(
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/breeding-species/pokemon.json',
-    'content/generated/breeding-species/machines.json',
     'content/generated/breeding-species/metadata.json',
 )
 SHARED_INPUTS={p:'content/raw/pokefirered/037335f4/'+p for p in ['include/constants/pokemon.h','src/data/pokemon/evolution.h','src/data/pokemon/level_up_learnset_pointers.h','src/data/pokemon/level_up_learnsets.h','src/data/pokemon/pokedex_entries.h','src/data/pokemon/species_info.h']}
-SHARED_INPUTS.update({'src/data/pokemon/tmhm_learnsets.h':'content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h','src/data/pokemon/egg_moves.h':'content/raw/pokefirered/037335f4/src/data/pokemon/egg_moves.h','src/data/pokemon/tutor_learnsets.h':'content/raw/pokefirered/037335f4/src/data/pokemon/tutor_learnsets.h','src/pokemon.c':'content/raw/pokefirered/037335f4/src/pokemon.c'})
+SHARED_INPUTS.update({'src/data/pokemon/egg_moves.h':'content/raw/pokefirered/037335f4/src/data/pokemon/egg_moves.h','src/data/pokemon/tutor_learnsets.h':'content/raw/pokefirered/037335f4/src/data/pokemon/tutor_learnsets.h','src/pokemon.c':'content/raw/pokefirered/037335f4/src/pokemon.c'})
 
 SHARED_INPUTS.update({'src/daycare.c':'content/raw/pokefirered/037335f4/src/daycare.c','src/field_specials.c':'content/raw/pokefirered/037335f4/src/field_specials.c','src/script_pokemon_util.c':'content/raw/pokefirered/037335f4/src/script_pokemon_util.c','src/data/region_map/region_map_sections.constants.json.txt':'content/raw/pokefirered/037335f4/src/data/region_map/region_map_sections.constants.json.txt'})
 
@@ -36,8 +36,10 @@ def generate(reference,dependency):
  deps=[]
  def dependent(p):
   b=safe(dependency,p).read_bytes();deps.append(dict(path=p));return json.loads(b)
- canonical,previous,machines,metadata=[dependent(p) for p in DEPENDENCIES]
- need(previous['ownedSpeciesCount']==182 and previous['opponentSpeciesCount']==203 and machines['machineCount']==51,'Exact predecessor')
+ canonical,previous,metadata=[dependent(p) for p in DEPENDENCIES]
+ deps.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
+ catalog=load_catalog(dependency)
+ need(previous['ownedSpeciesCount']==182 and previous['opponentSpeciesCount']==203,'Exact predecessor')
  definitions={s['id']['value']:s for s in canonical['species']};metas={s['id']['value']:s for s in canonical['metadata']};inputs={};raw={}
  def read(p):
   if p not in raw:
@@ -54,15 +56,7 @@ def generate(reference,dependency):
   for sr in refs:read(sr['path'])
   for edge in meta['sourceEvolutions']:evolutions.append(dict(species=dict(value=sid),**edge))
  need(len(evolutions)==1 and evolutions[0]['method']=='EVO_FRIENDSHIP' and evolutions[0]['parameterValue']==0 and evolutions[0]['target']['value']=='pret:SPECIES_TOGETIC','Exact friendship edge')
- tm='src/data/pokemon/tmhm_learnsets.h';text=read(tm);machine_ids=[f'ITEM_TM{i:02}' for i in range(1,51)]+[f'ITEM_HM{i:02}' for i in range(1,8)];need(len(set(machine_ids))==57,'Exact machine ids');cells=[]
- for item in machine_ids:
-  rows=[]
-  for name,number,*_ in IDENTITIES:
-   symbol='SPECIES_'+name;matches=list(re.finditer(r'^    \['+symbol+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),',text,re.M|re.S));need(len(matches)==1,'Machine row');r=matches[0]
-   sr=dict(path=tm,symbol=symbol,startLine=text.count('\n',0,r.start())+1,endLine=text.count('\n',0,r.end())+1)
-   rows.append(dict(species=dict(value='pret:'+symbol),sourceSpeciesId=number,canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',r[1])),source=sr))
-  cells.append(dict(item=dict(value='pret:'+item),compatibility=rows))
- cells.sort(key=lambda row:row['item']['value'])
+ cells=compatibility_additions(dependency,BASE+'machines.json');need(len(cells)==57,'Exact admitted machines')
  groups=dict((k,int(v)) for k,v in re.findall(r'^#define (EGG_GROUP_\w+)\s+(\d+)',read('include/constants/pokemon.h'),re.M));eggs=read('src/data/pokemon/egg_moves.h');egg_moves={n:re.findall(r'MOVE_\w+',body) for n,body in re.findall(r'egg_moves\(([A-Z0-9_]+),\s*(.*?)\)',eggs,re.S)}
  all_moves=metadata['allMachineMoves'];rows=[];sorted_species=sorted(canonical['species'],key=lambda r:r['sourceSpeciesId'])
  def base_species(species):
@@ -72,9 +66,10 @@ def generate(reference,dependency):
    species=parent
   return species
  for name,*_ in IDENTITIES:
-  sid='pret:SPECIES_'+name;original=metas[sid]['originalFields'];expr=re.search(r'^    \[SPECIES_'+name+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),',text,re.M|re.S)[1];compatible=[]
-  for kind,num,move in re.findall(r'TMHM\((TM|HM)(\d+)_(\w+)\)',expr):
-   i=int(num)-1+(50 if kind=='HM' else 0);need(all_moves[i]['value']=='pret:MOVE_'+move,'Original machine index');compatible.append(dict(value='pret:MOVE_'+move))
+  sid='pret:SPECIES_'+name;original=metas[sid]['originalFields'];compatible=[]
+  for item in catalog.species[sid]['compatibleItems']:
+   machine=item['value'].removeprefix('pret:ITEM_');i=int(machine[2:])-1+(50 if machine.startswith('HM') else 0)
+   compatible.append(dict(all_moves[i]))
   group_ids=[groups[g.strip('{} ')] for g in original['eggGroups'].split(',')]
   rows.append(dict(breeding=dict(species=dict(value=sid),eggGroup1=group_ids[0],eggGroup2=group_ids[1],eggCycles=int(original['eggCycles'])),baseEggSpecies=dict(value=base_species(sid)),eggMoves=[dict(value='pret:'+m) for m in egg_moves.get(name,[])],machineMoves=compatible))
  read('src/data/pokemon/tutor_learnsets.h');read('src/pokemon.c')
@@ -87,7 +82,7 @@ def generate(reference,dependency):
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-root',type=Path);p.add_argument('--dependency-root',type=Path,required=True);p.add_argument('--project-root',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference_root,a.dependency_root)
- files={BASE+name:encode(doc) for name,doc in docs.items()};lock=dict(sourceCommit=COMMIT,profile='firered-gift-egg-species-v1',files=[dict(path=name) for name,data in sorted(files.items())]);files['scripts/gift-egg-species.lock.json']=encode(lock)
+ files={BASE+name:encode(doc) for name,doc in docs.items()};lock=dict(sourceCommit=COMMIT,profile='firered-gift-egg-species-v1',files=[dict(path=name) for name,data in sorted(files.items())])
  for name,data in files.items():
   path=safe(a.project_root,name)
   if a.check:need(path.read_bytes()==data,'Regeneration differs: '+name)

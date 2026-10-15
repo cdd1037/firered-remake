@@ -84,7 +84,6 @@ def build(reference,dependency):
     files={BASE+'manifest.json':manifest,BASE+'synth-manifest.json':synth,**{RAW+p:b for p,b in raw.items()}}
     lock=encode(dict(sourceCommit=COMMIT,profile=PROFILE,
         files=[dict(path=p) for p,b in sorted(files.items())]))
-    files['scripts/trainer-tower-audio.lock.json']=lock
     return files,dict(sourceInputs=len(inputs),criesVerified=18,decodedSamples=sum(e['decodedBytes'] for e in evidence),newCues=16,inheritedCues=3,
         synthBytes=len(synth))
 def main():

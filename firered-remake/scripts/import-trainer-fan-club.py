@@ -30,16 +30,7 @@ MAP_ID = 'map.saffron-city-pokemon-trainer-fan-club'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_FanClubDaycare': 'secondary/fan_club_daycare'}
 ANCHOR_PACKAGE = 'content/generated/silph-region'
 ANCHOR_PATH = 'saffron-city/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_CRUSH_GIRL': 'crush-girl',
-    'OBJ_EVENT_GFX_LITTLE_GIRL': 'little-girl',
-    'OBJ_EVENT_GFX_YOUNGSTER': 'youngster',
-    'OBJ_EVENT_GFX_GENTLEMAN': 'gentleman',
-    'OBJ_EVENT_GFX_WOMAN_3': 'woman-3',
-    'OBJ_EVENT_GFX_ROCKER': 'rocker',
-    'OBJ_EVENT_GFX_BEAUTY': 'beauty',
-    'OBJ_EVENT_GFX_BLACK_BELT': 'black-belt',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'red-normal'}
+NPC_REUSE = {'OBJ_EVENT_GFX_BEAUTY', 'OBJ_EVENT_GFX_BLACK_BELT', 'OBJ_EVENT_GFX_CRUSH_GIRL', 'OBJ_EVENT_GFX_GENTLEMAN', 'OBJ_EVENT_GFX_LITTLE_GIRL', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_ROCKER', 'OBJ_EVENT_GFX_WOMAN_3', 'OBJ_EVENT_GFX_YOUNGSTER'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -199,14 +190,6 @@ def main():
         visible['events']['object_events'] = [e for e in world['events']['object_events'] if e['movement_type'] != 'MOVEMENT_TYPE_INVISIBLE']
         npcs = shared.npc_inventory(src,[visible],stage/'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'NPC source cohort differs')
-        for row in npcs['graphics']:
-            name=NPC_REUSE[row['graphicsId']]
-            relative='content/generated/trainer-tower-region/npc/'+name+'.png'
-            existing=current/relative; safe(existing)
-            generated=stage/row['texturePath']
-            need(generated.read_bytes() == existing.read_bytes(), 'Reused NPC differs')
-            row.update(texturePath=relative,reuseExisting=True);generated.unlink()
-        (stage/'npc').rmdir()
         contract['graphicsRule']=dict(clearedVramTiles=rendered['clearedVramTiles'],
             invisibleLocalIds=[9,10], reusedNpcGraphicsCount=len(npcs['graphics']))
         rich_path=stage/directory/'runtime-map.json'; rich=rich_path.read_bytes()

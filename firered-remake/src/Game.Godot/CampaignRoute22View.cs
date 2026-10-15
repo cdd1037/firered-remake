@@ -105,7 +105,7 @@ public partial class CampaignView
             foreach(var view in items.DexViews)
                 if(texture==BillPcDexPortrait(view))
                 {
-                    using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,PretBillItems.DexRgba(view, System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated/bill-items", view.PngPath))));
+                    using var image=NativeImages.LoadPng(PretBillItems.DexPng(view, System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated/bill-items", view.PngPath))), 64, 64);
                     return image.SavePngToBuffer();
                 }
         if(_catalog.RocketHideoutPokemon is {} rocket)

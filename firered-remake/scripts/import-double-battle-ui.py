@@ -14,8 +14,11 @@ def convert(source,lock):
         if s not in code:raise ValueError('Doubles source layout differs')
     out={};assets=[]
     def add(name,w,h,rgba):
-        encoded=ui.png(w,h,rgba);out[name+'.png']=encoded
-        assets.append(dict(id=name,path=name+'.png',width=w,height=h))
+        shared = name in ('hp-label', 'hp-green', 'hp-yellow', 'hp-red')
+        if not shared:
+            out[name+'.png']=ui.png(w,h,rgba)
+        folder = 'lab-battle-ui' if shared else 'double-battle-ui'
+        assets.append(dict(id=name,path='content/generated/'+folder+'/'+name+'.png',width=w,height=h))
     pal=ui.palette(data['graphics/battle_interface/healthbox.pal'])
     for side in ('player','opponent'):
         tiles=ui.tile_list(data['graphics/battle_interface/healthbox_doubles_'+side+'.png'])

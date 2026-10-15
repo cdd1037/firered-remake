@@ -44,14 +44,7 @@ ANCHORS = [
       5, 14, 31, 'MAP_FUCHSIA_CITY_HOUSE1', 1),
     ('ThreeIsland', 'content/generated/first-sevii-region', 'three-island/runtime-map.json',
       3, 4, 6, 'MAP_THREE_ISLAND_HOUSE2', 0)]
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_ROCKER': 'content/generated/first-sevii-region/npc/rocker.png',
-    'OBJ_EVENT_GFX_MAN': 'content/generated/first-sevii-region/npc/man.png',
-    'OBJ_EVENT_GFX_WOMAN_2': 'content/generated/pokemon-tower-region/npc/woman-2.png',
-    'OBJ_EVENT_GFX_LASS': 'content/generated/regional-service-maps/npc/lass.png',
-    'OBJ_EVENT_GFX_OLD_MAN_1': 'content/generated/celadon-approach-region/npc/old-man-1.png',
-    'OBJ_EVENT_GFX_LITTLE_BOY': 'content/generated/pokemon-tower-region/npc/little-boy.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_LASS', 'OBJ_EVENT_GFX_LITTLE_BOY', 'OBJ_EVENT_GFX_MAN', 'OBJ_EVENT_GFX_OLD_MAN_1', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_ROCKER', 'OBJ_EVENT_GFX_WOMAN_2'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -227,12 +220,6 @@ def main():
             clearedTiles=[dict(map=w['stableId'], tiles=w['clearedVramTiles']) for w in rendered_worlds])
         npcs = shared.npc_inventory(src, worlds, stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'Room actor cohort differs')
-        for row in npcs['graphics']:
-            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
-            rendered = stage / row['texturePath']
-            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
-        (stage / 'npc').rmdir()
         entries = []
         for world in worlds:
             directory = reader.directory(world['sourceName']); path = stage / directory / 'runtime-map.json'; rich = path.read_bytes()
@@ -258,8 +245,7 @@ def main():
             reusedNpcGraphicsCount=len(npcs['graphics']),
             scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target / 'scripts/school-house-interiors.lock.json', lock_bytes),
-                  (target / 'scripts/school-house-interiors.contract.json', canonical(contract))]
+        writes = [(target / 'scripts/school-house-interiors.contract.json', canonical(contract))]
         writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

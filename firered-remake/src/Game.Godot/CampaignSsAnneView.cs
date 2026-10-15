@@ -62,20 +62,20 @@ public partial class CampaignView
         _ssAnneArt = PretSsAnneBattleArt.Load(_root);
         foreach (var portrait in _ssAnneArt.Portraits)
         {
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, portrait.Rgba);
+            using var image = NativeImages.LoadPng(portrait.Png, 64, 64);
             _forestTrainerPortraits.Add(portrait.Id, ImageTexture.CreateFromImage(image));
         }
         Texture2D Sheet(SsAnneDepartureSheet sheet)
         {
-            using var image = Image.CreateFromData(sheet.Width, sheet.Height, false, Image.Format.Rgba8, _ssAnneArt.ReadRgba(sheet.Id));
+            using var image = NativeImages.LoadPng(_ssAnneArt.ReadPng(sheet.Id), sheet.Width, sheet.Height);
             return ImageTexture.CreateFromImage(image);
         }
         _ssAnneWake = Sheet(_ssAnneArt.Wake); _ssAnneSmoke = Sheet(_ssAnneArt.Smoke);
         var items = PretSsAnneItems.LoadProject(_root);
         foreach (var icon in items.Icons.Where(i => !_earlyItemIcons.ContainsKey(i.Item)))
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("ssanne-items", icon));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            
+            _earlyItemIcons.Add(icon.Item, ItemTexture("ssanne-items", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("S.S. Anne key pocket missing.");
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
@@ -83,8 +83,8 @@ public partial class CampaignView
         {
             var item = value.Metadata; var icon = items.Icons.Single(i => i.Item == item.Item.Id);
             string id = "ssanne-" + item.Item.SourceItemSymbol.ToLowerInvariant();
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("ssanne-items", icon));
-            _questPocketTextures.Add(id, ImageTexture.CreateFromImage(image));
+            
+            _questPocketTextures.Add(id, ItemTexture("ssanne-items", icon));
             document = document with
             {
                 Items = document.Items.Add(new(item.Item.Id.Value, item.Item.SourceItemSymbol, item.Item.Name, item.Description, id, item.Item.FieldUseFunction)),

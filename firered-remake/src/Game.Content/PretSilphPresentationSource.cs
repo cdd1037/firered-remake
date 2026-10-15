@@ -2,28 +2,25 @@ using System.Collections.Immutable;
 using System.Text.Json;
 namespace Game.Content;
 
-/// <summary>Pinned presentation inputs rebuilt from original Git blobs, never executed upstream.</summary>
+/// <summary>Generated presentation file access shared by Silph-related packages.</summary>
 public static class PretSilphPresentationSource
 {
-    public const int SourceCount = 116;
-    public const string RawDirectory = PretSourcePaths.FireRedRawDirectory + "/";
-    public static ImmutableDictionary<string, byte[]> Load(string root)
+    internal static ImmutableDictionary<string, byte[]> LoadGenerated(string root, string directory)
     {
-        var bytes = SafariSource.Read(root,"scripts/silph-presentation.lock.json");
-        using var json = JsonDocument.Parse(bytes); var doc = json.RootElement;
+        using var manifest = JsonDocument.Parse(SafariSource.Read(root, directory + "manifest.json"));
         var files = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in doc.GetProperty("files").EnumerateArray())
+        foreach (var row in manifest.RootElement.GetProperty("outputs").EnumerateArray())
         {
-            string path = row.GetProperty("path").GetString()!;
-            var content = SafariSource.Read(root,RawDirectory + path);
-            files.Add(path, content);
+            var path = row.GetProperty("path").GetString()!;
+            if (path.StartsWith(directory, StringComparison.Ordinal)) path = path[directory.Length..];
+            files.Add(path, SafariSource.Read(root, path.StartsWith("content/generated/", StringComparison.Ordinal) ? path : directory + path));
         }
         return files.ToImmutable();
     }
     internal static ImmutableDictionary<string, byte[]> Outputs(string root, string directory, ImmutableArray<SnorlaxArtOutput> outputs)
     {
         var files = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in outputs) files.Add(row.Path, SafariSource.Read(root,directory + row.Path));
+        foreach (var row in outputs) files.Add(row.Path, SafariSource.Read(root,row.Path.StartsWith("content/generated/", StringComparison.Ordinal) ? row.Path : directory + row.Path));
         return files.ToImmutable();
     }
     internal static byte[] Texture(string projectRelativePath, string directory, ImmutableDictionary<string, byte[]> files)

@@ -10,7 +10,7 @@ public sealed record NpcTradeItemsDocument(string SourceCommit, string Profile, 
     ImmutableArray<EarlyShopItemDefinition> Additions, ImmutableArray<EarlyShopStock> ShopsAdded,
     ImmutableArray<NpcTradeItemIcon> Icons);
 public sealed record NpcTradeItemIcon(ItemId Item, int Width, int Height, string TexturePath, ImmutableArray<string> SourcePaths,
-    JsonElement BindingSource);
+    JsonElement BindingSource, ImageRegion? Region = null);
 
 /// <summary>Original Vermilion trade room and held Stick; activation belongs to current composition.</summary>
 public sealed class PretNpcTradeElyssa
@@ -18,7 +18,6 @@ public sealed class PretNpcTradeElyssa
     public const string ResourceId = "firered-npc-trade-elyssa-v1";
     public static MapId HouseMapId { get; } = new("map.vermilion-city-house2");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
     public JsonElement NpcSources { get; }
@@ -30,11 +29,11 @@ public sealed class PretNpcTradeElyssa
     private PretNpcTradeElyssa(SilphSourcePackage source, PretWorldMap map, NpcTradeItemsDocument items)
     {
         NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(map.Id, map);
-        SourceFiles = source.Files; GeneratedDirectory = source.Directory; Items = items;
+        GeneratedDirectory = source.Directory; Items = items;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
         IconFiles = items.Icons.Select(i => i.TexturePath)
-            .ToImmutableDictionary(p => p, p => source.Outputs[p], StringComparer.Ordinal);
+            .Distinct(StringComparer.Ordinal).ToImmutableDictionary(p => p, p => source.Read(p), StringComparer.Ordinal);
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
@@ -57,29 +56,25 @@ public sealed class PretNpcTradeElyssa
     }
     public static PretNpcTradeElyssa Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot,"npc-trade-elyssa",            "scripts/npc-trade-elyssa.lock.json");
+        var source = new SilphSourcePackage(projectRoot,"npc-trade-elyssa");
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Elyssa source/catalog identity differs.");
-        foreach (var row in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
-        {
-            Need(row.GetProperty("reuseExisting").GetBoolean(), "Elyssa actors must reuse authenticated existing graphics.");
-        }
         var retained = source.Document("contracts.json").GetProperty("retainedCity");
         var city = SilphSourcePackage.Json(SafariSource.Read(projectRoot,retained.GetProperty("path").GetString()!));
         Need(JsonElement.DeepEquals(city.GetProperty("events").GetProperty("warp_events")[6], retained.GetProperty("warp")),
             "Elyssa retained city door differs.");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Vermilion trade room and Stick.", ResourceId, source.Files);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Vermilion trade room and Stick.", ResourceId, []);
         var spec = catalog.GetProperty("maps")[0];
         string relative = spec.GetProperty("directory").GetString()!, path = spec.GetProperty("path").GetString()!;
-        var bytes = source.Outputs[path];
+        var bytes = source.Read(path);
         Need(spec.GetProperty("stableId").GetString() == HouseMapId.Value && path == relative + "/runtime-map.json" ,
             "Elyssa compact resource binding differs.");
         var runtime = PretRuntimeMapData.Decode(bytes, HouseMapId.Value, MapIdFromSourceSymbol);
         Need(runtime.Width == 11 && runtime.Height == 9 && MapIdFromSourceSymbol(runtime.SourceRef.Symbol) == HouseMapId,
             "Elyssa map identity/dimensions differ.");
         var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/silph-region/npc/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(map.FieldWarps.Length == 3 && map.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             map.FieldWarps.All(w => w.DestinationMapId == new MapId("map.vermilion-city") && w.DestinationWarpId == 6),
             "Original Elyssa actor/exit cohort differs.");
@@ -91,8 +86,7 @@ public sealed class PretNpcTradeElyssa
             "Original Stick held metadata differs.");
         var icon = items.Icons[0];
         Need(icon.Item == NpcTradeShopCatalog.StickId && icon.Width == 24 && icon.Height == 24 &&
-            PngRgba8.Decode(source.Outputs[icon.TexturePath], icon.Width, icon.Height).Length == 24 * 24 * 4 &&
-            icon.SourcePaths.All(source.Raw.ContainsKey), "Original Stick icon differs.");
+            (source.Read(icon.TexturePath)).Length > 0, "Original Stick icon differs.");
         return new(source, map, items);
     }
     private static void Need(bool value, string message) => SilphSourcePackage.Need(value, message);

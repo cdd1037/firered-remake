@@ -11,30 +11,13 @@ public sealed record FameCheckerCollectionCoverage(FameCheckerCollectionEvent So
 public sealed class PretFameChecker
 {
     public FameCheckerCatalog Catalog { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    private PretFameChecker(FameCheckerCatalog catalog, ImmutableArray<PretWorldSourceFile> files)
-    {
-        Catalog = catalog; SourceFiles = files;
-    }
+    private PretFameChecker(FameCheckerCatalog catalog) { Catalog = catalog; }
 
     public static PretFameChecker Load(string projectRoot) => LoadPackage(
-        Path.Combine(projectRoot, "scripts/fame-checker.lock.json"),
         Path.Combine(projectRoot, "content/generated/fame-checker/catalog.json"));
 
-    /// <summary>Loads the catalog and source-file metadata.</summary>
-    public static PretFameChecker LoadPackage(string lockPath, string catalogPath)
-    {
-        using var sourceLock = JsonDocument.Parse(File.ReadAllBytes(lockPath));
-        var root = sourceLock.RootElement;
-        if (root.GetProperty("schemaVersion").GetInt32() != 1)
-            throw new InvalidDataException("fame_checker_source_schema");
-        var files = root.GetProperty("files").EnumerateArray().Select(r => new PretWorldSourceFile(
-            r.GetProperty("path").GetString()!,"https://raw.githubusercontent.com/pret/pokefirered/" + FameCheckerCatalog.SourceCommit + "/" + r.GetProperty("path").GetString())).ToImmutableArray();
-        if (files.Select(f => f.Path).Distinct(StringComparer.Ordinal).Count() != files.Length)
-            throw new InvalidDataException("fame_checker_source_inventory");
-        var catalog = FameCheckerCatalog.Authenticate(File.ReadAllBytes(catalogPath));
-        return new(catalog, files);
-    }
+    public static PretFameChecker LoadPackage(string catalogPath) =>
+        new(FameCheckerCatalog.Authenticate(File.ReadAllBytes(catalogPath)));
 
     /// <summary>Separates imported opcodes, mounted map context and a static reference path from map entrypoints.
     /// None is proof that script conditions are satisfiable, its dialogue executes, or the player has collected a fact.</summary>

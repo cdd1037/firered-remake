@@ -12,14 +12,14 @@ public partial class CampaignView
     private Texture2D PowerPlantPixels(JsonElement row,bool replicatePalette=false)
     {
         int width=row.GetProperty("width").GetInt32(),height=row.GetProperty("height").GetInt32();
-        var rgba=PngRgba8.Decode(_powerPlantArt!.Files[row.GetProperty("texturePath").GetString()!]);
+        using var image = NativeImages.LoadPng(_powerPlantArt!.Files[row.GetProperty("texturePath").GetString()!], width, height);
         if(replicatePalette)
         {
-            rgba=rgba.ToArray();
+            var rgba = image.GetData();
             for(int i=0;i<rgba.Length;i+=4)if(rgba[i+3]!=0)
                 for(int c=0;c<3;c++){int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2));}
+            image.SetData(width, height, false, Image.Format.Rgba8, rgba);
         }
-        using var image=Image.CreateFromData(width,height,false,Image.Format.Rgba8,rgba);
         return SceneTextures.FromImage(image);
     }
     private void LoadPowerPlantPresentation()
@@ -52,15 +52,14 @@ public partial class CampaignView
         foreach(var row in PowerPlantManifest.GetProperty("itemIcons").EnumerateArray())
         {
             if(row.GetProperty("inherited").GetBoolean())continue;
-            byte[] pixels=PngRgba8.Decode(_powerPlantArt!.Files[row.GetProperty("pngPath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            using var image=Image.CreateFromData(row.GetProperty("width").GetInt32(),row.GetProperty("height").GetInt32(),false,Image.Format.Rgba8,pixels);
+            using var image = NativeImages.LoadPng(_powerPlantArt!.Files[row.GetProperty("pngPath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
             _earlyItemIcons.Add(new(row.GetProperty("item").GetProperty("value").GetString()!),(ImageTexture)SceneTextures.FromImage(image));
         }
         Write("powerPlantPresentation",new{nativeWindowVerified=false,physicalAudioVerified=false});
     }
     private CaptureDexEntry? PowerPlantCaptureDexEntry(int species)=>!_powerPlantDex.TryGetValue(species,out var e)?null:
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,
-            e.HeightDisplay,e.WeightDisplay,e.Description,e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle,e.Source,e.DescriptionSource);
+            e.HeightDisplay,e.WeightDisplay,e.Description,e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle);
     private PokedexMenuPage? PowerPlantPokedexPage(int species,PokedexMenuPage page)=>_powerPlantDex.TryGetValue(species,out var e)
         ?page with{Portrait=e.Portrait,Footprint=page.Caught?e.Footprint:null}:null;
     private byte[]? ReadPowerPlantDexTexture(PokedexMenuTexture texture)=>_powerPlantArt is not null&&

@@ -18,7 +18,7 @@ canonical = codec.inputs.canonical
 
 def inputs(lock_path, raw, cache=None):
     lock = json.loads(lock_path.read_bytes())
-    project = json.loads((ROOT / 'content/source-lock.json').read_bytes())
+    project = json.loads((ROOT / 'scripts/import-config/source.json').read_bytes())
     if (lock.get('schemaVersion'), lock.get('profile'), lock.get('commit'), lock.get('repository')) != (1, 'firered-ui-corrections-v1', COMMIT, 'pret/pokefirered'):
         raise ValueError('Correction source identity differs')
     if project['source']['sourceCommit'] != COMMIT:

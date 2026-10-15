@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using System.Collections.Immutable;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,7 +9,7 @@ using Game.Domain.World;
 
 namespace Game.Content;
 
-public sealed record PretWorldSourceFile(string Path, string SourceUrl);
+public sealed record PretWorldSourceFile(string Path);
 public sealed record PretWorldMetadata(string Repository, string Commit, string Rights, string Scope, string RenderProfile,
     ImmutableArray<PretWorldSourceFile> Files);
 public sealed record PretWorldArtifact(string Path, int Width, int Height);
@@ -45,7 +44,7 @@ public static class PretWorldDecoder
     };
 }
 
-/// <summary>One compact map representation, with shared raw files supplying live script text.</summary>
+/// <summary>Converted map data and render-resource paths.</summary>
 public sealed class PretWorldMap : IFieldMap
 {
     // Existing reference-view save content ID; retained without changing historical saves.
@@ -54,7 +53,6 @@ public sealed class PretWorldMap : IFieldMap
     private readonly PretRuntimeMapData _data;
     private readonly Func<string, MapId> _mapIdFromSymbol;
     private readonly string? _playerTexturePath;
-    private readonly string _rawDirectory;
     public MapId Id => _data.Id;
     public int? SourceEncounterTypeAt(int x, int y) => GetSourceCell(x, y)?.EncounterType;
     public int? SourceBehaviorAt(int x, int y) => _data.SourceBehaviorAt(x, y);
@@ -72,13 +70,6 @@ public sealed class PretWorldMap : IFieldMap
     public ImmutableArray<PretWorldArtifact> Artifacts => _data.Artifacts;
     public JsonElement Events => _data.Events;
     public string SourceMapSymbol => SourceRef.Symbol;
-    public string ScriptSource => SourceText(SourceRef.Path.Replace("map.json", "scripts.inc", StringComparison.Ordinal));
-    public string TextSource => SourceText(SourceRef.Path.Replace("map.json", "text.inc", StringComparison.Ordinal));
-    private string SourceText(string path)
-    {
-        if (!_data.ScriptPaths.Contains(path)) throw new InvalidDataException("Missing map text dependency: " + path);
-        return File.ReadAllText(PretRuntimeMapValidation.SafeFile(_rawDirectory, path), Encoding.UTF8);
-    }
     public ImmutableArray<PretWorldWarp> Warps => Events.GetProperty("warp_events").EnumerateArray().Select((e, index) =>
         new PretWorldWarp(index, e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("elevation").GetInt32(),
             _mapIdFromSymbol(e.GetProperty("dest_map").GetString()!),
@@ -93,11 +84,6 @@ public sealed class PretWorldMap : IFieldMap
     private PretWorldMap(PretRuntimeMapData data, PretWorldMetadata metadata, string directory, string? playerTexturePath, Func<string, MapId>? resolver)
     {
         _data = data; Metadata = metadata; DirectoryPath = directory; _playerTexturePath = playerTexturePath;
-        var generated = PretRuntimeMapValidation.GeneratedRoot(directory);
-        _rawDirectory = Path.Combine(Directory.GetParent(generated)!.FullName, "raw/pokefirered/037335f4");
-        foreach (var path in data.ScriptPaths)
-            if (!File.Exists(PretRuntimeMapValidation.SafeFile(_rawDirectory, path)))
-                throw new InvalidDataException("Missing shared map script: " + path);
         _mapIdFromSymbol = resolver ?? (symbol => PretWorldCatalog.Specifications.FirstOrDefault(s => s.SourceMapSymbol == symbol) is { } spec
             ? new MapId(spec.StableId) : throw new InvalidDataException("Warp source map is outside the base collection: " + symbol));
     }

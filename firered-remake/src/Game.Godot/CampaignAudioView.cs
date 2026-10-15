@@ -10,9 +10,6 @@ using Godot;
 
 public partial class CampaignView
 {
-    private AudioDeliveryCatalog? _originalAudio;
-    private TownRouteAudioCatalog? _townRouteAudio;
-    private Route22CryAudioCatalog? _route22CryAudio;
     private ISourceAudioBackend? _sourceAudio;
     private long _audioSequence;
     private bool _audioFaulted;
@@ -69,99 +66,15 @@ public partial class CampaignView
             }
             return;
         }
-        if(backend!=""&&backend!="recorded")
-        {
-            _audioFaulted=true;Write("audioFault",new{backend,error="Unknown audio backend",recordedFallback=false});return;
-        }
-        if(_catalog.SnorlaxEnabled){_audioFaulted=true;Write("audioFault",new{backend,error="Snorlax mode2 requires the source synthesizer; no recorded fallback is admitted.",recordedFallback=false});return;}
-        _originalAudio=PretSmallAudioDelivery.Load(_root);
-        var recorded=new SourceAudioPlayer();_sourceAudio=recorded;AddChild(recorded);
-        _sourceAudio.PlaybackEvent+=cue=>Write("audioPlayback",cue);
-        Write("audioCatalog",new{count=_originalAudio.Clips.Count,            sourceSoundMode="mono",audioBytes=PretSmallAudioDelivery.AudioBytes,sampleRates=new[]{24000,48000},
-            outputDriver=AudioServer.GetDriverName(),audibleOutputVerified=false,seamlessLoopVerified=false,musicCodec="vorbis-q0",effectCodec="qoa-mono"});
+        _audioFaulted=true;
+        Write("audioFault",new{backend,error="Only the synth audio backend is supported",recordedFallback=false});
     }
 
     private bool EnsureAudio(string id)
     {
         if(_sourceAudio is null||_audioFaulted)return false;
         if(_sourceAudio.HasClip(id))return true;
-        if(_sourceAudio is SynthSourceAudioPlayer)
-        {
-            Write("audioMissing",new{id,backend="synth",recordedFallback=false});return false;
-        }
-        if(_originalAudio is null)return false;
-        if(_catalog.Route22Enabled&&id is "CRY_SPEAROW_NORMAL" or "CRY_FEAROW_NORMAL" or "CRY_MANKEY_NORMAL")
-        {
-            try
-            {
-                _route22CryAudio??=PretRoute22CryAudio.Load(_root);
-                var m=_route22CryAudio.Clips[id];
-                _sourceAudio.Register(VerifiedSourceAudioClip.FromQoa(new(m.Id,m.SourceCommit,m.SourceSymbol,m.SourcePath,
-                    m.SourcePlayer,m.Priority,m.SourceCounter,m.Renderer),_route22CryAudio.ReadEncodedBytes(id),
-        m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame));
-                Write("route22CryAudioCatalog",new{id,PretRoute22CryAudio.AudioBytes,
-        m.LogicalFrameCount,m.DirectCryStoppedVBlank,audibleOutputVerified=false});
-                return true;
-            }
-            catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException)
-            {_audioFaulted=true;_sourceAudio.ResetPlayback();Write("audioFault",new{id,error=error.Message});return false;}
-        }
-        if(_catalog.TownMapEnabled && id is "MUS_DEX_RATING" or "MUS_ROUTE3" or "MUS_VICTORY_ROAD" or "SE_M_SPIT_UP" or "SE_M_HYPER_BEAM2")
-        {
-            try
-            {
-                _townRouteAudio ??= PretTownRouteAudio.Load(_root);
-                var m=_townRouteAudio.Clips[id];var bytes=_townRouteAudio.ReadEncodedBytes(id);
-                var extraMetadata=new SourceAudioMetadata(m.Id,m.SourceCommit,m.SourceSymbol,m.SourcePath,m.SourcePlayer,m.Priority,m.SourceCounter,m.Renderer);
-                _sourceAudio.Register(m.Codec switch
-                {
-                    "vorbis"=>VerifiedSourceAudioClip.FromOgg(extraMetadata,bytes,m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame),
-                    "qoa"=>VerifiedSourceAudioClip.FromQoa(extraMetadata,bytes,m.SampleRate,m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame),
-                    _=>throw new InvalidDataException("Unsupported town/route codec: "+m.Codec)
-                });
-                Write("townRouteAudioCatalog",new{id,PretTownRouteAudio.AudioBytes,m.SourceCounter,m.SourceSequenceStoppedVBlank,audibleOutputVerified=false});
-                return true;
-            }
-            catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException)
-            {_audioFaulted=true;_sourceAudio.ResetPlayback();Write("audioFault",new{id,error=error.Message});return false;}
-        }
-        if(id=="SE_REPEL"&&_catalog.RepelEnabled)
-        {
-            try
-            {
-                var asset=PretRepelAudio.Load(_root);var m=asset.Metadata;
-                _sourceAudio.Register(VerifiedSourceAudioClip.FromQoa(new(m.Id,m.SourceCommit,m.SourceSymbol,m.SourcePath,
-                    m.SourcePlayer,m.Priority,m.SourceCounter,m.Renderer),asset.Data,m.SampleRate,
-                    m.Channels,m.LogicalFrameCount,m.LoopStartFrame,m.LoopEndFrame));
-                Write("repelAudioCatalog",new{PretRepelAudio.EncodedBytes,
-        m.SourceSequenceStoppedVBlank,audibleOutputVerified=false});
-                return true;
-            }
-            catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException)
-            { _audioFaulted=true;_sourceAudio.ResetPlayback();Write("audioFault",new{id,error=error.Message});return false; }
-        }
-        if(!_originalAudio.Clips.TryGetValue(id,out var clip)){Write("audioMissing",new{id});return false;}
-        var original=clip.Original;
-        var metadata=new SourceAudioMetadata(clip.Id,original.SourceCommit,original.SourceSymbol,original.SourcePath,original.SourcePlayer,
-            original.Priority,original.SourceCounter,original.Renderer,original.IsOriginalTestFixture);
-        try
-        {
-            byte[] bytes=_originalAudio.ReadEncodedBytes(id);
-            _sourceAudio.Register(clip.Codec switch
-            {
-                "vorbis"=>VerifiedSourceAudioClip.FromOgg(metadata,bytes,clip.SampleRate,clip.Channels,clip.LogicalFrameCount,clip.LoopStartFrame,clip.LoopEndFrame),
-                "qoa"=>VerifiedSourceAudioClip.FromQoa(metadata,bytes,clip.SampleRate,clip.Channels,clip.LogicalFrameCount,clip.LoopStartFrame,clip.LoopEndFrame),
-                "pcm_s16le_wav"=>VerifiedSourceAudioClip.FromWav(metadata,bytes,clip.LoopStartFrame,clip.LoopEndFrame),
-                _=>throw new InvalidDataException("Unsupported audio delivery codec: "+clip.Codec)
-            });
-            return true;
-        }
-        catch(Exception error) when(error is InvalidDataException or IOException or InvalidOperationException)
-        {
-            // Playback must not throw after an authoritative command already committed,
-            // drop its evidence record, or strand a source wait. Never substitute another sound.
-            _audioFaulted=true;_sourceAudio.ResetPlayback();Write("audioFault",new{id,error=error.Message});return false;
-        }
+        Write("audioMissing",new{id,backend="synth",recordedFallback=false});return false;
     }
 
     private void SourceSound(string id,bool fanfare=false)
@@ -185,8 +98,7 @@ public partial class CampaignView
         else _sourceAudio!.PlaySoundEffect(id);
     }
 
-    private int SourceAudioPlayerNumber(string id) => _sourceAudio is SynthSourceAudioPlayer synthesized?synthesized.Metadata(id).SourcePlayer:id=="SE_REPEL"?1:
-        _townRouteAudio?.Clips.TryGetValue(id,out var extra)==true?extra.SourcePlayer:_originalAudio!.Clips[id].Original.SourcePlayer;
+    private int SourceAudioPlayerNumber(string id) => ((SynthSourceAudioPlayer)_sourceAudio!).Metadata(id).SourcePlayer;
 
     private void SourceCry(PokemonInstance pokemon)=>SourceCrySymbol(pokemon.Species.Value.Replace("pret:","",StringComparison.Ordinal));
     private void SourceCrySymbol(string species,int mode=0)
@@ -199,13 +111,6 @@ public partial class CampaignView
             if(EnsureAudio(cueId))synthesized.PlayCry(cueId);
             return;
         }
-        if(mode!=0){if(_sourceAudio is not null){_audioFaulted=true;Write("audioFault",new{species,mode,error="Recorded backend has no admitted encounter cry",recordedFallback=false});}return;}
-        if(_originalAudio is null)return;
-        if(int.TryParse(species,out int number))
-            species=_catalog.Route22Pokemon?.Catalog.Species.Values.FirstOrDefault(s=>s.SourceSpeciesId==number)?.Id.Value.Replace("pret:","",StringComparison.Ordinal)
-                ??_originalAudio.Clips.Values.FirstOrDefault(c=>c.Original.SourcePlayer==4&&_catalog.TryConstant(c.Original.SourceSymbol,out int n)&&n==number)?.Original.SourceSymbol??species;
-        string id="CRY_"+species.Replace("SPECIES_","",StringComparison.Ordinal)+"_NORMAL";
-        if(EnsureAudio(id))_sourceAudio!.PlayCry(id);
     }
 
     private void ResetSourceAudio()

@@ -7,8 +7,7 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record PretPokemonTowerItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
 public sealed record PretPokemonTowerPickup(string Map, string Kind, int? LocalId, int? EventIndex,
     int X, int Y, int Elevation, string Flag, int SourceFlagId, bool InitiallyHidden, bool Underfoot,
     bool RequiresItemfinder, bool AllowsOrdinaryInteraction, ItemId Item, int Quantity, string? Script,
@@ -54,7 +53,7 @@ public static class PretPokemonTowerItems
         var options = ContentJson.CreateOptions(); options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretPokemonTowerItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 5 && document.Icons.Length == 5 &&
-            !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty, "Pokemon Tower item scope differs.");
+            !document.Limitations.IsDefaultOrEmpty, "Pokemon Tower item scope differs.");
         foreach (var item in document.Items)
         {
             PokemonTowerItemRules.ValidateSourceItem(item.Metadata, item.EffectBytes, item.EffectSource);
@@ -63,7 +62,7 @@ public static class PretPokemonTowerItems
         foreach (var icon in document.Icons)
         {
             Require(document.Items.Any(i => i.Metadata.Item.Id == icon.Item) &&
-                icon.PngPath == icon.Item.Value[5..].ToLowerInvariant() + ".png", "Pokemon Tower icon identity differs.");
+                icon.Region is not null, "Pokemon Tower icon identity differs.");
             PretPewterMachines.ValidateIcon(icon);
         }
         Require(document.Icons.Select(i => i.Item).Distinct().Count() == 5, "Duplicate Pokemon Tower icons.");

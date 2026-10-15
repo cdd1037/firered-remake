@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Read-only audit of pinned FireRed opening/first-badge audio inputs.
 
-No network, ROM, upstream executable, audio device or product mutation. --write-lock
-is an explicit maintainer action; the normal command re-derives and compares it.
+No network, ROM, upstream executable, audio device or product mutation. The
+normal command re-derives and validates pinned Git inputs; --report optionally
+writes the resulting inventory. No committed duplicate snapshot is required.
 This is a source inventory, not an m4a renderer or listening acceptance test.
 """
 import argparse
@@ -19,7 +20,6 @@ ROOT = Path(__file__).resolve().parents[1]
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 PROFILE = "firered-early-audio-source-v1"
-LOCK = ROOT / "content/early-audio-source-lock.json"
 SPECIES = "BULBASAUR IVYSAUR VENUSAUR CHARMANDER CHARMELEON CHARIZARD SQUIRTLE WARTORTLE BLASTOISE CATERPIE METAPOD BUTTERFREE WEEDLE KAKUNA BEEDRILL PIDGEY PIDGEOTTO PIDGEOT RATTATA RATICATE PIKACHU RAICHU SANDSHREW SANDSLASH GEODUDE GRAVELER GOLEM ONIX STEELIX".split()
 MAPS = "PalletTown PalletTown_PlayersHouse_1F PalletTown_PlayersHouse_2F PalletTown_RivalsHouse PalletTown_ProfessorOaksLab Route1 ViridianCity ViridianCity_Mart ViridianCity_PokemonCenter_1F Route2 Route2_ViridianForest_SouthEntrance ViridianForest Route2_ViridianForest_NorthEntrance PewterCity PewterCity_Gym PewterCity_Mart PewterCity_PokemonCenter_1F PewterCity_House1 PewterCity_House2 PewterCity_Museum_1F PewterCity_Museum_2F".split()
 EVENT_MUSIC = "OAK ENCOUNTER_RIVAL RIVAL_EXIT ENCOUNTER_BOY ENCOUNTER_GIRL VS_TRAINER VS_WILD VS_GYM_LEADER VICTORY_TRAINER VICTORY_WILD VICTORY_GYM_LEADER CAUGHT CAUGHT_INTRO LEVEL_UP OBTAIN_ITEM OBTAIN_KEY_ITEM HEAL OBTAIN_BADGE OBTAIN_TMHM EVOLVED EVOLUTION_INTRO EVOLUTION".split()
@@ -350,17 +350,12 @@ def build(root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference-root", type=Path)
-    parser.add_argument("--lock", type=Path, default=LOCK)
-    parser.add_argument("--write-lock", action="store_true")
+    parser.add_argument("--report", type=Path, help="Optional audit report outside runtime content.")
     args = parser.parse_args()
     root = args.reference_root or Path(os.environ.get("FIRERED_ORIGINAL_REFERENCE") or (ROOT / ".tools/reference-root").read_text(encoding="utf-8").strip())
     result = build(root)
-    if args.write_lock:
-        require(args.lock.resolve() == LOCK.resolve(), "Lock generation only writes the owned lock path")
-        args.lock.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
-    else:
-        expected = json.loads(args.lock.read_text(encoding="utf-8"))
-        require(expected == result, "Audio source lock or re-derived metadata differs")
+    if args.report:
+        args.report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": "source-audit-passed", "maps": len(result["maps"]), "songs": len(result["songs"]), "cries": len(result["cries"]), "instrumentSamples": len(result["samples"]), "sourceFiles": len(result["files"]), "fullSourceHash": result["fullSourceHash"], "renderedAudio": False, "audibleOutputVerified": False}))
 
 

@@ -317,7 +317,6 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         ? cue.Metadata : throw new InvalidDataException("Unknown synth cue: " + id);
     public string? CrySymbol(int species) => _catalog.Values.FirstOrDefault(c => c.Species == species)?.SourceSymbol;
     public bool HasClip(string id) => !_faulted && _catalog.ContainsKey(id);
-    public void Register(VerifiedSourceAudioClip clip) => throw new NotSupportedException("Synth admits only its frozen sequence catalog; no recorded fallback.");
 
     public long PlayMusic(string id, bool restart = false)
     {
@@ -461,7 +460,7 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
             UpdateCompletions();
             if (AutomaticSourceClock)
             {
-                _sourceRemainder += delta * SourceAudioPlayer.SourceFramesPerSecond;
+                _sourceRemainder += delta * SourceAudioTiming.SourceFramesPerSecond;
                 while (_sourceRemainder >= 1) { _sourceRemainder--; AdvanceSourceFrame(); }
             }
             if (_fadeRemaining > 0 && _music is not null)
@@ -573,11 +572,11 @@ public partial class SynthSourceAudioPlayer : Node, ISourceAudioBackend
         PlaybackEvent?.Invoke(new("fanfare-task-finished", cue?.Id ?? "", token, 2, reason, false, cue?.Metadata));
     }
 
-    private void ApplyMusicGain() => _synth.SetPlayerGain(0, _musicGain * (_renderCryDucking ? SourceAudioPlayer.CryDuckGain : 1f));
+    private void ApplyMusicGain() => _synth.SetPlayerGain(0, _musicGain * (_renderCryDucking ? SourceAudioTiming.CryDuckGain : 1f));
     private SourceAudioVoiceState? State(ActiveCue? cue) => cue is null ? null : new(cue.Cue.Id, cue.Token,
         cue.Cue.SourcePlayer, cue.Cue.Priority, !Completed(cue), _synth.PlayerPaused(CoreSlot(cue.Cue.SourcePlayer)),
         (double)_synth.PlayerElapsedFrames(CoreSlot(cue.Cue.SourcePlayer)) / Synth.Rate,
-        cue.Cue.SourcePlayer == 0 ? _musicGain * (_cryDucking ? SourceAudioPlayer.CryDuckGain : 1f) : 1);
+        cue.Cue.SourcePlayer == 0 ? _musicGain * (_cryDucking ? SourceAudioTiming.CryDuckGain : 1f) : 1);
     private void Emit(string kind, ActiveCue cue, string reason) => PlaybackEvent?.Invoke(new(kind,
         cue.Cue.Id, cue.Token, cue.Cue.SourcePlayer, reason, false, cue.Cue.Metadata));
     private static int CoreSlot(int player) => player switch { 0 => 0, 1 => 1, 2 => 3, 3 => 4, 4 => 2, _ => throw new ArgumentOutOfRangeException(nameof(player)) };

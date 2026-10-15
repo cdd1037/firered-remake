@@ -133,8 +133,6 @@ def generate(reference, dependency):
     evidence=dict(sourceCommit=COMMIT,inputs=[inputs[p] for p in sorted(inputs)])
     files={BASE+'items.json':encoded(document),BASE+'source-contract.json':encoded(facts),
         BASE+'source-input-hashes.json':encoded(evidence),BASE+'coin-case.png':png,**raw}
-    files['scripts/game-corner-coins.lock.json']=encoded(dict(sourceCommit=COMMIT,profile=PROFILE,
-        files=[dict(path=p) for p,b in sorted(files.items())]))
     return files,document,facts
 
 if __name__=='__main__':

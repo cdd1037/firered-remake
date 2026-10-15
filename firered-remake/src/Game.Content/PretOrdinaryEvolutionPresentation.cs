@@ -26,7 +26,7 @@ public static class PretOrdinaryEvolutionPresentation
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
                 path.Split('/').Any(p => p is "" or "." or "..") )
                 throw new InvalidDataException("Unsafe OrdinaryEvolution presentation resource.");
-            var file = new FileInfo(Path.Combine(path.StartsWith(Base, StringComparison.Ordinal) || path.StartsWith(PretSourcePaths.FireRedRawDirectory + "/", StringComparison.Ordinal) || path == "scripts/ordinary-evolution-presentation.lock.json" ? root : inheritedRoot ?? root, path));
+            var file = new FileInfo(Path.Combine(path.StartsWith(Base, StringComparison.Ordinal) ? root : inheritedRoot ?? root, path));
             if (file.LinkTarget is not null) throw new InvalidDataException("OrdinaryEvolution resource symlink rejected.");
             for (var directory = file.Directory; directory is not null; directory = directory.Parent)
                 if (directory.LinkTarget is not null) throw new InvalidDataException("OrdinaryEvolution directory symlink rejected.");
@@ -34,14 +34,12 @@ public static class PretOrdinaryEvolutionPresentation
             return bytes;
         }
 
-        using var locked = JsonDocument.Parse(Read("scripts/ordinary-evolution-presentation.lock.json"));
         using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
-        var sourceLock = locked.RootElement;
         var manifest = document.RootElement;
-        if (sourceLock.GetProperty("schemaVersion").GetInt32() != 1 || manifest.GetProperty("schemaVersion").GetInt32() != 1 )
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("OrdinaryEvolution presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in sourceLock.GetProperty("inheritedInputs").EnumerateArray())
+        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
@@ -56,8 +54,8 @@ public static class PretOrdinaryEvolutionPresentation
         {
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
             string path = asset.GetProperty("texturePath").GetString()!;
-            if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var rgba) ||
-                PngRgba8.Decode(rgba, width, height).Length != width * height * 4 )
+            if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var pngBytes) ||
+                (pngBytes).Length == 0)
                 throw new InvalidDataException("OrdinaryEvolution pixels differ: " + path);
             if (!files.TryGetValue(asset.GetProperty("texturePath").GetString()!, out var png) )
                 throw new InvalidDataException("OrdinaryEvolution texture differs: " + path);

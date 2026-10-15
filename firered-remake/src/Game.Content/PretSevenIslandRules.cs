@@ -24,7 +24,7 @@ public static class PretSevenIslandRules
     private static T Read<T>(string root,string file)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/seven-island-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }) ?? throw new InvalidDataException("seven_island_source_missing");
+        return JsonSerializer.Deserialize<T>(bytes, SharedMachineCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })) ?? throw new InvalidDataException("seven_island_source_missing");
     }
     public static SevenIslandTrainerDocument LoadDocument(string root)
     {

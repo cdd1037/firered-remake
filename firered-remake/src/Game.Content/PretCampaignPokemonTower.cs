@@ -18,11 +18,10 @@ public sealed partial class PretCampaignCatalog
     private static ImmutableDictionary<MapId,EarlyLandEncounterTable> PokemonTowerEncounterTables(PretPokemonTowerRegion region)
     {
         var result=ImmutableDictionary.CreateBuilder<MapId,EarlyLandEncounterTable>();
-        var source=region.SourceFiles.Single(f=>f.Path==EarlyLandEncounterRules.SourcePath);
         foreach(var entry in region.Dependencies.GetProperty("wildEncounters").EnumerateArray())
         {
             var land=entry.GetProperty("land_mons");
-            var table=new EarlyLandEncounterTable(PretPokemonTowerRegion.MapIdFromSourceSymbol(entry.GetProperty("map").GetString()!),                EarlyLandEncounterRules.SourceCommit,source.Path,entry.GetProperty("base_label").GetString()!,                land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,
+            var table=new EarlyLandEncounterTable(PretPokemonTowerRegion.MapIdFromSourceSymbol(entry.GetProperty("map").GetString()!),                EarlyLandEncounterRules.SourceCommit,EarlyLandEncounterRules.SourcePath,entry.GetProperty("base_label").GetString()!,                land.GetProperty("encounter_rate").GetInt32(),land.GetProperty("mons").EnumerateArray().Select((m,i)=>new EarlyLandEncounterSlot(i,
                 new("pret:"+m.GetProperty("species").GetString()),m.GetProperty("min_level").GetByte(),m.GetProperty("max_level").GetByte(),EarlyLandEncounterRules.SlotWeights[i])).ToImmutableArray());
             EarlyLandEncounterRules.ValidateTable(table);result.Add(table.Map,table);
         }

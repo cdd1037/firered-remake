@@ -17,26 +17,6 @@ public sealed partial class PretCampaignCatalog
     public FossilLabMachineCatalog FossilLabMachines { get; }
     public FossilLabShopCatalog FossilLabShop { get; }
 
-    private static void AppendFossilLabSources(PretFossilLabRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-        => AppendAuthenticatedRegionalSources(region.Scripts,region.TextSources.Values,region.Constants,sources,texts,constants);
-
-    private static void AppendAuthenticatedRegionalSources(IEnumerable<PretSourceScriptFile> scripts,IEnumerable<string> textSources,IReadOnlyDictionary<string, int> sourceConstants,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in scripts)
-        {
-            if (previous.TryGetValue(file.Path, out var existing))
-            {
-                if (existing.Text != file.Text)
-                    throw new InvalidDataException("current_regional_source_conflict:" + file.Path);
-            }
-            else { previous.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in textSources)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, sourceConstants);
-    }
 
     private static void ValidateFossilLabComposition(PretFossilLabRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
     {

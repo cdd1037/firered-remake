@@ -6,48 +6,51 @@ using Godot;
 
 public partial class CampaignView
 {
-    private readonly Dictionary<ItemId, ImageTexture> _earlyItemIcons = [];
+    private readonly Dictionary<ItemId, Texture2D> _earlyItemIcons = [];
     private int _shopCursor, _shopQuantity = 1, _shopConfirm, _fieldMedicineTarget;
     private string? _shopKey, _shopNotice;
     private bool _fieldMedicineTargetOpen;
-    private byte[] ReadItemIconRgba(string package, PretPewterMachineIcon icon)
+    private Texture2D ItemTexture(string path, ImageRegion? region, int width = 24, int height = 24)
+    {
+        var texture = SceneTextures.NativeTexture(System.IO.Path.Combine(_root, path),
+            region is {} r ? new Rect2I(r.X, r.Y, r.Width, r.Height) : null);
+        if (texture.GetWidth() != width || texture.GetHeight() != height)
+            throw new InvalidDataException("Item texture dimensions differ: " + path);
+        return texture;
+    }
+    private Texture2D ItemTexture(string package, PretPewterMachineIcon icon)
     {
         PretPewterMachines.ValidateIcon(icon);
-        var bytes = System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated", package, icon.PngPath));
-        return PretPewterMachines.IconRgba(icon, bytes);
+        return ItemTexture(icon.PngPath.StartsWith("content/generated/", StringComparison.Ordinal)
+            ? icon.PngPath : "content/generated/" + package + "/" + icon.PngPath, icon.Region, icon.Width, icon.Height);
     }
+    private Texture2D ItemTexture(NpcTradeItemIcon icon) => ItemTexture(icon.TexturePath, icon.Region, icon.Width, icon.Height);
     private void LoadShopPresentation()
     {
         if (_catalog.EarlyShopDocument is not { } document) return;
         foreach (var icon in document.Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, PretEarlyShop.IconRgba(icon, System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root, "content/generated/early-shop", icon.PngPath))));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            _earlyItemIcons.Add(icon.Item, ItemTexture(icon.PngPath, icon.Region, icon.Width, icon.Height));
         }
         if (_catalog.CeruleanEnabled)
         {
             var icon = PretCeruleanItems.LoadProject(_root).Icon;
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("cerulean-items", icon));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            
+            _earlyItemIcons.Add(icon.Item, ItemTexture("cerulean-items", icon));
         }
         foreach (var icon in _catalog.NpcTradeElyssa.Items.Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
-                PngRgba8.Decode(_catalog.NpcTradeElyssa.IconFiles[icon.TexturePath], icon.Width, icon.Height));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            _earlyItemIcons.Add(icon.Item, ItemTexture(icon));
         }
         LoadPokeDollIcon();
         LoadOrdinarySupplementIcons();
         if (OrdinaryItemInventoryCatalog.For(_catalog.EarlyShop)?.IsAddition(OrdinaryItemInventoryCatalog.RetroMailId) == true)
         {
-            using var retroMail = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PretDepartmentFourthFloor.LoadIconRgba(_root));
-            _earlyItemIcons.Add(OrdinaryItemInventoryCatalog.RetroMailId, ImageTexture.CreateFromImage(retroMail));
+            _earlyItemIcons.Add(OrdinaryItemInventoryCatalog.RetroMailId, ItemTexture(PretDepartmentFourthFloor.LoadDocument(_root).Icons[0]));
         }
         foreach (var icon in _catalog.NpcTradeMail.Items.Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
-                PngRgba8.Decode(_catalog.NpcTradeMail.AssetFiles[icon.TexturePath], icon.Width, icon.Height));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            _earlyItemIcons.Add(icon.Item, ItemTexture(icon));
         }
         LoadMailStationeryIcons();
     }
@@ -56,16 +59,13 @@ public partial class CampaignView
         if (OrdinaryItemInventoryCatalog.For(_catalog.EarlyShop) is null) return;
         foreach (var icon in PretOrdinaryItemSupplement.LoadDocument(_root).Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
-                PretOrdinaryItemSupplement.LoadIconRgba(_root));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            _earlyItemIcons.Add(icon.Item, ItemTexture(icon));
         }
     }
     private void LoadPokeDollIcon()
     {
         if (_catalog.PokeDollShopStock is null) return;
-        using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PretPokeDollItems.LoadIconRgba(_root));
-        _earlyItemIcons.Add(PokeDollInventoryCatalog.PokeDollId, ImageTexture.CreateFromImage(image));
+        _earlyItemIcons.Add(PokeDollInventoryCatalog.PokeDollId, ItemTexture(PretPokeDollItems.LoadDocument(_root).Icons[0]));
     }
     private EarlyShopItemDefinition? EarlyItem(ItemId id) => _catalog.EarlyShop?.Items.SingleOrDefault(i => i.Id == id);
     private FieldMedicineEffect FieldMedicineEffectFor(ItemId id) => _catalog.EarlyShop is {} shop

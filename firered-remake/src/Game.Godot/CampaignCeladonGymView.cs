@@ -41,13 +41,13 @@ public partial class CampaignView
         var art=CeladonGymPresentationAssets.Load(_root);
         foreach(var id in new[]{"beauty-front","cooltrainer-f-front","erika-front"})
         {
-            using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,PngRgba8.Decode(art[id+".png"]));
+            using var image=NativeImages.LoadPng(art[id+".png"], 64, 64);
             _forestTrainerPortraits.Add(id,ImageTexture.CreateFromImage(image));
         }
         foreach(var icon in PretCeladonGymItems.LoadProject(_root).Icons)
         {
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("celadon-gym-items", icon));
-            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
+            
+            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("celadon-gym-items", icon));
         }
     }
 

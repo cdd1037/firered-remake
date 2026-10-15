@@ -44,14 +44,14 @@ The previous `--story-REGION` selectors and nonempty historical regional/feature
 variables fail with explicit retired-selector errors, including values `0`.
 The only supported compact-map setting is unset or `1`.
 
-`--probe`, `--harness`, and `--pallet` are explicit engineering diagnostics. They
+`--probe` and `--harness` are explicit engineering diagnostics. They
 cannot be combined with each other or a current profile request/checkpoint.
 These modes are not historical campaign launch profiles. Non-profile runtime
 settings, such as audio, player entry and evidence output, keep their own owners.
 
 The launcher sets one profile and no predecessor feature flags. The 46 historical
 regional/feature launch scripts and their shared fall-through dispatcher have
-been removed. Current, probe, harness, Pallet and exported-host launchers remain.
+been removed. Current, probe, harness and exported-host launchers remain. The old raw-source Pallet reference preview and its `--pallet` selector have been retired; Pallet Town remains part of the current game.
 `launch-probe.sh` now explicitly selects the engineering probe.
 
 ## Save boundary and offline checkpoint contract

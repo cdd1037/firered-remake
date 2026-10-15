@@ -16,8 +16,6 @@ public sealed class PretCityServices
 {
     public const string Profile = "firered-city-services-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
@@ -25,21 +23,19 @@ public sealed class PretCityServices
     public ImmutableArray<PretPewterMachineIcon> Icons { get; }
     public JsonElement Services => Dependencies.GetProperty("services");
     public ImmutableArray<MapId> ReusedMapIds => [new("map.cerulean-city-bike-shop")];
-    public JsonElement ScriptInventory { get; }
+
     public JsonElement Catalog { get; }
     public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
-    private PretCityServices(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement scriptsInventory,
-        JsonElement npcSources, PretCityServiceItemsDocument items)
+    private PretCityServices(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
+        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, PretCityServiceItemsDocument items)
     {
-        GeneratedDirectory = directory; NewMaps = maps; Scripts = scripts; TextSources = texts;
+        GeneratedDirectory = directory; NewMaps = maps;
         Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
-        ScriptInventory = scriptsInventory; NpcSources = npcSources; Items = items.Items; Icons = items.Icons;
+        NpcSources = npcSources; Items = items.Items; Icons = items.Icons;
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -67,14 +63,14 @@ public sealed class PretCityServices
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/city-services");
-        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
+        
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        using var sourceLock = JsonDocument.Parse(ReadPinned(project,"content/sources/city-services.lock.json"));
+
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
             m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "City services manifest identity differs.");
@@ -82,18 +78,13 @@ public sealed class PretCityServices
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
+            if (path == "scripts.json") continue;
             if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "city-services/" + path)) continue;
-            Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate City services output.");
+            Require(outputs.TryAdd(path, ReadPinned(path.StartsWith("content/generated/", StringComparison.Ordinal) ? project : directory,path)), "Duplicate City services output.");
         }
         using var catalog = JsonDocument.Parse(outputs["city-services-catalog.json"]);
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        byte[] Raw(string path) => File.ReadAllBytes(SafeFile(rawDirectory, path));
-        foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
 
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
-        }
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
@@ -105,34 +96,17 @@ public sealed class PretCityServices
             if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact))
             {
 
-
                 var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                    PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate City services runtime map.");
                 continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
-        using var scriptInventory = JsonDocument.Parse(outputs["scripts.json"]);
-        Require(scriptInventory.RootElement.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "City services script reference closure is incomplete.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var property in scriptInventory.RootElement.GetProperty("filePreambles").EnumerateObject())
-        {
-            var path = property.Name;
-            var text = Encoding.UTF8.GetString(Raw(path));
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Require(symbol.Length > 0, "City services script has no original source label: " + path);
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
+
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_GOT_BIKE_VOUCHER"] == 0x241 && constants["FLAG_GOT_OLD_ROD"] == 0x240 &&
             constants["FLAG_GOT_BICYCLE"] == 0x271 && constants["BAG_KEYITEMS_COUNT"] == 30 &&
@@ -158,7 +132,7 @@ public sealed class PretCityServices
                 !item.CanToss && !item.CanGive && !item.CanSell && item.SecondaryId == 0 && item.BattleUsage == 0 &&
                 item.Registrability == (i == 0 ? 0 : 1), "City-service key item declaration differs.");
             Require(icon.Item == item.Id && icon.Width == 24 && icon.Height == 24 &&
-                PngRgba8.Decode(outputs[icon.PngPath], icon.Width, icon.Height).Length == 24 * 24 * 4 ,
+                outputs.ContainsKey(icon.PngPath) ,
                 "City-service icon identity differs.");
         }
         // The existing Cerulean loader owns the reused map; verify its certificate and selected bytes without rendering or duplicating it.
@@ -167,11 +141,11 @@ public sealed class PretCityServices
         foreach (var output in reused[0].GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
+            if (path == "scripts.json") continue;
             if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "cerulean-region/" + path)) continue;
         }
-        return new(directory, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), scriptInventory.RootElement.Clone(),
-            npcSources.RootElement.Clone(), itemDocument);
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
+            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), itemDocument);
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

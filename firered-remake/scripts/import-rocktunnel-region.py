@@ -37,7 +37,7 @@ require_safe_target = SHARED.require_safe_target
 Source = SHARED.Source
 import_map, connections_and_warps, npc_inventory = SHARED.import_map, SHARED.connections_and_warps, SHARED.npc_inventory
 def protect_project_paths(*targets):
-    for protected in [ROOT/'content/sources',ROOT/'scripts',ROOT/'src',ROOT/'tests',ROOT/'.git']:
+    for protected in [ROOT/'scripts/import-config',ROOT/'scripts',ROOT/'src',ROOT/'tests',ROOT/'.git']:
         for target in targets:
             path=pathlib.Path(target).resolve()
             if path.is_relative_to(protected.resolve()) or protected.resolve().is_relative_to(path):
@@ -55,7 +55,7 @@ def materialize(raw, reference_repo):
     SHARED.materialize(raw,reference_repo,source_package='rocktunnel-region')
 
 def read_lock(path=None):
-    target = path or ROOT / 'content/sources/rocktunnel-region.lock.json'
+    target = path or ROOT / 'scripts/import-config/rocktunnel-region.json'
     require_safe_target(target.parent, target)
     data = target.read_bytes()
     lock = json_bytes(data)

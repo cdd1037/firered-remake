@@ -7,7 +7,7 @@ using Godot;
 public partial class CampaignView
 {
     private QuestItemUiDocument? _questPocketUi;
-    private readonly Dictionary<string, ImageTexture> _questPocketTextures = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Texture2D> _questPocketTextures = new(StringComparer.Ordinal);
     private int _questPocket, _questPocketCursor, _questPocketAction;
     private bool _questPocketPopup;
     private string? _questPocketNotice;
@@ -15,7 +15,6 @@ public partial class CampaignView
 
     private void LoadQuestPocketPresentation()
     {
-        foreach (var texture in _questPocketTextures.Values) texture.Dispose();
         _questPocketTextures.Clear(); _questPocketUi = null; ResetQuestPocketPresentation();
         if (_catalog.QuestItems is null) return;
         var directory = System.IO.Path.Combine(_root, "content/generated/quest-item-ui");
@@ -29,7 +28,7 @@ public partial class CampaignView
                 if (image.LoadPngFromBuffer(PretQuestItemUi.ReadTexture(directory, asset)) != Error.Ok
                     || image.GetWidth() != asset.Width || image.GetHeight() != asset.Height || image.GetFormat() != Image.Format.Rgba8)
                     throw new InvalidDataException("Quest pocket texture pixels differ: " + asset.Id);
-                _questPocketTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
+                _questPocketTextures.Add(asset.Id, SceneTextures.FromImage(image));
             }
             if(_catalog.OldManTutorialEnabled)
             {
@@ -39,7 +38,7 @@ public partial class CampaignView
                 if(item.SourceItemSymbol!=tv.SourceSymbol||item.Name!=tv.Name||item.FieldUseFunction!=tv.FieldUseFunction)throw new InvalidDataException("Teachy TV presentation differs from source item.");
                 var asset=oldArt.Assets.Single(x=>x.Id==tv.Icon);using var image=new Image();
                 if(image.LoadPngFromBuffer(PretOldManArt.ReadTexture(oldDirectory,asset))!=Error.Ok||image.GetWidth()!=asset.Width||image.GetHeight()!=asset.Height||image.GetFormat()!=Image.Format.Rgba8)throw new InvalidDataException("Teachy TV texture pixels differ.");
-                _questPocketTextures.Add(asset.Id,ImageTexture.CreateFromImage(image));
+                _questPocketTextures.Add(asset.Id,SceneTextures.FromImage(image));
                 // Same source icon window as the existing key item; authenticated extension leaves original assets intact.
                 var icon=document.Assets.Single(x=>x.Id==document.Items.First().Icon);
                 document=document with{Items=document.Items.Add(tv),Assets=document.Assets.Add(new(asset.Id,asset.TexturePath,asset.Width,asset.Height,icon.X,icon.Y))};
@@ -55,8 +54,7 @@ public partial class CampaignView
         }
         catch
         {
-            foreach (var texture in _questPocketTextures.Values) texture.Dispose();
-            _questPocketTextures.Clear(); throw;
+                _questPocketTextures.Clear(); throw;
         }
     }
 

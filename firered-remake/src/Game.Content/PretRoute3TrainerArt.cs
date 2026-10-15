@@ -39,9 +39,9 @@ public static class PretRoute3TrainerArt
                 asset.GetProperty("sourceTrainerPicId").GetInt32() != (id == "youngster-front" ? 82 : 84) ||
                 asset.GetProperty("x").GetInt32() != 144 || asset.GetProperty("y").GetInt32() != 8)
                 throw new InvalidDataException("Route3 trainer portrait identity differs.");
-            var rgba = PngRgba8.Decode(Read("content/generated/route3-trainer-art/" + id + ".png"));
-            if (rgba.Length != 64 * 64 * 4) throw new InvalidDataException("Route3 trainer portrait size differs.");
-            result.Add(new(id, 144, 8, rgba));
+            var pngBytes = Read("content/generated/route3-trainer-art/" + id + ".png");
+            if (pngBytes.Length == 0) throw new InvalidDataException("Route3 trainer portrait size differs.");
+            result.Add(new(id, 144, 8, pngBytes));
         }
         return result.ToImmutable();
     }

@@ -13,10 +13,11 @@ def main():
     spec=importlib.util.spec_from_file_location('_cinnabar_region',p);region=importlib.util.module_from_spec(spec);spec.loader.exec_module(region)
     projection=p.with_name('_cinnabar-trainer-projection.py')
     src=region.Source(a.reference_root);region.PROFILE=PROFILE
-    source_root=a.project_root/'content/generated/cinnabar-source-preparation'
-    declaration=(source_root/'declarations.json').read_bytes()
+    region.PRODUCT=a.dependency_root
+    worlds=[dict(events=src.json('data/maps/'+name+'/map.json')) for name in region.CORE]
+    declarations=region.declarations(src,worlds,region.scripts(src,worlds))
+    declaration=canonical(declarations)
     paths=['charmap.txt','include/battle.h','include/constants/battle.h','include/constants/battle_ai.h','include/constants/battle_setup.h','include/constants/trainers.h','include/constants/opponents.h','include/constants/species.h','include/constants/moves.h','include/constants/items.h','src/data/trainers.h','src/data/trainer_parties.h','src/battle_main.c','src/data/pokemon/species_info.h','src/data/pokemon/evolution.h','src/data/pokemon/level_up_learnsets.h','src/data/pokemon/level_up_learnset_pointers.h','src/data/pokemon/tmhm_learnsets.h','src/data/text/species_names.h']
-    declarations=json.loads(declaration)
     paths+=sorted({b['sourceRef']['path'] for b in declarations['battleOccurrences']})
     for path in paths:src.read(path)
     proofbytes=(a.dependency_root/'content/generated/canonical-pokemon/catalog.json').read_bytes();proof=json.loads(proofbytes)
@@ -36,20 +37,19 @@ def main():
     pokemon=dict(schemaVersion=1,profile='firered-cinnabar-pokemon-v1',sourceCommit=region.COMMIT,species=selected[:2],opponentSpecies=selected[2:],speciesNames=names,encodedNames=encoded,machines=machines,heldItems=held,sourceEvolutions=evolutions,requiredMoves=sorted({json.dumps(x['move'],sort_keys=True) for s in selected for x in s['levelUpMoves']}),limitations=['Krabby/Kingler are candidate ownership additions; the four other species are opponents only.','Source metadata does not grant campaign admission, field progression, battle execution or presentation.'])
     pokemon['requiredMoves']=[json.loads(x) for x in pokemon['requiredMoves']]
     with tempfile.TemporaryDirectory(prefix='cinnabar-catalog-stage-') as temporary:
-        tmp=Path(temporary);sp=tmp/'source';dest=sp/'content/generated/cinnabar-source-preparation/declarations.json';dest.parent.mkdir(parents=True);dest.write_bytes(declaration)
+        tmp=Path(temporary);sp=tmp/'source'
         for path,b in src.data.items():
             target=sp/'content/raw/pokefirered/037335f4'/path;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b)
-        converted=tmp/'converted';subprocess.run([sys.executable,str(projection),str(tmp/'base'),str(sp),str(converted)],check=True,stdout=subprocess.DEVNULL)
+        converted=tmp/'converted';subprocess.run([sys.executable,str(projection),str(tmp/'base'),str(sp),str(converted)],input=declaration,check=True,stdout=subprocess.DEVNULL)
         trainer=(converted/'trainers.json').read_bytes()
-    lock=src.lock();lock.update(gameEdition='FIRERED',romRevision=0);lockdata=canonical(lock)
     outputs={'trainers.json':trainer,'pokemon.json':canonical(pokemon)}
     artifact=dict(schemaVersion=1,profile=PROFILE,sourceCommit=region.COMMIT,outputs=[dict(path=p) for p,b in sorted(outputs.items())])
     manifestdata=canonical(artifact)
-    writes={'scripts/cinnabar-catalogs.lock.json':lockdata,'content/generated/cinnabar-catalogs/manifest.json':manifestdata}
+    writes={'content/generated/cinnabar-catalogs/manifest.json':manifestdata}
     writes.update({'content/generated/cinnabar-catalogs/'+p:b for p,b in outputs.items()});writes.update({'content/raw/pokefirered/037335f4/'+p:b for p,b in src.data.items()})
     for path,b in writes.items():
         target=a.project_root/path;need(not any(p.is_symlink() for p in (target,*target.parents)),'Output symlink denied')
         if a.check:need(target.read_bytes()==b,'Regeneration differs: '+path)
         else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b)
-    print(json.dumps(dict(manifestBytes=len(manifestdata),lockBytes=len(lockdata),inputCount=len(src.entries),outputs=2)))
+    print(json.dumps(dict(manifestBytes=len(manifestdata),inputCount=len(src.entries),outputs=2)))
 if __name__=='__main__':main()

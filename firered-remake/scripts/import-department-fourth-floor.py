@@ -71,7 +71,6 @@ def generate(reference,dependency):
  facts=dict(sourceCommit=COMMIT,stockId='CeladonCity_DepartmentStore_4F_Items',items=shelf_items,terminator='ITEM_NONE',source=source(shelf_path,'CeladonCity_DepartmentStore_4F_Items',shelf),clerkSource=source(shelf_path,'CeladonCity_DepartmentStore_4F_EventScript_Clerk',clerk),martLine=22,clerkActor=dict(sourceLocalId=3,**actor),clerkMapSource=dict(path=map_path),mailPreviewSource=source(use,'CB2_CheckMail',preview),mailFieldUseSource=source(use,'FieldUseFunc_Mail',field),mailComposeImplemented=False,mailBlankPreviewImplemented=False,inventoryAndSaleOnly=True,evolutionExecutionImplementedByThisImporter=False,evolutions=evolutions)
  evidence=dict(sourceCommit=COMMIT,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=[])
  files = {BASE + 'items.json': encoded(items), BASE + 'source-input-hashes.json': encoded(evidence), BASE + 'source-contract.json': encoded(facts), icon['texturePath']: png, **raw}
- files['scripts/department-fourth-floor.lock.json']=encoded(dict(sourceCommit=COMMIT,profile=PROFILE,files=[dict(path=p) for p,b in sorted(files.items())]))
  return files,items
 if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__)

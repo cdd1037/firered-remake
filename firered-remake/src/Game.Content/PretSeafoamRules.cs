@@ -23,9 +23,9 @@ public static class PretSeafoamRules
     private static T Read<T>(string root,string file)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/seafoam-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions {
+        return JsonSerializer.Deserialize<T>(bytes, SharedMachineCatalog.Options(root, new JsonSerializerOptions {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-        }) ?? throw new InvalidDataException("seafoam_source_missing");
+        })) ?? throw new InvalidDataException("seafoam_source_missing");
     }
 
     public static JsonElement LoadPokemonDocument(string root)

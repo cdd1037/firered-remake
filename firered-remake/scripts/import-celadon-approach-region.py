@@ -21,7 +21,7 @@ Source=SHARED.Source
 import_map,connections_and_warps,npc_inventory=SHARED.import_map,SHARED.connections_and_warps,SHARED.npc_inventory
 
 def protect_project_paths(*targets):
-    for protected in [ROOT/'content/sources',ROOT/'scripts',ROOT/'src',ROOT/'tests',ROOT/'.git']:
+    for protected in [ROOT/'scripts/import-config',ROOT/'scripts',ROOT/'src',ROOT/'tests',ROOT/'.git']:
         for target in targets:
             path=pathlib.Path(target).resolve()
             if path.is_relative_to(protected.resolve()) or protected.resolve().is_relative_to(path):raise ValueError('Protected project path overlap')
@@ -35,7 +35,7 @@ def materialize(raw,reference_repo):
     SHARED.materialize(raw,reference_repo,source_package='celadon-approach-region')
 
 def read_lock(path=None):
-    target=path or ROOT/'content/sources/celadon-approach-region.lock.json';require_safe_target(target.parent,target)
+    target=path or ROOT/'scripts/import-config/celadon-approach-region.json';require_safe_target(target.parent,target)
     data=target.read_bytes();lock=json_bytes(data)
     if (type(lock.get('schemaVersion')) is not int or lock['schemaVersion'] != 1 or lock.get('repository') != 'pret/pokefirered' or (lock.get('commit') != COMMIT) or (lock.get('profile') != PROFILE) or (lock.get('gameVersion') != 'FIRERED') or (type(lock.get('revision')) is not int) or (lock['revision'] != 0) or (lock.get('completeGame') is not False) or (lock.get('maps') != [x[0] for x in MAPS]) or (not lock.get('files'))):raise ValueError('Invalid source identity or scope')
     seen=set()

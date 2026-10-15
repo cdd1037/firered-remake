@@ -110,24 +110,21 @@ def verified_recipe(root=ROOT, reference=REFERENCE):
     if len(prior) != 222 or len(prior_ids) != 222:
         raise ValueError("prior222 exact identity differs")
     region = json.loads(inputs["content/generated/ssanne-region/ssanne-catalog.json"])
-    scripts = json.loads(inputs["content/generated/ssanne-region/scripts.json"])
+    script_blocks = json.loads(read(root, "scripts/ssanne-synth.lock.json"))["scriptBlocks"]
     pokemon = json.loads(inputs["content/generated/ssanne-pokemon/catalog.json"])
     scope = json.loads(inputs["content/generated/ssanne-pokemon/scope.json"])
     supplement = json.loads(inputs["content/generated/ssanne-pokemon/supplement.json"])
     if len(region["maps"]) != 26 or {s["sourceSpeciesId"] for s in pokemon["species"]} != {58, 72, 77}:
         raise ValueError("bounded region/species inventory differs")
     field = {json.loads(source["data/maps/" + m["sourceName"] + "/map.json"])["music"] for m in region["maps"]}
-    for block in scripts["blocks"]:
-        ref = block["sourceRef"]
-        raw = source[ref["path"]]
-        if ref['commit'] != COMMIT:
-            raise ValueError("imported script source identity differs")
-        original = raw.decode().splitlines()
-        for line in block["lines"]:
-            if original[line["line"] - 1] != line["text"]:
-                raise ValueError("imported script line differs")
-            field.update(re.findall(r"\b(?:MUS|SE)_\w+", line["text"]))
-            for name in re.findall(r"playmoncry\s+SPECIES_(\w+)", line["text"]):
+    for block in script_blocks:
+        original = source[block["path"]].decode().splitlines()
+        label = original[block["labelLine"] - 1].split('@')[0].strip().rstrip(':')
+        if label != block["label"]:
+            raise ValueError("source script label differs")
+        for line in original[block["startLine"] - 1:block["endLine"]]:
+            field.update(re.findall(r"\b(?:MUS|SE)_\w+", line))
+            for name in re.findall(r"playmoncry\s+SPECIES_(\w+)", line):
                 field.add("CRY_" + name + "_NORMAL")
     if field - prior_ids != NEW_MUSIC | {"CRY_MACHOKE_NORMAL"}:
         raise ValueError("new region BGM/ambient cry repertoire differs")

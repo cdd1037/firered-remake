@@ -7,7 +7,6 @@ import pathlib
 import re
 import struct
 import subprocess
-import zlib
 from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -21,6 +20,8 @@ TRAINERS = ('TEAM_ROCKET_GRUNT_45',)
 INHERITED = {'ROCKET_GRUNT_M': 'content/generated/silph-trainer-art/rocket-grunt-m-front.png'}
 ITEMS = ('HM07', 'NEVER_MELT_ICE')
 
+
+from image_io import png as encode_rgba_png
 
 def need(ok, message):
     if not ok:
@@ -39,16 +40,7 @@ def safe(root, path):
     return result
 
 
-def png(width, height, rgba):
-    # Stored DEFLATE blocks keep output independent of zlib compression versions.
-    def chunk(kind, data):
-        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
-    scan = b''.join(b'\0' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
-    blocks = [scan[i:i + 65535] for i in range(0, len(scan), 65535)]
-    compressed = b'\x78\x01' + b''.join(bytes([int(i == len(blocks) - 1)]) +
-        struct.pack('<HH', len(block), len(block) ^ 65535) + block for i, block in enumerate(blocks))
-    compressed += struct.pack('>I', zlib.adler32(scan) & 0xffffffff)
-    return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)) + chunk(b'IDAT', compressed) + chunk(b'IEND', b'')
+png = encode_rgba_png
 
 
 class Source:

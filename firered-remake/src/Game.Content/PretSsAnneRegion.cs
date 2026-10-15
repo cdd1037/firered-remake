@@ -17,8 +17,6 @@ public sealed class PretSsAnneRegion
 {
     public const string Profile = "firered-ssanne-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
@@ -34,7 +32,7 @@ public sealed class PretSsAnneRegion
     public JsonElement Items => Dependencies.GetProperty("items");
     public JsonElement Machines => Dependencies.GetProperty("machines");
     public JsonElement Pickups => Dependencies.GetProperty("pickups");
-    public JsonElement ScriptInventory { get; }
+
     public JsonElement Catalog { get; }
     public JsonElement NpcSources { get; }
     public JsonElement ExternalVermilionEvents { get; }
@@ -42,14 +40,12 @@ public sealed class PretSsAnneRegion
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
-    private PretSsAnneRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement scriptsInventory,
-        JsonElement npcSources, JsonElement externalVermilionEvents)
+    private PretSsAnneRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
+        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalVermilionEvents)
     {
-        GeneratedDirectory = directory; NewMaps = maps; Scripts = scripts; TextSources = texts;
+        GeneratedDirectory = directory; NewMaps = maps;
         Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
-        ScriptInventory = scriptsInventory; NpcSources = npcSources; ExternalVermilionEvents = externalVermilionEvents;
+        NpcSources = npcSources; ExternalVermilionEvents = externalVermilionEvents;
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -101,14 +97,14 @@ public sealed class PretSsAnneRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/ssanne-region");
-        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
+        
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        using var sourceLock = JsonDocument.Parse(ReadPinned(project,"scripts/ssanne-region.lock.json"));
+
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
             m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "S.S. Anne manifest identity differs.");
@@ -116,19 +112,13 @@ public sealed class PretSsAnneRegion
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
+            if (path == "scripts.json") continue;
             if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "ssanne-region/" + path)) continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate S.S. Anne output.");
         }
         using var catalog = JsonDocument.Parse(outputs["ssanne-catalog.json"]);
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var raw = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            var bytes = ReadPinned(rawDirectory,path);
-            Require(raw.TryAdd(path, bytes), "Duplicate S.S. Anne source.");
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
-        }
+
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
@@ -140,33 +130,17 @@ public sealed class PretSsAnneRegion
             if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact) )
             {
                 var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                    PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate S.S. Anne runtime map.");
                 continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
         Require(maps.Count == 26 && maps.Values.Sum(x => x.Width*x.Height) == 5450, "Incomplete S.S. Anne map set.");
-        using var scriptInventory = JsonDocument.Parse(outputs["scripts.json"]);
-        Require(scriptInventory.RootElement.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "S.S. Anne script reference closure is incomplete.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var property in scriptInventory.RootElement.GetProperty("filePreambles").EnumerateObject())
-        {
-            var path = property.Name;
-            var text = Encoding.UTF8.GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Require(symbol.Length > 0, "S.S. Anne script has no original source label: " + path);
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
+
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_GOT_SS_TICKET"] > 0 && constants["FLAG_GOT_HM01"] > 0 &&
             constants["LOCALID_SS_ANNE_CAPTAIN"] == 1, "S.S. Anne progression/local actor constants differ.");
@@ -178,10 +152,9 @@ public sealed class PretSsAnneRegion
             dependencies.RootElement.GetProperty("departure").GetProperty("afterCityScene").GetInt32() == 3,
             "S.S. Anne dependency scope differs.");
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
-        using var cityEvents = JsonDocument.Parse(raw["data/maps/VermilionCity/map.json"]);
-        return new(directory, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), scriptInventory.RootElement.Clone(),
-            npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
+        using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/VermilionCity/map.json"));
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
+            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

@@ -9,14 +9,6 @@ from runtime_map_manifest import compose, compose_region
 import argparse,importlib.util,json,pathlib
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-SIDECARS = (
- 'celadon-approach-region-source-lock.json',
- 'city-services-source-lock.json',
- 'rocktunnel-region-source-lock.json',
- 'route11-region-source-lock.json',
- 'ssanne-source-lock.json',
- 'vermilion-gym-source-lock.json',
-)
 def require(ok,msg):
  if not ok:raise ValueError(msg)
 def safe(root,p):

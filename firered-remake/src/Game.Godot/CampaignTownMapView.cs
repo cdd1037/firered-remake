@@ -5,7 +5,7 @@ using Godot;
 /// <summary>Shared atlas browser and original region-local Fly destination selector. Application owns travel.</summary>
 public partial class CampaignView
 {
-    private readonly Dictionary<string, ImageTexture> _townMapTextures = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Texture2D> _townMapTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<int, SourceGameFont> _townMapFonts = [];
     private SourceGameFont? _townMapSmallFont;
     private bool _townMapWasActive, _townMapMoving, _townMapWasWall;
@@ -23,8 +23,8 @@ public partial class CampaignView
         var asset = map.Asset("item-town-map");
         string firstIcon = document.Items[0].Icon;
         var placement = document.Assets.Single(a => a.Id == firstIcon);
-        using var image = Image.CreateFromData(asset.Width, asset.Height, false, Image.Format.Rgba8, map.ReadAssetRgba(asset.Id));
-        _questPocketTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
+        using var image = NativeImages.LoadPng(map.ReadAssetTexture(asset.Id), asset.Width, asset.Height);
+        _questPocketTextures.Add(asset.Id, SceneTextures.FromImage(image));
         document = document with
         {
             Assets = document.Assets.Add(new(asset.Id,asset.TexturePath,asset.Width,asset.Height,                placement.X,placement.Y)),
@@ -38,13 +38,12 @@ public partial class CampaignView
         if (_townMapTextures.Count > 0 || _catalog.TownMap is not { } map) return;
         foreach (var asset in map.Assets.Where(a => a.Id != "item-town-map"))
         {
-            byte[] pixels = map.ReadAssetRgba(asset.Id);
-            using var image = Image.CreateFromData(asset.Width, asset.Height, false, Image.Format.Rgba8, pixels);
-            _townMapTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
+            using var image = NativeImages.LoadPng(map.ReadAssetTexture(asset.Id), asset.Width, asset.Height);
+            _townMapTextures.Add(asset.Id, SceneTextures.FromImage(image));
         }
         // Original GPU darkening is local to nonempty name windows. Precompute
         // those pixels without changing the authenticated base texture.
-        byte[] dark = map.ReadAssetRgba("kanto");
+        byte[] dark = NativeImages.ReadPixels(map.ReadAssetTexture("kanto"));
         for (int i = 0; i < dark.Length; i += 4)
             for (int channel = 0; channel < 3; channel++)
             {
@@ -53,7 +52,7 @@ public partial class CampaignView
                 dark[i + channel] = (byte)(five * 255 / 31);
             }
         using (var image = Image.CreateFromData(240, 160, false, Image.Format.Rgba8, dark))
-            _townMapTextures.Add("dark-name-background", ImageTexture.CreateFromImage(image));
+            _townMapTextures.Add("dark-name-background", SceneTextures.FromImage(image));
         Color Palette(int index)
         {
             var rgb = map.Layout.TextPaletteRgb[index];
@@ -67,7 +66,6 @@ public partial class CampaignView
 
     private void DisposeTownMapPresentation()
     {
-        foreach (var texture in _townMapTextures.Values) texture.Dispose();
         foreach (var font in _townMapFonts.Values) font.Dispose();
         _townMapTextures.Clear(); _townMapFonts.Clear(); _firstSeviiTownMap = null; _flyMap = null; _townMapSmallFont?.Dispose(); _townMapSmallFont = null;
     }

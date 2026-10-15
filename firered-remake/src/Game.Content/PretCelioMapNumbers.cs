@@ -8,31 +8,14 @@ namespace Game.Content;
 /// <summary>Original map-group/member indexes, including distinct interior groups, for player history.</summary>
 public static class PretCelioMapNumbers
 {
-    public const string AssetPath = PretSourcePaths.FireRedRawDirectory + "/data/maps/map_groups.json";
+    public const string AssetPath = "content/generated/map-numbers.json";
 
     public static ImmutableDictionary<string, RoamerMap> LoadSourceTable(string root)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, AssetPath));
         using var document = JsonDocument.Parse(bytes);
-        var source = document.RootElement;
-        var groups = source.GetProperty("group_order").EnumerateArray().Select(x => x.GetString()!).ToArray();
-        if (groups.Length != 43 || groups.Distinct(StringComparer.Ordinal).Count() != groups.Length ||
-            source.EnumerateObject().Count() != groups.Length + 2 ||
-            !source.TryGetProperty("connections_include_order", out var connections) || connections.ValueKind != JsonValueKind.Array)
-            throw new InvalidDataException("celio_map_groups_scope");
-        var table = ImmutableDictionary.CreateBuilder<string, RoamerMap>(StringComparer.Ordinal);
-        for (int group = 0; group < groups.Length; group++)
-        {
-            int number = 0;
-            foreach (var element in source.GetProperty(groups[group]).EnumerateArray())
-            {
-                string name = element.GetString() ?? throw new InvalidDataException("celio_map_name");
-                if (number >= 256 || !table.TryAdd(name, new(group, number++)))
-                    throw new InvalidDataException("celio_map_numbers_duplicate_or_range");
-            }
-        }
-        if (table.Count != 425) throw new InvalidDataException("celio_map_numbers_count");
-        return table.ToImmutable();
+        return document.RootElement.EnumerateObject().ToImmutableDictionary(
+            p => p.Name, p => new RoamerMap(p.Value[0].GetInt32(), p.Value[1].GetInt32()), StringComparer.Ordinal);
     }
 
     public static ImmutableDictionary<MapId, RoamerMap> Load(string root, IReadOnlyDictionary<MapId, PretWorldMap> maps)

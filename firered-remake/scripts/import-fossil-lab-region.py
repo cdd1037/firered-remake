@@ -32,11 +32,7 @@ TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_Lab': 'secondary/
             'gTileset_General': 'primary/general', 'gTileset_CinnabarIsland': 'secondary/cinnabar_island'}
 CITY_PACKAGE = 'content/generated/cinnabar-source-preparation'
 CITY_PATH = 'cinnabar-island/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_SCIENTIST': 'content/generated/silph-region/npc/scientist.png',
-    'OBJ_EVENT_GFX_BOY': 'content/generated/silph-region/npc/boy.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
-}
+NPC_REUSE = {'OBJ_EVENT_GFX_BOY', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_SCIENTIST'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -256,17 +252,10 @@ def event_contract(src, worlds, scripts, retained, links):
 
 
 def reuse_npcs(src, shared, worlds, stage, current):
-    # Render only into staging to prove byte identity. Retain bindings, not copies.
+    # Region packages declare the IDs rendered by the shared overworld import.
     folder = stage / 'npc'
     inventory = shared.npc_inventory(src, worlds, folder)
     need({r['graphicsId'] for r in inventory['graphics']} == set(NPC_REUSE), 'NPC cohort differs')
-    for row in inventory['graphics']:
-        path = NPC_REUSE[row['graphicsId']]
-        rendered = stage / row['texturePath']; existing = current / path
-        need(rendered.read_bytes() == existing.read_bytes(), 'Reused NPC differs: ' + path)
-        row.update(texturePath=path,  reuseExisting=True)
-        rendered.unlink()
-    folder.rmdir()
     return inventory
 
 
@@ -331,8 +320,7 @@ def main():
                         unsupportedWarpCount=2, unsupportedNpcEntryCount=1,
                         reusedNpcGraphicsCount=len(npcs['graphics']), scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target / 'scripts/fossil-lab-region.lock.json', lock_bytes),
-                  (target / 'scripts/fossil-lab-region.contract.json', canonical(contracts))]
+        writes = [(target / 'scripts/fossil-lab-region.contract.json', canonical(contracts))]
         writes += [(target / 'content/raw/pokefirered/037335f4' / p, data) for p, data in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

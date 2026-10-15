@@ -168,11 +168,7 @@ def compact_check(document, world, src):
     for path in document['scriptPaths']:
         src.read(path)
 
-NPC_REUSE = {
- 'red-normal': 'city-services', 'pushable-boulder': 'safari-region', 'item-ball': 'bill-region',
- 'swimmer-m-land': 'sevii-ruby-region', 'swimmer-m-water': 'cinnabar-source-preparation',
- 'swimmer-f-water': 'cinnabar-source-preparation', 'tuber-m-water': 'cinnabar-source-preparation',
- 'picnicker': 'bill-region', 'rocker': 'celadon-approach-region', 'camper': 'bill-region'}
+NPC_REUSE = {'camper', 'item-ball', 'picnicker', 'pushable-boulder', 'red-normal', 'rocker', 'swimmer-f-water', 'swimmer-m-land', 'swimmer-m-water', 'tuber-m-water'}
 
 
 def extra_constants(src, constants, scripts):
@@ -341,16 +337,8 @@ def main():
             relative=reader.directory(base['sourceName'])+'-current-stopped'
             world, variant=alternate_world(src,reader,shared,base,stage/relative)
             variants.append(dict(**variant,directory=relative));variant_worlds.append(world)
-        npcs=shared.npc_inventory(src,worlds,stage/'npc'); dependencies=[]
-        for row in npcs['graphics']:
-            filename=Path(row['texturePath']).name; stem=Path(filename).stem; rendered=stage/row['texturePath']
-            if stem in NPC_REUSE:
-                path='content/generated/'+NPC_REUSE[stem]+'/npc/'+filename; existing=current/path
-                need(rendered.read_bytes() == existing.read_bytes(),'Reused NPC differs: '+stem)
-                row.update(texturePath=path,reuseExisting=True);rendered.unlink()
-                dependencies.append(dict(path=path))
-            else: row.update(reuseExisting=False)
-        need(sum(not r['reuseExisting'] for r in npcs['graphics'])==1 and any(r['graphicsId']=='OBJ_EVENT_GFX_ARTICUNO' for r in npcs['graphics']),'NPC novelty differs')
+        npcs=shared.npc_inventory(src,worlds,stage/'npc')
+        need(any(r['graphicsId']=='OBJ_EVENT_GFX_ARTICUNO' for r in npcs['graphics']),'Articuno graphics missing')
         entries=[]; compact_by_id={}
         for world in worlds:
             relative=reader.directory(world['sourceName']);p=stage/relative/'runtime-map.json';rich=p.read_bytes()
@@ -380,7 +368,7 @@ def main():
                 'Shared script files contain unrelated labels as original bytes; only scripts.json selected closure is in scope.'])
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,maps=MAPS,completeGame=False);lock_bytes=canonical(lock)
         docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,resourceId=RESOURCE_ID,sourceCommit=COMMIT,
-                maps=entries,layoutVariants=variants,inputFiles=lock['files'],tilesets=TILESETS,dependencies=dependencies,
+                maps=entries,layoutVariants=variants,inputFiles=lock['files'],tilesets=TILESETS,
                 mapSymbols={**{w['events']['id']:w['stableId'] for w in worlds},'MAP_FUCHSIA_CITY':'map.fuchsia-city','MAP_CINNABAR_ISLAND':'map.cinnabar-island'}),
               'scripts.json':scripts,'contracts.json':contracts,'npc-source.json':npcs,
               'items.json':dict(schemaVersion=1,declarations=items),'trainers.json':dict(schemaVersion=1,ordinaryObjects=trainers,declarations=trainer_declarations),
@@ -392,9 +380,9 @@ def main():
             inputCount=len(src.entries),mapCount=7,layoutVariantCount=2,cellCount=sum(len(w['cells']) for w in worlds),
             borderCellCount=sum(len(w['borderBlocks']) for w in worlds),directedWarpCount=len(links['warps']),objectCount=len(objects),pickupCount=len(pickups),hiddenItemCount=len(hidden),
             boulderCount=len(boulders),staticEncounterCount=1,ordinaryTrainerCount=21,ordinaryTrainerObjectCount=22,npcGraphicsCount=len(npcs['graphics']),
-            reusedNpcGraphicsCount=len(dependencies),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
+            reusedNpcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        writes=[(target/'scripts/seafoam-resources.lock.json',lock_bytes),(target/'scripts/seafoam-resources.contract.json',canonical(contracts))]
+        writes=[(target / 'scripts/seafoam-resources.contract.json', canonical(contracts))]
         writes += [(target/'content/raw/pokefirered/037335f4'/p,data) for p,data in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:

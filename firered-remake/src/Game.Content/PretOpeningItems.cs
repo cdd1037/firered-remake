@@ -8,7 +8,7 @@ namespace Game.Content;
 
 public sealed record PretOpeningItemInput(string Path);
 public sealed record PretOpeningItemsDocument(int SchemaVersion, ImmutableArray<PretOpeningItemInput> Inputs,
-    ImmutableArray<OpeningItemSourceRef> RulesSources, ImmutableArray<string> Limitations, OpeningItemsCatalog Catalog);
+    ImmutableArray<string> Limitations, OpeningItemsCatalog Catalog);
 
 /// <summary>Validates the complete reviewed UTF-8 artifact; the caller owns filesystem access.</summary>
 public static class PretOpeningItems
@@ -18,7 +18,7 @@ public static class PretOpeningItems
     {
         var document = ContentJson.ParseStrict<PretOpeningItemsDocument>(generatedJson, ContentJson.CreateOptions());
         if (document.SchemaVersion != 1 || document.Inputs.IsDefault ||
-            document.RulesSources.IsDefaultOrEmpty || document.Limitations.IsDefaultOrEmpty || document.Catalog is null)
+            document.Limitations.IsDefaultOrEmpty || document.Catalog is null)
             throw ContentJson.Error("opening_items_profile", "$", "The complete bounded Potion document is required.");
         var inputs = new Dictionary<string, PretOpeningItemInput>(StringComparer.Ordinal);
         foreach (var input in document.Inputs)

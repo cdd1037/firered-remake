@@ -31,25 +31,7 @@ public sealed partial class PretCampaignCatalog
         ??CinnabarSpeciesName(species)
         ??throw new InvalidDataException("presentation_species_not_admitted");
 
-    private static void AppendSilphSources(PretSilphRegion region,PretSilphItemsDocument items,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
-    {
-        var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
-        foreach(var file in region.Scripts)
-        {
-            if(prior.TryGetValue(file.Path,out var old))
-            {if(old.Text!=file.Text)throw new InvalidDataException("silph_script_source_conflict: "+file.Path);}
-            else{prior.Add(file.Path,file);sources.Add(file);}
-            if(!texts.Contains(file.Text,StringComparer.Ordinal))texts.Add(file.Text);
-        }
-        foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
-        MergeRegionalServiceConstants(constants,region.Constants);
-        foreach(var item in items.Items)
-        {
-            var d=item.Metadata.Item;
-            if(constants.TryGetValue(d.SourceItemSymbol,out int n)&&n!=d.SourceItemId)throw new InvalidDataException("silph_item_constant_conflict");
-            constants[d.SourceItemSymbol]=d.SourceItemId;
-        }
-    }
+
 
     private static IEnumerable<FieldPickupDefinition> SilphPickupDefinitions(PretSilphRegion region,EarlyShopCatalog shop,PewterMachineCatalog machines,PretSilphItemsDocument items,PretStoryCompilation scripts)
     {

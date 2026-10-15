@@ -72,8 +72,11 @@ def run(project,preparation,output,check=False):
             need(compact == prior, 'Existing Fuji house gameplay source differs')
         specs.append(dict(stableId=s['stableId'],sourceName=s['sourceName'],sourceMapSymbol=compact['sourceRef']['symbol'],directory=name,width=compact['width'],height=compact['height'],isNew=is_new))
     for p,b in assets.items():
-        if p.startswith('assets/npc/') or p.startswith('assets/presentation/'): payload[region+p.removeprefix('assets/')]=b
-    for name in ['dependencies','npc-source','scripts','mechanics','pokemon-tower']: payload[region+name+'.json']=assets['overlays/'+name+'.json']
+        if p.startswith('assets/presentation/'): payload[region+p.removeprefix('assets/')]=b
+    for name in ['dependencies','npc-source','mechanics','pokemon-tower']: payload[region+name+'.json']=assets['overlays/'+name+'.json']
+    npcs=json.loads(assets['overlays/npc-source.json'])
+    npcs['graphics']=[{'graphicsId':row['graphicsId']} for row in npcs['graphics']]
+    payload[region+'npc-source.json']=encode(npcs)
     constant_source=json.loads(assets['overlays/constants.json']); constants=constant_source['values']
     # The preparation's literal inventory excludes these source expressions. Resolve only
     # the bounded required aliases, never eval/execute upstream declarations.

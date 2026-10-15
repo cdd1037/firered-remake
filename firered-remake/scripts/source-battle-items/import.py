@@ -46,6 +46,5 @@ def main():
  doc=dict(sourceCommit=PIN,semanticSha256=sha(semantic.encode()),items=items)
  output=(json.dumps(doc,ensure_ascii=False,separators=(',',':'))+'\n').encode(); path=root/'content/generated/source-battle-items/catalog.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(output)
  manifest=dict(sourceCommit=PIN,inputs=inputs,output=dict(path='content/generated/source-battle-items/catalog.json',byteLength=len(output),sha256=sha(output)),semanticSha256=doc['semanticSha256'],rawRows=len(rows),identities=len(items),fixedBattleEffects=len(admitted)+1,battleUsable=sum(bool(r['battleUsage']) for r in rows),upstreamScriptsExecuted=False)
- (root/'content/sources/source-battle-items').mkdir(parents=True,exist_ok=True)
- (root/'content/sources/source-battle-items/source-lock.json').write_text(json.dumps(manifest,indent=2)+'\n'); print(json.dumps(manifest,indent=2))
+ print(json.dumps(manifest,indent=2))
 if __name__=='__main__':main()

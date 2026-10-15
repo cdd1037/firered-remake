@@ -19,7 +19,6 @@ NEW_SPECIES = ['POLIWRATH', 'VAPOREON', 'FLAREON', 'FERALIGATR', 'LEDIAN', 'TOGE
 DEPENDENCIES = (
     'content/generated/metronome-moves/catalog.json',
     'content/generated/canonical-pokemon/catalog.json',
-    'content/generated/five-island-rules/items.json',
     'content/generated/five-island-rules/pokemon.json',
     'content/generated/celio-pokemon/pokemon.json',
     'content/generated/seven-island-rules/pokemon.json',
@@ -70,9 +69,8 @@ def generate(reference, dependency):
     canonical = d['content/generated/canonical-pokemon/catalog.json']
     species = {s['id']['value'][5:]: s for s in canonical['species']}
     moves = {m['id']['value'][5:]: m for m in d['content/generated/metronome-moves/catalog.json']['moves']}
-    five = d['content/generated/five-island-rules/items.json']
     seven = d['content/generated/seven-island-rules/pokemon.json']
-    owned = {r['species']['value'][5:] for r in five['tm36']['compatibility']} | set(d['content/generated/celio-pokemon/pokemon.json']['speciesAdded']) | {'SPECIES_MEWTWO'} | set(seven['ownedSpeciesAdded']) | {r['definition']['id']['value'][5:] for r in d['content/generated/event-island-species/catalog.json']['species']} | {r['definition']['id']['value'][5:] for r in d['content/generated/power-plant-pokemon/catalog.json']['species']}
+    owned = ({s[5:] for s in d['scripts/five-island-predecessor.json']['ownedSpecies']} | set(d['content/generated/five-island-rules/pokemon.json']['ownedSpeciesAdded'])) | set(d['content/generated/celio-pokemon/pokemon.json']['speciesAdded']) | {'SPECIES_MEWTWO'} | set(seven['ownedSpeciesAdded']) | {r['definition']['id']['value'][5:] for r in d['content/generated/event-island-species/catalog.json']['species']} | {r['definition']['id']['value'][5:] for r in d['content/generated/power-plant-pokemon/catalog.json']['species']}
     previous = {s[5:] for s in d['scripts/five-island-predecessor.json']['opponentSpecies']} | owned | set(d['content/generated/five-island-rules/pokemon.json']['opponentSpeciesAdded']) | {s['id']['value'][5:] for s in d['content/generated/league-rematch-rules/pokemon.json']['opponentSpecies']} | set(seven['trainerOnlySpeciesAdded'])
     need(len(owned) == 152 and len(previous) == 186 and owned <= previous, 'Exact Power Plant predecessor')
 
@@ -305,7 +303,6 @@ def main():
     files.update({RAW+n:data for n,data in raw.items()})
     lock=dict(sourceCommit=COMMIT,profile=PROFILE,
         files=[dict(path=p) for p,b in sorted(files.items())])
-    files['scripts/trainer-tower-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

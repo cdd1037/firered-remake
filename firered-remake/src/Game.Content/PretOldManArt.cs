@@ -1,6 +1,4 @@
-using System.Buffers.Binary;
 using System.Collections.Immutable;
-using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using Game.Domain.Pokemon;
@@ -76,10 +74,8 @@ public static class PretOldManArt
         if (info.LinkTarget is not null || info.Length > asset.Width * asset.Height * 4 + 1024)
             throw new InvalidDataException("Old Man texture path or size differs.");
         var bytes = File.ReadAllBytes(path);
-        VerifyRgba(bytes, asset);
         return bytes;
     }
 
-    private static void VerifyRgba(byte[] bytes, OldManArtAsset asset)
-        => _ = PngRgba8.Decode(bytes, asset.Width, asset.Height);
+
 }

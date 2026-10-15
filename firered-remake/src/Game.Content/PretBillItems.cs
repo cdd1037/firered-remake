@@ -13,8 +13,7 @@ public sealed record PretBillDexView(SpeciesId Species, int SourceSpeciesId, int
     bool MarksSeen, bool MarksOwned, string PngPath, OpeningItemSourceRef Source,
     OpeningItemSourceRef PaletteSource, OpeningItemSourceRef ScriptSource, OpeningItemSourceRef NameSource);
 public sealed record PretBillItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<PretMtMoonFossil> Rewards,
     ImmutableArray<PretBillDexView> DexViews, ImmutableArray<string> Limitations);
 
@@ -31,7 +30,7 @@ public static class PretBillItems
         var document = ContentJson.ParseStrict<PretBillItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 9 && document.Icons.Length == 9 &&
             document.Pickups.Length == 7 && document.Rewards.Length == 3 && document.DexViews.Length == 4 &&
-            !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty,
+            !document.Limitations.IsDefaultOrEmpty,
             "Bill item scope differs.");
         string[] items = ["NUGGET", "FAME_CHECKER", "SS_TICKET", "ELIXIR", "ETHER",
             "PECHA_BERRY", "ORAN_BERRY", "BLUK_BERRY", "BERRY_POUCH"];
@@ -69,9 +68,9 @@ public static class PretBillItems
     {
         var document = Load(Utf8.GetString(Read(root,            "content/generated/bill-items/bill-items.json")));
         foreach (var icon in document.Icons)
-            _ = PretPewterMachines.IconRgba(icon, Read(root, "content/generated/bill-items/" + icon.PngPath));
+            _ = PretPewterMachines.TexturePage(icon, Read(root, icon.PngPath));
         foreach (var view in document.DexViews)
-            _ = DexRgba(view, Read(root, "content/generated/bill-items/" + view.PngPath));
+            _ = DexPng(view, Read(root, "content/generated/bill-items/" + view.PngPath));
         return document;
     }
 
@@ -96,11 +95,11 @@ public static class PretBillItems
             item.Source, value.EffectSource) { SourceMetadata = item };
     }
 
-    public static byte[] DexRgba(PretBillDexView view, byte[] png)
+    public static byte[] DexPng(PretBillDexView view, byte[] png)
     {
         ArgumentNullException.ThrowIfNull(view);
         Require(view.Width == 64 && view.Height == 64, "Bill species picture dimensions differ.");
-        return PngRgba8.Decode(png, view.Width, view.Height);
+        return png;
     }
     private static byte[] Read(string root,string path)
     {

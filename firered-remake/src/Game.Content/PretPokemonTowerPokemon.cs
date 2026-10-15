@@ -72,7 +72,7 @@ public sealed class PretPokemonTowerPokemon
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach (var input in doc.Inputs)
         {
-            files.Add(new(input.Path,                $"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{input.Path}"));
+            files.Add(new(input.Path));
         }
         var species = baseCatalog.Species.ToBuilder();
         var expected = new[] { ("GASTLY", 92, 11),("HAUNTER", 93, 13) };

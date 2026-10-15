@@ -17,19 +17,19 @@ public partial class CampaignView
         foreach(var portrait in art.Document.Portraits)
         {
             var asset=art.Asset(portrait.AssetId);
-            using var image=Image.CreateFromData(asset.Width,asset.Height,false,Image.Format.Rgba8,art.ReadRgba(asset.Id));
+            using var image=NativeImages.LoadPng(art.ReadPng(asset.Id), asset.Width, asset.Height);
             _forestTrainerPortraits.Add(asset.Id,(ImageTexture)SceneTextures.FromImage(image));
         }
         foreach(var item in art.Document.Items)
         {
             var asset=art.Asset(item.AssetId);
-            using var image=Image.CreateFromData(asset.Width,asset.Height,false,Image.Format.Rgba8,art.ReadRgba(asset.Id));
+            using var image=NativeImages.LoadPng(art.ReadPng(asset.Id), asset.Width, asset.Height);
             if(!(_earlyItemIcons.TryGetValue(new(item.Id),out var existing)))_earlyItemIcons.Add(new(item.Id),(ImageTexture)SceneTextures.FromImage(image));
             if(item.Pocket!="POCKET_KEY_ITEMS")continue;
             var document=_questPocketUi??throw new InvalidDataException("First-Sevii key-item pocket missing.");
             if(document.Items.Any(i=>i.Id==item.Id))throw new InvalidDataException("Duplicated first-Sevii key item.");
             var position=document.Assets.Single(a=>a.Id==document.Items[0].Icon);
-            _questPocketTextures.Add(asset.Id,ImageTexture.CreateFromImage(image));
+            _questPocketTextures.Add(asset.Id,SceneTextures.FromImage(image));
             _questPocketUi=document with
             {
                 Items=document.Items.Add(new(item.Id,item.Symbol,item.Name,item.Description,asset.Id,item.FieldUseFunction)),
@@ -91,7 +91,7 @@ public partial class CampaignView
     private Texture2D SeagallopTexture(string id,int fade)
     {
         if(_seagallopTextures.TryGetValue((id,fade),out var texture))return texture;
-        var art=_firstSeviiPresentation??throw new InvalidDataException("Ferry resources missing.");var asset=art.Asset(id);byte[] rgba=art.ReadRgba(id);
+        var art=_firstSeviiPresentation??throw new InvalidDataException("Ferry resources missing.");var asset=art.Asset(id);byte[] rgba=NativeImages.ReadPixels(art.ReadPng(id));
         for(int i=0;i<rgba.Length;i+=4)for(int c=0;c<3;c++)
         {int value=rgba[i+c]>>3;value+=(-value*fade)>>4;rgba[i+c]=(byte)((value<<3)|(value>>2));}
         using var image=Image.CreateFromData(asset.Width,asset.Height,false,Image.Format.Rgba8,rgba);

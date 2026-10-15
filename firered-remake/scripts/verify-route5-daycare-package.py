@@ -50,9 +50,9 @@ def main():
              [(x, 7, 'MAP_ROUTE5', '1') for x in (3,4,5)], 'all three exits return to Route5 entrance 1')
         need(len(scripts['blocks']) == 34 and not scripts['unresolvedLabelReferences'], 'complete nonempty 34-label closure')
         need(scripts['futureUnsupportedRoots'] == ['EventScript_EggHatch'] and not contract['service']['eggHatchingAdmitted'], 'egg hatching remains future unsupported')
+        graphics = doc(dependency / 'content/generated/shared-overworld/catalog.json')
         for actor in doc(gen / 'npc-source.json')['graphics']:
-            b = (dependency / actor['texturePath']).read_bytes()
-            need(actor['reuseExisting'] and bool(b), 'reused actor ' + actor['graphicsId'])
+            need(actor['graphicsId'] in graphics, 'shared actor ' + actor['graphicsId'])
         need(len(checks) > 100, 'nonempty independent package verification')
         result = dict(passed=True, checkCount=len(checks), checks=checks, scope='Source and compact map evidence only; Application, save flow, UI, breeding and audio acceptance are separate.')
     except Exception as ex:

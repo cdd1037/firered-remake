@@ -13,30 +13,22 @@ public sealed partial class PretSevenIslandRegion
     public const string Profile = "firered-seven-island-region-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public ImmutableDictionary<MapId, PretWorldMap> SourceMaps => NewMaps;
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement ScriptInventory { get; }
-    public JsonElement Geometry { get; }
     public JsonElement Items { get; }
     public SevenIslandFieldData Field { get; }
-    public ImmutableDictionary<string, ImmutableArray<byte>> RawSources { get; }
     public JsonElement NpcSources { get; }
-    public ImmutableDictionary<string, JsonElement> ReusedAnchorEvents { get; }
     public JsonElement ExternalBoundaries => Contracts.GetProperty("externalBoundaries");
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     private PretSevenIslandRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableArray<PretSourceScriptFile> scripts, ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants)
+        ImmutableDictionary<string, int> constants)
     {
-        GeneratedDirectory = source.Directory; NewMaps = maps; Scripts = scripts; TextSources = texts; Constants = constants; SourceFiles = source.Files;
+        GeneratedDirectory = source.Directory; NewMaps = maps; Constants = constants; 
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        ScriptInventory = source.Document("scripts.json"); Geometry = source.Document("geometry.json"); Items = source.Document("items.json");
-        RawSources = source.Raw.ToImmutableDictionary(p => p.Key, p => p.Value.ToImmutableArray(), StringComparer.Ordinal);
-        ReusedAnchorEvents = new[] { "VermilionCity" }.ToImmutableDictionary(n => n, n => SilphSourcePackage.Json(source.Raw["data/maps/" + n + "/map.json"]), StringComparer.Ordinal); NpcSources = source.Document("npc-source.json");
+        Items = source.Document("items.json");
+        NpcSources = source.Document("npc-source.json");
         InitializeField(source);
         Field = LoadField(source, constants);
     }
@@ -75,9 +67,9 @@ public sealed partial class PretSevenIslandRegion
     }
     public static PretSevenIslandRegion Load(string root)
     {
-        var source = new SilphSourcePackage(root,"seven-island-region",            "content/sources/seven-island-region.lock.json");
-        var raw = source.Raw; var files = source.Files; var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        var outputs = source.Outputs; var directory = source.Directory;
+        var source = new SilphSourcePackage(root,"seven-island-region");
+        var files = ImmutableArray<PretWorldSourceFile>.Empty;
+        var directory = source.Directory;
         var catalog = source.Document("catalog.json");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Seven Island source maps; application admission remains separate.", Profile, files);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
@@ -86,38 +78,20 @@ public sealed partial class PretSevenIslandRegion
             var stableId = spec.GetProperty("stableId").GetString()!; var relative = spec.GetProperty("directory").GetString()!;
             var runtimeEntry = spec;
             Need(runtimeEntry.GetProperty("path").GetString() == relative + "/runtime-map.json" , "SevenIsland runtime certificate differs.");
-            var payload = outputs[relative + "/runtime-map.json"];
+            var payload = source.Read(relative + "/runtime-map.json");
             var runtime = PretRuntimeMapData.Decode(payload, stableId, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == stableId, "Map symbol differs from its ID.");
             var mapDirectory = Safe(directory, relative);
-            var playerTexture = Safe(directory, "npc/red-normal.png");
+            var playerTexture = PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png");
             maps.Add(new(stableId), PretWorldMap.FromRuntime(runtime, metadata, mapDirectory, playerTexture, MapIdFromSourceSymbol));
         }
         Need(maps.Count == 18 && maps.Values.Sum(m => m.Width * m.Height) == 14685 && maps.Values.Sum(m => m.FieldWarps.Length) == 29,
             "SevenIsland source map collection differs.");
         foreach (var map in maps.Values) foreach (var warp in map.FieldWarps)
             if (maps.TryGetValue(warp.DestinationMapId, out var target)) Need(warp.DestinationWarpId < target.FieldWarps.Length, "SevenIsland target warp index differs.");
-        var inventory = source.Document("scripts.json"); var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        Need(inventory.GetProperty("blocks").GetArrayLength() == 425 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0, "SevenIsland source script closure differs.");
-        foreach (var row in inventory.GetProperty("sourcePaths").EnumerateArray())
-        {
-            var path = row.GetString()!; var text = new UTF8Encoding(false, true).GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(symbol.Length > 0, "Missing SevenIsland script label."); scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
         var constants = PretSharedConstants.ForPackage(source.Directory);
-        foreach (Match match in Regex.Matches(Encoding.UTF8.GetString(raw["include/constants/metatile_labels.h"]),
-            @"^#define\s+(METATILE_\w+)\s+0x([0-9A-Fa-f]+)\b", RegexOptions.Multiline | RegexOptions.CultureInvariant))
-            Need(constants.TryGetValue(match.Groups[1].Value, out var value) && value ==
-                int.Parse(match.Groups[2].Value, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture),
-                "Generated SevenIsland metatile constant differs from source.");
-        ValidateContracts(source, maps.ToImmutable(), constants);
-        return new(source, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
+
+        return new(source, maps.ToImmutable(), constants);
     }
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
     private static string Safe(string root, string relative) => PretRuntimeMapValidation.SafeFile(root, relative);

@@ -6,11 +6,11 @@ The generated-resource refactor on 2026-10-15 uses one map format. Every map is 
 
 Each compact map retains its stable ID, source map path/symbol/commit, dimensions, PNG layer references, optional technical spawn, and complete event header. Original little-endian 16-bit blocks remain packed in canonical base64; both collision bits and all elevation bits are preserved. Unique metatile rows retain the original attribute words and attribute-file indices. Behavior names and all decoded attributes remain available through `GetSourceCell` when needed.
 
-Map scripts use `scriptPaths`, read from the shared ordinary tree `content/raw/pokefirered/037335f4`. Script and text bodies are not copied into generated maps. Map-level source metadata remains available; per-cell source records are reconstructed from the metatile table only on request.
+Script paths are import provenance only. Runtime programs and texts load from `story/runtime.json`; no original script is opened during game startup. Script and text bodies are not duplicated in generated maps. Map-level source metadata remains available; per-cell source records are reconstructed from the metatile table only on request.
 
 Complete events stay in each map because they are runtime inputs. Seafoam stopped-current layouts and Trainer Tower battle-format layouts keep their explicit existing directory names and original event headers. Maps are never merged solely by stable ID.
 
-The 15 cumulative map catalogs contain direct paths relative to `content/generated`; they no longer contain copied map payloads. A single `map-source-registry.json` supplies the original base-map source inventory. Region loaders continue to construct their source metadata from the shared raw files and ordinary source inventories. Five Pallet `border.json` files now contain map references, repeat rules and PNG references; geometry and blocks come from the compact map, and tile entries come from the shared raw tileset binaries.
+The 15 cumulative map catalogs contain direct paths relative to `content/generated`; they no longer contain copied map payloads. A single `map-source-registry.json` supplies the original base-map source inventory. Region loaders read generated metadata only. Five Pallet `border.json` files now contain map references, repeat rules and PNG references; geometry and blocks come from the compact map, and field behavior/attributes come from the compiled `field-tilesets.json`. Image references resolve through the regional render atlas.
 
 ## Regeneration
 

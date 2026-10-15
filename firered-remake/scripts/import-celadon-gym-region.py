@@ -35,7 +35,7 @@ def read_lock(path=None):
 def protect(target,project,allowed_stem,kind):
  target=pathlib.Path(target).absolute();safe(target,'sentinel')
  for root in {ROOT.resolve(),pathlib.Path(project).resolve()}:
-  for p in [root/'scripts',root/'src',root/'tests',root/'.git',root/'content/sources']:
+  for p in [root/'scripts',root/'src',root/'tests',root/'.git',root/'scripts/import-config']:
    if target.resolve().is_relative_to(p) or p.is_relative_to(target.resolve()):raise ValueError('Protected project path overlap')
   for k in ('raw','generated'):
    base=root/'content'/k

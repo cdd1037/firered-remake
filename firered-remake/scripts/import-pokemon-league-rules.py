@@ -154,7 +154,6 @@ def main():
     files.update({'content/raw/pokefirered/037335f4/'+n:d for n,d in raw.items()})
     lock=dict(sourceCommit=COMMIT,profile='firered-pokemon-league-rules-v1',
         files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/pokemon-league-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

@@ -165,7 +165,7 @@ def main():
     parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/gym-battle-terrain')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/gym-battle-terrain.lock.json')
-    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
+    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'scripts/import-config/source.json')
     args = parser.parse_args()
     if args.raw.resolve().is_relative_to(args.output.resolve()) or args.output.resolve().is_relative_to(args.raw.resolve()):
         raise ValueError('Raw and output roots must be disjoint')

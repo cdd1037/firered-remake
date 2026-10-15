@@ -14,9 +14,9 @@ public partial class CampaignView
         string firstIcon = document.Items[0].Icon;
         var position = document.Assets.Single(a => a.Id == firstIcon);
         if (document.Items.Any(i => i.Id == tea.Item.Id.Value)) throw new InvalidDataException("Tea pocket entry is duplicated.");
-        using var image = Image.CreateFromData(asset.Width, asset.Height, false, Image.Format.Rgba8, source.ReadRgba());
+        using var image = NativeImages.LoadPng(source.ReadPng(), asset.Width, asset.Height);
         // Key-item textures retain the existing pocket loader's ownership and cleanup path.
-        _questPocketTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
+        _questPocketTextures.Add(asset.Id, SceneTextures.FromImage(image));
         document = document with
         {
             Items = document.Items.Add(source.Document.Item),
@@ -32,13 +32,13 @@ public partial class CampaignView
         var art = _catalog.EeveeArt ?? throw new InvalidDataException("Regional Eevee art catalog missing.");
         foreach (var sprite in art.Sprites)
         {
-            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
+            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var icon in art.Icons)
         {
-            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
+            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
             for (int i = 0; i < rgba.Length; i += 4)
                 if (rgba[i + 3] != 0)
                     for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
@@ -47,7 +47,7 @@ public partial class CampaignView
         }
         foreach (var footprint in art.Footprints)
         {
-            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[footprint.TexturePath], footprint.Width, footprint.Height));
+            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
             _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
         }
         // Reuse the same owned front texture for a source mon-picture request.

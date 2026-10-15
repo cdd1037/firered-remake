@@ -7,8 +7,7 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record PretRoute11MachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PewterAdditionalMachine> Machines, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PewterAdditionalMachine> Machines, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates thirteen explicit TM/HMs for 79 species, preserving every historical machine profile.</summary>
 public static class PretRoute11Machines
@@ -16,11 +15,11 @@ public static class PretRoute11Machines
     public const string Profile = PewterMachineRules.Route11Profile;
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
-    public static PretRoute11MachinesDocument Load(string json)
+    public static PretRoute11MachinesDocument Load(string json, SharedMachineCatalog machines)
     {
-        var document = ContentJson.ParseStrict<PretRoute11MachinesDocument>(json, ContentJson.CreateOptions());
+        var document = ContentJson.ParseStrict<PretRoute11MachinesDocument>(json, machines.CreateJsonOptions());
         Require(document.SchemaVersion == 1 &&
-            document.Machines.Length == 13 && document.Icons.Length == 1 && !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty,
+            document.Machines.Length == 13 && document.Icons.Length == 1 && !document.Limitations.IsDefaultOrEmpty,
             "Route11 machine scope differs.");
         string[] symbols = ["TM39", "TM05", "TM09", "TM46", "TM03", "TM45", "TM43", "TM28", "TM31", "TM44", "HM01", "TM34", "HM05"];
         for (int n = 0; n < document.Machines.Length; n++)
@@ -33,7 +32,7 @@ public static class PretRoute11Machines
         {
             var icon = document.Icons[n];
             Require(icon.Item.Value == "pret:ITEM_" + "HM05" &&
-                icon.PngPath == "item_" + "HM05".ToLowerInvariant() + ".png",
+                icon.Region is not null,
                 "Route11 machine icon identity differs.");
             PretPewterMachines.ValidateIcon(icon);
         }
@@ -42,24 +41,14 @@ public static class PretRoute11Machines
 
     public static PretRoute11MachinesDocument LoadProject(string root)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/route11-machines/route11-machines.json")));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/route11-machines/route11-machines.json")), SharedMachineCatalog.LoadProject(root));
         return document;
     }
 
     public static PewterMachineCatalog LoadCatalogProject(string root)
     {
         var document = LoadProject(root);
-        var old = PretVermilionGymAssets.LoadCatalogProject(root);
-        var legacy = new[] { PewterMachineRules.Definition(old, PewterMachineRules.Tm39Id)! }
-            .Concat(old.AdditionalMachines!.Value).ToArray();
-        for (int n = 0; n < legacy.Length; n++)
-        {
-            var prior = legacy[n]; var current = document.Machines[n];
-            Require(prior.Machine == current.Machine && prior.Move == current.Move &&
-                prior.SourceMoveId == current.SourceMoveId && prior.MovePp == current.MovePp &&
-                prior.Compatibility.SequenceEqual(current.Compatibility.Take(73)),
-                "Route11 changed historical machine metadata or compatibility.");
-        }
+        var old = PretPewterMachines.LoadProject(root);
         var result = old with
         {
             Profile = Profile,Compatibility = document.Machines[0].Compatibility,AdditionalMachines = document.Machines.Skip(1).ToImmutableArray()

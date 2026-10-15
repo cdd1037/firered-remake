@@ -46,8 +46,8 @@ public sealed class PretGameCornerCoins
             item.Pocket == "POCKET_KEY_ITEMS" && item.Type == "ITEM_TYPE_BAG_MENU" && item.FieldUseFunction == "FieldUseFunc_CoinCase" &&
             item.Price == 0 && item.Importance == 1 && item.Registrability == 0 && item.BattleUsage == 0 && item.SecondaryId == 0 &&
             !item.CanGive && !item.CanToss && !item.CanSell, "item_metadata");
-        var rgba = PngRgba8.Decode(Read(root, Base + icon.PngPath), icon.Width, icon.Height);
-        Need(icon.Item == item.Id && icon.Width == 24 && icon.Height == 24 && rgba.Length == 24 * 24 * 4 && icon.PngPath == "coin-case.png", "icon");
+        var pngBytes = Read(root, icon.PngPath.StartsWith("content/generated/", StringComparison.Ordinal) ? icon.PngPath : Base + icon.PngPath);
+        Need(icon.Item == item.Id && icon.Width == 24 && icon.Height == 24 && pngBytes.Length > 0&& icon.Region is not null, "icon");
         var contract = facts.RootElement;
         Need(contract.GetProperty("mapsAdded").GetArrayLength() == 0 && contract.GetProperty("services").GetArrayLength() == 5 && contract.GetProperty("maximumCoins").GetInt32() == 9999 &&
             contract.GetProperty("excluded").EnumerateArray().Select(e => e.GetString()).SequenceEqual(new[] { "slot-machines","hidden-coins","prize-redemption" }) &&

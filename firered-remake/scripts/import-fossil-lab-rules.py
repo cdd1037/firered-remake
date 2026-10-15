@@ -10,13 +10,16 @@ import re
 import subprocess
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from machine_catalog import compatibility_additions, machine_definitions, admission_species
+
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 SPECIES = ("SPECIES_OMANYTE", "SPECIES_OMASTAR", "SPECIES_KABUTO", "SPECIES_KABUTOPS", "SPECIES_AERODACTYL")
 DEPENDENCIES = (
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/fighting-dojo-rules/pokemon.json',
-    'content/generated/fighting-dojo-rules/machines.json',
     'content/generated/trainer-tower-rules/items.json',
 )
 
@@ -59,11 +62,9 @@ def generate(reference, dependency):
         dependencies.append(dict(path=path))
         return json.loads(data)
 
-    canonical, previous, previous_machines, previous_items = [dependent(p) for p in DEPENDENCIES]
+    canonical, previous, previous_items = [dependent(p) for p in DEPENDENCIES]
     need(previous["ownedSpeciesCount"] == 154 and previous["opponentSpeciesCount"] == 186,
          "Exact Dojo predecessor")
-    need(previous_machines["speciesCount"] == 154 and previous_machines["machineCount"] == 41,
-         "Exact Dojo machine predecessor")
     species = {s["id"]["value"][5:]: s for s in canonical["species"]}
     metadata = {s["id"]["value"][5:]: s for s in canonical["metadata"]}
     edges = []
@@ -91,20 +92,7 @@ def generate(reference, dependency):
         else:
             need(not meta["sourceEvolutions"], "Terminal fossil species")
 
-    machine_ids = [row["item"]["value"][5:] for row in previous_machines["additions"]]
-    need(len(machine_ids) == len(set(machine_ids)) == 41, "Forty-one inherited machine items")
-    machine_rows = []
-    tm_path = "src/data/pokemon/tmhm_learnsets.h"
-    for item in sorted(machine_ids):
-        rows = []
-        for name in SPECIES:
-            match = one(tm_path, r"^    \[" + name + r"\]\s*=\s*TMHM_LEARNSET\((.*?)\),")
-            tokens = re.findall(r"TMHM\(((?:TM|HM)\d{2})_[A-Z0-9_]+\)", match[1])
-            need(tokens and len(tokens) == len(set(tokens)), "Source machine row syntax")
-            need(not re.sub(r"TMHM\((?:TM|HM)\d{2}_[A-Z0-9_]+\)|[|\s]", "", match[1]), "Unhandled machine row")
-            rows.append(dict(species=identity(name), sourceSpeciesId=species[name]["sourceSpeciesId"],
-                             canLearn=item[5:] in tokens, source=ref(tm_path, name, match)))
-        machine_rows.append(dict(item=identity(item), compatibility=rows))
+    machine_rows = compatibility_additions(dependency, 'content/generated/fossil-lab-rules/machines.json')
 
     lab_path = "data/maps/CinnabarIsland_PokemonLab_ExperimentRoom/scripts.inc"
     gifts = []

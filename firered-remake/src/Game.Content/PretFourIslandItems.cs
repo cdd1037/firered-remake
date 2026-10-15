@@ -22,7 +22,7 @@ public static partial class PretFourIslandItems
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/four-island-items/items.json"));
         var document = JsonSerializer.Deserialize<FourIslandItemsDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
+            SharedMachineCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("four_island_items_missing");
         if (            document.Items.Length != 2 || document.Additions.Length != 1 || document.MachineAdditions.Length != 37 ||
             document.Pickups.Length != 8 || document.Pickups.Count(p => p.Hidden) != 2)

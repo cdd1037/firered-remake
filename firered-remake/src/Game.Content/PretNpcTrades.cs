@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
-using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 using Game.Domain.Pokemon;
 using Game.Domain.World;
@@ -15,28 +13,23 @@ public sealed class PretNpcTrades
     public static MapId LoungeMapId { get; } = new("map.cinnabar-island-pokemon-lab-lounge");
     public NpcTradePokemonCatalog Trades { get; }
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, string> Texts { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement ScriptInventory { get; }
     public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretNpcTrades(SilphSourcePackage source, NpcTradePokemonCatalog trades,
-        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants)
+        ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants)
     {
         Texts = source.Document("presentation-text.json").EnumerateArray().ToImmutableDictionary(
             r => r.GetProperty("symbol").GetString()!, r => r.GetProperty("text").GetString()!, StringComparer.Ordinal);
-        Trades = trades; NewMaps = maps; Scripts = scripts; TextSources = texts; Constants = constants;
-        SourceFiles = source.Files; GeneratedDirectory = source.Directory;
+        Trades = trades; NewMaps = maps; Constants = constants;
+        GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        ScriptInventory = source.Document("scripts.json"); NpcSources = source.Document("npc-source.json");
+        NpcSources = source.Document("npc-source.json");
     }
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
     {
@@ -55,14 +48,10 @@ public sealed class PretNpcTrades
     public static PretNpcTrades Load(string projectRoot, SourceMechanicsCatalog mechanics)
     {
         ArgumentNullException.ThrowIfNull(mechanics);
-        var source = new SilphSourcePackage(projectRoot,"npc-trades",            "scripts/npc-trades.lock.json");
+        var source = new SilphSourcePackage(projectRoot,"npc-trades");
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "NPC trade source/catalog identity differs.");
-        foreach (var row in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
-        {
-            Need(row.GetProperty("reuseExisting").GetBoolean(), "Lounge actors must reuse authenticated existing graphics.");
-        }
         var contracts = source.Document("contracts.json");
         Need(contracts.GetProperty("enabledTradeIds").EnumerateArray().Select(v => v.GetInt32()).SequenceEqual(Enumerable.Range(0, 9)) &&
             contracts.GetProperty("deferredTradeIds").GetArrayLength() == 0 &&
@@ -74,64 +63,28 @@ public sealed class PretNpcTrades
         NpcTradePokemonCatalog trades;
         try { trades = NpcTradePokemonCatalog.Authenticate(mechanics, definitions); }
         catch (ArgumentException e) { throw new InvalidDataException("NPC trade semantic authentication failed.", e); }
-        foreach (var definition in definitions)
-        {
-            var map = SilphSourcePackage.Json(source.Raw[definition.ActorSource.Path]);
-            var actor = map.GetProperty("object_events")[definition.LocalId - 1];
-            Need(actor.GetProperty("script").GetString() == definition.ScriptLabel &&
-                definition.ScriptSource.Symbol == definition.ScriptLabel && definition.Source.Symbol == definition.TradeSymbol,
-                "NPC trade original actor/source binding differs.");
-        }
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Cinnabar Lounge and nine NPC trade records.", ResourceId, source.Files);
-        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Original Cinnabar Lounge and nine NPC trade records.", ResourceId, []);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
             string path = spec.GetProperty("path").GetString()!;
             Need(path == relative + "/runtime-map.json" , "Lounge compact resource binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
+            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 15 && runtime.Height == 11,
                 "Lounge map identity/dimensions differ.");
             maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/silph-region/npc/red-normal.png"), MapIdFromSourceSymbol));
+                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(maps.Count == 1 && maps.ContainsKey(LoungeMapId) && maps[LoungeMapId].FieldWarps.Length == 1 &&
             maps[LoungeMapId].Events.GetProperty("object_events").GetArrayLength() == 3,
             "Only the original Lounge and its three actors may be added.");
-        var inventory = source.Document("scripts.json");
-        Need(inventory.GetProperty("blocks").GetArrayLength() == 152 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "NPC trade source script closure differs.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
-        {
-            string path = entry.GetString()!;
-            // ExperimentRoom already owns its full script.
-            if (path.StartsWith("data/maps/", StringComparison.Ordinal) &&
-                !path.StartsWith("data/maps/CinnabarIsland_PokemonLab_Lounge/", StringComparison.Ordinal) &&
-                !path.StartsWith("data/maps/Route2_House/", StringComparison.Ordinal) &&
-                !path.StartsWith("data/maps/CeruleanCity_House3/", StringComparison.Ordinal) &&
-                !path.StartsWith("data/maps/VermilionCity_House2/", StringComparison.Ordinal) &&
-                !path.StartsWith("data/maps/Route18_EastEntrance_2F/", StringComparison.Ordinal) &&
-                !path.StartsWith("data/maps/UndergroundPath_NorthEntrance/", StringComparison.Ordinal) &&
-                !path.StartsWith("data/maps/Route11_EastEntrance_2F/", StringComparison.Ordinal)) continue;
-            string text = new UTF8Encoding(false, true).GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(label.Length > 0, "Missing NPC trade source script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["INGAME_TRADE_NIDORAN"] == 2 && constants["INGAME_TRADE_NIDORINOA"] == 4 &&
             constants["FLAG_DID_MS_NIDO_TRADE"] == 587 && constants["FLAG_DID_NINA_TRADE"] == 593 &&
             constants["INGAME_TRADE_ELECTRODE"] == 6 && constants["INGAME_TRADE_TANGELA"] == 7 && constants["INGAME_TRADE_SEEL"] == 8 &&
             constants["PARTY_SIZE"] == 6, "Original trade IDs/cancel constant differ.");
-        return new(source, trades, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
+        return new(source, trades, maps.ToImmutable(), constants);
     }
     private static NpcTradePokemonDefinition Definition(SilphSourcePackage source, JsonElement row)
     {

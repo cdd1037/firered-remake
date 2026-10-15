@@ -166,14 +166,14 @@ def generate(reference, dependency, rules_root):
         heldItems=sorted({m['heldItem'] for t in trainers for m in t['party']}),
         missingCanonicalSpecies=[], missingCanonicalMoves=[], upstreamScriptsExecuted=False)
     return {'catalog.json': output(document), 'battle-occurrences.json': output(occurrence_document), 'manifest.json': output(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-           summary=summary)), 'source-lock.json': output(lock)}, src
+           summary=summary))}, src
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument('--source-root', type=Path, required=True); p.add_argument('--dependency-root', type=Path, required=True)
     p.add_argument('--rules-root', type=Path, required=True); p.add_argument('--output-root', type=Path, default=Path(__file__).resolve().parents[1]); p.add_argument('--check', action='store_true')
     a = p.parse_args(); artifacts, src = generate(a.source_root, a.dependency_root, a.rules_root)
     for name, data in artifacts.items():
-        path = a.output_root/('content/sources/vs-seeker-parties' if name == 'source-lock.json' else 'content/generated/vs-seeker-parties')/name
+        path = a.output_root/'content/generated/vs-seeker-parties'/name
         if a.check: need(path.read_bytes() == data, 'Generated artifact differs: ' + str(path))
         else: path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
     for name, raw in src.data.items():

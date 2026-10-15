@@ -49,7 +49,7 @@ def safe_path(root, relative):
 
 def load_lock(path):
     lock = json.loads(pathlib.Path(path).read_bytes())
-    project = json.loads((ROOT / 'content/source-lock.json').read_bytes())
+    project = json.loads((ROOT / 'scripts/import-config/source.json').read_bytes())
     if (lock.get('schemaVersion'), lock.get('profile'), lock.get('repository'), lock.get('commit'),
             lock.get('gameEdition'), lock.get('romRevision')) != (1, PROFILE, 'pret/pokefirered', COMMIT, 'FIRERED', 0):
         raise ValueError('Unsupported cursor source identity')

@@ -227,7 +227,7 @@ def generate(reference, generated_directory, check=False):
         outputCount=len(docs),
         outputs=[dict(path=p) for p, b in sorted(docs.items())])
     manifest_data = canonical(manifest); docs['manifest.json'] = manifest_data
-    writes = {'content/sources/' + PACKAGE + '.lock.json': lock_data}
+    writes = {}
     writes.update({'content/raw/pokefirered/037335f4/' + p: b for p, b in src.data.items()})
     writes.update({'content/generated/' + PACKAGE + '/' + p: b for p, b in docs.items()})
     return writes, manifest, dict()

@@ -13,12 +13,12 @@ public partial class CampaignView
         var art=_catalog.SnorlaxArt??throw new InvalidDataException("Snorlax art catalog missing.");
         foreach(var sprite in art.Sprites)
         {
-            using var image=Image.CreateFromData(sprite.Width,sprite.Height,false,Image.Format.Rgba8,PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
+            using var image=NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
             _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
         }
         foreach(var icon in art.Icons)
         {
-            var rgba=PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
+            var rgba=NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
             // Existing source icon presentation expands5-bit components by bit repetition.
             for(int i=0;i<rgba.Length;i+=4)if(rgba[i+3]!=0)for(int c=0;c<3;c++){int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2));}
             using var image=Image.CreateFromData(32,32,false,Image.Format.Rgba8,rgba);
@@ -26,7 +26,7 @@ public partial class CampaignView
         }
         foreach(var foot in art.Footprints)
         {
-            using var image=Image.CreateFromData(foot.Width,foot.Height,false,Image.Format.Rgba8,PngRgba8.Decode(art.Files[foot.TexturePath], foot.Width, foot.Height));
+            using var image=NativeImages.LoadPng(art.Files[foot.TexturePath], foot.Width, foot.Height);
             _route22Footprints.Add(foot.SourceSpeciesId,ImageTexture.CreateFromImage(image));
         }
     }

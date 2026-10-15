@@ -9,7 +9,9 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
+from presentation_atlas import pack
+from PIL import Image
 import argparse
 import importlib.util
 import json
@@ -81,11 +83,6 @@ def load_lock(path=None):
     return lock
 
 
-def raw_manifest():
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
-                           inputCount=len(PATHS)))
-
-
 def read_sources(lock, raw, repository=None):
     safe(raw)
     if repository is not None:
@@ -140,13 +137,19 @@ def convert(lock, sources):
     if set(sources) != PATHS:
         raise ValueError('Option-frame source inventory differs')
     validate_semantics(sources)
-    assets, outputs = [], {}
+    assets, outputs, images = [], {}, []
 
-    def add(index, kind, width, height, rgba, source_paths):
+    def add(index, kind, width, height, rgba):
         stem = f'type{index + 1}/{kind}'
-        texture = pixels.png(width, height, rgba)
-        outputs[stem + '.png'] = texture
-        assets.append(dict(frameIndex=index, kind=kind, texturePath=stem + '.png', width=width, height=height, x=0, y=0 if kind == 'frame' else 112, sourcePaths=source_paths))
+        # The fixed message and default frame already belong to the battle UI.
+        if kind == 'battle-message' or index == 0:
+            name = 'frame1' if kind == 'frame' else kind
+            texture_path = 'content/generated/lab-battle-ui/' + name + '.png'
+        else:
+            images.append((stem, Image.frombytes('RGBA', (width, height), bytes(rgba))))
+            texture_path = 'content/generated/option-frames/frames.png'
+        assets.append(dict(frameIndex=index, kind=kind, texturePath=texture_path,
+                           width=width, height=height, x=0, y=0 if kind == 'frame' else 112))
 
     battle_paths = ['graphics/battle_interface/textbox.png', 'graphics/battle_interface/textbox.bin',
                     'graphics/battle_interface/textbox1.pal']
@@ -160,14 +163,20 @@ def convert(lock, sources):
             raise ValueError('User frame dimensions/palette differ')
         palette = pixels.colors(rgb)
         frame_tiles = pixels.tile_list(data)
-        add(index, 'frame', width, height, pixels.rgba(indices, palette), [frame_path])
+        add(index, 'frame', width, height, pixels.rgba(indices, palette))
         tiles = list(text_tiles)
         # Both banks are loaded by source. The three supported crops only reference 18..26.
         tiles[18:27] = frame_tiles
         tiles[34:43] = frame_tiles
         for kind, top in [('battle-message', 14), ('action-menu', 34), ('move-menu', 54)]:
             rgba = pixels.render_map(tiles, sources[battle_paths[1]], {0: text_palette, 1: palette}, 240, 48, top)
-            add(index, kind, 240, 48, rgba, [frame_path, *battle_paths])
+            add(index, kind, 240, 48, rgba)
+    outputs['frames.png'], regions = pack(images, 'content/generated/option-frames/frames.png')
+    regions = {row['id']: row['region'] for row in regions}
+    for asset in assets:
+        stem = f"type{asset['frameIndex'] + 1}/{asset['kind']}"
+        if stem in regions:
+            asset['region'] = regions[stem]
     display = dict(logicalWidth=240, logicalHeight=160, frameIndexMinimum=0, frameIndexMaximum=9,
                    frameTileSize=8, textureFilter='nearest', transparentIndex=0,
                    paletteExpansion='(rgb5 << 3) | (rgb5 >> 2)', battleWindowY=112,
@@ -209,12 +218,19 @@ def main():
     writes = [(safe(output, name), data) for name, data in outputs.items()]
     if args.source is not None:
         writes += [(safe(raw, name), data) for name, data in sources.items()]
-        writes.append((safe(raw_metadata_directory(raw, 'option-frames'), 'manifest.json'), raw_manifest()))
     writes = [(target, safe(target.parent, target.name + '.tmp'), data) for target, data in writes]
     for target, stage, data in writes:
         target.parent.mkdir(parents=True, exist_ok=True)
         stage.write_bytes(data)
         stage.replace(target)
+    # This importer owns the former per-option images. Remove them only after the
+    # replacement page and catalog have both been written; shared lab images stay put.
+    for index in range(2, 11):
+        directory = safe(output, f'type{index}')
+        for kind in ('frame', 'action-menu', 'move-menu'):
+            safe(directory, kind + '.png').unlink(missing_ok=True)
+        if directory.is_dir() and not any(directory.iterdir()):
+            directory.rmdir()
     print(json.dumps(dict(status='verified', assets=40, sources=len(PATHS))))
 
 

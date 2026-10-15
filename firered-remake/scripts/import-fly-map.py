@@ -5,7 +5,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse,  importlib.util, json, pathlib, re, struct, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -33,8 +33,6 @@ def safe(root, relative=None):
     return target
 
 
-def raw_manifest(): return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
-     inputCount=len(PATHS)))
 
 def convert( source):
     code = source['src/region_map.c'].decode(); outputs = {}; assets = []
@@ -135,23 +133,71 @@ def convert( source):
         outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
     return outputs
 
+def pack_backgrounds(outputs, generated):
+    """Bake six flag-dependent maps and exact name-window dimming once."""
+    import io
+    from PIL import Image
+    def image(data):
+        return Image.open(io.BytesIO(data)).convert('RGBA')
+    base = [image((generated/'town-map/kanto.png').read_bytes()),
+            image((generated/'first-sevii-town-map/sevii123-locked.png').read_bytes()),
+            image(outputs['fly-sevii45.png']), image(outputs['fly-sevii67.png'])]
+    surround = image(outputs['fly-surround.png'])
+    coefficient = json.loads((generated/'town-map/town-map.json').read_bytes())['layout']['nameWindowDarkeningCoefficient']
+    atlas = Image.new('RGBA', (484, 972))
+    backgrounds = []
+    row = 0
+    for region in range(4):
+        for hidden in ([False] if region < 2 else [False, True]):
+            frame = base[region].copy()
+            frame.paste(surround, (0, 0), surround.getchannel('A').point(lambda a: 255 if a else 0))
+            if hidden:
+                mask = image(outputs['fly-hide-navel.png' if region == 2 else 'fly-hide-birth.png'])
+                frame.paste(mask, (104, 88) if region == 2 else (168, 128), mask.getchannel('A').point(lambda a: 255 if a else 0))
+            for dark in (False, True):
+                tile = frame.copy()
+                if dark:
+                    data = bytearray(tile.tobytes())
+                    for p in range(0, len(data), 4):
+                        for c in range(3):
+                            five = (data[p+c] * 31 + 127) // 255
+                            five += (-five * coefficient) >> 4
+                            data[p+c] = five * 255 // 31
+                    tile = Image.frombytes('RGBA', tile.size, bytes(data))
+                x, y = int(dark) * 242 + 1, row * 162 + 1
+                atlas.paste(tile, (x, y))
+                backgrounds.append(dict(mapRegion=region, hidden=hidden, dark=dark,
+                    texturePath='backgrounds.png', region=dict(x=x,y=y,width=240,height=160)))
+            row += 1
+    buffer = io.BytesIO(); atlas.save(buffer, format='PNG', compress_level=9)
+    outputs['backgrounds.png'] = buffer.getvalue()
+    doc = json.loads(outputs['fly-map.json']); doc['backgrounds'] = backgrounds
+    doc['assets'] = [asset for asset in doc['assets'] if asset['id'].startswith('fly-icon-')]
+    outputs['fly-map.json'] = canonical(doc)
+    for name in ('fly-surround', 'fly-sevii45', 'fly-sevii67', 'fly-hide-navel', 'fly-hide-birth'):
+        outputs.pop(name + '.png')
+    manifest = json.loads(outputs['manifest.json']); manifest['assetCount'] = 2
+    manifest['outputs'] = [dict(path=path) for path in sorted(outputs) if path != 'manifest.json']
+    outputs['manifest.json'] = canonical(manifest)
+    return outputs
+
 def import_content(raw,out,repo=None):
     raw=safe(raw);out=safe(out)
     if raw.is_relative_to(out) or out.is_relative_to(raw):raise ValueError('Overlapping output directories')
     if repo is not None and any(p.is_relative_to(safe(repo)) or safe(repo).is_relative_to(p) for p in (raw,out)):raise ValueError('Outputs overlap source repository')
-    lock_bytes=safe(ROOT / 'content/fly-map-source-lock.json').read_bytes()
+    lock_bytes=safe(ROOT / 'scripts/import-config/fly-map.json').read_bytes()
     lock=json.loads(lock_bytes)
     if (lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != ('pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0) or len(lock['files']) != len(PATHS) or {f['path'] for f in lock['files']} != PATHS:raise ValueError('Source profile differs')
     source={}
     for f in lock['files']:
         b=safe(safe(raw, f['path'])).read_bytes() if repo is None else subprocess.check_output(['git','-C',str(repo),'show',COMMIT+':'+f['path']],timeout=30)
         source[f['path']]=b
-    outputs=convert(source)
-    material=([(raw,p,b) for p,b in source.items()]+[(raw_metadata_directory(raw, 'fly-map'),'manifest.json',raw_manifest())]) if repo is not None else []
+    outputs=pack_backgrounds(convert(source), out.parent)
+    material=([(raw,p,b) for p,b in source.items()]+[]) if repo is not None else []
     material += [(out,p,b) for p,b in outputs.items()]
     for root,p,b in material:
         target=safe(root,p);stage=safe(root,p+'.tmp');target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)
-    return dict(profile=PROFILE,inputCount=len(source),assetCount=7,outputCount=len(outputs))
+    return dict(profile=PROFILE,inputCount=len(source),assetCount=2,outputCount=len(outputs))
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-repo',type=pathlib.Path)

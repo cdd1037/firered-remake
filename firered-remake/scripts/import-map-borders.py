@@ -5,7 +5,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import base64
 import importlib.util
@@ -30,7 +30,7 @@ def canonical(value):
 def verify_inputs(raw, rules_raw, rule_lock):
     data = rule_lock.read_bytes()
     rule_files = json.loads(data)['files']
-    manifest = json.loads((raw_metadata_directory(raw, 'pallet') / 'manifest.json').read_bytes())
+    manifest = json.loads((ROOT / 'scripts/fetch-pallet.lock.json').read_bytes())
     files = manifest['files']
     if manifest['repository'] != 'pret/pokefirered' or manifest['commit'] != COMMIT:
         raise ValueError('Pallet source inventory differs from reviewed pin')

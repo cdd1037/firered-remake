@@ -17,23 +17,7 @@ public sealed partial class PretCampaignCatalog
     public FightingDojoMachineCatalog FightingDojoMachines { get; }
     public FightingDojoTrainerCatalog FightingDojoTrainers { get; }
 
-    private static void AppendFightingDojoSources(PretFightingDojoRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in region.Scripts)
-        {
-            if (previous.TryGetValue(file.Path, out var existing))
-            {
-                if (existing.Text != file.Text)
-                    throw new InvalidDataException("fighting_dojo_source_conflict:" + file.Path);
-            }
-            else { previous.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-    }
+
 
     private static void ValidateFightingDojoComposition(PretFightingDojoRegion region,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> previous,PretStoryCompilation scripts)
     {

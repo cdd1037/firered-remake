@@ -18,27 +18,23 @@ public sealed class PretTrainerTowerRegion
     public const string Profile = "firered-trainer-tower-region-v1";
     public ImmutableDictionary<MapId, PretWorldMap> Maps { get; }
     public ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap> Layouts { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement ScriptInventory { get; }
+
     public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretTrainerTowerRegion(SilphSourcePackage source,
-        ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap> layouts,
-        ImmutableArray<PretSourceScriptFile> scripts, ImmutableDictionary<string, string> texts)
+        ImmutableDictionary<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap> layouts)
     {
         Layouts = layouts;
         Maps = layouts.Where(p => p.Key.Format is PretTrainerTowerLayoutFormat.Common or PretTrainerTowerLayoutFormat.Single)
-            .ToImmutableDictionary(p => p.Key.Map, p => p.Value);
-        Scripts = scripts; TextSources = texts; SourceFiles = source.Files; GeneratedDirectory = source.Directory;
+            .ToImmutableDictionary(p => p.Key.Map, p => p.Value); SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty; GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        ScriptInventory = source.Document("scripts.json"); NpcSources = source.Document("npc-source.json");
+        NpcSources = source.Document("npc-source.json");
         Constants = PretSharedConstants.ForPackage(source.Directory);
     }
 
@@ -124,47 +120,28 @@ public sealed class PretTrainerTowerRegion
     {
         var source = Source(projectRoot);
         var catalog = source.Document("catalog.json");
-        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Trainer Tower resources; runtime admission is separate.", Profile, source.Files);
-        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-        var originalLayouts = SilphSourcePackage.Json(raw["data/layouts/layouts.json"]).GetProperty("layouts").EnumerateArray()
-            .Where(l => l.TryGetProperty("id", out _)).ToDictionary(l => l.GetProperty("id").GetString()!, StringComparer.Ordinal);
+        var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.", "Trainer Tower resources; runtime admission is separate.", Profile, ImmutableArray<PretWorldSourceFile>.Empty);
         var layouts = ImmutableDictionary.CreateBuilder<(MapId Map, PretTrainerTowerLayoutFormat Format), PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
             string relative = spec.GetProperty("directory").GetString()!, path = spec.GetProperty("path").GetString()!;
             string id = spec.GetProperty("stableId").GetString()!;
             Need(path == relative + "/runtime-map.json", "Tower map path differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
+            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Tower source map identity differs.");
             var format = Enum.Parse<PretTrainerTowerLayoutFormat>(spec.GetProperty("format").GetString()!);
             string originalId = runtime.Events.GetProperty("layout").GetString()!;
             string expectedId = originalId + (format == PretTrainerTowerLayoutFormat.Double ? "_DOUBLES" : format == PretTrainerTowerLayoutFormat.Knockout ? "_KNOCKOUT" : "");
             Need(spec.GetProperty("layoutId").GetString() == expectedId, "Tower map/format layout binding differs.");
-            var layout = originalLayouts[expectedId];
-            Need(runtime.Width == layout.GetProperty("width").GetInt32() && runtime.Height == layout.GetProperty("height").GetInt32() &&
-                runtime.BorderWidth == layout.GetProperty("border_width").GetInt32() && runtime.BorderHeight == layout.GetProperty("border_height").GetInt32(), "Tower layout dimensions differ.");
             layouts.Add((new(id), format), PretWorldMap.FromRuntime(runtime, metadata, Path.Combine(source.Directory, relative),
-                Path.Combine(source.Directory, "npc/red-normal.png"), MapIdFromSourceSymbol));
+                PretOverworldTextures.Resolve(source.Directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(layouts.Count == 27 && layouts.Keys.Select(k => k.Map).Distinct().Count() == 11, "Tower map/layout count differs.");
-        var inventory = source.Document("scripts.json");
-        Need(inventory.GetProperty("blocks").GetArrayLength() == 294 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0, "Tower script scope differs.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
-        {
-            string path = entry.GetString()!, text = new UTF8Encoding(false, true).GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(label.Length > 0, "Missing Tower script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
-        return new(source, layouts.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable());
+
+        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
+        
+        return new(source, layouts.ToImmutable());
     }
-    private static SilphSourcePackage Source(string root) => new(root,"trainer-tower-region",        "scripts/trainer-tower-region.lock.json");
+    private static SilphSourcePackage Source(string root) => new(root,"trainer-tower-region");
     private static void Need(bool value, string message) => SilphSourcePackage.Need(value, message);
 }

@@ -10,7 +10,7 @@ public sealed record VictoryRoadPickup(string Id, MapId Map, int LocalId, int X,
 public sealed record VictoryRoadItemsDocument(string SourceCommit, string Profile, ImmutableArray<PewterMachineItem> Items,
     ImmutableArray<VictoryRoadPickup> Pickups, bool Renewable, ImmutableArray<string> Limitations);
 public sealed record VictoryRoadMachinesDocument(string SourceCommit, string Profile,
-    ImmutableArray<PewterAdditionalMachine> Machines, ImmutableArray<OpeningItemSourceRef> RulesSources);
+    ImmutableArray<PewterAdditionalMachine> Machines);
 public sealed record VictoryRoadItemContent(VictoryRoadItemsDocument Items, VictoryRoadMachinesDocument Machines);
 
 /// <summary>Pinned source declarations plus two ordinary inventory additions and four machine additions.</summary>
@@ -21,7 +21,7 @@ public static class PretVictoryRoadItems
     {
         root = Path.GetFullPath(root);
         var items = SafariSource.Parse<VictoryRoadItemsDocument>(SafariSource.Read(root,            "content/generated/victory-road-rules/items.json"));
-        var machines = SafariSource.Parse<VictoryRoadMachinesDocument>(SafariSource.Read(root,            "content/generated/victory-road-rules/machines.json"));
+        var machines = SafariSource.Parse<VictoryRoadMachinesDocument>(SafariSource.Read(root,            "content/generated/victory-road-rules/machines.json"), root);
         SafariSource.Require(items.Items.Length == 16 &&
             items.Pickups.Length == 18 && !items.Renewable && !items.Limitations.IsDefaultOrEmpty &&
             items.Items.Select(i => i.Item.Id).Distinct().Count() == 16 &&

@@ -34,23 +34,7 @@ public sealed partial class PretCampaignCatalog
     public string TrainerTowerEncounterMusic(TrainerTowerFloorTemplate template,int trainerIndex) =>
         TrainerTowerRegion.EncounterMusic(template, trainerIndex);
 
-    private static void AppendTrainerTowerSources(PretTrainerTowerRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in region.Scripts)
-        {
-            if (previous.TryGetValue(file.Path, out var existing))
-            {
-                if (existing.Text != file.Text)
-                    throw new InvalidDataException("trainer_tower_source_conflict:" + file.Path);
-            }
-            else { previous.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-    }
+
 
     private static void ValidateTrainerTowerComposition(PretTrainerTowerRegion region, PretStoryCompilation scripts, TrainerTowerCatalog courses, TrainerTowerShopCatalog shop)
     {
@@ -66,9 +50,8 @@ public sealed partial class PretCampaignCatalog
                     !map.Events.GetProperty("allow_running").GetBoolean()) throw new InvalidDataException("trainer_tower_field_rules");
             }
         }
-        var sourcePaths = region.Scripts.Where(s => s.Path == "data/scripts/trainer_tower.inc" || s.Path.StartsWith("data/maps/TrainerTower_", StringComparison.Ordinal))
-            .Select(s => s.Path).ToHashSet(StringComparer.Ordinal);
-        var programs = scripts.Programs.Values.Where(p => p.Instructions.Any(i => sourcePaths.Contains(i.Source.Path))).ToArray();
+        var programs = scripts.Programs.Values.Where(p => p.Instructions.Any(i =>
+            i.Source.Path == "data/scripts/trainer_tower.inc" || i.Source.Path.StartsWith("data/maps/TrainerTower_", StringComparison.Ordinal))).ToArray();
         if (programs.Length == 0 || programs.Any(p => p.Instructions.IsEmpty || p.Instructions.Any(i => i.Op == StoryOp.Unsupported)))
             throw new InvalidDataException("trainer_tower_story_incomplete");
         foreach (var label in new[] { "TrainerTower_Lobby_EventScript_EntryTrigger","TrainerTower_EventScript_DoBattle","TrainerTower_EventScript_SetFloorCleared","TrainerTower_EventScript_WarpToLobbyLost","TrainerTower_EventScript_SpeakToOwner","TrainerTower_Elevator_EventScript_FloorSelect" })

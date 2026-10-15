@@ -62,12 +62,10 @@ public sealed class PretFuchsiaRoutePokemon
         var doc=ContentJson.ParseStrict<FuchsiaRoutePokemonDocument>(Utf8.GetString(bytes),options);
         Require(doc.SchemaVersion==1 && doc.RequiredMoves.Length==17 && doc.HeldItems.Length==4 && doc.Machines.Length==4 &&
             doc.NaturalLevelLimit is null && !doc.Limitations.IsDefaultOrEmpty,"Fuchsia source document scope differs.");
-        var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();var lineCounts=new Dictionary<string,int>(StringComparer.Ordinal);
+        var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach(var input in doc.Inputs)
         {
-            var source=PretCeladonApproachSource.Read(root,PretSourcePaths.FireRedRawDirectory + "/"+input.Path);
-            if(!input.Path.EndsWith(".png",StringComparison.Ordinal))lineCounts.Add(input.Path,Utf8.GetString(source).Count(c=>c=='\n')+1);
-            files.Add(new(input.Path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{input.Path}"));
+            files.Add(new(input.Path));
         }
         var species=baseCatalog.Species.ToBuilder();var moves=baseCatalog.Moves.ToBuilder();
         foreach(var s in doc.Species)

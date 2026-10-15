@@ -39,10 +39,10 @@ public partial class CampaignView
         var extension = PretFirstSeviiTownMap.Load(_root);
         foreach (var a in extension.Assets)
         {
-            using var image = Image.CreateFromData(a.Width, a.Height, false, Image.Format.Rgba8, extension.ReadAssetRgba(a.Id));
-            _townMapTextures.Add(a.Id, ImageTexture.CreateFromImage(image));
+            using var image = NativeImages.LoadPng(extension.ReadAssetPng(a.Id), a.Width, a.Height);
+            _townMapTextures.Add(a.Id, SceneTextures.FromImage(image));
             if (a.Id is not ("kanto-switch" or "sevii123" or "sevii123-locked" or "switch-menu")) continue;
-            var pixels = extension.ReadAssetRgba(a.Id);
+            var pixels = NativeImages.ReadPixels(extension.ReadAssetPng(a.Id));
             for (int i = 0; i < pixels.Length; i += 4)
                 for (int c = 0; c < 3; c++)
                 {
@@ -50,7 +50,7 @@ public partial class CampaignView
                     five += (-five * 6) >> 4; pixels[i + c] = (byte)(five * 255 / 31);
                 }
             using var dark = Image.CreateFromData(a.Width, a.Height, false, Image.Format.Rgba8, pixels);
-            _townMapTextures.Add("dark-" + a.Id, ImageTexture.CreateFromImage(dark));
+            _townMapTextures.Add("dark-" + a.Id, SceneTextures.FromImage(dark));
         }
         _firstSeviiTownMap = extension;
     }

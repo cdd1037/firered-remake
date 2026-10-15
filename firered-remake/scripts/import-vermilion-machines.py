@@ -3,6 +3,9 @@
 import argparse,  json, pathlib, subprocess, sys, re
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
+import sys
+sys.path.insert(0, str(ROOT / "scripts"))
+from machine_catalog import load_catalog, machine_reference, compatibility_reference
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-vermilion-machines-v1'
@@ -15,18 +18,10 @@ def safe(root,p):
  return q
 MACHINES=('TM39_ROCK_TOMB','TM05_ROAR','TM09_BULLET_SEED','TM46_THIEF','TM03_WATER_PULSE','TM45_ATTRACT','TM43_SECRET_POWER','TM28_DIG')
 def convert(sources):
- p='src/data/pokemon/tmhm_learnsets.h';text=sources[p].decode();constants=sources['include/constants/species.h'].decode();rows=[]
- for full in MACHINES:
-  compatibility=[]
-  for species in ('MEOWTH','PERSIAN'):
-   symbol='SPECIES_'+species;matches=list(re.finditer(r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),',text,re.M|re.S))
-   if len(matches)!=1:raise ValueError('Nonunique compatibility source')
-   m=matches[0];tokens=re.findall(r'TMHM\((\w+)\)',m[1])
-   if re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]) or len(tokens)!=len(set(tokens)):raise ValueError('Unsupported compatibility syntax')
-   ids=re.findall(r'^#define '+symbol+r'\s+(\d+)\b',constants,re.M)
-   if len(ids)!=1:raise ValueError('Nonunique species identity')
-   compatibility.append(dict(species=dict(value='pret:'+symbol),sourceSpeciesId=int(ids[0]),canLearn=full in tokens,source=dict(path=p,symbol=symbol,startLine=text.count('\n',0,m.start())+1,endLine=text.count('\n',0,m.end())+1)))
-  rows.append(dict(item=dict(value='pret:ITEM_'+full[:4]),compatibility=compatibility))
+ shared = load_catalog(ROOT)
+ rows = [dict(item=dict(value='pret:ITEM_' + item[:4]), compatibility=[
+  compatibility_reference(shared, 'pret:ITEM_' + item[:4], 'pret:SPECIES_' + species)
+  for species in ('MEOWTH', 'PERSIAN')]) for item in MACHINES]
  return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,rows=rows)
 def run(repo,raw,out):
  raw,out=pathlib.Path(raw).absolute(),pathlib.Path(out).absolute()

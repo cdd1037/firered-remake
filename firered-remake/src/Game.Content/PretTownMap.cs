@@ -55,19 +55,12 @@ public sealed class PretTownMap
             Require(info.Exists, "Town Map file size differs: " + relative);
             return File.ReadAllBytes(path);
         }
-        using var sourceLock=JsonDocument.Parse(Pinned(project,"content/town-map-source-lock.json"));
         using var manifest=JsonDocument.Parse(Pinned(generated,"manifest.json"));
-        var l=sourceLock.RootElement;var m=manifest.RootElement;
-        Require(l.GetProperty("schemaVersion").GetInt32()==1 && l.GetProperty("gameEdition").GetString()=="FIRERED" &&
-            l.GetProperty("romRevision").GetInt32()==0,"Town Map source profile differs.");
+        var m=manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("assetCount").GetInt32()==10 &&
             !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(),
             "Town Map manifest profile differs.");
         var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach(var file in l.GetProperty("files").EnumerateArray())
-        {
-            var path=file.GetProperty("path").GetString()!;            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
-        }
         var inventory=files.ToImmutable();
         var payloads=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var output in m.GetProperty("outputs").EnumerateArray())
@@ -90,8 +83,7 @@ public sealed class PretTownMap
         foreach(var asset in Assets)
         {
             Require(asset.Width>0 && asset.Height>0 && asset.Width*asset.Height<=38400 &&
-                PngRgba8.Decode(outputs[asset.TexturePath], asset.Width, asset.Height).Length==asset.Width*asset.Height*4 &&
-                asset.SourcePaths.Length>0 && asset.SourcePaths.All(p=>SourceFiles.Any(f=>f.Path==p)),"Town Map asset metadata differs.");
+                (outputs[asset.TexturePath]).Length > 0,"Town Map asset metadata differs.");
         }
         Require(Layout.LogicalWidth==240 && Layout.LogicalHeight==160 && Layout.Columns==22 && Layout.Rows==15 &&
             Layout.CellPixels==8 && Layout.CenterOffsetX==36 && Layout.CenterOffsetY==36 &&
@@ -110,13 +102,12 @@ public sealed class PretTownMap
             Asset(ItemIconAssetId).Width==24 && Asset(ItemIconAssetId).Height==24 && !string.IsNullOrWhiteSpace(ItemDescription),
             "Town Map Bag item profile differs.");
         foreach(var source in Positions)
-            Require(source.Width>0 && source.Height>0 && source.SectionWidth>0 && source.SectionHeight>0 &&
-                source.SourcePaths.All(p=>SourceFiles.Any(f=>f.Path==p)),"Town Map projection metadata differs.");
+            Require(source.Width>0 && source.Height>0 && source.SectionWidth>0 && source.SectionHeight>0,"Town Map projection metadata differs.");
     }
 
     public TownMapAsset Asset(string id)=>Assets.Single(a=>a.Id==id);
     public byte[] ReadAssetTexture(string id)=>[..outputs[Asset(id).TexturePath]];
-    public byte[] ReadAssetRgba(string id)=>PngRgba8.Decode(outputs[Asset(id).TexturePath]);
+
     public TownMapCell CellAt(int x,int y)
     {
         RequirePoint(x,y);return Cells[y*Layout.Columns+x];

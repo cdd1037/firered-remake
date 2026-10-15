@@ -52,7 +52,7 @@ def safe(root, relative):
     return target
 
 
-def load_lock(path=ROOT / 'scripts/fetch-early-starter-status.lock.json', project_path=ROOT / 'content/source-lock.json'):
+def load_lock(path=ROOT / 'scripts/fetch-early-starter-status.lock.json', project_path=ROOT / 'scripts/import-config/source.json'):
     data = pathlib.Path(path).read_bytes()
     lock = json.loads(data, object_pairs_hook=pairs)
     if (lock['schemaVersion'], lock['profile'], lock['repository'], lock['commit']) != (1, PROFILE, REPOSITORY, COMMIT):
@@ -195,7 +195,7 @@ def main():
     parser.add_argument('--raw', type=pathlib.Path, default=ROOT / RAW_ROOT)
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/early-starter-status')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/fetch-early-starter-status.lock.json')
-    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
+    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'scripts/import-config/source.json')
     args = parser.parse_args()
     outputs = run(args.lock, args.project_lock, args.raw, args.output)
     print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=3, outputs=len(outputs))))

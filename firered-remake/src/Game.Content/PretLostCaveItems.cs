@@ -35,10 +35,4 @@ public static class PretLostCaveItems
         OrdinaryItemInventoryCatalog.AppendLostCaveItems(predecessor, LoadItemsDocument(root).Additions);
     public static JsonElement LoadSourceContract(string root) =>
         JsonSerializer.Deserialize<JsonElement>(Read(root,Base + "source-contract.json"));
-    public static byte[] LoadIconRgba(string root, ItemId item)
-    {
-        var icon = LoadItemsDocument(root).Icons.SingleOrDefault(i => i.Item == item)
-            ?? throw new ArgumentException("lost_cave_item_icon_id");
-        return PngRgba8.Decode(Read(root,icon.TexturePath),icon.Width,icon.Height);
-    }
 }

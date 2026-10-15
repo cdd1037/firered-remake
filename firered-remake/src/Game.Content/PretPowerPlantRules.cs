@@ -27,7 +27,7 @@ public static partial class PretPowerPlantRules
     }
     public static PowerPlantPokemonDocument LoadDocument(string root)
     {
-        var d = JsonSerializer.Deserialize<PowerPlantPokemonDocument>(Read(root,"content/generated/power-plant-pokemon/catalog.json"), Options)
+        var d = JsonSerializer.Deserialize<PowerPlantPokemonDocument>(Read(root,"content/generated/power-plant-pokemon/catalog.json"), SharedMachineCatalog.Options(root, Options))
             ?? throw new InvalidDataException("power_plant_source_missing");
         if (d.Machines.IsDefaultOrEmpty || d.NewMachines.IsDefaultOrEmpty || d.Items.IsDefaultOrEmpty ||
             d.Pickups.IsDefaultOrEmpty || d.HeldItems.IsDefault || d.Land is null || d.Land.Slots.IsDefaultOrEmpty)

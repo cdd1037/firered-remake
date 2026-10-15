@@ -11,7 +11,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse, base64, collections,  json, pathlib, re, struct
 from PIL import Image
 ROOT=pathlib.Path(__file__).resolve().parent.parent
@@ -72,12 +72,9 @@ def write_npc_sprites(mapjson,out,source):
     (out/'npc-sprites.json').write_text(canonical({'schemaVersion':1,'sprites':result,'scope':'Source static/standard standing frames only. Original object visibility, movement and script state are not inferred here.'}), encoding='utf-8', newline='\n')
 
 def import_map(name,stable_id,out):
-    lock=json.loads((ROOT/'scripts/fetch-pallet.lock.json').read_text(encoding='utf-8')); manifest=json.loads((raw_metadata_directory(RAW, 'pallet')/'manifest.json').read_text(encoding='utf-8'))
-    if manifest['commit'] != lock['commit'] or manifest['files'] is None: raise ValueError('Unpinned manifest')
-    files={f['path']:f for f in manifest['files']}
-    if set(files)!=set(f['path'] for f in lock['files']): raise ValueError('Dependency set differs')
-    for e in lock['files']:
-        b=binary(e['path']); f=files[e['path']]
+    lock=json.loads((ROOT/'scripts/fetch-pallet.lock.json').read_text(encoding='utf-8')); manifest=lock
+    for entry in lock['files']:
+        binary(entry['path'])
     def source(path,symbol): return {'kind':'pret','path':path,'symbol':symbol,'repository':lock['repository'],'commit':lock['commit']}
     map_path=f'data/maps/{name}/map.json'
     mapjson=json.loads(binary(map_path))

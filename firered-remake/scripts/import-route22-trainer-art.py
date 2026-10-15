@@ -14,10 +14,10 @@ def safe(root,relative):
     return result
 
 def run(repository,raw,output):
-    lock_bytes=(ROOT/'content/route22-trainer-art-source-lock.json').read_bytes()
+    lock_bytes=(ROOT/'scripts/import-config/route22-trainer-art.json').read_bytes()
     lock=json.loads(lock_bytes)
     if (lock['repository'],lock['commit'],len(lock['files']))!=('pret/pokefirered',COMMIT,8): raise ValueError('Source identity differs')
-    project=json.loads((ROOT/'content/source-lock.json').read_bytes())
+    project=json.loads((ROOT/'scripts/import-config/source.json').read_bytes())
     if (project['source']['sourceCommit'],project['referenceGame']['gameEdition'],project['referenceGame']['romRevision'])!=(COMMIT,'FIRERED',0): raise ValueError('Source profile differs')
     sources={}
     for entry in lock['files']:

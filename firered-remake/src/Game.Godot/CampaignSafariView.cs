@@ -22,13 +22,13 @@ public partial class CampaignView
         var art = _catalog.SafariArt ?? throw new InvalidDataException("Safari art catalog missing.");
         foreach (var sprite in art.Sprites)
         {
-            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
+            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var icon in art.Icons)
         {
-            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
+            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
             for (int i = 0; i < rgba.Length; i += 4)
                 if (rgba[i + 3] != 0)
                     for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
@@ -37,7 +37,7 @@ public partial class CampaignView
         }
         foreach (var footprint in art.Footprints)
         {
-            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[footprint.TexturePath], footprint.Width, footprint.Height));
+            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
             _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
         }
         foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
@@ -51,16 +51,16 @@ public partial class CampaignView
         var items = _catalog.SafariItems ?? throw new InvalidDataException("Safari item metadata missing.");
         foreach (var icon in items.Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("safari-items", icon));
-            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var existing)))_earlyItemIcons.Add(icon.Item, (ImageTexture)SceneTextures.FromImage(image));
+            
+            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var existing)))_earlyItemIcons.Add(icon.Item, ItemTexture("safari-items", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("Safari key-item pocket missing.");
         var gold = items.Items.Single(i => i.Metadata.Item.Id == PretSafariItems.GoldTeethId).Metadata;
         var goldIcon = items.Icons.Single(i => i.Item == PretSafariItems.GoldTeethId);
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
         const string id = "safari-gold-teeth";
-        using var goldImage = Image.CreateFromData(goldIcon.Width, goldIcon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("safari-items", goldIcon));
-        _questPocketTextures.Add(id, ImageTexture.CreateFromImage(goldImage));
+        
+        _questPocketTextures.Add(id, ItemTexture("safari-items", goldIcon));
         _questPocketUi = document with
         {
             Items = document.Items.Add(new(gold.Item.Id.Value, gold.Item.SourceItemSymbol, gold.Item.Name,

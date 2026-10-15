@@ -15,7 +15,7 @@ public static class PretOriginalMachineCatalog
     private static T Read<T>(string root,string file)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/original-machine-catalog", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+        return JsonSerializer.Deserialize<T>(bytes, SharedMachineCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))
             ?? throw new InvalidDataException("original_machine_source_missing");
     }
     public static OriginalMachinesDocument LoadDocument(string root)

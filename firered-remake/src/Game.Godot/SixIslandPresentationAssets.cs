@@ -32,23 +32,22 @@ internal static class SixIslandPresentationAssets
             manifest.GetProperty("profile").GetString() != profile)
             throw new InvalidDataException("Six Island presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
+        foreach (var asset in manifest.GetProperty("assets").EnumerateArray())
         {
-            string path = row.GetProperty("path").GetString()!;
-            if (!path.EndsWith(".png", StringComparison.Ordinal)) continue;
-            files.Add(path, Read(path));
+            string path = asset.GetProperty("texturePath").GetString()!;
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         foreach (var row in manifest.GetProperty("outputs").EnumerateArray())
         {
             string path = Base + row.GetProperty("path").GetString()!;
-            files.Add(path, Read(path));
+            if (!files.ContainsKey(path)) files.Add(path, Read(path));
         }
         foreach (var asset in manifest.GetProperty("assets").EnumerateArray())
         {
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
             string path = asset.GetProperty("texturePath").GetString()!;
             if (width is <= 0 or > 256 || height is <= 0 or > 256 || !files.TryGetValue(path, out var rgba) ||
-                PngRgba8.Decode(rgba, width, height).Length != width * height * 4)
+                !NativeImages.HasSize(rgba, width, height))
                 throw new InvalidDataException("Six Island asset pixels differ: " + path);
             if (asset.TryGetProperty("texturePath", out var texture) && !files.ContainsKey(texture.GetString()!))
                 throw new InvalidDataException("Missing presentation texture: " + texture.GetString());

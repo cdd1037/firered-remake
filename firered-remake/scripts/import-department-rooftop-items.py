@@ -5,13 +5,14 @@ REFERENCE DEPENDENCY OUTPUT [--check]. Reads shared inputs without copying them.
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
+from machine_catalog import load_catalog, machine_definitions
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 BASE = 'content/generated/department-rooftop-items/'
 RAW = 'content/raw/pokefirered/037335f4/'
 PROFILE = 'firered-department-rooftop-items-v1'
-SHARED = {'src/data/items.json': 'content/raw/pokefirered/037335f4/src/data/items.json', 'include/constants/items.h': 'content/raw/pokefirered/037335f4/include/constants/items.h', 'src/data/pokemon/item_effects.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/item_effects.h', 'include/constants/item_effects.h': 'content/raw/pokefirered/037335f4/include/constants/item_effects.h', 'src/data/item_icon_table.h': 'content/raw/pokefirered/037335f4/src/data/item_icon_table.h', 'src/data/graphics/items.h': 'content/raw/pokefirered/037335f4/src/data/graphics/items.h', 'src/move_descriptions.c': 'content/raw/pokefirered/037335f4/src/move_descriptions.c', 'src/data/pokemon/tmhm_learnsets.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h', 'include/constants/moves.h': 'content/raw/pokefirered/037335f4/include/constants/moves.h', 'src/data/battle_moves.h': 'content/raw/pokefirered/037335f4/src/data/battle_moves.h', 'src/pokemon.c': 'content/raw/pokefirered/037335f4/src/pokemon.c', 'src/script_menu.c': 'content/raw/pokefirered/037335f4/src/script_menu.c', 'include/constants/menu.h': 'content/raw/pokefirered/037335f4/include/constants/menu.h', 'include/constants/flags.h': 'content/raw/pokefirered/037335f4/include/constants/flags.h', 'src/strings.c': 'content/raw/pokefirered/037335f4/src/strings.c', 'data/scripts/obtain_item.inc': 'content/raw/pokefirered/037335f4/data/scripts/obtain_item.inc', 'data/event_scripts.s': 'content/raw/pokefirered/037335f4/data/event_scripts.s', 'data/text/obtain_item.inc': 'content/raw/pokefirered/037335f4/data/text/obtain_item.inc', 'asm/macros/event.inc': 'content/raw/pokefirered/037335f4/asm/macros/event.inc', 'data/maps/CeladonCity_DepartmentStore_Roof/scripts.inc': 'content/raw/pokefirered/037335f4/data/maps/CeladonCity_DepartmentStore_Roof/scripts.inc', 'data/maps/CeladonCity_DepartmentStore_Roof/text.inc': 'content/raw/pokefirered/037335f4/data/maps/CeladonCity_DepartmentStore_Roof/text.inc', 'data/maps/CeladonCity_DepartmentStore_Roof/map.json': 'content/raw/pokefirered/037335f4/data/maps/CeladonCity_DepartmentStore_Roof/map.json', 'src/data/party_menu.h': 'content/raw/pokefirered/037335f4/src/data/party_menu.h'}
+SHARED = {'src/data/items.json': 'content/raw/pokefirered/037335f4/src/data/items.json', 'include/constants/items.h': 'content/raw/pokefirered/037335f4/include/constants/items.h', 'src/data/pokemon/item_effects.h': 'content/raw/pokefirered/037335f4/src/data/pokemon/item_effects.h', 'include/constants/item_effects.h': 'content/raw/pokefirered/037335f4/include/constants/item_effects.h', 'src/data/item_icon_table.h': 'content/raw/pokefirered/037335f4/src/data/item_icon_table.h', 'src/data/graphics/items.h': 'content/raw/pokefirered/037335f4/src/data/graphics/items.h', 'include/constants/moves.h': 'content/raw/pokefirered/037335f4/include/constants/moves.h', 'src/data/battle_moves.h': 'content/raw/pokefirered/037335f4/src/data/battle_moves.h', 'src/pokemon.c': 'content/raw/pokefirered/037335f4/src/pokemon.c', 'src/script_menu.c': 'content/raw/pokefirered/037335f4/src/script_menu.c', 'include/constants/menu.h': 'content/raw/pokefirered/037335f4/include/constants/menu.h', 'include/constants/flags.h': 'content/raw/pokefirered/037335f4/include/constants/flags.h', 'src/strings.c': 'content/raw/pokefirered/037335f4/src/strings.c', 'data/scripts/obtain_item.inc': 'content/raw/pokefirered/037335f4/data/scripts/obtain_item.inc', 'data/event_scripts.s': 'content/raw/pokefirered/037335f4/data/event_scripts.s', 'data/text/obtain_item.inc': 'content/raw/pokefirered/037335f4/data/text/obtain_item.inc', 'asm/macros/event.inc': 'content/raw/pokefirered/037335f4/asm/macros/event.inc', 'data/maps/CeladonCity_DepartmentStore_Roof/scripts.inc': 'content/raw/pokefirered/037335f4/data/maps/CeladonCity_DepartmentStore_Roof/scripts.inc', 'data/maps/CeladonCity_DepartmentStore_Roof/text.inc': 'content/raw/pokefirered/037335f4/data/maps/CeladonCity_DepartmentStore_Roof/text.inc', 'data/maps/CeladonCity_DepartmentStore_Roof/map.json': 'content/raw/pokefirered/037335f4/data/maps/CeladonCity_DepartmentStore_Roof/map.json', 'src/data/party_menu.h': 'content/raw/pokefirered/037335f4/src/data/party_menu.h'}
 
 def need(value, message):
     if not value: raise ValueError(message)
@@ -62,32 +63,20 @@ def generate(reference, dependency):
         addition.update(description=item['description_english'].replace('\\n','\n'), healHp=hp, cureStatus=0,
             effectBytes=[0,0,0,0,flag,0,hp], useSupport=1, effectSource=source(ep,effect_symbol,effect), sourceMetadata=meta)
         drinks.append(addition)
-    dependency_paths = ['scripts/department-machine-stock.contract.json', 'content/generated/stone-evolution-species/machines.json', 'content/generated/first-sevii-rules/items.json']
+    dependency_paths = ['content/generated/first-sevii-rules/items.json',
+        'scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json']
     dependencies = [dict(path=p) for p in dependency_paths]
-    owned = json.loads((dependency/dependency_paths[0]).read_bytes())['ownedSpecies']
-    stone = json.loads((dependency/dependency_paths[1]).read_bytes())['additions'][0]['compatibility']
-    owned += [dict(symbol=row['species']['value'][5:], sourceSpeciesId=row['sourceSpeciesId']) for row in stone]
-    need(len(owned) == 170 and len({s['symbol'] for s in owned}) == 170, 'Current owned species')
-    existing_drinks = json.loads((dependency/dependency_paths[2]).read_bytes())['additions']
+    existing_drinks = json.loads((dependency/dependency_paths[0]).read_bytes())['additions']
     for drink in drinks[:2]: need(drink == next(d for d in existing_drinks if d['id'] == drink['id']), 'Reuse exact existing drink')
-    machines, icon_aliases = [], []
-    for tm, move, desc_name, move_id, pp, move_type, effect, alias in [
-        ('TM16','LIGHT_SCREEN','LightScreen',113,30,'PSYCHIC','LIGHT_SCREEN','TM04'),
-        ('TM20','SAFEGUARD','Safeguard',219,25,'NORMAL','SAFEGUARD','TM05'),
-        ('TM33','REFLECT','Reflect',115,20,'PSYCHIC','REFLECT','TM04')]:
-        symbol = 'ITEM_'+tm; item, meta = metadata(symbol)
-        # Match the established machine convention: English field through the closing line preceding the brace.
-        block = one(items_path, r'^    \{\n      "english": "'+tm+r'",.*?^    \}')
-        meta['source']['startLine'] += 1; meta['source']['endLine'] -= 1
-        dp = 'src/move_descriptions.c'; ds = 'gMoveDescription_'+desc_name
-        description = one(dp, r'^const u8 '+ds+r'\[\] = _\("(.*?)"\);')
-        machine = dict(item=meta, description=json.loads('"'+description[1]+'"'),
-            declarationDescription=item['description_english'].replace('\\n','\n'), descriptionSource=source(dp,ds,description))
-        lp = 'src/data/pokemon/tmhm_learnsets.h'; cells=[]
-        for species in owned:
-            row = one(lp, r'^    \['+species['symbol']+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),')
-            cells.append(dict(species=dict(value='pret:'+species['symbol']), sourceSpeciesId=species['sourceSpeciesId'],
-                canLearn='TMHM('+tm+'_'+move+')' in row[0], source=source(lp,species['symbol'],row)))
+    machines = machine_definitions(dependency, BASE + 'machines.json', 'additions')
+    need(len(machines) == 3 and all(len(m['species']) == 170 for m in machines), 'Current admitted machines and species')
+    icon_aliases = []
+    for index, (tm, move, move_id, pp, move_type, effect, alias) in enumerate([
+        ('TM16','LIGHT_SCREEN',113,30,'PSYCHIC','LIGHT_SCREEN','TM04'),
+        ('TM20','SAFEGUARD',219,25,'NORMAL','SAFEGUARD','TM05'),
+        ('TM33','REFLECT',115,20,'PSYCHIC','REFLECT','TM04')]):
+        symbol = 'ITEM_'+tm
+        need(machines[index]['item'] == 'pret:'+symbol, 'Admitted rooftop reward')
         need(number('include/constants/moves.h','MOVE_'+move) == move_id, 'Source move ID')
         bp='src/data/battle_moves.h'; battle=one(bp,r'^    \[MOVE_'+move+r'\]\s*=\s*\{(.*?)\},')
         for key,expected in [('effect','EFFECT_'+effect),('power','0'),('type','TYPE_'+move_type),('accuracy','0'),('pp',str(pp))]:
@@ -96,7 +85,6 @@ def generate(reference, dependency):
         table_path='src/data/party_menu.h'
         entries=re.findall(r'MOVE_(\w+)',one(table_path,r'^static const u16 sTMHMMoves\[\] =\s*\{(.*?)^\};')[1])
         need(entries[int(tm[2:])-1] == move, 'Source TM index')
-        machines.append(dict(machine=machine,move=dict(value='pret:MOVE_'+move),sourceMoveId=move_id,movePp=pp,compatibility=cells))
         ip='src/data/item_icon_table.h'; binding=one(ip,r'^    \['+symbol+r'\]\s*= \{gItemIcon_TMHM, gItemIconPalette_'+move_type.title()+r'TMHM\},$')
         other=one(ip,r'^    \[ITEM_'+alias+r'\]\s*= \{gItemIcon_TMHM, gItemIconPalette_'+move_type.title()+r'TMHM\},$')
         icon_aliases.append(dict(item=dict(value='pret:'+symbol), reusedItem=dict(value='pret:ITEM_'+alias), source=source(ip,symbol,binding), reusedSource=source(ip,'ITEM_'+alias,other)))
@@ -139,12 +127,10 @@ def generate(reference, dependency):
         roofSources=[dict(path=roof+p) for p in ['scripts.inc','text.inc','map.json']],
         objects=map_data['object_events'],backgroundEvents=map_data['bg_events'],menus=menus,flags=flags,
         drinks=[dict(item=d['id']['value'],sourceItemId=d['sourceItemId'],price=d['price'],healHp=d['healHp'],effectBytes=d['effectBytes']) for d in drinks],
-        rewardMappings=[dict(drink=d['id']['value'],reward=m['machine']['item']['id']['value'],flag=f['symbol']) for d,m,f in zip(drinks,machines,flags)],
+        rewardMappings=[dict(drink=d['id']['value'],reward=m['item'],flag=f['symbol']) for d,m,f in zip(drinks,machines,flags)],
         giveDrinkOrder=['removeitem','checkitemspace','additem','fanfare','putitemaway','setflag'],consumesDrinkWhenRewardHasNoRoom=True,dependencies=dependencies_facts)
     evidence=dict(sourceCommit=COMMIT,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
     files = {BASE + 'items.json': encoded(document), BASE + 'machines.json': encoded(machine_doc), BASE + 'source-contract.json': encoded(facts), BASE + 'source-input-hashes.json': encoded(evidence), icon['texturePath']: png, **raw}
-    files['scripts/department-rooftop-items.lock.json']=encoded(dict(sourceCommit=COMMIT,profile=PROFILE,
-        files=[dict(path=p) for p,b in sorted(files.items())]))
     return files,document,machine_doc
 
 if __name__ == '__main__':
@@ -156,5 +142,6 @@ if __name__ == '__main__':
         target=args.output/path
         if args.check: need(target.read_bytes() == data,'Regeneration differs: '+path)
         else: target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(data)
+    catalog=load_catalog(args.dependency)
     print(json.dumps(dict(checked=args.check,
-        compatibility=[sum(c['canLearn'] for c in m['compatibility']) for m in machines['additions']]),indent=2))
+        compatibility=[sum(catalog.compatibility(m['item'], species)['canLearn'] for species in m['species']) for m in machines['additions']]),indent=2))

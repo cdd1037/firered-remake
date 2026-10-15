@@ -6,6 +6,7 @@ _constant_scripts = str(_ConstantPath(__file__).resolve().parent)
 if _constant_scripts not in _constant_sys.path:
     _constant_sys.path.insert(0, _constant_scripts)
 from shared_constants import package_documents
+from overworld_sprites import graphics_records
 import sys as _map_sys
 from pathlib import Path as _MapPath
 _map_scripts = str(_MapPath(__file__).resolve().parents[1] / 'scripts')
@@ -17,7 +18,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import ast
 import base64
@@ -412,47 +413,11 @@ def script_inventory(src, worlds):
                 specials=[dict(symbol=k, occurrences=v, runtimeStatus='requiresNamedHandlerAudit') for k, v in sorted(specials.items())],
                 movements=[dict(opcode=k, occurrences=v, runtimeStatus='requiresMovementAudit') for k, v in sorted(movements.items())])
 
-def npc_inventory(src, worlds, out):
+def npc_inventory(src, worlds, out, *, render=False):
     root = 'src/data/object_events/'
     graphics = {e['graphics_id'] for w in worlds for e in w['events']['object_events']}
     graphics.add('OBJ_EVENT_GFX_RED_NORMAL')
-    records = []
-    out.mkdir()
-    for graphics_id in sorted(graphics):
-        symbol = re.search(r'\[' + graphics_id + r'\]\s*=\s*&(\w+)', src.text(root + 'object_event_graphics_info_pointers.h'))[1]
-        body = re.search(r'\b' + symbol + r' = \{(.*?)\n\};', src.text(root + 'object_event_graphics_info.h'), re.S)[1]
-        fields = dict(re.findall(r'\.(\w+)\s*=\s*([^,\n]+)', body))
-        rows = re.search(r'\b' + fields['images'] + r'\[\] = \{(.*?)\n\};', src.text(root + 'object_event_pic_tables.h'), re.S)[1]
-        frames = []
-        for pic, width, height, index in re.findall(r'overworld_frame\((\w+), (\d+), (\d+), (\d+)\)', rows):
-            path = re.search(r'\b' + pic + r'\[\] = INCBIN_U16\("(.*?)"\)', src.text(root + 'object_event_graphics.h'))[1].replace('.4bpp', '.png')
-            frames.append(dict(pic=pic, widthTiles=int(width), heightTiles=int(height), index=int(index), sourceRef=src.ref(path, pic)))
-        palette = re.search(r'\{\s*(\w+)\s*,\s*' + fields['paletteTag'] + r'\s*\}', src.text('src/event_object_movement.c'))[1]
-        palette_path = re.search(r'\b' + palette + r'\[\] = INCBIN_U16\("(.*?)"\)', src.text(root + 'object_event_graphics.h'))[1].replace('.gbapal', '.pal')
-        width, height = int(fields['width']), int(fields['height'])
-        colors = [tuple(((int(v) >> 3) << 3) | ((int(v) >> 3) >> 2) for v in line.split())
-                  for line in src.text(palette_path).splitlines()[3:]]
-        if len(colors) != 16 or any(len(c) != 3 for c in colors) or not frames:
-            raise ValueError('Invalid NPC palette/frame table')
-        sheet = Image.new('RGBA', (width * len(frames), height))
-        for i, frame in enumerate(frames):
-            if frame['widthTiles'] * frame['heightTiles'] * 64 != width * height:
-                raise ValueError('NPC frame byte span differs')
-            image = Image.open(io.BytesIO(src.data[frame['sourceRef']['path']]))
-            if image.mode != 'P' or image.height != height or (frame['index'] + 1) * width > image.width:
-                raise ValueError('Unsupported NPC source sheet')
-            crop = image.crop((frame['index'] * width, 0, (frame['index'] + 1) * width, height))
-            rgba = Image.new('RGBA', crop.size)
-            rgba.putdata([(*colors[c], 0 if c == 0 else 255) for c in crop.get_flattened_data()])
-            sheet.paste(rgba, (i * width, 0))
-        filename = graphics_id.removeprefix('OBJ_EVENT_GFX_').lower().replace('_', '-') + '.png'
-        sheet.save(out / filename, optimize=False, compress_level=9)
-        records.append(dict(graphicsId=graphics_id, declaration=fields, frames=frames,
-                            texturePath='npc/' + filename,
-                            frameWidth=width, frameHeight=height, frameCount=len(frames),
-                            tileCenterAnchor=dict(x=width // 2, y=height - 8),
-                            sourceRef=src.ref(root + 'object_event_graphics_info.h', symbol),
-                            paletteSourceRef=src.ref(palette_path, palette), runtimeStatus='sourceOnly'))
+    records = graphics_records(src, graphics, out, render=render)
     return dict(schemaVersion=1, graphics=records, dynamicGraphics=[])
 
 
@@ -544,12 +509,9 @@ def materialize(raw, reference_repo, source_package='route22-region'):
     for entry in lock['files']:
         path = entry['path']; require_safe_target(raw, raw / path)
         data = git('cat-file', 'blob', COMMIT + ':' + entry['path']); verified[path] = data
-    require_safe_target(raw_metadata_directory(raw, source_package), raw_metadata_directory(raw, source_package) / 'manifest.json')
     for path, data in verified.items():
         target = raw / path; target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
     manifest = dict(schemaVersion=1, commit=COMMIT,  inputCount=len(verified))
-    raw_metadata_directory(raw, source_package).mkdir(parents=True, exist_ok=True)
-    (raw_metadata_directory(raw, source_package) / 'manifest.json').write_bytes(canonical(manifest).encode())
 
 
 def first_badge_boundary(worlds):

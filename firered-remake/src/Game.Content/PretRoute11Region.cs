@@ -17,8 +17,6 @@ public sealed class PretRoute11Region
 {
     public const string Profile = "firered-route11-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
@@ -29,7 +27,7 @@ public sealed class PretRoute11Region
     public JsonElement Items => Dependencies.GetProperty("items");
     public JsonElement Pickups => Dependencies.GetProperty("pickups");
     public ImmutableArray<MapId> ReusedMapIds => [new("map.route-2")];
-    public JsonElement ScriptInventory { get; }
+
     public JsonElement Catalog { get; }
     public JsonElement NpcSources { get; }
     public JsonElement ExternalRoute2Events { get; }
@@ -37,14 +35,12 @@ public sealed class PretRoute11Region
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
-    private PretRoute11Region(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement scriptsInventory,
-        JsonElement npcSources, JsonElement externalRoute2Events)
+    private PretRoute11Region(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
+        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalRoute2Events)
     {
-        GeneratedDirectory = directory; NewMaps = maps; Scripts = scripts; TextSources = texts;
+        GeneratedDirectory = directory; NewMaps = maps;
         Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
-        ScriptInventory = scriptsInventory; NpcSources = npcSources; ExternalRoute2Events = externalRoute2Events;
+        NpcSources = npcSources; ExternalRoute2Events = externalRoute2Events;
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -79,14 +75,14 @@ public sealed class PretRoute11Region
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/route11-region");
-        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
+        
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        using var sourceLock = JsonDocument.Parse(ReadPinned(project,"content/sources/route11-region.lock.json"));
+
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
             m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Route11/Cave manifest identity differs.");
@@ -94,19 +90,13 @@ public sealed class PretRoute11Region
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
+            if (path == "scripts.json") continue;
             if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "route11-region/" + path)) continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate Route11/Cave output.");
         }
         using var catalog = JsonDocument.Parse(outputs["route11-catalog.json"]);
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var raw = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            var bytes = ReadPinned(rawDirectory,path);
-            Require(raw.TryAdd(path, bytes), "Duplicate Route11/Cave source.");
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
-        }
+
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
@@ -118,33 +108,17 @@ public sealed class PretRoute11Region
             if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact) )
             {
                 var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                    PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate Route11/Cave runtime map.");
                 continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
         Require(maps.Count == 8 && maps.Values.Sum(x => x.Width*x.Height) == 8978, "Incomplete Route11/Cave map set.");
-        using var scriptInventory = JsonDocument.Parse(outputs["scripts.json"]);
-        Require(scriptInventory.RootElement.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "Route11/Cave script reference closure is incomplete.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var property in scriptInventory.RootElement.GetProperty("filePreambles").EnumerateObject())
-        {
-            var path = property.Name;
-            var text = Encoding.UTF8.GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Require(symbol.Length > 0, "Route11/Cave script has no original source label: " + path);
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
+
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_GOT_HM05"] > 0 && constants["FLAG_GOT_ITEMFINDER"] > 0 &&
             constants["REQUIRED_SEEN_MONS"] == 10 && constants["REQUIRED_CAUGHT_MONS"] == 30,
@@ -156,28 +130,10 @@ public sealed class PretRoute11Region
             dependencies.RootElement.GetProperty("aides").GetArrayLength() == 2 &&
             dependencies.RootElement.GetProperty("blockedMaps")[0].GetString() == "MAP_ROUTE12",
             "Route11/Cave dependency scope differs.");
-        // Existing Forest owns Route2: authenticate its certificate and preserve the original map identity.
-        var reused = catalog.RootElement.GetProperty("reusedMaps");
-        Require(reused.GetArrayLength() == 1 && reused[0].GetProperty("stableId").GetString() == "map.route-2" ,
-            "Route11/Cave reused Route2 certificate differs.");
-        var forestDirectory = Path.Combine(project, "content/generated/forest-region");
-        foreach (var output in reused[0].GetProperty("outputs").EnumerateArray())
-        {
-            var relative = output.GetProperty("path").GetString()!;
-            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "forest-region/" + relative)) continue;
-            var bytes = ReadPinned(forestDirectory,relative);
-            if (relative == "route-2/runtime-map.json")
-            {
-                using var world = JsonDocument.Parse(bytes);
-                using var original = JsonDocument.Parse(raw["data/maps/Route2/map.json"]);
-                Require(JsonElement.DeepEquals(world.RootElement.GetProperty("events"), original.RootElement), "Reused Route2 events differ.");
-            }
-        }
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
-        using var cityEvents = JsonDocument.Parse(raw["data/maps/Route2/map.json"]);
-        return new(directory, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), scriptInventory.RootElement.Clone(),
-            npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
+        using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/Route2/map.json"));
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
+            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

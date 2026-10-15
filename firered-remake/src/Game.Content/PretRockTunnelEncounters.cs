@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Encounters;
@@ -23,15 +22,7 @@ public sealed class PretRockTunnelEncounters
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/rocktunnel-encounters.lock.json"));
-        var s=sourceLock.RootElement;
-        if(s.GetProperty("schemaVersion").GetInt32()!=1 || s.GetProperty("gameEdition").GetString()!="FIRERED" || s.GetProperty("romRevision").GetInt32()!=0)
-            throw new InvalidDataException("RockTunnel encounter source identity differs.");
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var d=ContentJson.ParseStrict<RockTunnelEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/rocktunnel-encounters/encounters.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<RockTunnelEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/rocktunnel-encounters/encounters.json")),ContentJson.CreateOptions());
                 if(d.SchemaVersion!=1 || d.Tables.Length!=4 ||
             d.HeldItemDrawBound!=100 || d.HeldItems.Length!=9 || d.ExcludedTables.GetArrayLength()!=3 || d.Limitations.IsDefaultOrEmpty)
             throw new InvalidDataException("RockTunnel encounter document scope differs.");

@@ -41,7 +41,6 @@ public sealed class PretCanonicalPokemonCatalog
 {
     public const string Profile = "firered-canonical-species-metadata-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public const string LockRelativePath = "content/sources/canonical-pokemon/source-lock.json";
     public const string CatalogRelativePath = "content/generated/canonical-pokemon/catalog.json";
     public const string ManifestRelativePath = "content/generated/canonical-pokemon/manifest.json";
 

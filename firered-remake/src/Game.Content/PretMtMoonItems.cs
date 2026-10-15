@@ -14,8 +14,7 @@ public sealed record PretMtMoonPickup(string Map, string Kind, ItemId Item, int 
     OpeningItemSourceRef? ScriptSource);
 public sealed record PretMtMoonFossil(ItemId Item, string Script, OpeningItemSourceRef Source);
 public sealed record PretMtMoonItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretMtMoonItem> Items, ImmutableArray<PewterAdditionalMachine> Machines,
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretMtMoonItem> Items, ImmutableArray<PewterAdditionalMachine> Machines,
     ImmutableArray<PewterMachineCompatibility> Tm39Compatibility, ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<PretMtMoonFossil> Fossils, ImmutableArray<string> Limitations);
 
@@ -25,14 +24,13 @@ public static class PretMtMoonItems
     public const string Profile = "firered-mtmoon-items-v1";
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
-    public static PretMtMoonItemsDocument Load(string json)
+    public static PretMtMoonItemsDocument Load(string json, SharedMachineCatalog machines)
     {
-        var options = ContentJson.CreateOptions();
+        var options = machines.CreateJsonOptions();
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var d = ContentJson.ParseStrict<PretMtMoonItemsDocument>(json, options);
         Require(d.SchemaVersion == 1 && d.Items.Length == 12 && d.Machines.Length == 3 && d.Tm39Compatibility.Length == 56 &&
-            d.Icons.Length == 12 && d.Pickups.Length == 19 && d.Fossils.Length == 2 && !d.Limitations.IsDefaultOrEmpty &&
-            !d.RulesSources.IsDefaultOrEmpty, "MtMoon item scope differs.");
+            d.Icons.Length == 12 && d.Pickups.Length == 19 && d.Fossils.Length == 2 && !d.Limitations.IsDefaultOrEmpty, "MtMoon item scope differs.");
         foreach (var i in d.Icons)
         {
             PretPewterMachines.ValidateIcon(i);
@@ -50,7 +48,7 @@ public static class PretMtMoonItems
 
     public static PretMtMoonItemsDocument LoadProject(string root)
     {
-        var d = Load(Utf8.GetString(Read(root,"content/generated/mtmoon-items/mtmoon-items.json")));
+        var d = Load(Utf8.GetString(Read(root,"content/generated/mtmoon-items/mtmoon-items.json")), SharedMachineCatalog.LoadProject(root));
         return d;
     }
 

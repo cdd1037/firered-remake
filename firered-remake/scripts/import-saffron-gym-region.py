@@ -212,9 +212,9 @@ def contracts(src,worlds,doc):
 def main():
     global ROOT, PRODUCT
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--reference-root',type=Path,required=True);ap.add_argument('--project-root',type=Path,default=ROOT);ap.add_argument('--dependency-root',type=Path,required=True);ap.add_argument('--check',action='store_true');a=ap.parse_args()
-    ROOT=a.project_root.absolute();PRODUCT=a.dependency_root.absolute();out=ROOT/'content/generated/saffron-gym-region';raw=ROOT/'content/raw/pokefirered/037335f4';lockpath=ROOT/'content/sources/saffron-gym-region.lock.json'
+    ROOT=a.project_root.absolute();PRODUCT=a.dependency_root.absolute();out=ROOT/'content/generated/saffron-gym-region';raw=ROOT/'content/raw/pokefirered/037335f4'
     if ROOT==a.reference_root.absolute() or ROOT.is_relative_to(a.reference_root.absolute()) or a.reference_root.absolute().is_relative_to(ROOT):raise ValueError('Reference/output overlap')
-    for target in (ROOT,out,raw,lockpath):
+    for target in (ROOT,out,raw):
         if any(p.is_symlink() for p in (target,*target.parents)):raise ValueError('Output parent symlink denied')
     out.mkdir(parents=True,exist_ok=True);src=Source(a.reference_root);worlds=[decode(src,n) for n in CORE];doc=scripts(src,worlds);links=topology(src,worlds)
     doc['profile']=PROFILE;doc['sourcePaths']=sorted({b['sourceRef']['path'] for b in doc['blocks']})
@@ -241,7 +241,7 @@ def main():
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(CORE),cellCount=sum(w['width']*w['height'] for w in worlds),borderCellCount=sum(len(w['borderBlocks']) for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),objectCount=len(objects),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        writes=[(lockpath,lockdata)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             if any(x.is_symlink() for x in (p,*p.parents)):raise ValueError('Output symlink denied')
             if a.check:

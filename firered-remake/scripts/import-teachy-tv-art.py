@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Decode authenticated Teachy TV overlays, host and original Route1 backdrop.
-Uses the adjacent authored standard-library codec; no upstream build or ROM.
+Uses Pillow image I/O and authored GBA tile rules; no upstream build or ROM.
 """
 import argparse
 import sys

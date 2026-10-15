@@ -70,17 +70,17 @@ internal static class VictoryRoadPresentationAssets
         var expectedSprites = (from species in new[] { 87, 103 } from side in new[] { "front", "back" }
             from variant in new[] { "normal", "shiny" } select (species, side, variant)).ToHashSet();
         if (sprites.Any(s => s.SpeciesId != (s.SourceSpeciesId == 87 ? "pret:SPECIES_DEWGONG" : "pret:SPECIES_EXEGGUTOR") ||
-                PngRgba8.Decode(files[s.TexturePath]).Length != 64 * 64 * 4 || !files.ContainsKey(s.TexturePath)))
+                !NativeImages.HasSize(files[s.TexturePath], 64, 64) || !files.ContainsKey(s.TexturePath)))
             throw new InvalidDataException("Victory Road sprite format differs.");
         if (!layers.Select(layer => layer.Layer).ToHashSet().SetEquals([0, 1, 2]) ||
-            layers.Any(layer => layer.Width != 64 || layer.Height != 16 || PngRgba8.Decode(files[layer.TexturePath]).Length != 64 * 16 * 4))
+            layers.Any(layer => layer.Width != 64 || layer.Height != 16 || !NativeImages.HasSize(files[layer.TexturePath], 64, 16)))
             throw new InvalidDataException("Victory Road layer format differs.");
         if (!sprites.Select(s => (s.SourceSpeciesId, s.Side, s.PaletteVariant)).ToHashSet().SetEquals(expectedSprites) || !pokemonIcons.Select(i => i.SourceSpeciesId).ToHashSet().SetEquals([87, 103]) ||
-            pokemonIcons.Any(i => i.SpeciesId != (i.SourceSpeciesId == 87 ? "pret:SPECIES_DEWGONG" : "pret:SPECIES_EXEGGUTOR") || PngRgba8.Decode(files[i.TexturePath]).Length != 32 * 32 * 4) ||
+            pokemonIcons.Any(i => i.SpeciesId != (i.SourceSpeciesId == 87 ? "pret:SPECIES_DEWGONG" : "pret:SPECIES_EXEGGUTOR") || !NativeImages.HasSize(files[i.TexturePath], 32, 32)) ||
             !m.GetProperty("trainerOnlySpecies").EnumerateArray().Select(s => s.GetInt32()).SequenceEqual([87, 103]))
             throw new InvalidDataException("Victory Road trainer-only Pokemon presentation differs.");
         if (!portraits.Select(p => p.SourceTrainerPicId).ToHashSet().SetEquals([88, 102, 103, 105, 110, 111, 128]) ||
-            portraits.Any(p => PngRgba8.Decode(files[p.TexturePath]).Length != 64 * 64 * 4) || items.Any(i => PngRgba8.Decode(files[i.TexturePath]).Length != 24 * 24 * 4) ||
+            portraits.Any(p => !NativeImages.HasSize(files[p.TexturePath], 64, 64)) || items.Any(i => !NativeImages.HasSize(files[i.TexturePath], 24, 24)) ||
             !tiles.Select(t => t.MetatileId).ToHashSet().SetEquals([721, 737, 775, 791]))
             throw new InvalidDataException("Victory Road presentation inventory differs.");
         return new(files, trainers, portraits, items, tiles, layers, sprites, pokemonIcons);

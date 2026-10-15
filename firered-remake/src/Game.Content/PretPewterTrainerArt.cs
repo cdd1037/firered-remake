@@ -34,9 +34,9 @@ public static class PretPewterTrainerArt
             if (id is not ("camper-front" or "brock-front") || asset.GetProperty("texturePath").GetString() != id + ".png" ||
                 asset.GetProperty("width").GetInt32() != 64 || asset.GetProperty("height").GetInt32() != 64 || asset.GetProperty("sourceFrame").GetInt32() != 0)
                 throw new InvalidDataException("Trainer portrait identity differs.");
-            var rgba = PngRgba8.Decode(Read("content/generated/pewter-trainer-art/" + id + ".png"));
-            if (rgba.Length != 64 * 64 * 4) throw new InvalidDataException("Trainer portrait size differs.");
-            result.Add(new(id, asset.GetProperty("x").GetInt32(), asset.GetProperty("y").GetInt32(), rgba));
+            var pngBytes = Read("content/generated/pewter-trainer-art/" + id + ".png");
+            if (pngBytes.Length == 0) throw new InvalidDataException("Trainer portrait size differs.");
+            result.Add(new(id, asset.GetProperty("x").GetInt32(), asset.GetProperty("y").GetInt32(), pngBytes));
         }
         return result.ToImmutable();
     }

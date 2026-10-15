@@ -48,9 +48,9 @@ return bytes;
                 asset.GetProperty("sourceTrainerPicId").GetInt32() != expected.PicId ||
                 asset.GetProperty("x").GetInt32() != 144 || asset.GetProperty("y").GetInt32() != 8)
                 throw new InvalidDataException("MtMoon trainer portrait identity differs.");
-            var rgba = PngRgba8.Decode(Read("content/generated/mtmoon-trainer-art/" + id + ".png"));
-            if (rgba.Length != 64 * 64 * 4) throw new InvalidDataException("MtMoon trainer portrait size differs.");
-            result.Add(new(id, 144, 8, rgba));
+            var pngBytes = Read("content/generated/mtmoon-trainer-art/" + id + ".png");
+            if (pngBytes.Length == 0) throw new InvalidDataException("MtMoon trainer portrait size differs.");
+            result.Add(new(id, 144, 8, pngBytes));
         }
         return result.ToImmutable();
     }

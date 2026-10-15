@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Text;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 using Game.Domain.Items;
 
@@ -15,23 +13,20 @@ public sealed class MoveReminderCatalog
     private MoveReminderCatalog(PokemonCatalog pokemon, ImmutableDictionary<string, string> texts)
     { Pokemon = pokemon; Texts = texts; }
 
-    public static MoveReminderCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> strings)
+    public static MoveReminderCatalog Authenticate(PokemonCatalog owned, ImmutableDictionary<string, string> texts)
     {
         if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
             throw new ArgumentException("move_reminder_source_authentication");
-        var source = Encoding.UTF8.GetString(strings);
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
         foreach (string symbol in new[] { "gText_TeachWhichMoveToMon", "gText_TeachMoveQues", "gText_MonLearnedMove",
             "gText_MonIsTryingToLearnMove", "gText_StopLearningMove", "gText_1_2_and_Poof",
             "gText_MonForgotOldMoveAndMonLearnedNewMove", "gText_GiveUpTryingToTeachNewMove",
             "gText_WhichMoveShouldBeForgotten", "gText_PokeSum_HmMovesCantBeForgotten",
             "gText_2Tinymushrooms", "gText_1BigMushroom", "gText_TeachWhichPokemon" })
         {
-            var match = Regex.Match(source, "const u8 " + symbol + "\\[\\] = _\\(\"([^\"]*)\"\\);", RegexOptions.CultureInvariant);
-            if (!match.Success) throw new ArgumentException("move_reminder_text_missing: " + symbol);
-            texts.Add(symbol, match.Groups[1].Value);
+            if (!texts.TryGetValue(symbol, out var text) || string.IsNullOrEmpty(text))
+                throw new ArgumentException("move_reminder_text_missing: " + symbol);
         }
-        return new(owned, texts.ToImmutable());
+        return new(owned, texts);
     }
 }
 

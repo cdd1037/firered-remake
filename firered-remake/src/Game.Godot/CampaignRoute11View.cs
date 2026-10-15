@@ -43,19 +43,19 @@ public partial class CampaignView
         var art = PretRoute11Art.Load(_root);
         foreach (var portrait in art.Portraits)
         {
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, portrait.Rgba);
+            using var image = NativeImages.LoadPng(portrait.Png, 64, 64);
             _forestTrainerPortraits.Add(portrait.Id, ImageTexture.CreateFromImage(image));
         }
         foreach (var asset in art.StatusAssets)
         {
-            using var image = Image.CreateFromData(asset.Width, asset.Height, false, Image.Format.Rgba8, asset.Rgba);
+            using var image = NativeImages.LoadPng(asset.Png, asset.Width, asset.Height);
             _forestStatusTextures.Add(asset.Id, ImageTexture.CreateFromImage(image));
         }
         var items = _catalog.Route11Items ?? throw new InvalidDataException("Route11 item presentation is missing.");
         foreach (var icon in items.Icons.Concat(PretRoute11Machines.LoadProject(_root).Icons).Where(i => !_earlyItemIcons.ContainsKey(i.Item)))
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba(items.Icons.Contains(icon) ? "route11-items" : "route11-machines", icon));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            
+            _earlyItemIcons.Add(icon.Item, ItemTexture(items.Icons.Contains(icon) ? "route11-items" : "route11-machines", icon));
         }
     }
 

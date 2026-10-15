@@ -9,9 +9,9 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
-import binascii
+import io
 import importlib.util
 import json
 import os
@@ -19,11 +19,11 @@ import pathlib
 import re
 import subprocess
 import sys
-import struct
-import zlib
 import tempfile
 
 sys.dont_write_bytecode = True
+from PIL import Image
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -76,17 +76,12 @@ def safe(root, relative=None):
 def load_lock(path):
     data = safe(path).read_bytes()
     lock = json.loads(data, object_pairs_hook=unique_pairs)
-    if tuple(lock.get(k) for k in ('schemaVersion', 'repository', 'commit', 'tree', 'profile', 'gameEdition', 'romRevision')) != (
-            1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
+    if tuple(lock.get(k) for k in ('schemaVersion', 'repository', 'commit', 'profile', 'gameEdition', 'romRevision')) != (
+            1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Forest capture dex source identity differs')
     if len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:
         raise ValueError('Forest capture dex source dependency set differs')
     return lock
-
-
-def raw_manifest():
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
-         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
@@ -127,41 +122,13 @@ def dependencies(project):
 
 
 def footprint_indices(data):
-    """Decode only the fixed 16x16 1bpp grayscale profile, then source gbagfx inversion."""
-    if data[:8] != b'\x89PNG\r\n\x1a\n':
-        raise ValueError('Footprint PNG signature differs')
-    pos, chunks = 8, []
-    while pos < len(data):
-        if pos + 12 > len(data):
-            raise ValueError('Footprint PNG truncated')
-        length = struct.unpack_from('>I', data, pos)[0]
-        tag, payload = data[pos + 4:pos + 8], data[pos + 8:pos + 8 + length]
-        end = pos + 12 + length
-        if end > len(data) or binascii.crc32(tag + payload) & 0xffffffff != struct.unpack_from('>I', data, end - 4)[0]:
-            raise ValueError('Footprint PNG CRC differs')
-        chunks.append((tag, payload))
-        pos = end
-    if [t for t, _ in chunks] != [b'IHDR', b'IDAT', b'IEND'] or chunks[0][1] != struct.pack('>IIBBBBB', 16, 16, 1, 0, 0, 0, 0) or chunks[-1][1]:
-        raise ValueError('Footprint PNG profile differs')
-    decoder = zlib.decompressobj()
-    raw = decoder.decompress(chunks[1][1], 49)
-    if len(raw) != 48 or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:
-        raise ValueError('Footprint PNG stream differs')
-    result, previous = (bytearray(), [0, 0])
-    for y in range(16):
-        method, row = raw[y * 3], []
-        if method not in range(5):
-            raise ValueError('Footprint PNG filter differs')
-        for x, value in enumerate(raw[y * 3 + 1:y * 3 + 3]):
-            a, b, c = row[x - 1] if x else 0, previous[x], previous[x - 1] if x else 0
-            p = a + b - c
-            distances = [abs(p - a), abs(p - b), abs(p - c)]
-            prediction = [0, a, b, (a + b) // 2, [a, b, c][distances.index(min(distances))]][method]
-            value = (value + prediction) & 255
-            row.append(value)
-            result.extend(1 ^ ((value >> shift) & 1) for shift in range(7, -1, -1))
-        previous = row
-    return bytes(result)
+    """Read 1-bit grayscale pixels and apply the source gbagfx inversion."""
+    with Image.open(io.BytesIO(data)) as image:
+        if image.format != 'PNG' or image.mode != '1' or image.size != (16, 16):
+            raise ValueError('Footprint PNG profile differs')
+        # Pillow exposes 1-bit pixels as 0/255; source black becomes palette index 1.
+        result = bytes(1 if pixel == 0 else 0 for pixel in image.convert('L').tobytes())
+    return result
 
 
 def convert(lock, sources, old):
@@ -220,10 +187,7 @@ def convert(lock, sources, old):
             category=category, displayCategory=category.split(' ')[0][:11], heightDecimeters=height, weightHectograms=weight,
             heightDisplay=f'{feet}’{remainder:02}”', weightDisplay=f'{lbs//100}.{(lbs//10)%10} {legacy.string(texts, "gText_Lbs")}',
             description=legacy.string(descriptions, desc_symbol), footprintPath=filename,
-            frontSpritePath='forest-pokemon/' + stem + '-front-normal.png', habitatTitle=habitat_title,
-            source=legacy.reference(lock, sources, 'src/data/pokemon/pokedex_entries.h', dex_symbol, match[0]),
-            descriptionSource=legacy.reference(lock, sources, 'src/data/pokemon/pokedex_text_fr.h', desc_symbol,
-                re.search(r'const u8 ' + desc_symbol + r'\[\] = _\(.*?\);', descriptions, re.S)[0]))
+            frontSpritePath='forest-pokemon/' + stem + '-front-normal.png', habitatTitle=habitat_title)
     outputs['capture-dex.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
          inputs=lock['files'], entries=entries, assets=assets, layout=old['layout'], limitations=[
             'Five forest wild-species settled first-registration entries only; no full dex browser, zoom, fades or cry.',
@@ -252,7 +216,7 @@ def run(lock_path, raw, out, repository=None, project=ROOT):
     outputs = convert(lock, sources, dependencies(project))
     targets = [(safe(out, p), b) for p, b in outputs.items()]
     if repository is not None:
-        targets = [(safe(raw, p), b) for p, b in sources.items()] + [(safe(raw_metadata_directory(raw, 'forest-capture-dex'), 'manifest.json'), raw_manifest())] + targets
+        targets = [(safe(raw, p), b) for p, b in sources.items()] + [] + targets
     # Validate every destination before any write. Stage bytes beside each final path.
     for target, _ in targets:
         if target.exists() and not target.is_file():

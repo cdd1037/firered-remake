@@ -76,22 +76,22 @@ public partial class CampaignView
         var art=RocketHideoutPresentationAssets.Load(_root,portraits:true).Files;
         foreach(var id in new[]{"rocket-grunt-m-front","giovanni-front"})
         {
-            using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,PngRgba8.Decode(art[id+".png"]));
+            using var image=NativeImages.LoadPng(art[id+".png"], 64, 64);
             _forestTrainerPortraits.Add(id,ImageTexture.CreateFromImage(image));
         }
         var items=PretRocketHideoutItems.LoadProject(_root);
         foreach(var icon in items.Icons)
         {
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("rocket-hideout-items", icon));
-            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
+            
+            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("rocket-hideout-items", icon));
         }
         var document=_questPocketUi??throw new InvalidDataException("Rocket key/ball pocket missing.");
         var position=document.Assets.Single(a=>a.Id==document.Items[0].Icon);
         foreach(var value in items.Items.Where(x=>x.Metadata.Item.Id.Value is "pret:ITEM_LIFT_KEY" or "pret:ITEM_SILPH_SCOPE" or "pret:ITEM_NET_BALL" or "pret:ITEM_NEST_BALL"))
         {
             var item=value.Metadata;var icon=items.Icons.Single(i=>i.Item==item.Item.Id);string id="rocket-"+item.Item.SourceItemSymbol.ToLowerInvariant();
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("rocket-hideout-items", icon));
-            _questPocketTextures.Add(id,ImageTexture.CreateFromImage(image));
+            
+            _questPocketTextures.Add(id,ItemTexture("rocket-hideout-items", icon));
             document=document with
             {
                 Items=document.Items.Add(new(item.Item.Id.Value,item.Item.SourceItemSymbol,item.Item.Name,item.Description,id,item.Item.FieldUseFunction)),

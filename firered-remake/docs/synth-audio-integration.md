@@ -1,6 +1,6 @@
 # Default original C# audio backend
 
-The user's current choice is custom synthesis by default. `FIRERED_AUDIO=1` with no backend override selects `SynthSourceAudioPlayer`; `FIRERED_AUDIO=0` disables presentation audio. `FIRERED_AUDIO_BACKEND=recorded` is an explicit local comparison switch and requires the old separately retained assets. The default never loads those catalogs, never silently falls back to a recording, and reports unknown IDs or runtime faults.
+Custom live synthesis is the only supported audio backend. `FIRERED_AUDIO=1` with no backend override selects `SynthSourceAudioPlayer`; `FIRERED_AUDIO=0` disables presentation audio. `FIRERED_AUDIO_BACKEND` may be unset or `synth`; other values report an audio fault. The obsolete recorded backend, encoded-clip loaders, historical delivery catalogs, and their import/study tools have been removed. Audio never silently falls back to a recording, and reports unknown IDs or runtime faults.
 
 ## Bounded inventory
 
@@ -18,7 +18,7 @@ Rebuild/export from the private original-player workspace with `python3 tools/ex
 
 ## Host contract
 
-The unchanged recorded adapter and the new synth implement `ISourceAudioBackend`. All game-facing methods remain presentation-only; they do not mutate Domain, command history, save payloads or RNG. Source player 0 maps to core 0, SE1 → 1, SE2 → 3, SE3 → 4, cry → 2. All players share five PCM channels and four family-specific PSG channels, so the adapter does not multiply the original voice budget by instantiating a synth per effect.
+The live synthesizer implements `ISourceAudioBackend`, whose presentation contracts and source timing constants are in `SourceAudioContracts.cs`. All game-facing methods remain presentation-only; they do not mutate Domain, command history, save payloads or RNG. Source player 0 maps to core 0, SE1 → 1, SE2 → 3, SE3 → 4, cry → 2. All players share five PCM channels and four family-specific PSG channels, so the adapter does not multiply the original voice budget by instantiating a synth per effect.
 
 SE1/2 retain priority protection, SE3 replaces unconditionally. Unknown IDs return zero with a missing event; runtime arithmetic/format errors clear queued audio and tasks, emit a fault event, and let the campaign's wait guard fail visibly rather than strand gameplay. No silent recorded fallback is used.
 
@@ -57,3 +57,7 @@ Three runs on identical product source hashes passed all 392 original command or
 The fresh dependency root hard-links 3,679 retained source/content files while omitting 577 audio-related files. This proves visible runtime independence from recordings; it is not yet the final compressed-backup restore test. Original source WAVs were also omitted for this runtime gate without reclassifying them as converted recordings.
 
 Earlier failures remain recorded: old UI asset fixtures violated the new map pin/pose-restoration contract and were corrected without weakening product guards. An initial temporary-root creation hit a cross-device hard-link error. One implicit-driver run completed all route commands but its diagnostic audio capture stayed silent; its immediate failure shutdown then timed out. The runner now selects Dummy explicitly, retains timeout stdout/stderr and resets/disposes audio before failure exit. The accepted explicit-Dummy rerun has actual nonzero output. No failed run is treated as a pass.
+
+## Recorded backend retirement
+
+The historical `early-audio`, `audio-delivery`, `small-audio-delivery`, `repel-audio`, `town-route-audio`, and `route22-cry-audio` generated trees are no longer runtime or import dependencies. The live synth packs and original sequence/sample resources are retained unchanged. `scripts/audit-early-audio.py` remains an active shared MIDI reader and source-audit tool; it re-derives its audit from the pinned Git source and can write an explicitly requested `--report`; the redundant committed audio snapshot has been removed. Repel presentation retains its source sequencer stop at VBlank 27, independently of audio rendering.

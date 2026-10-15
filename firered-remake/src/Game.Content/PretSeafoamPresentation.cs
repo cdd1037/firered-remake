@@ -32,14 +32,12 @@ public static class PretSeafoamPresentation
             return bytes;
         }
 
-        using var locked = JsonDocument.Parse(Read("scripts/seafoam-presentation.lock.json"));
         using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
-        var sourceLock = locked.RootElement;
         var manifest = document.RootElement;
-        if (sourceLock.GetProperty("schemaVersion").GetInt32() != 1 || manifest.GetProperty("schemaVersion").GetInt32() != 1 )
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("Seafoam presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in sourceLock.GetProperty("inheritedInputs").EnumerateArray())
+        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
@@ -54,8 +52,8 @@ public static class PretSeafoamPresentation
         {
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
             string path = asset.GetProperty("texturePath").GetString()!;
-            if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var rgba) ||
-                PngRgba8.Decode(rgba, width, height).Length != width * height * 4 )
+            if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var pngBytes) ||
+                (pngBytes).Length == 0)
                 throw new InvalidDataException("Seafoam pixels differ: " + path);
             if (!files.TryGetValue(asset.GetProperty("texturePath").GetString()!, out var png) )
                 throw new InvalidDataException("Seafoam texture differs: " + path);

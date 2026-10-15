@@ -5,7 +5,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import io
 import json
@@ -193,7 +193,6 @@ def render(data, lock, output):
 
 def run(raw, output, reference_repo=None, lock_path=None):
     raw, output = pathlib.Path(raw), pathlib.Path(output)
-    safe(raw_metadata_directory(raw, 'mart-metatiles'), 'manifest.json')
     safe(output, 'manifest.json')
     if raw.resolve().is_relative_to(output.resolve()) or output.resolve().is_relative_to(raw.resolve()):
         raise ValueError('Raw and output directories overlap')

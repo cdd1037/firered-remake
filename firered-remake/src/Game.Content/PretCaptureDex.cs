@@ -8,7 +8,7 @@ public sealed record CaptureDexSource(string Kind, string Repository, string Com
 public sealed record CaptureDexEntry(int SourceSpeciesId, int NationalNumber, string Name,
     string Category, string DisplayCategory, int HeightDecimeters, int WeightHectograms,
     string HeightDisplay, string WeightDisplay, string Description, string FootprintPath,
-    string FrontSpritePath, string HabitatTitle, CaptureDexSource Source, CaptureDexSource DescriptionSource);
+    string FrontSpritePath, string HabitatTitle);
 public sealed record CaptureDexAsset(string Id, string TexturePath, int Width, int Height, int X, int Y);
 public sealed record CaptureDexLayout(int Width, int Height, int FrontX, int FrontY,
     int FootprintX, int FootprintY, int NumberX, int NumberY, int NameX, int NameY,

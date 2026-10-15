@@ -37,12 +37,12 @@ public partial class CampaignView
             _storageIcons.Add(new(icon.SpeciesId),ImageTexture.CreateFromImage(display));
         }
         var art=CeladonApproachPresentationAssets.Load(_root);
-        using(var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,PngRgba8.Decode(art["biker-front.png"])))
+        using(var image=NativeImages.LoadPng(art["biker-front.png"], 64, 64))
             _forestTrainerPortraits.Add("biker-front",ImageTexture.CreateFromImage(image));
         foreach(var icon in PretCeladonApproachItems.LoadProject(_root).Icons)
         {
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("celadon-approach-items", icon));
-            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
+            
+            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("celadon-approach-items", icon));
         }
     }
 

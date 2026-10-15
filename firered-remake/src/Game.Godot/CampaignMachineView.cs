@@ -31,7 +31,7 @@ public partial class CampaignView
     {
         if (_catalog.PewterMachines is not { } catalog) return;
         var machine = PretPewterMachines.LoadDocument(System.IO.File.ReadAllText(System.IO.Path.Combine(_root,
-            "content/generated/pewter-machines/pewter-machines.json")));
+            "content/generated/pewter-machines/pewter-machines.json")), SharedMachineCatalog.LoadProject(_root));
         // Catalog admission belongs to the current rules; these shared pixels depend only on
         // the exact inherited TM39/CASE source definitions, not the regional profile name.
         PewterMachineRules.ValidateCatalog(catalog);
@@ -44,8 +44,8 @@ public partial class CampaignView
         foreach (var icon in machine.Icons)
         {
             string id = icon.Item == PewterMachineRules.TmCaseId ? MachineCaseIcon : MachineIcon;
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("pewter-machines", icon));
-            _questPocketTextures.Add(id, ImageTexture.CreateFromImage(image));
+            
+            _questPocketTextures.Add(id, ItemTexture("pewter-machines", icon));
             document = document with { Assets = document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,                position.X,position.Y)) };
         }
         var item = machine.Catalog.TmCase;

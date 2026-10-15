@@ -20,32 +20,12 @@ public sealed partial class PretCampaignCatalog
     public PretFirstSeviiPresentation? FirstSeviiPresentation { get; }
     public bool FirstSeviiEnabled=>FirstSeviiRegion is not null;
 
-    private static void AppendFirstSeviiSources(PretFirstSeviiRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
-    {
-        var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
-        foreach(var source in region.Scripts)
-        {
-            if(prior.TryGetValue(source.Path,out var old))
-            {
-                if(old.Text!=source.Text)
-                    throw new InvalidDataException("first_sevii_source_conflict: "+source.Path);
-            }
-            else{prior.Add(source.Path,source);sources.Add(source);}
-            if(!texts.Contains(source.Text,StringComparer.Ordinal))texts.Add(source.Text);
-        }
-        foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
-        MergeRegionalServiceConstants(constants,region.Constants);
-    }
+
 
     private static void ValidateFirstSeviiAnchors(PretFirstSeviiRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(region.NewMaps.Count!=14||region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("first_sevii_predecessor_maps");
-        foreach(var (name,events) in region.ReusedAnchorEvents)
-        {
-            var map=maps.Values.SingleOrDefault(m=>m.SourceRef.Path=="data/maps/"+name+"/map.json");
-            if(map is null||!JsonElement.DeepEquals(map.Events,events))throw new InvalidDataException("first_sevii_anchor_events: "+name);
-        }
+        if (region.NewMaps.Keys.Any(maps.ContainsKey))
+            throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
     private static IEnumerable<FieldPickupDefinition> FirstSeviiPickupDefinitions(PretFirstSeviiRegion region,FirstSeviiItemCatalog items,EarlyShopCatalog shop,PretStoryCompilation scripts)

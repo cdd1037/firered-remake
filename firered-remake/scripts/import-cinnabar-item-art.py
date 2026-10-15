@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Decode only Secret Key and TM14/TM22/TM38 icons from pinned Git blobs; no upstream execution."""
 from pathlib import Path
-import argparse, base64, binascii, importlib.util, io, json, re, struct, sys, zlib
+import argparse, base64, importlib.util, io, json, re, sys
 from PIL import Image
 sys.dont_write_bytecode = True
 SPEC = importlib.util.spec_from_file_location('item_source', Path(__file__).with_name('import-cinnabar-items.py'))
@@ -11,14 +11,9 @@ BASE = META.BASE
 PROFILE = 'firered-cinnabar-item-art-source-v1'
 ITEMS = ('SECRET_KEY', 'TM14', 'TM22', 'TM38')
 
-def png(width, height, rgba):
-    def chunk(tag, data):
-        return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', binascii.crc32(tag + data) & 0xffffffff)
-    scan = b''.join(b'\0' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
-    # Stored DEFLATE blocks make the reviewed PNG bytes independent of encoder versions.
-    length = len(scan)
-    data = b'\x78\x01\x01' + struct.pack('<HH', length, length ^ 65535) + scan + struct.pack('>I', zlib.adler32(scan) & 0xffffffff)
-    return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)) + chunk(b'IDAT', data) + chunk(b'IEND', b'')
+from image_io import png as encode_rgba_png
+
+png = encode_rgba_png
 
 def generate(reference):
     source = BASE.Source(reference)

@@ -9,8 +9,7 @@ using Game.Domain.Ids;
 namespace Game.Content;
 
 public sealed record PretSsAnneItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items, PretBillSourceItem BerryPouch, ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, PretBillSourceItem BerryPouch, ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates fourteen ship item declarations, their icons, twelve pickups and the Berry Pouch dependency.</summary>
@@ -26,7 +25,7 @@ public static class PretSsAnneItems
         var document = ContentJson.ParseStrict<PretSsAnneItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 14 && document.Icons.Length == 15 &&
             document.Pickups.Length == 12 && document.BerryPouch is not null &&
-            !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty,
+            !document.Limitations.IsDefaultOrEmpty,
             "S.S. Anne item scope differs.");
         string[] items = ["CHERI_BERRY", "CHESTO_BERRY", "ETHER", "GREAT_BALL", "HM01", "HYPER_POTION", "LAVA_COOKIE", "PECHA_BERRY", "SS_TICKET", "STARDUST", "SUPER_POTION", "TM31", "TM44", "X_ATTACK", "BERRY_POUCH"];
         var definitions = document.Items.Add(document.BerryPouch!);

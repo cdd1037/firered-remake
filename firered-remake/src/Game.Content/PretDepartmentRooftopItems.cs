@@ -23,12 +23,12 @@ public static class PretDepartmentRooftopItems
         var bytes = File.ReadAllBytes(Path.Combine(root, relative));
         return bytes;
     }
-    private static T Deserialize<T>(byte[] data) => JsonSerializer.Deserialize<T>(data,
-        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ??
+    private static T Deserialize<T>(string root, byte[] data) => JsonSerializer.Deserialize<T>(data,
+        SharedMachineCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })) ??
         throw new InvalidDataException("department_rooftop_document_missing");
     public static NpcTradeItemsDocument LoadDocument(string root)
     {
-        var doc = Deserialize<NpcTradeItemsDocument>(Read(root,Base + "items.json"));
+        var doc = Deserialize<NpcTradeItemsDocument>(root, Read(root,Base + "items.json"));
         if (            doc.Additions.IsDefault || doc.Additions.Length != 1 ||
             doc.Additions[0].Id != OrdinaryItemInventoryCatalog.LemonadeId ||
             doc.ShopsAdded.IsDefault || !doc.ShopsAdded.IsEmpty || doc.Icons.IsDefault || doc.Icons.Length != 1 ||
@@ -38,7 +38,7 @@ public static class PretDepartmentRooftopItems
     }
     public static DepartmentRooftopMachinesDocument LoadMachinesDocument(string root)
     {
-        var doc = Deserialize<DepartmentRooftopMachinesDocument>(Read(root,Base + "machines.json"));
+        var doc = Deserialize<DepartmentRooftopMachinesDocument>(root, Read(root,Base + "machines.json"));
         if (doc.Additions.IsDefault || doc.Additions.Length != 3 ||
             doc.IconAliases.IsDefault || doc.IconAliases.Length != 3 ||
             !doc.IconAliases.Select(a => (a.Item.Value, a.ReusedItem.Value)).SequenceEqual(new[] {
@@ -51,10 +51,5 @@ public static class PretDepartmentRooftopItems
     public static DepartmentStoreMachineStock LoadMachines(string root, PewterMachineCatalog predecessor) =>
         DepartmentStoreMachineStock.AppendRooftopRewards(predecessor, LoadMachinesDocument(root).Additions);
     public static JsonElement LoadSourceContract(string root) =>
-        Deserialize<JsonElement>(Read(root,Base + "source-contract.json"));
-    public static byte[] LoadIconRgba(string root)
-    {
-        var icon = LoadDocument(root).Icons[0];
-        return PngRgba8.Decode(Read(root,icon.TexturePath),icon.Width,icon.Height);
-    }
+        Deserialize<JsonElement>(root, Read(root,Base + "source-contract.json"));
 }

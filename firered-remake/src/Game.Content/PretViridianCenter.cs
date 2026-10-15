@@ -1,11 +1,8 @@
-using System.Buffers.Binary;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 
 namespace Game.Content;
@@ -19,8 +16,6 @@ public sealed class PretViridianCenter
     public const string Profile = "firered-viridian-center-import-v1";
     public const string StableMapId = "map.viridian-pokemon-center-1f";
     public PretWorldMap Map { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public ImmutableDictionary<string, string> SourceUiTexts { get; }
@@ -28,11 +23,10 @@ public sealed class PretViridianCenter
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     public string ServiceSourcePath => Path.Combine(GeneratedDirectory, "service.json");
 
-    private PretViridianCenter(string directory, PretWorldMap map, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
+    private PretViridianCenter(string directory, PretWorldMap map, ImmutableDictionary<string, int> constants,
         ImmutableArray<PretWorldSourceFile> files, ImmutableDictionary<string, string> uiTexts)
     {
-        GeneratedDirectory = directory; Map = map; Scripts = scripts; TextSources = texts;
+        GeneratedDirectory = directory; Map = map;
         Constants = constants; SourceFiles = files; SourceUiTexts = uiTexts;
     }
 
@@ -42,14 +36,12 @@ public sealed class PretViridianCenter
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/viridian-center");
-        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        using var sourceLock = JsonDocument.Parse(ReadPinned(project,"scripts/viridian-center.lock.json"));
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
             m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Center manifest identity differs.");
@@ -61,17 +53,11 @@ public sealed class PretViridianCenter
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate center output.");
         }
         using var catalog = JsonDocument.Parse(outputs["center-catalog.json"]);
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var raw = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
+        var inventory = catalog.RootElement.GetProperty("inputFiles").EnumerateArray().Select(entry =>
         {
             var path = entry.GetProperty("path").GetString()!;
-            var bytes = ReadPinned(rawDirectory,path);
-            Require(raw.TryAdd(path, bytes), "Duplicate center source.");
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
-        }
-        var inventory = files.ToImmutable();
-        var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
+            return new PretWorldSourceFile(path);
+        }).ToImmutableArray();
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
             "Authenticated Viridian Pokemon Center 1F; runtime certification is separate.", Profile, inventory);
         var spec = catalog.RootElement.GetProperty("map");
@@ -80,39 +66,19 @@ public sealed class PretViridianCenter
         if(runtimeMaps is not null)
         {
             var compact=runtimeMaps.Maps[new MapId(spec.GetProperty("stableId").GetString()!)];
-            map=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),SafeFile(directory,"npc/red-normal.png"),MapIdFromSourceSymbol);
+            map=PretWorldMap.FromRuntime(compact,metadata,SafeFile(directory,relative),PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"),MapIdFromSourceSymbol);
         }
         else
         {
             map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
-        }
-        using var scriptInventory = JsonDocument.Parse(outputs["scripts.json"]);
-        Require(scriptInventory.RootElement.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "Center script reference closure is incomplete.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var property in scriptInventory.RootElement.GetProperty("filePreambles").EnumerateObject())
-        {
-            var path = property.Name;
-            var text = Encoding.UTF8.GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Require(symbol.Length > 0, "Center script has no original source label: " + path);
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
+                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
         }
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["HEAL_LOCATION_VIRIDIAN_CITY"] == 2 && constants["LOCALID_VIRIDIAN_NURSE"] == 1 &&
             constants["FLDEFF_POKECENTER_HEAL"] == 25 && constants["SCR_MENU_CANCEL"] == 127, "Center required source constants differ.");
-        var uiTexts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        var centerText = Regex.Match(Encoding.UTF8.GetString(raw["src/strings.c"]),
-            "const u8 gText_PlayerScurriedToCenter\\[\\] = _\\(\"((?:\\\\.|[^\"\\\\])*)\"\\);", RegexOptions.CultureInvariant);
-        Require(centerText.Success, "Missing source center whiteout message.");
-        uiTexts.Add("gText_PlayerScurriedToCenter", centerText.Groups[1].Value + "$");
-        return new(directory, map, scripts.ToImmutable(), texts.ToImmutable(), constants.ToImmutable(), inventory, uiTexts.ToImmutable());
+        var storyTexts = PretStoryRuntime.Load(projectRoot).TextBank;
+        var uiTexts = ImmutableDictionary<string, string>.Empty.Add("gText_PlayerScurriedToCenter", storyTexts["gText_PlayerScurriedToCenter"]);
+        return new(directory, map, constants.ToImmutable(), inventory, uiTexts);
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

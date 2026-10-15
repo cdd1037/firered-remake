@@ -36,9 +36,4 @@ public static class PretPokeDollItems
     }
     public static JsonElement LoadSourceContract(string root) =>
             JsonSerializer.Deserialize<JsonElement>(Read(root,Base + "source-contract.json"));
-    public static byte[] LoadIconRgba(string root)
-    {
-        var icon = LoadDocument(root).Icons[0];
-            return PngRgba8.Decode(Read(root,icon.TexturePath),icon.Width,icon.Height);
-    }
 }

@@ -6,6 +6,7 @@ No upstream code is run; source art is local-only and only six new icon variants
 import argparse,  io, json, re, subprocess
 from pathlib import Path
 from PIL import Image
+from machine_catalog import compatibility_additions, load_catalog, machine_definitions
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -20,8 +21,7 @@ SHARED = {
  'include/constants/item_effects.h':'content/raw/pokefirered/037335f4/include/constants/item_effects.h',
  'src/data/item_icon_table.h':'content/raw/pokefirered/037335f4/src/data/item_icon_table.h',
  'src/data/graphics/items.h':'content/raw/pokefirered/037335f4/src/data/graphics/items.h',
- 'src/data/pokemon/tmhm_learnsets.h':'content/raw/pokefirered/037335f4/src/data/pokemon/tmhm_learnsets.h',
- 'src/move_descriptions.c':'content/raw/pokefirered/037335f4/src/move_descriptions.c',
+ 
  'include/constants/moves.h':'content/raw/pokefirered/037335f4/include/constants/moves.h',
  'src/data/battle_moves.h':'content/raw/pokefirered/037335f4/src/data/battle_moves.h',
  'src/data/party_menu.h':'content/raw/pokefirered/037335f4/src/data/party_menu.h',
@@ -36,9 +36,8 @@ SHARED = {
  **{ROOM+p:'content/raw/pokefirered/037335f4/'+ROOM+p for p in ['scripts.inc','map.json','text.inc']},
 }
 DEPENDENCIES = (
-    'scripts/department-machine-stock.contract.json',
-    'content/generated/stone-evolution-species/machines.json',
-    'content/generated/department-rooftop-items/machines.json',
+    'scripts/import-config/machine-admissions.json',
+    'scripts/import-config/machine-catalog.json',
 )
 
 def need(value, message):
@@ -61,35 +60,20 @@ def generate(reference, dependency):
     def source(path,symbol,m):return dict(path=path,symbol=symbol,startLine=text(path).count('\n',0,m.start())+1,
         endLine=text(path).count('\n',0,m.end())+1)
     def number(path,symbol):return int(one(path,r'^#define '+symbol+r'\s+(0x[0-9A-Fa-f]+|\d+)\b[^\n]*')[1],0)
-    def dependent(path):
-        data=(dependency/path).read_bytes()
-        dependencies.append(dict(path=path));return json.loads(data)
-    dept,stone,roof=[dependent(p) for p in DEPENDENCIES]
-    previous=dept['ownedSpecies']+[dict(symbol=c['species']['value'][5:],sourceSpeciesId=c['sourceSpeciesId']) for c in stone['additions'][0]['compatibility']]
-    extra=[dict(symbol='SPECIES_'+name,sourceSpeciesId=n) for name,n in [('DRATINI',147),('DRAGONAIR',148),('DRAGONITE',149),('PORYGON',137)]]
-    owned=previous+extra
-    need(len(previous)==170 and len(owned)==174 and len({s['symbol'] for s in owned})==174,'Exact owner scope')
-    old_ids=sorted([m['item']['value'][5:] for m in stone['additions']]+[m['machine']['item']['sourceItemSymbol'] for m in roof['additions']])
-    need(len(old_ids)==len(set(old_ids))==45,'Exact inherited machine scope')
+    dependencies.extend(dict(path=p) for p in DEPENDENCIES)
+    inherited=compatibility_additions(dependency, BASE+'machines.json', 'inherited')
+    machines=machine_definitions(dependency, BASE+'machines.json', 'additions')
+    need(len(inherited)==45 and len(machines)==5 and all(len(m['species'])==174 for m in machines), 'Exact admitted machine scope')
     ip='src/data/items.json';items=json.loads(text(ip))['items']
-    def metadata(symbol,machine=False):
+    def metadata(symbol):
         i=next(x for x in items if x['itemId']==symbol)
         block=one(ip,r'^    \{\n      "english": "'+re.escape(i['english'])+r'",.*?^    \}')
         sr=source(ip,symbol,block)
-        if machine:sr['startLine']+=1;sr['endLine']-=1
         m=dict(id=dict(value='pret:'+symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),
             name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),
             holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],
             battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=sr)
         return i,m
-    def compatibility(item, scope):
-        path='src/data/pokemon/tmhm_learnsets.h';cells=[]
-        for s in scope:
-            row=one(path,r'^    \['+s['symbol']+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),')
-            cells.append(dict(species=dict(value='pret:'+s['symbol']),sourceSpeciesId=s['sourceSpeciesId'],
-                canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',row[1])),source=source(path,s['symbol'],row)))
-        return cells
-    inherited=[dict(item=dict(value='pret:'+item),compatibility=compatibility(item,extra)) for item in old_ids]
     icon_path='src/data/item_icon_table.h';graphics='src/data/graphics/items.h'
     icons,generated,aliases=[],{},[]
     def icon(symbol,stem,alias=None):
@@ -120,18 +104,15 @@ def generate(reference, dependency):
         addition={k:m[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}
         addition.update(description=i['description_english'].replace('\\n','\n'),healHp=0,cureStatus=0,effectBytes=effects,useSupport=10,effectSource=effect_source,sourceMetadata=m)
         ordinary.append(addition);icon(symbol,symbol[5:].lower().replace('_','-'))
-    machines=[]
     tm_rows=[('TM13','ICE_BEAM','IceBeam',58,10,'ICE',4000,'TM14'),('TM23','IRON_TAIL','IronTail',231,15,'STEEL',3500,'TM47'),
         ('TM24','THUNDERBOLT','Thunderbolt',85,15,'ELECTRIC',4000,'TM25'),('TM30','SHADOW_BALL','ShadowBall',247,15,'GHOST',4500,None),('TM35','FLAMETHROWER','Flamethrower',53,15,'FIRE',4000,'TM38')]
     table='src/data/party_menu.h';entries=re.findall(r'MOVE_(\w+)',one(table,r'^static const u16 sTMHMMoves\[\] =\s*\{(.*?)^\};')[1])
-    for tm,move,name,n,pp,typ,coins,alias in tm_rows:
-        symbol='ITEM_'+tm;i,m=metadata(symbol,True)
-        dp='src/move_descriptions.c';ds='gMoveDescription_'+name;desc=one(dp,r'^const u8 '+ds+r'\[\] = _\("(.*?)"\);')
+    for index,(tm,move,name,n,pp,typ,coins,alias) in enumerate(tm_rows):
+        symbol='ITEM_'+tm
+        need(machines[index]['item']=='pret:'+symbol, 'Admitted prize machine')
         need(number('include/constants/moves.h','MOVE_'+move)==n and entries[int(tm[2:])-1]==move,'Source TM mapping')
         bp='src/data/battle_moves.h';battle=one(bp,r'^    \[MOVE_'+move+r'\]\s*=\s*\{(.*?)\},')
         need(re.search(r'\.pp\s*=\s*'+str(pp)+r'\s*,',battle[1]) and re.search(r'\.type\s*=\s*TYPE_'+typ+r'\s*,',battle[1]),'Move PP/type')
-        machines.append(dict(machine=dict(item=m,description=json.loads('"'+desc[1]+'"'),declarationDescription=i['description_english'].replace('\\n','\n'),descriptionSource=source(dp,ds,desc)),
-            move=dict(value='pret:MOVE_'+move),sourceMoveId=n,movePp=pp,compatibility=compatibility(symbol,owned)))
         icon(symbol,'tm30',alias)
     path=ROOM+'scripts.inc';prefix='CeladonCity_GameCorner_PrizeRoom_EventScript_'
     def script(label):return one(path,r'^'+prefix+label+r'::\n.*?\tend\n')
@@ -193,8 +174,6 @@ def generate(reference, dependency):
         additions=machines,iconAliases=aliases,icons=icons[5:])
     evidence=dict(sourceCommit=COMMIT,inputs=[inputs[p] for p in sorted(inputs)],dependencyInputs=dependencies)
     files={BASE+'items.json':encoded(items_doc),BASE+'machines.json':encoded(machine_doc),BASE+'prizes.json':encoded(facts),BASE+'source-input-hashes.json':encoded(evidence),**generated,**raw}
-    files['scripts/game-corner-prizes.lock.json']=encoded(dict(sourceCommit=COMMIT,profile=PROFILE,
-        files=[dict(path=p) for p,b in sorted(files.items())]))
     return files,items_doc,machine_doc,facts
 
 if __name__=='__main__':
@@ -206,4 +185,5 @@ if __name__=='__main__':
         target=args.output/path
         if args.check:need(target.read_bytes()==data,'Regeneration differs: '+path)
         else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(checked=args.check,prizes=len(facts),compatible=[sum(c['canLearn'] for c in m['compatibility']) for m in machines['additions']]),indent=2))
+    catalog=load_catalog(args.dependency)
+    print(json.dumps(dict(checked=args.check,prizes=len(facts),compatible=[sum(catalog.compatibility(m['item'], species)['canLearn'] for species in m['species']) for m in machines['additions']]),indent=2))

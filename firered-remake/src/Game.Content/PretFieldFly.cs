@@ -17,9 +17,9 @@ public static class PretFieldFly
         return File.ReadAllBytes(Path.Combine(root, path));
     }
     public static FieldFlySourceDocument LoadDocument(string root) => ContentJson.ParseStrict<FieldFlySourceDocument>(
-        Encoding.UTF8.GetString(Read(root,"content/generated/field-fly/field.json")), ContentJson.CreateOptions());
+        Encoding.UTF8.GetString(Read(root,"content/generated/field-fly/field.json")), SharedMachineCatalog.Options(root));
     public static PewterAdditionalMachine LoadHm02(string root) => ContentJson.ParseStrict<PewterAdditionalMachine>(
-        Encoding.UTF8.GetString(Read(root,"content/generated/field-fly/hm02.json")), ContentJson.CreateOptions());
+        Encoding.UTF8.GetString(Read(root,"content/generated/field-fly/hm02.json")), SharedMachineCatalog.Options(root));
     public static FieldFlyCatalog Load(string root) => FieldFlyCatalog.Authenticate(LoadDocument(root));
     public static FieldFlyMachineCatalog LoadMachines(string root, PewterMachineCatalog predecessor) =>
         FieldFlyMachineCatalog.Authenticate(predecessor, LoadHm02(root));

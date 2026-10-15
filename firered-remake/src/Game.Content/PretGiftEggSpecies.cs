@@ -20,9 +20,9 @@ public static class PretGiftEggSpecies
     private static T Read<T>(string root,string file)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/gift-egg-species", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions {
+        return JsonSerializer.Deserialize<T>(bytes, SharedMachineCatalog.Options(root, new JsonSerializerOptions {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-        }) ?? throw new InvalidDataException("gift-egg-species_source_missing");
+        })) ?? throw new InvalidDataException("gift-egg-species_source_missing");
     }
 
     public static JsonElement LoadPokemonDocument(string root)

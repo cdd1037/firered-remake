@@ -37,7 +37,7 @@ public partial class CampaignView
                 throw new InvalidDataException("Event-ticket icon pixels differ: " + id);
             string assetId = "event-ticket-" + item.SourceItemSymbol.ToLowerInvariant();
             using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, rgba);
-            _questPocketTextures.Add(assetId, ImageTexture.CreateFromImage(image));
+            _questPocketTextures.Add(assetId, SceneTextures.FromImage(image));
             document = document with
             {
                 Items = document.Items.Add(new(item.Id.Value, item.SourceItemSymbol, item.Name,

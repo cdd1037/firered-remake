@@ -110,7 +110,7 @@
       "path": "content/generated/rocket-hideout-art/giovanni-front.png"
     },
     {
-      "path": "content/generated/bill-machines/item_tm28.png"
+      "path": "content/generated/bill-machines/bill-machines.json"
     },
     {
       "path": "content/generated/gym-battle-terrain/gym-scene.png"
@@ -123,6 +123,9 @@
     },
     {
       "path": "content/generated/synth-audio/manifest.json"
+    },
+    {
+      "path": "content/generated/item-icons/items.png"
     }
   ],
   "profile": "firered-viridian-gym-presentation-v1",

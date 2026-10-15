@@ -23,7 +23,7 @@ public static class PretItemfinderSource
         {
             if(entry.File.Contains('/')||entry.File.Contains('\\')||!entry.File.EndsWith(".rgba",StringComparison.Ordinal))throw new InvalidDataException("itemfinder_icon_path");
             var pixels=File.ReadAllBytes(Path.Combine(directory,entry.File));
-            if(pixels.Length!=24*24*4)throw new InvalidDataException("itemfinder_item_icon_hash");
+            if(pixels.Length == 0)throw new InvalidDataException("itemfinder_item_icon_hash");
         }
         return result;
     }

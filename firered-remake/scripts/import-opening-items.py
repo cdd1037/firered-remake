@@ -125,8 +125,7 @@ def import_catalog(raw, out):
                                effectBytes=[0, 0, 0, 0, heal_flag, 0, int(effects[1][2])],
                                source=reference(items_path, 'ITEM_POTION', item_match),
                                effectSource=reference(effect_path, 'sItemEffect_Potion', effect_match)))
-    document = dict(schemaVersion=1, inputs=[inputs[x] for x in sorted(inputs)], rulesSources=rules,
-                    limitations=['Only ITEM_POTION is imported and executable.',
+    document = dict(schemaVersion=1, inputs=[inputs[x] for x in sorted(inputs)], limitations=['Only ITEM_POTION is imported and executable.',
                                  'Only the ordinary Items pocket and PC are represented; other pockets are unsupported.',
                                  'No shops, held-item actions, status ailments, eggs, reusable tutorial items or multiplayer.',
                                  'Battle action scheduling and active-combatant synchronization belong to the caller.',

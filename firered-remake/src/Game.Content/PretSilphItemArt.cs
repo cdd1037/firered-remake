@@ -20,14 +20,14 @@ public sealed class PretSilphItemArt
         var doc = SafariSource.Parse<SilphItemArtDocument>(SafariSource.Read(root,GeneratedDirectory + "manifest.json"));
         SafariSource.Require(doc.SchemaVersion == 1 && doc.Icons.Length == 23 , "Silph item art scope differs.");
         var expected = "CARD_KEY MASTER_BALL ULTRA_BALL TM01 TM08 TM41 HYPER_POTION MAX_REVIVE ESCAPE_ROPE FULL_HEAL PROTEIN HP_UP X_SPECIAL CALCIUM CARBOS RARE_CANDY IRON ZINC ELIXIR PP_UP NUGGET MAX_POTION REVIVE".Split(' ').Select(s => "pret:ITEM_" + s).ToHashSet(StringComparer.Ordinal);
-        var files = PretSilphPresentationSource.Outputs(root, GeneratedDirectory, doc.Outputs);
+        var files = doc.Outputs.ToImmutableDictionary(output => output.Path, output => SafariSource.Read(root, output.Path), StringComparer.Ordinal);
         foreach (var icon in doc.Icons)
         {
             SafariSource.Require(expected.Remove(icon.Item.Value) && icon.Width == 24 && icon.Height == 24 &&
-                icon.PngPath == icon.Item.Value[5..].ToLowerInvariant() + ".png" , "Silph item icon differs.");
-            _ = PretPewterMachines.IconRgba(icon, files[icon.PngPath]);         }
+                icon.PngPath.StartsWith("content/generated/item-icons/", StringComparison.Ordinal) , "Silph item icon differs.");
+            _ = PretPewterMachines.TexturePage(icon, files[icon.PngPath]);         }
         SafariSource.Require(expected.Count == 0, "Missing Silph item icon.");
         return new(doc, files);
     }
-    public byte[] ReadTexture(string projectRelativePath) => PretSilphPresentationSource.Texture(projectRelativePath, GeneratedDirectory, Files);
+    public byte[] ReadTexture(string projectRelativePath) => Files[projectRelativePath];
 }

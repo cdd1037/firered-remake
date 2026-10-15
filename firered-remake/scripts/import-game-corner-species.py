@@ -84,7 +84,6 @@ def main():
     lock = dict(sourceCommit=COMMIT,  profile='firered-game-corner-species-v1',
 
         files=[dict(path=path) for path, data in sorted(files.items())])
-    files['scripts/game-corner-species.lock.json'] = encode(lock)
     for name, data in files.items():
         path = args.output / name
         if args.check: need(path.read_bytes() == data, 'Regeneration differs: ' + name)

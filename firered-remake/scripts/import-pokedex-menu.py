@@ -9,7 +9,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import importlib.util
 import json
@@ -105,7 +105,7 @@ DEPENDENCIES = (
 
 
 def canonical(value):
-    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + '\n').encode('utf-8')
+    return (json.dumps(value, ensure_ascii=False, separators=(',', ':'), sort_keys=True) + '\n').encode('utf-8')
 
 
 def pairs(rows):
@@ -136,33 +136,14 @@ def safe(root, relative=None):
     return target
 
 
-def load_lock(path):
-    data = safe(path).read_bytes()
-    lock = decode(data)
-    if tuple(lock.get(k) for k in ('schemaVersion', 'repository', 'commit', 'tree', 'profile', 'gameEdition', 'romRevision')) != (1, 'pret/pokefirered', COMMIT, TREE, PROFILE, 'FIRERED', 0):
-        raise ValueError('Pokédex source identity differs')
-    if len(lock['files']) != len(PATHS) or [e['path'] for e in lock['files']] != sorted(PATHS):
-        raise ValueError('Pokédex source set differs')
-    return lock
-
-
-def raw_manifest():
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
-         inputCount=len(PATHS)))
-
-
-def read_sources(lock, raw, repository=None):
-    if repository is not None:
-        safe(repository)
-        tree = subprocess.check_output(['git', '-C', str(repository), 'rev-parse', COMMIT + '^{tree}'], timeout=30).decode('ascii').strip()
+def read_sources(raw, repository=None):
     sources = {}
-    for entry in lock['files']:
-        path = safe(raw, entry['path'])
+    for relative in sorted(PATHS):
         if repository is None:
-            data = path.read_bytes()
+            data = safe(raw, relative).read_bytes()
         else:
-            data = subprocess.check_output(['git', '-C', str(repository), 'cat-file', 'blob', COMMIT + ':' + entry['path']], timeout=30)
-        sources[entry['path']] = data
+            data = subprocess.check_output(['git', '-C', str(repository), 'show', COMMIT + ':' + relative], timeout=30)
+        sources[relative] = data
     return sources
 
 
@@ -181,19 +162,10 @@ def string(text, symbol):
     return ''.join(json.loads(t) for t in re.findall(r'"(?:[^"\\]|\\.)*"', match[1]))
 
 
-def convert(lock, sources, old):
+def convert(sources, old):
     if set(sources) != PATHS:
         raise ValueError('Pokédex source set differs')
     texts = {p: b.decode('utf-8') for p, b in sources.items() if p.endswith(('.c', '.h'))}
-    def ref(path, symbol, fragment=None):
-        value = texts[path]
-        if fragment is None:
-            pattern = r'^[\w *]+\b' + re.escape(symbol) + r'\([^;]*?\)\n\{.*?^\}'
-            match = re.search(pattern, value, re.M | re.S)
-            fragment = match[0] if match else next(line for line in value.splitlines() if symbol in line)
-        start = value[:value.index(fragment)].count('\n') + 1
-        return dict(kind='source', repository='pret/pokefirered', commit=COMMIT, path=path, symbol=symbol,
-             url=f'https://github.com/pret/pokefirered/blob/{COMMIT}/{path}#L{start}', startLine=start, endLine=start + fragment.count('\n'))
     screen = texts['src/pokedex_screen.c']
     for needle in ('ret = ndex_num;', '.maxShowed = 9,', 'gText_5Dashes', '(caught << 17) + (seen << 16)',
                    'while ((categoryName[index] != CHAR_SPACE) && (index < 11))', 'inches = 10000 * height / 254;',
@@ -285,10 +257,7 @@ def convert(lock, sources, old):
             heightDisplay=f'{inches//120}’{(inches%120)//10:02}”', weightDisplay=f'{lbs//100}.{(lbs//10)%10} lbs.',
             description=string(texts['src/data/pokemon/pokedex_text_fr.h'], desc), type1=types[1], type2=types[2],
             habitatTitle=string(texts['src/strings.c'], 'gText_DexCategory_' + habitat[0][1] + 'Pkmn'),
-            portrait=portraits.get(sid), footprint=footprints.get(sid),
-            source=ref('src/data/pokemon/pokedex_entries.h', 'NATIONAL_DEX_' + name, match[0]),
-            descriptionSource=ref('src/data/pokemon/pokedex_text_fr.h', desc,
-                re.search(r'const u8 ' + desc + r'\[\] = _\(.*?\);', texts['src/data/pokemon/pokedex_text_fr.h'], re.S)[0])))
+            portrait=portraits.get(sid), footprint=footprints.get(sid)))
     for page in old_pages:
         for sid, legacy in page['entries'].items():
             current = next(e for e in entries if e['sourceSpeciesId'] == int(sid))
@@ -298,18 +267,7 @@ def convert(lock, sources, old):
     symbols = ['gText_PokedexTableOfContents', 'gText_Seen', 'gText_Owned', 'gText_Kanto', 'gText_National',
         'gText_NumericalModeKanto', 'gText_NumericalModeNational', 'gText_PokemonListNoColor', 'gText_PickOKExit',
         'gText_5Dashes', 'gText_PokedexPokemon', 'gText_HT', 'gText_WT', 'gText_Lbs', 'gText_Cry', 'gText_NextDataCancel', 'gText_PokedexNo', 'gText_ClosePokedex']
-    refs = [ref('src/pokedex_screen.c', n) for n in ('DexScreen_CountMonsInOrderedList', 'Task_DexScreen_NumericalOrder',
-        'DexScreen_TryScrollMonsVertical', 'DexScreen_PrintMonCategory', 'DexScreen_PrintMonHeight', 'DexScreen_PrintMonWeight',
-        'DexScreen_PrintMonFlavorText', 'DexScreen_DrawMonFootprint', 'DexScreen_DrawMonDexPage', 'ItemPrintFunc_OrderedListMenu',
-        'DexScreen_InitListMenuForOrderedList', 'DexScreen_DestroyDexOrderListMenu', 'DexScreen_LoadMonPicInWindow', 'sListMenuTemplate_OrderedListMenu')]
-    refs += [ref('src/start_menu.c', n) for n in ('StartMenuPokedexCallback', 'StartMenuPokedexSanityCheck')]
-    refs += [ref('src/event_data.c', 'IsNationalPokedexEnabled'), ref('src/list_menu.c', 'ListMenu_ProcessInput')]
-    refs += [ref('src/list_menu.c', 'BlitMenuInfoIcon'), ref('src/list_menu.c', 'ListMenuLoadStdPalAt'),
-             ref('src/list_menu.c', 'MENU_INFO_ICON_CAUGHT'), ref('src/graphics.c', 'gMenuInfoElements1_Pal'),
-             ref('src/graphics.c', 'gMenuInfoElements_Gfx')]
-    outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-         inputs=lock['files'], entries=entries,
-        dependencies=[dict(path=p) for p in sorted(DEPENDENCIES)],
+    outputs['pokedex-menu.json'] = canonical(dict(schemaVersion=1, profile=PROFILE, entries=entries,
         entryLayout=old_pages[0]['layout'], assets=assets, ownedMarker=owned_marker,
         uiTexts={n:string(texts['src/strings.c'], n) for n in symbols},
         listLayout=dict(width=240,height=160,x=16,y=16,windowWidth=184,windowHeight=128,visibleRows=9,
@@ -318,35 +276,23 @@ def convert(lock, sources, old):
             unseenLabel='-----',seenCanOpen=True,caughtRequiredForDescription=True,caughtRequiredForMeasures=True,
             caughtRequiredForFootprint=True,caughtRequiredForTypes=True,unseenCategory='???????????',
             unseenHeight='??’??”',unseenWeight='????.? lbs.',pageScroll=9,pokedexFlag=0x829,nationalFlag=0x840,
-            nationalVariable=0x404e,nationalVariableValue=0x6258,nationalMagic=0xb9,startRequiresSeen=True),
-        rulesSources=refs, limitations=[
-            '386 metadata records do not add battle species, acquisition, routes, encounters, moves, evolutions or national unlock.',
-            'Current 29 species normal portraits reuse existing authenticated art; remaining 357 portraits and footprints are absent.',
-            'Numerical Kanto/national lists and caught-gated data projection only; habitat/search/area/size/cry/fades are not implemented here.',
-            'Original list coordinates and control tokens are supplied; full original menu composition and native visual acceptance remain separate.',
-            'Twenty-two missing current-species footprints and the original 12x12 caught marker are preconverted; seven existing footprints and settled page skin are reused unchanged.']))
-    outputs['manifest.json'] = canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-        inputCount=len(PATHS),entryCount=386,regionalCount=151,
-        portraitCount=29,newFootprintCount=22,ownedMarkerCount=1,
-        outputs=[dict(path=p) for p,b in sorted(outputs.items())],
-        upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False,runtimeShadersUsed=False))
+            nationalVariable=0x404e,nationalVariableValue=0x6258,nationalMagic=0xb9,startRequiresSeen=True)))
     return outputs
 
 
-def run(lock_path, raw, out, repository=None, project=ROOT):
+def run(raw, out, repository=None, project=ROOT):
     raw, out, project = safe(raw), safe(out), safe(project)
-    protected = [safe(project, p) for p in DEPENDENCIES] + [safe(lock_path)]
+    protected = [safe(project, p) for p in DEPENDENCIES]
     if repository is not None:
         protected.append(safe(repository))
     for a,b in [(raw,out)] + [(p,t) for p in protected for t in (raw,out)]:
         if a.resolve().is_relative_to(b.resolve()) or b.resolve().is_relative_to(a.resolve()):
             raise ValueError('Pokédex input/output/dependency overlap rejected')
-    lock = load_lock(lock_path)
-    sources = read_sources(lock,raw,repository)
-    outputs = convert(lock,sources,dependencies(project))
+    sources = read_sources(raw,repository)
+    outputs = convert(sources,dependencies(project))
     targets = [(safe(out,p),b) for p,b in outputs.items()]
     if repository is not None:
-        targets = [(safe(raw,p),b) for p,b in sources.items()] + [(safe(raw_metadata_directory(raw, 'pokedex-menu'),'manifest.json'),raw_manifest())] + targets
+        targets = [(safe(raw,p),b) for p,b in sources.items()] + [] + targets
     for target,_ in targets:
         if target.exists() and not target.is_file():
             raise ValueError('Pokédex destination is not a regular file')
@@ -366,9 +312,8 @@ def main():
     parser.add_argument('--reference-repo',type=pathlib.Path)
     parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/pokedex-menu')
-    parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/fetch-pokedex-menu.lock.json')
     args=parser.parse_args()
-    outputs=run(args.lock,args.raw,args.out,args.reference_repo)
+    outputs=run(args.raw,args.out,args.reference_repo)
     print(json.dumps(dict(status='verified',inputs=len(PATHS),entries=386,portraits=29,outputs=len(outputs))))
 
 

@@ -20,9 +20,9 @@ public static class PretNpcTradeOwnedRules
     private static T Read<T>(string root,string file)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/npc-trade-owned-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions {
+        return JsonSerializer.Deserialize<T>(bytes, SharedMachineCatalog.Options(root, new JsonSerializerOptions {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-        }) ?? throw new InvalidDataException("npc_trade_owned_source_missing");
+        })) ?? throw new InvalidDataException("npc_trade_owned_source_missing");
     }
 
     public static JsonElement LoadPokemonDocument(string root)

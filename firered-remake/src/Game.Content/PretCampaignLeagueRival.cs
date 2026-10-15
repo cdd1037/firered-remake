@@ -12,7 +12,7 @@ public sealed partial class PretCampaignCatalog
     public LeagueRivalTrainerCatalog? LeagueRivalTrainerParties { get; }
     public bool LeagueRivalEnabled=>LeagueRivalTrainerParties is not null;
 
-    private static void ValidateLeagueRivalComposition(ImmutableDictionary<MapId,PretWorldMap> maps,LeagueRivalTrainerCatalog trainers,PretStoryCompilation scripts,IEnumerable<PretSourceScriptFile> sources,ImmutableDictionary<string,string>.Builder text,CampaignPokemonContent pokemon,CinnabarOwnedPokemonCatalog owned,CinnabarOpponentPokemonCatalog opponents)
+    private static void ValidateLeagueRivalComposition(ImmutableDictionary<MapId,PretWorldMap> maps,LeagueRivalTrainerCatalog trainers,PretStoryCompilation scripts,ImmutableDictionary<string,string>.Builder text,CampaignPokemonContent pokemon,CinnabarOwnedPokemonCatalog owned,CinnabarOpponentPokemonCatalog opponents)
     {
         if(!maps.ContainsKey(new("map.route-22"))||!maps.ContainsKey(new("map.viridian-city-gym"))||
             owned.Catalog.Species.Count!=115||owned.Catalog.Moves.Count!=354)

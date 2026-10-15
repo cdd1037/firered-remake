@@ -23,9 +23,8 @@ public sealed class PretGameCornerPrizeRoom
         if (existing.ContainsKey(MapId) || !existing.TryGetValue(new("map.celadon-city"), out var city) ||
             !regional.NewMaps.TryGetValue(MapId, out var map))
             throw new InvalidDataException("game_corner_prize_room_predecessor");
-        var originalCity = regional.SourceFiles.Single(f => f.Path == "data/maps/CeladonCity/map.json");
         if (map.Id != MapId || map.SourceRef.Path != "data/maps/CeladonCity_GameCorner_PrizeRoom/map.json" ||
-            city.SourceRef.Path != originalCity.Path ||
+            city.SourceRef.Path != "data/maps/CeladonCity/map.json" ||
             map.Width != 9 || map.Height != 10 || map.Events.GetProperty("object_events").GetArrayLength() != 5 ||
             map.Events.GetProperty("connections").ValueKind != System.Text.Json.JsonValueKind.Null)
             throw new InvalidDataException("game_corner_prize_room_source");
@@ -35,8 +34,6 @@ public sealed class PretGameCornerPrizeRoom
                 .SequenceEqual([(0, 3, 9, 0, 5), (1, 4, 8, 3, 5), (2, 5, 9, 0, 5)]) ||
             map.FieldWarps.Any(w => w.DestinationMapId != city.Id))
             throw new InvalidDataException("game_corner_prize_room_original_doors");
-        var script = regional.Scripts.Single(s => s.Path == ScriptPath);
-        if (!IsOriginalScript(script)) throw new InvalidDataException("game_corner_prize_room_script");
         return new(map);
     }
 

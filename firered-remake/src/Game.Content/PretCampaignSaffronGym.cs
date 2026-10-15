@@ -22,19 +22,7 @@ public sealed partial class PretCampaignCatalog
     public bool SupportsTeleportPads(MapId map)=>SilphEnabled&&SilphRegion!.NewMaps.ContainsKey(map)&&map.Value.StartsWith("map.silph-co-",StringComparison.Ordinal)||
         SaffronGymEnabled&&map.Value=="map.saffron-city-gym"&&SaffronGymRegion!.NewMaps.ContainsKey(map);
 
-    private static void AppendSaffronGymSources(PretSaffronGymRegion region,PretSaffronGymItemsDocument items,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
-    {
-        var paths=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
-        foreach(var source in region.Scripts)
-        {
-            if(paths.TryGetValue(source.Path,out var prior))
-            {if(prior.Text!=source.Text)throw new InvalidDataException("saffron_gym_source_conflict: "+source.Path);continue;}
-            paths.Add(source.Path,source);sources.Add(source);
-            if(!texts.Contains(source.Text,StringComparer.Ordinal))texts.Add(source.Text);
-        }
-        foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
-        MergeRegionalServiceConstants(constants,region.Constants);
-    }
+
     private static EarlyShopCatalog ComposeSaffronGymShop(EarlyShopCatalog previous,PretSaffronGymRegion region,PretSaffronGymItemsDocument items)
     {
         var candidate=PretSaffronGymItems.Extend(previous,items);

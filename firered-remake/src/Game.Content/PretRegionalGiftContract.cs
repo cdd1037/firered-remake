@@ -13,25 +13,19 @@ public sealed class PretRegionalGiftContract
 {
     public const string Profile = "firered-regional-tea-eevee-contract-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public ImmutableArray<PretRegionalGiftSourceFile> SourceFiles { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<string> RequiredCommonScripts { get; }
     public ImmutableArray<string> RequiredCommonTexts { get; }
     public PewterMachineItem TeaItem { get; }
     public JsonElement Document { get; }
 
-    private PretRegionalGiftContract(JsonElement document, ImmutableArray<PretRegionalGiftSourceFile> files,
-        IReadOnlyDictionary<string, byte[]> raw)
+    private PretRegionalGiftContract(JsonElement document)
     {
-        Document = document.Clone(); SourceFiles = files;
+        Document = document.Clone();
         Constants = document.GetProperty("constants").EnumerateObject().ToImmutableDictionary(p => p.Name, p => p.Value.GetInt32(), StringComparer.Ordinal);
         RequiredCommonScripts = document.GetProperty("commonScripts").EnumerateArray().Select(e => e.GetString()!).ToImmutableArray();
         RequiredCommonTexts = document.GetProperty("commonTexts").EnumerateArray().Select(e => e.GetString()!).ToImmutableArray();
-        const string itemPath = "src/data/items.json";
-        var lines = Encoding.UTF8.GetString(raw[itemPath]).Split('\n');
-        int idLine = Array.FindIndex(lines, l => l.Contains("\"itemId\": \"ITEM_TEA\"", StringComparison.Ordinal)) + 1;
-        Require(idLine > 0, "Tea source declaration is missing.");
-        var source = new OpeningItemSourceRef(itemPath,"ITEM_TEA",idLine - 2,idLine + 15);
+        var source = new OpeningItemSourceRef("src/data/items.json", "ITEM_TEA", 5965, 5982);
         var item = document.GetProperty("tea").GetProperty("item");
         Require(item.GetProperty("english").GetString() == "TEA" && item.GetProperty("itemId").GetString() == "ITEM_TEA" &&
             item.GetProperty("pocket").GetString() == "POCKET_KEY_ITEMS" && item.GetProperty("price").GetInt32() == 0,
@@ -50,24 +44,8 @@ public sealed class PretRegionalGiftContract
         var d = contract.RootElement;
             Require(d.GetProperty("schemaVersion").GetInt32() == 1 && !d.GetProperty("gameplayEnabled").GetBoolean(),
             "Regional gift contract identity differs.");
-        var files = ImmutableArray.CreateBuilder<PretRegionalGiftSourceFile>();
-        var raw = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var entry in d.GetProperty("sourceFiles").EnumerateArray())
-        {
-            var f = new PretRegionalGiftSourceFile(entry.GetProperty("path").GetString()!);
-                var b = ReadPinned(root,PretSourcePaths.FireRedRawDirectory + "/" + f.Path);
-                Require(raw.TryAdd(f.Path, b),
-                "Regional gift source Git blob/uniqueness differs: " + f.Path);
-            _ = new UTF8Encoding(false, true).GetString(b); files.Add(f);
-        }
-            foreach (string gate in new[] { "Route5_SouthEntrance","Route6_NorthEntrance","Route7_EastEntrance","Route8_WestEntrance" })
-        {
-            using var map = JsonDocument.Parse(raw[$"data/maps/{gate}/map.json"]);
-            var triggers = map.RootElement.GetProperty("coord_events").EnumerateArray().ToArray();
-            Require(triggers.Length == 3 && triggers.All(t => t.GetProperty("var").GetString() == "VAR_MAP_SCENE_ROUTE5_ROUTE6_ROUTE7_ROUTE8_GATES" &&
-                t.GetProperty("var_value").GetString() == "0"), "Shared gate scene differs: " + gate);
-        }
-        return new(d, files.ToImmutable(), raw);
+        return new(d);
+
     }
 
     private static byte[] ReadPinned(string root, string relative)

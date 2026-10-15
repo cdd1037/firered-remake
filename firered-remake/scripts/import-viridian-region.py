@@ -11,7 +11,8 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
+from overworld_sprites import graphics_records
 import argparse
 import base64
 import collections
@@ -96,7 +97,6 @@ class Source:
             require_safe_target(raw, raw / path)
             data = (raw / path).read_bytes()
             self.data[path] = data
-        require_safe_target(raw_metadata_directory(raw, 'viridian-region'), raw_metadata_directory(raw, 'viridian-region') / 'manifest.json')
 
     def text(self, path):
         return self.data[path].decode('utf-8')
@@ -457,49 +457,13 @@ def quest_inventory(src, scripts):
                           'Importing complete original blocks is not script execution or whole-game reachability.'])
 
 
-def npc_inventory(src, worlds, out):
+def npc_inventory(src, worlds, out, *, render=False):
     root = 'src/data/object_events/'
     graphics = {e['graphics_id'] for w in worlds for e in w['events']['object_events']}
     dynamic = 'OBJ_EVENT_GFX_VAR_0' in graphics
     graphics.discard('OBJ_EVENT_GFX_VAR_0')
     graphics.update(['OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_OLD_MAN_1', 'OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN'])
-    records = []
-    out.mkdir()
-    for graphics_id in sorted(graphics):
-        symbol = re.search(r'\[' + graphics_id + r'\]\s*=\s*&(\w+)', src.text(root + 'object_event_graphics_info_pointers.h'))[1]
-        body = re.search(r'\b' + symbol + r' = \{(.*?)\n\};', src.text(root + 'object_event_graphics_info.h'), re.S)[1]
-        fields = dict(re.findall(r'\.(\w+)\s*=\s*([^,\n]+)', body))
-        rows = re.search(r'\b' + fields['images'] + r'\[\] = \{(.*?)\n\};', src.text(root + 'object_event_pic_tables.h'), re.S)[1]
-        frames = []
-        for pic, width, height, index in re.findall(r'overworld_frame\((\w+), (\d+), (\d+), (\d+)\)', rows):
-            path = re.search(r'\b' + pic + r'\[\] = INCBIN_U16\("(.*?)"\)', src.text(root + 'object_event_graphics.h'))[1].replace('.4bpp', '.png')
-            frames.append(dict(pic=pic, widthTiles=int(width), heightTiles=int(height), index=int(index), sourceRef=src.ref(path, pic)))
-        palette = re.search(r'\{\s*(\w+)\s*,\s*' + fields['paletteTag'] + r'\s*\}', src.text('src/event_object_movement.c'))[1]
-        palette_path = re.search(r'\b' + palette + r'\[\] = INCBIN_U16\("(.*?)"\)', src.text(root + 'object_event_graphics.h'))[1].replace('.gbapal', '.pal')
-        width, height = int(fields['width']), int(fields['height'])
-        colors = [tuple(((int(v) >> 3) << 3) | ((int(v) >> 3) >> 2) for v in line.split())
-                  for line in src.text(palette_path).splitlines()[3:]]
-        if len(colors) != 16 or any(len(c) != 3 for c in colors) or not frames:
-            raise ValueError('Invalid NPC palette/frame table')
-        sheet = Image.new('RGBA', (width * len(frames), height))
-        for i, frame in enumerate(frames):
-            if frame['widthTiles'] * frame['heightTiles'] * 64 != width * height:
-                raise ValueError('NPC frame byte span differs')
-            image = Image.open(io.BytesIO(src.data[frame['sourceRef']['path']]))
-            if image.mode != 'P' or image.height != height or (frame['index'] + 1) * width > image.width:
-                raise ValueError('Unsupported NPC source sheet')
-            crop = image.crop((frame['index'] * width, 0, (frame['index'] + 1) * width, height))
-            rgba = Image.new('RGBA', crop.size)
-            rgba.putdata([(*colors[c], 0 if c == 0 else 255) for c in crop.get_flattened_data()])
-            sheet.paste(rgba, (i * width, 0))
-        filename = graphics_id.removeprefix('OBJ_EVENT_GFX_').lower().replace('_', '-') + '.png'
-        sheet.save(out / filename, optimize=False, compress_level=9)
-        records.append(dict(graphicsId=graphics_id, declaration=fields, frames=frames,
-                            texturePath='npc/' + filename,
-                            frameWidth=width, frameHeight=height, frameCount=len(frames),
-                            tileCenterAnchor=dict(x=width // 2, y=height - 8),
-                            sourceRef=src.ref(root + 'object_event_graphics_info.h', symbol),
-                            paletteSourceRef=src.ref(palette_path, palette), runtimeStatus='sourceOnly'))
+    records = graphics_records(src, graphics, out, render=render)
     return dict(schemaVersion=1, graphics=records,
                 dynamicGraphics=[dict(graphicsId='OBJ_EVENT_GFX_VAR_0', variable='VAR_OBJ_GFX_ID_0',
                                       candidates=['OBJ_EVENT_GFX_OLD_MAN_LYING_DOWN', 'OBJ_EVENT_GFX_OLD_MAN_1'],
@@ -522,22 +486,6 @@ def import_catalog(raw, out, lock_path=None):
         encounters = encounter_inventory(src, worlds)
         quest = quest_inventory(src, scripts)
         npcs = npc_inventory(src, worlds, stage / 'npc')
-        rules = [
-            ('outdoorConnections', 'Coordinate offsets and reciprocal references validated; field/camera streaming is not integrated.'),
-            ('grassEncounter', 'Preserve grass and encounter type; stepping cannot bypass encounter evaluation.'),
-            ('ledgeJump', 'Directional ledge behavior and forced jump landing require authoritative movement.'),
-            ('martOnLoad', 'setmetatile hides questionnaire before Pokedex; source tile mutation is required.'),
-            ('parcelGift', 'giveitem_msg and key-item pocket/space/failure/message semantics need runtime handlers.'),
-            ('oakReceipt', 'Remove parcel, SetUnlockedPokedexFlags, gift five balls and all ordered scene changes.'),
-            ('shop', 'pokemart menu, stock, funds, quantity/space validation and atomic purchase/sale required.'),
-            ('dynamicNpcs', 'Bind VAR_OBJ_GFX_ID_0 and preserve old-man coordinates, flags and collision.'),
-            ('oldManTutorial', 'StartOldManTutorialBattle, Teachy TV and capture presentation remain outside parcel milestone.'),
-            ('externalBoundaries', 'Route2/22/21 and unimported interiors are explicit boundaries, not removed warps.'),
-            ('sourcePresentation', 'No NPC animation, tileset animation, music/sound output or original visual parity is certified.')]
-        matrix = dict(schemaVersion=1, runtimeIntegrated=False, commands=scripts['commands'],
-                      specials=scripts['specials'], movements=scripts['movements'],
-                      rules=[dict(id=k, status='unsupportedInThisIncrement', requirement=v) for k, v in rules],
-                      unresolvedLabelReferences=scripts['unresolvedLabelReferences'])
         catalog = dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
                         isPlayable=False, runtimeIntegrated=False,
                        maps=[dict(sourceName=name, stableId=stable, sourceMapSymbol=w['events']['id'], directory=directory,
@@ -545,8 +493,8 @@ def import_catalog(raw, out, lock_path=None):
                              for (name, stable, directory), w in zip(MAPS, worlds)],
                        connections=connections, warps=warps, inputFiles=src.lock['files'],
                        scope='Independent source-data increment. The existing five-map application catalog is unchanged.')
-        documents = {'viridian-catalog.json': catalog, 'scripts.json': scripts, 'encounters.json': encounters,
-                     'parcel-quest.json': quest, 'npc-source.json': npcs, 'support-matrix.json': matrix}
+        documents = {'viridian-catalog.json': catalog, 'encounters.json': encounters,
+                     'parcel-quest.json': quest, 'npc-source.json': npcs}
         for filename, document in documents.items():
             (stage / filename).write_text(canonical(document), encoding='utf-8')
         outputs = [dict(path=p.relative_to(stage).as_posix())

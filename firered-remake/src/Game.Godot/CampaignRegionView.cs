@@ -1,15 +1,17 @@
 using System.Text.Json;
+using System.Collections.Immutable;
 using Game.Domain.World;
 using Godot;
 public partial class CampaignView
 {
     private string? _mapEditKey;
+    private ImmutableSortedDictionary<string,FieldMetatileEdit>? _mapEditState;
     private CampaignResourceCache.Owner? _mapEditOwner;
     private CampaignResourceCache.Owner? _drawMapEditOwner;
     private void ReleaseMapEdits()
     {
         if(!ReferenceEquals(_mapEditOwner,_drawMapEditOwner))_mapEditOwner?.Dispose();
-        _mapEditOwner=null;_mapEditKey=null;
+        _mapEditOwner=null;_mapEditKey=null;_mapEditState=null;
     }
     private void BeginMapFrame()
     {
@@ -19,10 +21,11 @@ public partial class CampaignView
     }
     private void ApplyMapEdits(Game.Application.CampaignState state)
     {
-        var key=PresentationMapKey(state.World.Player.MapId)+":"+Game.Application.CanonicalJson.Hash(state.MapEdits);
-        if(_mapEditKey==key)return;
+        // Immutable edit collections can be reused by identity; no JSON/hash work on ordinary movement.
+        var key=PresentationMapKey(state.World.Player.MapId);
+        if(_mapEditKey==key&&ReferenceEquals(_mapEditState,state.MapEdits))return;
         var original=GetMapArt(state.World.Player.MapId);
-        if(state.MapEdits is not {Count:>0}){_art=original;ReleaseMapEdits();_mapEditKey=key;return;}
+        if(state.MapEdits is not {Count:>0}){_art=original;ReleaseMapEdits();_mapEditKey=key;_mapEditState=state.MapEdits;return;}
         var definitions=state.World.Player.MapId.Value=="map.vermilion-city-gym"
             ?_catalog.VermilionGymRegion?.BeamDefinitions:_catalog.MartMetatiles?.Definitions;
         if(definitions is null&&!IsSeafoamPatchedMap(state.World.Player.MapId)&&!IsTrainerTowerPresentationMap(state.World.Player.MapId)&&!IsFiveIslandPatchedMap(state.World.Player.MapId)&&!IsSixIslandPatchedMap(state.World.Player.MapId)&&!IsFourIslandPatchedMap(state.World.Player.MapId)&&!IsSeviiRubyPatchedMap(state.World.Player.MapId)&&_catalog.PokemonLeagueRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&!(_catalog.VictoryRoadEnabled&&IsVictoryRoadCave(state.World.Player.MapId))&&_catalog.CinnabarRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.SilphRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true&&_catalog.RocketHideoutRegion?.NewMaps.ContainsKey(state.World.Player.MapId)!=true)throw new InvalidDataException("Metatile art missing for "+state.World.Player.MapId.Value);
@@ -55,25 +58,26 @@ public partial class CampaignView
         try
         {
             var patched=original with{Bottom=Patch(original.Bottom,0),Middle=Patch(original.Middle,1),Top=Patch(original.Top,2)};
-            _art=patched;ReleaseMapEdits();_mapEditOwner=replacement;_mapEditKey=key;
+            _art=patched;ReleaseMapEdits();_mapEditOwner=replacement;_mapEditKey=key;_mapEditState=state.MapEdits;
         }
         catch{replacement.Dispose();throw;}
     }
+    private IReadOnlyDictionary<string,Game.Content.OverworldSprite>? _overworldSprites;
     private Dictionary<string,SpriteAsset> LoadRegionNpcs(string manifest,CampaignResourceCache.Owner owner)
     {
-        // Content supplies each map binding from its generated manifest.
-        var localRoot=System.IO.Path.GetDirectoryName(manifest)!;using var doc=JsonDocument.Parse(System.IO.File.ReadAllBytes(manifest));var result=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
-        foreach(var e in doc.RootElement.GetProperty("graphics").EnumerateArray())
+        var generated=System.IO.Path.Combine(_root,"content/generated");
+        _overworldSprites ??= Game.Content.PretOverworldTextures.Load(generated);
+        using var doc=JsonDocument.Parse(System.IO.File.ReadAllBytes(manifest));
+        var result=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
+        foreach(var entry in doc.RootElement.GetProperty("graphics").EnumerateArray())
         {
-            var path=e.GetProperty("texturePath").GetString()!;
-            if(System.IO.Path.IsPathRooted(path)||path.Split('/').Contains(".."))throw new InvalidDataException("Region NPC path invalid.");
-            bool reused=e.TryGetProperty("reuseExisting",out var reuse)&&reuse.GetBoolean();
-            if(reused&&!path.StartsWith("content/generated/",StringComparison.Ordinal))throw new InvalidDataException("Reused region NPC path invalid.");
-            var full=System.IO.Path.Combine(reused?_root:localRoot,path);
-            var texture=owner.Texture(full);int w=e.GetProperty("frameWidth").GetInt32(),h=e.GetProperty("frameHeight").GetInt32(),count=e.GetProperty("frameCount").GetInt32();var anchor=e.GetProperty("tileCenterAnchor");
-            if(texture.GetWidth()!=w*count||texture.GetHeight()!=h)throw new InvalidDataException("Region NPC sheet size invalid.");
-            bool inanimate=e.GetProperty("declaration").GetProperty("inanimate").GetString()=="TRUE";
-            result.Add(e.GetProperty("graphicsId").GetString()!,new(texture,w,h,count,new(anchor.GetProperty("x").GetInt32(),anchor.GetProperty("y").GetInt32()),inanimate));
+            string id=entry.GetProperty("graphicsId").GetString()!;
+            var sprite=_overworldSprites[id]; var r=sprite.Region;
+            var texture=owner.NativeTexture(System.IO.Path.Combine(generated,"shared-overworld",sprite.TexturePath),new Rect2I(r.X,r.Y,r.Width,r.Height));
+            if(r.Width!=sprite.FrameWidth*sprite.FrameCount||r.Height!=sprite.FrameHeight)
+                throw new InvalidDataException("Region NPC sheet size invalid.");
+            result.Add(id,new(texture,sprite.FrameWidth,sprite.FrameHeight,sprite.FrameCount,
+                new(sprite.AnchorX,sprite.AnchorY),sprite.Inanimate));
         }
         return result;
     }

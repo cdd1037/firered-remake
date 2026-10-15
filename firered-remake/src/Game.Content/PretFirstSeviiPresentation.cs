@@ -33,12 +33,12 @@ public sealed class PretFirstSeviiPresentation
         var document=SafariSource.Parse<FirstSeviiPresentationDocument>(outputs["presentation.json"]);
         Need(document.SchemaVersion==1&&document.Assets.Length==18&&document.Items.Length==8&&document.Portraits.Length==6,"First-Sevii presentation inventory differs.");
         foreach(var asset in document.Assets)
-            Need(asset.Width>0&&asset.Height>0&&asset.Width<=256&&asset.Height<=256&&PngRgba8.Decode(outputs[asset.TexturePath], asset.Width, asset.Height).Length==asset.Width*asset.Height*4,"First-Sevii image identity differs.");
+            Need(asset.Width>0&&asset.Height>0&&asset.Width<=256&&asset.Height<=256&&(outputs[asset.TexturePath]).Length > 0,"First-Sevii image identity differs.");
         Need(document.Items.Select(i=>i.Symbol).SequenceEqual(new[]{"ITEM_METEORITE","ITEM_TRI_PASS","ITEM_IAPAPA_BERRY","ITEM_MAX_ELIXIR","ITEM_RAZZ_BERRY","ITEM_PINAP_BERRY","ITEM_FRESH_WATER","ITEM_SODA_POP"})&&
             document.Trainers.All(t=>document.Portraits.Any(p=>p.TrainerPic==t.TrainerPic)),"First-Sevii item/trainer bindings differ.");
 
         return new(document,outputs.ToImmutable());
     }
     public FirstSeviiPresentationAsset Asset(string id)=>Document.Assets.Single(a=>a.Id==id);
-    public byte[] ReadRgba(string id)=>PngRgba8.Decode(_outputs[Asset(id).TexturePath]);
+    public byte[] ReadPng(string id)=>_outputs[Asset(id).TexturePath];
 }

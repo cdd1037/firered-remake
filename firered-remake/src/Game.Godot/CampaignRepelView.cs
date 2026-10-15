@@ -4,6 +4,8 @@ using Godot;
 
 public partial class CampaignView
 {
+    // Source SE_REPEL sequencer stop; independent of renderer tails or delivery codecs.
+    private const int RepelSequenceStoppedVBlank = 27;
     private string? _repelWaitId;
     private double _repelWaitElapsed;
     private ulong _repelFieldAckFrame = ulong.MaxValue;
@@ -26,7 +28,7 @@ public partial class CampaignView
         // Source sequencer status ends at authenticated VBlank 27. The rendered
         // sample's release tail may continue independently; audio backend sample
         // counts never advance gameplay steps or either RNG.
-        double duration = PretRepelAudio.SourceSequenceStoppedVBlank / SourceAudioFramesPerSecond;
+        double duration = RepelSequenceStoppedVBlank / SourceAudioFramesPerSecond;
         if (!_busy && _repelWaitElapsed >= duration)
             Apply(new("repel_presented", Text: pending.WaitId));
         return true;

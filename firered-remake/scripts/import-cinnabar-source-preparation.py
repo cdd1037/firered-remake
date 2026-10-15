@@ -352,8 +352,8 @@ def main():
     ROOT=a.project_root.absolute();PRODUCT=a.dependency_root.absolute();reference=a.reference_root.absolute()
     if ROOT==reference or ROOT.is_relative_to(reference) or reference.is_relative_to(ROOT):raise ValueError('Reference/output overlap')
     out=ROOT/'content/generated/cinnabar-source-preparation';raw=ROOT/'content/raw/pokefirered/037335f4'
-    lockpath=ROOT/'content/sources/cinnabar-source-preparation.lock.json'
-    for target in (ROOT,out,raw,lockpath):
+    
+    for target in (ROOT,out,raw):
         if any(p.is_symlink() for p in (target,*target.parents)):raise ValueError('Output parent symlink denied')
     src=Source(reference);worlds=[decode(src,n) for n in CORE];doc=scripts(src,worlds);links=topology(src,worlds)
     # These behavior-triggered script roots are not map-event pointers.
@@ -384,7 +384,7 @@ def main():
         lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False,maps=CORE)
         lockdata=canonical(lock)
         docs=package_documents(out.parent, constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,inputFiles=lock['files'],**links),
-              'scripts.json':doc,'npc-source.json':npcs,'contracts.json':contract,'declarations.json':data,
+              'scripts.json':doc,'npc-source.json':npcs,'contracts.json':contract,
               'geometry.json':dict(maps=geometry_inventory(worlds)),'item-art.json':item_art}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
@@ -393,7 +393,7 @@ def main():
             warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),
             scriptBlockCount=len(doc['blocks']),unresolvedLabelCount=0,trainerCount=len(data['trainers']),outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        writes=[(lockpath,lockdata)]+[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(raw/p,b) for p,b in sorted(src.data.items())]+[(out/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             if any(x.is_symlink() for x in (p,*p.parents)):raise ValueError('Output symlink denied')
             if a.check:

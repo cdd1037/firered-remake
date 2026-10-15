@@ -4,17 +4,17 @@
 Reads fixed Git blobs or authenticated cache bytes. Never executes upstream code.
 """
 import argparse
-import binascii
+import io
 import importlib.util
 import json
 import pathlib
 import re
-import struct
 import subprocess
 import sys
-import zlib
 
 sys.dont_write_bytecode = True
+from PIL import Image
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-route1-capture-dex-v1'
@@ -124,43 +124,15 @@ def reference(lock, sources, path, symbol, needle):
 
 
 def footprint_indices(data):
-    """Decode only the fixed 16x16 1bpp grayscale profile, then source gbagfx inversion."""
-    if data[:8] != b'\x89PNG\r\n\x1a\n':
-        raise ValueError('Footprint PNG signature differs')
-    pos, chunks = 8, []
-    while pos < len(data):
-        if pos + 12 > len(data):
-            raise ValueError('Footprint PNG truncated')
-        length = struct.unpack_from('>I', data, pos)[0]
-        tag, payload = data[pos + 4:pos + 8], data[pos + 8:pos + 8 + length]
-        end = pos + 12 + length
-        if end > len(data) or binascii.crc32(tag + payload) & 0xffffffff != struct.unpack_from('>I', data, end - 4)[0]:
-            raise ValueError('Footprint PNG CRC differs')
-        chunks.append((tag, payload))
-        pos = end
-    if [t for t, _ in chunks] != [b'IHDR', b'IDAT', b'IEND'] or chunks[0][1] != struct.pack('>IIBBBBB', 16, 16, 1, 0, 0, 0, 0) or chunks[-1][1]:
-        raise ValueError('Footprint PNG profile differs')
-    decoder = zlib.decompressobj()
-    raw = decoder.decompress(chunks[1][1], 49)
-    if len(raw) != 48 or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:
-        raise ValueError('Footprint PNG stream differs')
-    result, previous = (bytearray(), [0, 0])
-    for y in range(16):
-        method, row = raw[y * 3], []
-        if method not in range(5):
-            raise ValueError('Footprint PNG filter differs')
-        for x, value in enumerate(raw[y * 3 + 1:y * 3 + 3]):
-            a, b, c = row[x - 1] if x else 0, previous[x], previous[x - 1] if x else 0
-            p = a + b - c
-            distances = [abs(p - a), abs(p - b), abs(p - c)]
-            prediction = [0, a, b, (a + b) // 2, [a, b, c][distances.index(min(distances))]][method]
-            value = (value + prediction) & 255
-            row.append(value)
-            result.extend(1 ^ ((value >> shift) & 1) for shift in range(7, -1, -1))
-        previous = row
+    """Read 1-bit grayscale pixels and apply the source gbagfx inversion."""
+    with Image.open(io.BytesIO(data)) as image:
+        if image.format != 'PNG' or image.mode != '1' or image.size != (16, 16):
+            raise ValueError('Footprint PNG profile differs')
+        # Pillow exposes 1-bit pixels as 0/255; source black becomes palette index 1.
+        result = bytes(1 if pixel == 0 else 0 for pixel in image.convert('L').tobytes())
     if not 0 < sum(result) < 256:
         raise ValueError('Empty footprint')
-    return bytes(result)
+    return result
 
 
 def kanto_palette(data):
@@ -310,10 +282,7 @@ def convert(lock, sources):
             category=category, displayCategory=category.split(' ')[0], heightDecimeters=height, weightHectograms=weight,
             heightDisplay=f'{feet}’{remainder:02}”', weightDisplay=f'{lbs//100}.{(lbs//10)%10} {string(texts, "gText_Lbs")}',
             description=string(descriptions, desc_symbol), footprintPath=stem+'-footprint.png',
-            frontSpritePath='route1-battle-art/'+stem+'-front-normal.png', habitatTitle=string(texts, habitat_symbol),
-            source=reference(lock, sources, 'src/data/pokemon/pokedex_entries.h', dex_symbol, match[0]),
-            descriptionSource=reference(lock, sources, 'src/data/pokemon/pokedex_text_fr.h', desc_symbol,
-                re.search(r'const u8 '+desc_symbol+r'\[\] = _\(.*?\);', descriptions, re.S)[0]))
+            frontSpritePath='route1-battle-art/'+stem+'-front-normal.png', habitatTitle=string(texts, habitat_symbol))
     layout = dict(width=240, height=160, frontX=152, frontY=24, footprintX=104, footprintY=64,
         numberX=16, numberY=32, nameX=44, nameY=32, categoryX=16, categoryY=48,
         heightX=16, heightY=60, weightX=16, weightY=72, measureValueOffsetX=30,

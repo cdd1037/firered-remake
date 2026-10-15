@@ -26,8 +26,7 @@ public partial class CampaignView
 }
         Texture2D Pixels(JsonElement row)
         {
-            using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(),
-                false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
+            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
             return SceneTextures.FromImage(image);
         }
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
@@ -90,7 +89,7 @@ public partial class CampaignView
     }
     private CaptureDexEntry? GameCornerCaptureDexEntry(int species) => _gameCornerArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
         new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle, e.Source, e.DescriptionSource);
+            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
     private PokedexMenuPage? GameCornerPokedexPage(int species, PokedexMenuPage page) =>
         _gameCornerArt?.DexEntries.GetValueOrDefault(species) is { } entry
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;

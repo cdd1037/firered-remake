@@ -59,7 +59,7 @@ def read(path, expected_length=None):
 
 
 def read_lock(path=None):
-    data = read(path or ROOT / 'content/oak-rating-source-lock.json')
+    data = read(path or ROOT / 'scripts/import-config/oak-rating.json')
     lock = json.loads(data, object_pairs_hook=unique)
     if (lock['schemaVersion'], lock['commit'], lock['profile'], len(lock['files'])) != (1, COMMIT, PROFILE, 34):
         raise ValueError('Oak rating source identity differs')

@@ -12,6 +12,9 @@ import subprocess
 
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+import sys
+sys.path.insert(0, str(ROOT / "scripts"))
+from machine_catalog import load_catalog, machine_reference, compatibility_reference
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-pewter-machines-v1'
 SPECIES = ('BULBASAUR IVYSAUR VENUSAUR CHARMANDER CHARMELEON CHARIZARD SQUIRTLE WARTORTLE BLASTOISE '
@@ -118,20 +121,9 @@ def build(lock, data):
     if pp is None or int(pp.group(1)) != 10:
         raise ValueError('Rock Tomb PP differs')
     rules.append(ref('src/data/battle_moves.h','MOVE_ROCK_TOMB',move))
-    compatibility = []
-    for symbol in SPECIES:
-        full = 'SPECIES_' + symbol
-        species_id = constant('include/constants/species.h',full)
-        path = 'src/data/pokemon/tmhm_learnsets.h'
-        m = match(path,r'^    \[' + full + r'\]\s*= TMHM_LEARNSET\((.*?)\),')
-        tokens = re.findall(r'TMHM\((\w+)\)',m.group(1))
-        if m.group(1).strip() != '0' and not tokens:
-            raise ValueError('Empty unsupported learnset')
-        remaining = re.sub(r'TMHM\(\w+\)|\||\s|0','',m.group(1))
-        if remaining or len(tokens) != len(set(tokens)):
-            raise ValueError('Unsupported learnset expression')
-        compatibility.append(dict(species={'value':'pret:' + full},sourceSpeciesId=species_id,
-            canLearn='TM39_ROCK_TOMB' in tokens,source=ref(path,full,m)))
+    shared = load_catalog(ROOT)
+    tm = dict(item='pret:ITEM_TM39')
+    compatibility = [compatibility_reference(shared, 'pret:ITEM_TM39', 'pret:SPECIES_' + symbol) for symbol in SPECIES]
     for path, symbol, pattern in [
         ('src/item.c','CheckBagHasSpace',r'^bool8 CheckBagHasSpace\(.*?^\}'),
         ('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),
@@ -175,7 +167,7 @@ def build(lock, data):
     catalog = dict(sourceCommit=COMMIT,profile=PROFILE,completeItemCatalog=False,machineSlots=slots,keyItemSlots=key_slots,
         maximumStack=999,move={'value':'pret:MOVE_ROCK_TOMB'},sourceMoveId=move_id,movePp=10,
         tm39=tm,tmCase=case,compatibility=compatibility)
-    return dict(schemaVersion=1,icons=icons,inputs=lock['files'],rulesSources=rules,limitations=[
+    return dict(schemaVersion=1,icons=icons,inputs=lock['files'],limitations=[
         'Only TM39 and TM CASE storage/teaching are implemented; metadata does not add a general TM/HM service.',
         'Other pockets and non-CASE Key Item membership remain the existing validator responsibility.',
         'CheckBagHasSpace checks the machine pocket; AddBagItem may fail if the first CASE cannot fit in Key Items.',

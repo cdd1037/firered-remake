@@ -3,14 +3,13 @@ using System.Collections.Immutable;
 namespace Game.Domain.Pokemon;
 
 public sealed record SourceEasyChatWord(ushort Value, int Group, int Index, string Symbol, string Text,
-    bool Enabled, PokemonSourceRef DefinitionSource, PokemonSourceRef TextSource);
-public sealed record SourceEasyChatGroup(int Id, string Symbol, string Name, ImmutableArray<ushort> WordValues,
-    PokemonSourceRef Source, PokemonSourceRef NameSource);
+    bool Enabled);
+public sealed record SourceEasyChatGroup(int Id, string Symbol, string Name, ImmutableArray<ushort> WordValues);
 /// <summary>Each entry retains ordered alternatives. The original picks the first unlocked spelling,
 /// suppressing duplicate Pokémon names across the two source groups.</summary>
 public sealed record SourceEasyChatAlphabeticalGroup(int Id, string Name,
-    ImmutableArray<ImmutableArray<ushort>> Alternatives, PokemonSourceRef Source);
-public sealed record SourceEasyChatCatalog(string SourceCommit, ImmutableArray<SourceEasyChatGroup> Groups,
+    ImmutableArray<ImmutableArray<ushort>> Alternatives);
+public sealed record SourceEasyChatCatalog(ImmutableArray<SourceEasyChatGroup> Groups,
     ImmutableDictionary<ushort, SourceEasyChatWord> Words, ImmutableArray<SourceEasyChatAlphabeticalGroup> Alphabetical,
     ImmutableDictionary<string, byte> NameCharacters, int SeenPokemonGroup, int NationalPokemonGroup,
     int DeoxysSpecies, int UnownSpecies)

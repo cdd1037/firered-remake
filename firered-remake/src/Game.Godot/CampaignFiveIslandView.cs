@@ -27,14 +27,14 @@ public partial class CampaignView
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)
         {
             int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            var rgba = PngRgba8.Decode(_fiveIslandArt.Files[row.GetProperty("texturePath").GetString()!]);
+            using var image = NativeImages.LoadPng(_fiveIslandArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
             if (replicatePalette)
             {
-                rgba = rgba.ToArray();
+                var rgba = image.GetData();
                 for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
                     for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
+                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
             }
-            using var image = Image.CreateFromData(width,height,false,Image.Format.Rgba8,rgba);
             return SceneTextures.FromImage(image);
         }
         foreach (var row in FiveIslandManifest.GetProperty("sprites").EnumerateArray())
@@ -85,7 +85,7 @@ public partial class CampaignView
             var document = _questPocketUi ?? throw new InvalidDataException("Five Island key-item pocket missing.");
             if (document.Items.Any(i => i.Id == item)) throw new InvalidDataException("Duplicated Five Island key item.");
             var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
-            using var image = icon.GetImage(); _questPocketTextures.Add(asset, ImageTexture.CreateFromImage(image));
+            using var image = icon.GetImage(); _questPocketTextures.Add(asset, SceneTextures.FromImage(image));
             _questPocketUi = document with
             {
                 Items = document.Items.Add(new(item, item[5..], row.GetProperty("name").GetString()!, row.GetProperty("description").GetString()!, asset, row.GetProperty("fieldUseFunction").GetString()!)),
@@ -98,7 +98,7 @@ public partial class CampaignView
 
     private CaptureDexEntry? FiveIslandCaptureDexEntry(int species) => !_fiveIslandDex.TryGetValue(species,out var e) ? null :
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,e.HeightDisplay,e.WeightDisplay,e.Description,
-            e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle,e.Source,e.DescriptionSource);
+            e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle);
     private PokedexMenuTexture? FiveIslandDexPortrait(int species)
     {
         if (_fiveIslandArt is null) return null;

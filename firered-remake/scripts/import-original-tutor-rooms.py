@@ -34,11 +34,7 @@ ANCHORS = [
       2, 25, 14, 'MAP_FOUR_ISLAND_HOUSE1'),
     ('CinnabarIsland_PokemonLab_Entrance', 'content/generated/fossil-lab-region', 'cinnabar-island-pokemon-lab-entrance/runtime-map.json',
       4, 19, 5, 'MAP_CINNABAR_ISLAND_POKEMON_LAB_RESEARCH_ROOM')]
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_FAT_MAN': 'content/generated/four-island-region/npc/fat-man.png',
-    'OBJ_EVENT_GFX_POKE_MANIAC': 'content/generated/victory-road-region/npc/poke-maniac.png',
-    'OBJ_EVENT_GFX_SCIENTIST': 'content/generated/silph-region/npc/scientist.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_FAT_MAN', 'OBJ_EVENT_GFX_POKE_MANIAC', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_SCIENTIST'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -195,12 +191,6 @@ def main():
         for world in worlds: shared.import_map(src, world['sourceName'], world['stableId'], stage / reader.directory(world['sourceName']))
         npcs = shared.npc_inventory(src, worlds, stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'Room actor cohort differs')
-        for row in npcs['graphics']:
-            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
-            rendered = stage / row['texturePath']
-            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
-        (stage / 'npc').rmdir()
         entries = []
         for world in worlds:
             directory = reader.directory(world['sourceName']); path = stage / directory / 'runtime-map.json'; rich = path.read_bytes()
@@ -224,8 +214,7 @@ def main():
             cellCount=264, borderCellCount=8, directedWarpCount=4, objectCount=4, reusedNpcGraphicsCount=4,
             scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target / 'scripts/original-tutor-rooms.lock.json', lock_bytes),
-                  (target / 'scripts/original-tutor-rooms.contract.json', canonical(contract))]
+        writes = [(target / 'scripts/original-tutor-rooms.contract.json', canonical(contract))]
         writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

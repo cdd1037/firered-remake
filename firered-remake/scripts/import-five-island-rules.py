@@ -7,7 +7,9 @@ import json
 import re
 import subprocess
 from pathlib import Path
+from machine_catalog import admission_view, compatibility_additions
 
+ROOT = Path(__file__).resolve().parents[1]
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TRAINERS = ('TEAM_ROCKET_ADMIN','TEAM_ROCKET_ADMIN_2','SCIENTIST_GIDEON','TEAM_ROCKET_GRUNT_42','TEAM_ROCKET_GRUNT_47','TEAM_ROCKET_GRUNT_48','TEAM_ROCKET_GRUNT_49','TEAM_ROCKET_GRUNT_50','TEAM_ROCKET_GRUNT_51')
 
@@ -163,9 +165,6 @@ def generate_items(reference,root):
    inputs[path]=dict(path=path);texts[path]=b.decode()
   return texts[path]
  def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
- def dependency(path):
-  b=(root/path).read_bytes()
-  dependencies.append(dict(path=path));return json.loads(b)
  items_text=source('src/data/items.json');source_items=json.loads(items_text)['items']
  constants=source('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}
  def metadata(symbol):
@@ -180,25 +179,11 @@ def generate_items(reference,root):
  for m in [metadata('ITEM_BIG_PEARL'),metadata('ITEM_UP_GRADE'),metadata('ITEM_SAPPHIRE')]:
   i=m['item']
   new.append({k:i[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=m['description'],healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=i))
- four=dependency('content/generated/four-island-items/items.json')
- six=dependency('content/generated/six-island-items/items.json')
- old_ids=[r['item']['value'][5:] for r in six['machineAdditions']];need(len(set(old_ids))==38,'Inherited machine set')
- owned=[(r['species']['value'][5:],r['sourceSpeciesId']) for r in four['hm07']['compatibility']]
- owned += [(r['species']['value'][5:],r['sourceSpeciesId']) for r in six['machineAdditions'][0]['compatibility']]
- added=[('SPECIES_HOPPIP',187),('SPECIES_SKIPLOOM',188),('SPECIES_JUMPLUFF',189)]
- need(len(owned)==132 and not set(owned)&set(added),'Owned predecessor');owned+=added
- text=source('src/data/pokemon/tmhm_learnsets.h');matches={m[1]:m for m in re.finditer(r'\[(SPECIES_\w+)\]\s*=\s*TMHM_LEARNSET\((.*?)\),',text,re.S)}
- def cell(species,source_id,item):
-  m=matches[species];return dict(species={'value':'pret:'+species},sourceSpeciesId=source_id,canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',m[2])),source=ref('src/data/pokemon/tmhm_learnsets.h',species,text[:m.start()].count('\n')+1,text[:m.end()].count('\n')+1))
- additions=[dict(item={'value':'pret:'+item},compatibility=[cell(s,n,item) for s,n in added]) for item in sorted(old_ids)]
- tm_source=source('src/data/pokemon/tmhm_learnsets.h')
- move_constants=source('include/constants/moves.h')
- move_id=int(re.search(r'^#define MOVE_SLUDGE_BOMB\s+(\d+)',move_constants,re.M)[1])
- canonical=dependency('content/generated/canonical-pokemon/catalog.json')
- move_data=source('src/data/battle_moves.h')
- move_block=re.search(r'\[MOVE_SLUDGE_BOMB\] =\s*\{(.*?)\}',move_data,re.S)[1]
- move=dict(pp=int(re.search(r'\.pp = (\d+)',move_block)[1]))
- tm36=dict(machine=metadata('ITEM_TM36'),move=dict(value='pret:MOVE_SLUDGE_BOMB'),sourceMoveId=move_id,movePp=move['pp'],compatibility=[cell(sp,n,'ITEM_TM36') for sp,n in owned])
+ additions=compatibility_additions(ROOT, 'content/generated/five-island-rules/items.json', 'machineAdditions')
+ need(len(additions)==38, 'Exact admitted machine scope')
+ tm36=admission_view(ROOT, 'content/generated/five-island-rules/items.json', '/tm36')
+ need(len(tm36['species'])==135, 'Exact admitted TM36 species scope')
+ dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
  pickups=[];flags=source('include/constants/flags.h')
  def pickup(map_symbol,event,hidden,local_id,item,quantity):
   flag=event['flag']
@@ -285,7 +270,6 @@ def main():
     files={'content/generated/five-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
     files.update({name:value.encode() for name,value in generate_encounters(a.reference).items()})
     lock=dict(sourceCommit=COMMIT,profile='firered-five-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/five-island-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

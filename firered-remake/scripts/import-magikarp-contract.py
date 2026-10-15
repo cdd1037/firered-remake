@@ -91,7 +91,7 @@ def read_sources(project=ROOT, raw=None, region_raw=None):
     indexed = {entry['path']: entry for entry in lock['files']}
     sources, entries = {}, []
     for path in sorted(REGION_PATHS):
-        entry = {k: indexed[path][k] for k in ('path')}
+        entry = {k: indexed[path][k] for k in ('path',)}
         sources[path] = safe_file(region_raw, path).read_bytes().decode('utf-8', errors='strict')
         entries.append(dict(**entry, sourceDirectory='content/raw/pokefirered/037335f4'))
     for entry in missing_entries():
@@ -219,8 +219,7 @@ def build(sources, entries):
             transferHandledBy='script after callback; not NAMING_SCREEN_CAUGHT_MON'),
         commonScripts=list(COMMON_SCRIPTS), commonTexts=list(COMMON_TEXTS),
         scripts=[selected[name] for name in sorted(selected)], sourceFunctions=snippets)
-    common = '\n'.join(name + '::\n' + '\n'.join(selected[name]['lines']) + '\n' for name in COMMON_SCRIPTS + COMMON_TEXTS).encode('utf-8')
-    outputs = {'magikarp-contract.json': encode(contract), 'common-script-dependencies.inc': common}
+    outputs = {'magikarp-contract.json': encode(contract)}
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
          reusedRegionSourceCount=len(REGION_PATHS),
         newSourceCount=len(MISSING), scriptBlockCount=len(selected), commonScriptCount=len(COMMON_SCRIPTS),

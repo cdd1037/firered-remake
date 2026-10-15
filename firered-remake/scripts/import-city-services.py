@@ -42,7 +42,7 @@ def materialize(raw, reference_repo):
     SHARED.materialize(raw,reference_repo,source_package='city-services')
 
 def read_lock(path=None):
-    target = path or ROOT / 'content/sources/city-services.lock.json'
+    target = path or ROOT / 'scripts/import-config/city-services.json'
     require_safe_target(target.parent, target)
     data = target.read_bytes()
     lock = json_bytes(data)

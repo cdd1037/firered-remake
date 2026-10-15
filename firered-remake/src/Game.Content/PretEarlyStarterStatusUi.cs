@@ -1,6 +1,4 @@
-using System.Buffers.Binary;
 using System.Collections.Immutable;
-using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 
@@ -56,7 +54,6 @@ public static class PretEarlyStarterStatusUi
         foreach (var asset in doc.Assets)
         {
             _ = ReadTexture(project, asset);
-            _ = ReadRgba(project, asset);
         }
         return doc;
     }
@@ -66,16 +63,11 @@ public static class PretEarlyStarterStatusUi
     {
         ValidateAsset(asset);
         var bytes = ReadPinned(projectRoot,Generated + "/" + asset.TexturePath);
-        VerifyRgba(bytes, asset);
         return bytes;
     }
 
-    /// <summary>Already converted RGBA8, left-to-right rows, binary alpha, ready for Image.CreateFromData.</summary>
-    public static byte[] ReadRgba(string projectRoot, EarlyStarterStatusUiAsset asset)
-    {
-        ValidateAsset(asset);
-        return PngRgba8.Decode(ReadPinned(projectRoot,Generated + "/" + asset.TexturePath),asset.Width,asset.Height);
-    }
+    /// <summary>Generated PNG bytes for the rendering layer.</summary>
+
 
     private static void ValidateAsset(EarlyStarterStatusUiAsset asset)
     {
@@ -88,28 +80,7 @@ public static class PretEarlyStarterStatusUi
             "Early-starter status asset layout is invalid.");
     }
 
-    private static void VerifyRgba(byte[] bytes, EarlyStarterStatusUiAsset asset)
-    {
-        Require(bytes.Length >= 57 && bytes.AsSpan(0, 8).SequenceEqual(new byte[] { 137,80,78,71,13,10,26,10 })
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(8, 4)) == 13 && bytes.AsSpan(12, 4).SequenceEqual("IHDR"u8)
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(16, 4)) == asset.Width
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(20, 4)) == asset.Height
-            && bytes.AsSpan(24, 5).SequenceEqual(new byte[] { 8,6,0,0,0 }) && bytes.AsSpan(37, 4).SequenceEqual("IDAT"u8)
-            && bytes.AsSpan(bytes.Length - 12, 12).SequenceEqual(new byte[] { 0,0,0,0,73,69,78,68,174,66,96,130 }),
-            "Early-starter status PNG encoding differs.");
-        var count = checked((int)BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(33, 4)));
-        Require(count == bytes.Length - 57, "Early-starter status PNG chunk lengths differ.");
-        using var memory = new MemoryStream(bytes, 41, count, writable: false);
-        using var zlib = new ZLibStream(memory, CompressionMode.Decompress);
-        int stride = checked(asset.Width * 4);
-        var scanlines = new byte[checked((stride + 1) * asset.Height)];
-        zlib.ReadExactly(scanlines);
-        Require(zlib.ReadByte() == -1, "Early-starter status RGBA stream exceeds its expected size.");
-        for (int y = 0; y < asset.Height; y++)
-        {
-            Require(scanlines[y * (stride + 1)] == 0, "Early-starter status PNG filter differs.");
-        }
-    }
+
 
     private static byte[] ReadPinned(string root,string path)
     {

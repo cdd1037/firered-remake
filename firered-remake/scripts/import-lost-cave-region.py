@@ -150,6 +150,14 @@ def main():
     converter=reader.load_helper('export-runtime-maps.py')
     const=five.constants(src,shared,worlds,scripts)
     contracts=contract(src,worlds,scripts,links)
+    # Publish gameplay pickup operands, never the script transcript used to derive them.
+    for pickup in contracts['itemPickups']:
+        source_script = pickup.pop('script')
+        matches = [re.fullmatch(r'\s*finditem\s+(ITEM_[A-Z0-9_]+)(?:\s*,\s*(\d+))?\s*', row['text']) for row in source_script['lines']]
+        matches = [match for match in matches if match]
+        need(len(matches) == 1, 'Lost Cave pickup instruction differs')
+        pickup.update(item=matches[0][1], quantity=int(matches[0][2] or 1), sourceRef=source_script['sourceRef'])
+
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='lost-cave-import-',dir=target) as temp:
         stage=Path(temp)
@@ -166,7 +174,7 @@ def main():
         symbols={w['events']['id']:w['stableId'] for w in worlds};symbols['MAP_FIVE_ISLAND']='map.five-island'
         docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
             runtimeIntegrated=False,maps=maps,tilesets=TILESETS,mapSymbols=symbols,inputFiles=lock['files']),
-            'scripts.json':scripts,'contracts.json':contracts,'declarations.json':data,
+            'scripts.json':scripts,'contracts.json':contracts,'items.json':dict(declarations=data['itemDeclarations']),
             'npc-source.json':npcs,'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=a.check)
         for n,d in docs.items():(stage/n).write_bytes(canonical(d))
         outputs=[dict(path=p.relative_to(stage).as_posix())
@@ -176,7 +184,7 @@ def main():
             trainerCount=len(data['trainers']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,
             outputs=outputs)
         mb=canonical(manifest);(stage/'manifest.json').write_bytes(mb)
-        writes=[(target/'scripts/lost-cave-region.lock.json',lb),(target/'scripts/lost-cave-region.contract.json',canonical(contracts))]
+        writes=[(target / 'scripts/lost-cave-region.contract.json', canonical(contracts))]
         writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:

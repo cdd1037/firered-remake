@@ -39,8 +39,8 @@ public partial class CampaignView
         }
         foreach(var icon in _catalog.BillItems!.Icons.Where(i=>i.Item.Value is "pret:ITEM_NUGGET" or "pret:ITEM_FAME_CHECKER" or "pret:ITEM_SS_TICKET").Concat(PretBillMachines.LoadProject(_root).Icons.Where(i=>i.Item.Value is "pret:ITEM_TM45" or "pret:ITEM_TM43" or "pret:ITEM_TM28")))
         {
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba(_catalog.BillItems!.Icons.Contains(icon) ? "bill-items" : "bill-machines", icon));
-            _earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
+            
+            _earlyItemIcons.Add(icon.Item,ItemTexture(_catalog.BillItems!.Icons.Contains(icon) ? "bill-items" : "bill-machines", icon));
         }
         var document=_questPocketUi??throw new InvalidDataException("Bill key pocket missing.");
         var position=document.Assets.Single(a=>a.Id==document.Items[0].Icon);
@@ -48,8 +48,8 @@ public partial class CampaignView
         {
             var icon=_catalog.BillItems.Icons.Single(i=>i.Item==value.Item.Id);
             string id="bill-"+value.Item.SourceItemSymbol.ToLowerInvariant();
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba(_catalog.BillItems!.Icons.Contains(icon) ? "bill-items" : "bill-machines", icon));
-            _questPocketTextures.Add(id,ImageTexture.CreateFromImage(image));
+            
+            _questPocketTextures.Add(id,ItemTexture(_catalog.BillItems!.Icons.Contains(icon) ? "bill-items" : "bill-machines", icon));
             document=document with
             {
                 Items=document.Items.Add(new(value.Item.Id.Value,value.Item.SourceItemSymbol,value.Item.Name,value.Description,id,value.Item.FieldUseFunction)),

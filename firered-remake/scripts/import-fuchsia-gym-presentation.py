@@ -12,9 +12,6 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 BASE = 'content/generated/fuchsia-gym-presentation/'
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
-# Initial-build witnesses are retained in the immutable lock, not used to generate portraits.
-BUILD_WITNESSES = frozenset('src/Game.Godot/OriginalAudioCore_' + name + '.cs'
-    for name in ('Cry', 'CryCatalog', 'Profiles', 'PsgSynth', 'Resources', 'Sequence', 'Synth'))
 PORTRAITS = [('juggler-front', 'juggler', 'Juggler', 'JUGGLER'),
              ('tamer-front', 'tamer', 'Tamer', 'TAMER'),
              ('koga-front', 'leader_koga', 'LeaderKoga', 'LEADER_KOGA')]
@@ -41,17 +38,15 @@ def safe(root, relative):
 
 
 def authenticated(root=ROOT):
-    raw = safe(root, BASE + 'source-lock.json').read_bytes()
+    raw = safe(root, 'scripts/import-config/fuchsia-gym-presentation.json').read_bytes()
     locked = json.loads(raw)
-    if (locked['schemaVersion'], locked['repository'], locked['commit'], len(locked['files']), len(locked['inputs'])) != (1, 'pret/pokefirered', COMMIT, 18, 28):
+    if (locked['schemaVersion'], locked['repository'], locked['commit'], len(locked['files']), len(locked['inputs'])) != (1, 'pret/pokefirered', COMMIT, 18, 21):
         raise ValueError('Fuchsia Gym presentation source scope differs')
     source, inputs = {}, {}
     for row in locked['files']:
-        data = safe(root, row['projectPath']).read_bytes()
+        data = safe(root, 'content/raw/pokefirered/037335f4/' + row['path']).read_bytes()
         source[row['path']] = data
     for row in locked['inputs']:
-        if row['path'] in BUILD_WITNESSES:
-            continue
         data = safe(root, row['path']).read_bytes()
         inputs[row['path']] = data
     return locked, source, inputs
@@ -149,7 +144,8 @@ def build(root, source, inputs):
                              leaderTexture='content/generated/gym-battle-terrain/leader-scene.png'),
                     rewards=dict(badgeFlag='FLAG_BADGE05_GET', badgeAsset='badge-5', badgeMusicControl=None,
                                  tmItem='pret:ITEM_TM06', tmOnceFlag='FLAG_GOT_TM06_FROM_KOGA', tmFanfare='MUS_LEVEL_UP',
-                                 tmTexture='content/generated/fuchsia-gym-items/item_tm06.png'),
+                                 tmTexture=json.loads(inputs['content/generated/fuchsia-gym-items/fuchsia-gym-items.json'])['icons'][0]['pngPath'],
+                                 tmRegion=json.loads(inputs['content/generated/fuchsia-gym-items/fuchsia-gym-items.json'])['icons'][0]['region']),
                     audio=dict(backend='original-csharp-source-filtered-v1', inheritedCueCount=303,
                                requiredCues=[by_id[id] for id in CUES], newCues=0, recordingsWritten=False,
                                audibleOutputVerified=False))

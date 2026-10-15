@@ -10,13 +10,16 @@ from pathlib import Path
 import re
 import subprocess
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from machine_catalog import compatibility_additions, machine_definitions, admission_species
+
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 BASE = 'content/generated/super-rod-species/'
 DEPENDENCIES = (
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/seafoam-rules/pokemon.json',
-    'content/generated/seafoam-rules/machines.json',
 )
 
 
@@ -31,9 +34,8 @@ def generate(reference, dependency):
         data = (dependency / path).read_bytes()
         dependencies.append(dict(path=path))
         return json.loads(data)
-    canonical, previous, machines = [dependent(p) for p in DEPENDENCIES]
-    need(previous['ownedSpeciesCount'] == 162 and previous['opponentSpeciesCount'] == 191 and
-         machines['speciesCount'] == 162 and machines['machineCount'] == 41, 'Exact Seafoam predecessor')
+    canonical, previous = [dependent(p) for p in DEPENDENCIES]
+    need(previous['ownedSpeciesCount'] == 162 and previous['opponentSpeciesCount'] == 191, 'Exact Seafoam ownership')
     symbol = 'SPECIES_QWILFISH'
     definition = next(s for s in canonical['species'] if s['id']['value'] == 'pret:' + symbol)
     metadata = next(s for s in canonical['metadata'] if s['id']['value'] == 'pret:' + symbol)
@@ -51,17 +53,7 @@ def generate(reference, dependency):
         return raw[path].decode()
     for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [m['source'] for m in definition['levelUpMoves']]:
         read(sr['path'])
-    tm = 'src/data/pokemon/tmhm_learnsets.h'
-    text = read(tm)
-    matches = list(re.finditer(r'^    \[SPECIES_QWILFISH\]\s*=\s*TMHM_LEARNSET\((.*?)\),', text, re.M | re.S))
-    need(len(matches) == 1, 'Exact Qwilfish machine row')
-    row = matches[0]
-    source = dict(path=tm, symbol=symbol, startLine=text.count('\n', 0, row.start()) + 1,
-                  endLine=text.count('\n', 0, row.end()) + 1)
-    machine_ids = sorted(r['item']['value'][5:] for r in machines['additions'])
-    need(len(machine_ids) == 41, 'Exactly 41 inherited machines')
-    cells = [dict(item=dict(value='pret:' + item), compatibility=[dict(species=dict(value='pret:' + symbol),
-        sourceSpeciesId=211, canLearn=bool(re.search(r'TMHM\(' + item[5:] + r'_', row[1])), source=source)]) for item in machine_ids]
+    cells = compatibility_additions(dependency, 'content/generated/super-rod-species/machines.json')
     docs = {
         'pokemon.json': dict(sourceCommit=COMMIT,  profile='firered-super-rod-owned-pokemon-v1',
 
@@ -86,7 +78,6 @@ def main():
     lock = dict(sourceCommit=COMMIT,  profile='firered-super-rod-species-v1',
 
         files=[dict(path=p) for p, data in sorted(files.items())])
-    files['scripts/super-rod-species.lock.json'] = encode(lock)
     for name, data in files.items():
         path = args.output / name
         if args.check: need(path.read_bytes() == data, 'Regeneration differs: ' + name)

@@ -14,7 +14,6 @@ TRAINERS = ['ELITE_FOUR_LORELEI_2','ELITE_FOUR_BRUNO_2','ELITE_FOUR_AGATHA_2','E
 MISSING = ['CROBAT','MISDREAVUS','HERACROSS','KINGDRA','TYRANITAR']
 DEPENDENCIES = (
     'content/generated/celio-pokemon/pokemon.json',
-    'content/generated/five-island-rules/items.json',
     'content/generated/five-island-rules/pokemon.json',
     'scripts/five-island-predecessor.json',
     'content/generated/cerulean-cave-pokemon/pokemon.json',
@@ -50,12 +49,11 @@ def generate(reference, dependency):
     canonical=dependent('content/generated/canonical-pokemon/catalog.json')
     deps={path:dependent(path) for path in DEPENDENCIES}
     celio=deps['content/generated/celio-pokemon/pokemon.json']
-    five_items=deps['content/generated/five-island-rules/items.json']
     five_pokemon=deps['content/generated/five-island-rules/pokemon.json']
     baseline=deps['scripts/five-island-predecessor.json']
     cave=deps['content/generated/cerulean-cave-pokemon/pokemon.json']
     species={s['id']['value'][5:]:s for s in canonical['species']}
-    owned={r['species']['value'][5:] for r in five_items['tm36']['compatibility']} | set(celio['speciesAdded']) | set(cave['speciesAdded'])
+    owned=({s[5:] for s in baseline['ownedSpecies']} | set(five_pokemon['ownedSpeciesAdded'])) | set(celio['speciesAdded']) | set(cave['speciesAdded'])
     previous={s[5:] for s in baseline['opponentSpecies']} | owned | set(five_pokemon['opponentSpeciesAdded'])
     need(len(owned)==139 and len(previous)==163 and owned<=previous,'Exact current Cave predecessor scope')
     trainers,battles,identities,move_defs=[],[],[],{}
@@ -194,7 +192,6 @@ def main():
     files={'content/generated/league-rematch-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
     lock=dict(sourceCommit=COMMIT,profile='firered-league-rematch-rules-v1',
         files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/league-rematch-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

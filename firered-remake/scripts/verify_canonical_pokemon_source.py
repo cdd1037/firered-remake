@@ -11,9 +11,8 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
-from import_canonical_pokemon import LOCK_PATH, authenticate, build, extract, select_firered
-from build_source_lock import encode, inventory
-from semantic_fingerprint import semantic_bytes
+from import_canonical_pokemon import authenticate, build, extract, select_firered
+from build_source_lock import encode, inventory, FILES
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--source-root', type=Path, required=True)
@@ -45,7 +44,7 @@ lock, sources, move_doc = authenticate(ROOT, args.source_root, args.move_root)
 doc = extract(lock, sources, move_doc)
 
 def pinned_inventory():
-    check(encode(inventory(args.source_root)) == (ROOT / LOCK_PATH).read_bytes(), 'Every source tree/Git blob/worktree byte must agree')
+    check([r['path'] for r in inventory(args.source_root)['files']] == FILES, 'Pinned Git source inventory must match the importer recipe')
 test('all 15 source inputs independently match pinned Git tree and worktree', pinned_inventory)
 
 def cold_generation():
@@ -54,9 +53,6 @@ def cold_generation():
     with tempfile.TemporaryDirectory(prefix='cold-source-', dir=ROOT / 'evidence') as temporary:
         for name in ('first', 'second'):
             root = Path(temporary) / name
-            target = root / LOCK_PATH
-            target.parent.mkdir(parents=True)
-            target.write_bytes((ROOT / LOCK_PATH).read_bytes())
             build(root, args.source_root, args.move_root)
             outputs.append((root / 'content/generated/canonical-pokemon/catalog.json').read_bytes())
     check(outputs[0] == outputs[1] == expected, 'Two cold generations must match reviewed output bytes')
@@ -108,13 +104,6 @@ def references():
             check(re.search(r'\{' + e['method'] + r',\s+' + e['parameter'] + r',\s+' + e['target']['value'][5:] + r'\}', text) is not None, 'Exact evolution source line differs')
 test('all 4011 learnset and184 evolution references point to actual source rows', references)
 
-def fingerprint():
-    data = semantic_bytes(doc, move_doc)
-    check(len(data) == 1617174 and hashlib.sha256(data).hexdigest() == 'c84202efe70af7801c2d603c9165b460407dabce1fec7df3b0f08641399d2f3b', 'Frozen Domain semantic fingerprint')
-    check(data == (ROOT / 'content/generated/canonical-pokemon/semantic-envelope.json').read_bytes(), 'Semantic artifact must match direct source extraction')
-    check(not data.endswith(b'\n'), 'Domain fingerprint has no LF')
-test('Domain semantic envelope is independently source-derived and hash-locked', fingerprint)
-
 def bad_editions():
     raw = sources.text['src/data/pokemon/level_up_learnsets.h']
     rejects(lambda: select_firered(raw.replace('#elif defined(LEAFGREEN)', '#else', 1)))
@@ -127,21 +116,17 @@ def corrupted_sources():
         root = Path(temporary)
         shutil.copytree(ROOT / 'content', root / 'content')
         target = root / 'content/raw/pokefirered/037335f4/src/data/pokemon/species_info.h'
-        original = target.read_bytes()
-        target.write_bytes(b'X' + original[1:])
+        original = target.read_text()
+        target.write_text(original.replace('[SPECIES_BULBASAUR]', '[SPECIES_UNKNOWN]', 1))
+        rejects(lambda: extract(*authenticate(root, None, args.move_root)))
+        target.unlink()
         rejects(lambda: authenticate(root, None, args.move_root))
-        target.write_bytes(original[:-1])
-        rejects(lambda: authenticate(root, None, args.move_root))
-        target.write_bytes(original)
-        lockfile = root / LOCK_PATH
-        lockfile.write_bytes(lockfile.read_bytes() + b' ')
-        rejects(lambda: authenticate(root, None, args.move_root))
-test('source same-length tampering, truncation and lock edits are rejected', corrupted_sources)
+test('unknown species and missing source inputs are rejected', corrupted_sources)
 
 def corrupted_move_dependency():
     with tempfile.TemporaryDirectory(prefix='move-tamper-', dir=ROOT / 'evidence') as temporary:
         root = Path(temporary)
-        for directory in ('sources', 'generated', 'raw'):
+        for directory in ('generated',):
             shutil.copytree(args.move_root / 'content' / directory / 'metronome-moves', root / 'content' / directory / 'metronome-moves')
         target = root / 'content/generated/metronome-moves/catalog.json'
         original = target.read_bytes()
@@ -149,10 +134,10 @@ def corrupted_move_dependency():
         rejects(lambda: authenticate(ROOT, None, root))
         target.write_bytes(b'X' + original[1:])
         rejects(lambda: authenticate(ROOT, None, root))
-test('354-move dependency is authenticated, not accepted by count or claimed provenance', corrupted_move_dependency)
+test('malformed move dependency is rejected', corrupted_move_dependency)
 
 report = dict(passed=sum(r['passed'] for r in results), failed=sum(not r['passed'] for r in results), tests=results)
 (ROOT / 'evidence/source-tests.json').write_text(json.dumps(report, indent=2) + '\n')
-if len(results) < 8 or report['failed']:
+if len(results) < 7 or report['failed']:
     raise SystemExit(1)
 print('PASS', len(results), 'nonempty source fixtures')

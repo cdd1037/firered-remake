@@ -7,7 +7,7 @@ namespace Game.Content;
 public sealed record PretLabTrainerInput(string Path);
 public sealed record PretLabTrainerDocument(int SchemaVersion, string Profile, string SourceCommit,
     bool CompleteSourceRoster, ImmutableArray<PretLabTrainerInput> Inputs, ImmutableArray<string> Limitations,
-    ImmutableArray<TrainerSourceRef> RulesSources, ImmutableArray<TrainerDefinition> Trainers,
+    ImmutableArray<TrainerDefinition> Trainers,
     ImmutableArray<EarlyRivalBattleDefinition> Battles);
 
 /// <summary>Strict UTF-8 artifact identity and source provenance; caller owns local filesystem access.</summary>
@@ -19,8 +19,7 @@ public static class PretLabTrainerCatalog
         var doc = ContentJson.ParseStrict<PretLabTrainerDocument>(generatedJson, ContentJson.CreateOptions());
         if (doc.SchemaVersion != 1 || doc.CompleteSourceRoster)
             throw ContentJson.Error("trainer_profile", "$", "Unknown trainer source/profile or unsupported full-roster claim.");
-        if (doc.Inputs.IsDefaultOrEmpty || doc.Limitations.IsDefaultOrEmpty || doc.RulesSources.IsDefaultOrEmpty ||
-            doc.Trainers.IsDefaultOrEmpty || doc.Battles.IsDefaultOrEmpty)
+        if (doc.Inputs.IsDefaultOrEmpty || doc.Limitations.IsDefaultOrEmpty || doc.Trainers.IsDefaultOrEmpty || doc.Battles.IsDefaultOrEmpty)
             throw ContentJson.Error("trainer_missing_data", "$", "Explicit inputs, limitations, rules, trainers and battles are required.");
         var inputs = new Dictionary<string, PretLabTrainerInput>(StringComparer.Ordinal);
         foreach (var input in doc.Inputs)

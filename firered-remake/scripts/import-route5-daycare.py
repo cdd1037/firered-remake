@@ -31,9 +31,7 @@ DIRECTORY = 'route-5-pokemon-day-care'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_FanClubDaycare': 'secondary/fan_club_daycare'}
 TOWN_PACKAGE = 'content/generated/vermilion-region'
 TOWN_RESOURCE = 'route-5/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_GENTLEMAN': 'content/generated/city-services/npc/gentleman.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_GENTLEMAN', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -220,12 +218,6 @@ def main():
         shared.import_map(src, MAP, MAP_ID, stage / DIRECTORY)
         npcs = shared.npc_inventory(src, [world], stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'House actor cohort differs')
-        for row in npcs['graphics']:
-            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
-            rendered = stage / row['texturePath']
-            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
-        (stage / 'npc').rmdir()
         path = stage / DIRECTORY / 'runtime-map.json'; rich = path.read_bytes()
         compact = converter.normalize_runtime(json.loads(rich)); util.compact_check(compact, world, src)
         data = converter.encode(compact); (stage / DIRECTORY / 'runtime-map.json').write_bytes(data)

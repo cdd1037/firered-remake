@@ -20,6 +20,8 @@ PROFILE = 'firered-slot-machine-presentation-v1'
 BASE = 'content/generated/slot-machine-presentation/'
 RAW = 'content/raw/pokefirered/037335f4/'
 HELPERS = (
+    'scripts/slot_machine_layers.py',
+    'scripts/presentation_atlas.py',
     'scripts/import-lab-battle-ui.py',
     'scripts/fetch-lab-battle-ui.py',
     'scripts/import-source-font.py',
@@ -126,9 +128,7 @@ def generate(reference, dependency):
         need(needle in code, 'Slot presentation source contract differs: ' + needle)
 
     def emit(name, width, height, rgba, **metadata):
-        scan = b''.join(b'\0' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
-        png = b'\x89PNG\r\n\x1a\n' + pixels.chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0))
-        png += pixels.chunk(b'IDAT', zlib.compress(scan, 9)) + pixels.chunk(b'IEND', b'')
+        png = pixels.png(width, height, rgba)
         outputs[name + '.png'] = png
         row = dict(id=name, width=width, height=height, texturePath=BASE + name + '.png', **metadata)
         assets.append(row)
@@ -157,7 +157,7 @@ def generate(reference, dependency):
         else:
             rgba = pixels.rgba(indices, palettes[name])
         emit(name.replace('_', '-'), w, h, rgba, sourcePaths=[paths[name]], transparentIndex=0)
-    # Keep compact source tile indices and maps for palette-line/button animation; never bake every variant.
+    # Intermediate source tiles/maps are consumed offline by slot_machine_layers; never shipped to the runtime.
     tile_sets = {name: pixels.tile_list(source(paths[name]))[:count] for name, count in [('bg', 138), ('combos_window', 66), ('button_pressed', 4)]}
     for name, tiles in tile_sets.items():
         outputs[name + '.indices'] = b''.join(tiles)
@@ -287,10 +287,11 @@ def generate(reference, dependency):
         limitations=['Resource candidate only; no Application betting, probabilities or initial-state policy.',
                      'Background, help and controls are individual source layers, not complete game screenshots.',
                      'No scanline shader, task timings, native render or physical audio acceptance is claimed.'])
+    from slot_machine_layers import bake
+    outputs, manifest = bake(outputs, manifest)
     outputs['manifest.json'] = encoded(manifest)
     files = {BASE + p: b for p, b in outputs.items()}
     files.update({RAW + p: b for p, b in sources.items() if p not in SHARED})
-    files['scripts/slot-machine-presentation.lock.json'] = lock_bytes
     for path, data in files.items():
         if path.endswith('.json'):
             json.loads(data)

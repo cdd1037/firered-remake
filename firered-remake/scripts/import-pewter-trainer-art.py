@@ -13,7 +13,7 @@ def safe(root,p):
 
 def run(repository, raw, output):
  lock_bytes=(ROOT/'scripts/pewter-trainer-art.lock.json').read_bytes();lock=json.loads(lock_bytes)
- project=json.loads((ROOT/'content/source-lock.json').read_bytes())
+ project=json.loads((ROOT/'scripts/import-config/source.json').read_bytes())
  if (project['source']['repository'],project['source']['sourceCommit'],project['referenceGame']['gameEdition'],project['referenceGame']['romRevision'])!=('pret/pokefirered',COMMIT,'FIRERED',0):raise ValueError('Project source profile differs')
  if (lock['repository'],lock['commit'])!=('pret/pokefirered',COMMIT) or len(lock['files'])!=9:raise ValueError('Source identity differs')
  sources={}

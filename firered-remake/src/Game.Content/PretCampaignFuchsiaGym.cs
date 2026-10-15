@@ -25,25 +25,7 @@ public sealed partial class PretCampaignCatalog
     public PokemonMoveDefinition? FuchsiaGymToxic => FuchsiaGymEnabled
         ? PokemonContent!.Catalog.Moves[new("pret:MOVE_TOXIC")] : null;
 
-    private static void AppendFuchsiaGymSources(PretFuchsiaGymRegion region,PretMetronomeMoveCatalog moveSource,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var paths = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var source in region.Scripts)
-        {
-            if (paths.TryGetValue(source.Path, out var prior))
-            {
-                if (prior.Text != source.Text)
-                    throw new InvalidDataException("fuchsia_gym_script_conflict: " + source.Path);
-                continue;
-            }
-            paths.Add(source.Path, source); sources.Add(source);
-            if (!texts.Contains(source.Text, StringComparer.Ordinal)) texts.Add(source.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-        MergeRegionalServiceConstants(constants, moveSource.Constants.Where(p=>p.Key.StartsWith("MOVE_",StringComparison.Ordinal)).ToDictionary(p=>p.Key,p=>p.Value,StringComparer.Ordinal));
-    }
+
 
     private static PokemonCatalog FuchsiaGymPokemon(PokemonCatalog predecessor,FuchsiaGymTrainerDocument trainers,PretMetronomeMoveCatalog source)
     {

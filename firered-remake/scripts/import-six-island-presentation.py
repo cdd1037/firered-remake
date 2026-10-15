@@ -7,7 +7,6 @@ import pathlib
 import re
 import struct
 import subprocess
-import zlib
 from PIL import Image
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -22,8 +21,10 @@ SPECIES = OWNED + OPPONENT_ONLY
 TRAINERS = ('AROMA_LADY_ROSE', 'JUGGLER_EDWARD', 'SWIMMER_MALE_SAMIR', 'SWIMMER_FEMALE_DENISE', 'TWINS_MIU_MIA', 'HIKER_EARL', 'RUIN_MANIAC_STANLY', 'RUIN_MANIAC_FOSTER', 'RUIN_MANIAC_LARRY', 'HIKER_DARYL', 'POKEMANIAC_HECTOR')
 INHERITED = {'AROMA_LADY': 'content/generated/first-sevii-presentation/first-sevii-aroma-lady-front.png', 'JUGGLER': 'content/generated/fuchsia-gym-presentation/juggler-front.png', 'SWIMMER_M': 'content/generated/cinnabar-trainer-art/swimmer-m-front.png', 'SWIMMER_F': 'content/generated/first-sevii-presentation/first-sevii-swimmer-f-front.png', 'TWINS': 'content/generated/first-sevii-presentation/first-sevii-twins-front.png', 'HIKER': 'content/generated/mtmoon-trainer-art/hiker-front.png', 'POKEMANIAC': 'content/generated/rocktunnel-art/pokemaniac-front.png'}
 ITEMS = ('SUN_STONE', 'DRAGON_SCALE', 'DREAM_MAIL')
-REUSED_ASSETS = {'cave': 'content/generated/four-island-presentation/cave.png', 'pond': 'content/generated/four-island-presentation/pond.png', 'mountain': 'content/generated/sevii-ruby-presentation/mountain.png', 'braille-font': 'content/generated/sevii-ruby-presentation/braille-font.png', 'braille-dialogue-frame': 'content/generated/sevii-ruby-presentation/braille-dialogue-frame.png', 'braille-cursor': 'content/generated/sevii-ruby-presentation/braille-cursor.png'}
+REUSED_ASSETS = {'cave': 'content/generated/four-island-presentation/cave.png', 'pond': 'content/generated/four-island-presentation/pond.png', 'mountain': 'content/generated/sevii-ruby-presentation/mountain.png', 'braille-font': 'content/generated/sevii-ruby-presentation/braille-font.png', 'braille-dialogue-frame': 'content/generated/lab-battle-ui/dialogue.png', 'braille-cursor': 'content/generated/sevii-ruby-presentation/braille-cursor.png'}
 
+
+from image_io import png as encode_rgba_png
 
 def need(ok, message):
     if not ok:
@@ -42,16 +43,7 @@ def safe(root, path):
     return result
 
 
-def png(width, height, rgba):
-    # Stored DEFLATE blocks keep output independent of zlib compression versions.
-    def chunk(kind, data):
-        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
-    scan = b''.join(b'\0' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
-    blocks = [scan[i:i + 65535] for i in range(0, len(scan), 65535)]
-    compressed = b'\x78\x01' + b''.join(bytes([int(i == len(blocks) - 1)]) +
-        struct.pack('<HH', len(block), len(block) ^ 65535) + block for i, block in enumerate(blocks))
-    compressed += struct.pack('>I', zlib.adler32(scan) & 0xffffffff)
-    return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)) + chunk(b'IDAT', compressed) + chunk(b'IEND', b'')
+png = encode_rgba_png
 
 
 class Source:

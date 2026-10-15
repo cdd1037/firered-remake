@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Encounters;
@@ -23,15 +22,7 @@ public sealed class PretRoute11Encounters
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/route11-encounters.lock.json"));
-        var s=sourceLock.RootElement;
-        if(s.GetProperty("schemaVersion").GetInt32()!=1 || s.GetProperty("gameEdition").GetString()!="FIRERED" || s.GetProperty("romRevision").GetInt32()!=0)
-            throw new InvalidDataException("Route11 encounter source identity differs.");
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var d=ContentJson.ParseStrict<Route11EncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/route11-encounters/encounters.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<Route11EncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/route11-encounters/encounters.json")),ContentJson.CreateOptions());
                 if(d.SchemaVersion!=1 || d.Tables.Length!=2 ||
             d.HeldItemDrawBound!=100 || d.HeldItems.Length!=5 || d.ExcludedTables.GetArrayLength()!=2 || d.Limitations.IsDefaultOrEmpty)
             throw new InvalidDataException("Route11 encounter document scope differs.");

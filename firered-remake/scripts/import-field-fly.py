@@ -5,12 +5,13 @@ only missing text inputs and the two small generated documents are materialized.
 """
 import argparse,  json, re, subprocess
 from pathlib import Path
+from machine_catalog import admission_rows, admission_view
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 BASE = 'content/generated/field-fly/'
 RAW = 'content/raw/pokefirered/037335f4/'
-DEPENDENCY = 'content/generated/game-corner-prizes/machines.json'
+DEPENDENCIES = ('scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json')
 def encode(value): return (json.dumps(value, ensure_ascii=False, indent=2)+'\n').encode()
 def need(value, reason):
     if not value: raise ValueError(reason)
@@ -47,8 +48,9 @@ def generate(reference, dependency):
             else: total+=sign*(int(token,0) if re.fullmatch(r'0x[0-9A-Fa-f]+|\d+',token) else number(path,token))
         return total
     def stable(symbol): return 'map.'+re.sub(r'ROUTE(\d+)',r'ROUTE_\1',symbol.removeprefix('MAP_')).lower().replace('_','-')
-    dep=(dependency/DEPENDENCY).read_bytes()
-    owners=json.loads(dep)['additions'][0]['compatibility'];need(len(owners)==174,'Current owner count')
+    hm02=admission_view(dependency, BASE+'hm02.json', '')
+    compatibility=admission_rows(dependency, BASE+'hm02.json', '')
+    need(hm02['item']=='pret:ITEM_HM02' and len(compatibility)==174,'Current owner count')
     region_path='src/region_map.c'; region=text(region_path)
     sections=json.loads(read('src/data/region_map/region_map_sections.json'))['map_sections']
     ids=[s['id'] for s in sections]; kanto=ids.index('MAPSEC_PALLET_TOWN'); sevii=ids.index('MAPSEC_ONE_ISLAND')
@@ -77,20 +79,6 @@ def generate(reference, dependency):
             healLocation=heal['id'],healLocationId=heals.index(heal)+1,x=heal['x'],y=heal['y'],visitedFlag=flag,
             visitedFlagId=number('include/constants/flags.h',flag),visitMapSymbol=origin,visitSource=source(script,transition,flag_line)))
     need(len(destinations)==20 and len({d['sectionId'] for d in destinations})==20,'20 original Fly destinations')
-    path='src/data/items.json'; items=text(path); item=next(x for x in json.loads(items)['items'] if x['itemId']=='ITEM_HM02')
-    pos=items.index('"itemId": "ITEM_HM02"'); start=items.index('"english"',items.rfind('{',0,pos));end=items.index('}',pos)
-    value=dict(id=dict(value='pret:ITEM_HM02'),sourceItemSymbol='ITEM_HM02',sourceItemId=number('include/constants/items.h','ITEM_HM02'),
-        name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=item['type'],
-        holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],
-        battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=False,canSell=False,canGive=False,
-        source=source(path,'ITEM_HM02',items[:start].count('\n')+1,items[:end].count('\n')))
-    path='src/move_descriptions.c'; m=match(path,r'const u8 gMoveDescription_Fly\[\] = _\("(.*?)"\);'); line=text(path)[:m.start()].count('\n')+1
-    machine=dict(item=value,description=json.loads('"'+m[1]+'"'),declarationDescription=item['description_english'].replace('\\n','\n'),descriptionSource=source(path,'gMoveDescription_Fly',line))
-    compatibility=[];path='src/data/pokemon/tmhm_learnsets.h'
-    for owner in owners:
-        symbol=owner['species']['value'][5:];m=match(path,r'\['+symbol+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),');line=text(path)[:m.start()].count('\n')+1
-        compatibility.append(dict(species=owner['species'],sourceSpeciesId=owner['sourceSpeciesId'],canLearn='TMHM(HM02_FLY)' in m[0],source=source(path,symbol,line,line+m[0].count('\n'))))
-    hm02=dict(machine=machine,move=dict(value='pret:MOVE_FLY'),sourceMoveId=number('include/constants/moves.h','MOVE_FLY'),movePp=15,compatibility=compatibility)
     move=match('src/data/battle_moves.h',r'\[MOVE_FLY\]\s*=\s*\{(.*?)\},')[1]
     need(re.search(r'\.pp\s*=\s*15,',move),'Fly PP15')
     for item_symbol in ['ITEM_HM02','ITEM_TM40']:
@@ -114,7 +102,7 @@ def generate(reference, dependency):
     need('SetMainCallback2(CB2_ReturnToPartyMenuFromFlyMap);' in region,'Cancel returns to party')
     field=dict(sourceCommit=COMMIT,destinations=destinations,sectionRegions=regions)
     contract=dict(schemaVersion=1,sourceCommit=COMMIT,upstreamScriptsExecuted=False,romDownloaded=False,
-        dependencies=[dict(path=DEPENDENCY)],inputs=sorted(inputs.values(),key=lambda p:p['path']),
+        dependencies=[dict(path=p) for p in DEPENDENCIES],inputs=sorted(inputs.values(),key=lambda p:p['path']),
         speciesCount=174,compatibleSpeciesCount=sum(c['canLearn'] for c in compatibility),
         iconAlias=dict(item='pret:ITEM_HM02',sourceItem='pret:ITEM_TM40'),giftFlagId=number('include/constants/flags.h','FLAG_GOT_HM02'),
         outputs=[dict(path=BASE+'field.json'),dict(path=BASE+'hm02.json')])

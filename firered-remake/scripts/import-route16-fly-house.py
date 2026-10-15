@@ -24,8 +24,7 @@ MAPS = ['Route16_House']
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_GenericBuilding1':'secondary/generic_building_1'}
 ANCHORS = [('Route16','route-16/runtime-map.json'),
            ('Route16_NorthEntrance_1F','route-16-north-entrance-1f/runtime-map.json')]
-NPC_REUSE = {'OBJ_EVENT_GFX_WOMAN_1':'content/generated/city-services/npc/woman-1.png',
- 'OBJ_EVENT_GFX_RED_NORMAL':'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_WOMAN_1'}
 def canonical(doc): return (json.dumps(doc, sort_keys=True, indent=2)+'\n').encode()
 def need(value, message):
     if not value: raise ValueError(message)
@@ -277,12 +276,6 @@ def main():
         stage=Path(temp);shared.import_map(src,MAPS[0],house['stableId'],stage/'route-16-house')
         npcs=shared.npc_inventory(src,[house],stage/'npc')
         need({r['graphicsId'] for r in npcs['graphics']}==set(NPC_REUSE)|{'OBJ_EVENT_GFX_FEAROW'}, 'House actor resource cohort differs')
-        for row in npcs['graphics']:
-            if row['graphicsId'] in NPC_REUSE:
-                path=NPC_REUSE[row['graphicsId']];existing=dep/path;safe(existing);rendered=stage/row['texturePath']
-                need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-                row.update(texturePath=path,reuseExisting=True);rendered.unlink()
-            else:row.update(reuseExisting=False)
         path=stage/'route-16-house/runtime-map.json';rich=path.read_bytes();compact=converter.normalize_runtime(json.loads(rich))
         util.compact_check(compact,house,src);data=converter.encode(compact);(stage/'route-16-house/runtime-map.json').write_bytes(data)
         entry=dict(sourceName=MAPS[0],stableId=house['stableId'],directory='route-16-house',sourceMapSymbol='MAP_ROUTE16_HOUSE',
@@ -307,7 +300,7 @@ def main():
             mapCount=1,retainedMapCount=2,cellCount=99,borderCellCount=4,directedWarpCount=8,objectCount=2,newNpcGraphicsCount=1,reusedNpcGraphicsCount=2,
             scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        writes=[(target/'scripts/route16-fly-house.lock.json',lock_bytes),(target/'scripts/route16-fly-house.contract.json',canonical(contract))]+own_raw
+        writes=[(target / 'scripts/route16-fly-house.contract.json', canonical(contract))]+own_raw
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:
             safe(path)

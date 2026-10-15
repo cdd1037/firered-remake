@@ -7,8 +7,7 @@ using Game.Domain.Items;
 using Game.Domain.Ids;
 namespace Game.Content;
 public sealed record PretCeladonApproachItemsDocument(int SchemaVersion,string Profile,string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs,ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<PretPewterMachineInput> Inputs,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups,EarlyShopStock Shop,ImmutableArray<string> Limitations);
 public static class PretCeladonApproachItems
 {
@@ -19,7 +18,7 @@ public static class PretCeladonApproachItems
     {
         var options=ContentJson.CreateOptions();options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
         var d=ContentJson.ParseStrict<PretCeladonApproachItemsDocument>(json,options);
-        Require(d.SchemaVersion==1&&d.Items.Length==7&&d.Icons.Length==7&&d.Pickups.Length==13&&!d.RulesSources.IsDefaultOrEmpty&&!d.Limitations.IsDefaultOrEmpty,"Celadon item scope differs.");
+        Require(d.SchemaVersion==1&&d.Items.Length==7&&d.Icons.Length==7&&d.Pickups.Length==13&&!d.Limitations.IsDefaultOrEmpty,"Celadon item scope differs.");
         string[] names=["SUPER_REPEL","RAWST_BERRY","LUM_BERRY","LEPPA_BERRY","WEPEAR_BERRY","PP_UP","ICE_HEAL"];
         for(int n=0;n<7;n++)
         {
@@ -36,7 +35,6 @@ PretPewterMachines.ValidateIcon(icon);
     }
     public static PretCeladonApproachItemsDocument LoadProject(string root)
     {
-        _=PretCeladonApproachSource.Load(root,"celadon-approach-items");
         var outputs=PretCeladonApproachSource.Outputs(root,"celadon-approach-items");
         return Load(Utf8.GetString(outputs["celadon-approach-items.json"]));
     }

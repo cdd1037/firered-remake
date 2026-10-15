@@ -4,7 +4,7 @@ import argparse,hashlib,json,pathlib,re,subprocess,tempfile
 R=pathlib.Path(__file__).resolve().parents[1]; O=R; commit='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 p=argparse.ArgumentParser();p.add_argument('--reference',default='/workspace/scratch/18c02ed4ed0d/firered-reference-20261010/pokefirered');p.add_argument('--check',action='store_true');a=p.parse_args()
 paths=['src/battle_script_commands.c','src/battle_util.c','src/battle_main.c','src/pokemon.c','src/data/battle_moves.h','src/data/items.json','data/battle_scripts_1.s','data/battle_ai_scripts.s','src/random.c','include/random.h']
-raw=O/'content/raw/pokefirered/037335f4';lockpath=O/'content/rocket-hideout-battle-source-lock.json'
+raw=O/'content/raw/pokefirered/037335f4';lockpath=O/'scripts/import-config/rocket-hideout-battle.json'
 if not lockpath.exists():
  entries=[]
  for x in paths:

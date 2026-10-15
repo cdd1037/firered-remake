@@ -102,7 +102,7 @@ def run(repo,raw,out):
  raw,out=root_path(raw),root_path(out)
  def overlaps(a,b):return a==b or a.is_relative_to(b) or b.is_relative_to(a)
  if overlaps(raw,out):raise ValueError('Raw and generated roots must be disjoint')
- for p in ('scripts','src','tests','.git','content/sources'):
+ for p in ('scripts','src','tests','.git','scripts/import-config'):
   if overlaps(raw,ROOT/p) or overlaps(out,ROOT/p):raise ValueError('Protected project path overlap')
  if repo:
   repo=pathlib.Path(repo).resolve()

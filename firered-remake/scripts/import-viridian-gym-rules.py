@@ -10,6 +10,8 @@ import re
 import subprocess
 from pathlib import Path
 
+import machine_catalog as shared_machines
+
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TRAINERS = ("TAMER_JASON", "TAMER_COLE", "BLACK_BELT_ATSUSHI", "BLACK_BELT_KIYO",
             "BLACK_BELT_TAKASHI", "COOLTRAINER_SAMUEL", "COOLTRAINER_YUJI",
@@ -115,42 +117,8 @@ def generate(reference, dependency):
     trainer_doc = dict(sourceCommit=COMMIT, profile="firered-viridian-gym-trainers-v1", completeSourceRoster=False,
                        trainers=trainers, battles=battles, resolvedMoves=resolved)
 
-    baseline = (dependency / "scripts/fuchsia-gym-baseline.lock.json").read_bytes()
-    owned = json.loads(baseline)["species"] + ["CHANSEY", "SCYTHER", "TAUROS", "PSYDUCK", "GOLDUCK", "LAPRAS", "KRABBY", "KINGLER"]
-    need(len(owned) == len(set(owned)) == 115, "Expected exactly 115 owned species")
-    path = "src/data/items.json"
-    item = next(i for i in json.loads(read(path))["items"] if i["itemId"] == "ITEM_TM26")
-    match = one(path, r'^    \{\n      "english": "TM26",.*?^    \}')
-    item_ref = ref(path, "ITEM_TM26", match)
-    definition = dict(id=identity("ITEM_TM26"), sourceItemSymbol="ITEM_TM26", sourceItemId=number("include/constants/items.h", "ITEM_TM26"),
-        name=item["english"], price=item["price"], importance=item["importance"], registrability=item["registrability"],
-        pocket=item["pocket"], type=str(item["type"]), holdEffect=item["holdEffect"], holdEffectParam=item["holdEffectParam"],
-        fieldUseFunction=item["fieldUseFunc"], battleUsage=item["battleUsage"], battleUseFunction=item["battleUseFunc"],
-        secondaryId=item["secondaryId"], canToss=item["importance"] == 0, canSell=item["price"] != 0,
-        canGive=item["importance"] == 0, source=item_ref)
-    path = "src/move_descriptions.c"
-    description = one(path, r'^const u8 gMoveDescription_Earthquake\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
-    metadata = dict(item=definition, description=json.loads(description[1]), declarationDescription=item["description_english"].replace("\\n", "\n"),
-                    descriptionSource=ref(path, "gMoveDescription_Earthquake", description))
-    path = "src/data/party_menu.h"
-    mapping = one(path, r"^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};")
-    need(re.findall(r"MOVE_\w+", mapping[1])[25] == "MOVE_EARTHQUAKE" and item["moveId"] == "Earthquake", "TM26 mapping differs")
-    refs = [ref(path, "sTMHMMoves", mapping)]
-    path = "src/data/battle_moves.h"
-    move = one(path, r"^    \[MOVE_EARTHQUAKE\] =\n    \{(.*?)^    \},")
-    need(".type = TYPE_GROUND," in move[1], "Earthquake type differs")
-    refs.append(ref(path, "MOVE_EARTHQUAKE", move))
-    rows = []
-    for short in owned:
-        symbol, path = "SPECIES_" + short, "src/data/pokemon/tmhm_learnsets.h"
-        row = one(path, r"^    \[" + symbol + r"\]\s*= TMHM_LEARNSET\((.*?)\),")
-        tokens = re.findall(r"TMHM\((\w+)\)", row[1])
-        need(not re.sub(r"TMHM\(\w+\)|\||\s|0", "", row[1]), "Unhandled TM compatibility syntax")
-        rows.append(dict(species=identity(symbol), sourceSpeciesId=number("include/constants/species.h", symbol),
-                         canLearn="TM26_EARTHQUAKE" in tokens, source=ref(path, symbol, row)))
-    machine = dict(machine=metadata, move=identity("MOVE_EARTHQUAKE"), sourceMoveId=number("include/constants/moves.h", "MOVE_EARTHQUAKE"),
-                   movePp=int(re.search(r"\.pp = (\d+),", move[1])[1]), compatibility=sorted(rows, key=lambda r: r["sourceSpeciesId"]))
-    machine_doc = dict(sourceCommit=COMMIT, profile="firered-viridian-gym-machines-v1", machine=machine, rulesSources=refs)
+    machine = shared_machines.admission_view(dependency, 'content/generated/viridian-gym-rules/machines.json', '/machine')
+    machine_doc = dict(sourceCommit=COMMIT, profile="firered-viridian-gym-machines-v1", machine=machine)
 
     path = "src/overworld.c"
     multipliers = one(path, r"^static const u8 sWhiteOutMoneyLossMultipliers\[\] = \{(.*?)^\};")
@@ -173,7 +141,7 @@ def generate(reference, dependency):
     need(len(rules["species"]) == 14 and len(rules["moves"]) == 43, "Move/species closure differs")
     outputs = {"trainers.json": trainer_doc, "machines.json": machine_doc, "rules.json": rules}
     outputs["source-input-hashes.json"] = dict(sourceCommit=COMMIT, files=[inputs[p] for p in sorted(inputs)],
-        predecessorInputs=[dict(path="scripts/fuchsia-gym-baseline.lock.json")])
+        predecessorInputs=[dict(path="scripts/import-config/machine-admissions.json"), dict(path="scripts/import-config/machine-catalog.json")])
     return outputs
 
 def main():
@@ -196,7 +164,7 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
     print(json.dumps(dict(checked=args.check, trainers=9, members=29, heldDefaultMembers=6, ownedSpecies=115,
-                         rosterSpecies=14, moves=43, tm26EligibleSpecies=sum(r["canLearn"] for r in outputs["machines.json"]["machine"]["compatibility"])), indent=2))
+                         rosterSpecies=14, moves=43, tm26EligibleSpecies=sum(shared_machines.load_catalog(args.dependency).compatibility('pret:ITEM_TM26', s)['canLearn'] for s in outputs['machines.json']['machine']['species'])), indent=2))
 
 if __name__ == "__main__":
     main()

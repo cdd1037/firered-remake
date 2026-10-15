@@ -177,7 +177,7 @@ def main():
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,inputCount=len(src.entries),mapCount=1,cellCount=480,warpCount=3,npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),trainerOccurrenceCount=9,unresolvedLabelCount=0,outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        writes=[(target/'content/sources/viridian-gym-region.lock.json',lockdata)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,b in writes:
             safe(path)
             if a.check:need(path.is_file() and path.read_bytes()==b,'Regeneration differs: '+str(path))

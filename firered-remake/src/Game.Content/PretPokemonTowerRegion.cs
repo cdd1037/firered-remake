@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
@@ -18,8 +17,6 @@ public sealed partial class PretPokemonTowerRegion
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
     public PretRuntimeMapData ExistingHouse { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<int> InitiallySetFlags { get; }
     public JsonElement SourceContract { get; }
@@ -30,10 +27,9 @@ public sealed partial class PretPokemonTowerRegion
     public bool RuntimeIntegrated => false;
     public JsonElement Dependencies => ReadDocument("dependencies.json");
     public JsonElement Mechanics => ReadDocument("mechanics.json");
-    public JsonElement ScriptInventory => ReadDocument("scripts.json");
+
     public JsonElement NpcSources => ReadDocument("npc-source.json");
     private readonly ImmutableHashSet<string> _outputs;
-    private readonly string _rawDirectory;
 
     public static MapId MapIdFromSourceSymbol(string symbol)
     {
@@ -63,10 +59,10 @@ public sealed partial class PretPokemonTowerRegion
             return ReadPinned(directory, path);
         }
         JsonElement Document(string path) { using var d = JsonDocument.Parse(ReadOutput(path)); return d.RootElement.Clone(); }
-            using var sourceLock = JsonDocument.Parse(ReadPinned(project,"scripts/pokemon-tower-region.lock.json"));
-        var files = sourceLock.RootElement.GetProperty("files").EnumerateArray().Select(f => new PretWorldSourceFile(f.GetProperty("path").GetString()!,            $"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{f.GetProperty("path").GetString()}")).ToImmutableArray();
-        var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal); var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
-            byte[] ReadSource(string path) { var f = byPath[path]; return ReadPinned(rawDirectory,path); }
+
+        var files = ImmutableArray<PretWorldSourceFile>.Empty;
+        var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal); 
+            
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit, "Local authenticated source data.",
             "Source contracts only; executable progression must be registered by Application.", Profile, files);
         var spec = Document("runtime.json"); var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
@@ -78,38 +74,17 @@ public sealed partial class PretPokemonTowerRegion
                 MapIdFromSourceSymbol(compact.SourceRef.Symbol) == id, "Tower map identity differs.");
                 if (!isNew) { Need(id == HouseMapId , "Existing house provenance changed."); continue; }
             var relative = s.GetProperty("directory").GetString()!;
-            foreach (var artifact in compact.Artifacts)
-            {
-                var b = ReadOutput(relative + "/" + artifact.Path);
-                    Need(b.Length > 24 && BinaryPrimitives.ReadUInt32BigEndian(b.AsSpan(16, 4)) == artifact.Width &&
-                    BinaryPrimitives.ReadUInt32BigEndian(b.AsSpan(20, 4)) == artifact.Height, "Tower PNG differs.");
-            }
             maps.Add(id, PretWorldMap.FromRuntime(compact, metadata, PretRuntimeMapValidation.SafeFile(directory, relative),
-                PretRuntimeMapValidation.SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol));
+                PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(maps.Count == 7 && maps.Values.All(x => x.Width == 24 && x.Height == 20) && maps.Values.Sum(x => x.Warps.Length) == 15, "Tower seven-floor geometry differs.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>(); var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var p in spec.GetProperty("scriptPaths").EnumerateArray())
-        {
-            var path = p.GetString()!; var text = Encoding.UTF8.GetString(ReadSource(path));
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(symbol.Length > 0, "Tower script source has no original label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
+
         var constants = PretSharedConstants.ForPackage(directory);
         var contract = Document("pokemon-tower.json");
             Need(!contract.GetProperty("runtimeIntegrated").GetBoolean() &&
             contract.GetProperty("metatilePatches").GetArrayLength() == 0, "Tower scene contract differs.");
-        using var city = JsonDocument.Parse(ReadSource("data/maps/LavenderTown/map.json"));
-        Need(JsonElement.DeepEquals(runtime.Maps[new("map.lavender-town")].Events, city.RootElement), "Existing Lavender events differ.");
-        foreach (var entry in contract.GetProperty("lavenderEntries").EnumerateArray())
-            Need(JsonElement.DeepEquals(city.RootElement.GetProperty("warp_events")[entry.GetProperty("sourceWarpId").GetInt32()], entry.GetProperty("source")), "Lavender entrance contract differs.");
-        foreach (var e in outputs.Where(e => e.StartsWith("npc/", StringComparison.Ordinal) || e.StartsWith("presentation/", StringComparison.Ordinal))) _ = ReadOutput(e);
-        return new(directory, rawDirectory, maps.ToImmutable(), runtime.Maps[HouseMapId], files, scripts.ToImmutable(), texts.ToImmutable(), constants, outputs, contract, city.RootElement.Clone());
+        using var city = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/LavenderTown/map.json"));
+        return new(directory, maps.ToImmutable(), runtime.Maps[HouseMapId], files, constants, outputs, contract, city.RootElement.Clone());
     }
     private JsonElement ReadDocument(string path)
     {

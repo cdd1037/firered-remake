@@ -65,7 +65,6 @@ def generate(reference,dependency):
  facts=dict(sourceCommit=COMMIT,fieldUseImplemented=False,fieldUseSupport='NoFieldUse',reason='The original PP Up/PP Max move-selection effect is not implemented.',fieldUseSource=source(use,'FieldUseFunc_PpUp',field),effectSource=source(effect_path,'sItemEffect_PPMax',effect),friendshipSource=source(effect_path,'VITAMIN_FRIENDSHIP_CHANGE',vitamin),effectBytes=effects)
  evidence=dict(sourceCommit=COMMIT,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=[])
  files = {BASE + 'items.json': encoded(items), BASE + 'source-input-hashes.json': encoded(evidence), BASE + 'source-contract.json': encoded(facts), icon['texturePath']: png, **raw}
- files['scripts/ordinary-item-supplement.lock.json']=encoded(dict(sourceCommit=COMMIT,profile=PROFILE,files=[dict(path=p) for p,b in sorted(files.items())]))
  return files,items
 if __name__=='__main__':
  parser=argparse.ArgumentParser(description=__doc__)

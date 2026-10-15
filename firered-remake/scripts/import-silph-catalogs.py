@@ -2,6 +2,8 @@
 """Regenerate Silph source metadata from immutable pret Git blobs, without upstream execution."""
 from pathlib import Path
 import argparse, collections,  json, os, re, struct, subprocess, sys
+import machine_catalog as shared_machines
+
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-silph-catalogs-v1'
@@ -158,13 +160,8 @@ def metadata(src,dependency):
   meta=next(m for m in proof['metadata'] if m['id']==s['id']);held.append(dict(species=s['id'],common=meta['originalFields']['itemCommon'],rare=meta['originalFields']['itemRare'],source=s['source']));evolutions.append(dict(species=s['id'],sourceEvolutions=meta['sourceEvolutions']))
  pokemon=dict(schemaVersion=1,profile='firered-silph-pokemon-v1',sourceCommit=COMMIT,species=selected[:1],opponentSpecies=selected[1:],speciesNames=names,encodedNames=encoded,machines=machines,heldItems=held,sourceEvolutions=evolutions,requiredMoves=sorted({json.dumps(m['move'],sort_keys=True) for s in selected for m in s['levelUpMoves']}),limitations=['Only Lapras is added to the112 owned predecessor; Alakazam and Mr. Mime are opponent-only.','Full natural source moves are retained; metadata does not admit battles, gifts, evolution or teaching.'])
  pokemon['requiredMoves']=[json.loads(m) for m in pokemon['requiredMoves']]
- baseline=safe(dependency,'scripts/fuchsia-gym-baseline.lock.json').read_bytes()
- owned=json.loads(baseline)['species']+['CHANSEY','SCYTHER','TAUROS','PSYDUCK','GOLDUCK','LAPRAS'];need(len(owned)==len(set(owned))==113,'Expected113 owned species')
- def compatibility(short,tm):
-  symbol='SPECIES_'+short;p='src/data/pokemon/tmhm_learnsets.h';m=one(p,r'^    \['+symbol+r'\]\s*= TMHM_LEARNSET\((.*?)\),');tokens=re.findall(r'TMHM\((\w+)\)',m[1]);need(not re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]),'Unhandled machine row')
-  return dict(species=ident(symbol),sourceSpeciesId=number('include/constants/species.h',symbol),canLearn=any(t.startswith(tm+'_') for t in tokens),source=ref(p,symbol,m))
- sourceitems=json.loads(text['src/data/items.json'])['items'];items=[];new=[]
- p='src/data/party_menu.h';mm=one(p,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'MOVE_\w+',mm[1]);need(len(mapping)==58,'58 machine mapping differs')
+ catalog = shared_machines.load_catalog(dependency)
+ sourceitems=json.loads(text['src/data/items.json'])['items'];items=[];new=shared_machines.machine_definitions(dependency, 'content/generated/silph-catalogs/machines.json')
  for short in ITEMS:
   symbol='ITEM_'+short;item=next(i for i in sourceitems if i['itemId']==symbol);p='src/data/items.json';m=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}');r=ref(p,symbol,m)
   definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=str(item['type']),holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,canGive=item['importance']==0,source=r)
@@ -172,10 +169,8 @@ def metadata(src,dependency):
   if short.startswith('TM'):
    p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+item['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1]);dr=ref(p,'gMoveDescription_'+item['moveId'],m)
   wrapped=dict(item=definition,description=description,declarationDescription=declaration,descriptionSource=dr);items.append(dict(metadata=wrapped,effectBytes=[],effectSource=None))
-  if short.startswith('TM'):
-   move=mapping[int(short[2:])-1];p='src/data/battle_moves.h';m=one(p,r'^    \['+move+r'\] =\n    \{(.*?)^    \},');pp=int(re.search(r'\.pp = (\d+),',m[1])[1]);new.append(dict(machine=wrapped,move=ident(move),sourceMoveId=number('include/constants/moves.h',move),movePp=pp,compatibility=[compatibility(s,short) for s in owned]))
- itemdoc=dict(schemaVersion=1,profile='firered-silph-items-v1',sourceCommit=COMMIT,items=items,rulesSources=[ref('src/data/party_menu.h','sTMHMMoves',mm)],limitations=['23 original item definitions cover17 visible and12 hidden source pickups plus President Master Ball; metadata creates no rewards.','Inherited item objects must remain unchanged; only missing identities may extend the shop.'])
- machinedoc=dict(schemaVersion=1,profile='firered-silph-machines-v1',sourceCommit=COMMIT,inheritedItemIds=[ident('ITEM_'+x) for x in MACHINES],additions=[dict(item=ident('ITEM_'+x),compatibility=[compatibility('LAPRAS',x)]) for x in MACHINES],newMachines=new,limitations=['All24 inherited112-species matrices retain identity and append Lapras; TM01/TM08/TM41 add exact113 cells each.'])
+ itemdoc=dict(schemaVersion=1,profile='firered-silph-items-v1',sourceCommit=COMMIT,items=items,limitations=['23 original item definitions cover17 visible and12 hidden source pickups plus President Master Ball; metadata creates no rewards.','Inherited item objects must remain unchanged; only missing identities may extend the shop.'])
+ machinedoc=dict(schemaVersion=1,profile='firered-silph-machines-v1',sourceCommit=COMMIT,inheritedItemIds=[ident('ITEM_'+x) for x in MACHINES],additions=shared_machines.compatibility_additions(dependency, 'content/generated/silph-catalogs/machines.json'),newMachines=new,limitations=['All24 inherited112-species matrices retain identity and append Lapras; TM01/TM08/TM41 add exact113 cells each.'])
  return pokemon,itemdoc,machinedoc
 
 def main():

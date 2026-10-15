@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Game.Domain.Events;
 using Game.Domain.Ids;
 using Game.Domain.World;
@@ -16,7 +14,7 @@ using Game.Domain.Slots;
 namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
-    /// <summary>Builds the current game from generated resources and original scripts.</summary>
+    /// <summary>Builds the current game from generated gameplay resources and compiled story IR.</summary>
     public static PretCampaignCatalog LoadCurrent(string projectRoot)
     {
         // Resource readers validate their formats; no original-file identity pass is required.
@@ -43,7 +41,6 @@ public sealed partial class PretCampaignCatalog
         var fourIslandTrainers = PretFourIslandRules.LoadTrainers(projectRoot);
         var seviiRuby = PretSeviiRubyRegion.Load(projectRoot);
         var seviiRubyTrainers = PretSeviiRubyRules.LoadTrainers(projectRoot);
-        var nationalDexSource = PretNationalDexSource.Load(projectRoot);
         var twins = PretRoute8Twins.Load(projectRoot);
         var doubleMechanics = SourceMechanicsCatalogLoader.LoadAuthenticated(projectRoot);
         var npcTrades = PretNpcTrades.Load(projectRoot, doubleMechanics);
@@ -69,7 +66,6 @@ public sealed partial class PretCampaignCatalog
         var lostCave = PretLostCaveRegion.Load(projectRoot);
         var trainerFanClub = PretTrainerFanClub.Load(projectRoot);
         var lostCaveTrainers = LostCaveTrainerPartyFactory.Authenticate(vsSeekerTrainers);
-        var sourceGridMenus = PretSourceGridMenus.Load(projectRoot);
         var fieldFly = PretFieldFly.Load(projectRoot);
         var fieldRockSmash = PretFieldRockSmash.Load(projectRoot);
         var flyMapPresentation = PretFlyMap.Load(projectRoot);
@@ -110,7 +106,6 @@ public sealed partial class PretCampaignCatalog
         PretSurfArt surfArt;
         PretSurfEncounters surfEncounters;
         SurfOwnedPokemonCatalog surfOwned;
-        var surfScripts = PretSurfScripts.Load(projectRoot);
         var viridianGym = PretViridianGymRegion.Load(projectRoot);
         var viridianGymTrainers = PretViridianGymRules.LoadTrainers(projectRoot);
         var leagueRivalTrainers = PretLeagueRivalRules.LoadTrainers(projectRoot);
@@ -299,764 +294,16 @@ public sealed partial class PretCampaignCatalog
             maps = maps.AddRange(fiveIsland.NewMaps);
         }
 
-        // Preserve script, constant and content-hash ordering across the whole source bundle.
-        var sources = new List<PretSourceScriptFile>();
-        var textFiles = new List<string>();
-        var constants = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var map in maps.Values.OrderBy(x => x.Id.Value, StringComparer.Ordinal))
-        {
-            string path = map.SourceRef.Path.Replace("map.json", "scripts.inc", StringComparison.Ordinal);
-            var f = map.Metadata.Files.Single(x => x.Path == path);
-            sources.Add(new(path, map.ScriptSource, new(SourceKind.Pret,path,map.SourceMapSymbol,map.Metadata.Repository,map.Metadata.Commit)));
-            if (map.Metadata.Files.Any(x => x.Path == map.SourceRef.Path.Replace("map.json", "text.inc", StringComparison.Ordinal)))
-                textFiles.Add(map.TextSource);
-        }
-
-        // Vs Seeker item ID is authenticated by the same immutable original item record used by the Bag.
-        constants["ITEM_VS_SEEKER"] = vsSeekerPresentation.ItemDefinition.GetProperty("sourceItemId").GetInt32();
-        using var l = JsonDocument.Parse(File.ReadAllText(Path.Combine(projectRoot, "scripts/fetch-story.lock.json")));
-        foreach (var e in l.RootElement.GetProperty("files").EnumerateArray())
-        {
-            var path = e.GetProperty("path").GetString()!;
-            var bytes = File.ReadAllBytes(Path.Combine(projectRoot, PretSourcePaths.FireRedRawDirectory, path));
-            var text = Encoding.UTF8.GetString(bytes);
-            if (path is "data/event_scripts.s" or "data/scripts/movement.inc" or "data/scripts/fame_checker.inc" or "data/scripts/std_msgbox.inc" or "data/scripts/obtain_item.inc")
-            {
-                sources.Add(new(path, text, new(SourceKind.Pret,path,"common-script-library","pret/pokefirered",PretWorldMap.SourceCommit)));
-                textFiles.Add(text);
-            }
-
-            if (path.StartsWith("include/constants/", StringComparison.Ordinal))
-                foreach (Match m in Regex.Matches(text, @"^#define\s+([A-Z][A-Z0-9_]+)\s+(0x[0-9a-fA-F]+|[0-9]+)\s*(?://[^\n]*)?$", RegexOptions.Multiline | RegexOptions.CultureInvariant))
-                    constants[m.Groups[1].Value] = m.Groups[2].Value.StartsWith("0x", StringComparison.Ordinal) ? Convert.ToInt32(m.Groups[2].Value, 16) : int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
-        }
-
-        {
-            var paths = sources.Select(x => x.Path).ToHashSet(StringComparer.Ordinal);
-            var textPaths = maps.Values.Select(x => x.SourceRef.Path.Replace("map.json", "text.inc", StringComparison.Ordinal)).Concat(paths).ToHashSet(StringComparer.Ordinal);
-            foreach (var source in region.Scripts)
-                if (paths.Add(source.Path))
-                {
-                    sources.Add(source);
-                    textFiles.Add(source.Text);
-                    textPaths.Add(source.Path);
-                }
-
-            foreach (var(path, text)in region.TextSources)
-                if (textPaths.Add(path))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in region.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            var byPath = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            var textPaths = maps.Values.Select(x => x.SourceRef.Path.Replace("map.json", "text.inc", StringComparison.Ordinal)).Concat(byPath.Keys).Concat(region.TextSources.Keys).ToHashSet(StringComparer.Ordinal);
-            foreach (var source in center.Scripts)
-            {
-                if (byPath.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting authenticated center source: " + source.Path);
-                    continue;
-                }
-
-                byPath.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-                textPaths.Add(source.Path);
-            }
-
-            foreach (var(path, text)in center.TextSources)
-                if (textPaths.Add(path))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in center.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in forest.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting forest source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in forest.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in forest.Constants)
-                constants[symbol] = value;
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in pewter.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Pewter source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in pewter.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in pewter.Constants)
-                constants[symbol] = value;
-        }
-
         var pokemonStorage = PretPokemonStorageSource.Load(projectRoot);
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in pokemonStorage.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting storage source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in pokemonStorage.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in pokemonStorage.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting storage constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
         var fieldPickups = PretEarlyPickups.Load(projectRoot);
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in fieldPickups.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting pickup source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in fieldPickups.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in fieldPickups.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting pickup constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in oakRating.Scripts.Concat(oakRating.CallerScripts))
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Oak rating source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in oakRating.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in oakRating.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Oak rating constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in route22.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Route22 source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in route22.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in route22.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Route22 constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in route3.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Route3 source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in route3.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in route3.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Route3 constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in mtMoon.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting MtMoon source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in mtMoon.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in mtMoon.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting MtMoon constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in cerulean.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Cerulean source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in cerulean.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in cerulean.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Cerulean constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in bill.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Bill source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in bill.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in bill.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Bill constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in vermilion.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Vermilion source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in vermilion.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in vermilion.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Vermilion constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in ssAnne.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting S.S. Anne source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in ssAnne.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in ssAnne.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting S.S. Anne constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in vermilionGym.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Vermilion Gym source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in vermilionGym.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in vermilionGym.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Vermilion Gym constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in cityServices.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting City services source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in cityServices.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in cityServices.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting City services constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in route11.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Route11 source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in route11.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in route11.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Route11 constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in rockTunnel.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting RockTunnel source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in rockTunnel.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in rockTunnel.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting RockTunnel constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in celadonApproach.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting CeladonApproach source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in celadonApproach.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in celadonApproach.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting CeladonApproach constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in celadonGym.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting CeladonGym source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in celadonGym.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in celadonGym.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting CeladonGym constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in rocketHideout.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Rocket Hideout source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in rocketHideout.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in rocketHideout.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Rocket Hideout constant: " + symbol);
-                constants[symbol] = value;
-            }
-
-            // Metatile labels use mixed case, unlike the source region's uppercase
-            // numeric constant inventory. Resolve only the authenticated patch atlas.
-            foreach (var tile in rocketHideout.SourceContract.GetProperty("patchAtlas").EnumerateArray())
-            {
-                string symbol = tile.GetProperty("symbol").GetString()!;
-                int value = tile.GetProperty("metatileId").GetInt32();
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Rocket Hideout metatile constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        {
-            var paths = sources.ToDictionary(x => x.Path, StringComparer.Ordinal);
-            foreach (var source in pokemonTower.Scripts)
-            {
-                if (paths.TryGetValue(source.Path, out var prior))
-                {
-                    if (prior.Text != source.Text)
-                        throw new InvalidDataException("Conflicting Tower source: " + source.Path);
-                    continue;
-                }
-
-                paths.Add(source.Path, source);
-                sources.Add(source);
-                textFiles.Add(source.Text);
-            }
-
-            foreach (var text in pokemonTower.TextSources.Values)
-                if (!textFiles.Contains(text, StringComparer.Ordinal))
-                    textFiles.Add(text);
-            foreach (var(symbol, value)in pokemonTower.Constants)
-            {
-                if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Tower constant: " + symbol);
-                constants[symbol] = value;
-            }
-        }
-
-        AppendSnorlaxSources(snorlax, sources, textFiles, constants);
-        AppendRegionalFlavorSources(projectRoot, sources, textFiles);
-        AppendRegionalServiceSources(projectRoot, regionalServices, regionalGift, sources, textFiles, constants);
-        AppendFuchsiaRouteSources(fuchsiaRoute, sources, textFiles, constants);
-        AppendFuchsiaGymSources(fuchsiaGym, fuchsiaGymMoveSource, sources, textFiles, constants);
-        AppendSafariSources(safari, safariItems, sources, textFiles, constants);
-        AppendSurfSources(surfScripts, sources, textFiles, constants);
-        AppendSilphSources(silph, silphItems, sources, textFiles, constants);
-        {
-            AppendSaffronGymSources(saffronGym, saffronGymItems, sources, textFiles, constants);
-        }
-
-        AppendCinnabarSources(cinnabar, cinnabarItems, sources, textFiles, constants);
-        AppendFirstSeviiSources(firstSevii, sources, textFiles, constants);
-        AppendViridianGymSources(viridianGym, sources, textFiles, constants);
-        {
-            AppendVictoryRoadSources(victoryRoad, sources, textFiles, constants);
-        }
-
-        {
-            AppendPokemonLeagueSources(pokemonLeague, sources, textFiles, constants);
-        }
-
-        AppendNationalDexSources(nationalDexSource, sources, textFiles, constants);
-        {
-            AppendSeviiRubySources(seviiRuby, sources, textFiles, constants);
-        }
-
-        {
-            AppendFourIslandSources(fourIsland, sources, textFiles, constants);
-        }
-
-        {
-            AppendSixIslandSources(sixIsland, sources, textFiles, constants);
-        }
-
-        {
-            AppendFiveIslandSources(fiveIsland, sources, textFiles, constants);
-        }
-
-        AppendCeruleanCaveSources(ceruleanCave, sources, textFiles, constants);
-        AppendSevenIslandSources(sevenIsland, sources, textFiles, constants);
-        AppendEventIslandSources(eventIsland, sources, textFiles, constants);
-        AppendPowerPlantSources(powerPlant, sources, textFiles, constants);
-        AppendTrainerTowerSources(trainerTower, sources, textFiles, constants);
-        AppendFightingDojoSources(fightingDojo, sources, textFiles, constants);
-        AppendFossilLabSources(fossilLab, sources, textFiles, constants);
-        AppendNpcTradeSources(npcTrades, sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(npcTradeHaden.Scripts, npcTradeHaden.TextSources.Values, npcTradeHaden.Constants,
-            sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(goodRodService.Scripts, goodRodService.TextSources.Values, goodRodService.Constants,
-            sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(seafoam.Scripts, seafoam.TextSources.Values, seafoam.Constants,
-            sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(superRodService.Scripts, superRodService.TextSources.Values, superRodService.Constants,
-            sources, textFiles, constants);
-
-        AppendAuthenticatedRegionalSources(moveReminderHouse.Scripts, moveReminderHouse.TextSources.Values, moveReminderHouse.Constants,
-            sources, textFiles, constants);
-
-        AppendAuthenticatedRegionalSources(moveDeleterHouse.Scripts, moveDeleterHouse.TextSources.Values, moveDeleterHouse.Constants,
-            sources, textFiles, constants);
-
-        AppendAuthenticatedRegionalSources(originalTutorRooms.Scripts, originalTutorRooms.TextSources.Values, originalTutorRooms.Constants,
-            sources, textFiles, constants);
-
-        AppendAuthenticatedRegionalSources(copycatHouse.Scripts, copycatHouse.TextSources.Values, copycatHouse.Constants,
-            sources, textFiles, constants);
-
-        AppendAuthenticatedRegionalSources(capeBrinkTutor.Scripts, capeBrinkTutor.TextSources.Values, capeBrinkTutor.Constants,
-            sources, textFiles, constants);
-
-        AppendAuthenticatedRegionalSources(fourIslandDayCare.Scripts, fourIslandDayCare.TextSources.Values, fourIslandDayCare.Constants,
-            sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(route5DayCare.Scripts, route5DayCare.TextSources.Values, route5DayCare.Constants,
-            sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(route16FlyHouse.Scripts, route16FlyHouse.TextSources.Values, route16FlyHouse.Constants,
-            sources, textFiles, constants);
-        originalTmAcquisition.AppendSources(sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(schoolHouseInteriors.Scripts, schoolHouseInteriors.TextSources.Values, schoolHouseInteriors.Constants,
-            sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(lostCave.Scripts, lostCave.TextSources.Values, lostCave.Constants,
-            sources, textFiles, constants);
-        AppendAuthenticatedRegionalSources(trainerFanClub.Scripts, trainerFanClub.TextSources.Values, trainerFanClub.Constants,
-            sources, textFiles, constants);
-
-        MergeRegionalServiceConstants(constants, gameCornerCoins.Constants);
-        {
-            MergeRegionalServiceConstants(constants, departmentStore.Constants);
-            MergeRegionalServiceConstants(constants, new Dictionary<string, int> { { "PARTY_SIZE", 6 }, { "SPECIES_EGG", 412 } });
-        }
+        var storyRuntime = PretStoryRuntime.Load(projectRoot);
+        var constants = storyRuntime.Compilation.Constants.ToDictionary(x => x.Key, x => x.Value, StringComparer.Ordinal);
 
         // Compose the owned and opponent catalogs used by campaign encounters.
         CampaignPokemonContent pokemonContent;
         {
-            var extra = new Dictionary<string, string>(StringComparer.Ordinal);
-            var starterLockBytes = File.ReadAllBytes(Path.Combine(projectRoot, "scripts/fetch-starter-events.lock.json"));
-            using var starterLock = JsonDocument.Parse(starterLockBytes);
-            foreach (var entry in starterLock.RootElement.GetProperty("files").EnumerateArray())
-            {
-                var path = entry.GetProperty("path").GetString()!;
-                if (Path.IsPathRooted(path) || path.Split('/').Contains(".."))
-                    throw new InvalidDataException("Starter source path invalid.");
-                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, PretSourcePaths.FireRedRawDirectory, path));
-                extra.Add(path, Encoding.UTF8.GetString(bytes));
-            }
-
-            foreach (Match m in Regex.Matches(extra["include/constants/species.h"], @"^#define\s+(SPECIES_[A-Z0-9_]+)\s+([0-9]+)\s*$", RegexOptions.Multiline | RegexOptions.CultureInvariant))
-                constants[m.Groups[1].Value] = int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
-            foreach (var constant in new[]
-            {
-                "YES",
-                "NO"
-            }
-
-            )
-            {
-                var m = Regex.Match(extra["asm/macros/event.inc"], @"^\s*" + constant + @"\s*=\s*([0-9]+)\s*$", RegexOptions.Multiline | RegexOptions.CultureInvariant);
-                if (!m.Success)
-                    throw new InvalidDataException("Missing source yes/no constant.");
-                constants[constant] = int.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
-            }
-
-            var pokemonJson = File.ReadAllText(Path.Combine(projectRoot, "content/generated/pokemon/starter-catalog.json"));
-            var pokemon = PretPokemonCatalog.Load(pokemonJson);
-            var names = ImmutableSortedDictionary.CreateBuilder<int, string>();
-            foreach (Match m in Regex.Matches(extra["src/data/text/species_names.h"], @"\[(SPECIES_[A-Z0-9_]+)\]\s*=\s*_\(""([^""]+)""\)", RegexOptions.CultureInvariant))
-                if (constants.TryGetValue(m.Groups[1].Value, out var speciesId) && pokemon.Species.Values.Any(x => x.SourceSpeciesId == speciesId))
-                    names.Add(speciesId, m.Groups[2].Value);
-            if (names.Count != pokemon.Species.Count)
-                throw new InvalidDataException("Missing source species names.");
-            var keyboard = Regex.Match(extra["src/naming_screen.c"], @"static const u8 sKeyboardChars[^=]+=(.*?);", RegexOptions.Singleline | RegexOptions.CultureInvariant);
-            if (!keyboard.Success)
-                throw new InvalidDataException("Nickname keyboard missing.");
-            var chars = string.Concat(Regex.Matches(keyboard.Groups[1].Value, @"__\(""([^""]*)""\)", RegexOptions.CultureInvariant).Select(m => m.Groups[1].Value)).Distinct().Order().ToArray();
-            if (chars.Length < 60)
-                throw new InvalidDataException("Nickname alphabet incomplete.");
-            pokemonContent = new(pokemon, names.ToImmutable(), new string (chars));
+            var pokemon = PretPokemonCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/pokemon/starter-catalog.json")));
+            pokemonContent = new(pokemon, storyRuntime.StarterSpeciesNames, storyRuntime.NicknameCharacters);
         }
 
         PretRoute1PokemonContent route1Pokemon;
@@ -1382,20 +629,7 @@ public sealed partial class PretCampaignCatalog
         CampaignBattleContent battleContent;
         {
             var trainers = PretLabTrainerCatalog.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/lab-trainers/lab-trainers.json"), Encoding.UTF8));
-            var lockBytes = File.ReadAllBytes(Path.Combine(projectRoot, "scripts/fetch-lab-battle-extra.lock.json"));
-            using var extraLock = JsonDocument.Parse(lockBytes);
-            string? moveNamesSource = null;
-            foreach (var input in extraLock.RootElement.GetProperty("files").EnumerateArray())
-            {
-                var path = input.GetProperty("path").GetString()!;
-                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, PretSourcePaths.FireRedRawDirectory, path));
-                if (path == "src/data/text/move_names.h")
-                    moveNamesSource = Encoding.UTF8.GetString(bytes);
-            }
-
-            var names = ImmutableSortedDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-            foreach (Match m in Regex.Matches(moveNamesSource ?? throw new InvalidDataException("Move names source absent."), @"\[(MOVE_[A-Z0-9_]+)\]\s*=\s*_\(""([^""]*)""\)", RegexOptions.CultureInvariant))
-                names.Add("pret:" + m.Groups[1].Value, m.Groups[2].Value);
+            var names = storyRuntime.MoveNames.ToBuilder();
             foreach (var move in new[]
             {
                 "TACKLE",
@@ -1496,24 +730,7 @@ public sealed partial class PretCampaignCatalog
         }
 
         OpeningItemsCatalog openingItems;
-        var openingUiTexts = new Dictionary<string, string>(StringComparer.Ordinal);
-        {
-            openingItems = PretOpeningItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/opening-items/opening-items.json"), Encoding.UTF8));
-            var lockBytes = File.ReadAllBytes(Path.Combine(projectRoot, "scripts/fetch-opening-ui.lock.json"));
-            using var uiLock = JsonDocument.Parse(lockBytes);
-            foreach (var input in uiLock.RootElement.GetProperty("files").EnumerateArray())
-            {
-                var path = input.GetProperty("path").GetString()!;
-                var bytes = File.ReadAllBytes(Path.Combine(projectRoot, PretSourcePaths.FireRedRawDirectory, path));
-                var sourceText = Encoding.UTF8.GetString(bytes);
-                if (path == "include/constants/help_system.h")
-                    foreach (Match m in Regex.Matches(sourceText, @"^#define\s+([A-Z][A-Z0-9_]+)\s+([0-9]+)\s*(?://[^\n]*)?$", RegexOptions.Multiline | RegexOptions.CultureInvariant))
-                        constants[m.Groups[1].Value] = int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
-                else
-                    foreach (Match m in Regex.Matches(sourceText, "const u8 ([A-Za-z0-9_]+)\\[\\] = _\\(\"((?:\\\\.|[^\"\\\\])*)\"\\);", RegexOptions.CultureInvariant))
-                        openingUiTexts.TryAdd(m.Groups[1].Value, m.Groups[2].Value);
-            }
-        }
+        openingItems = PretOpeningItems.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/opening-items/opening-items.json"), Encoding.UTF8));
 
         // Variable and flag identity stays symbolic; numeric IDs are not save identity.
         foreach (var name in constants.Keys.Where(x => x.StartsWith("VAR_", StringComparison.Ordinal)).ToArray())
@@ -1559,12 +776,6 @@ public sealed partial class PretCampaignCatalog
             metatiles = PretMartMetatiles.Load(projectRoot);
             constants["METATILE_Mart_CounterMid_Top"] = metatiles.OnLoadPatches.Single(x => x.Y == 3).RawMetatileId;
             constants["METATILE_Mart_CounterMid_Bottom"] = metatiles.OnLoadPatches.Single(x => x.Y == 4).RawMetatileId;
-            var parcelSource = PretParcelEventSource.Load(projectRoot);
-            foreach (var pair in parcelSource.Constants)
-                if (!pair.Key.StartsWith("VAR_", StringComparison.Ordinal))
-                    constants[pair.Key] = pair.Value;
-            foreach (var pair in parcelSource.Text)
-                openingUiTexts[pair.Key] = pair.Value;
         }
 
         var earlyShop = PretEarlyShop.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/early-shop/early-shop.json"), Encoding.UTF8));
@@ -1684,12 +895,8 @@ public sealed partial class PretCampaignCatalog
             machines = VictoryRoadMachineCatalog.Authenticate(machineProof, PretVictoryRoadItems.ExtendMachines(machineProof, victoryRoadItems)).Catalog;
         }
 
-        // Compile and validate the complete current script vocabulary.
-        var compiled = PretStoryCompiler.Compile(sources, constants, includeGiftOpcodes: true, includeRoute3Opcodes: true, includeMtMoonOpcodes: true, includeBillOpcodes: true, includeSsAnneOpcodes: true, includeVermilionGymOpcodes: true, includeRockTunnelOpcodes: true, includeRocketHideoutOpcodes: true, includePokemonTowerOpcodes: true, includeSnorlaxOpcodes: true, includePresetDoubleOpcodes: true, includeSafariOpcodes: true, includeSilphOpcodes: true, includeSaffronGymData: true, includeCinnabarData: true, includeFirstSevii: true, includeViridianGym: true, includeVictoryRoad: true, includePokemonLeague: true, includeSeviiRuby: true, includeFourIsland: true, includeSixIsland: true, includeFiveIsland: true, includeCelio: true, includeSevenIsland: true, includeEventIslands: true, includePowerPlant: true, includeTrainerTower: true, includeSeafoam: true, includeGameCornerCoins: true, includeGameCornerSlots: true);
-        compiled = compiled with { Menus = compiled.Menus.AddRange(sourceGridMenus) };
-        compiled = CompleteSurfSourceFallthrough(compiled);
-        compiled = CompleteFourIslandSourceFallthrough(compiled);
-        compiled = CompleteFourIslandDayCareFallthrough(compiled);
+        // The importer compiled source syntax, edition branches, menus and fallthrough.
+        var compiled = storyRuntime.Compilation;
         {
             var lab = maps.Values.Single(x => x.SourceMapSymbol == "MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB");
             var objects = lab.Events.GetProperty("object_events").EnumerateArray().ToArray();
@@ -1721,189 +928,8 @@ public sealed partial class PretCampaignCatalog
             };
         }
 
-        var bank = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var(symbol, text)in region.SourceUiTexts)
-            bank.Add(symbol, text);
-        foreach (var(symbol, text)in center.SourceUiTexts)
-        {
-            if (bank.TryGetValue(symbol, out var old) && old != text)
-                throw new InvalidDataException("Conflicting center UI text: " + symbol);
-            bank[symbol] = text;
-        }
-
-        AppendFourIslandDayCareTexts(fourIslandDayCare, bank);
-
-        foreach (var text in textFiles)
-        {
-            string? label = null;
-            StringBuilder? value = null;
-            foreach (var raw in text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'))
-            {
-                var line = raw.Trim();
-                var m = Regex.Match(line, @"^([A-Za-z_][A-Za-z0-9_]*):{1,2}(?:\s*@.*)?$", RegexOptions.CultureInvariant);
-                if (m.Success)
-                {
-                    label = m.Groups[1].Value;
-                    value = null;
-                    continue;
-                }
-
-                if ((line.StartsWith(".string", StringComparison.Ordinal) || line.StartsWith(".braille", StringComparison.Ordinal)) && label is not null)
-                {
-                    var part = Regex.Match(line, "^\\.(?:string|braille)\\s+\"(.*)\"$", RegexOptions.CultureInvariant);
-                    if (!part.Success)
-                        throw new InvalidDataException("Unsupported text directive: " + label);
-                    value ??= new();
-                    value.Append(part.Groups[1].Value);
-                    if (value.ToString().EndsWith('$'))
-                    {
-                        if (!bank.TryAdd(label, value.ToString()))
-                            throw new InvalidDataException("Duplicate source text: " + label);
-                        label = null;
-                    }
-                }
-            }
-        }
-
-        {
-            foreach (var symbol in new[]
-            {
-                "gText_TakeOutItemsFromThePC",
-                "gText_StoreItemsInThePC",
-                "gText_GoBackToThePreviousMenu",
-                "gOtherText_Give",
-                "gText_WhatWouldYouLikeToDo",
-                "gText_ItemStorage",
-                "gText_Mailbox",
-                "gText_TurnOff",
-                "gText_WithdrawItem2",
-                "gText_DepositItem2",
-                "gFameCheckerText_Cancel",
-                "gText_ThereAreNoItems",
-                "gText_TheresNoMailHere",
-                "gText_WithdrawHowMany",
-                "gText_DepositHowManyStrVars1",
-                "gText_WithdrewQuantItem",
-                "gText_DepositedStrVar2StrVar1s",
-                "gText_NoMoreRoomInBag",
-                "gText_ThereIsNoPokemon",
-                "gText_WontHaveEffect",
-                "gText_PkmnHPRestoredByVar2",
-                "gOtherText_Use",
-                "gText_MenuBag"
-            }
-
-            )
-            {
-                if (!openingUiTexts.TryGetValue(symbol, out var text))
-                    throw new InvalidDataException("Opening menu text missing: " + symbol);
-                bank.Add(symbol, text.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
-            }
-        }
-
-        foreach (var symbol in new[]
-        {
-            "gText_PlayedPokeFlute",
-            "gText_PlayedPokeFluteCatchy",
-            "gText_PokeFluteAwakenedMon"
-        }
-
-        )
-            bank.Add(symbol, openingUiTexts[symbol].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
-        foreach (var symbol in new[]
-        {
-            "gText_BigGuy",
-            "gText_BigGirl"
-        }
-
-        )
-            bank.Add(symbol, openingUiTexts[symbol] + "$");
-        bank.Add("gText_BerryPouch_2", openingUiTexts["gText_BerryPouch_2"] + "$");
-        bank.Add("gText_PPWasRestored", openingUiTexts["gText_PPWasRestored"].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
-        bank.Add("gText_MovesPPIncreased", openingUiTexts["gText_MovesPPIncreased"].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
-        bank.Add("gText_BoostPp", openingUiTexts["gText_BoostPp"] + "$");
-        foreach (var symbol in new[] { "gText_PkmnBaseVar2StatIncreased", "gText_ItemEffect_HP",
-            "gText_ItemEffect_Attack", "gText_ItemEffect_Defense", "gText_ItemEffect_Speed",
-            "gText_ItemEffect_SpAtk", "gText_ItemEffect_SpDef" })
-            bank.Add(symbol, openingUiTexts[symbol].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
-        foreach (var symbol in new[]
-        {
-            "gText_ItemsPocket",
-            "gText_KeyItemsPocket",
-            "gText_PokeBallsPocket"
-        }
-
-        )
-            bank.Add(symbol, openingUiTexts[symbol] + "$");
-        // The pinned opening-ui strings.c is byte-identical to item-ui/src/strings.c.
-        // Select the English runtime text, not the unused Japanese BootedUpTM literal.
-        foreach (var symbol in new[]
-        {
-            "gText_TMCase",
-            "gText_Close",
-            "gText_TMCaseWillBePutAway",
-            "gText_TeachWhichPokemon",
-            "gText_PkmnLearnedMove3",
-            "gText_PkmnCantLearnMove",
-            "gText_PkmnNeedsToReplaceMove",
-            "gText_WhichMoveToForget",
-            "gText_PkmnAlreadyKnows",
-            "gText_TeachMoveQues",
-            "gText_Able2",
-            "gText_NotAble",
-            "gText_Learned",
-            "gText_Yes",
-            "gText_No"
-        }
-
-        )
-            bank.Add(symbol, openingUiTexts[symbol].Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal) + "$");
-        foreach (var(symbol, text)in oldMan.Texts)
-            bank.Add(symbol, text.Text + "$");
-        foreach (var text in earlyShop.Texts)
-        {
-            var value = text.Text.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal).Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$";
-            if (bank.TryGetValue(text.Symbol, out var prior) && prior != value)
-                throw new InvalidDataException("Conflicting shop text: " + text.Symbol);
-            bank[text.Symbol] = value;
-        }
-
-        foreach (var(symbol, text)in pokemonStorage.SourceUiTexts)
-        {
-            var value = text.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal);
-            if (bank.TryGetValue(symbol, out var prior) && prior != value)
-                throw new InvalidDataException("Conflicting storage UI text: " + symbol);
-            bank[symbol] = value;
-        }
-
-        foreach (var(symbol, text)in oldRod.Texts)
-        {
-            var value = text.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal).Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$";
-            if (bank.TryGetValue(symbol, out var prior) && prior != value)
-                throw new InvalidDataException("Conflicting fishing text: " + symbol);
-            bank[symbol] = value;
-        }
-
-        // Bag and registered field-item callbacks share the same authenticated Oak refusal.
-        var questItemUi = PretQuestItemUi.Load(File.ReadAllText(Path.Combine(projectRoot,
-            "content/generated/quest-item-ui/quest-item-ui.json"), Encoding.UTF8));
-        bank.Add("gText_OakForbidsUseOfItemHere", questItemUi.Texts["gText_OakForbidsUseOfItemHere"]
-            .Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal).Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$");
-
-        bank.Add("gText_CoinCase", gameCornerCoins.ItemUseText.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal)
-            .Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$");
-
+        var bank = storyRuntime.TextBank.ToBuilder();
         var repel = PretEarlyRepel.Load(File.ReadAllText(Path.Combine(projectRoot, "content/generated/early-repel/early-repel.json"), Encoding.UTF8));
-        {
-            foreach (var text in repel.Texts)
-            {
-                var value = text.Text.Replace("{PAUSE_UNTIL_PRESS}", "", StringComparison.Ordinal).Replace("\n", @"\n", StringComparison.Ordinal).TrimEnd('$') + "$";
-                if (bank.TryGetValue(text.Symbol, out var prior) && prior != value)
-                    throw new InvalidDataException("Conflicting Repel text: " + text.Symbol);
-                bank[text.Symbol] = value;
-            }
-
-        }
 
         {
         }
@@ -1933,7 +959,7 @@ public sealed partial class PretCampaignCatalog
         ValidateFirstSeviiComposition(firstSevii, viridianGymPredecessorMaps, firstSeviiPredecessorMaps, cinnabarOwned, cinnabarOpponents, firstSeviiTrainers, compiled, bank);
         ValidateViridianGymComposition(viridianGym, victoryRoadPredecessorMaps, viridianGymPredecessorMaps, viridianGymTrainers, compiled, victoryRoadPredecessorMachines, cinnabarOwned);
         {
-            ValidateLeagueRivalComposition(victoryRoadPredecessorMaps, leagueRivalTrainers, compiled, sources, bank, pokemonContent, cinnabarOwned, cinnabarOpponents);
+            ValidateLeagueRivalComposition(victoryRoadPredecessorMaps, leagueRivalTrainers, compiled, bank, pokemonContent, cinnabarOwned, cinnabarOpponents);
         }
 
         ValidateVictoryRoadComposition(victoryRoad, pokemonLeaguePredecessorMaps, victoryRoadPredecessorMaps, victoryRoadTrainers, cinnabarOwned, compiled);
@@ -2442,7 +1468,7 @@ public sealed partial class PretCampaignCatalog
             pokemonLeague: pokemonLeague,
             pokemonLeagueTrainers: pokemonLeagueTrainers,
             pokemonLeagueOpponents: pokemonLeagueOpponents,
-            nationalDexSource: nationalDexSource,
+            nationalDexEnabled: true,
             seviiRuby: seviiRuby,
             seviiRubyOwned: seviiRubyOwned,
             seviiRubyOpponents: seviiRubyOpponents,
@@ -2473,25 +1499,6 @@ public sealed partial class PretCampaignCatalog
             sevenTrainers: sevenTrainers, sevenMachines: sevenMachines, sevenShop: sevenShop, sevenItems: sevenItems, moveTutors: moveTutors, eventIsland: eventIsland, eventOwned: eventOwned, eventOpponents: eventOpponents, eventMachines: eventMachines, eventShop: eventShop, powerPlant: powerPlant, powerPlantOwned: powerPlantOwned, powerPlantOpponents: powerPlantOpponents, powerPlantMachines: powerPlantMachines, powerPlantShop: powerPlantShop, trainerTower: trainerTower, trainerTowerCatalog: trainerTowerCatalog,
             trainerTowerOpponents: trainerTowerOpponents, trainerTowerShop: trainerTowerShop,
             fightingDojo: fightingDojo, dojoOwned: dojoOwned, dojoOpponents: dojoOpponents, dojoMachines: dojoMachines, dojoTrainers: dojoTrainers, fossilLab: fossilLab, fossilOwned: fossilOwned, fossilOpponents: fossilOpponents, fossilMachines: fossilMachines, fossilShop: fossilShop, npcTrades: npcTrades, npcTradeElyssa: npcTradeElyssa, npcTradeHaden: npcTradeHaden, npcTradeMail: npcTradeMail, goodRodService: goodRodService, seafoam: seafoam, seafoamOwned: seafoamOwned, seafoamOpponents: seafoamOpponents, seafoamMachines: seafoamMachines, seafoamTrainers: seafoamTrainers, moveReminderHouse: moveReminderHouse, moveReminder: moveReminder, moveDeleterHouse: moveDeleterHouse, originalTutorRooms: originalTutorRooms, copycatHouse: copycatHouse, superRodService: superRodService, superRodOwned: superRodOwned, superRodOpponents: superRodOpponents, superRodMachines: superRodMachines, capeBrinkTutor: capeBrinkTutor, fieldFly: fieldFly, flyMapPresentation: flyMapPresentation, route16FlyHouse: route16FlyHouse, route5DayCare: route5DayCare, fourIslandDayCare: fourIslandDayCare, originalTmAcquisition: originalTmAcquisition, schoolHouseInteriors: schoolHouseInteriors, lostCave: lostCave, lostCaveTrainers: lostCaveTrainers, trainerFanClub: trainerFanClub) { MailPresentation = mailPresentation, MailComposer = mailComposer.Catalog, TeachyTv = teachyTv, VsSeeker = vsSeeker.Catalog, VsSeekerTexts = vsSeekerPresentation.EncodedTexts, VsSeekerTrainers = vsSeekerTrainers, VsSeekerBattleOccurrences = vsSeekerOccurrences, VsSeekerOpponents = vsSeekerOpponents, FameChecker = fameChecker.Catalog, GameCornerSlots = SlotMachineSessionContract.CreateApprovedProduction(slotRules), ItemfinderDocument = itemfinder, FieldRockSmash = fieldRockSmash, MemorialPillarTrainers = memorialTrainers, MemorialPillarOpponents = memorialOpponents };
-    }
-
-    private static void AppendCeruleanCaveSources(PretCeruleanCaveRegion region,
-        List<PretSourceScriptFile> sources, List<string> texts, Dictionary<string, int> constants)
-    {
-        var existing = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in region.Scripts)
-        {
-            if (existing.TryGetValue(file.Path, out var prior))
-            {
-                if (prior.Text != file.Text)
-                    throw new InvalidDataException("cerulean_cave_source_conflict:" + file.Path);
-            }
-            else { existing.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
     }
 
     private static void ValidateCeruleanCaveComposition(PretCeruleanCaveRegion region,

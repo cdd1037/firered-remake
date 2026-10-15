@@ -11,7 +11,7 @@ public partial class CampaignView
 {
     private enum FameMode { List, Facts, Pick }
     private FameCheckerPresentationData? _fameArt;
-    private readonly Dictionary<string, ImageTexture> _fameTextures = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Texture2D> _fameTextures = new(StringComparer.Ordinal);
     private readonly Dictionary<(int,int), SourceGameFont> _fameFonts = [];
     private readonly SourceTextProgress _famePrinter = new();
     private ImmutableArray<FameCheckerPersonView> _famePeople = [];
@@ -24,18 +24,22 @@ public partial class CampaignView
     private int _fameRepeat;
     private double _fameTime;
     private ulong _fameClosedFrame = ulong.MaxValue;
-    private ImageTexture? _fameBase, _fameOverlay;
+    private Texture2D? _fameBase, _fameOverlay;
+    private CampaignResourceCache.Owner? _fameImages;
     private string? _fameBackgroundKey;
     private bool FameCheckerActive => _session?.State.FameChecker is not null;
     private FameCheckerPersonView? FamePerson => _famePerson < _famePeople.Length ? _famePeople[_famePerson] : null;
     private bool FamePickLayer => _fameMode == FameMode.Pick || _fameSlide != 0;
     private FameCheckerFact? FameFact => FamePerson?.Facts[_fameFact].Fact;
 
-    private ImageTexture FameTexture(FameCheckerTexture texture)
+    private Texture2D FameTexture(FameCheckerTexture texture)
     {
         if (_fameTextures.TryGetValue(texture.Id, out var result)) return result;
-        using var image = Image.CreateFromData(texture.Width, texture.Height, false, Image.Format.Rgba8, texture.Rgba.ToArray());
-        result = ImageTexture.CreateFromImage(image); _fameTextures.Add(texture.Id, result); return result;
+        _fameImages ??= _mapResources.CreateOwner("fame-checker");
+        var r = texture.Region;
+        result = _fameImages.NativeTexture(System.IO.Path.Combine(_root, texture.TexturePath), new Rect2I(r.X,r.Y,r.Width,r.Height));
+        _fameTextures.Add(texture.Id, result);
+        return result;
     }
     private SourceGameFont FameFont(int color = 2, int shadow = 3)
     {
@@ -199,10 +203,9 @@ public partial class CampaignView
     }
     private void UpdateFameBackground()
     {
-        string key=$"{FamePickLayer}:{_fameRestored}:{_fameOffset}:{_fameInfo}";if(_fameBackgroundKey==key)return;
-        void Update(ref ImageTexture? texture,byte[] rgba){using var image=Image.CreateFromData(240,160,false,Image.Format.Rgba8,rgba);if(texture is null)texture=ImageTexture.CreateFromImage(image);else texture.Update(image);}
-        Update(ref _fameBase,_fameArt!.RenderBaseBackground(FamePickLayer,_fameRestored));
-        Update(ref _fameOverlay,_fameArt.RenderPickOverlay(_fameOffset,FamePickLayer?5:_fameInfo));_fameBackgroundKey=key;
+        string key=$"{FamePickLayer}:{_fameRestored}:{_fameInfo}";if(_fameBackgroundKey==key)return;
+        _fameBase=FameTexture(_fameArt!.BaseBackground(FamePickLayer,_fameRestored));
+        _fameOverlay=FameTexture(_fameArt.Overlay(FamePickLayer?5:_fameInfo));_fameBackgroundKey=key;
     }
     private bool DrawFameChecker()
     {
@@ -218,7 +221,7 @@ public partial class CampaignView
                 else{var q=_fameArt.Textures["question-mark"];DrawTexture(FameTexture(q),new(x-q.Width/2,31+27*(panel.Index/3)-q.Height/2));}
             }
         }
-        DrawTexture(_fameOverlay!,Vector2.Zero);
+        DrawTextureRectRegion(_fameOverlay!,new Rect2(0,0,240,160),new Rect2(_fameOffset,0,240,160));
         if(_fameMode==FameMode.Facts)
         {var cursor=_fameArt.CursorFrame(_fameFrame/15%2);DrawTexture(FameTexture(cursor),new(114+47*(_fameFact%3)-16,34+27*(_fameFact/3)-16));}
         if(FamePickLayer&&FamePerson is {} pick)
@@ -265,8 +268,8 @@ public partial class CampaignView
     }
     private void DisposeFameCheckerPresentation()
     {
-        foreach(var texture in _fameTextures.Values)texture.Dispose();_fameTextures.Clear();
+        _fameTextures.Clear();_fameImages?.Dispose();_fameImages=null;
         foreach(var font in _fameFonts.Values)font.Dispose();_fameFonts.Clear();
-        _fameBase?.Dispose();_fameOverlay?.Dispose();_fameBase=_fameOverlay=null;_fameArt=null;_fameOwner=null;
+        _fameBase=_fameOverlay=null;_fameArt=null;_fameOwner=null;
     }
 }

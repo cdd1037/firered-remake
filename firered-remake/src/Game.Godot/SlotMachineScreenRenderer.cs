@@ -9,6 +9,7 @@ internal sealed class SlotMachineScreenRenderer
     private readonly SlotMachineRules rules;
     private readonly byte[][] icons, fairies, digits;
     private readonly byte[] help;
+    private readonly Dictionary<string, byte[]> pixels = new(StringComparer.Ordinal);
     private readonly int[] affine, darken, backdrop;
     private readonly JsonElement layout;
     private (int Bet, int Buttons, int Lines, int? Light)? backgroundKey;
@@ -17,10 +18,32 @@ internal sealed class SlotMachineScreenRenderer
     internal SlotMachineScreenRenderer(SlotMachinePresentationData presentation, SlotMachineRules source)
     {
         art = presentation; rules = source; layout = art.Layout;
-        icons = Enumerable.Range(0, 7).Select(i => art.SpriteFrame("reel-icons", i).ToArray()).ToArray();
-        fairies = Enumerable.Range(0, 6).Select(i => art.SpriteFrame("clefairy", i).ToArray()).ToArray();
-        digits = Enumerable.Range(0, 10).Select(i => art.SpriteFrame("digits", i).ToArray()).ToArray();
-        help = art.RenderHelpMap();
+        // Decode each co-used page once through Godot; source maps and palettes are import-only.
+        foreach (var page in art.Textures.Values.GroupBy(t => t.TexturePath))
+        {
+            using var image = NativeImages.LoadPng(page.First().Png.ToArray());
+            byte[] data = image.GetData();
+            int pageWidth = image.GetWidth();
+            foreach (var texture in page)
+            {
+                var region = texture.Region;
+                if (region.X < 0 || region.Y < 0 || region.X + region.Width > pageWidth || region.Y + region.Height > image.GetHeight())
+                    throw new InvalidDataException("Slot image region exceeds its page.");
+                var crop = new byte[texture.Width * texture.Height * 4];
+                for (int y = 0; y < texture.Height; y++)
+                    data.AsSpan(((region.Y + y) * pageWidth + region.X) * 4, texture.Width * 4).CopyTo(crop.AsSpan(y * texture.Width * 4));
+                pixels.Add(texture.Id, crop);
+            }
+        }
+        byte[][] Frames(string id, int height, int count)
+        {
+            int size = art.Textures[id].Width * height * 4;
+            return Enumerable.Range(0, count).Select(i => pixels[id].AsSpan(i * size, size).ToArray()).ToArray();
+        }
+        icons = Frames("reel-icons", 32, 7);
+        fairies = Frames("clefairy", 32, 6);
+        digits = Frames("digits", 16, 10);
+        help = pixels["help"];
         static int[] Values(JsonElement row) => row.EnumerateArray().Select(n => n.GetInt32()).ToArray();
         affine = Values(layout.GetProperty("scanline").GetProperty("affineParameters"));
         darken = Values(layout.GetProperty("scanline").GetProperty("darkenCoefficients"));
@@ -74,6 +97,35 @@ internal sealed class SlotMachineScreenRenderer
         }
     }
 
+    private byte[] PreparedBackground(int bet, int buttons, int lines, int? light)
+    {
+        if (bet is < 0 or > 3 || buttons is < 0 or > 7 || lines is < 0 or > 31 || light is < 0 or > 2)
+            throw new ArgumentOutOfRangeException(nameof(bet), "Slot display state outside source ranges.");
+        byte[] result = (byte[])pixels["background"].Clone();
+        void Patch(string id)
+        {
+            int width = art.Textures[id].Width;
+            // Rectangle tuples: source x/y, destination x/y, width/height.
+            foreach (var rect in layout.GetProperty("preparedPatches").GetProperty(id).EnumerateArray())
+            {
+                int sx = rect[0].GetInt32(), sy = rect[1].GetInt32();
+                int x = rect[2].GetInt32(), y = rect[3].GetInt32();
+                int w = rect[4].GetInt32(), h = rect[5].GetInt32();
+                for (int row = 0; row < h; row++)
+                    pixels[id].AsSpan(((sy + row) * width + sx) * 4, w * 4).CopyTo(result.AsSpan(((y + row) * 240 + x) * 4));
+            }
+        }
+        if (light is int frame) Patch("light-" + frame);
+        foreach (var line in layout.GetProperty("matchLines").EnumerateArray())
+        {
+            int id = line.GetProperty("id").GetInt32();
+            bool active = (lines & (1 << id)) != 0 || bet >= line.GetProperty("minimumBet").GetInt32();
+            Patch($"line-{id}-{(active ? 5 : 4)}");
+        }
+        for (int reel = 0; reel < 3; reel++) if ((buttons & (1 << reel)) != 0) Patch("button-" + reel);
+        return result;
+    }
+
     internal byte[] Render(SlotReels reels, int coins, int payout, int bet, int pressedButtons,
         int winningLines, int? payoutLightFrame, string fairyAnimation, int animationTicks,
         int helpWidth = 0, int fade = 0)
@@ -101,7 +153,7 @@ internal sealed class SlotMachineScreenRenderer
             Sprite(output, icons[icon], 32, 32, center[0].GetInt32(), center[1].GetInt32() + state.Subpixel * 8, applyAffine: true);
         }
         var key = (bet, pressedButtons, winningLines, payoutLightFrame);
-        if (backgroundKey != key) { background = art.RenderBackground(bet, pressedButtons, winningLines, payoutLightFrame); backgroundKey = key; }
+        if (backgroundKey != key) { background = PreparedBackground(bet, pressedButtons, winningLines, payoutLightFrame); backgroundKey = key; }
         Layer(output, background!, 240);
         var animation = layout.GetProperty("clefairy").GetProperty("animations").GetProperty(fairyAnimation);
         var frames = animation.GetProperty("frames").EnumerateArray().ToArray();
@@ -121,7 +173,7 @@ internal sealed class SlotMachineScreenRenderer
         }
         Number(coins, "creditCenters"); Number(payout, "payoutCenters");
         if (helpWidth > 0) Layer(output, help, 256, 256 - helpWidth, helpWidth);
-        Layer(output, art.Textures["controls"].Rgba.Span, art.Textures["controls"].Width);
+        Layer(output, pixels["controls"].AsSpan(), art.Textures["controls"].Width);
         if (fade > 0) for (int p = 0; p < output.Length; p += 4)
             for (int c = 0; c < 3; c++) output[p + c] = Shade(output[p + c], fade);
         return output;

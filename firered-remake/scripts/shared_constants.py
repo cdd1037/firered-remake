@@ -76,6 +76,12 @@ def publish_constants(generated_directory, document, *, check=False):
 def package_documents(generated_directory, constants, documents, *, check=False):
     """Publish source constants globally and return only package-owned data."""
     documents = dict(documents)
+    # Geometry inventories are import-time proofs. Runtime maps already own the
+    # decoded cells, collision and tileset data; never publish the duplicate report.
+    documents.pop('geometry.json', None)
+    # The story importer owns executable IR. Per-region transcript indexes are
+    # only working values for source closure and must not enter runtime output.
+    documents.pop('scripts.json', None)
     publish_constants(generated_directory, constants, check=check)
     if 'movementBindings' in constants:
         documents['movement-bindings.json'] = numeric_values(constants['movementBindings'])

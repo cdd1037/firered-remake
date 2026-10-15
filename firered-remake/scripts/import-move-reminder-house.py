@@ -31,9 +31,7 @@ DIRECTORY = 'two-island-house'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding2': 'secondary/generic_building_2'}
 TOWN_PACKAGE = 'content/generated/first-sevii-region'
 TOWN_RESOURCE = 'two-island/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_FAT_MAN': 'content/generated/city-services/npc/fat-man.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_FAT_MAN', 'OBJ_EVENT_GFX_RED_NORMAL'}
 ALIASES = {'CHECKED_MUSHROOMS': 'FLAG_TEMP_1', 'HAS_BIG_MUSHROOM': 'FLAG_TEMP_2',
            'HAS_TINY_MUSHROOMS': 'FLAG_TEMP_3', 'HAS_BOTH_MUSHROOMS': 'FLAG_TEMP_4'}
 
@@ -184,12 +182,6 @@ def main():
         shared.import_map(src, MAP, MAP_ID, stage / DIRECTORY)
         npcs = shared.npc_inventory(src, [world], stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'House actor cohort differs')
-        for row in npcs['graphics']:
-            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
-            rendered = stage / row['texturePath']
-            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
-        (stage / 'npc').rmdir()
         path = stage / DIRECTORY / 'runtime-map.json'; rich = path.read_bytes()
         compact = converter.normalize_runtime(json.loads(rich)); util.compact_check(compact, world, src)
         data = converter.encode(compact); (stage / DIRECTORY / 'runtime-map.json').write_bytes(data)
@@ -210,8 +202,7 @@ def main():
             cellCount=99, borderCellCount=4, directedWarpCount=2, objectCount=1, reusedNpcGraphicsCount=2,
             scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target / 'scripts/move-reminder-house.lock.json', lock_bytes),
-                  (target / 'scripts/move-reminder-house.contract.json', canonical(contract))]
+        writes = [(target / 'scripts/move-reminder-house.contract.json', canonical(contract))]
         writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

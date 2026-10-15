@@ -25,22 +25,16 @@ public sealed class PretOakRating
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static readonly ImmutableHashSet<int> NationalExcluded = [151, 249, 250, 251, 385, 386];
     public ImmutableArray<OakRatingBand> RatingBands { get; }
-    /// <summary>The rating library only. Loading it never marks VM/native operations supported.</summary>
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    /// <summary>Original PC/lab callers for explicit integration review; unrelated branches remain unsupported.</summary>
-    public ImmutableArray<PretSourceScriptFile> CallerScripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, string> SourceUiTexts { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement SourceContract { get; }
 
-    private PretOakRating(ImmutableArray<OakRatingBand> bands, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableArray<PretSourceScriptFile> callers, ImmutableDictionary<string, string> textSources,
+    private PretOakRating(ImmutableArray<OakRatingBand> bands,
         ImmutableDictionary<string, string> ui, ImmutableDictionary<string, int> constants,
         ImmutableArray<PretWorldSourceFile> files, JsonElement contract)
     {
-        RatingBands = bands; Scripts = scripts; CallerScripts = callers; TextSources = textSources;
+        RatingBands = bands;
         SourceUiTexts = ui; Constants = constants; SourceFiles = files; SourceContract = contract;
     }
 
@@ -117,26 +111,13 @@ public sealed class PretOakRating
             Require(info.Exists, "Missing Oak rating input: " + relative);
             return File.ReadAllBytes(path);
         }
-        using var lockDocument = JsonDocument.Parse(Read("content/oak-rating-source-lock.json"));
-        var sourceLock = lockDocument.RootElement;
         using var catalogDocument = JsonDocument.Parse(Read("content/generated/oak-rating/oak-rating.json"));
         var catalog = catalogDocument.RootElement;
-        var raw = new Dictionary<string, string>(StringComparer.Ordinal);
-        var scriptPaths = new HashSet<string>(StringComparer.Ordinal) {
-            "data/scripts/pokedex_rating.inc", "data/scripts/pc.inc", "data/maps/PalletTown_ProfessorOaksLab/scripts.inc",
-            "data/text/pokedex_rating.inc", "data/event_scripts.s", "data/maps/PalletTown_ProfessorOaksLab/text.inc"
-        };
-        var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var e in sourceLock.GetProperty("files").EnumerateArray())
+        var inventory = catalog.GetProperty("inputFiles").EnumerateArray().Select(entry =>
         {
-            string path = e.GetProperty("path").GetString()!;
-
-            if (scriptPaths.Contains(path))
-                raw.Add(path, Utf8.GetString(Read(PretSourcePaths.FireRedRawDirectory + "/" + path)));
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
-        }
-        var inventory = files.ToImmutable();
-        var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
+            var path = entry.GetProperty("path").GetString()!;
+            return new PretWorldSourceFile(path);
+        }).ToImmutableArray();
         var options = ContentJson.CreateOptions();
         T Decode<T>(JsonElement value) => value.Deserialize<T>(options) ?? throw new InvalidDataException("Missing Oak rating value.");
         var bands = Decode<ImmutableArray<OakRatingBand>>(catalog.GetProperty("ratingBands"));
@@ -156,12 +137,7 @@ public sealed class PretOakRating
         Require(rules.GetProperty("regionalCount").GetInt32() == 151 && rules.GetProperty("nationalCount").GetInt32() == 386 &&
             rules.GetProperty("nationalCompletionExcluded").EnumerateArray().Select(e => e.GetInt32()).ToImmutableHashSet().SetEquals(NationalExcluded),
             "Oak rating count rules differ.");
-        PretSourceScriptFile Script(string path) => new(path, raw[path], new(SourceKind.Pret,path,"oak-rating-source-library","pret/pokefirered",SourceCommit));
-        return new(bands, [Script("data/scripts/pokedex_rating.inc")],
-            [Script("data/scripts/pc.inc"), Script("data/maps/PalletTown_ProfessorOaksLab/scripts.inc")],
-                    new[] { "data/text/pokedex_rating.inc","data/event_scripts.s","data/maps/PalletTown_ProfessorOaksLab/text.inc" }
-                .ToImmutableDictionary(p => p, p => raw[p], StringComparer.Ordinal),
-            texts.ToImmutable(), constants.ToImmutable(), inventory, catalog.Clone());
+        return new(bands, texts.ToImmutable(), constants.ToImmutable(), inventory, catalog.Clone());
     }
     private static void Require(bool value, string message) { if (!value) throw new InvalidDataException(message); }
     private static string SafeFile(string root, string path)

@@ -8,8 +8,8 @@ public static class PretTrainerTowerPresentation
     public const string Profile = "firered-trainer-tower-presentation-v1";
     public static JsonElement Load(string root)
     {
-        var source = new SilphSourcePackage(root,"trainer-tower-presentation",            "scripts/trainer-tower-presentation.lock.json");
-        var catalog = source.Document("catalog.json");
+        var files = PretSilphPresentationSource.LoadGenerated(root, "content/generated/trainer-tower-presentation/");
+        var catalog = SafariSource.Parse<JsonElement>(files["catalog.json"]);
         SilphSourcePackage.Need(            catalog.GetProperty("sprites").GetArrayLength() == 80 && catalog.GetProperty("trainerPortraits").GetArrayLength() == 37 &&
             catalog.GetProperty("itemIcons").GetArrayLength() == 15 && catalog.GetProperty("assets").GetArrayLength() == 132 &&
             catalog.GetProperty("newOpponentSpecies").GetArrayLength() == 18 && catalog.GetProperty("newOwnedSpecies").GetArrayLength() == 0 &&
@@ -18,11 +18,11 @@ public static class PretTrainerTowerPresentation
         {
             string prefix = "content/generated/trainer-tower-presentation/";
             string png = asset.GetProperty("texturePath").GetString()!;
-            SilphSourcePackage.Need(png.StartsWith(prefix, StringComparison.Ordinal), "Tower asset path differs.");
-            var bytes = PngRgba8.Decode(source.Outputs[png[prefix.Length..]], asset.GetProperty("width").GetInt32(), asset.GetProperty("height").GetInt32());
-            SilphSourcePackage.Need(bytes.Length == asset.GetProperty("width").GetInt32() * asset.GetProperty("height").GetInt32() * 4 , "Tower asset payload differs.");
-            foreach (var input in asset.GetProperty("sourcePaths").EnumerateArray())
-                SilphSourcePackage.Need(source.Raw.ContainsKey(input.GetString()!), "Tower asset source missing.");
+            SilphSourcePackage.Need(png.StartsWith("content/generated/", StringComparison.Ordinal), "Tower asset path differs.");
+            SilphSourcePackage.Need(asset.GetProperty("width").GetInt32() > 0 && asset.GetProperty("height").GetInt32() > 0, "Tower asset dimensions differ.");
+            var bytes = png.StartsWith(prefix, StringComparison.Ordinal)
+                ? files[png[prefix.Length..]] : SafariSource.Read(root, png);
+            SilphSourcePackage.Need(bytes.Length > 0, "Tower asset payload is empty.");
         }
         return catalog;
     }

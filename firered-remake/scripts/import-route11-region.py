@@ -47,7 +47,7 @@ def materialize(raw, reference_repo):
     SHARED.materialize(raw,reference_repo,source_package='route11-region')
 
 def read_lock(path=None):
-    target = path or ROOT / 'content/sources/route11-region.lock.json'
+    target = path or ROOT / 'scripts/import-config/route11-region.json'
     require_safe_target(target.parent, target)
     data = target.read_bytes()
     lock = json_bytes(data)

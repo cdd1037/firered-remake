@@ -19,8 +19,7 @@ public partial class CampaignView
         var art = PretFossilLabPresentation.Load(_root);
         Texture2D Pixels(JsonElement row)
         {
-            using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(),
-                false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
+            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
             return SceneTextures.FromImage(image);
         }
         foreach (var row in art.Manifest.GetProperty("sprites").EnumerateArray())
@@ -81,8 +80,8 @@ public partial class CampaignView
         var document = _questPocketUi ?? throw new InvalidDataException("Old Amber requires the current Key Items pocket.");
         if (document.Items.Any(i => i.Id == id)) throw new InvalidDataException("Old Amber bag presentation is duplicated.");
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
-        using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[icon.GetProperty("texturePath").GetString()!]));
-        _questPocketTextures.Add(assetId, ImageTexture.CreateFromImage(image));
+        using var image = NativeImages.LoadPng(art.Files[icon.GetProperty("texturePath").GetString()!], 24, 24);
+        _questPocketTextures.Add(assetId, SceneTextures.FromImage(image));
         _questPocketUi = document with
         {
             Items = document.Items.Add(new(id, item.SourceItemSymbol, item.Name, source.GetProperty("description").GetString()!, assetId, item.FieldUseFunction)),
@@ -104,7 +103,7 @@ public partial class CampaignView
     }
     private CaptureDexEntry? FossilLabCaptureDexEntry(int species) => _fossilLabArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
         new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle, e.Source, e.DescriptionSource);
+            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
     private PokedexMenuPage? FossilLabPokedexPage(int species, PokedexMenuPage page) =>
         _fossilLabArt?.DexEntries.GetValueOrDefault(species) is { } entry
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;

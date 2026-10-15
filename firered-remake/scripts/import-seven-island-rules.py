@@ -7,7 +7,9 @@ import json
 import re
 import subprocess
 from pathlib import Path
+from machine_catalog import compatibility_additions
 
+ROOT = Path(__file__).resolve().parents[1]
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 TRAINERS = ('CRUSH_GIRL_CYNDY', 'TAMER_EVAN', 'PKMN_RANGER_JACKSON', 'PKMN_RANGER_KATELYN', 'COOLTRAINER_LEROY', 'COOLTRAINER_MICHELLE', 'COOL_COUPLE_LEX_NYA', 'AROMA_LADY_MIAH', 'YOUNG_COUPLE_EVE_JON', 'PKMN_RANGER_NICOLAS', 'PKMN_RANGER_MADELINE', 'JUGGLER_MASON', 'RUIN_MANIAC_BRANDON', 'RUIN_MANIAC_BENJAMIN', 'PAINTER_EDNA', 'GENTLEMAN_CLIFFORD', 'PSYCHIC_DARIO', 'PSYCHIC_RODETTE')
@@ -96,16 +98,14 @@ def generate(reference, dependency):
         data=(dependency/path).read_bytes()
         dependencies.append(dict(path=path));return json.loads(data)
     canonical=dependent('content/generated/canonical-pokemon/catalog.json')
-    five=dependent('content/generated/five-island-rules/items.json')
     base=dependent('scripts/five-island-predecessor.json')
     five_p=dependent('content/generated/five-island-rules/pokemon.json')
     celio=dependent('content/generated/celio-pokemon/pokemon.json')
     cave=dependent('content/generated/cerulean-cave-pokemon/pokemon.json')
-    old_machines=dependent('content/generated/cerulean-cave-pokemon/machines.json')
     rematch=dependent('content/generated/league-rematch-rules/pokemon.json')
     species={s['id']['value'][5:]:s for s in canonical['species']}
     metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
-    previous_owned={r['species']['value'][5:] for r in five['tm36']['compatibility']}|set(celio['speciesAdded'])|set(cave['speciesAdded'])
+    previous_owned={s[5:] for s in base['ownedSpecies']}|set(five_p['ownedSpeciesAdded'])|set(celio['speciesAdded'])|set(cave['speciesAdded'])
     previous_opponents={s[5:] for s in base['opponentSpecies']}|previous_owned|set(five_p['opponentSpeciesAdded'])|{s['id']['value'][5:] for s in rematch['opponentSpecies']}
     additions=['SPECIES_PHANPY','SPECIES_DONPHAN','SPECIES_LARVITAR','SPECIES_PUPITAR','SPECIES_TYRANITAR','SPECIES_SKARMORY','SPECIES_UNOWN']
     trainer_only=['SPECIES_GIRAFARIG','SPECIES_HITMONTOP','SPECIES_MILTANK','SPECIES_PINECO','SPECIES_SMEARGLE','SPECIES_URSARING']
@@ -153,13 +153,9 @@ def generate(reference, dependency):
     need(admitted-previous_owned=={'SPECIES_PHANPY','SPECIES_LARVITAR','SPECIES_SKARMORY','SPECIES_UNOWN'},'Minimal direct wild additions')
     all_wild={s['species'] for e in encounters for kind in ['land_mons','water_mons','rock_smash_mons','fishing_mons'] for s in e.get(kind,{}).get('mons',[])}
     held=[dict(species=identity(s),common=metadata[s]['originalFields']['itemCommon'],rare=metadata[s]['originalFields']['itemRare']) for s in sorted(all_wild)]
-    tm='src/data/pokemon/tmhm_learnsets.h';cells=[]
-    for item in sorted(r['item']['value'][5:] for r in old_machines['additions']):
-        rows=[]
-        for name in additions:
-            match=one(tm,r'^    \['+name+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),')
-            rows.append(dict(species=identity(name),sourceSpeciesId=species[name]['sourceSpeciesId'],canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',match[1])),source=ref(tm,name,match)))
-        cells.append(dict(item=identity(item),compatibility=rows))
+    cells=compatibility_additions(ROOT, 'content/generated/seven-island-rules/machines.json')
+    need(len(cells)==39, 'Exact admitted machine scope')
+    dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
     for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/battle_script_commands.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h','src/wild_encounter.c','include/random.h','include/constants/pokemon.h']:read(path)
     def draw(seed):
         seed=(seed*1103515245+24691)&0xffffffff;return seed,seed>>16
@@ -232,7 +228,6 @@ def main():
     p.add_argument('--check',action='store_true');a=p.parse_args();docs=generate(a.reference,a.dependency_root)
     files={'content/generated/seven-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
     lock=dict(sourceCommit=COMMIT,profile='firered-seven-island-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/seven-island-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

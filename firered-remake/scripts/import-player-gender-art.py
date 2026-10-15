@@ -8,21 +8,21 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
-import binascii
+import io
 import json
 import pathlib
 import re
-import struct
 import subprocess
-import zlib
+
+from PIL import Image
+from image_io import png
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-player-gender-art-v1'
-PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 OBJECT_ROOT = 'src/data/object_events/'
 PALETTE_PATH = 'graphics/object_events/palettes/player.pal'
 PATHS = frozenset([
@@ -56,17 +56,12 @@ def safe(root, relative=None):
 
 
 def load_lock(path=None):
-    data = safe(path or ROOT / 'content/player-gender-art-source-lock.json').read_bytes()
+    data = safe(path or ROOT / 'scripts/import-config/player-gender-art.json').read_bytes()
     lock = json.loads(data)
     require((lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) == (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0), 'Player art source identity differs')
     require(len(lock['files']) == len(PATHS) and {e['path'] for e in lock['files']} == PATHS,
             'Player art dependency set differs')
     return lock
-
-
-def raw_manifest():
-    return canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository):
@@ -86,49 +81,15 @@ def read_sources(lock, raw, repository):
 
 
 def indexed_png(data):
-    """Strict 144x32 source indices; bounded decompression before pixel allocation."""
-    require(data.startswith(PNG_SIGNATURE) and len(data) < 4096, 'Unexpected player PNG signature/length')
-    position, chunks = 8, []
-    while position < len(data):
-        require(position + 12 <= len(data), 'Truncated source PNG')
-        length = struct.unpack_from('>I', data, position)[0]
-        end = position + length + 12
-        require(end <= len(data), 'Truncated source PNG payload')
-        tag, payload = data[position + 4:position + 8], data[position + 8:end - 4]
-        require(binascii.crc32(tag + payload) & 0xffffffff == struct.unpack_from('>I', data, end - 4)[0],
-                'Source PNG CRC differs')
-        chunks.append((tag, payload))
-        position = end
-    require([c[0] for c in chunks] == [b'IHDR', b'PLTE', b'tRNS', b'IDAT', b'IEND'], 'Source PNG chunks differ')
-    require(chunks[0][1] == struct.pack('>IIBBBBB', 144, 32, 4, 3, 0, 0, 0), 'Source PNG geometry differs')
-    require(len(chunks[1][1]) == 48 and chunks[2][1] == b'\0' and chunks[4][1] == b'', 'Source PNG palette differs')
-    decoder = zlib.decompressobj()
-    scanlines = decoder.decompress(chunks[3][1], 2337)
-    require(len(scanlines) == 2336 and decoder.eof and not decoder.unused_data and not decoder.unconsumed_tail,
-            'Source PNG pixel stream differs')
-    previous, indices = [0] * 72, bytearray()
-    for y in range(32):
-        method, row = scanlines[y * 73], []
-        require(method in range(5), 'Source PNG filter unsupported')
-        for x, value in enumerate(scanlines[y * 73 + 1:(y + 1) * 73]):
-            left, up, upper_left = row[x - 1] if x else 0, previous[x], previous[x - 1] if x else 0
-            if method == 0:
-                prediction = 0
-            elif method == 1:
-                prediction = left
-            elif method == 2:
-                prediction = up
-            elif method == 3:
-                prediction = (left + up) // 2
-            else:
-                estimate = left + up - upper_left
-                distances = abs(estimate - left), abs(estimate - up), abs(estimate - upper_left)
-                prediction = (left, up, upper_left)[distances.index(min(distances))]
-            decoded = (value + prediction) & 255
-            row.append(decoded)
-            indices.extend((decoded >> 4, decoded & 15))
-        previous = row
-    return bytes(indices)
+    """Read the source sheet's palette indices without color conversion."""
+    with Image.open(io.BytesIO(data)) as image:
+        require(image.format == 'PNG' and image.mode == 'P' and image.size == (144, 32),
+                'Source PNG geometry/format differs')
+        require(len(image.getpalette('RGB')) == 48 and image.info.get('transparency') == 0,
+                'Source PNG palette differs')
+        indices = image.tobytes()
+        require(all(index < 16 for index in indices), 'Source palette index exceeds four bits')
+        return indices
 
 
 def palette(data):
@@ -145,17 +106,9 @@ def palette(data):
     return colors, words
 
 
-def png_chunk(tag, data):
-    return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', binascii.crc32(tag + data) & 0xffffffff)
-
-
 def rgba_png(rgba):
     require(len(rgba) == 144 * 32 * 4, 'Player RGBA length differs')
-    scanlines = b''.join(b'\0' + rgba[y * 576:(y + 1) * 576] for y in range(32))
-    count = len(scanlines)
-    stream = b'\x78\x01\x01' + struct.pack('<HH', count, count ^ 0xffff) + scanlines
-    stream += struct.pack('>I', zlib.adler32(scanlines) & 0xffffffff)
-    return PNG_SIGNATURE + png_chunk(b'IHDR', struct.pack('>IIBBBBB', 144, 32, 8, 6, 0, 0, 0)) + png_chunk(b'IDAT', stream) + png_chunk(b'IEND', b'')
+    return png(144, 32, rgba)
 
 
 def block(text, symbol):
@@ -258,7 +211,7 @@ def import_content(raw, output, repository=None):
     outputs = convert( sources)
     material = {(raw, p): b for p, b in sources.items()} if repository is not None else {}
     if repository is not None:
-        material[(raw_metadata_directory(raw, 'player-gender-art'), 'manifest.json')] = raw_manifest()
+        pass
     material.update({(output, p): b for p, b in outputs.items()})
     targets = [(safe(root, p), safe(root, p + '.tmp'), b) for (root, p), b in material.items()]
     require(not any(p.exists() and not p.is_file() for target, stage, _ in targets for p in (target, stage)),

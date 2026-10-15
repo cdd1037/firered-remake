@@ -153,7 +153,6 @@ def main():
     files={'content/generated/four-island-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()}
     lock=dict(sourceCommit=COMMIT,profile='firered-four-island-rules-v1',
         files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/four-island-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check: need(dest.read_bytes()==data,'Regeneration differs: '+name)

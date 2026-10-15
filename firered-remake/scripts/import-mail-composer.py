@@ -66,7 +66,7 @@ def vocabulary(src):
                 match, text_ref = capture(src, text_path, r'^\s*\[' + symbol + r'\]\s*=\s*_\("((?:\\.|[^"\\])*)"\),?', symbol)
                 _, definition = capture(src, source_path, r'^#define\s+' + symbol + r'\s+(?:0x[\da-fA-F]+|\d+)\b[^\n]*', symbol)
                 group_words.append(dict(value=(group_id << 9) | index, group=group_id, index=index, symbol=prefix + '(' + symbol.split('_', 1)[1] + ')',
-                    text=unescape(match[1]), enabled=True, definitionSource=definition, textSource=text_ref))
+                    text=unescape(match[1]), enabled=True))
             order = [w['value'] for w in group_words]
         else:
             entries = re.findall(r'\.text = (sEasyChatWord_\w+),\s*\.alphabeticalOrder = (\d+),\s*\.enabled = (TRUE|FALSE)', body[1])
@@ -75,13 +75,13 @@ def vocabulary(src):
                 text, text_ref = source_string(src, path, text_symbol)
                 _, definition = capture(src, 'include/constants/easy_chat.h', r'^#define\s+' + symbol + r'\s+\(EC_GROUP_\w+ << 9\) \| 0x[\da-fA-F]+[^\n]*', symbol)
                 group_words.append(dict(value=value, group=group_id, index=index, symbol=symbol, text=text,
-                    enabled=enabled == 'TRUE', definitionSource=definition, textSource=text_ref))
+                    enabled=enabled == 'TRUE'))
             permutation = [int(e[1]) for e in entries]
             need(sorted(permutation) == list(range(len(entries))), 'Invalid original alphabetical permutation: ' + table)
             order = [(group_id << 9) | index for index in permutation]
         need(len(group_words) == int(count), 'Group count differs: ' + table)
         need(sum(w['enabled'] for w in group_words) == int(enabled_count), 'Enabled count differs: ' + table)
-        groups.append(dict(id=group_id, symbol=group_symbol, name=name, wordValues=order, source=group_ref, nameSource=name_ref))
+        groups.append(dict(id=group_id, symbol=group_symbol, name=name, wordValues=order))
         words.extend(group_words)
     need(len(groups) == 22 and len(words) == 1813, 'Complete vocabulary scope differs')
     by_value = {w['value']: w for w in words}
@@ -109,9 +109,9 @@ def vocabulary(src):
             need(len(values) == size and all(v in by_value for v in values), 'Unknown alphabetical word')
             choices.append(values)
         label = source_string(src, 'src/keyboard_text.c', 'gText_EasyChatKeyboard_ABCDEFothers')[0].split('}')[-1] if bucket == 0 else table.rsplit('_', 1)[-1]
-        alphabetical.append(dict(id=bucket, name=label, alternatives=choices, source=ref))
+        alphabetical.append(dict(id=bucket, name=label, alternatives=choices))
     need(len(alphabetical) == 27, 'Alphabetical bucket count differs')
-    return dict(sourceCommit=COMMIT, groups=groups, words=words, alphabetical=alphabetical)
+    return dict(groups=groups, words=words, alphabetical=alphabetical)
 
 def contracts(src):
     refs = [function(src, 'src/easy_chat.c', name, needles) for name, needles in [
@@ -137,14 +137,13 @@ def contracts(src):
     need(chars[' '] == 0 and chars['A'] == 0xBB, 'Source character map differs')
     texts = []
     for symbol in ['gText_CombineNineWordsOrPhrases', 'gText_AndMakeAMessage', 'gText_TheMailMessage', 'gText_IsAsShownOkay', 'gText_AllTextBeingEditedWill', 'gText_BeDeletedThatOkay', 'gText_StopGivingPkmnMail', 'gText_DelAllCancelOk']:
-        text, ref = source_string(src, 'src/strings.c', symbol); texts.append(dict(symbol=symbol, text=text, source=ref))
+        text, ref = source_string(src, 'src/strings.c', symbol); texts.append(dict(symbol=symbol, text=text))
     for suffix in ['ABCDEFothers', 'GHIJKL', 'MNOPQRS', 'TUVWXYZ']:
         symbol = 'gText_EasyChatKeyboard_' + suffix
-        text, ref = source_string(src, 'src/keyboard_text.c', symbol); texts.append(dict(symbol=symbol, text=text, source=ref))
-    return dict(sourceCommit=COMMIT, seenPokemonGroup=ec['EC_GROUP_POKEMON'], nationalPokemonGroup=ec['EC_GROUP_POKEMON_2'],
-        deoxysSpecies=sp['SPECIES_DEOXYS'], unownSpecies=sp['SPECIES_UNOWN'], blankWord=65535, mailWordCount=9,
-        trainerIdByteOrder='player-save-byte-order-little-endian', authorMinimumPaddedLength=6, authorMaximumLength=7,
-        references=refs, nameCharacters=chars, texts=texts)
+        text, ref = source_string(src, 'src/keyboard_text.c', symbol); texts.append(dict(symbol=symbol, text=text))
+    return dict(seenPokemonGroup=ec['EC_GROUP_POKEMON'], nationalPokemonGroup=ec['EC_GROUP_POKEMON_2'],
+        deoxysSpecies=sp['SPECIES_DEOXYS'], unownSpecies=sp['SPECIES_UNOWN'],
+        nameCharacters=chars, texts=texts)
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -160,7 +159,7 @@ def main():
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,   inputCount=len(src.entries), wordCount=len(docs['catalog.json']['words']), groupCount=22,
         outputs=[dict(path=p) for p, b in sorted(generated.items())])
     generated['manifest.json'] = canonical(manifest)
-    writes = [(target/'scripts/mail-composer.lock.json', lock_bytes)]
+    writes = []
     writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p, b in sorted(src.data.items())]
     writes += [(target/'content/generated'/PACKAGE/p, b) for p, b in sorted(generated.items())]
     for path, data in writes:

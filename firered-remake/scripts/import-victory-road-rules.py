@@ -8,6 +8,8 @@ import re
 import subprocess
 from pathlib import Path
 
+import machine_catalog as shared_machines
+
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TRAINERS = ("BLACK_BELT_DAISUKE", "COOLTRAINER_ALEXA", "COOLTRAINER_CAROLINE", "COOLTRAINER_COLBY",
     "COOLTRAINER_GEORGE", "COOLTRAINER_NAOMI", "COOLTRAINER_ROLANDO", "COOL_COUPLE_RAY_TYRA",
@@ -99,8 +101,6 @@ def generate(reference, dependency, region):
         return json.loads(data)
     contracts = dependent(region, 'content/generated/victory-road-region/contracts.json',
          region_inputs)
-    declarations = dependent(region, 'content/generated/victory-road-region/declarations.json',
-         region_inputs)
     dependencies = {}
     canonical = dependent(dependency, 'content/generated/canonical-pokemon/catalog.json',
          dependencies)
@@ -130,7 +130,6 @@ def generate(reference, dependency, region):
     need(sum(t['doubleBattle'] for t in trainers) == 1 and sum(b['mode'] == 4 for b in battles) == 2, 'Double scope')
     trainer_doc = dict(sourceCommit=COMMIT, profile='firered-victory-road-trainers-v1', completeSourceRoster=False,
         trainers=trainers, battles=battles, resolvedMoves=resolved)
-    need({m['species']['value'][5:] for t in trainers for m in t['party']} == set(declarations['trainerSpecies']), 'Region trainer closure differs')
 
     # Full original FireRed table declarations, including rods whose acquisition is not yet admitted.
     wild_path = 'src/data/wild_encounters.json'
@@ -138,7 +137,6 @@ def generate(reference, dependency, region):
     headers = next(g for g in wild_source['wild_encounter_groups'] if g['label'] == 'gWildMonHeaders')
     source_encounters = [e for e in headers['encounters'] if e.get('base_label') in
         {'sVictoryRoad1F_FireRed','sVictoryRoad2F_FireRed','sVictoryRoad3F_FireRed','sRoute23_FireRed'}]
-    need(source_encounters == declarations['encounters'], 'Region wild declarations differ')
     weights = {f['type']: f['encounter_rates'] for f in headers['fields']}
     map_ids = {'MAP_ROUTE23': 'map.route-23', **{f'MAP_VICTORY_ROAD_{n}F': f'map.victory-road-{n}f' for n in range(1,4)}}
     land, water, fishing, pairs = [], [], [], set()
@@ -216,22 +214,8 @@ def generate(reference, dependency, region):
         renewable=False,limitations=['Eighteen unique pickup flags represent sixteen item types.',
           'Pickup/source metadata does not itself admit new bag item use; capability audit documents the exact current boundary.',
           'Double-Edge tutor and its one-time flag remain outside this rules admission.'])
-    machines=[];rules_refs=[]
-    for index,move in [(2,'DRAGON_CLAW'),(7,'HAIL'),(37,'SANDSTORM'),(50,'OVERHEAT')]:
-        symbol=f'ITEM_TM{index:02d}';path='src/data/party_menu.h'
-        mapping=one(path,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};')
-        need(re.findall(r'MOVE_\w+',mapping[1])[index-1]=='MOVE_'+move,'TM mapping differs')
-        rules_refs.append(ref(path,'sTMHMMoves',mapping))
-        path='src/data/battle_moves.h'; m=one(path,r'^    \[MOVE_'+move+r'\] =\n    \{(.*?)^    \},')
-        rules_refs.append(ref(path,'MOVE_'+move,m));rows=[]
-        for sp in owned:
-            path='src/data/pokemon/tmhm_learnsets.h';row=one(path,r'^    \['+sp+r'\]\s*= TMHM_LEARNSET\((.*?)\),')
-            tokens=re.findall(r'TMHM\((\w+)\)',row[1]);need(not re.sub(r'TMHM\(\w+\)|\||\s|0','',row[1]),'TM syntax')
-            rows.append(dict(species=identity(sp),sourceSpeciesId=number('include/constants/species.h',sp),
-                canLearn=f'TM{index:02d}_'+move in tokens,source=ref(path,sp,row)))
-        machines.append(dict(machine=metadata[symbol],move=identity('MOVE_'+move),sourceMoveId=number('include/constants/moves.h','MOVE_'+move),
-            movePp=int(re.search(r'\.pp = (\d+),',m[1])[1]),compatibility=sorted(rows,key=lambda r:r['sourceSpeciesId'])))
-    machine_doc=dict(sourceCommit=COMMIT,profile='firered-victory-road-machines-v1',machines=machines,rulesSources=rules_refs)
+    machines = shared_machines.machine_definitions(dependency, 'content/generated/victory-road-rules/machines.json', 'machines')
+    machine_doc = dict(sourceCommit=COMMIT, profile='firered-victory-road-machines-v1', machines=machines)
     # Authenticated auxiliary mechanics inputs are data-only evidence, never executed.
     for path in ['src/pokemon.c','src/battle_setup.c','src/battle_main.c','src/wild_encounter.c',
                  'data/scripts/move_tutors.inc','src/renewable_hidden_items.c','include/constants/flags.h','src/data/pokemon/item_effects.h']:
@@ -258,7 +242,6 @@ def main():
     files.update({'content/raw/pokefirered/037335f4/'+name:data for name,data in raw.items()})
     lock=dict(sourceCommit=COMMIT,profile='firered-victory-road-rules-v1',
         files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/victory-road-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

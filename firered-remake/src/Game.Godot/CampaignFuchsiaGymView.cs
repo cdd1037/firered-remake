@@ -20,13 +20,13 @@ public partial class CampaignView
         }
         foreach (var id in new[] { "juggler-front", "tamer-front", "koga-front" })
         {
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, PngRgba8.Decode(presentation.Files[id + ".png"]));
+            using var image = NativeImages.LoadPng(presentation.Files[id + ".png"], 64, 64);
             _forestTrainerPortraits.Add(id, (ImageTexture)SceneTextures.FromImage(image));
         }
         foreach (var icon in PretFuchsiaGymItems.LoadProject(_root).Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("fuchsia-gym-items", icon));
-            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var existing)))_earlyItemIcons.Add(icon.Item, (ImageTexture)SceneTextures.FromImage(image));
+            
+            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var existing)))_earlyItemIcons.Add(icon.Item, ItemTexture("fuchsia-gym-items", icon));
         }
         _fuchsiaGymPresentation = presentation;
         Write("fuchsiaGymPresentation", new {             badgeFlag = "FLAG_BADGE05_GET", tm06Fanfare = "MUS_LEVEL_UP", audibleOutputVerified = false });

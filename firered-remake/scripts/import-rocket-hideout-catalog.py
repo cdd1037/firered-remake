@@ -250,7 +250,7 @@ def rebuild(project,target,check=False):
   manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,inputCount=len(sources),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
   outputs['manifest.json']=manifest
   raw_manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,inputCount=len(sources)))
-  materials={'content/generated/'+stem+'/'+p:b for p,b in outputs.items()};materials['content/raw/'+stem+'/manifest.json']=raw_manifest
+  materials={'content/generated/'+stem+'/'+p:b for p,b in outputs.items()}
   for p,b in materials.items():
    dest=safe(target,p)
    if check:

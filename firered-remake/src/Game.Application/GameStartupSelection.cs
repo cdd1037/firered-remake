@@ -1,12 +1,14 @@
 namespace Game.Application;
 
-public enum GameStartupMode { Current, Probe, Harness, PalletDiagnostic }
+public enum GameStartupMode { Current, Probe, Harness }
 
 /// <summary>Pure composition input parsing. Hosts snapshot arguments/environment once and pass this result onward.</summary>
 public sealed record GameStartupSelection(GameStartupMode Mode,string ProjectRoot,string Checkpoint)
 {
     private static readonly string[] RetiredEnvironmentSelectors =
     [
+        "FIRERED_REFERENCE_ROOT",
+        "FIRERED_REFERENCE_SOURCE",
         "FIRERED_BILL",
         "FIRERED_CAPTURE",
         "FIRERED_CELADON_APPROACH",
@@ -89,7 +91,7 @@ public sealed record GameStartupSelection(GameStartupMode Mode,string ProjectRoo
             else if(arg.StartsWith("--story-",StringComparison.Ordinal))throw new InvalidOperationException("startup_profile_retired: "+arg);
             else if(arg=="--probe")modes.Add(GameStartupMode.Probe);
             else if(arg=="--harness")modes.Add(GameStartupMode.Harness);
-            else if(arg=="--pallet")modes.Add(GameStartupMode.PalletDiagnostic);
+            else if(arg=="--pallet")throw new InvalidOperationException("startup_mode_retired: --pallet");
         }
         string fromEnvironment=Env("FIRERED_PROFILE");
         if(fromEnvironment.Length>0)

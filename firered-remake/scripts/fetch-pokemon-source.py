@@ -3,7 +3,7 @@
 import hashlib,json,pathlib,urllib.request
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 lock=json.loads((ROOT/'scripts/fetch-pokemon.lock.json').read_text(encoding='utf-8'))
-if lock['commit']!=json.loads((ROOT/'content/source-lock.json').read_text(encoding='utf-8'))['source']['sourceCommit']:
+if lock['commit']!=json.loads((ROOT/'scripts/import-config/source.json').read_text(encoding='utf-8'))['source']['sourceCommit']:
     raise ValueError('Pokemon source commit must match project source lock')
 for entry in lock['files']:
     path=pathlib.PurePosixPath(entry['path'])

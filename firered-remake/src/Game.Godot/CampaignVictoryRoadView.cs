@@ -23,13 +23,13 @@ public partial class CampaignView
         {
             if (!opponents.Catalog.Species.TryGetValue(new(sprite.SpeciesId), out var species) || species.SourceSpeciesId != sprite.SourceSpeciesId)
                 throw new InvalidDataException("Victory Road sprite species is not an authenticated opponent.");
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath]));
+            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], 64, 64);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(SceneTextures.FromImage(image), new(sprite.X, sprite.Y)));
         }
         foreach (var icon in art.PokemonIcons)
         {
-            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath]);
+            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath]);
             for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
                 for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
             using var image = Image.CreateFromData(32, 32, false, Image.Format.Rgba8, rgba);
@@ -43,26 +43,26 @@ public partial class CampaignView
                 throw new InvalidDataException("Victory Road visible trainer differs: " + trainer.Id.Value);
         foreach (var portrait in art.Portraits)
         {
-            byte[] rgba = PngRgba8.Decode(art.Files[portrait.TexturePath]);
+            byte[] png = art.Files[portrait.TexturePath];
             if (portrait.Inherited)
             {
                 if (!_forestTrainerPortraits.TryGetValue(portrait.Id, out var old)) throw new InvalidDataException("Inherited Victory Road portrait missing.");
             }
             else
             {
-                using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, rgba);
+                using var image = NativeImages.LoadPng(png, 64, 64);
                 _forestTrainerPortraits.Add(portrait.Id, (ImageTexture)SceneTextures.FromImage(image));
             }
         }
         foreach (var icon in art.Items)
         {
-            using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[icon.TexturePath]));
+            using var image = NativeImages.LoadPng(art.Files[icon.TexturePath], 24, 24);
             _earlyItemIcons.Add(new(icon.Item), (ImageTexture)SceneTextures.FromImage(image));
         }
         foreach (var tile in art.Tiles) _victoryRoadTiles.Add(tile.MetatileId, tile);
         foreach (var layer in art.Layers)
         {
-            using var image = Image.CreateFromData(layer.Width, layer.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[layer.TexturePath]));
+            using var image = NativeImages.LoadPng(art.Files[layer.TexturePath], layer.Width, layer.Height);
             _victoryRoadTileLayers.Add(layer.Layer, SceneTextures.FromImage(image));
         }
         _victoryRoadPresentation = art;

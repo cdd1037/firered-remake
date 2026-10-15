@@ -27,7 +27,7 @@ public partial class CampaignView
         var art = PokemonTowerPresentationAssets.Load(_root, art:true);
         ImageTexture Rgba(JsonElement row)
         {
-            using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(), false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
+            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
             return ImageTexture.CreateFromImage(image);
         }
         PokedexMenuTexture DexTexture(JsonElement row)
@@ -52,7 +52,7 @@ public partial class CampaignView
         }
         foreach (var row in art.Manifest.GetProperty("icons").EnumerateArray())
         {
-            var rgba = PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]);
+            var rgba = NativeImages.ReadPixels(art.Files[row.GetProperty("texturePath").GetString()!]);
             for (int i=0;i<rgba.Length;i+=4) if(rgba[i+3]!=0) for(int c=0;c<3;c++) { int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2)); }
             using var image=Image.CreateFromData(32,32,false,Image.Format.Rgba8,rgba);
             _storageIcons.Add(new(row.GetProperty("speciesId").GetString()!),ImageTexture.CreateFromImage(image));
@@ -69,14 +69,14 @@ public partial class CampaignView
         var items=PretPokemonTowerItems.LoadProject(_root);
         foreach(var icon in items.Icons)
         {
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("pokemon-tower-items", icon));
-            _earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
+            
+            _earlyItemIcons.Add(icon.Item,ItemTexture("pokemon-tower-items", icon));
         }
         var pocket=_questPocketUi??throw new InvalidDataException("Tower key-item pocket missing.");
         var position=pocket.Assets.Single(a=>a.Id==pocket.Items[0].Icon);
         var flute=items.Items.Single(x=>x.Metadata.Item.SourceItemSymbol=="ITEM_POKE_FLUTE").Metadata;
         var fluteIcon=items.Icons.Single(x=>x.Item==flute.Item.Id);const string fluteId="tower-poke-flute";
-        using(var image=Image.CreateFromData(fluteIcon.Width,fluteIcon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("pokemon-tower-items", fluteIcon)))_questPocketTextures.Add(fluteId,ImageTexture.CreateFromImage(image));
+        _questPocketTextures.Add(fluteId,ItemTexture("pokemon-tower-items", fluteIcon));
         _questPocketUi=pocket with { Items=pocket.Items.Add(new(flute.Item.Id.Value,flute.Item.SourceItemSymbol,flute.Item.Name,flute.Description,fluteId,flute.Item.FieldUseFunction)),
             Assets=pocket.Assets.Add(new(fluteId,fluteIcon.PngPath,fluteIcon.Width,fluteIcon.Height,position.X,position.Y)) };
     }
@@ -84,7 +84,7 @@ public partial class CampaignView
     {
         if(!_towerDexEntries.TryGetValue(species,out var d))return null;
         return new(d.SourceSpeciesId,d.NationalNumber,d.Name,d.Category,d.DisplayCategory,d.HeightDecimeters,d.WeightHectograms,
-            d.HeightDisplay,d.WeightDisplay,d.Description,d.Footprint!.TexturePath,d.Portrait!.TexturePath,d.HabitatTitle,d.Source,d.DescriptionSource);
+            d.HeightDisplay,d.WeightDisplay,d.Description,d.Footprint!.TexturePath,d.Portrait!.TexturePath,d.HabitatTitle);
     }
     private void SynchronizePokemonTowerPresentation(CampaignState? before,CampaignState after)
     {

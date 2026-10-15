@@ -5,8 +5,7 @@ namespace Game.Content;
 public sealed partial class PretCampaignCatalog
 {
     public const string NationalDexContentProfile = "firered-national-dex-postgame-v1";
-    public PretNationalDexSource? NationalDexSource { get; }
-    public bool NationalDexEnabled => NationalDexSource is not null;
+    public bool NationalDexEnabled { get; }
 
     public CampaignNationalDexProjection EvaluateNationalDex(IEnumerable<int> seenSpecies,IEnumerable<int> caughtSpecies)
     {
@@ -16,21 +15,5 @@ public sealed partial class PretCampaignCatalog
         return new(result.National!.Seen, result.National.Caught, result.NationalComplete!.Value);
     }
 
-    private static void AppendNationalDexSources(PretNationalDexSource source,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in source.Scripts)
-        {
-            if (previous.TryGetValue(file.Path, out var old))
-            {
-                if (old.Text != file.Text)
-                    throw new InvalidDataException("national_dex_source_conflict: " + file.Path);
-            }
-            else { previous.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in source.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, source.Constants);
-    }
+
 }

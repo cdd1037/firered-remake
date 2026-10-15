@@ -84,9 +84,6 @@ def generate(reference):
     files = {BASE + 'rules.json': encoded(rules), BASE + 'source-contract.json': encoded(facts),
              BASE + 'source-input-hashes.json': encoded(dict(sourceCommit=COMMIT,  inputs=inputs))}
     files.update({RAW + p: b for p, b in sources.items()})
-    files['scripts/slot-machine.lock.json'] = encoded(dict(sourceCommit=COMMIT,  profile=PROFILE,
-
-        files=[dict(path=p) for p, b in sorted(files.items())]))
     return files
 
 if __name__ == '__main__':

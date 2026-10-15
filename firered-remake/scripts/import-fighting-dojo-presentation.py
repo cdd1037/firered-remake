@@ -111,15 +111,11 @@ def build(target, dependency, reference, check):
         foot = dict(id=identity, sourceSpeciesId=number, speciesId='pret:' + symbol, width=16, height=16, texturePath=BASE + identity + '.png', sourcePaths=[image, pal], inherited=False)
         footprints.append(foot)
         entry = next(e for e in dex['entries'] if e['sourceSpeciesId'] == number)
-        # Retain the authenticated full-dex source metadata; check its two source declarations independently.
-        for field in ['source', 'descriptionSource']:
-            ref = entry[field]
-            source.read(ref['path']); need(ref['commit'] == COMMIT, 'Dex metadata source hash differs')
-        declaration = re.search(r'\[NATIONAL_DEX_' + name.upper() + r'\]\s*=\s*\{(.*?)\n\s*\}', source.text(entry['source']['path']), re.S)[1]
+        declaration = re.search(r'\[NATIONAL_DEX_' + name.upper() + r'\]\s*=\s*\{(.*?)\n\s*\}', source.text('src/data/pokemon/pokedex_entries.h'), re.S)[1]
         need(re.search(r'\.categoryName\s*=\s*_\("' + entry['category'] + r'"\)', declaration) and
              int(re.search(r'\.height\s*=\s*(\d+)', declaration)[1]) == entry['heightDecimeters'] and
              int(re.search(r'\.weight\s*=\s*(\d+)', declaration)[1]) == entry['weightHectograms'], 'Dex category/measures differ')
-        description = re.search(r'const u8 g' + name + r'PokedexText\[\]\s*=\s*_\((.*?)\);', source.text(entry['descriptionSource']['path']), re.S)[1]
+        description = re.search(r'const u8 g' + name + r'PokedexText\[\]\s*=\s*_\((.*?)\);', source.text('src/data/pokemon/pokedex_text_fr.h'), re.S)[1]
         text = ''.join(json.loads('"' + s + '"') for s in re.findall(r'"([^"\n]*)"', description))
         need(text == entry['description'], 'Dex description differs')
         front = next(s for s in sprites if (s['sourceSpeciesId'], s['side'], s['paletteVariant']) == (number, 'front', 'normal'))
@@ -131,8 +127,6 @@ def build(target, dependency, reference, check):
     rgba = Image.open(io.BytesIO(reuse(portrait['texturePath']))).convert('RGBA').tobytes()
     need(rgba == indexed(portrait['sourceImage'], portrait['sourcePalette'], (64, 64), False), 'Inherited Black Belt portrait differs')
     portrait = dict(portrait, inherited=True)
-    npc_path = 'content/generated/viridian-gym-region/npc/black-belt.png'
-    reuse(npc_path)
     trainers = []
     declarations = source.text('src/data/trainers.h')
     opponents = source.text('include/constants/opponents.h')
@@ -158,7 +152,7 @@ def build(target, dependency, reference, check):
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                     inputs=lock['files'], inheritedInputs=lock['inheritedInputs'], newOwnedSpecies=[106, 107],
                     sprites=sprites, pokemonIcons=icons, footprints=footprints, portraits=[portrait], trainers=trainers,
-                    npc=dict(graphicsId='OBJ_EVENT_GFX_BLACK_BELT', texturePath=npc_path),
+                    npc=dict(graphicsId='OBJ_EVENT_GFX_BLACK_BELT'),
                     dexEntriesPath=BASE + 'dex-entries.json', audio=dict(newCueCount=0, inheritedCries=cries, physicalAudioVerified=False),
                     limits=['Room and border layers are supplied by fighting-dojo-region.',
                             'Existing League sprites, party/storage icons and cries are reused.',
@@ -166,7 +160,7 @@ def build(target, dependency, reference, check):
                     authorDependencies=[dict(path='scripts/import-cinnabar-source-preparation.py')],
                     outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     mb = canonical(manifest)
-    writes = [(target / ('scripts/' + PACKAGE + '.lock.json'), lb), (target / BASE / 'manifest.json', mb)]
+    writes = [(target / BASE / 'manifest.json', mb)]
     writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(source.data.items())]
     writes += [(target / BASE / p, b) for p, b in sorted(outputs.items())]
     for p, b in writes:

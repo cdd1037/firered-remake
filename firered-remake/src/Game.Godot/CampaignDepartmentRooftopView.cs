@@ -8,8 +8,7 @@ public partial class CampaignView
     private void LoadRooftopIcons()
     {
         if (!_catalog.DepartmentRooftopEnabled) return;
-        using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PretDepartmentRooftopItems.LoadIconRgba(_root));
-        _earlyItemIcons.Add(new ItemId("pret:ITEM_LEMONADE"), ImageTexture.CreateFromImage(image));
+        _earlyItemIcons.Add(new ItemId("pret:ITEM_LEMONADE"), ItemTexture(PretDepartmentRooftopItems.LoadDocument(_root).Icons[0]));
         foreach (var alias in PretDepartmentRooftopItems.LoadMachinesDocument(_root).IconAliases)
         {
             if (!_earlyItemIcons.TryGetValue(alias.ReusedItem, out var icon)) throw new InvalidDataException("department_rooftop_shared_icon_missing");

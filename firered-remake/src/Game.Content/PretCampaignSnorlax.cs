@@ -20,28 +20,7 @@ public sealed partial class PretCampaignCatalog
         SnorlaxRegion is not { } region || !region.NewMaps.ContainsKey(map) ||
         IsCurrentStaticWarpResolved(map, sourceWarpId);
 
-    private static void AppendSnorlaxSources(PretSnorlaxRegion region,List<PretSourceScriptFile> sources,List<string> textFiles,Dictionary<string, int> constants)
-    {
-        var paths = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var source in region.Scripts)
-        {
-            if (paths.TryGetValue(source.Path, out var prior))
-            {
-                if (prior.Text != source.Text)
-                    throw new InvalidDataException("Conflicting Snorlax source: " + source.Path);
-                continue;
-            }
-            paths.Add(source.Path, source); sources.Add(source); textFiles.Add(source.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!textFiles.Contains(text, StringComparer.Ordinal)) textFiles.Add(text);
-        foreach (var (symbol, value) in region.Constants)
-        {
-            if (constants.TryGetValue(symbol, out var prior) && prior != value)
-                throw new InvalidDataException("Conflicting Snorlax constant: " + symbol);
-            constants[symbol] = value;
-        }
-    }
+
 
     private static void ValidateSnorlaxComposition(ImmutableDictionary<MapId, PretWorldMap> maps,CampaignPokemonContent pokemon,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
     {

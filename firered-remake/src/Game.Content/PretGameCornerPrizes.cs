@@ -25,11 +25,11 @@ public static class PretGameCornerPrizes
         var bytes = File.ReadAllBytes(Path.Combine(root, relative));
         return bytes;
     }
-    private static T Deserialize<T>(byte[] bytes) => JsonSerializer.Deserialize<T>(bytes, Options) ??
+    private static T Deserialize<T>(string root, byte[] bytes) => JsonSerializer.Deserialize<T>(bytes, SharedMachineCatalog.Options(root, Options)) ??
         throw new InvalidDataException("game_corner_prize_document_missing");
     public static NpcTradeItemsDocument LoadItemsDocument(string root)
     {
-        var doc = Deserialize<NpcTradeItemsDocument>(Read(root,Base + "items.json"));
+        var doc = Deserialize<NpcTradeItemsDocument>(root, Read(root,Base + "items.json"));
         if (doc.Additions.IsDefault || doc.Additions.Length != 5 ||
             !doc.Additions.Select(i => i.Id).SequenceEqual(OrdinaryItemInventoryCatalog.GameCornerPrizeItems) ||
             doc.ShopsAdded.IsDefault || !doc.ShopsAdded.IsEmpty || doc.Icons.IsDefault || doc.Icons.Length != 5 ||
@@ -40,7 +40,7 @@ public static class PretGameCornerPrizes
     }
     public static GameCornerMachinesDocument LoadMachinesDocument(string root)
     {
-        var doc = Deserialize<GameCornerMachinesDocument>(Read(root,Base + "machines.json"));
+        var doc = Deserialize<GameCornerMachinesDocument>(root, Read(root,Base + "machines.json"));
         if (            doc.Inherited.IsDefault || doc.Inherited.Length != 45 ||
             doc.Additions.IsDefault || doc.Additions.Length != 5 ||
             doc.IconAliases.IsDefault || doc.IconAliases.Length != 4 ||
@@ -53,7 +53,7 @@ public static class PretGameCornerPrizes
     }
     public static JsonElement LoadSourceContract(string root)
     {
-        var doc = Deserialize<JsonElement>(Read(root,Base + "prizes.json"));
+        var doc = Deserialize<JsonElement>(root, Read(root,Base + "prizes.json"));
         if (            doc.GetProperty("mapId").GetString() != GameCornerPrizeCatalog.Map || doc.GetProperty("counters").GetArrayLength() != 3 ||
             !doc.GetProperty("itemCapacityCheckedBeforeDeduction").GetBoolean() || !doc.GetProperty("monDeductedOnlyAfterReceipt").GetBoolean())
             throw new InvalidDataException("game_corner_prize_contract");
@@ -73,10 +73,4 @@ public static class PretGameCornerPrizes
     public static GameCornerPrizeCatalog LoadCatalog(string root, PokemonCatalog owned, EarlyShopCatalog items, PewterMachineCatalog machines) =>
         GameCornerPrizeCatalog.Authenticate(owned, items, machines,
             LoadSourceContract(root).GetProperty("counters").Deserialize<ImmutableArray<GameCornerPrizeCounter>>(Options));
-    public static byte[] LoadIconRgba(string root, ItemId item)
-    {
-        var icon = LoadItemsDocument(root).Icons.Concat(LoadMachinesDocument(root).Icons).SingleOrDefault(i => i.Item == item)
-            ?? throw new ArgumentException("game_corner_prize_icon_id");
-        return PngRgba8.Decode(Read(root,icon.TexturePath),icon.Width,icon.Height);
-    }
 }

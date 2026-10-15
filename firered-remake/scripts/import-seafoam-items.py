@@ -59,7 +59,6 @@ def generate(reference,dependency):
  source_inputs=dict(sourceCommit=COMMIT,inputs=[inputs[k] for k in sorted(inputs)],dependencyInputs=dependencies)
  files = {BASE + 'items.json': encoded(items), BASE + 'source-input-hashes.json': encoded(source_inputs), icon['texturePath']: png, **raw}
  lock=dict(sourceCommit=COMMIT,profile=items['profile'],files=[dict(path=p) for p,b in sorted(files.items())])
- files['scripts/seafoam-items.lock.json']=encoded(lock)
  return files,items
 
 def main():

@@ -18,20 +18,16 @@ public sealed partial class PretPokemonTowerRegion
     public ImmutableArray<PretTowerCoordinateTrigger> RivalTriggers { get; }
     public ImmutableArray<PretTowerRivalBranch> RivalBranches { get; }
     public ImmutableArray<PretTowerPickup> Pickups { get; }
-    public ImmutableDictionary<string, PretTowerNpcSprite> NpcSprites { get; }
 
-    private PretPokemonTowerRegion(string directory, string rawDirectory, ImmutableDictionary<MapId, PretWorldMap> maps,
-        PretRuntimeMapData house, ImmutableArray<PretWorldSourceFile> files, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
+    private PretPokemonTowerRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps,
+        PretRuntimeMapData house, ImmutableArray<PretWorldSourceFile> files, ImmutableDictionary<string, int> constants,
         ImmutableHashSet<string> outputs, JsonElement contract, JsonElement city)
     {
-        GeneratedDirectory = directory; _rawDirectory = rawDirectory; NewMaps = maps; ExistingHouse = house; SourceFiles = files;
-        Scripts = scripts; TextSources = texts; Constants = constants; _outputs = outputs; SourceContract = contract; ExternalLavenderEvents = city;
+        GeneratedDirectory = directory; NewMaps = maps; ExistingHouse = house; SourceFiles = files; Constants = constants; _outputs = outputs; SourceContract = contract; ExternalLavenderEvents = city;
         InitiallySetFlags = [constants["FLAG_HIDE_POKEHOUSE_FUJI"]];
         var deps = Dependencies; var mechanics = Mechanics;
         SourceRef Source(string path, string symbol)
         {
-            var f = files.Single(f => f.Path == path);
             return new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit);
         }
         SourceRef Ref(JsonElement s)
@@ -104,11 +100,9 @@ public sealed partial class PretPokemonTowerRegion
                 hidden, underfoot, underfoot, hidden ? null : e.GetProperty("script").GetString()!, Ref(p.GetProperty(hidden ? "sourceRef" : "scriptSource")));
         }).ToImmutableArray();
         Need(Pickups.Length == 10 && Pickups.Count(p => p.Underfoot) == 1 && Pickups.Single(p => p.Underfoot).ItemSymbol == "ITEM_SOOTHE_BELL", "Tower pickup inventory differs.");
-        NpcSprites = NpcSources.GetProperty("graphics").EnumerateArray().Select(n =>
-        {
-            var relative = n.GetProperty("texturePath").GetString()!;             return new PretTowerNpcSprite(n.GetProperty("graphicsId").GetString()!,Path.Combine(directory, relative),                n.GetProperty("frameWidth").GetInt32(),n.GetProperty("frameHeight").GetInt32(),n.GetProperty("frameCount").GetInt32(),                n.GetProperty("tileCenterAnchor").GetProperty("x").GetInt32(),n.GetProperty("tileCenterAnchor").GetProperty("y").GetInt32(),                Ref(n.GetProperty("sourceRef")),Ref(n.GetProperty("paletteSourceRef")),n.GetProperty("frames").EnumerateArray().Select(f => Ref(f.GetProperty("sourceRef"))).ToImmutableArray());
-        }).ToImmutableDictionary(n => n.GraphicsId, StringComparer.Ordinal);
-        Need(NpcSprites.Count == 15 && maps.Values.SelectMany(m => m.Events.GetProperty("object_events").EnumerateArray())
-            .Concat(house.Events.GetProperty("object_events").EnumerateArray()).All(e => NpcSprites.ContainsKey(e.GetProperty("graphics_id").GetString()!)), "Tower NPC source closure incomplete.");
+        var npcGraphics = NpcSources.GetProperty("graphics").EnumerateArray()
+            .Select(n => n.GetProperty("graphicsId").GetString()!).ToHashSet(StringComparer.Ordinal);
+        Need(npcGraphics.Count == 15 && maps.Values.SelectMany(m => m.Events.GetProperty("object_events").EnumerateArray())
+            .Concat(house.Events.GetProperty("object_events").EnumerateArray()).All(e => npcGraphics.Contains(e.GetProperty("graphics_id").GetString()!)), "Tower NPC source closure incomplete.");
     }
 }

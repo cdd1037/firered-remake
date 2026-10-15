@@ -9,15 +9,15 @@ import json
 import re
 import subprocess
 from pathlib import Path
+from machine_catalog import compatibility_additions
 
+ROOT = Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 MAPS = ['MAP_CERULEAN_CAVE_1F', 'MAP_CERULEAN_CAVE_2F', 'MAP_CERULEAN_CAVE_B1F']
 DEPENDENCIES = (
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/celio-pokemon/pokemon.json',
-    'content/generated/celio-pokemon/machines.json',
-    'content/generated/five-island-rules/items.json',
     'content/generated/five-island-rules/pokemon.json',
     'scripts/five-island-predecessor.json',
 )
@@ -50,18 +50,17 @@ def generate(reference, dependency):
 
     canonical = dep('content/generated/canonical-pokemon/catalog.json')
     celio = dep('content/generated/celio-pokemon/pokemon.json')
-    celio_machines = dep('content/generated/celio-pokemon/machines.json')
-    five_items = dep('content/generated/five-island-rules/items.json')
     five_pokemon = dep('content/generated/five-island-rules/pokemon.json')
     baseline = dep('scripts/five-island-predecessor.json')
     species = {s['id']['value'][5:]: s for s in canonical['species']}
     metadata = {s['id']['value'][5:]: s for s in canonical['metadata']}
     need(len(species) == 386 and len(canonical['abilities']) == 76, 'Canonical source closure')
-    owned = {r['species']['value'] for r in five_items['tm36']['compatibility']} | {'pret:' + s for s in celio['speciesAdded']}
+    owned = set(baseline['ownedSpecies']) | {'pret:' + s for s in five_pokemon['ownedSpeciesAdded'] + celio['speciesAdded']}
     opponents = set(baseline['opponentSpecies']) | owned | {'pret:' + s for s in five_pokemon['opponentSpeciesAdded']}
     need(len(owned) == 138 and len(opponents) == 162 and owned <= opponents, 'Exact Celio predecessor scope')
-    machine_ids = [r['item']['value'][5:] for r in celio_machines['additions']]
-    need(len(machine_ids) == len(set(machine_ids)) == 39, 'Exact inherited machine scope')
+    cells = compatibility_additions(ROOT, 'content/generated/cerulean-cave-pokemon/machines.json')
+    need(len(cells) == 39, 'Exact admitted machine scope')
+    dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
 
     wild_path = 'src/data/wild_encounters.json'
     wild = json.loads(read(wild_path))
@@ -89,7 +88,7 @@ def generate(reference, dependency):
     need({'pret:' + s for s in metadata_species} <= owned, 'Every retained inactive encounter species already exists')
     need(not {'pret:' + s for s in additions} & opponents, 'No added opponent overlaps')
 
-    species_rows, cells = [], []
+    species_rows = []
     for name in additions:
         original, meta = species[name], metadata[name]
         for sr in [original['source'], original['learnsetSource'], meta['learnsetPointerSource'], meta['dexSource']] + [m['source'] for m in original['levelUpMoves']]:
@@ -113,14 +112,6 @@ def generate(reference, dependency):
             if move not in initial: initial = (initial + [move])[-4:]
         need(initial == ['pret:MOVE_SWIFT', 'pret:MOVE_RECOVER', 'pret:MOVE_SAFEGUARD', 'pret:MOVE_PSYCHIC'], 'Original level70 moves')
         species_rows.append(dict(definition=original, metadata=meta))
-    tm_path = 'src/data/pokemon/tmhm_learnsets.h'
-    for item in sorted(machine_ids):
-        rows = []
-        for name in additions:
-            match = one(tm_path, r'^    \[' + name + r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),')
-            rows.append(dict(species=dict(value='pret:' + name), sourceSpeciesId=species[name]['sourceSpeciesId'],
-                canLearn=bool(re.search(r'TMHM\(' + item[5:] + r'_', match[1])), source=source_ref(tm_path, name, match)))
-        cells.append(dict(item=dict(value='pret:' + item), compatibility=rows))
     ability = next(a for a in canonical['abilities'] if a['symbol'] == 'ABILITY_PRESSURE')
     read(ability['source']['path'])
     pokemon = dict(sourceCommit=COMMIT,  profile='firered-cerulean-cave-owned-pokemon-v1',
@@ -135,7 +126,7 @@ def generate(reference, dependency):
         pressureAbility=dict(symbol=ability['symbol'], sourceAbilityId=ability['sourceAbilityId'], source=ability['source']),
         limitation='This catalog authenticates data only; it grants no encounter, battle, trainer, map, lifecycle or save admission.')
     machines = dict(sourceCommit=COMMIT, profile='firered-cerulean-cave-teaching-v1', previousSpeciesCount=len(owned),
-        speciesCount=len(owned) + len(additions), machineCount=len(machine_ids), additions=cells,
+        speciesCount=len(owned) + len(additions), machineCount=len(cells), additions=cells,
          itemsAdded=[])
     evidence = dict(sourceCommit=COMMIT,  files=[inputs[k] for k in sorted(inputs)], dependencyInputs=dependencies)
     return {'pokemon.json': pokemon, 'machines.json': machines, 'source-input-hashes.json': evidence}
@@ -149,7 +140,6 @@ def main():
     files = {'content/generated/cerulean-cave-pokemon/' + name: encoded(value) for name, value in docs.items()}
     lock = dict(sourceCommit=COMMIT,  profile='firered-cerulean-cave-pokemon-source-v1',
                 files=[dict(path=p) for p, d in sorted(files.items())])
-    files['scripts/cerulean-cave-pokemon.lock.json'] = encoded(lock)
     for path, data in files.items():
         target = args.output / path
         if args.check: need(target.read_bytes() == data, 'Deterministic regeneration differs: ' + path)

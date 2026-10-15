@@ -6,8 +6,7 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record PretCeruleanMachinesDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PewterAdditionalMachine> Machines, PretPewterMachineIcon Icon, ImmutableArray<string> Limitations);
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PewterAdditionalMachine> Machines, PretPewterMachineIcon Icon, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates five explicit TMs for 65 species, preserving every historical machine profile.</summary>
 public static class PretCeruleanMachines
@@ -15,11 +14,11 @@ public static class PretCeruleanMachines
     public const string Profile = PewterMachineRules.CeruleanProfile;
     private static readonly UTF8Encoding Utf8 = new(false, true);
 
-    public static PretCeruleanMachinesDocument Load(string json)
+    public static PretCeruleanMachinesDocument Load(string json, SharedMachineCatalog machines)
     {
-        var document = ContentJson.ParseStrict<PretCeruleanMachinesDocument>(json, ContentJson.CreateOptions());
+        var document = ContentJson.ParseStrict<PretCeruleanMachinesDocument>(json, machines.CreateJsonOptions());
         Require(document.SchemaVersion == 1 &&
-            document.Machines.Length == 5 && !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty,
+            document.Machines.Length == 5 && !document.Limitations.IsDefaultOrEmpty,
             "Cerulean machine scope differs.");
         string[] symbols = ["TM39", "TM05", "TM09", "TM46", "TM03"];
         for (int n = 0; n < document.Machines.Length; n++)
@@ -28,7 +27,7 @@ public static class PretCeruleanMachines
             Require(machine.Machine.Item.Id.Value == "pret:ITEM_" + symbols[n] && machine.Compatibility.Length == 65,
                 "Cerulean machine order or compatibility differs.");
         }
-        Require(document.Icon.Item == PewterMachineRules.Tm03Id && document.Icon.PngPath == "item_tm03.png",
+        Require(document.Icon.Item == PewterMachineRules.Tm03Id && document.Icon.Region is not null,
             "Cerulean machine icon identity differs.");
         PretPewterMachines.ValidateIcon(document.Icon);
         return document;
@@ -36,24 +35,14 @@ public static class PretCeruleanMachines
 
     public static PretCeruleanMachinesDocument LoadProject(string root)
     {
-        var document = Load(Utf8.GetString(Read(root,            "content/generated/cerulean-machines/cerulean-machines.json")));
+        var document = Load(Utf8.GetString(Read(root,            "content/generated/cerulean-machines/cerulean-machines.json")), SharedMachineCatalog.LoadProject(root));
         return document;
     }
 
     public static PewterMachineCatalog LoadCatalogProject(string root)
     {
         var document = LoadProject(root);
-        var old = PretPewterMachines.LoadMtMoonProject(root);
-        var legacy = new[] { PewterMachineRules.Definition(old, PewterMachineRules.Tm39Id)! }
-            .Concat(old.AdditionalMachines!.Value).ToArray();
-        for (int n = 0; n < legacy.Length; n++)
-        {
-            var prior = legacy[n]; var current = document.Machines[n];
-            Require(prior.Machine == current.Machine && prior.Move == current.Move &&
-                prior.SourceMoveId == current.SourceMoveId && prior.MovePp == current.MovePp &&
-                prior.Compatibility.SequenceEqual(current.Compatibility.Take(56)),
-                "Cerulean changed historical machine metadata or compatibility.");
-        }
+        var old = PretPewterMachines.LoadProject(root);
         var result = old with
         {
             Profile = Profile,Compatibility = document.Machines[0].Compatibility,AdditionalMachines = document.Machines.Skip(1).ToImmutableArray()

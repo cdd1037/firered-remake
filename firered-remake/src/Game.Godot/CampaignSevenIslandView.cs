@@ -31,14 +31,14 @@ public partial class CampaignView
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)
         {
             int width=row.GetProperty("width").GetInt32(), height=row.GetProperty("height").GetInt32();
-            var rgba=PngRgba8.Decode(_sevenIslandArt.Files[row.GetProperty("texturePath").GetString()!]);
+            using var image = NativeImages.LoadPng(_sevenIslandArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
             if (replicatePalette)
             {
-                rgba=rgba.ToArray();
+                var rgba = image.GetData();
                 for(int i=0;i<rgba.Length;i+=4) if(rgba[i+3]!=0)
                     for(int c=0;c<3;c++){int v=rgba[i+c]>>3;rgba[i+c]=(byte)((v<<3)|(v>>2));}
+                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
             }
-            using var image=Image.CreateFromData(width,height,false,Image.Format.Rgba8,rgba);
             return SceneTextures.FromImage(image);
         }
         foreach(var row in SevenIslandManifest.GetProperty("sprites").EnumerateArray().Concat(SevenIslandManifest.GetProperty("inheritedSprites").EnumerateArray()))
@@ -104,7 +104,7 @@ public partial class CampaignView
 
     private CaptureDexEntry? SevenIslandCaptureDexEntry(int species)=>!_sevenIslandDex.TryGetValue(species,out var e)?null:
         new(e.SourceSpeciesId,e.NationalNumber,e.Name,e.Category,e.DisplayCategory,e.HeightDecimeters,e.WeightHectograms,
-            e.HeightDisplay,e.WeightDisplay,e.Description,e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle,e.Source,e.DescriptionSource);
+            e.HeightDisplay,e.WeightDisplay,e.Description,e.Footprint!.TexturePath,e.Portrait!.TexturePath,e.HabitatTitle);
     private PokedexMenuPage? SevenIslandPokedexPage(int species,PokedexMenuPage page)
     {
         if(_sevenIslandArt is null||!_sevenIslandDexPortraits.TryGetValue(PresentedDexAppearance(species),out var portrait))return null;

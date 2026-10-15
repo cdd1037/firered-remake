@@ -9,8 +9,7 @@ using Game.Domain.Ids;
 namespace Game.Content;
 
 public sealed record PretRoute11ItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates seven Route11 item declarations, icons and six source pickups.</summary>
@@ -26,7 +25,7 @@ public static class PretRoute11Items
         var document = ContentJson.ParseStrict<PretRoute11ItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 7 && document.Icons.Length == 7 &&
             document.Pickups.Length == 6 &&
-            !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty,
+            !document.Limitations.IsDefaultOrEmpty,
             "Route11 item scope differs.");
         string[] items = ["AWAKENING", "ETHER", "ESCAPE_ROPE", "GREAT_BALL", "PARALYZE_HEAL", "X_DEFEND", "ASPEAR_BERRY"];
         var definitions = document.Items;

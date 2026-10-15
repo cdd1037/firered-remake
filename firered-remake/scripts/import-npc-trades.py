@@ -29,12 +29,7 @@ TRADE_MAPS = ['Route2_House', 'CeruleanCity_House3', 'UndergroundPath_NorthEntra
               'VermilionCity_House2', 'Route11_EastEntrance_2F', 'Route18_EastEntrance_2F',
               'CinnabarIsland_PokemonLab_Lounge', 'CinnabarIsland_PokemonLab_ExperimentRoom']
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_Lab': 'secondary/lab'}
-NPC_REUSE = {
- 'OBJ_EVENT_GFX_SCIENTIST': 'content/generated/silph-region/npc/scientist.png',
- 'OBJ_EVENT_GFX_OLD_MAN_2': 'content/generated/silph-region/npc/old-man-2.png',
- 'OBJ_EVENT_GFX_WOMAN_2': 'content/generated/silph-region/npc/woman-2.png',
- 'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
-}
+NPC_REUSE = {'OBJ_EVENT_GFX_OLD_MAN_2', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_SCIENTIST', 'OBJ_EVENT_GFX_WOMAN_2'}
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def compact(value): return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
 def need(value, message):
@@ -222,7 +217,7 @@ def main():
             inputCount=len(src.entries),mapCount=1,cellCount=165,borderCellCount=4,objectCount=3,tradeCount=9,enabledTradeIds=ENABLED_TRADE_IDS,
             reusedNpcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        writes=[(target/'scripts/npc-trades.lock.json',lock_bytes)]
+        writes=[]
         writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:

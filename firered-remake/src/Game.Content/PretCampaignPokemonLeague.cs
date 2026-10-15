@@ -19,45 +19,22 @@ public sealed partial class PretCampaignCatalog
     public PokemonLeagueMartStock? PokemonLeagueMartStock { get; }
     public bool PokemonLeagueEnabled=>PokemonLeagueRegion is not null;
 
-    private static void AppendPokemonLeagueSources(PretPokemonLeagueRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
-    {
-        var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
-        foreach(var source in region.Scripts)
-        {
-            if(prior.TryGetValue(source.Path,out var old))
-            {
-                if(old.Text!=source.Text)
-                    throw new InvalidDataException("pokemon_league_source_conflict: "+source.Path);
-            }
-            else{prior.Add(source.Path,source);sources.Add(source);}
-            if(!texts.Contains(source.Text,StringComparer.Ordinal))texts.Add(source.Text);
-        }
-        foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
-        MergeRegionalServiceConstants(constants,region.Constants);
-    }
+
 
     private static void ValidatePokemonLeagueAnchors(PretPokemonLeagueRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(region.NewMaps.Count!=7||region.NewMaps.Keys.Any(maps.ContainsKey)||
-            maps.ContainsKey(new("map.indigo-plateau-pokemon-center-2f")))
-            throw new InvalidDataException("pokemon_league_predecessor_maps");
-        var exterior=maps[new("map.indigo-plateau-exterior")];
-        if(!JsonElement.DeepEquals(exterior.Events,region.ReusedAnchorEvents["IndigoPlateau_Exterior"]))
-            throw new InvalidDataException("pokemon_league_exterior_anchor");
-        // The upper-floor source map is retained as boundary evidence, never composed.
-        if(region.NewMaps.ContainsKey(new("map.indigo-plateau-pokemon-center-2f")))
-            throw new InvalidDataException("pokemon_league_link_floor_unsupported");
+        if (region.NewMaps.Keys.Any(maps.ContainsKey))
+            throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
     private static PokemonLeagueMartStock CreatePokemonLeagueMartStock(PretPokemonLeagueRegion region,EarlyShopCatalog shop,PretStoryCompilation scripts)
     {
         const string stockId=Game.Domain.Items.PokemonLeagueMartStock.ExpectedStockId;
         string[] expected=["ITEM_ULTRA_BALL","ITEM_GREAT_BALL","ITEM_FULL_RESTORE","ITEM_MAX_POTION","ITEM_REVIVE","ITEM_FULL_HEAL","ITEM_MAX_REPEL","ITEM_NONE"];
-        if(!scripts.AssemblyData.TryGetValue(stockId,out var data)||!data.SequenceEqual(expected.Select(s=>".2byte "+s)))
+        if(!scripts.AssemblyData.TryGetValue(stockId,out var data)||!data.All(d=>d.Directive==".2byte"&&d.Operands.Length==1)||!data.Select(d=>d.Operands[0]).SequenceEqual(expected))
             throw new InvalidDataException("pokemon_league_mart_declaration");
-        var source=region.Scripts.Single(s=>s.Path==Game.Domain.Items.PokemonLeagueMartStock.ExpectedSourcePath);
         var result=new PokemonLeagueMartStock(PretWorldMap.SourceCommit,expected.Take(7).Select(s=>new ItemId("pret:"+s)).ToImmutableArray(),
-            new(source.Path,stockId,53,63));
+            new(Game.Domain.Items.PokemonLeagueMartStock.ExpectedSourcePath,stockId,53,63));
         result.Validate(shop);
         return result;
     }

@@ -28,11 +28,10 @@ def main():
     need(not(target==ref or target.is_relative_to(ref) or ref.is_relative_to(target)), 'Reference/output overlap')
     safe(target)
     prep=module(ROOT / 'scripts/first-sevii-preparation/prepare_first_sevii.py', 'first_sevii_preparer')
-    branch=(ROOT/'scripts/first-sevii-preparation/branch_contract.json').read_bytes()
     reader=module(dep / 'scripts/import-cinnabar-source-preparation.py', 'first_sevii_reader')
     reader.PRODUCT=dep;reader.TILESETS=prep.TILESETS;reader.PROFILE=PROFILE
     with tempfile.TemporaryDirectory(prefix='first-sevii-import-') as temp:
-        tmp=Path(temp);prepared=tmp/'prepared';prepared.mkdir();(prepared/'branch_contract.json').write_bytes(branch)
+        tmp=Path(temp);prepared=tmp/'prepared';prepared.mkdir()
         prep.OUT=prepared
         argv=sys.argv
         try:
@@ -120,13 +119,13 @@ def main():
         lockdata=canonical(lock)
         docs=package_documents(target / 'content/generated', constants, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,runtimeIntegrated=False,maps=catalog,tilesets=prep.TILESETS,mapSymbols=map_symbols,inputFiles=lock['files'],**contracts['mapTopology']),
               'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contracts,
-              'declarations.json':original['declarations.json'],'geometry.json':original['geometry.json'],
+              'geometry.json':original['geometry.json'],
               'catalog-delta.json':original['catalog-delta.json']}, check=a.check)
         for name,value in docs.items():(stage/name).write_bytes(canonical(value))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
-        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(w['width']*w['height'] for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,trainerCount=len(docs['declarations.json']['trainers']),outputs=outputs)
+        manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=reader.COMMIT,inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(w['width']*w['height'] for w in worlds),warpCount=sum(len(w['events']['warp_events']) for w in worlds),npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,trainerCount=len(original['declarations.json']['trainers']),outputs=outputs)
         manifestdata=canonical(manifest);(stage/'manifest.json').write_bytes(manifestdata)
-        writes=[(target/'content/sources/first-sevii-region.lock.json',lockdata)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             safe(p)
             if a.check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))

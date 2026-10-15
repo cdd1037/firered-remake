@@ -5,7 +5,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+from raw_source_paths import local_trainer_palette_directory
 import argparse,  importlib.util, io, json, pathlib, re, subprocess, sys
 from PIL import Image
 sys.dont_write_bytecode=True
@@ -19,13 +19,13 @@ def safe(root,p):
 
 def run(repository, raw, output):
  lock_bytes=(ROOT/'scripts/forest-trainer-art.lock.json').read_bytes();lock=json.loads(lock_bytes)
- project=json.loads((ROOT/'content/source-lock.json').read_bytes())
+ project=json.loads((ROOT/'scripts/import-config/source.json').read_bytes())
  if (project['source']['repository'],project['source']['sourceCommit'],project['referenceGame']['gameEdition'],project['referenceGame']['romRevision'])!=('pret/pokefirered',COMMIT,'FIRERED',0):raise ValueError('Project source profile differs')
  if (lock['repository'],lock['commit'])!=('pret/pokefirered',COMMIT) or len(lock['files'])!=13:raise ValueError('Source identity differs')
  sources={}
  for e in lock['files']:
   p=e['path']
-  source=repository if repository else (raw_metadata_directory(raw, 'local/forest-trainer-art') if p in ('graphics/trainers/palettes/bug_catcher.pal','graphics/trainers/palettes/red_back_pic.pal','graphics/trainers/palettes/leaf_back_pic.pal') else raw)
+  source=repository if repository else (local_trainer_palette_directory(raw) if p in ('graphics/trainers/palettes/bug_catcher.pal','graphics/trainers/palettes/red_back_pic.pal','graphics/trainers/palettes/leaf_back_pic.pal') else raw)
   b=subprocess.check_output(['git','-C',str(repository),'show',COMMIT+':'+p]) if repository else safe(source,p).read_bytes()
   sources[p]=b
   if repository:

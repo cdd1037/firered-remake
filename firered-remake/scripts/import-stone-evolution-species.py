@@ -7,8 +7,8 @@ All 163 predecessor species and all 354 moves are inherited unchanged.
 import argparse
 import json
 from pathlib import Path
-import re
 import subprocess
+from machine_catalog import compatibility_additions
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -16,8 +16,6 @@ BASE = 'content/generated/stone-evolution-species/'
 DEPENDENCIES = (
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/super-rod-species/pokemon.json',
-    'content/generated/super-rod-species/machines.json',
-    'content/generated/department-machine-stock/machines.json',
 )
 
 
@@ -32,10 +30,9 @@ def generate(reference, dependency):
         data = (dependency / path).read_bytes()
         dependencies.append(dict(path=path))
         return json.loads(data)
-    canonical, previous, machines, department = [dependent(p) for p in DEPENDENCIES]
-    need(previous['ownedSpeciesCount'] == 163 and previous['opponentSpeciesCount'] == 192 and
-         machines['speciesCount'] == 163 and machines['machineCount'] == 41 and
-         department['speciesCount'] == 163 and department['machineCount'] == 42, 'Exact Super Rod and Department predecessor')
+    canonical, previous = [dependent(p) for p in DEPENDENCIES]
+    dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
+    need(previous['ownedSpeciesCount'] == 163 and previous['opponentSpeciesCount'] == 192, 'Exact Super Rod predecessor')
     identities = [('NINETALES',38), ('ARCANINE',59), ('POLIWRATH',62), ('CLOYSTER',91), ('EXEGGUTOR',103), ('VAPOREON',134), ('FLAREON',136)]
     definitions = []
     for name, number in identities:
@@ -58,23 +55,8 @@ def generate(reference, dependency):
         definition, metadata = row['definition'], row['metadata']
         for sr in [definition['source'], definition['learnsetSource'], metadata['learnsetPointerSource'], metadata['dexSource']] + [m['source'] for m in definition['levelUpMoves']]:
             read(sr['path'])
-    tm = 'src/data/pokemon/tmhm_learnsets.h'
-    text = read(tm)
-    machine_ids = sorted([r['item']['value'][5:] for r in machines['additions']] + ['ITEM_TM15'])
-    need(len(machine_ids) == len(set(machine_ids)) == 42, 'Exactly 42 inherited machines')
-    cells = []
-    for item in machine_ids:
-        compatibility = []
-        for name, number in identities:
-            symbol = 'SPECIES_' + name
-            matches = list(re.finditer(r'^    \[' + symbol + r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),', text, re.M | re.S))
-            need(len(matches) == 1, 'Exact machine row: ' + symbol)
-            row = matches[0]
-            source = dict(path=tm, symbol=symbol, startLine=text.count('\n', 0, row.start()) + 1,
-                          endLine=text.count('\n', 0, row.end()) + 1)
-            compatibility.append(dict(species=dict(value='pret:' + symbol), sourceSpeciesId=number,
-                canLearn=bool(re.search(r'TMHM\(' + item[5:] + r'_', row[1])), source=source))
-        cells.append(dict(item=dict(value='pret:' + item), compatibility=compatibility))
+    cells = compatibility_additions(dependency, BASE + 'machines.json')
+    need(len(cells) == 42, 'Exactly 42 admitted machines')
     docs = {
         'pokemon.json': dict(sourceCommit=COMMIT,  profile='firered-stone-evolution-owned-pokemon-v1',
 
@@ -99,7 +81,6 @@ def main():
     lock = dict(sourceCommit=COMMIT,  profile='firered-stone-evolution-species-v1',
 
         files=[dict(path=p) for p, data in sorted(files.items())])
-    files['scripts/stone-evolution-species.lock.json'] = encode(lock)
     for name, data in files.items():
         path = args.output / name
         if args.check: need(path.read_bytes() == data, 'Regeneration differs: ' + name)

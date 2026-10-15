@@ -19,7 +19,7 @@ public static class PretDepartmentStoreMachines
     {
         var bytes = File.ReadAllBytes(Path.Combine(projectRoot, "content/generated/department-machine-stock/machines.json"));
         var document = JsonSerializer.Deserialize<DepartmentMachineDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ??
+            SharedMachineCatalog.Options(projectRoot, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })) ??
             throw new InvalidDataException("department_machine_document_missing");
         if (document.SchemaVersion != 1 ||
             document.StockId != DepartmentStoreMachineStock.ExpectedStockId || document.MovePower != 150 || document.MoveAccuracy != 90 || document.MoveType != "TYPE_NORMAL" || document.MoveEffect != "EFFECT_RECHARGE" || document.IconSourceItem != ReusedTm15Icon.Value)

@@ -24,10 +24,9 @@ public sealed class PretSilphPokemon
     public ImmutableDictionary<MoveId, string> AdditionalMoveNames { get; } = ImmutableDictionary<MoveId, string>.Empty;
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, PewterPokemonEncodedName> EncodedNames { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     private PretSilphPokemon(PokemonCatalog catalog, SilphPokemonDocument doc, SilphSourcePackage source)
     {
-        Catalog = catalog; Document = doc; SourceFiles = source.Files;
+        Catalog = catalog; Document = doc;
         AdditionalSpeciesNames = doc.SpeciesNames.ToImmutableSortedDictionary(n => doc.Species.Concat(doc.OpponentSpecies).Single(s => s.Id == n.Id).SourceSpeciesId, n => n.Name);
         Constants = doc.Species.Concat(doc.OpponentSpecies).ToImmutableDictionary(s => s.Id.Value[5..], s => s.SourceSpeciesId, StringComparer.Ordinal);
         EncodedNames = doc.EncodedNames.ToImmutableDictionary(n => n.Symbol, StringComparer.Ordinal);

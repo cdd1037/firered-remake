@@ -28,12 +28,13 @@ The helpers strip source records before publication, and package output
 inventories contain only their own resources. Rebuild affected source packages
 with their existing import commands to add their symbols to a fresh table.
 
-`content/sources/shared-constants.recipe.json` retains the source repository,
-pinned commit, upstream paths and contributing packages. Individual package
-source locks and importer expression resolvers remain the detailed source
-recipe. They are not required by the runtime constant reader. No digest index,
-content-addressed blob store, per-value provenance table, or legacy format loader
-is involved.
+The source repository and pinned commit are configured in
+`scripts/import-config/source.json`. The actual contributing header paths and
+expression resolvers live in each importer; retained path/role recipes are under
+`scripts/import-config`. The duplicate descriptive inventory and write-only
+regional locks have been removed. None is needed by the runtime constant reader.
+No digest index, content-addressed blob store, per-value provenance table, or
+legacy format loader is involved.
 
 The focused National Dex source check continues to cover 31 source blobs,
 95 script closure blocks, 12 prerequisite boundary cases, four arrival

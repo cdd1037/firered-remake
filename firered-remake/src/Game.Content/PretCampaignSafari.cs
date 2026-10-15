@@ -16,31 +16,7 @@ public sealed partial class PretCampaignCatalog
     public PretSafariEncounters? SafariEncounters { get; }
     public bool SafariEnabled => SafariRegion is not null;
 
-    private static void AppendSafariSources(PretSafariRegion region,PretSafariItems items,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var paths = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var source in region.Scripts)
-        {
-            if (paths.TryGetValue(source.Path, out var prior))
-            {
-                if (prior.Text != source.Text)
-                    throw new InvalidDataException("safari_source_conflict: " + source.Path);
-                continue;
-            }
-            paths.Add(source.Path, source); sources.Add(source);
-            if (!texts.Contains(source.Text, StringComparer.Ordinal)) texts.Add(source.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-        foreach (var item in items.Items)
-        {
-            var definition = item.Metadata.Item;
-            if (constants.TryGetValue(definition.SourceItemSymbol, out int previous) && previous != definition.SourceItemId)
-                throw new InvalidDataException("safari_item_constant_conflict");
-            constants[definition.SourceItemSymbol] = definition.SourceItemId;
-        }
-    }
+
 
     private static IEnumerable<FieldPickupDefinition> SafariPickupDefinitions(PretSafariRegion region,EarlyShopCatalog shop,PewterMachineCatalog machines,PretSafariItems items,PretStoryCompilation scripts)
     {

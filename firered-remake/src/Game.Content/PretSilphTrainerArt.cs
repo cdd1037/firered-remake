@@ -8,7 +8,6 @@ public static class PretSilphTrainerArt
     public const string GeneratedDirectory = "content/generated/silph-trainer-art/";
     public static ImmutableArray<ForestTrainerPortrait> Load(string root)
     {
-        _ = PretSilphPresentationSource.Load(root);
         var bytes = SafariSource.Read(root,GeneratedDirectory + "manifest.json");
         using var json = JsonDocument.Parse(bytes); var doc = json.RootElement;
         SafariSource.Require(doc.GetProperty("schemaVersion").GetInt32() == 1 && doc.GetProperty("portraits").GetArrayLength() == 5 , "Silph portrait manifest scope differs.");
@@ -27,9 +26,9 @@ public static class PretSilphTrainerArt
                 row.GetProperty("height").GetInt32() == 64 && row.GetProperty("sourceFrame").GetInt32() == 0 &&
                 row.GetProperty("x").GetInt32() == 144 && row.GetProperty("y").GetInt32() == 8 &&
                 row.GetProperty("texturePath").GetString() == id + ".png" && row.GetProperty("texturePath").GetString() == id + ".png", "Silph trainer identity differs.");
-            var rgba = PngRgba8.Decode(files[id + ".png"]);
-            SafariSource.Require(rgba.Length == 64 * 64 * 4 , "Silph trainer pixels differ.");
-            result.Add(new(id, 144, 8, [.. rgba]));
+            var pngBytes = files[id + ".png"];
+            SafariSource.Require(pngBytes.Length > 0, "Silph trainer pixels differ.");
+            result.Add(new(id, 144, 8, [.. pngBytes]));
         }
         SafariSource.Require(identities.Count == 0, "Missing Silph trainer identity.");
         return result.ToImmutable();

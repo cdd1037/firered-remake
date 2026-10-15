@@ -200,6 +200,14 @@ def main():
             'Mt. Ember summit/legendary boundaries and later ferry destinations remain unadmitted.',
             'Celio dispatch contains original guarded Sapphire/link/roamer branches; closure membership is not permission.',
             'No battle, natural travel, save, native window or physical audio validation is claimed.'])
+    for pickup in contract['itemPickups']:
+        if pickup['event']['graphics_id'] == 'OBJ_EVENT_GFX_RUBY':
+            continue
+        original = pickup.pop('script')
+        matches = [re.fullmatch(r'\s*finditem\s+(ITEM_\w+)(?:,\s*(\d+))?\s*', row['text']) for row in original['lines']]
+        matches = [match for match in matches if match]
+        need(len(matches) == 1, 'Sevii Ruby pickup recipe')
+        pickup.update(item=matches[0][1], quantity=int(matches[0][2] or 1), sourceRef=original['sourceRef'])
     shared=reader.load_helper('_regional_service_shared.py');shared.PROFILE=PROFILE;shared.TILESETS=TILESETS
     converter=reader.load_helper('export-runtime-maps.py')
     with tempfile.TemporaryDirectory(prefix='sevii-ruby-import-') as temp:
@@ -224,7 +232,7 @@ def main():
         docs=package_documents(target / 'content/generated', const, {'catalog.json':dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
             runtimeIntegrated=False,maps=catalog,tilesets=TILESETS,mapSymbols=mapsymbols,inputFiles=lock['files'],**links),
             'scripts.json':scripts,'npc-source.json':npcs,'contracts.json':contract,
-            'declarations.json':data,'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
+            'geometry.json':dict(maps=reader.geometry_inventory(worlds),tilesets=TILESETS)}, check=args.check)
         for n,d in docs.items():(stage/n).write_bytes(canonical(d))
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=len(worlds),cellCount=sum(w['width']*w['height'] for w in worlds),
@@ -232,7 +240,7 @@ def main():
             scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,trainerCount=len(data['trainers']),
             outputs=outputs)
         manifestbytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifestbytes)
-        writes=[(target/'content/sources/sevii-ruby-region.lock.json',lockbytes)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
+        writes=[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for p,b in writes:
             safe(p)
             if args.check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs: '+str(p))

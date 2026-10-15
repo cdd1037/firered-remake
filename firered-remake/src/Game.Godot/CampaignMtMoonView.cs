@@ -72,14 +72,14 @@ public partial class CampaignView
         }
         foreach (var asset in PretMtMoonTrainerArt.Load(_root))
         {
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, asset.Rgba);
+            using var image = NativeImages.LoadPng(asset.Png, 64, 64);
             _forestTrainerPortraits.Add(asset.Id, ImageTexture.CreateFromImage(image));
         }
         var items = _catalog.MtMoonItems ?? throw new InvalidDataException("Missing MtMoon item presentation.");
         foreach (var icon in items.Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("mtmoon-items", icon));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            
+            _earlyItemIcons.Add(icon.Item, ItemTexture("mtmoon-items", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("Missing source key item pocket.");
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
@@ -88,8 +88,8 @@ public partial class CampaignView
             var value = items.Items.Single(i => i.Metadata.Item.Id == fossil.Item).Metadata;
             var icon = items.Icons.Single(i => i.Item == fossil.Item);
             string id = "mtmoon-" + value.Item.SourceItemSymbol.ToLowerInvariant();
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, ReadItemIconRgba("mtmoon-items", icon));
-            _questPocketTextures.Add(id, ImageTexture.CreateFromImage(image));
+            
+            _questPocketTextures.Add(id, ItemTexture("mtmoon-items", icon));
             document = document with
             {
                 Items = document.Items.Add(new(value.Item.Id.Value, value.Item.SourceItemSymbol, value.Item.Name, value.Description, id, value.Item.FieldUseFunction)),

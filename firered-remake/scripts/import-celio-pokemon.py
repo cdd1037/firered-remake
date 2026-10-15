@@ -7,13 +7,14 @@ import json
 import re
 import subprocess
 from pathlib import Path
+from machine_catalog import compatibility_additions
 
+ROOT = Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 ADDITIONS = ['SPECIES_ENTEI', 'SPECIES_RAIKOU', 'SPECIES_SUICUNE']
 DEPENDENCIES = (
     'content/generated/canonical-pokemon/catalog.json',
-    'content/generated/five-island-rules/items.json',
     'content/generated/five-island-rules/pokemon.json',
     'scripts/five-island-predecessor.json',
 )
@@ -42,21 +43,19 @@ def generate(reference, dependency):
         return dict(path=path, symbol=symbol, startLine=read(path).count('\n', 0, match.start()) + 1,
                     endLine=read(path).count('\n', 0, match.end()) + 1)
     canonical = dep('content/generated/canonical-pokemon/catalog.json')
-    five_items = dep('content/generated/five-island-rules/items.json')
     five_pokemon = dep('content/generated/five-island-rules/pokemon.json')
     baseline = dep('scripts/five-island-predecessor.json')
     species = {s['id']['value'][5:]: s for s in canonical['species']}
     metadata = {s['id']['value'][5:]: s for s in canonical['metadata']}
     need(len(species) == 386 and len(canonical['abilities']) == 76, 'Canonical source closure')
-    owned = {r['species']['value'] for r in five_items['tm36']['compatibility']}
+    owned = set(baseline['ownedSpecies']) | {'pret:' + s for s in five_pokemon['ownedSpeciesAdded']}
     opponents = set(baseline['opponentSpecies']) | owned | {'pret:' + s for s in five_pokemon['opponentSpeciesAdded']}
     added_ids = {'pret:' + s for s in ADDITIONS}
     need(len(owned) == 135 and len(opponents) == 159 and owned <= opponents and not opponents & added_ids, 'Exact Five predecessor scope')
-    machine_ids = [r['item']['value'][5:] for r in five_items['machineAdditions']] + ['ITEM_TM36']
-    need(len(machine_ids) == len(set(machine_ids)) == 39, 'Exact inherited machine scope')
-    tm_path = 'src/data/pokemon/tmhm_learnsets.h'
-    tm_rows = {m[1]: m for m in re.finditer(r'\[(SPECIES_\w+)\]\s*=\s*TMHM_LEARNSET\((.*?)\),', read(tm_path), re.S)}
-    species_rows, level50, cells = [], [], []
+    cells = compatibility_additions(ROOT, 'content/generated/celio-pokemon/machines.json')
+    need(len(cells) == 39, 'Exact admitted machine scope')
+    dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
+    species_rows, level50 = [], []
     for name in ADDITIONS:
         original, meta = species[name], metadata[name]
         for sr in [original['source'], original['learnsetSource'], meta['learnsetPointerSource'], meta['dexSource']] + [m['source'] for m in original['levelUpMoves']]:
@@ -82,13 +81,6 @@ def generate(reference, dependency):
         need(len(initial) == 4, 'Four level-50 moves')
         level50.append(dict(species=original['id'], level=50, moves=[dict(value=m) for m in initial]))
         species_rows.append(dict(definition=original, metadata=meta))
-    for item in sorted(machine_ids):
-        rows = []
-        for name in ADDITIONS:
-            match = tm_rows[name]
-            rows.append(dict(species=dict(value='pret:' + name), sourceSpeciesId=species[name]['sourceSpeciesId'],
-                canLearn=bool(re.search(r'TMHM\(' + item[5:] + r'_', match[2])), source=source_ref(tm_path, name, match)))
-        cells.append(dict(item=dict(value='pret:' + item), compatibility=rows))
     ability = next(a for a in canonical['abilities'] if a['symbol'] == 'ABILITY_PRESSURE')
     read(ability['source']['path'])
     # Includes the initialization declaration establishing why these three species are admitted.
@@ -100,7 +92,7 @@ def generate(reference, dependency):
         pressureAbility=dict(symbol=ability['symbol'], sourceAbilityId=ability['sourceAbilityId'], source=ability['source']),
         limitation='Catalog authentication alone does not admit roaming encounters, lifecycle, battle AI, capture, presentation or save migration.')
     machines = dict(sourceCommit=COMMIT, profile='firered-celio-teaching-v1', previousSpeciesCount=len(owned), speciesCount=len(owned | added_ids),
-        machineCount=len(machine_ids), additions=cells,  itemsAdded=[])
+        machineCount=len(cells), additions=cells,  itemsAdded=[])
     evidence = dict(sourceCommit=COMMIT,  files=[inputs[k] for k in sorted(inputs)], dependencyInputs=dependencies)
     return {'pokemon.json': pokemon, 'machines.json': machines, 'source-input-hashes.json': evidence}
 
@@ -111,7 +103,6 @@ def main():
     docs = generate(args.reference, args.dependency)
     files = {'content/generated/celio-pokemon/' + name: encoded(value) for name, value in docs.items()}
     lock = dict(sourceCommit=COMMIT,  profile='firered-celio-pokemon-source-v1', files=[dict(path=path) for path, data in sorted(files.items())])
-    files['scripts/celio-pokemon.lock.json'] = encoded(lock)
     for path, data in files.items():
         target = args.output / path
         if args.check: need(target.read_bytes() == data, 'Deterministic regeneration differs: ' + path)

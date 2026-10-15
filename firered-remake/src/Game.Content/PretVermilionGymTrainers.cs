@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Trainers;
@@ -20,14 +19,7 @@ public static class PretVermilionGymTrainers
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/vermilion-gym-trainers.lock.json"));
-        var s=sourceLock.RootElement;
-        if(            s.GetProperty("gameEdition").GetString()!="FIRERED" || s.GetProperty("romRevision").GetInt32()!=0 || s.GetProperty("schemaVersion").GetInt32()!=1 ) throw new InvalidDataException("VermilionGym trainer source identity differs.");
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-gym-trainers/trainers.json")),ContentJson.CreateOptions());
+        var doc=ContentJson.ParseStrict<VermilionGymTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-gym-trainers/trainers.json")),ContentJson.CreateOptions());
                 if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("VermilionGym trainer document identity differs.");
         var catalog=new VermilionGymTrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         VermilionGymTrainerPartyFactory.ValidateCatalog(catalog);return catalog;

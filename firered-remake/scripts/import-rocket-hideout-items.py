@@ -3,11 +3,13 @@
 import argparse,base64,copy,importlib.util,json,pathlib,re,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
+import sys
+sys.path.insert(0, str(ROOT / "scripts"))
+from machine_catalog import load_catalog, machine_reference, compatibility_reference, admission_view, admission_species
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14';TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE='firered-rocket-hideout-items-v1'
 DEPENDENCIES=(
     'scripts/import-lab-battle-ui.py',
-    'content/generated/celadon-gym-items/celadon-gym-machines.json',
 )
 ITEMS=('LIFT_KEY','SILPH_SCOPE','BLACK_GLASSES','X_SPEED','CALCIUM','NET_BALL','NEST_BALL','TM12','TM21','TM49')
 TEACHING={'TM12':('TAUNT','Taunt'),'TM21':('FRUSTRATION','Frustration'),'TM49':('SNATCH','Snatch')}
@@ -41,17 +43,9 @@ def outputs(lock,data,project):
  def number(p,s):
   m=match(p,r'^#define '+s+r'[ \t]+(0x[0-9A-Fa-f]+|\d+|\(FLAG_HIDDEN_ITEMS_START \+\s+\d+\))[ \t]*(?://[^\n]*)?$');rules.append(ref(p,s,m))
   return number(p,'FLAG_HIDDEN_ITEMS_START')+int(re.search(r'\+\s+(\d+)',m[1])[1]) if m[1].startswith('(') else int(m[1],0)
- def compatibility(s,tm):
-  p='src/data/pokemon/tmhm_learnsets.h';m=match(p,r'^    \['+s+r'\]\s*= TMHM_LEARNSET\((.*?)\),');tokens=re.findall(r'TMHM\((\w+)\)',m[1])
-  if re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1]) or len(tokens)!=len(set(tokens)):raise ValueError('Unsupported compatibility syntax')
-  return dict(species=ident(s),sourceSpeciesId=number('include/constants/species.h',s),canLearn=tm in tokens,source=ref(p,s,m))
- prior=parse(read(project,'content/generated/celadon-gym-items/celadon-gym-machines.json'))
- machines=copy.deepcopy(prior['machines']);species=[r['species']['value'][5:] for r in machines[0]['compatibility']]+['SPECIES_KANGASKHAN']
- if len(species)!=99 or len(set(species))!=99 or len(machines)!=15:raise ValueError('Predecessor scope differs')
- for row in machines:
-  cells=[compatibility(s,row['machine']['item']['name']+'_'+row['move']['value'][10:]) for s in species]
-  if row['compatibility']!=cells[:98]:raise ValueError('Inherited compatibility changed')
-  row['compatibility']=cells
+ target='content/generated/rocket-hideout-items/rocket-hideout-machines.json'
+ machines=[admission_view(project,target,'/machines/'+str(index)) for index in range(18)]
+ species=[species[5:] for species in admission_species(project,target,'/machines/0')]
  codec_path=safe(project,'scripts/import-lab-battle-ui.py');read(project,'scripts/import-lab-battle-ui.py')
  spec=importlib.util.spec_from_file_location('rocket_item_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
  items=[];icons=[];result={};declarations=parse(data['src/data/items.json'])['items']
@@ -84,7 +78,6 @@ def outputs(lock,data,project):
   effects,effect_source=effect(short);items.append(dict(metadata=wrapped,effectBytes=effects,effectSource=effect_source))
   if short in TEACHING:
    p='src/data/battle_moves.h';m=match(p,r'^    \[MOVE_'+move+r'\] =\n    \{(.*?)^    \},');pp=int(re.search(r'\.pp = (\d+),',m[1])[1]);rules.append(ref(p,'MOVE_'+move,m))
-   machines.append(dict(machine=wrapped,move=ident('MOVE_'+move),sourceMoveId=number('include/constants/moves.h','MOVE_'+move),movePp=pp,compatibility=[compatibility(s,short+'_'+move) for s in species]))
   p='src/data/item_icon_table.h';m=match(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,m);icon_symbols=m.groups();paths=[]
   for asset in icon_symbols:
    p='src/data/graphics/items.h';m=match(p,r'^const u32 '+asset+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,asset,m));paths.append(m[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
@@ -107,8 +100,8 @@ def outputs(lock,data,project):
   p='data/event_scripts.s';m=match(p,r'^\s*setflag '+flag+r'\s*$');rules.append(ref(p,flag,m))
  for p,s,pattern in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','RemoveBagItem',r'^bool8 RemoveBagItem\(.*?^\}'),('src/party_menu.c','Task_LearnedMove',r'^static void Task_LearnedMove\([^;]*?\n\{.*?^\}'),('src/pokemon.c','CanMonLearnTMHM',r'^u32 CanMonLearnTMHM\([^;]*?\n\{.*?^\}'),('src/battle_script_commands.c','Cmd_handleballthrow',r'^static void Cmd_handleballthrow\(void\)\n\{.*?^\}')]:rules.append(ref(p,s,match(p,pattern)))
  limitations=['56 items preserve all46 predecessor items and five shop stocks exactly. No new shop stock.','18 source machines have99 compatibility cells; the preceding15x98 cells are identical.','TM12 Taunt, TM21 Frustration and TM49 Snatch remain inventory/compatibility metadata; teaching is rejected until battle execution is admitted.','Calcium and X Speed retain original effect bytes but their use is unavailable. PP Up and Max Ether remain inherited unavailable uses.','Lift Key/Silph Scope are key items; original progression flags and atomic award integration belong to Application. BlackGlasses held battle admission belongs to the Rocket battle profile.','Net/Nest Ball capture requires the separate source multiplier and capture integration. Game Corner coins and slot games are excluded.']
- result['rocket-hideout-items.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,items=items,icons=icons,limitations=limitations))
- result['rocket-hideout-machines.json']=canonical(dict(schemaVersion=1,profile='firered-rocket-hideout-machines-v1',sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,machines=machines,icons=icons,limitations=limitations))
+ result['rocket-hideout-items.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],items=items,icons=icons,limitations=limitations))
+ result['rocket-hideout-machines.json']=canonical(dict(schemaVersion=1,profile='firered-rocket-hideout-machines-v1',sourceCommit=COMMIT,inputs=lock['files'],machines=machines,icons=icons,limitations=limitations))
  result['rocket-hideout-pickups.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,pickups=pickups,limitations=limitations))
  return result
 

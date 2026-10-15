@@ -34,9 +34,4 @@ public static class PretSeafoamItems
         return SeafoamShopCatalog.Authenticate(predecessor, predecessor.Catalog with {
                 Profile = SeafoamShopCatalog.Profile,Items = predecessor.Catalog.Items.AddRange(document.Additions) });
     }
-    public static byte[] LoadIconRgba(string root)
-    {
-        var icon = LoadDocument(root).Icons[0];
-            return PngRgba8.Decode(Read(root,icon.TexturePath),icon.Width,icon.Height);
-    }
 }

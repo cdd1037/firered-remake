@@ -32,11 +32,7 @@ TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_PewterGym': 'seco
             'gTileset_General': 'primary/general', 'gTileset_SaffronCity': 'secondary/saffron_city'}
 CITY_PACKAGE = 'content/generated/silph-region'
 CITY_PATH = 'saffron-city/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_BLACK_BELT': 'content/generated/viridian-gym-region/npc/black-belt.png',
-    'OBJ_EVENT_GFX_ITEM_BALL': 'content/generated/silph-region/npc/item-ball.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
-}
+NPC_REUSE = {'OBJ_EVENT_GFX_BLACK_BELT', 'OBJ_EVENT_GFX_ITEM_BALL', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -241,17 +237,10 @@ def event_contract(src, world, scripts, retained, links):
 
 
 def reuse_npcs(src, shared, worlds, stage, current):
-    # Render only into staging to prove byte identity. Retain bindings, not copies.
+    # Region packages declare the IDs rendered by the shared overworld import.
     folder = stage / 'npc'
     inventory = shared.npc_inventory(src, worlds, folder)
     need({r['graphicsId'] for r in inventory['graphics']} == set(NPC_REUSE), 'NPC cohort differs')
-    for row in inventory['graphics']:
-        path = NPC_REUSE[row['graphicsId']]
-        rendered = stage / row['texturePath']; existing = current / path
-        need(rendered.read_bytes() == existing.read_bytes(), 'Reused NPC differs: ' + path)
-        row.update(texturePath=path,  reuseExisting=True)
-        rendered.unlink()
-    folder.rmdir()
     return inventory
 
 
@@ -310,8 +299,7 @@ def main():
                         objectCount=7, trainerCount=5, giftChoiceCount=2, coordinateEventCount=2, backgroundEventCount=4,
                         reusedNpcGraphicsCount=len(npcs['graphics']), scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target / 'scripts/fighting-dojo-region.lock.json', lock_bytes),
-                  (target / 'scripts/fighting-dojo-region.contract.json', canonical(contracts))]
+        writes = [(target / 'scripts/fighting-dojo-region.contract.json', canonical(contracts))]
         writes += [(target / 'content/raw/pokefirered/037335f4' / p, data) for p, data in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

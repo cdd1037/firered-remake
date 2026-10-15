@@ -30,9 +30,7 @@ MAPS = ['TwoIsland_CapeBrink', 'TwoIsland_CapeBrink_House']
 TILESETS = {'gTileset_General':'primary/general', 'gTileset_SeviiIslands123':'secondary/sevii_islands_123',
  'gTileset_Building':'primary/building', 'gTileset_GenericBuilding2':'secondary/generic_building_2'}
 ANCHOR_PACKAGE = 'content/generated/first-sevii-region'
-NPC_REUSE = {
- 'OBJ_EVENT_GFX_CHANNELER': 'content/generated/saffron-gym-region/npc/channeler.png',
- 'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_CHANNELER', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
 def need(value, message):
@@ -198,11 +196,6 @@ def main():
         stage=Path(temp)
         for w in worlds:shared.import_map(src,w['sourceName'],w['stableId'],stage/reader.directory(w['sourceName']))
         npcs=shared.npc_inventory(src,worlds,stage/'npc');need({r['graphicsId'] for r in npcs['graphics']}==set(NPC_REUSE),'NPC graphics cohort differs')
-        for row in npcs['graphics']:
-            path=NPC_REUSE[row['graphicsId']];existing=current/path;safe(existing);rendered=stage/row['texturePath']
-            need(rendered.read_bytes() == existing.read_bytes(),'Reused sprite differs')
-            row.update(texturePath=path,reuseExisting=True);rendered.unlink()
-        (stage/'npc').rmdir()
         entries=[]
         for w in worlds:
             directory=reader.directory(w['sourceName']);path=stage/directory/'runtime-map.json';rich=path.read_bytes()
@@ -216,7 +209,7 @@ def main():
         outputs=[dict(path=p.relative_to(stage).as_posix()) for p in sorted(stage.rglob('*')) if p.is_file()]
         manifest=dict(schemaVersion=1,profile=RESOURCE_ID,resourceId=RESOURCE_ID,sourceCommit=COMMIT,inputCount=len(src.entries),mapCount=2,cellCount=1059,borderCellCount=8,directedWarpCount=2,directedConnectionCount=2,objectCount=1,reusedNpcGraphicsCount=2,scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        writes=[(target/'scripts/cape-brink-tutor.lock.json',lock_bytes),(target/'scripts/cape-brink-tutor.contract.json',canonical(contract))]
+        writes=[(target / 'scripts/cape-brink-tutor.contract.json', canonical(contract))]
         writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:

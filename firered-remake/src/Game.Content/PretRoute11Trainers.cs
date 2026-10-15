@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Trainers;
@@ -18,14 +17,7 @@ public static class PretRoute11Trainers
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/route11-trainers.lock.json"));
-        var s=sourceLock.RootElement;
-        if(            s.GetProperty("gameEdition").GetString()!="FIRERED" || s.GetProperty("romRevision").GetInt32()!=0 || s.GetProperty("schemaVersion").GetInt32()!=1 ) throw new InvalidDataException("Route11 trainer source identity differs.");
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var doc=ContentJson.ParseStrict<Route11TrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/route11-trainers/trainers.json")),ContentJson.CreateOptions());
+        var doc=ContentJson.ParseStrict<Route11TrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/route11-trainers/trainers.json")),ContentJson.CreateOptions());
                 if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("Route11 trainer document identity differs.");
         var catalog=new Route11TrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         Route11TrainerPartyFactory.ValidateCatalog(catalog);return catalog;

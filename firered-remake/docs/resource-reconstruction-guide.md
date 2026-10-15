@@ -1,6 +1,6 @@
 # 资源来源、重建与未来公开仓库边界
 
-> 当前资源布局：原始文件使用共享上游路径，转换资源使用共享数值常量、单一紧凑地图和 PNG 图像。运行依赖及本轮验证见 [转换资源收敛](generated-resource-unification.md)、[共享原始资源](shared-raw-resources.md)。下文历史命令不代表旧逐包文件布局仍受支持。
+> 当前资源布局：原始文件使用共享上游路径，转换资源使用共享数值常量、单一紧凑地图和 PNG 图像。运行依赖及本轮验证见 [运行边界](generated-only-runtime.md)、[共享原始资源](shared-raw-resources.md)。下文历史命令不代表旧逐包文件布局仍受支持。
 
 > 2026-10-15：运行时素材身份认证与逐文件 hash/长度门禁已移除。下文旧 hash、锁表及冻结验收叙述仅为早期来源记录；现行加载与重建约定见 [深入精简结果](deep-simplification-20261015.md)。来源版本、输入路径、生成步骤和正常格式检查继续保留。
 
@@ -215,3 +215,24 @@ historical checkpoints. Use the current importer defaults and recipes; do not
 recreate those duplicate feature directories. See
 [shared-raw-resources.md](shared-raw-resources.md) for the layout and the three
 retained palette variants. Package manifests remain separate from source files.
+
+## Battle dialogue import
+
+Run `python tools/import-battle-text.py --source <local-pokefirered>` from the game root. The importer reads `src/battle_message.c` and `src/strings.c`, preserving escaped text and presentation controls, and writes `content/generated/battle-text/catalog.json`. The runtime reads this catalog only; no original C source or source lock is needed.
+
+Fanfare presentation wait durations: `python tools/import-presentation-cues.py --source <local-pokefirered>` compiles `src/sound.c` into `content/generated/presentation-cues/fanfares.json`. Runtime fallback remains the level-up cue duration.
+
+## 共享背包图标导入收尾
+
+背包、商店、任务道具及招式机器的 35 个已接入包使用共享原生 PNG 图集 `content/generated/item-icons/items.png`。图标记录保留逻辑尺寸，并在原有 JSON 中直接记录 `region`；Godot 使用同一缓存纹理的 `AtlasTexture` 区域，不再为每个图标解码或生成独立 PNG。
+
+单个区域导入器仍可先生成自己的小图，随后必须执行收尾命令，再启动游戏或交付生成目录：
+
+```sh
+python3 scripts/item_icon_exports.py
+python3 scripts/test-item-icon-exports.py
+```
+
+收尾步骤读取已有图集区域和刚生成的小图，按完整 RGBA 像素去重，输出一张有透明间隔的有界页面，并更新原有图标记录、输出清单及继承依赖路径。仅在页面和全部元数据写出后删除这批小图。因此不必为了重导入一个包重新导入所有区域；重复运行在输入不变时不改写文件。不同调色板、RGB555 展开方式和全透明像素中的 RGB 值均分别保留，不新增索引清单或运行时源文件依赖。
+
+当前这一批将 136 张独立 PNG 合为一张 416×208 页面，涵盖 170 条类型化图标记录、4 条跨包区域引用及 120 种逐字节不同的 RGBA 图像。普通图标之外的独立表现批次尚未强行并入此页面。下游 Viridian Gym、Fuchsia Gym、Power Plant 导入器通过前置包的图标记录和图集区域读取继承图像；不再依赖已退役的逐图标文件名。

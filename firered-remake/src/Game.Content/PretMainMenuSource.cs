@@ -112,7 +112,7 @@ return bytes;
         foreach (var entry in root.GetProperty("inputFiles").EnumerateArray())
         {
             var path = entry.GetProperty("path").GetString()!;
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
+            files.Add(new(path));
         }
         var inventory = files.ToImmutable();
         var result = new PretMainMenuSource(generatedDirectory, root, inventory);

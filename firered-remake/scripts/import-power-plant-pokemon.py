@@ -4,6 +4,10 @@ No reference repository code is executed. Includes the Thunder Stone ownership c
 """
 import argparse,  json, re, subprocess
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from machine_catalog import compatibility_additions, machine_definitions, admission_species
+
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 SPECIES=['SPECIES_ELECTABUZZ','SPECIES_JOLTEON','SPECIES_ZAPDOS']
@@ -11,15 +15,16 @@ BASE='content/generated/power-plant-pokemon/'
 RAW='content/raw/pokefirered/037335f4/'
 DEPENDENCIES=(
     'content/generated/canonical-pokemon/catalog.json',
-    'content/generated/five-island-rules/items.json',
     'content/generated/five-island-rules/pokemon.json',
     'content/generated/celio-pokemon/pokemon.json',
     'content/generated/seven-island-rules/pokemon.json',
-    'content/generated/seven-island-rules/machines.json',
     'content/generated/event-island-species/catalog.json',
     'content/generated/league-rematch-rules/pokemon.json',
     'scripts/five-island-predecessor.json',
 )
+from image_io import png as encode_rgba_png
+from item_icon_exports import decode_icon_page
+
 def encoded(v):return (json.dumps(v,indent=2,ensure_ascii=False)+'\n').encode()
 def ident(s):return dict(value='pret:'+s)
 def need(v,m):
@@ -135,18 +140,18 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
                          'path': 'src/pokemon_icon.c'},
   'src/sound.c': {
                   'path': 'src/sound.c'}}
- DEPENDENCY_PINS = {'content/generated/campaign-hit-art/manifest.json': {
+ DEPENDENCY_PINS = {'content/generated/item-icons/items.png': {'path':'content/generated/item-icons/items.png'},'content/generated/campaign-hit-art/manifest.json': {
                                                        'path': 'content/generated/campaign-hit-art/manifest.json'},
-  'content/generated/mtmoon-items/item_tm05.png': {
-                                                   'path': 'content/generated/mtmoon-items/item_tm05.png'},
+  'content/generated/mtmoon-items/mtmoon-items.json': {
+                                                   'path': 'content/generated/mtmoon-items/mtmoon-items.json'},
   'content/generated/synth-audio/firered.pack': {
                                                  'path': 'content/generated/synth-audio/firered.pack'},
   'content/generated/synth-audio/manifest.json': {
                                                   'path': 'content/generated/synth-audio/manifest.json'},
   'content/generated/synth-audio/normal-cries.bin': {
                                                      'path': 'content/generated/synth-audio/normal-cries.bin'},
-  'content/generated/vermilion-gym-assets/item_tm34.png': {
-                                                           'path': 'content/generated/vermilion-gym-assets/item_tm34.png'}}
+  'content/generated/vermilion-gym-assets/assets.json': {
+                                                           'path': 'content/generated/vermilion-gym-assets/assets.json'}}
 
 
  SOURCE_PINS.update({'data/maps/PowerPlant/map.json': {
@@ -184,16 +189,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
      return (json.dumps(value, sort_keys=True, indent=2, ensure_ascii=False) + '\n').encode()
 
 
- def png(width, height, rgba):
-     # Identical stored-DEFLATE encoding to import-event-island-presentation.py's helper.
-     def chunk(kind, data):
-         return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
-     scan = b''.join(b'\0' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
-     blocks = [scan[i:i + 65535] for i in range(0, len(scan), 65535)]
-     compressed = b'\x78\x01' + b''.join(bytes([int(i == len(blocks) - 1)]) +
-         struct.pack('<HH', len(block), len(block) ^ 65535) + block for i, block in enumerate(blocks))
-     compressed += struct.pack('>I', zlib.adler32(scan) & 0xffffffff)
-     return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)) + chunk(b'IDAT', compressed) + chunk(b'IEND', b'')
+ png = encode_rgba_png
 
 
  def build_presentation(read_source_bytes, dependency_root):
@@ -403,8 +399,8 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
      item_table, item_graphics = text('src/data/item_icon_table.h'), text('src/data/graphics/items.h')
      for symbol, item_id, inherited_png in [
          ('ITEM_THUNDER_STONE', 96, None),
-         ('ITEM_TM17', 305, 'content/generated/mtmoon-items/item_tm05.png'),
-         ('ITEM_TM25', 313, 'content/generated/vermilion-gym-assets/item_tm34.png')]:
+         ('ITEM_TM17', 305, ('content/generated/mtmoon-items/mtmoon-items.json','pret:ITEM_TM05')),
+         ('ITEM_TM25', 313, ('content/generated/vermilion-gym-assets/assets.json','pret:ITEM_TM34'))]:
          need(re.search(r'^#define ' + symbol + r'\s+' + str(item_id) + r'\s*(?://[^\n]*)?$', text('include/constants/items.h'), re.M), 'Item ID differs')
          binding = re.search(r'^    \[' + symbol + r'\][ \t]*= \{(\w+), (\w+)\},', item_table, re.M)
          need(binding, 'Item icon binding missing')
@@ -416,10 +412,12 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          image, pal = paths
          _, rgba = indexed(image, pal, (24, 24), floor=False)
          if inherited_png:
-             png_bytes = reuse(inherited_png)
-             with Image.open(io.BytesIO(png_bytes)) as im:
-                 need(im.size == (24, 24) and im.convert('RGBA').tobytes() == rgba, 'Inherited TM icon differs')
-             png_path = inherited_png
+             descriptor,item = inherited_png
+             document=json.loads(reuse(descriptor))
+             icon_row=next(i for i in document.get('icons',[document.get('icon')]) if i['item']['value']==item)
+             png_path=icon_row['pngPath'];png_bytes=reuse(png_path)
+             im=decode_icon_page(png_bytes,icon_row)
+             need(im.tobytes()==rgba,'Inherited TM icon differs')
          else:
              emitted = emit('items/' + symbol.lower(), 24, 24, rgba, paths)
              png_path = emitted['texturePath']
@@ -428,6 +426,7 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
              pngPath=png_path,
              source=ref(image, binding[1]), paletteSource=ref(pal, binding[2]), bindingSource=ref('src/data/item_icon_table.h', symbol, binding),
              inherited=bool(inherited_png)))
+         if inherited_png and icon_row.get('region'):item_icons[-1]['region']=icon_row['region']
 
      if SOURCE_PINS:
          need(set(inputs) == set(SOURCE_PINS), 'Source input inventory differs')
@@ -453,7 +452,6 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
      out['manifest.json'] = manifest_bytes
      files = {BASE + p: b for p, b in out.items()}
      files.update({RAW + p: b for p, b in raw.items()})
-     files['scripts/power-plant-presentation.lock.json'] = lock_bytes
      report = dict(passed=True, sourceFiles=len(raw), inheritedInputs=len(inherited), assets=len(assets), sprites=len(sprites),
          icons=len(icons), footprints=len(footprints), itemIcons=len(item_icons), inheritedItemIcons=2,
          geometry=len(geometry_rows), outputs=len(out) - 1,  lockBytes=len(lock_bytes),
@@ -479,8 +477,8 @@ def generate(reference,dependency):
   dependencies.append(dict(path=path));return json.loads(b)
  d={p:dep(p) for p in DEPENDENCIES};canonical=d['content/generated/canonical-pokemon/catalog.json']
  species={s['id']['value'][5:]:s for s in canonical['species']};metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
- five=d['content/generated/five-island-rules/items.json'];celio=d['content/generated/celio-pokemon/pokemon.json'];seven=d['content/generated/seven-island-rules/pokemon.json'];events=d['content/generated/event-island-species/catalog.json']
- owned=[r['species']['value'][5:] for r in five['tm36']['compatibility']]+celio['speciesAdded']+['SPECIES_MEWTWO']+seven['ownedSpeciesAdded']+[r['definition']['id']['value'][5:] for r in events['species']]
+ seven=d['content/generated/seven-island-rules/pokemon.json']
+ owned=[species[5:] for species in admission_species(dependency, BASE+'catalog.json', '/newMachines/0') if species[5:] not in SPECIES]
  opponents={s[5:] for s in d['scripts/five-island-predecessor.json']['opponentSpecies']}|set(owned)|set(d['content/generated/five-island-rules/pokemon.json']['opponentSpeciesAdded'])|{s['id']['value'][5:] for s in d['content/generated/league-rematch-rules/pokemon.json']['opponentSpecies']}|set(seven['trainerOnlySpeciesAdded'])
  need(len(owned)==len(set(owned))==149 and len(opponents)==183,'Exact Event Island predecessor')
  need(not set(SPECIES)&set(owned) and not set(SPECIES)&opponents,'Minimal additions not previously admitted')
@@ -513,11 +511,7 @@ def generate(reference,dependency):
   fields=metadata[s]['originalFields'];read(metadata[s]['source']['path']) if 'source' in metadata[s] else read(species[s]['source']['path'])
   held.append(dict(species=ident(s),common=fields['itemCommon'],rare=fields['itemRare']))
  need([(r['species']['value'],r['rare']) for r in held if r['rare']!='ITEM_NONE']==[('pret:SPECIES_MAGNETON','ITEM_MAGNET')],'FireRed held-item tables')
- old=d['content/generated/seven-island-rules/machines.json'];machineids=sorted(r['item']['value'][5:] for r in old['additions']);need(len(machineids)==39,'39 inherited machines')
- tm='src/data/pokemon/tmhm_learnsets.h'
- def cell(s,item):
-  m=one(tm,r'^    \['+s+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),');return dict(species=ident(s),sourceSpeciesId=species[s]['sourceSpeciesId'],canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',m[1])),source=ref(tm,s,m))
- cells=[dict(item=ident(item),compatibility=[cell(s,item) for s in SPECIES]) for item in machineids]
+ cells=compatibility_additions(dependency, BASE+'catalog.json', 'machines')
  itemtext=read('src/data/items.json');sourceitems=json.loads(itemtext)['items'];constants={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',read('include/constants/items.h'),re.M)}
  def item(symbol):
   i=next(i for i in sourceitems if i['itemId']==symbol);m=one('src/data/items.json',r'"itemId":\s*"'+symbol+r'"');r=ref('src/data/items.json',symbol,m)
@@ -533,10 +527,7 @@ def generate(reference,dependency):
    p='src/data/pokemon/item_effects.h';m=one(p,r'^static const u8 sItemEffect_ThunderStone\[6\] = \{\n    \[4\] = ITEM4_EVO_STONE,\n\};');effect=ref(p,'sItemEffect_ThunderStone',m)
    need('#define ITEM4_EVO_STONE         0x80' in read('include/constants/item_effects.h'),'Stone effect byte')
   items.append({k: meta[k] for k in ['id', 'sourceItemSymbol', 'sourceItemId', 'name', 'price', 'pocket', 'importance', 'type', 'fieldUseFunction', 'battleUsage', 'battleUseFunction', 'holdEffectParam', 'source']} | dict(description=wrapped['description'], healHp=0, cureStatus=0, effectBytes=[0, 0, 0, 0, 128, 0] if stone else [], useSupport=9 if stone else 10, effectSource=effect, sourceMetadata=meta))
- newmachines=[];moveconstants=read('include/constants/moves.h');movedata=read('src/data/battle_moves.h')
- for symbol,move in [('ITEM_TM17','MOVE_PROTECT'),('ITEM_TM25','MOVE_THUNDER')]:
-  i=next(i for i in sourceitems if i['itemId']==symbol);need('MOVE_'+i['moveId'].upper()==move,'Source machine move');moveid=int(re.search(r'^#define '+move+r'\s+(\d+)',moveconstants,re.M)[1]);moveblock=re.search(r'\['+move+r'\] =\s*\{(.*?)\}',movedata,re.S)[1];movepp=int(re.search(r'\.pp = (\d+)',moveblock)[1])
-  newmachines.append(dict(machine=item(symbol),move=ident(move),sourceMoveId=moveid,movePp=movepp,compatibility=[cell(s,symbol) for s in owned]))
+ newmachines=machine_definitions(dependency, BASE+'catalog.json')
  flags=read('include/constants/flags.h');ballscripts=read('data/scripts/item_ball_scripts.inc');pickups=[]
  def flagvalue(symbol):
   m=re.search(r'^#define\s+'+symbol+r'\s+([^\n]+)',flags,re.M);need(m,'Flag exists');expr=m[1].split('//')[0].strip()
@@ -566,7 +557,7 @@ def main():
  doc,raw,files=generate(a.reference,a.dependency_root);files[BASE+'catalog.json']=encoded(doc)
  presentation,art=build_power_plant_presentation(lambda path:subprocess.check_output(['git','show',COMMIT+':'+path],cwd=a.reference),a.dependency_root);files.update(presentation)
  for path,b in raw.items():files[RAW+path]=b
- lock=dict(sourceCommit=COMMIT,profile=doc['profile'],files=[dict(path=p) for p,b in sorted(files.items())]);files['scripts/power-plant-pokemon.lock.json']=encoded(lock)
+ lock=dict(sourceCommit=COMMIT,profile=doc['profile'],files=[dict(path=p) for p,b in sorted(files.items())])
  for path,b in files.items():
   dst=a.output/path
   if a.check:need(dst.read_bytes()==b,'Regeneration differs: '+path)

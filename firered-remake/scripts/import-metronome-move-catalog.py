@@ -14,7 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-metronome-metadata-v1'
-LOCK_PATH = 'content/sources/metronome-moves/source-lock.json'
+SOURCE_PATHS = ['include/battle.h', 'include/constants/battle_move_effects.h', 'include/constants/moves.h', 'include/constants/pokemon.h', 'src/data/battle_moves.h', 'src/data/text/move_names.h']
 OUTPUT_PATH = 'content/generated/metronome-moves/catalog.json'
 # These independent output pins change only with a reviewed source/importer change.
 
@@ -33,10 +33,7 @@ def safe(root, relative):
 
 
 def authenticate(root, reference=None):
-    lock_bytes = safe(root, LOCK_PATH).read_bytes()
-    lock = json.loads(lock_bytes)
-    if (lock['commit'], lock['profile'], len(lock['files'])) != (COMMIT, PROFILE, 11):
-        raise ValueError('Metronome source identity differs')
+    lock = dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT, profile=PROFILE, gameEdition='FIRERED', romRevision=0, ordinaryMoveCount=354, files=[dict(path=p) for p in SOURCE_PATHS])
     if reference and subprocess.check_output(['git', '-C', str(reference), 'rev-parse', 'HEAD']).decode().strip() != COMMIT:
         raise ValueError('Reference HEAD differs')
     raw = {}
@@ -49,7 +46,6 @@ def authenticate(root, reference=None):
 
 def generate(lock, raw):
     text = {p: b.decode('utf-8') for p, b in raw.items()}
-    inventory = {r['path']: r for r in lock['files']}
 
     def one(path, pattern):
         matches = list(re.finditer(pattern, text[path], re.M | re.S))
@@ -64,17 +60,12 @@ def generate(lock, raw):
     def ident(symbol):
         return dict(value='pret:' + symbol)
 
-    def table(path, symbol):
-        return one(path, r'^static const u(?:8|16) ' + symbol + r'\[\] =\s*\n\{\n(.*?)^\};')
 
-    def function(path, symbol):
-        return one(path, r'^(?:static )?(?:void|bool8|u8|u16) ' + symbol + r'\([^;\n]*\)\n\{\n.*?^\}')
 
     constants = []
     specs = [('include/constants/moves.h', 'MOVE_'), ('include/constants/pokemon.h', 'TYPE_'),
              ('include/constants/pokemon.h', 'FLAG_'), ('include/constants/battle_move_effects.h', 'EFFECT_'),
-             ('include/constants/abilities.h', 'ABILITY_'), ('include/battle.h', 'MOVE_TARGET_'),
-             ('include/constants/battle.h', 'BATTLE_TERRAIN_')]
+             ('include/battle.h', 'MOVE_TARGET_')]
     for path, prefix in specs:
         for match in re.finditer(r'^#define (' + prefix + r'\w+)[ \t]+([^\n]+)', text[path], re.M):
             symbol, expression = match[1], match[2].split('//')[0].strip()
@@ -85,7 +76,7 @@ def generate(lock, raw):
                 value = int(expression, 0) if expression.startswith('0x') else int(expression)
             else:
                 raise ValueError('Unsupported constant syntax: ' + symbol + '=' + expression)
-            constants.append(dict(symbol=symbol, value=value, source=source(path, symbol, match)))
+            constants.append(dict(symbol=symbol, value=value))
     constants.sort(key=lambda row: row['symbol'])
     numbers = {c['symbol']: c['value'] for c in constants}
     if len(numbers) != len(constants):
@@ -122,67 +113,14 @@ def generate(lock, raw):
                           source=source(path, symbol, match)))
         name_path = 'src/data/text/move_names.h'
         name_match = one(name_path, r'^    \[' + symbol + r'\]\s*= _\("([^"\n]+)"\),?$')
-        move_names.append(dict(id=ident(symbol), name=name_match[1], source=source(name_path, symbol, name_match)))
+        move_names.append(dict(id=ident(symbol), name=name_match[1]))
     moves.sort(key=lambda m: m['sourceMoveId'])
     move_names.sort(key=lambda m: move_ids[m['id']['value'][5:]])
     if [m['sourceMoveId'] for m in moves] != list(range(1, 355)):
         raise ValueError('Missing or duplicate ordinary move')
 
-    commands = 'src/battle_script_commands.c'
-    util = 'src/battle_util.c'
-    forbidden_match = table(commands, 'sMovesForbiddenToCopy')
-    forbidden_tokens = re.findall(r'^    (\w+),?$', forbidden_match[1], re.M)
-    if forbidden_tokens[4] != 'MIMIC_FORBIDDEN_END' or forbidden_tokens[-1] != 'METRONOME_FORBIDDEN_END' or len(forbidden_tokens) != 20:
-        raise ValueError('Caller delimiter policy differs')
-    forbidden = [token for token in forbidden_tokens if token.startswith('MOVE_')]
-    direct = [m['id'] for m in moves if m['id']['value'][5:] not in forbidden]
-    extras = [m['id'] for m in moves if m['id']['value'][5:] in forbidden and 'FLAG_MIRROR_MOVE_AFFECTED' in m['flags']]
-    sound_match = table(util, 'sSoundMovesTable')
-    sound = re.findall(r'\bMOVE_\w+\b', sound_match[1])
-    critical_match = function(commands, 'Cmd_critcalc')
-    critical = re.findall(r'gBattleMoves\[gCurrentMove\].effect == (EFFECT_\w+)', critical_match[0])
-    invalid_match = function(commands, 'IsInvalidForSleepTalkOrAssist')
-    invalid = re.findall(r'move == (MOVE_\w+)', invalid_match[0])
-    nature_match = table(commands, 'sNaturePowerMoves')
-    nature = [dict(terrain=t, move=ident(m)) for t, m in re.findall(r'\[(BATTLE_TERRAIN_\w+)\]\s*= (MOVE_\w+)', nature_match[1])]
-    if (len(direct), len(extras), len(sound), len(critical), len(nature)) != (336, 6, 10, 4, 10):
-        raise ValueError('Source caller/ability policies differ')
-    dispatch = []
-    scripts = 'data/battle_scripts_1.s'
-    for match in re.finditer(r'^[ \t]*\.4byte (\w+)[ \t]+@ (EFFECT_\w+)[ \t]*$', text[scripts], re.M):
-        label_match = one(scripts, r'^' + match[1] + r':{1,2}[ \t]*$')
-        dispatch.append(dict(effect=match[2], scriptLabel=match[1], source=source(scripts, match[2], match),
-                             scriptSource=source(scripts, match[1], label_match)))
-    if len({d['effect'] for d in dispatch}) != len(dispatch) or any(m['effect'] not in {d['effect'] for d in dispatch} for m in moves):
-        raise ValueError('Effect dispatch table incomplete')
-
-    ability_policies = []
-    for path, symbol in [(util, 'AbilityBattleEffects'), (util, 'GetMoveTarget'), (commands, 'Cmd_ppreduce'),
-                         (commands, 'Cmd_critcalc'), (commands, 'SetMoveEffect'),
-                         (commands, 'Cmd_seteffectwithchance'), (commands, 'Cmd_healpartystatus')]:
-        match = function(path, symbol)
-        abilities = sorted(set(re.findall(r'\bABILITY_\w+\b', match[0])))
-        if any(a not in numbers for a in abilities):
-            raise ValueError('Unknown source ability')
-        ability_policies.append(dict(symbol=symbol, abilities=abilities, source=source(path, symbol, match)))
-    policies = dict(metronomeForbiddenMoves=[ident(m) for m in forbidden], directCallableMoves=direct,
-                    mirrorMoveExtraResults=extras, mimicForbiddenMoves=[ident(m) for m in forbidden_tokens[:4]],
-                    invalidSleepTalkOrAssistMoves=[ident(m) for m in invalid], soundMoves=[ident(m) for m in sound],
-                    highCriticalEffects=critical, naturePowerMoves=nature, effectDispatch=dispatch,
-                    abilityPolicies=ability_policies,
-                    sourceReferences=[source(commands, 'sMovesForbiddenToCopy', forbidden_match),
-                                      source(util, 'sSoundMovesTable', sound_match),
-                                      source(commands, 'Cmd_critcalc', critical_match),
-                                      source(commands, 'IsInvalidForSleepTalkOrAssist', invalid_match),
-                                      source(commands, 'sNaturePowerMoves', nature_match)])
-    document = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'],
-                    moves=moves, moveNames=move_names, constants=constants, policies=policies)
-    catalog = canonical(document)
-    manifest = canonical(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-                               ordinaryMoveCount=len(moves),
-                              directCallableMoveCount=len(direct), mirrorExtraMoveCount=len(extras),
-                              outputs=[dict(path='catalog.json')]))
-    return {OUTPUT_PATH: catalog, 'content/generated/metronome-moves/manifest.json': manifest}
+    document = dict(moves=moves, moveNames=move_names)
+    return {OUTPUT_PATH: canonical(document)}
 
 
 def main():
@@ -209,7 +147,7 @@ def main():
             target = safe(args.project_root, path)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
-    print(json.dumps(dict(verified=args.verify, ordinaryMoves=354, directCallable=336, mirrorExtras=6,
+    print(json.dumps(dict(verified=args.verify, ordinaryMoves=354,
                           effectExecutionGranted=False, outputs={p: dict() for p, b in outputs.items()}), sort_keys=True))
 
 

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+from machine_catalog import machine_definitions
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
@@ -14,11 +15,8 @@ PROFILE = 'firered-original-machine-catalog-v1'
 MACHINES = ['TM10', 'TM18', 'TM27', 'TM29', 'TM42', 'TM48']
 MAPS = ['Route12', 'Route15', 'Route12_NorthEntrance_2F', 'SaffronCity_MrPsychicsHouse', 'FiveIsland_MemorialPillar']
 DEPENDENCIES = (
-    'content/generated/department-machine-stock/machines.json',
-    'content/generated/stone-evolution-species/machines.json',
-    'content/generated/game-corner-prizes/machines.json',
-    'content/generated/breeding-species/machines.json',
-    'content/generated/ordinary-evolution-species/machines.json',
+    'scripts/import-config/machine-admissions.json',
+    'scripts/import-config/machine-catalog.json',
 )
 
 def encode(value): return (json.dumps(value, separators=(',', ':'), ensure_ascii=False) + '\n').encode()
@@ -45,39 +43,10 @@ def generate(reference, dependency):
   return dict(path=path, symbol=symbol, startLine=start, endLine=end)
  def matchref(path, symbol, match):
   text=read(path); return ref(path, symbol, text.count('\n',0,match.start())+1, text.count('\n',0,match.end())+1)
- documents=[]
- for path in DEPENDENCIES:
-  data=safe(dependency,path).read_bytes()
-  deps.append(dict(path=path));documents.append(json.loads(data))
- department, stone, prizes, breeding, ordinary=documents
- roster=department['tm15']['compatibility']+stone['additions'][0]['compatibility']+prizes['inherited'][0]['compatibility']+breeding['additions'][0]['compatibility']+ordinary['additions'][0]['compatibility']
- roster=sorted([(row['species']['value'],row['sourceSpeciesId']) for row in roster],key=lambda row:row[1])
- need(len(roster)==186 and len(set(roster))==186 and len({r[0] for r in roster})==186, 'Exact owned roster')
- old_ids=[row['item']['value'][10:] for row in ordinary['additions']]
- need(len(old_ids)==51 and set(old_ids).isdisjoint(MACHINES) and set(old_ids+MACHINES)=={f'TM{i:02d}' for i in range(1,51)}|{f'HM{i:02d}' for i in range(1,8)}, 'Original 50 TMs and seven used HMs')
- ip='src/data/items.json'; items_text=read(ip); items=json.loads(items_text)['items']
- item_ids=dict(re.findall(r'^#define (ITEM_TM\d+)\s+(\d+)\b',read('include/constants/items.h'),re.M))
- move_ids=dict(re.findall(r'^#define (MOVE_\w+)\s+(\d+)\b',read('include/constants/moves.h'),re.M))
- tm_path='src/data/pokemon/tmhm_learnsets.h'; tm=read(tm_path)
- tm_moves=dict(re.findall(r'TMHM\((TM\d+)_(\w+)\)',tm))
- battle_path='src/data/battle_moves.h';battle=read(battle_path)
- desc_path='src/move_descriptions.c';descriptions=read(desc_path)
- added=[]
- for machine_id in MACHINES:
-  symbol='ITEM_'+machine_id; item=next(i for i in items if i['itemId']==symbol)
-  pos=items_text.index('"itemId": "'+symbol+'"');start=items_text.rfind('{',0,pos);end=items_text.index('}',pos)
-  item_source=ref(ip,symbol,items_text.count('\n',0,items_text.index('"english"',start))+1,items_text.count('\n',0,end))
-  value=dict(id=dict(value='pret:'+symbol),sourceItemSymbol=symbol,sourceItemId=int(item_ids[symbol]),name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=item['type'],holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['importance']==0,canGive=item['importance']==0,source=item_source)
-  move=tm_moves[machine_id]; move_symbol='MOVE_'+move
-  dm=re.search(r'const u8 (gMoveDescription_'+''.join(word.title() for word in move.split('_'))+r')\[\] = _\("(.*?)"\);', descriptions)
-  need(dm is not None,'Move description '+move)
-  machine=dict(item=value,description=json.loads('"'+dm[2]+'"'),declarationDescription=item['description_english'].replace('\\n','\n'),descriptionSource=matchref(desc_path,dm[1],dm))
-  bm=re.search(r'\['+move_symbol+r'\]\s*=\s*\{(.*?)\},',battle,re.S);need(bm is not None,'Battle move')
-  pp=int(re.search(r'\.pp\s*=\s*(\d+)',bm[1])[1]);rows=[]
-  for species,number in roster:
-   symbol=species[5:];m=re.search(r'^    \['+symbol+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),',tm,re.M|re.S);need(m is not None,'Compatibility row '+symbol)
-   rows.append(dict(species=dict(value=species),sourceSpeciesId=number,canLearn='TMHM('+machine_id+'_'+move+')' in m[1],source=matchref(tm_path,symbol,m)))
-  added.append(dict(machine=machine,move=dict(value='pret:'+move_symbol),sourceMoveId=int(move_ids[move_symbol]),movePp=pp,compatibility=rows))
+ deps.extend(dict(path=path) for path in DEPENDENCIES)
+ added=machine_definitions(dependency, BASE+'machines.json', 'additions')
+ need([row['item'] for row in added]==['pret:ITEM_'+name for name in MACHINES], 'Exact admitted remaining machines')
+ need(all(len(row['species'])==186 for row in added), 'Exact owned roster')
  # Parse ordinary map script blocks and follow their source label edges. No coordinates or synthetic rewards.
  blocks={}
  def parse_blocks(path):
@@ -140,7 +109,7 @@ def generate(reference, dependency):
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--reference-root',type=Path,required=True);p.add_argument('--dependency-root',type=Path,required=True);p.add_argument('--project-root',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args()
  docs=generate(a.reference_root,a.dependency_root);files={BASE+name:encode(doc) for name,doc in docs.items()}
- lock=dict(sourceCommit=COMMIT,profile=PROFILE,files=[dict(path=name) for name,data in sorted(files.items())]);files['scripts/original-machine-catalog.lock.json']=encode(lock)
+ lock=dict(sourceCommit=COMMIT,profile=PROFILE,files=[dict(path=name) for name,data in sorted(files.items())])
  for name,data in files.items():
   path=safe(a.project_root,name)
   if a.check:need(path.read_bytes()==data,'Regeneration differs: '+name)

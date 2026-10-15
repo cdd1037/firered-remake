@@ -32,9 +32,7 @@ DIRECTORY = 'route-12-fishing-house'
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_GenericBuilding2':'secondary/generic_building_2'}
 CITY_PACKAGE = 'content/generated/snorlax-region'
 CITY_RESOURCE = 'route-12/runtime-map.json'
-NPC_REUSE = {
- 'OBJ_EVENT_GFX_FISHER': 'content/generated/city-services/npc/fisher.png',
- 'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_FISHER', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -220,10 +218,6 @@ def main():
     with tempfile.TemporaryDirectory(prefix='super-rod-',dir=target) as temp:
         stage=Path(temp);shared.import_map(src,MAP,MAP_ID,stage/DIRECTORY)
         npcs=shared.npc_inventory(src,[world],stage/'npc');need({r['graphicsId'] for r in npcs['graphics']}==set(NPC_REUSE),'Super Rod actor cohort differs')
-        for row in npcs['graphics']:
-            path=NPC_REUSE[row['graphicsId']];existing=current/path;rendered=stage/row['texturePath'];need(rendered.read_bytes() == existing.read_bytes(),'Reused Super Rod actor differs')
-            row.update(texturePath=path,reuseExisting=True);rendered.unlink()
-        (stage/'npc').rmdir()
         items=item_inventory(src,constants,stage,dep)
         path=stage/DIRECTORY/'runtime-map.json';rich=path.read_bytes();compact=converter.normalize_runtime(json.loads(rich));util.compact_check(compact,world,src)
         data=converter.encode(compact);(stage/DIRECTORY/'runtime-map.json').write_bytes(data)
@@ -238,7 +232,7 @@ def main():
           inputCount=len(src.entries),mapCount=1,cellCount=99,borderCellCount=4,directedWarpCount=4,objectCount=1,reusedNpcGraphicsCount=2,itemCount=1,
           ordinarySuperRodTableCount=46,sourceOnlyTableCount=4,scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        writes=[(target/'scripts/super-rod-service.lock.json',lock_bytes),(target/'scripts/super-rod-service.contract.json',canonical(contract))]
+        writes=[(target / 'scripts/super-rod-service.contract.json', canonical(contract))]
         writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:

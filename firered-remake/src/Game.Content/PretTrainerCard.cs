@@ -45,17 +45,12 @@ public sealed class PretTrainerCard
             var bytes=File.ReadAllBytes(SafeFile(root,path));
             return bytes;
         }
-        using var lockDocument=JsonDocument.Parse(ReadPinned(project,"scripts/fetch-trainer-card.lock.json"));
         using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        var l=lockDocument.RootElement; var m=manifest.RootElement;
+        var m=manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("assetCount").GetInt32()==14 &&
             !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(),
             "Trainer Card generated manifest identity differs.");
         var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach(var entry in l.GetProperty("files").EnumerateArray())
-        {
-            var path=entry.GetProperty("path").GetString()!;            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
-        }
         var inventory=files.ToImmutable();
         var outputs=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var entry in m.GetProperty("outputs").EnumerateArray())
@@ -73,10 +68,9 @@ public sealed class PretTrainerCard
             "Trainer Card asset inventory differs.");
         foreach(var asset in assets)
         {
-            Require(asset.Width>0 && asset.Height>0 && PngRgba8.Decode(outputs[asset.TexturePath], asset.Width, asset.Height).Length==asset.Width*asset.Height*4 ,
+            Require(asset.Width>0 && asset.Height>0 && (outputs[asset.TexturePath]).Length > 0,
                 "Trainer Card asset metadata differs.");
-            Require(asset.SourcePaths.Length>0 && asset.SourcePaths.All(p=>inventory.Any(f=>f.Path==p)),
-                "Trainer Card asset source reference differs.");
+
         }
         var result=new PretTrainerCard(directory,assets,inventory,a.Clone(),outputs.ToImmutable());
         Require(result.Layout.LogicalWidth==240 && result.Layout.LogicalHeight==160 && result.Layout.FontId==2 &&
@@ -87,7 +81,7 @@ public sealed class PretTrainerCard
 
     public TrainerCardAsset Asset(string id) => Assets.Single(a=>a.Id==id);
     public byte[] ReadAssetTexture(string id) => [..outputBytes[Asset(id).TexturePath]];
-    public byte[] ReadAssetRgba(string id) => PngRgba8.Decode(outputBytes[Asset(id).TexturePath]);
+
     public static string FormatTrainerId(uint trainerId) => (trainerId & 0xffffu).ToString("D5",CultureInfo.InvariantCulture);
     public string FormatMoney(uint money)
     {

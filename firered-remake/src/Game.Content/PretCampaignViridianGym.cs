@@ -16,29 +16,12 @@ public sealed partial class PretCampaignCatalog
     public ViridianGymTrainerCatalog? ViridianGymTrainerParties { get; }
     public bool ViridianGymEnabled=>ViridianGymRegion is not null;
 
-    private static void AppendViridianGymSources(PretViridianGymRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
-    {
-        var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
-        foreach(var source in region.Scripts)
-        {
-            if(prior.TryGetValue(source.Path,out var old))
-            {
-                if(old.Text!=source.Text)
-                    throw new InvalidDataException("viridian_gym_source_conflict: "+source.Path);
-            }
-            else{prior.Add(source.Path,source);sources.Add(source);}
-            if(!texts.Contains(source.Text,StringComparer.Ordinal))texts.Add(source.Text);
-        }
-        foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
-        MergeRegionalServiceConstants(constants,region.Constants);
-    }
+
 
     private static void ValidateViridianGymAnchors(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(region.NewMaps.Count!=1||region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("viridian_gym_predecessor_maps");
-        if(!JsonElement.DeepEquals(maps[new("map.viridian-city")].Events,region.ReusedAnchorEvents["ViridianCity"]))
-            throw new InvalidDataException("viridian_gym_anchor_events");
+        if (region.NewMaps.Keys.Any(maps.ContainsKey))
+            throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
     private static void ValidateViridianGymComposition(PretViridianGymRegion region,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,ViridianGymTrainerCatalog trainers,PretStoryCompilation scripts,PewterMachineCatalog machines,CinnabarOwnedPokemonCatalog owned)

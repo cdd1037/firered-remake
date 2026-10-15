@@ -15,8 +15,6 @@ public sealed class PretCeruleanRegion
 {
     public const string Profile = "firered-cerulean-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
@@ -24,7 +22,7 @@ public sealed class PretCeruleanRegion
     public JsonElement Trainers => Dependencies.GetProperty("trainers");
     public JsonElement Healing => Dependencies.GetProperty("healLocation");
     public JsonElement Route4Connection => Dependencies.GetProperty("route4Connection");
-    public JsonElement ScriptInventory { get; }
+
     public JsonElement Catalog { get; }
     public JsonElement NpcSources { get; }
     public JsonElement ExternalRoute9Events { get; }
@@ -32,14 +30,12 @@ public sealed class PretCeruleanRegion
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
-    private PretCeruleanRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement scriptsInventory,
-        JsonElement npcSources, JsonElement externalRoute9Events)
+    private PretCeruleanRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
+        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalRoute9Events)
     {
-        GeneratedDirectory = directory; NewMaps = maps; Scripts = scripts; TextSources = texts;
+        GeneratedDirectory = directory; NewMaps = maps;
         Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
-        ScriptInventory = scriptsInventory; NpcSources = npcSources; ExternalRoute9Events = externalRoute9Events;
+        NpcSources = npcSources; ExternalRoute9Events = externalRoute9Events;
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -83,14 +79,14 @@ public sealed class PretCeruleanRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/cerulean-region");
-        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
+        
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        using var sourceLock = JsonDocument.Parse(ReadPinned(project,"scripts/cerulean-region.lock.json"));
+
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
             m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "Cerulean manifest identity differs.");
@@ -98,18 +94,13 @@ public sealed class PretCeruleanRegion
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
+            if (path == "scripts.json") continue;
             if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "cerulean-region/" + path)) continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate cerulean output.");
         }
         using var catalog = JsonDocument.Parse(outputs["cerulean-catalog.json"]);
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        byte[] Raw(string path) => File.ReadAllBytes(SafeFile(rawDirectory, path));
-        foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
 
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
-        }
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
@@ -121,34 +112,17 @@ public sealed class PretCeruleanRegion
             if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact))
             {
 
-
                 var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                    PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate Cerulean runtime map.");
                 continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
-        using var scriptInventory = JsonDocument.Parse(outputs["scripts.json"]);
-        Require(scriptInventory.RootElement.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "Cerulean script reference closure is incomplete.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var property in scriptInventory.RootElement.GetProperty("filePreambles").EnumerateObject())
-        {
-            var path = property.Name;
-            var text = Encoding.UTF8.GetString(Raw(path));
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Require(symbol.Length > 0, "Cerulean script has no original source label: " + path);
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
+
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_BADGE02_GET"] > 0 && constants["TRAINER_LEADER_MISTY"] > 0 &&
             constants["HEAL_LOCATION_CERULEAN_CITY"] == 4, "Cerulean trainer/heal constants differ.");
@@ -158,10 +132,9 @@ public sealed class PretCeruleanRegion
             !dependencies.RootElement.GetProperty("route4Connection").GetProperty("enabled").GetBoolean(),
             "Cerulean dependency scope differs.");
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
-        using var route9Events = JsonDocument.Parse(Raw("data/maps/Route9/map.json"));
-        return new(directory, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), scriptInventory.RootElement.Clone(),
-            npcSources.RootElement.Clone(), route9Events.RootElement.Clone());
+        using var route9Events = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/Route9/map.json"));
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
+            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), route9Events.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

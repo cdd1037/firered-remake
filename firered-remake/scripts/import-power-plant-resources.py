@@ -331,7 +331,7 @@ def main():
             inputCount=len(src.entries),mapCount=1,cellCount=1960,borderCellCount=4,directedWarpCount=7,objectCount=8,pickupCount=5,hiddenItemCount=2,
             fakeItemBallCount=2,staticEncounterCount=3,npcGraphicsCount=len(npcs['graphics']),scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        writes=[(target/'scripts/power-plant-resources.lock.json',lock_bytes),(target/'scripts/power-plant-resources.contract.json',canonical(contracts))]
+        writes=[(target / 'scripts/power-plant-resources.contract.json', canonical(contracts))]
         writes += [(target/'content/raw/pokefirered/037335f4'/p,data) for p,data in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:

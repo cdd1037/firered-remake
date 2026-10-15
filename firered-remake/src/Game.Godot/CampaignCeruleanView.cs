@@ -39,11 +39,10 @@ public partial class CampaignView
         }
         foreach(var asset in PretCeruleanTrainerArt.Load(_root))
         {
-            using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,asset.Rgba);
+            using var image=NativeImages.LoadPng(asset.Png, 64, 64);
             _forestTrainerPortraits.Add(asset.Id,ImageTexture.CreateFromImage(image));
         }
         var machineIcon=PretCeruleanMachines.LoadProject(_root).Icon;
-        using(var image=Image.CreateFromData(machineIcon.Width,machineIcon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("cerulean-machines", machineIcon)))
-            _earlyItemIcons.Add(machineIcon.Item,ImageTexture.CreateFromImage(image));
+        _earlyItemIcons.Add(machineIcon.Item,ItemTexture("cerulean-machines", machineIcon));
     }
 }

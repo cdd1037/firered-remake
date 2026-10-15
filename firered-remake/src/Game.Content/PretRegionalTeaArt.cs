@@ -15,9 +15,9 @@ public sealed class PretRegionalTeaArt
     public const string Profile = "firered-regional-tea-art-v1";
     public const string GeneratedDirectory = "content/generated/regional-tea-art/";
     public RegionalTeaArtDocument Document { get; }
-    private readonly byte[] _rgba;
-    private PretRegionalTeaArt(RegionalTeaArtDocument document, byte[] rgba) { Document = document; _rgba = rgba; }
-    public byte[] ReadRgba() => [.. _rgba];
+    private readonly byte[] _png;
+    private PretRegionalTeaArt(RegionalTeaArtDocument document, byte[] png) { Document = document; _png = png; }
+    public byte[] ReadPng() => [.. _png];
 
     public static PretRegionalTeaArt Load(string projectRoot, PewterMachineItem tea)
     {
@@ -37,8 +37,8 @@ public sealed class PretRegionalTeaArt
         Require(asset.Id == "regional-tea" && ui.Icon == asset.Id && asset.TexturePath == "regional-tea.png" &&
             document.TexturePath == "regional-tea.png" && (asset.Width, asset.Height, asset.X, asset.Y) == (24, 24, 8, 124),
             "Tea icon layout differs.");
-        var rgba = PngRgba8.Decode(Read(root,GeneratedDirectory + document.TexturePath),24,24);
-        return new(document, rgba);
+        var png = Read(root,GeneratedDirectory + document.TexturePath);
+        return new(document, png);
     }
 
     private static byte[] Read(string root,string relative)

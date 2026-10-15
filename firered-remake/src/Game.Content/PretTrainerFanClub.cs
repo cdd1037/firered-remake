@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
-using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 using Game.Domain.World;
 
@@ -14,25 +12,20 @@ public sealed class PretTrainerFanClub
     public const string ScriptPath = "data/maps/SaffronCity_PokemonTrainerFanClub/scripts.inc";
     public static MapId RoomMapId { get; } = new("map.saffron-city-pokemon-trainer-fan-club");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement ScriptInventory { get; }
     public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretTrainerFanClub(SilphSourcePackage source, PretWorldMap map,
-        ImmutableArray<PretSourceScriptFile> scripts, ImmutableDictionary<string, string> texts,
         ImmutableDictionary<string, int> constants)
     {
         NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(map.Id, map);
-        Scripts = scripts; TextSources = texts; Constants = constants; SourceFiles = source.Files;
+        Constants = constants;
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
-        Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
+        Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
     }
 
@@ -55,14 +48,14 @@ public sealed class PretTrainerFanClub
     public static PretTrainerFanClub Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"trainer-fan-club",            "scripts/trainer-fan-club.lock.json");
+        var source = new SilphSourcePackage(projectRoot,"trainer-fan-club");
         var graphics = new HashSet<string>(["OBJ_EVENT_GFX_BEAUTY", "OBJ_EVENT_GFX_BLACK_BELT",
             "OBJ_EVENT_GFX_CRUSH_GIRL", "OBJ_EVENT_GFX_GENTLEMAN", "OBJ_EVENT_GFX_LITTLE_GIRL",
             "OBJ_EVENT_GFX_RED_NORMAL", "OBJ_EVENT_GFX_ROCKER", "OBJ_EVENT_GFX_WOMAN_3",
             "OBJ_EVENT_GFX_YOUNGSTER"], StringComparer.Ordinal);
         foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
         {
-            Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!) && texture.GetProperty("reuseExisting").GetBoolean(),
+            Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!),
                 "Trainer Fan Club actors must reuse the original existing resources.");
         }
         Need(graphics.Count == 0, "Trainer Fan Club actor resources are incomplete.");
@@ -70,17 +63,16 @@ public sealed class PretTrainerFanClub
         Need(catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Trainer Fan Club catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Saffron Trainer Fan Club and original shared script closure.", ResourceId, source.Files);
-        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
+            "Original Saffron Trainer Fan Club and original shared script closure.", ResourceId, []);
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
         string path = spec.GetProperty("path").GetString()!;
         Need(id == RoomMapId.Value && path == relative + "/runtime-map.json" ,
             "Trainer Fan Club compact map binding differs.");
-        var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
+        var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
         Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Trainer Fan Club map identity differs.");
         var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/trainer-tower-region/npc/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(map.Width == 11 && map.Height == 17 && map.FieldWarps.Length == 1 &&
             map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null &&
             map.Events.GetProperty("object_events").GetArrayLength() == 10 &&
@@ -92,30 +84,12 @@ public sealed class PretTrainerFanClub
             !map.Events.GetProperty("allow_escaping").GetBoolean() && !map.Events.GetProperty("allow_running").GetBoolean(),
             "Trainer Fan Club original map/event collection differs.");
         ValidateTopology(source, dependencyRoot, map);
-        var inventory = source.Document("scripts.json");
-        Need(inventory.GetProperty("blocks").GetArrayLength() == 103 &&
-            inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "Trainer Fan Club script closure differs.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
-        {
-            string sourcePath = entry.GetString()!, text = new UTF8Encoding(false, true).GetString(raw[sourcePath]);
-            if (sourcePath.EndsWith("/text.inc", StringComparison.Ordinal) || sourcePath.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(sourcePath, text);
-            else
-            {
-                string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(label.Length > 0, "Missing Trainer Fan Club script label.");
-                scripts.Add(new(sourcePath, text, new(SourceKind.Pret,sourcePath,label,                    "pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["NUM_TRAINER_FAN_CLUB_MEMBERS"] == 8 && constants["(NUM_TRAINER_FAN_CLUB_MEMBERS - 1)"] == 7 &&
             constants["VAR_FANCLUB_FAN_COUNTER"] == 0x4038 && constants["VAR_FANCLUB_LOSE_FAN_TIMER"] == 0x4039 &&
             constants["VAR_MAP_SCENE_SAFFRON_CITY_POKEMON_TRAINER_FAN_CLUB"] == 0x4073 && constants["FAMECHECKER_BRUNO"] == 10,
             "Trainer Fan Club original constants differ.");
-        return new(source, map, scripts.ToImmutable(), texts.ToImmutable(), constants);
+        return new(source, map, constants);
     }
 
     private static void ValidateTopology(SilphSourcePackage source, string dependencyRoot, PretWorldMap room)

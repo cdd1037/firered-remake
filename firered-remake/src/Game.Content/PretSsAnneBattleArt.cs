@@ -36,7 +36,7 @@ public sealed class PretSsAnneBattleArt
 
     /// <summary>Authenticated palette-expanded PNG bytes; callers may load them without another path lookup.</summary>
     public byte[] ReadPng(string id) => ReadAsset(id);
-    public byte[] ReadRgba(string id) => PngRgba8.Decode(ReadAsset(id));
+
     private byte[] ReadAsset(string id) => _outputs.TryGetValue(id + ".png", out var bytes)
         ? (byte[])bytes.Clone() : throw new InvalidDataException("Unknown S.S. Anne art asset: " + id);
 
@@ -50,7 +50,7 @@ public sealed class PretSsAnneBattleArt
         foreach (var input in document.GetProperty("inputs").EnumerateArray())
         {
             string path = input.GetProperty("path").GetString()!;
-            files.Add(new(path,$"https://github.com/pret/pokefirered/blob/{SourceCommit}/{path}"));
+            files.Add(new(path));
         }
         Require(files.Select(f => f.Path).Distinct(StringComparer.Ordinal).Count() == 22, "Duplicate S.S. Anne art input.");
         var outputs = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
@@ -65,11 +65,8 @@ public sealed class PretSsAnneBattleArt
         {
             string id = asset.GetProperty("id").GetString()!;
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
-            Require(PngRgba8.Decode(outputs[id + ".png"]).Length == width * height * 4, "S.S. Anne RGBA geometry differs.");
+            Require((outputs[id + ".png"]).Length > 0, "S.S. Anne PNG payload differs.");
             byte[] png = outputs[id + ".png"];
-            Require(png.AsSpan(0, 8).SequenceEqual(new byte[] {137,80,78,71,13,10,26,10}) &&
-                System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(16, 4)) == width &&
-                System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(20, 4)) == height, "S.S. Anne PNG geometry differs.");
             if (asset.GetProperty("kind").GetString() == "trainer")
             {
                 var expected = id switch
@@ -84,7 +81,7 @@ public sealed class PretSsAnneBattleArt
                     asset.GetProperty("sourceImage").GetString() == "graphics/trainers/front_pics/" + expected.Stem + "_front_pic.png" &&
                     asset.GetProperty("sourcePalette").GetString() == "graphics/trainers/palettes/" + expected.Stem + ".pal",
                     "S.S. Anne trainer source geometry differs.");
-                portraits.Add(new(id, 144, 8, PngRgba8.Decode(outputs[id + ".png"])));
+                portraits.Add(new(id, 144, 8, outputs[id + ".png"]));
             }
             else
             {

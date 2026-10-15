@@ -19,7 +19,7 @@ public partial class CampaignView
         var position=document.Assets.Single(a=>a.Id==firstIcon);
         var rgba=System.IO.File.ReadAllBytes(System.IO.Path.Combine(_root,"content/generated/itemfinder-source/itemfinder.rgba"));
         using var image=Image.CreateFromData(24,24,false,Image.Format.Rgba8,rgba);
-        _questPocketTextures.Add(iconId,ImageTexture.CreateFromImage(image));
+        _questPocketTextures.Add(iconId,SceneTextures.FromImage(image));
         document=document with{Items=document.Items.Add(new(ItemfinderRules.Item.Value,"ITEM_ITEMFINDER","ITEMFINDER",source.ItemfinderDescription,iconId,"ItemUseOutOfBattle_Itemfinder")),
             Assets=document.Assets.Add(new(iconId,"content/generated/itemfinder-source/itemfinder.rgba",24,24,position.X,position.Y))};
     }

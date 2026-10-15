@@ -4,6 +4,8 @@ Only reads pinned Git blobs. Never builds or executes reference code. --check is
 """
 import argparse,  json, re, subprocess
 from pathlib import Path
+from machine_catalog import compatibility_additions
+ROOT=Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 SPECIES=['SPECIES_HO_OH','SPECIES_LUGIA','SPECIES_DEOXYS']
@@ -25,7 +27,6 @@ def generate(reference,dependency):
         b=(dependency/path).read_bytes()
         dependencies.append(dict(path=path));return json.loads(b)
     canonical=dep('content/generated/canonical-pokemon/catalog.json')
-    old=dep('content/generated/seven-island-rules/machines.json')
     species={s['id']['value'][5:]:s for s in canonical['species']};metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
     form=canonical['generationContract']['formStatOverrides'][0]
     need(form['species']==ident('SPECIES_DEOXYS') and form['baseStats']==dict(hp=50,attack=180,defense=20,speed=150,specialAttack=180,specialDefense=20),'FireRed Attack forme')
@@ -40,15 +41,11 @@ def generate(reference,dependency):
     for s,kind,mapname,level in [('SPECIES_HO_OH','hoOh','NavelRock_Summit',70),('SPECIES_LUGIA','lugia','NavelRock_Base',70),('SPECIES_DEOXYS','deoxys','BirthIsland_Exterior',30)]:
         p='data/maps/'+mapname+'/scripts.inc';m=one(p,r'^\tseteventmon '+s+', '+str(level)+r'\n')
         encounters.append(dict(kind=kind,map='MAP_'+re.sub(r'([a-z])([A-Z])',r'\1_\2',mapname).upper(),species=ident(s),level=level,heldItem='ITEM_NONE',modernFatefulEncounter=True,source=ref(p,'seteventmon '+s,m)))
-    for p in ['asm/macros/event.inc','src/pokemon.c','src/battle_setup.c','src/battle_main.c','include/random.h','include/constants/pokemon.h','include/constants/species.h','include/constants/items.h','src/data/pokemon/tmhm_learnsets.h','src/data/items.json']:read(p)
+    for p in ['asm/macros/event.inc','src/pokemon.c','src/battle_setup.c','src/battle_main.c','include/random.h','include/constants/pokemon.h','include/constants/species.h','include/constants/items.h','src/data/items.json']:read(p)
     need('CreateEventMon(&gEnemyParty[0], species, level, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);' in read('src/pokemon.c') and 'SetMonData(mon, MON_DATA_MODERN_FATEFUL_ENCOUNTER, &isModernFatefulEncounter);' in read('src/pokemon.c'),'Event generation source')
-    cells=[];tm='src/data/pokemon/tmhm_learnsets.h'
-    for item in sorted(r['item']['value'][5:] for r in old['additions']):
-        rows=[]
-        for s in SPECIES:
-            m=one(tm,r'^    \['+s+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),')
-            rows.append(dict(species=ident(s),sourceSpeciesId=species[s]['sourceSpeciesId'],canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',m[1])),source=ref(tm,s,m)))
-        cells.append(dict(item=ident(item),compatibility=rows))
+    cells=compatibility_additions(ROOT, 'content/generated/event-island-species/catalog.json', 'machines')
+    need(len(cells)==39, 'Exact admitted machine scope')
+    dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
     text=read('src/data/items.json');source_items=json.loads(text)['items'];items=[]
     constants={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',read('include/constants/items.h'),re.M)}
     for symbol in ['ITEM_MYSTIC_TICKET','ITEM_AURORA_TICKET','ITEM_SACRED_ASH','ITEM_ITEMFINDER','ITEM_MACHO_BRACE','ITEM_LEFTOVERS']:
@@ -69,7 +66,6 @@ def main():
     d,raw=generate(a.reference,a.dependency_root);files={'content/generated/event-island-species/catalog.json':(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode()}
     for path,data in raw.items():files['content/raw/pokefirered/037335f4/'+path]=data
     lock=dict(sourceCommit=COMMIT,profile=d['profile'],files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/event-island-species.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for path,b in files.items():
         dest=a.output/path
         if a.check:need(dest.read_bytes()==b,'Regeneration differs: '+path)

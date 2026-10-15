@@ -7,8 +7,7 @@ using Game.Domain.Ids;
 namespace Game.Content;
 
 public sealed record PretCeladonGymItemsDocument(int SchemaVersion,string Profile,string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs,ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,ImmutableArray<string> Limitations);
+    ImmutableArray<PretPewterMachineInput> Inputs,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,ImmutableArray<string> Limitations);
 
 public static class PretCeladonGymItems
 {
@@ -19,11 +18,10 @@ public static class PretCeladonGymItems
     {
         var options=ContentJson.CreateOptions();options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
         var document=ContentJson.ParseStrict<PretCeladonGymItemsDocument>(json,options);
-        Require(document.SchemaVersion==1&&document.Items.Length==1&&document.Icons.Length==1&&!document.RulesSources.IsDefaultOrEmpty&&
-            !document.Limitations.IsDefaultOrEmpty,"Celadon Gym item scope differs.");
+        Require(document.SchemaVersion==1&&document.Items.Length==1&&document.Icons.Length==1&&!document.Limitations.IsDefaultOrEmpty,"Celadon Gym item scope differs.");
         var item=document.Items.Single();CeladonGymItemRules.ValidateMachine(item.Metadata);
         Require(item.EffectBytes.IsEmpty&&item.EffectSource is null,"TM19 has unexpected effect bytes.");
-        var icon=document.Icons.Single();Require(icon.Item==CeladonGymItemRules.Tm19Id&&icon.PngPath=="item_tm19.png","TM19 icon identity differs.");
+        var icon=document.Icons.Single();Require(icon.Item==CeladonGymItemRules.Tm19Id&&icon.Region is not null,"TM19 icon identity differs.");
 PretPewterMachines.ValidateIcon(icon);
         return document;
     }

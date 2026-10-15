@@ -31,7 +31,7 @@ def safe(root, relative):
 def run(repository, raw, output):
     lock_bytes = (ROOT / "scripts/route3-trainer-art.lock.json").read_bytes()
     lock = json.loads(lock_bytes)
-    project = json.loads((ROOT / "content/source-lock.json").read_bytes())
+    project = json.loads((ROOT / "scripts/import-config/source.json").read_bytes())
     if (project["source"]["repository"], project["source"]["sourceCommit"],
             project["referenceGame"]["gameEdition"], project["referenceGame"]["romRevision"]) != (
             "pret/pokefirered", COMMIT, "FIRERED", 0):

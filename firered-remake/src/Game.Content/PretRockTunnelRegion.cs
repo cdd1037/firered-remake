@@ -17,8 +17,6 @@ public sealed class PretRockTunnelRegion
 {
     public const string Profile = "firered-rocktunnel-region-import-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Dependencies { get; }
@@ -32,7 +30,7 @@ public sealed class PretRockTunnelRegion
     public JsonElement Items => Dependencies.GetProperty("items");
     public JsonElement Pickups => Dependencies.GetProperty("pickups");
     public ImmutableArray<MapId> ReusedMapIds => [new("map.cerulean-city")];
-    public JsonElement ScriptInventory { get; }
+
     public JsonElement Catalog { get; }
     public JsonElement NpcSources { get; }
     public JsonElement ExternalCeruleanEvents { get; }
@@ -40,14 +38,12 @@ public sealed class PretRockTunnelRegion
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
     public string DependencySourcePath => Path.Combine(GeneratedDirectory, "dependencies.json");
 
-    private PretRockTunnelRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
-        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement scriptsInventory,
-        JsonElement npcSources, JsonElement externalCeruleanEvents)
+    private PretRockTunnelRegion(string directory, ImmutableDictionary<MapId, PretWorldMap> maps, ImmutableDictionary<string, int> constants,
+        ImmutableArray<PretWorldSourceFile> files, JsonElement dependencies, JsonElement catalog, JsonElement npcSources, JsonElement externalCeruleanEvents)
     {
-        GeneratedDirectory = directory; NewMaps = maps; Scripts = scripts; TextSources = texts;
+        GeneratedDirectory = directory; NewMaps = maps;
         Constants = constants; SourceFiles = files; Dependencies = dependencies; Catalog = catalog;
-        ScriptInventory = scriptsInventory; NpcSources = npcSources; ExternalCeruleanEvents = externalCeruleanEvents;
+        NpcSources = npcSources; ExternalCeruleanEvents = externalCeruleanEvents;
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -88,14 +84,14 @@ public sealed class PretRockTunnelRegion
     {
         var project = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(project, "content/generated/rocktunnel-region");
-        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
+        
         byte[] ReadPinned(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
             return bytes;
         }
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        using var sourceLock = JsonDocument.Parse(ReadPinned(project,"content/sources/rocktunnel-region.lock.json"));
+
         var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1 &&
             m.GetProperty("unresolvedLabelCount").GetInt32() == 0, "RockTunnel manifest identity differs.");
@@ -103,19 +99,13 @@ public sealed class PretRockTunnelRegion
         foreach (var output in m.GetProperty("outputs").EnumerateArray())
         {
             var path = output.GetProperty("path").GetString()!;
+            if (path == "scripts.json") continue;
             if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "rocktunnel-region/" + path)) continue;
             Require(outputs.TryAdd(path, ReadPinned(directory,path)), "Duplicate RockTunnel output.");
         }
         using var catalog = JsonDocument.Parse(outputs["rocktunnel-catalog.json"]);
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var raw = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            var bytes = ReadPinned(rawDirectory,path);
-            Require(raw.TryAdd(path, bytes), "Duplicate RockTunnel source.");
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
-        }
+
         var inventory = files.ToImmutable();
         var byPath = inventory.ToDictionary(f => f.Path, StringComparer.Ordinal);
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; asset redistribution rights are not inferred.",
@@ -127,33 +117,17 @@ public sealed class PretRockTunnelRegion
             if (runtimeMaps is not null && runtimeMaps.Maps.TryGetValue(new MapId(spec.GetProperty("stableId").GetString()!), out var compact) )
             {
                 var runtimeMap = PretWorldMap.FromRuntime(compact, metadata, SafeFile(directory, relative),
-                    SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                    PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
                 Require(maps.TryAdd(runtimeMap.Id, runtimeMap), "Duplicate RockTunnel runtime map.");
                 continue;
             }
             var map = PretWorldMap.LoadRegion(SafeFile(directory, relative), spec.GetProperty("stableId").GetString()!,
-                metadata, SafeFile(directory, "npc/red-normal.png"), MapIdFromSourceSymbol);
+                metadata, PretOverworldTextures.Resolve(directory, "../shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
             Require(MapIdFromSourceSymbol(map.SourceMapSymbol) == map.Id, "Map stable identity differs.");
             Require(maps.TryAdd(map.Id, map), "Duplicate region map.");
         }
         Require(maps.Count == 7 && maps.Values.Sum(x => x.Width*x.Height) == 7980, "Incomplete RockTunnel map set.");
-        using var scriptInventory = JsonDocument.Parse(outputs["scripts.json"]);
-        Require(scriptInventory.RootElement.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "RockTunnel script reference closure is incomplete.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var property in scriptInventory.RootElement.GetProperty("filePreambles").EnumerateObject())
-        {
-            var path = property.Name;
-            var text = Encoding.UTF8.GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                var symbol = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Require(symbol.Length > 0, "RockTunnel script has no original source label: " + path);
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,symbol,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
+
         var constants = PretSharedConstants.ForPackage(directory).ToBuilder();
         Require(constants["FLAG_SYS_FLASH_ACTIVE"] == 0x806 && constants["FLAG_BADGE01_GET"] == 0x820 &&
             constants["REQUIRED_OWNED_MONS"] == 20 && constants["LOCALID_ROUTE9_CUT_TREE"] == 10,
@@ -168,28 +142,10 @@ public sealed class PretRockTunnelRegion
             dependencies.RootElement.GetProperty("darkness").GetProperty("maps").GetArrayLength() == 2 &&
             dependencies.RootElement.GetProperty("darkness").GetProperty("maps").EnumerateArray().All(x => x.GetProperty("requiresFlash").GetBoolean() && x.GetProperty("allowEscaping").GetBoolean()),
             "RockTunnel dependency scope differs.");
-        // Existing Cerulean profile owns CeruleanCity: authenticate its certificate and preserve the original map identity.
-        var reused = catalog.RootElement.GetProperty("reusedMaps");
-        Require(reused.GetArrayLength() == 1 && reused[0].GetProperty("stableId").GetString() == "map.cerulean-city" ,
-            "RockTunnel reused CeruleanCity certificate differs.");
-        var ceruleanDirectory = Path.Combine(project, "content/generated/cerulean-region");
-        foreach (var output in reused[0].GetProperty("outputs").EnumerateArray())
-        {
-            var relative = output.GetProperty("path").GetString()!;
-            if (runtimeMaps is not null && PretRuntimeMapIntegration.Replaces(runtimeMaps, "cerulean-region/" + relative)) continue;
-            var bytes = ReadPinned(ceruleanDirectory,relative);
-            if (relative == "cerulean-city/runtime-map.json")
-            {
-                using var world = JsonDocument.Parse(bytes);
-                using var original = JsonDocument.Parse(raw["data/maps/CeruleanCity/map.json"]);
-                Require(JsonElement.DeepEquals(world.RootElement.GetProperty("events"), original.RootElement), "Reused CeruleanCity events differ.");
-            }
-        }
         using var npcSources = JsonDocument.Parse(outputs["npc-source.json"]);
-        using var cityEvents = JsonDocument.Parse(raw["data/maps/CeruleanCity/map.json"]);
-        return new(directory, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants.ToImmutable(),
-            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), scriptInventory.RootElement.Clone(),
-            npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
+        using var cityEvents = JsonDocument.Parse(GeneratedRegionEvents.Read(project, "data/maps/CeruleanCity/map.json"));
+        return new(directory, maps.ToImmutable(), constants.ToImmutable(),
+            inventory, dependencies.RootElement.Clone(), catalog.RootElement.Clone(), npcSources.RootElement.Clone(), cityEvents.RootElement.Clone());
     }
     private static void Require(bool value, string error) { if (!value) throw new InvalidDataException(error); }
     private static string SafeFile(string root, string path)

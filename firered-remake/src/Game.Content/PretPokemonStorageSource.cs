@@ -26,8 +26,6 @@ public sealed class PretPokemonStorageSource
     public const string ReturnEntry = "EventScript_PCMainMenu";
     public const string PowerOffEntry = "EventScript_TurnOffPC";
     public const string NamingFlag = "FLAG_SYS_NOT_SOMEONES_PC";
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableDictionary<string, string> SourceUiTexts { get; }
     public ImmutableDictionary<string, PretPokemonStorageSourceText> UiTextSources { get; }
@@ -35,33 +33,32 @@ public sealed class PretPokemonStorageSource
     public ImmutableArray<PretPcMenuVariant> PcMenuVariants { get; }
     public ImmutableArray<PretPokemonStorageMenuOption> StorageMenu { get; }
     public ImmutableArray<OpeningItemSourceRef> RulesSources { get; }
-    public JsonElement ScriptInventory { get; }
+
     public ImmutableArray<string> Limitations { get; }
     public string GeneratedDirectory { get; }
 
-    private PretPokemonStorageSource(string generatedDirectory, ImmutableArray<PretSourceScriptFile> scripts,
-        ImmutableDictionary<string, string> texts, ImmutableDictionary<string, int> constants,
+    private PretPokemonStorageSource(string generatedDirectory, ImmutableDictionary<string, int> constants,
         ImmutableDictionary<string, PretPokemonStorageSourceText> uiTexts, ImmutableArray<PretWorldSourceFile> files,
         ImmutableArray<PretPcMenuVariant> pcMenus, ImmutableArray<PretPokemonStorageMenuOption> storageMenu,
-        ImmutableArray<OpeningItemSourceRef> rules, JsonElement scriptInventory, ImmutableArray<string> limitations)
+        ImmutableArray<OpeningItemSourceRef> rules, ImmutableArray<string> limitations)
     {
-        GeneratedDirectory = generatedDirectory; Scripts = scripts; TextSources = texts; Constants = constants;
+        GeneratedDirectory = generatedDirectory; Constants = constants;
         UiTextSources = uiTexts; SourceUiTexts = uiTexts.ToImmutableDictionary(x => x.Key, x => x.Value.Text, StringComparer.Ordinal);
         SourceFiles = files; PcMenuVariants = pcMenus; StorageMenu = storageMenu; RulesSources = rules;
-        ScriptInventory = scriptInventory; Limitations = limitations;
+        Limitations = limitations;
     }
 
     public static PretPokemonStorageSource Load(string projectRoot)
     {
         var project = Path.GetFullPath(projectRoot);
-        var rawDirectory = Path.Combine(project, PretSourcePaths.FireRedRawDirectory);
+        
         var generatedDirectory = Path.Combine(project, "content/generated/pokemon-storage");
         byte[] Read(string root,string path)
         {
             var bytes = File.ReadAllBytes(SafeFile(root, path));
             return bytes;
         }
-        using var sourceLock = JsonDocument.Parse(Read(project,"scripts/fetch-pokemon-storage.lock.json"));
+
         var generated = Read(generatedDirectory,"pokemon-storage.json");
         using var document = JsonDocument.Parse(generated);
         var root = document.RootElement;
@@ -72,26 +69,7 @@ public sealed class PretPokemonStorageSource
         var output = m.GetProperty("outputs")[0];
         Require(output.GetProperty("path").GetString() == "pokemon-storage.json" , "Storage generated output metadata differs.");
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var raw = new Dictionary<string, string>(StringComparer.Ordinal);
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var entry in sourceLock.RootElement.GetProperty("files").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            var bytes = Read(rawDirectory,path);
-            var text = new UTF8Encoding(false, true).GetString(bytes);
-            Require(raw.TryAdd(path, text), "Duplicate storage source path.");
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{PretWorldMap.SourceCommit}/{path}"));
-            switch (entry.GetProperty("roles")[0].GetString())
-            {
-                case "script":
-                    var label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant);
-                    Require(label.Success, "Storage script has no original label.");
-                    scripts.Add(new(path, text, new(SourceKind.Pret,path,label.Groups[1].Value,"pret/pokefirered",PretWorldMap.SourceCommit)));
-                    break;
-                case "text": texts.Add(path, text); break;
-            }
-        }
+
         var inventory = files.ToImmutable();
         var options = ContentJson.CreateOptions();
         T Decode<T>(JsonElement value) => value.Deserialize<T>(options) ?? throw new InvalidDataException("Missing storage document value.");
@@ -107,10 +85,9 @@ public sealed class PretPokemonStorageSource
         var pcMenus = Decode<ImmutableArray<PretPcMenuVariant>>(root.GetProperty("pcMenuVariants"));
         var storageMenu = Decode<ImmutableArray<PretPokemonStorageMenuOption>>(root.GetProperty("storageMenu"));
         var rules = Decode<ImmutableArray<OpeningItemSourceRef>>(root.GetProperty("rulesSources"));
-        Require(pcMenus.Length == 3 && storageMenu.Length == 5 && scripts.Count == 5 && texts.Count == 4 &&
-            root.GetProperty("scripts").GetProperty("unresolvedLabelReferences").GetArrayLength() == 0, "Incomplete storage source contract.");
-        return new(generatedDirectory, scripts.ToImmutable(), texts.ToImmutable(), constants.ToImmutable(), uiTexts, inventory,
-            pcMenus, storageMenu, rules, root.GetProperty("scripts").Clone(), Decode<ImmutableArray<string>>(root.GetProperty("limitations")));
+        Require(pcMenus.Length == 3 && storageMenu.Length == 5, "Incomplete storage source contract.");
+        return new(generatedDirectory, constants.ToImmutable(), uiTexts, inventory,
+            pcMenus, storageMenu, rules, Decode<ImmutableArray<string>>(root.GetProperty("limitations")));
     }
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     private static string SafeFile(string root, string path)

@@ -45,7 +45,7 @@ def safe_path(root, relative):
     if pathlib.PurePosixPath(relative).is_absolute() or '..' in pathlib.PurePosixPath(relative).parts or '\\' in relative or not p.resolve().is_relative_to(root): raise ValueError('Unsafe path: '+relative)
     return p
 
-def load_lock(path, project_path=ROOT/'content/source-lock.json'):
+def load_lock(path, project_path=ROOT/'scripts/import-config/source.json'):
     lock=json.loads(pathlib.Path(path).read_bytes()); project=json.loads(pathlib.Path(project_path).read_bytes())
     if (lock.get('schemaVersion'),lock.get('profile'),lock.get('repository'),lock.get('commit')) != (1,PROFILE,REPOSITORY,COMMIT): raise ValueError('Unsupported UI lock identity')
     if (project['source']['sourceCommit'],project['source']['repository'],project['referenceGame']['gameEdition'],project['referenceGame']['romRevision']) != (COMMIT,REPOSITORY,'FIRERED',0): raise ValueError('Project source identity differs')

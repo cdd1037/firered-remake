@@ -56,7 +56,10 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('reference',type=Path);p.add_argument('output',type=Path);p.add_argument('--check',action='store_true');a=p.parse_args()
     doc,raw,icons=generate(a.reference);outputs={'itemfinder-source.json':(json.dumps(doc,ensure_ascii=False,indent=2)+'\n').encode()}
     outputs.update(icons)
-    outputs.update({'source/'+k:v for k,v in raw.items()})
+    if not a.check:
+        raw_root=Path(__file__).resolve().parents[1]/'content/raw/pokefirered/037335f4'
+        for path,data in raw.items():
+            target=raw_root/path;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
     lock=json.loads(Path(__file__).with_name('itemfinder-source.lock.json').read_text())
     assert doc['inputs'] == lock['inputs'], 'Locked Itemfinder source contract changed'
     for path,data in outputs.items():

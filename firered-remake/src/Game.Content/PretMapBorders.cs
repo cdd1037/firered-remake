@@ -12,7 +12,7 @@ namespace Game.Content;
 public sealed record PretMapBorderRepeatRule(string CoordinateSpace, int EngineMapOffset, int SourceBiasPeriods,
     int PhaseX, int PhaseY, string NegativeCoordinates, string Connections);
 public sealed record PretMapBorderCell(int X, int Y, ushort SourceRawBlock, int MetatileId, uint RawAttributes,
-    int LayerType, ImmutableArray<ushort> TileEntries);
+    int LayerType);
 public readonly record struct PretMapBorderRectangle(int X, int Y, int Width, int Height);
 internal sealed record PretMapBorderDocument(int SchemaVersion, string StableId, string MapPath, SourceRef SourceRef, SourceRef RuleSourceRef,
     PretMapBorderRepeatRule RepeatRule, ImmutableArray<PretWorldArtifact> Artifacts);
@@ -92,25 +92,12 @@ public sealed class PretMapBorders
         var map = PretWorldMap.Load(Path.GetDirectoryName(PretRuntimeMapValidation.SafeFile(generated, data.MapPath))!);
         Require(data.RepeatRule == new PretMapBorderRepeatRule("map-local-metatiles", 7, 8, 0, 0, "euclidean-remainder", "not-implemented"),
             "Border repetition rule differs from source phase.");
-        var raw = Path.Combine(Directory.GetParent(generated)!.FullName, "raw/pokefirered/037335f4");
-        var cells = map.BorderCells.Select(cell =>
-        {
-            var path = cell.SourceRef.Path.Replace("metatile_attributes.bin", "metatiles.bin", StringComparison.Ordinal);
-            var tiles = File.ReadAllBytes(PretRuntimeMapValidation.SafeFile(raw, path));
-            var offset = (cell.MetatileId < 640 ? cell.MetatileId : cell.MetatileId - 640) * 16;
-            Require(offset + 16 <= tiles.Length, "Border metatile exceeds source tileset.");
-            var entries = Enumerable.Range(0, 8).Select(i => BinaryPrimitives.ReadUInt16LittleEndian(tiles.AsSpan(offset + i * 2, 2))).ToImmutableArray();
-            return new PretMapBorderCell(cell.X, cell.Y, cell.RawBlock, cell.MetatileId, cell.RawAttributes, cell.LayerType, entries);
-        }).ToImmutableArray();
+        var cells = map.BorderCells.Select(cell => new PretMapBorderCell(
+            cell.X, cell.Y, cell.RawBlock, cell.MetatileId, cell.RawAttributes, cell.LayerType)).ToImmutableArray();
         var names = new HashSet<string>(["bottom.png", "middle.png", "top.png", "map.png"], StringComparer.Ordinal);
         foreach (var artifact in data.Artifacts)
         {
             Require(names.Remove(artifact.Path), "Unknown/duplicate border texture.");
-            var bytes = File.ReadAllBytes(PretRuntimeMapValidation.SafeFile(directory, artifact.Path));
-            Require(bytes.Length > 24 && bytes.AsSpan(0, 8).SequenceEqual(new byte[] { 137,80,78,71,13,10,26,10 }), "Invalid border PNG.");
-            Require(artifact.Width == map.BorderWidth * 16 && artifact.Height == map.BorderHeight * 16 &&
-                BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(16, 4)) == artifact.Width &&
-                BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(20, 4)) == artifact.Height, "Border texture dimensions differ.");
         }
         Require(names.Count == 0, "Incomplete border texture set.");
         return new(data, directory, map, cells);

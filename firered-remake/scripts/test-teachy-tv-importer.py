@@ -6,8 +6,8 @@ sys.dont_write_bytecode = True
 import importlib.util
 import json
 from pathlib import Path
-import struct
-import zlib
+import io
+from PIL import Image
 
 ROOT=Path(__file__).resolve().parent.parent
 def module(name,path):
@@ -33,13 +33,8 @@ check('source_uses_follow_me_music',doc['presentationContract']['sourceShowMidi'
 assets,contract=art.convert(sources)
 check('ten_dedicated_artifacts',len(assets)==10)
 def pixel(png,x,y):
-    at=8;data=b'';width=struct.unpack_from('>I',png,16)[0]
-    while at<len(png):
-        size=struct.unpack_from('>I',png,at)[0]
-        if png[at+4:at+8]==b'IDAT':data+=png[at+8:at+8+size]
-        at+=size+12
-    raw=zlib.decompress(data);offset=y*(width*4+1)+1+x*4
-    return list(raw[offset:offset+4])
+    with Image.open(io.BytesIO(png)) as image:
+        return list(image.convert('RGBA').getpixel((x,y)))
 check('screen_opening_transparent',pixel(assets['screen-frame.png']['bytes'],50,50)[3]==0)
 check('screen_border_opaque',pixel(assets['screen-frame.png']['bytes'],0,0)[3]==255)
 check('route_crop_original_dimensions',assets['route1-background.png']['width']==256 and assets['route1-background.png']['height']==256)

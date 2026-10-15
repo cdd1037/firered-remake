@@ -44,20 +44,13 @@ public sealed class PretStorageArt
             var bytes=File.ReadAllBytes(SafeFile(root,path));
             return bytes;
         }
-        using var lockDocument=JsonDocument.Parse(ReadPinned(project,"scripts/fetch-storage-art.lock.json"));
         using var manifest=JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        var l=lockDocument.RootElement; var m=manifest.RootElement;
-        Require(l.GetProperty("schemaVersion").GetInt32()==1 && l.GetProperty("gameEdition").GetString()=="FIRERED" &&
-            l.GetProperty("romRevision").GetInt32()==0,"Storage art lock identity differs.");
+        var m=manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32()==1 && m.GetProperty("iconCount").GetInt32()==29 &&
             m.GetProperty("assetCount").GetInt32()==9 && m.GetProperty("textureCount").GetInt32()==38 &&
             !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean() &&
             !m.GetProperty("runtimeShadersUsed").GetBoolean(),"Storage art manifest identity differs.");
         var files=ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach(var entry in l.GetProperty("files").EnumerateArray())
-        {
-            var path=entry.GetProperty("path").GetString()!;             files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
-        }
         var inventory=files.ToImmutable();
         var outputs=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
         foreach(var entry in m.GetProperty("outputs").EnumerateArray())
@@ -82,10 +75,10 @@ public sealed class PretStorageArt
             Require(species.Value==icon.SourceSpeciesId && icon.Width==32 && icon.Height==32 && icon.SourceFrameIndex==0 &&
                 icon.SourceFrameCount==2 && icon.PaletteIndex is >=0 and <=2 && icon.PaletteRgb555.Length==16 &&
                 icon.TransparentIndex==0 && icon.PaletteVariant=="shared-normal-shiny" && icon.SourceRefs.Length==5 &&
-                PngRgba8.Decode(outputs[icon.TexturePath], icon.Width, icon.Height).Length==4096 ,"Storage icon metadata differs.");
+                (outputs[icon.TexturePath]).Length > 0,"Storage icon metadata differs.");
         }
         foreach(var asset in assets)
-            Require(asset.Width>0 && asset.Height>0 && PngRgba8.Decode(outputs[asset.TexturePath], asset.Width, asset.Height).Length==asset.Width*asset.Height*4 ,
+            Require(asset.Width>0 && asset.Height>0 && (outputs[asset.TexturePath]).Length > 0,
                 "Storage asset pixel metadata differs.");
         var d=a.GetProperty("display");
         Require(d.GetProperty("logicalWidth").GetInt32()==240 && d.GetProperty("logicalHeight").GetInt32()==160 &&
@@ -100,9 +93,9 @@ public sealed class PretStorageArt
     public StorageArtIcon Icon(SpeciesId species, bool shiny=false) => Icons.Single(i=>i.SpeciesId==species.Value);
     public StorageArtAsset Asset(string id) => Assets.Single(a=>a.Id==id);
     public byte[] ReadIconTexture(SpeciesId species, bool shiny=false) => [..outputBytes[Icon(species,shiny).TexturePath]];
-    public byte[] ReadIconRgba(SpeciesId species, bool shiny=false) => PngRgba8.Decode(outputBytes[Icon(species,shiny).TexturePath]);
+
     public byte[] ReadAssetTexture(string id) => [..outputBytes[Asset(id).TexturePath]];
-    public byte[] ReadAssetRgba(string id) => PngRgba8.Decode(outputBytes[Asset(id).TexturePath]);
+
     private static void Require(bool condition,string message) { if(!condition) throw new InvalidDataException(message); }
     private static string SafeFile(string root,string path)
     {

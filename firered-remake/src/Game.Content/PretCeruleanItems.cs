@@ -7,8 +7,7 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record PretCeruleanItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    PretMtMoonItem Item, EarlyShopStock Shop, PretPewterMachineIcon Icon, ImmutableArray<string> Limitations);
+    ImmutableArray<PretPewterMachineInput> Inputs, PretMtMoonItem Item, EarlyShopStock Shop, PretPewterMachineIcon Icon, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates original source, the generated data and palette-derived Super Potion art.</summary>
 public static class PretCeruleanItems
@@ -22,7 +21,7 @@ public static class PretCeruleanItems
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
         var document = ContentJson.ParseStrict<PretCeruleanItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 &&
-            !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty,
+            !document.Limitations.IsDefaultOrEmpty,
             "Cerulean item scope differs.");
         Require(document.Item.EffectSource is not null, "Cerulean item effect source missing.");
         CeruleanItemRules.ValidateSuperPotion(Definition(document.Item));

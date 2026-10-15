@@ -1,6 +1,4 @@
-using System.Buffers.Binary;
 using System.Collections.Immutable;
-using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -27,18 +25,16 @@ public sealed class PretPlayerGenderArt
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private readonly ImmutableDictionary<int, byte[]> textures;
-    private readonly ImmutableDictionary<int, byte[]> rgba;
     public PlayerGenderArtDocument Document { get; }
     public ImmutableArray<PlayerGenderArtAsset> Assets => Document.Assets;
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public string GeneratedDirectory { get; }
 
     private PretPlayerGenderArt(string directory, PlayerGenderArtDocument document,
-        ImmutableArray<PretWorldSourceFile> sources, ImmutableDictionary<int, byte[]> textureBytes,
-        ImmutableDictionary<int, byte[]> pixelBytes)
+        ImmutableArray<PretWorldSourceFile> sources, ImmutableDictionary<int, byte[]> textureBytes)
     {
         GeneratedDirectory = directory; Document = document; SourceFiles = sources;
-        textures = textureBytes; rgba = pixelBytes;
+        textures = textureBytes;
     }
 
     /// <summary>Validates the source lock, thirteen raw inputs, both manifests, metadata and both sprite sheets.</summary>
@@ -46,17 +42,11 @@ public sealed class PretPlayerGenderArt
     {
         var root = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(root, "content/generated/player-gender-art");
-        using var sourceLock = JsonDocument.Parse(ReadPinned(root,"content/player-gender-art-source-lock.json"));
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        var l = sourceLock.RootElement; var m = manifest.RootElement;
+        var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1             && !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(),
             "Player art manifest identity differs.");
         var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var entry in l.GetProperty("files").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            sources.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
-        }
         var sourceFiles = sources.ToImmutable();
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var entry in m.GetProperty("outputs").EnumerateArray())
@@ -72,7 +62,6 @@ public sealed class PretPlayerGenderArt
             && document.Assets.Length == 2 && document.Assets.Select(a => a.Gender).Order().SequenceEqual([0, 1])
             && !document.Limitations.IsDefaultOrEmpty, "Player art document differs.");
         var textures = ImmutableDictionary.CreateBuilder<int, byte[]>();
-        var rgba = ImmutableDictionary.CreateBuilder<int, byte[]>();
         foreach (var asset in document.Assets)
         {
             ValidateAsset(asset);
@@ -80,9 +69,8 @@ public sealed class PretPlayerGenderArt
                 Require(source.Kind == "pret" , "Player art provenance differs.");
             var bytes = outputs[asset.TexturePath];
             textures.Add(asset.Gender, bytes);
-            rgba.Add(asset.Gender, DecodeRgba(bytes));
         }
-        return new(directory, document, sourceFiles, textures.ToImmutable(), rgba.ToImmutable());
+        return new(directory, document, sourceFiles, textures.ToImmutable());
     }
 
     public PlayerGenderArtAsset Sprite(int gender)
@@ -93,7 +81,7 @@ public sealed class PretPlayerGenderArt
 
     /// <summary>Fresh authenticated PNG bytes; subsequent caller or disk mutations cannot alter this snapshot.</summary>
     public byte[] ReadTexture(int gender) { ValidateGender(gender); return [.. textures[gender]]; }
-    public byte[] ReadRgba(int gender) { ValidateGender(gender); return [.. rgba[gender]]; }
+
 
     /// <summary>Convenience one-shot load for canonical gender 0 or 1; prefer one Load for repeated rendering.</summary>
     public static byte[] ReadTexture(string projectRoot, int gender)
@@ -132,20 +120,12 @@ public sealed class PretPlayerGenderArt
     {
         var path = SafeFile(root, relative);
 var bytes = File.ReadAllBytes(path);
-if (texture) ValidatePngHeader(bytes);
 return bytes;
     }
 
-    private static void ValidatePngHeader(ReadOnlySpan<byte> bytes)
-    {
-        Require(bytes.Length >= 33 && bytes[..8].SequenceEqual(new byte[] { 137,80,78,71,13,10,26,10 })
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.Slice(8, 4)) == 13 && bytes.Slice(12, 4).SequenceEqual("IHDR"u8)
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.Slice(16, 4)) == 144
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.Slice(20, 4)) == 32
-            && bytes.Slice(24, 5).SequenceEqual(new byte[] { 8,6,0,0,0 }), "Player PNG header differs.");
-    }
 
-    private static byte[] DecodeRgba(byte[] bytes) => PngRgba8.Decode(bytes, 144, 32);
+
+
 
     private static string SafeFile(string root, string relative)
     {

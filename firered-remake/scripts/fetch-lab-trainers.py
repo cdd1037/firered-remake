@@ -10,7 +10,7 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 lock = json.loads((ROOT / 'scripts/lab-trainers.lock.json').read_text(encoding='utf-8'))
 if (lock['schemaVersion'] != 1 or lock['commit'] != COMMIT or
         lock['repository'] != 'pret/pokefirered' or lock['completeSourceRoster'] is not False or
-        lock['commit'] != json.loads((ROOT / 'content/source-lock.json').read_text(encoding='utf-8'))['source']['sourceCommit']):
+        lock['commit'] != json.loads((ROOT / 'scripts/import-config/source.json').read_text(encoding='utf-8'))['source']['sourceCommit']):
     raise ValueError('Unexpected trainer source identity or scope')
 seen = set()
 for entry in lock['files']:

@@ -77,8 +77,7 @@ public partial class CampaignView
     {
         foreach (var icon in PretGameCornerPrizes.LoadItemsDocument(_root).Icons.Concat(PretGameCornerPrizes.LoadMachinesDocument(_root).Icons))
         {
-            using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, PretGameCornerPrizes.LoadIconRgba(_root, icon.Item));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            _earlyItemIcons.Add(icon.Item, ItemTexture(icon));
         }
         foreach (var alias in PretGameCornerPrizes.LoadMachinesDocument(_root).IconAliases)
         {

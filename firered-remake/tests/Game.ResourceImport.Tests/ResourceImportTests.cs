@@ -10,6 +10,14 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task NationalDex() => Run("test-national-dex-source.py");
     [TestMethod]
+    public async Task MachineCatalog()
+    {
+        await Run("test-machine-catalog-import.py");
+        await Run("test-machine-importers.py");
+        await Run("test-late-machine-importers.py");
+        await Run("test-shop-machine-importers.py");
+    }
+    [TestMethod]
     public Task SourceHit() => Run("test-source-hit-import.py", Path.Combine(TestAssets.Output(), "results"));
     [TestMethod]
     public Task TeachyTv() => Run("test-teachy-tv-importer.py", "--git-dir", TestAssets.Source);

@@ -3,4 +3,4 @@
     <ProjectReference Include="../../src/Game.Application/Game.Application.csproj" />
     <ProjectReference Include="../../src/Game.Content/Game.Content.csproj" />
   </ItemGroup>
-</Project>
+<ItemGroup><ProjectReference Include="../../tools/import-story/import-story.csproj" /></ItemGroup></Project>

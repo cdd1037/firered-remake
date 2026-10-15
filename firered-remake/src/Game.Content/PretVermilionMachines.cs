@@ -17,13 +17,7 @@ public static class PretVermilionMachines
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/vermilion-machines.lock.json"));
-        var s=sourceLock.RootElement;
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var d=ContentJson.ParseStrict<VermilionMachinesDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-machines/machines.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<VermilionMachinesDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-machines/machines.json")),SharedMachineCatalog.Options(root));
                 if(d.SchemaVersion!=1 || d.Rows.Length!=8)
             throw new InvalidDataException("Vermilion machine extension scope differs.");
         var old=PretBillMachines.LoadCatalogProject(root);

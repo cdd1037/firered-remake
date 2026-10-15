@@ -9,7 +9,6 @@ public partial class Bootstrap : Node2D
 {
     private int _frames;
     private bool _harness;
-    private bool _pallet;
     private bool _story;
     private bool _probe;
     private Font _font = null!;
@@ -31,7 +30,6 @@ public partial class Bootstrap : Node2D
         }
         _probe=startup.Mode==GameStartupMode.Probe;
         _harness=startup.Mode==GameStartupMode.Harness;
-        _pallet=startup.Mode==GameStartupMode.PalletDiagnostic;
         _story=startup.Mode==GameStartupMode.Current;
         _evidencePath = OS.GetEnvironment("FIRERED_EVIDENCE");
         if (!string.IsNullOrEmpty(_evidencePath)) System.IO.File.WriteAllText(System.IO.Path.ChangeExtension(_evidencePath, ".events.log"), "");
@@ -70,7 +68,6 @@ public partial class Bootstrap : Node2D
         var missing = "火红工程验证方向键确认退出等待按键".Where(c => !_font.HasChar(c)).ToArray();
         Record("CHINESE_GLYPHS " + (missing.Length == 0 ? "PASS" : "MISSING " + new string(missing)));
         if (_story) { AddChild(new CampaignView{Startup=startup}); return; }
-        if (_pallet) { AddChild(new PalletTownView()); return; }
         if (_harness) { AddChild(new EngineeringHarness()); return; }
         var spriteImage = Image.CreateEmpty(12, 12, false, Image.Format.Rgba8);
         spriteImage.Fill(Colors.Transparent);
@@ -94,7 +91,7 @@ public partial class Bootstrap : Node2D
     }
     public override void _Draw()
     {
-        if (_font is null || _harness || _pallet || _story) return;
+        if (_font is null || _harness || _story) return;
         DrawRect(new Rect2(12, 12, 216, 136), new Color("172a43"));
         DrawRect(new Rect2(17, 17, 206, 126), new Color("0d182c"));
         DrawString(_font, new Vector2(25, 44), "火红工程验证", fontSize: 14, modulate: new Color("ffdb85"));
@@ -110,7 +107,7 @@ public partial class Bootstrap : Node2D
     }
     public override void _UnhandledInput(InputEvent input)
     {
-        if (_harness || _pallet || _story) return;
+        if (_harness || _story) return;
         if (input is InputEventKey { Pressed: true, Echo: false } key)
         {
             Record("INPUT_PROBE " + key.Keycode);

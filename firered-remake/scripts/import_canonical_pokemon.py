@@ -9,11 +9,8 @@ import re
 from build_source_lock import COMMIT, TREE, PROFILE, FILES, encode, git
 
 ROOT = Path(__file__).resolve().parent.parent
-LOCK_PATH = 'content/sources/canonical-pokemon/source-lock.json'
 MOVE_FILES = [
-    'content/sources/metronome-moves/source-lock.json',
     'content/generated/metronome-moves/catalog.json',
-    'content/generated/metronome-moves/manifest.json',
 ]
 SPECIES_INFO = 'src/data/pokemon/species_info.h'
 LEARNSETS = 'src/data/pokemon/level_up_learnsets.h'
@@ -109,8 +106,7 @@ class Sources:
         return self.ref(POKEMON, name, m.start(), pos)
 
 def authenticate(root, source_root, move_root):
-    lock_bytes = (root / LOCK_PATH).read_bytes()
-    lock = json.loads(lock_bytes)
+    lock = dict(schemaVersion=1, repository='pret/pokefirered', commit=COMMIT, profile=PROFILE, gameEdition='FIRERED', romRevision=0, canonicalSpeciesCount=386, officialAbilityCount=76, files=[dict(path=p) for p in FILES])
     require([r['path'] for r in lock['files']] == FILES, 'Source inventory paths differ')
     require(lock['commit'] == COMMIT, 'Source version differs')
     sources, metadata = {}, {}
@@ -123,8 +119,7 @@ def authenticate(root, source_root, move_root):
         data = raw_path.read_bytes()
         sources[row['path']], metadata[row['path']] = data.decode(), row
     dep_data = [(move_root / path).read_bytes() for path in MOVE_FILES]
-    move_lock, moves = json.loads(dep_data[0]), json.loads(dep_data[1])
-    require(move_lock['commit'] == COMMIT, 'Move dependency source identity differs')
+    moves = json.loads(dep_data[0])
     require(len(moves['moves']) == 354 and [m['sourceMoveId'] for m in moves['moves']] == list(range(1, 355)), 'Move closure differs')
     return lock, Sources(sources, metadata), moves
 

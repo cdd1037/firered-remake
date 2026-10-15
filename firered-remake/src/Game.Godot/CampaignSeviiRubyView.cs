@@ -26,15 +26,14 @@ public partial class CampaignView
         Texture2D Pixels(JsonElement row, bool replicatePalette = false)
         {
             int width = row.GetProperty("width").GetInt32(), height = row.GetProperty("height").GetInt32();
-            var rgba = PngRgba8.Decode(_seviiRubyArt.Files[row.GetProperty("texturePath").GetString()!]);
+            using var image = NativeImages.LoadPng(_seviiRubyArt.Files[row.GetProperty("texturePath").GetString()!], width, height);
             if (replicatePalette)
             {
-                rgba = rgba.ToArray();
+                var rgba = image.GetData();
                 for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
                     for (int c = 0; c < 3; c++) { int value = rgba[i + c] >> 3; rgba[i + c] = (byte)((value << 3) | (value >> 2)); }
+                image.SetData(width, height, false, Image.Format.Rgba8, rgba);
             }
-            if (rgba.Length != width * height * 4) throw new InvalidDataException("Sevii Ruby pixel dimensions differ.");
-            using var image = Image.CreateFromData(width, height, false, Image.Format.Rgba8, rgba);
             return SceneTextures.FromImage(image);
         }
         foreach (var row in SeviiRubyManifest.GetProperty("sprites").EnumerateArray())
@@ -62,7 +61,6 @@ public partial class CampaignView
         foreach (var row in SeviiRubyManifest.GetProperty("portraits").EnumerateArray())
         {
             string id = row.GetProperty("id").GetString()!;
-            var rgba = PngRgba8.Decode(_seviiRubyArt.Files[row.GetProperty("texturePath").GetString()!]);
             if(!(_forestTrainerPortraits.TryGetValue(id, out var inherited)))_forestTrainerPortraits.Add(id, (ImageTexture)Pixels(row));
         }
         foreach (var row in SeviiRubyManifest.GetProperty("trainers").EnumerateArray())
@@ -85,7 +83,7 @@ public partial class CampaignView
             var document = _questPocketUi ?? throw new InvalidDataException("Sevii Ruby key-item pocket missing.");
             if (document.Items.Any(i => i.Id == item)) throw new InvalidDataException("Duplicated Sevii Ruby key item.");
             var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
-            using var image = icon.GetImage(); _questPocketTextures.Add(asset, ImageTexture.CreateFromImage(image));
+            using var image = icon.GetImage(); _questPocketTextures.Add(asset, SceneTextures.FromImage(image));
             _questPocketUi = document with
             {
                 Items = document.Items.Add(new(item, item[5..], row.GetProperty("name").GetString()!, row.GetProperty("description").GetString()!, asset, row.GetProperty("fieldUseFunction").GetString()!)),
@@ -109,7 +107,7 @@ public partial class CampaignView
         if (!_seviiRubyDex.TryGetValue(species, out var entry)) return null;
         return new(entry.SourceSpeciesId, entry.NationalNumber, entry.Name, entry.Category, entry.DisplayCategory,
             entry.HeightDecimeters, entry.WeightHectograms, entry.HeightDisplay, entry.WeightDisplay, entry.Description,
-            entry.Footprint!.TexturePath, entry.Portrait!.TexturePath, entry.HabitatTitle, entry.Source, entry.DescriptionSource);
+            entry.Footprint!.TexturePath, entry.Portrait!.TexturePath, entry.HabitatTitle);
     }
     private byte[]? ReadSeviiRubyDexTexture(PokedexMenuTexture texture) => _seviiRubyDex.Values.Any(e => e.Portrait == texture || e.Footprint == texture)
         ? _seviiRubyArt!.Files[texture.TexturePath] : null;
@@ -184,6 +182,6 @@ public partial class CampaignView
         _seviiRubyMountain = null; _seviiRubyBrailleFont = null; _seviiRubyBrailleCursor = null; _seviiRubyBrailleFrame = null;
         _seviiRubyArt = null; _seviiRubyTrainers.Clear(); _seviiRubyDex.Clear(); _seviiRubyTileLayers.Clear();
         foreach (string key in _questPocketTextures.Keys.Where(k => k.StartsWith("sevii-ruby-", StringComparison.Ordinal)).ToArray())
-        { _questPocketTextures[key].Dispose(); _questPocketTextures.Remove(key); }
+        { _questPocketTextures.Remove(key); }
     }
 }

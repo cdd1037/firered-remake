@@ -1,85 +1,41 @@
 #!/usr/bin/env python3
-"""Deterministic, dependency-free static front portraits for the three starter pic boxes.
+"""Static front portraits for the three starter pic boxes.
 
 This deliberately handles only the pinned 64x64 indexed PNG + JASC palette profile.
 It never executes upstream tooling, reads ROMs, or downloads anything.
 """
 import argparse
-import binascii
+import io
 import importlib.util
 import json
 import pathlib
 import re
-import struct
 import sys
-import zlib
 
 sys.dont_write_bytecode = True
+from PIL import Image
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+if str(ROOT / 'scripts') not in sys.path:
+    sys.path.insert(0, str(ROOT / 'scripts'))
+from image_io import png
 _spec = importlib.util.spec_from_file_location('starter_art_inputs', ROOT / 'scripts/fetch-starter-art.py')
 inputs = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(inputs)
 NAMES = (('Bulbasaur', 1), ('Charmander', 4), ('Squirtle', 7))
-PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 
 
 def indexed_png(data):
-    """Strict small PNG decoder. Independent golden checks use Pillow, not this code."""
-    if not data.startswith(PNG_SIGNATURE):
-        raise ValueError('Invalid PNG signature')
-    position, chunks = 8, []
-    while position < len(data):
-        if position + 12 > len(data):
-            raise ValueError('Truncated PNG chunk')
-        length = struct.unpack_from('>I', data, position)[0]
-        tag = data[position + 4:position + 8]
-        payload = data[position + 8:position + 8 + length]
-        end = position + length + 12
-        if end > len(data):
-            raise ValueError('Truncated PNG payload')
-        expected_crc = struct.unpack_from('>I', data, end - 4)[0]
-        if binascii.crc32(tag + payload) & 0xffffffff != expected_crc:
-            raise ValueError('PNG CRC mismatch')
-        chunks.append((tag, payload))
-        position = end
-    # The bounded source profile has one IDAT, no ancillary metadata and no extra frames.
-    if [tag for tag, _ in chunks] != [b'IHDR', b'PLTE', b'tRNS', b'IDAT', b'IEND']:
-        raise ValueError('Unsupported PNG chunk profile')
-    if chunks[0][1] != struct.pack('>IIBBBBB', 64, 64, 4, 3, 0, 0, 0):
-        raise ValueError('Expected a noninterlaced 64x64 indexed 4bpp PNG')
-    if len(chunks[1][1]) != 48 or chunks[2][1] != b'\0' or chunks[4][1]:
-        raise ValueError('Expected sixteen colors and transparent palette index zero')
-    decompressor = zlib.decompressobj()
-    scanlines = decompressor.decompress(chunks[3][1], 2113)
-    if len(scanlines) != 2112 or not decompressor.eof or decompressor.unused_data or decompressor.unconsumed_tail:
-        raise ValueError('PNG pixel stream length/termination differs')
-    previous = [0] * 32
-    indices = bytearray()
-    for y in range(64):
-        method = scanlines[y * 33]
-        if method not in range(5):
-            raise ValueError('Unsupported PNG filter')
-        encoded = scanlines[y * 33 + 1:(y + 1) * 33]
-        row = []
-        for x, value in enumerate(encoded):
-            left, up, upper_left = row[x - 1] if x else 0, previous[x], previous[x - 1] if x else 0
-            if method == 0:
-                prediction = 0
-            elif method == 1:
-                prediction = left
-            elif method == 2:
-                prediction = up
-            elif method == 3:
-                prediction = (left + up) // 2
-            else:
-                estimate = left + up - upper_left
-                distances = (abs(estimate - left), abs(estimate - up), abs(estimate - upper_left))
-                prediction = (left, up, upper_left)[distances.index(min(distances))]
-            decoded = (value + prediction) & 255
-            row.append(decoded)
-            indices.extend((decoded >> 4, decoded & 15))
-        previous = row
-    return bytes(indices)
+    """Read source indices directly; external GBA palettes provide output colors."""
+    with Image.open(io.BytesIO(data)) as image:
+        if image.format != 'PNG' or image.mode != 'P' or image.size != (64, 64):
+            raise ValueError('Expected a 64x64 indexed PNG')
+        if len(image.getpalette('RGB')) != 48 or image.info.get('transparency') != 0:
+            raise ValueError('Expected sixteen colors and transparent palette index zero')
+        indices = image.tobytes()
+        if any(index > 15 for index in indices):
+            raise ValueError('Source palette index exceeds four bits')
+        return indices
 
 
 def palette(data):
@@ -106,20 +62,10 @@ def rgba_pixels(indices, colors):
     return bytes(channel for index in indices for channel in (*colors[index], 0 if index == 0 else 255))
 
 
-def png_chunk(tag, data):
-    return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', binascii.crc32(tag + data) & 0xffffffff)
-
-
 def rgba_png(rgba):
     if len(rgba) != 64 * 64 * 4:
         raise ValueError('Expected one 64x64 RGBA frame')
-    scanlines = b''.join(b'\0' + rgba[row * 256:(row + 1) * 256] for row in range(64))
-    # One RFC 1951 stored block. Fixed bytes avoid zlib/Pillow encoder-version drift.
-    count = len(scanlines)
-    stream = b'\x78\x01\x01' + struct.pack('<HH', count, count ^ 0xffff) + scanlines
-    stream += struct.pack('>I', zlib.adler32(scanlines) & 0xffffffff)
-    return (PNG_SIGNATURE + png_chunk(b'IHDR', struct.pack('>IIBBBBB', 64, 64, 8, 6, 0, 0, 0))
-            + png_chunk(b'IDAT', stream) + png_chunk(b'IEND', b''))
+    return png(64, 64, rgba)
 
 
 def reference(lock, sources, path, symbol, needle=None):
@@ -209,7 +155,7 @@ def convert(lock, sources):
                      inputs=lock['files'],
                     outputs=[dict(path=path)
                              for path, data in sorted(outputs.items())],
-                    counts={'species': 3, 'frames': 3}, pngEncoding='RGBA8 filter-0 one stored DEFLATE block',
+                    counts={'species': 3, 'frames': 3}, pngEncoding='RGBA8 via Pillow',
                     upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False)
     outputs['manifest.json'] = inputs.canonical(manifest)
     return outputs
@@ -220,7 +166,7 @@ def main():
     parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/starter-art')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/starter-art.lock.json')
-    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
+    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'scripts/import-config/source.json')
     args = parser.parse_args()
     if args.output.resolve().is_relative_to(args.raw.resolve()) or args.raw.resolve().is_relative_to(args.output.resolve()):
         raise ValueError('Raw and output directories must be disjoint')

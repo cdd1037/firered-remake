@@ -7,7 +7,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cache',type=pathlib.Path,default=pathlib.Path('/tmp/pokefirered-source-audit'))
     args=parser.parse_args(); lock=json.loads(LOCK.read_text(encoding='utf-8')); dest=ROOT/'content/raw/pokefirered/037335f4'
-    if lock['commit'] != json.loads((ROOT/'content/source-lock.json').read_text(encoding='utf-8'))['source']['sourceCommit']:
+    if lock['commit'] != json.loads((ROOT/'scripts/import-config/source.json').read_text(encoding='utf-8'))['source']['sourceCommit']:
         raise ValueError('Project source lock differs from Pallet subset lock')
     def fetch(e):
         p=pathlib.PurePosixPath(e['path'])

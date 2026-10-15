@@ -5,7 +5,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import importlib.util
 import json
@@ -84,9 +84,6 @@ def read_lock(path=ROOT / 'scripts/route11-art.lock.json'):
     return lock
 
 
-def raw_manifest():
-    return encoded(dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
-                         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
@@ -271,7 +268,7 @@ def run(lock_path, raw, output, repository=None, support_root=ROOT):
     lock = read_lock(lock_path); sources = read_sources(lock, raw, repository)
     outputs = convert(lock, sources, support_root)
     writes = [(safe(output, p), b) for p, b in outputs.items()]
-    if repository: writes += [(safe(raw, p), b) for p, b in sources.items()] + [(safe(raw_metadata_directory(raw, 'route11-art'), 'manifest.json'), raw_manifest())]
+    if repository: writes += [(safe(raw, p), b) for p, b in sources.items()] + []
     for target, _ in writes: safe(target.parent, target.name + '.tmp')
     for target, data in writes:
         target.parent.mkdir(parents=True, exist_ok=True)

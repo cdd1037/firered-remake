@@ -25,7 +25,7 @@ internal static class CeladonApproachPresentationAssets
             string name=row.GetProperty("path").GetString()!;
             result.Add(name,Read("content/generated/celadon-approach-art/"+name));
         }
-        if(PngRgba8.Decode(result["biker-front.png"]).Length!=64*64*4)throw new InvalidDataException("CeladonApproach art inventory differs.");
+        if(!NativeImages.HasSize(result["biker-front.png"], 64, 64))throw new InvalidDataException("CeladonApproach art inventory differs.");
         return result;
     }
 }

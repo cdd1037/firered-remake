@@ -6,7 +6,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Content;
 
-public sealed record MailPresentationAsset(string Id, int Width, int Height, string PngPath, ImmutableArray<string> SourcePaths, bool Shared);
+public sealed record MailPresentationAsset(string Id, int Width, int Height, string PngPath, ImmutableArray<string> SourcePaths, bool Shared, ImageRegion? Region = null);
 public sealed record MailStationery(ushort ItemId, string ItemSymbol, string Name,
     ImmutableArray<string> BackgroundIds, string ItemIconId, int MessageX, int MessageY, int LineHeight,
     ImmutableArray<int> WordsPerLine, int AuthorX, int AuthorY, string AuthorPrefix,
@@ -24,15 +24,14 @@ public sealed class PretMailPresentation
     public ImmutableDictionary<string, byte[]> PngFiles { get; }
     public ImmutableDictionary<string, string> Texts { get; }
     public JsonElement EasyChat { get; }
-    public JsonElement SourceLock { get; }
 
-    private PretMailPresentation(JsonElement document, JsonElement sourceLock, ImmutableDictionary<string, byte[]> files)
+    private PretMailPresentation(JsonElement document, ImmutableDictionary<string, byte[]> files)
     {
         Stationery = Parse<ImmutableArray<MailStationery>>(document.GetProperty("stationery"));
         Items = Parse<ImmutableArray<EarlyShopItemDefinition>>(document.GetProperty("items"));
         Assets = Parse<ImmutableArray<MailPresentationAsset>>(document.GetProperty("assets")).ToImmutableDictionary(a => a.Id, StringComparer.Ordinal);
         Texts = Parse<ImmutableArray<NpcTradeMailText>>(document.GetProperty("texts")).ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);
-        PngFiles = files; EasyChat = document.GetProperty("easyChat").Clone(); SourceLock = sourceLock;
+        PngFiles = files; EasyChat = document.GetProperty("easyChat").Clone();
         Need(Stationery.Length == 12 && Stationery.Select(s => (int)s.ItemId).SequenceEqual(Enumerable.Range(121, 12)) &&
             Stationery.All(s => s.ItemSymbol == SourceMailRules.ItemSymbol(s.ItemId) && s.BackgroundIds.Length == 2 &&
                 s.WordsPerLine.SequenceEqual(new[] { 2,2,2,2,1 }) && s.MessageX == 32 && s.MessageY == 35 && s.LineHeight == 16 &&
@@ -89,24 +88,12 @@ public sealed class PretMailPresentation
     public static PretMailPresentation Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var lockBytes = SafariSource.Read(projectRoot,"scripts/mail-presentation.lock.json");
-        var locked = SafariSource.Parse<JsonElement>(lockBytes);
-        Need(locked.GetProperty("schemaVersion").GetInt32() == 1 &&
-            !locked.GetProperty("upstreamScriptsExecuted").GetBoolean() && !locked.GetProperty("romDownloaded").GetBoolean(), "mail_presentation_source_identity");
-        var files = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
-        foreach (var (rows, root) in new[] { (locked.GetProperty("outputs"), projectRoot),(locked.GetProperty("dependencies"), dependencyRoot) })
-            foreach (var row in rows.EnumerateArray())
-            {
-                string path = row.GetProperty("path").GetString()!;
-                files.Add(path, SafariSource.Read(root,path));
-            }
-        var data = files[Base + "catalog.json"];
-        var doc = SafariSource.Parse<JsonElement>(data);
+        var doc = SafariSource.Parse<JsonElement>(SafariSource.Read(projectRoot, Base + "catalog.json"));
         var png = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var asset in Parse<ImmutableArray<MailPresentationAsset>>(doc.GetProperty("assets")))
         {
-            png.Add(asset.Id, files[asset.PngPath]);
+            png.Add(asset.Id, SafariSource.Read(asset.PngPath.StartsWith(Base, StringComparison.Ordinal) ? projectRoot : dependencyRoot, asset.PngPath));
         }
-        return new(doc, locked, png.ToImmutable());
+        return new(doc, png.ToImmutable());
     }
 }

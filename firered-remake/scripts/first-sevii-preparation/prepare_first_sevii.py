@@ -155,6 +155,27 @@ def declarations(src,doc,worlds,proof):
       trainerMoves=battle_moves,fullNaturalMoveClosure=fullmoves,
       speciesReferences=[dict(species=s,sourceSpeciesId=species[s]['sourceSpeciesId'],source=species[s]['source'],learnsetSource=species[s]['learnsetSource'],sourceEvolutions=metadata[s]['sourceEvolutions']) for s in sorted(wanted)])
 
+def item_declarations(src, doc, worlds, data):
+    bylabel={b['label']:b for b in doc['blocks']};items=[];hidden=[]
+    for w in worlds:
+        for i,e in enumerate(w['events']['object_events']):
+            if e['graphics_id']=='OBJ_EVENT_GFX_ITEM_BALL':items.append(dict(map=w['events']['id'],localId=i+1,event=e,script=bylabel[e['script']]))
+        hidden += [dict(map=w['events']['id'],event=e) for e in w['events']['bg_events'] if 'item' in e]
+    relevant={b['label']:b for b in doc['blocks'] if b['sourceRef']['path'].startswith(tuple('data/maps/'+n+'/' for n in CORE+SUPPORT))}
+    tokens='\n'.join(r['text'] for b in relevant.values() for r in b['lines'])
+    shoplabels=['TwoIsland_Items_ShopInitial','TwoIsland_Items_ShopExpanded1','ThreeIsland_Mart_Items']
+    shops=[dict(label=n,sourceRef=bylabel[n]['sourceRef'],items=re.findall(r'\bITEM_(?!NONE\b)\w+', '\n'.join(r['text'] for r in bylabel[n]['lines']))) for n in shoplabels]
+    itemset={'ITEM_METEORITE','ITEM_TRI_PASS','ITEM_TOWN_MAP','ITEM_IAPAPA_BERRY','ITEM_MOON_STONE','ITEM_FULL_RESTORE'}
+    for x in items:itemset.update(re.findall(r'\bITEM_\w+','\n'.join(r['text'] for r in x['script']['lines'])))
+    itemset.update(x['event']['item'] for x in hidden)
+    itemset.update(s for x in shops for s in x['items'])
+    itemset.discard('ITEM_NONE')
+    data['itemDeclarations']=[x for x in src.json('src/data/items.json')['items'] if x['itemId'] in itemset]
+    need({x['itemId'] for x in data['itemDeclarations']}==itemset,'item declarations missing')
+    data['shopStocks']=shops
+    return bylabel, items, hidden, tokens
+
+
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--reference-root',type=Path,required=True);ap.add_argument('--project-root',type=Path,required=True);ap.add_argument('--check',action='store_true');a=ap.parse_args()
     need(OUT!=a.project_root.resolve() and not OUT.is_relative_to(a.project_root.resolve()),'do not write into main')
@@ -198,23 +219,7 @@ def main():
     delta['excludedEncounterGates']=[dict(map='MAP_THREE_ISLAND_PORT',species='SPECIES_DUNSPARCE',gate='IsNationalPokedexEnabled',
       sourcePath='data/maps/ThreeIsland_DunsparceTunnel/scripts.inc',sourceLabel='ThreeIsland_DunsparceTunnel_OnTransition',
       reason='Port Dunsparce grass is east of the tunnel, disconnected from western first-visit port; the alternate dug-out tunnel layout is selected only when National Dex is enabled.')]
-    bylabel={b['label']:b for b in doc['blocks']};items=[];hidden=[]
-    for w in worlds:
-        for i,e in enumerate(w['events']['object_events']):
-            if e['graphics_id']=='OBJ_EVENT_GFX_ITEM_BALL':items.append(dict(map=w['events']['id'],localId=i+1,event=e,script=bylabel[e['script']]))
-        hidden += [dict(map=w['events']['id'],event=e) for e in w['events']['bg_events'] if 'item' in e]
-    relevant={b['label']:b for b in doc['blocks'] if b['sourceRef']['path'].startswith(tuple('data/maps/'+n+'/' for n in CORE+SUPPORT))}
-    tokens='\n'.join(r['text'] for b in relevant.values() for r in b['lines'])
-    shoplabels=['TwoIsland_Items_ShopInitial','TwoIsland_Items_ShopExpanded1','ThreeIsland_Mart_Items']
-    shops=[dict(label=n,sourceRef=bylabel[n]['sourceRef'],items=re.findall(r'\bITEM_(?!NONE\b)\w+', '\n'.join(r['text'] for r in bylabel[n]['lines']))) for n in shoplabels]
-    itemset={'ITEM_METEORITE','ITEM_TRI_PASS','ITEM_TOWN_MAP','ITEM_IAPAPA_BERRY','ITEM_MOON_STONE','ITEM_FULL_RESTORE'}
-    for x in items:itemset.update(re.findall(r'\bITEM_\w+','\n'.join(r['text'] for r in x['script']['lines'])))
-    itemset.update(x['event']['item'] for x in hidden)
-    itemset.update(s for x in shops for s in x['items'])
-    itemset.discard('ITEM_NONE')
-    data['itemDeclarations']=[x for x in src.json('src/data/items.json')['items'] if x['itemId'] in itemset]
-    need({x['itemId'] for x in data['itemDeclarations']}==itemset,'item declarations missing')
-    data['shopStocks']=shops
+    bylabel,items,hidden,tokens = item_declarations(src, doc, worlds, data)
     data['gifts']=[dict(item=i,quantity=1,label=l,bagFull=f) for i,l,f in [
        ('ITEM_METEORITE','OneIsland_PokemonCenter_1F_EventScript_MeetCelioScene','source additem has no alternate branch'),
        ('ITEM_TRI_PASS','OneIsland_PokemonCenter_1F_EventScript_MeetCelioScene','source giveitem_msg result is not branched'),
@@ -236,7 +241,6 @@ def main():
        ('SEAGALLOP_ONE_ISLAND','SEAGALLOP_CINNABAR_ISLAND','MAP_CINNABAR_ISLAND',21,7)]],
       ferryIslandDestinations=[dict(destination='SEAGALLOP_'+n+'_ISLAND',destinationMap='MAP_'+n+'_ISLAND_HARBOR',x=8,y=5) for n in ['ONE','TWO','THREE']],
       initialTiming=dict(badge='FLAG_BADGE07_GET',requiresGameClear=False,requiresNationalDex=False,scopeEndsAtCinnabarScene=4),
-      criticalBranches=json.loads((OUT/'branch_contract.json').read_text()),
       limitations=['Preparation only; none of the14 new maps is admitted in the current Cinnabar profile.',
         'Full script inventory includes postgame and multiplayer dependencies; those branches are guarded/outside this bounded route.',
         'Map data contains authentic blocks, metatile attributes and events; no rendered resources or compiled runtime profile is produced.',

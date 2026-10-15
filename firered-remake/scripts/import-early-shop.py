@@ -11,6 +11,8 @@ import sys
 
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT/'scripts'))
+from item_icon_exports import item_icon_path, output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 PROFILE = 'firered-viridian-pewter-shop-v1'
 SYMBOLS = ['ITEM_POKE_BALL', 'ITEM_POTION', 'ITEM_ANTIDOTE', 'ITEM_PARALYZE_HEAL',
@@ -158,7 +160,7 @@ def convert(raw, out):
             raise ValueError('Item icon dimensions differ')
         rgba = codec.rgba(indices, codec.palette(sources[palette_path]))
         png = codec.png(w, h, rgba)
-        filename = symbol.lower() + '.png'
+        filename = item_icon_path(image_path, palette_path)
         icon_outputs[filename] = png
         # Binary sources use a one-line identity span; source text line counts are not meaningful for PNG.
         image_ref = dict(path=image_path, symbol=m[1], startLine=1, endLine=1)
@@ -184,7 +186,7 @@ def convert(raw, out):
     catalog = dict(sourceCommit=COMMIT, profile=PROFILE, completeItemCatalog=False, limits=limits,
                    questLimits=quest_limits, maximumTransactionQuantity=99, maximumMoney=maximum_money,
                    items=items, shops=shops)
-    document = dict(schemaVersion=1, inputs=list(inputs.values()), rulesSources=rules, catalog=catalog,
+    document = dict(schemaVersion=1, inputs=list(inputs.values()), catalog=catalog,
         icons=icons, texts=texts, limitations=[
             'Only the exact Viridian/Pewter Mart stock union is in this catalog. ITEM_NONE is a terminator, never merchandise.',
             'This is a new opt-in inventory validator. Existing save formats, null pockets and opening validator remain unchanged.',
@@ -200,8 +202,10 @@ def convert(raw, out):
         outputs=[dict(path='early-shop.json')] +
                 [dict(path=p) for p, b in sorted(icon_outputs.items())])
     out.mkdir(parents=True, exist_ok=True)
-    for path, content in {'early-shop.json': data, **icon_outputs}.items():
-        (out / path).write_bytes(content)
+    for (directory, path), content in output_materials(out, {'early-shop.json': data, **icon_outputs}).items():
+        target = directory / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
     (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
     return manifest
 

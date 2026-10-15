@@ -170,9 +170,7 @@ def render(src, codec, stage):
                 indices = [tile[(7-py if entry & 2048 else py)*8+(7-px if entry & 1024 else px)] or tiles[1][py*8+px]
                     for py in range(8) for px in range(8)]
                 codec.blit(out, 240, codec.rgba(indices, pal, False), 8, 8, x*8, y*8)
-        rgba = bytes(out); raw_scan = b''.join(b'\0'+rgba[y*240*4:(y+1)*240*4] for y in range(160))
-        png = (b'\x89PNG\r\n\x1a\n' + codec.chunk(b'IHDR', struct.pack('>IIBBBBB', 240, 160, 8, 6, 0, 0, 0)) +
-            codec.chunk(b'IDAT', zlib.compress(raw_scan, 9)) + codec.chunk(b'IEND', b''))
+        png = codec.png(240, 160, bytes(out))
         stem = 'fab-mail-' + ('male' if gender == 0 else 'female')
         (stage/(stem+'.png')).write_bytes(png)
         assets.append(dict(id=stem, playerGender=gender, width=240, height=160, texturePath=stem + '.png', sourcePaths=[tile_path, palette_path, map_path], genderPaletteSource=gender_ref))
@@ -273,7 +271,7 @@ def main():
              inputCount=len(src.entries), outputs=outputs,
             tradeCount=1, mailWordCount=9, itemCount=1, backgroundCount=2, mapCount=0)
         manifest_bytes = canonical(manifest); (stage/'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target/'scripts/npc-trade-mail.lock.json', lock_bytes)]
+        writes = []
         writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

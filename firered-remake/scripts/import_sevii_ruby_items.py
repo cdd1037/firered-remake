@@ -2,12 +2,11 @@
 """Derive Ruby keys and HM06/118-species teaching from pinned local source only."""
 import  json, re
 from pathlib import Path
+from machine_catalog import admission_view, compatibility_additions
 ROOT=Path(__file__).resolve().parents[1]
 RAW=ROOT/'content/raw/pokefirered/037335f4'
 OUT=ROOT/'content/generated/sevii-ruby-items'
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-lockpath=ROOT/'content/sources/sevii-ruby-region.lock.json'
-files={r['path']:r for r in json.loads(lockpath.read_text())['files']}
 def source(path):
  b=(RAW/path).read_bytes();return b.decode()
 def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
@@ -41,21 +40,10 @@ assert fire and '[4] = ITEM4_EVO_STONE' in fire[1]
 new[3]['effectBytes']=[0,0,0,0,128,0]
 new[3]['useSupport']=9
 new[3]['effectSource']=dict(path='src/data/pokemon/item_effects.h',symbol='sItemEffect_FireStone',startLine=effect_text[:fire.start()].count('\n')+1,endLine=effect_text[:fire.end()].count('\n')+1)
-# The authenticated Cinnabar derivative enumerates the exact inherited 115 species.
-previous_path=ROOT/'content/generated/cinnabar-items/machines.json'
-previous_bytes=previous_path.read_bytes()
-previous=json.loads(previous_bytes)
-# Exactly the 36 machines in the National Dex predecessor.
-old_ids=[i['value'][5:] for i in previous['inheritedItemIds']]+['ITEM_TM14','ITEM_TM22','ITEM_TM38','ITEM_TM26','ITEM_TM02','ITEM_TM07','ITEM_TM37','ITEM_TM50']
-assert len(old_ids)==36 and len(set(old_ids))==36
-owned=[(r['species']['value'][5:],r['sourceSpeciesId']) for r in previous['newMachines'][0]['compatibility']]+[('SPECIES_RAPIDASH',78),('SPECIES_SLUGMA',218),('SPECIES_MAGCARGO',219)]
-assert len(owned)==118 and len(set(owned))==118
-text=source('src/data/pokemon/tmhm_learnsets.h');matches={m[1]:m for m in re.finditer(r'\[(SPECIES_\w+)\]\s*=\s*TMHM_LEARNSET\((.*?)\),',text,re.S)}
-def cell(species,source_id,item):
- m=matches[species];start=text[:m.start()].count('\n')+1;end=text[:m.end()].count('\n')+1
- return dict(species={'value':'pret:'+species},sourceSpeciesId=source_id,canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',m[2])),source=ref('src/data/pokemon/tmhm_learnsets.h',species,start,end))
-additions=[dict(item={'value':'pret:'+item},compatibility=[cell(s,n,item) for s,n in owned[-3:]]) for item in sorted(old_ids)]
-hm=dict(machine=items[2],move={'value':'pret:MOVE_ROCK_SMASH'},sourceMoveId=249,movePp=15,compatibility=[cell(s,n,'ITEM_HM06') for s,n in sorted(owned,key=lambda p:p[1])])
+additions=compatibility_additions(ROOT, 'content/generated/sevii-ruby-items/items.json', 'machineAdditions')
+assert len(additions)==36
+hm=admission_view(ROOT, 'content/generated/sevii-ruby-items/items.json', '/hm06')
+assert len(hm['species'])==118
 OUT.mkdir(parents=True,exist_ok=True)
 document=dict(sourceCommit=COMMIT,profile='firered-sevii-ruby-items-v1',items=items,additions=new,machineAdditions=additions,hm06=hm)
 output=(json.dumps(document,ensure_ascii=False,indent=2)+'\n').encode();(OUT/'items.json').write_bytes(output)

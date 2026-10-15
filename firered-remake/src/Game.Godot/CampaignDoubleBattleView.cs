@@ -46,8 +46,11 @@ public partial class CampaignView
         foreach (var asset in json.RootElement.GetProperty("assets").EnumerateArray())
         {
             string file = asset.GetProperty("path").GetString()!;
-            if (Path.GetFileName(file) != file) throw new InvalidDataException("Doubles texture path differs.");
-            var data = File.ReadAllBytes(Path.Combine(folder, file));
+            var id = asset.GetProperty("id").GetString()!;
+            var shared = id is "hp-label" or "hp-green" or "hp-yellow" or "hp-red";
+            var expected = $"content/generated/{(shared ? "lab-battle-ui" : "double-battle-ui")}/{id}.png";
+            if (Path.GetFileName(id) != id || file != expected) throw new InvalidDataException("Doubles texture path differs.");
+            var data = File.ReadAllBytes(Path.Combine(_root, file));
             using var image = new Image();
             if (image.LoadPngFromBuffer(data) != Error.Ok) throw new InvalidDataException("Doubles PNG differs.");
             image.Convert(Image.Format.Rgba8);

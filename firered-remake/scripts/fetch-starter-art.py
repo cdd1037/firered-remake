@@ -77,7 +77,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/starter-art.lock.json')
-    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
+    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'scripts/import-config/source.json')
     parser.add_argument('--cache', type=pathlib.Path, help='Optional previously downloaded source tree')
     parser.add_argument('--offline', action='store_true', help='Reject missing files without networking')
     args = parser.parse_args()

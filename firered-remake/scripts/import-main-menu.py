@@ -9,7 +9,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import ast
 import json
@@ -76,7 +76,7 @@ def safe(root, relative=None):
 
 
 def load_lock(path=None):
-    data = safe(path or ROOT / 'content/main-menu-source-lock.json').read_bytes()
+    data = safe(path or ROOT / 'scripts/import-config/main-menu.json').read_bytes()
     lock = json.loads(data.decode('utf-8'), object_pairs_hook=unique_pairs)
     if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0):
         raise ValueError('Main-menu source identity differs')
@@ -85,9 +85,6 @@ def load_lock(path=None):
     return lock
 
 
-def raw_manifest():
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
-         inputCount=len(PATHS)))
 
 
 def read_sources(lock, raw, repository=None):
@@ -351,7 +348,6 @@ def import_content(raw, out, repository=None, lock_path=None):
     sources=read_sources(lock,raw,repository)
     outputs=convert(lock,sources)
     material={(raw,p):b for p,b in sources.items()} if repository is not None else {}
-    if repository is not None: material[(raw_metadata_directory(raw, 'main-menu'),'manifest.json')]=raw_manifest()
     material.update({(out,p):b for p,b in outputs.items()})
     targets=[(safe(root,p),safe(root,p+'.tmp'),b) for (root,p),b in material.items()]
     if any(p.exists() and not p.is_file() for target,stage,_ in targets for p in (target,stage)):
@@ -369,7 +365,7 @@ def main():
     parser.add_argument('--reference-repo',type=pathlib.Path)
     parser.add_argument('--raw',type=pathlib.Path,default=ROOT/'content/raw/pokefirered/037335f4')
     parser.add_argument('--out',type=pathlib.Path,default=ROOT/'content/generated/main-menu')
-    parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'content/main-menu-source-lock.json')
+    parser.add_argument('--lock',type=pathlib.Path,default=ROOT/'scripts/import-config/main-menu.json')
     args=parser.parse_args()
     print(json.dumps(import_content(args.raw,args.out,args.reference_repo,args.lock),sort_keys=True))
 

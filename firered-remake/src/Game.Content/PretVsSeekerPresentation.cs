@@ -30,7 +30,7 @@ public sealed class PretVsSeekerPresentation
     public VsSeekerPresentationAsset Asset(string id) => Assets.Single(a => a.Id == id);
     public byte[] ReadPng(string id) => _textures.TryGetValue(id, out var data) ? (byte[])data.Clone()
         : throw new ArgumentException("Unknown Vs Seeker asset.", nameof(id));
-    public byte[] ReadItemIconRgba() => (byte[])_itemIcon.Clone();
+    public byte[] ReadItemIconPng() => (byte[])_itemIcon.Clone();
 
     public static PretVsSeekerPresentation Load(string root, string? dependencyRoot = null)
     {
@@ -50,12 +50,12 @@ public sealed class PretVsSeekerPresentation
                 throw new InvalidDataException("Vs Seeker frame geometry differs.");
             textures.Add(asset.Id, Read(asset.Reused ? dependencyRoot ?? root : root,asset.Path));
         }
-        byte[] iconRgba = PngRgba8.Decode(Read(root,Base + "item-vs-seeker.png"));
+        byte[] iconPng = Read(root,Base + "item-vs-seeker.png");
         var texts = json.GetProperty("texts").EnumerateArray().ToImmutableDictionary(
             e => e.GetProperty("symbol").GetString()!, e => e.GetProperty("encodedText").GetString()!, StringComparer.Ordinal);
         if (texts.Count != 6 || texts.Values.Any(t => !t.EndsWith('$')))
             throw new InvalidDataException("Vs Seeker original text inventory differs.");
-        return new(assets, textures.ToImmutable(), iconRgba, json.GetProperty("itemDefinition").Clone(),
+        return new(assets, textures.ToImmutable(), iconPng, json.GetProperty("itemDefinition").Clone(),
             texts, json.GetProperty("texts").Clone());
     }
     private static byte[] Read(string root,string relative)

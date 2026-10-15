@@ -56,7 +56,7 @@ def safe(root, relative):
     return target
 
 
-def load_lock(path=ROOT / 'scripts/forest-status-ui.lock.json', project_path=ROOT / 'content/source-lock.json'):
+def load_lock(path=ROOT / 'scripts/forest-status-ui.lock.json', project_path=ROOT / 'scripts/import-config/source.json'):
     data = pathlib.Path(path).read_bytes()
     lock = json.loads(data, object_pairs_hook=pairs)
     if (lock['schemaVersion'], lock['profile'], lock['repository'], lock['commit']) != (1, PROFILE, REPOSITORY, COMMIT):
@@ -190,8 +190,11 @@ def convert(lock, sources):
     outputs, assets = {}, []
 
     def add(id, pixels, width, x, y, context, status, source_tile, palette, source_image, source_palette):
-        filename = id + '.png'
-        outputs[filename] = codec.png(width, 8, pixels)
+        filename = ('battle-' + status if context in ('battle-player', 'battle-opponent') and status in ('poison', 'paralysis', 'burn') else id) + '.png'
+        encoded = codec.png(width, 8, pixels)
+        if filename in outputs and outputs[filename] != encoded:
+            raise ValueError('Shared battle status pixels differ: ' + status)
+        outputs[filename] = encoded
         assets.append(dict(id=id, texturePath=filename, width=width, height=8, x=x, y=y, context=context, status=status, sourceTile=source_tile, sourceImagePath=source_image, sourcePalettePath=source_palette, paletteRgb555=[r >> 3 | g >> 3 << 5 | b >> 3 << 10 for r, g, b in palette], transparentIndex=0))
 
     def party_pixels(tile):
@@ -271,7 +274,7 @@ def main():
     parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--output', type=pathlib.Path, default=ROOT / 'content/generated/forest-status-ui')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/forest-status-ui.lock.json')
-    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
+    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'scripts/import-config/source.json')
     args = parser.parse_args()
     outputs = run(args.lock, args.project_lock, args.raw, args.output, args.source_repo)
     print(json.dumps(dict(status='verified', sourceFiles=len(PATHS), assets=11, outputs=len(outputs))))

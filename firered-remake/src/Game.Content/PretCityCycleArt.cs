@@ -1,6 +1,4 @@
-using System.Buffers.Binary;
 using System.Collections.Immutable;
-using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 
@@ -24,7 +22,6 @@ public sealed class PretCityCycleArt
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private readonly ImmutableDictionary<int, byte[]> textures;
-    private readonly ImmutableDictionary<int, byte[]> rgba;
     public PlayerGenderArtDocument Document { get; }
     public ImmutableArray<PlayerGenderArtAsset> Assets => Document.Assets;
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
@@ -32,16 +29,14 @@ public sealed class PretCityCycleArt
     public JsonElement Rules { get; }
     public PretFishingArtDocument Fishing { get; }
     private readonly ImmutableDictionary<int, byte[]> fishingTextures;
-    private readonly ImmutableDictionary<int, byte[]> fishingRgba;
 
     private PretCityCycleArt(string directory, PlayerGenderArtDocument document,
-        ImmutableArray<PretWorldSourceFile> sources, ImmutableDictionary<int, byte[]> textureBytes,
-        ImmutableDictionary<int, byte[]> pixelBytes, JsonElement rules, PretFishingArtDocument fishing,
-        ImmutableDictionary<int, byte[]> fishingTextureBytes, ImmutableDictionary<int, byte[]> fishingPixelBytes)
+        ImmutableArray<PretWorldSourceFile> sources, ImmutableDictionary<int, byte[]> textureBytes, JsonElement rules, PretFishingArtDocument fishing,
+        ImmutableDictionary<int, byte[]> fishingTextureBytes)
     {
         GeneratedDirectory = directory; Document = document; SourceFiles = sources;
-        textures = textureBytes; rgba = pixelBytes; Rules = rules; Fishing = fishing;
-        fishingTextures = fishingTextureBytes; fishingRgba = fishingPixelBytes;
+        textures = textureBytes; Rules = rules; Fishing = fishing;
+        fishingTextures = fishingTextureBytes;
     }
 
     /// <summary>Loads cycling and fishing sprite sheets, metadata and animation rules.</summary>
@@ -49,18 +44,11 @@ public sealed class PretCityCycleArt
     {
         var root = Path.GetFullPath(projectRoot);
         var directory = Path.Combine(root, "content/generated/city-cycle-art");
-        using var sourceLock = JsonDocument.Parse(ReadPinned(root,"content/sources/city-services-cycle-art.lock.json"));
         using var manifest = JsonDocument.Parse(ReadPinned(directory,"manifest.json"));
-        var l = sourceLock.RootElement; var m = manifest.RootElement;
-        Require(l.GetProperty("schemaVersion").GetInt32() == 1, "Unsupported player art source schema.");
+        var m = manifest.RootElement;
         Require(m.GetProperty("schemaVersion").GetInt32() == 1,
             "Player art manifest identity differs.");
         var sources = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var entry in l.GetProperty("files").EnumerateArray())
-        {
-            var path = entry.GetProperty("path").GetString()!;
-            sources.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
-        }
         var sourceFiles = sources.ToImmutable();
         var outputs = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var entry in m.GetProperty("outputs").EnumerateArray())
@@ -76,13 +64,11 @@ public sealed class PretCityCycleArt
             && document.Assets.Length == 2 && document.Assets.Select(a => a.Gender).Order().SequenceEqual([0, 1])
             && !document.Limitations.IsDefaultOrEmpty, "Player art document differs.");
         var textures = ImmutableDictionary.CreateBuilder<int, byte[]>();
-        var rgba = ImmutableDictionary.CreateBuilder<int, byte[]>();
         foreach (var asset in document.Assets)
         {
             ValidateAsset(asset);
             var bytes = outputs[asset.TexturePath];
             textures.Add(asset.Gender, bytes);
-            rgba.Add(asset.Gender, DecodeRgba(bytes));
         }
         using var rules = JsonDocument.Parse(outputs["cycle-rules.json"]);
         Require(!rules.RootElement.GetProperty("runtimeIntegrated").GetBoolean() &&
@@ -93,7 +79,6 @@ public sealed class PretCityCycleArt
             fishing.SourceTimingHz == 60 && fishing.Assets.Length == 2 && fishing.Animations.Length == 12 && fishing.Texts.Count == 3,
             "Fishing art scope differs.");
         var fishTextures = ImmutableDictionary.CreateBuilder<int, byte[]>();
-        var fishRgba = ImmutableDictionary.CreateBuilder<int, byte[]>();
         foreach (var asset in fishing.Assets)
         {
             ValidateGender(asset.Gender);
@@ -102,15 +87,12 @@ public sealed class PretCityCycleArt
                 asset.DrawOffsetFromTileOrigin == new PlayerGenderArtPoint(-8, -16) ,
                 "Fishing sprite metadata differs.");
             fishTextures.Add(asset.Gender, outputs[asset.TexturePath]);
-            var pixels = DecodeRgba(outputs[asset.TexturePath]);
-            Require(pixels.Length == 384 * 32 * 4, "Fishing sprite pixel dimensions differ.");
-            fishRgba.Add(asset.Gender, pixels);
         }
         Require(fishing.Animations.Select(a => a.SourceAnimationId).Order().SequenceEqual(Enumerable.Range(0, 12)) &&
             fishing.Animations.All(a => a.Commands.All(c => c.Opcode is "frame" or "loop" or "jump" or "end" &&
                 (c.Opcode != "frame" || c.Value is >= 0 and < 12 && c.Duration > 0))), "Fishing animation commands differ.");
-        return new(directory, document, sourceFiles, textures.ToImmutable(), rgba.ToImmutable(), rules.RootElement.Clone(),
-            fishing, fishTextures.ToImmutable(), fishRgba.ToImmutable());
+        return new(directory, document, sourceFiles, textures.ToImmutable(), rules.RootElement.Clone(),
+            fishing, fishTextures.ToImmutable());
     }
 
     public PlayerGenderArtAsset Sprite(int gender)
@@ -125,12 +107,12 @@ public sealed class PretCityCycleArt
         return Fishing.Assets.Single(a => a.Gender == gender);
     }
     public byte[] ReadFishingTexture(int gender) { ValidateGender(gender); return [.. fishingTextures[gender]]; }
-    public byte[] ReadFishingRgba(int gender) { ValidateGender(gender); return [.. fishingRgba[gender]]; }
+
     public PretFishingAnimation FishingAnimation(string action, string direction) => Fishing.Animations.Single(a => a.Id == action + "." + direction);
 
     /// <summary>Fresh authenticated PNG bytes; subsequent caller or disk mutations cannot alter this snapshot.</summary>
     public byte[] ReadTexture(int gender) { ValidateGender(gender); return [.. textures[gender]]; }
-    public byte[] ReadRgba(int gender) { ValidateGender(gender); return [.. rgba[gender]]; }
+
 
     /// <summary>Convenience one-shot load for canonical gender 0 or 1; prefer one Load for repeated rendering.</summary>
     public static byte[] ReadTexture(string projectRoot, int gender)
@@ -169,20 +151,12 @@ public sealed class PretCityCycleArt
     {
         var path = SafeFile(root, relative);
 var bytes = File.ReadAllBytes(path);
-if (texture) ValidatePngHeader(bytes);
 return bytes;
     }
 
-    private static void ValidatePngHeader(ReadOnlySpan<byte> bytes)
-    {
-        Require(bytes.Length >= 33 && bytes[..8].SequenceEqual(new byte[] { 137,80,78,71,13,10,26,10 })
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.Slice(8, 4)) == 13 && bytes.Slice(12, 4).SequenceEqual("IHDR"u8)
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.Slice(16, 4)) is 288 or 384
-            && BinaryPrimitives.ReadUInt32BigEndian(bytes.Slice(20, 4)) == 32
-            && bytes.Slice(24, 5).SequenceEqual(new byte[] { 8,6,0,0,0 }), "Player PNG header differs.");
-    }
 
-    private static byte[] DecodeRgba(byte[] bytes) => PngRgba8.Decode(bytes, System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(16, 4)), 32);
+
+
 
     private static string SafeFile(string root, string relative)
     {

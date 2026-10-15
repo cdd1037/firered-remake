@@ -55,12 +55,10 @@ public sealed class PretEeveePokemon
         Require(doc.SchemaVersion == 1 && doc.DeferredEvolutions.Length == 5 && doc.RequiredMoves.Length == 9 &&
             doc.NaturalLevelLimit is null && !doc.Limitations.IsDefaultOrEmpty, "Eevee document scope differs.");
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var lineCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        
         foreach (var input in doc.Inputs)
         {
-            var source = PretCeladonApproachSource.Read(project,PretSourcePaths.FireRedRawDirectory + "/" + input.Path);
-            if (!input.Path.EndsWith(".png", StringComparison.Ordinal)) lineCounts.Add(input.Path, Utf8.GetString(source).Count(c => c == '\n') + 1);
-            files.Add(new(input.Path,                $"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{input.Path}"));
+            files.Add(new(input.Path));
         }
         var s = doc.Species.Single();
         Require(Game.Domain.WildBattle.EeveeBattleScope.IsEeveeDefinition(s), "Eevee source species identity differs.");

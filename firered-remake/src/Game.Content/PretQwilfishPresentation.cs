@@ -24,7 +24,7 @@ public static class PretQwilfishPresentation
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
                 path.Split('/').Any(p => p is "" or "." or "..") )
                 throw new InvalidDataException("Unsafe Qwilfish presentation resource.");
-            var file = new FileInfo(Path.Combine(path.StartsWith(Base, StringComparison.Ordinal) || path.StartsWith(PretSourcePaths.FireRedRawDirectory + "/", StringComparison.Ordinal) || path == "scripts/qwilfish-presentation.lock.json" ? root : inheritedRoot ?? root, path));
+            var file = new FileInfo(Path.Combine(path.StartsWith(Base, StringComparison.Ordinal) ? root : inheritedRoot ?? root, path));
             if (file.LinkTarget is not null) throw new InvalidDataException("Qwilfish resource symlink rejected.");
             for (var directory = file.Directory; directory is not null; directory = directory.Parent)
                 if (directory.LinkTarget is not null) throw new InvalidDataException("Qwilfish directory symlink rejected.");
@@ -32,14 +32,12 @@ public static class PretQwilfishPresentation
             return bytes;
         }
 
-        using var locked = JsonDocument.Parse(Read("scripts/qwilfish-presentation.lock.json"));
         using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
-        var sourceLock = locked.RootElement;
         var manifest = document.RootElement;
-        if (sourceLock.GetProperty("schemaVersion").GetInt32() != 1 || manifest.GetProperty("schemaVersion").GetInt32() != 1 )
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("Qwilfish presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in sourceLock.GetProperty("inheritedInputs").EnumerateArray())
+        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
@@ -54,8 +52,8 @@ public static class PretQwilfishPresentation
         {
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
             string path = asset.GetProperty("texturePath").GetString()!;
-            if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var rgba) ||
-                PngRgba8.Decode(rgba, width, height).Length != width * height * 4 )
+            if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var pngBytes) ||
+                (pngBytes).Length == 0)
                 throw new InvalidDataException("Qwilfish pixels differ: " + path);
             if (!files.TryGetValue(asset.GetProperty("texturePath").GetString()!, out var png) )
                 throw new InvalidDataException("Qwilfish texture differs: " + path);

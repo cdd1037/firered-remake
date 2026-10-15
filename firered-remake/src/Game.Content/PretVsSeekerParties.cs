@@ -14,7 +14,7 @@ public static class PretVsSeekerParties
 {
     public const string CatalogRelativePath = "content/generated/vs-seeker-parties/catalog.json";
     public const string OccurrencesRelativePath = "content/generated/vs-seeker-parties/battle-occurrences.json";
-    public const string LockRelativePath = "content/sources/vs-seeker-parties/source-lock.json";
+
     private static readonly JsonSerializerOptions Options = new() {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,RespectNullableAnnotations = true,RespectRequiredConstructorParameters = true
     };

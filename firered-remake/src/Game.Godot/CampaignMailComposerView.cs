@@ -38,8 +38,7 @@ public partial class CampaignView
         {
             var id = new ItemId("pret:" + paper.ItemSymbol);
             if (!_catalog.EarlyShop!.Items.Any(i => i.Id == id)) throw new InvalidDataException("mail_inventory_icon_binding");
-            using var image = MailSourceScreen.Texture(paper.ItemIconId).GetImage();
-            _earlyItemIcons.Add(id, ImageTexture.CreateFromImage(image));
+            _earlyItemIcons.Add(id, MailSourceScreen.Texture(paper.ItemIconId));
         }
     }
     private bool MailComposeAction(string kind, int? choice = null, int quantity = 0)

@@ -5,10 +5,12 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT/'scripts'))
+from item_icon_exports import item_icon_path, output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-cerulean-items-v1'
@@ -37,7 +39,6 @@ def lock_read(path=None):
  d=json.loads(b,object_pairs_hook=pairs)
  if (d['schemaVersion'], d['repository'], d['commit'], d['profile'], len(d['files'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 14): raise ValueError('Source identity differs')
  return d
-def raw_manifest(): return encoded(dict(profile=PROFILE,sourceCommit=COMMIT,inputCount=14))
 def read_sources(lock,raw,repo=None):
  data={}
  if repo is not None:
@@ -96,11 +97,11 @@ def convert(lock,data):
  spec=importlib.util.spec_from_file_location('cerulean_items_existing_png_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
  image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
  if (w,h)!=(24,24):raise ValueError('Super Potion icon dimensions differ')
- png=codec.png(w,h,rgba);png_name='item_super_potion.png'
+ png=codec.png(w,h,rgba);png_name=item_icon_path(image,palette)
  icon=dict(item=ident(symbol),width=w,height=h,pngPath=png_name,source=ref(image,symbols[0]),paletteSource=ref(palette,symbols[1]),bindingSource=binding)
  for p,s,pat in [('src/pokemon.c','PokemonUseItemEffects',r'^bool8 PokemonUseItemEffects\([^;]*?\n\{.*?^\}'),('src/item_use.c','FieldUseFunc_Medicine',r'^void FieldUseFunc_Medicine\([^;]*?\n\{.*?^\}'),('src/item_use.c','BattleUseFunc_Medicine',r'^void BattleUseFunc_Medicine\([^;]*?\n\{.*?^\}')]:rules.append(ref(p,s,match(p,pat)))
  for p in ['src/data/items.json.txt','tools/gbagfx/gfx.c','tools/gbagfx/convert_png.c']:rules.append(ref(p,'bounded source declaration and conversion'))
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,item=item,shop=shop,icon=icon,limitations=['Only Super Potion is added to the seventeen-item MtMoon catalog; original two Marts stay unchanged.', 'Cerulean Mart preserves nine source stock entries and the ITEM_NONE terminator.', 'Super Potion restores up to 50 HP to a living injured owned Pokemon; it neither revives nor cures status.', 'No TM03, TM28, new generic item engine, source audio, or native/playable acceptance is claimed.'])
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],item=item,shop=shop,icon=icon,limitations=['Only Super Potion is added to the seventeen-item MtMoon catalog; original two Marts stay unchanged.', 'Cerulean Mart preserves nine source stock entries and the ITEM_NONE terminator.', 'Super Potion restores up to 50 HP to a living injured owned Pokemon; it neither revives nor cures status.', 'No TM03, TM28, new generic item engine, source audio, or native/playable acceptance is claimed.'])
  outputs={png_name:png,'cerulean-items.json':encoded(doc)}
  outputs['manifest.json']=encoded(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=14,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
  return outputs
@@ -118,8 +119,8 @@ def run(raw,out,repo=None,lock_path=None):
    p=protected.absolute()
    if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
- materials={(out,p):b for p,b in outputs.items()}
- if repo is not None:materials.update({(raw,p):b for p,b in data.items()});materials[(raw_metadata_directory(raw, 'cerulean-items'),'manifest.json')]=raw_manifest()
+ materials=output_materials(out,outputs)
+ if repo is not None:materials.update({(raw,p):b for p,b in data.items()})
  targets=[]
  for (root,p),b in materials.items():
   target=safe(root,p);stage=safe(root,p+'.tmp');directory(target.parent)

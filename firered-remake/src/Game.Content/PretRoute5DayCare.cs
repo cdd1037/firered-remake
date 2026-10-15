@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
-using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 using Game.Domain.World;
 
@@ -12,31 +10,23 @@ public sealed class PretRoute5DayCare
 {
     public const string ResourceId = "firered-route5-daycare-v1";
     public static MapId HouseMapId { get; } = new("map.route-5-pokemon-day-care");
-    private readonly ImmutableDictionary<string, ImmutableArray<byte>> _sourceBytes;
     public static MapId DayCareMapId => HouseMapId;
     public const string EntryScript = "Route5_PokemonDayCare_EventScript_DaycareMan";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement ScriptInventory { get; }
     public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretRoute5DayCare(SilphSourcePackage source, PretWorldMap house,
-        ImmutableArray<PretSourceScriptFile> scripts, ImmutableDictionary<string, string> texts,
         ImmutableDictionary<string, int> constants)
     {
-        _sourceBytes = source.Raw.ToImmutableDictionary(p => p.Key,
-            p => ImmutableArray.CreateRange(p.Value), StringComparer.Ordinal);
         NewMaps = ImmutableDictionary<MapId, PretWorldMap>.Empty.Add(HouseMapId, house);
-        Scripts = scripts; TextSources = texts; Constants = constants; SourceFiles = source.Files;
+        Constants = constants;
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
-        Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
+        Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
     }
 
@@ -55,41 +45,36 @@ public sealed class PretRoute5DayCare
             map.Cells.Select(c => new ConnectedFieldCell(c.BehaviorId, c.Collision, c.Elevation)).ToImmutableArray(), []);
     }
 
-    /// <summary>Returns a copy of a source blob already authenticated by this package.</summary>
-    public byte[] CopySource(string sourcePath) => _sourceBytes.TryGetValue(sourcePath, out var bytes)
-        ? bytes.ToArray() : throw new InvalidDataException("Source is outside Route 5 Day Care: " + sourcePath);
 
     /// <summary>Load map/script evidence before compiling campaign scripts. dependencyRoot supplies unchanged town/NPC resources.</summary>
     public static PretRoute5DayCare Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"route5-daycare",            "scripts/route5-daycare.lock.json");
+        var source = new SilphSourcePackage(projectRoot,"route5-daycare");
         var npc = source.Document("npc-source.json").GetProperty("graphics");
         Need(npc.GetArrayLength() == 2, "Route 5 Day Care actor collection differs.");
         var graphics = new HashSet<string>(StringComparer.Ordinal);
         foreach (var texture in npc.EnumerateArray())
         {
             string graphic = texture.GetProperty("graphicsId").GetString()!;
-            Need(graphics.Add(graphic) && texture.GetProperty("reuseExisting").GetBoolean() &&
-                graphic is "OBJ_EVENT_GFX_GENTLEMAN" or "OBJ_EVENT_GFX_RED_NORMAL",
+            Need(graphics.Add(graphic) && graphic is "OBJ_EVENT_GFX_GENTLEMAN" or "OBJ_EVENT_GFX_RED_NORMAL",
                 "Route 5 Day Care actors must reuse the original existing resources.");
         }
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == 1 ,
             "Route 5 Day Care catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Route 5 Day Care; service rules and current-game admission are separate.", ResourceId, source.Files);
-        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
+            "Original Route 5 Day Care; service rules and current-game admission are separate.", ResourceId, []);
         var spec = catalog.GetProperty("maps")[0];
         string id = spec.GetProperty("stableId").GetString()!, relative = spec.GetProperty("directory").GetString()!;
         string path = spec.GetProperty("path").GetString()!;
         Need(id == HouseMapId.Value && path == relative + "/runtime-map.json" ,
             "Route 5 Day Care compact map binding differs.");
-        var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
+        var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
         Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == 12 && runtime.Height == 9 &&
             runtime.Events.GetProperty("layout").GetString() == "LAYOUT_ROUTE5_POKEMON_DAY_CARE", "Route 5 Day Care layout differs.");
         var house = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/city-services/npc/red-normal.png"), MapIdFromSourceSymbol);
+            PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
         Need(house.FieldWarps.Length == 3 && house.Events.GetProperty("object_events").GetArrayLength() == 1 &&
             house.Events.GetProperty("coord_events").GetArrayLength() == 0 && house.Events.GetProperty("bg_events").GetArrayLength() == 0 &&
             house.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "Route 5 Day Care original event collection differs.");
@@ -106,32 +91,11 @@ public sealed class PretRoute5DayCare
                 door.GetProperty("dest_warp_id").GetString() == "1", "Route 5 Day Care original exit differs.");
         }
         ValidateTown(source, dependencyRoot);
-        var inventory = source.Document("scripts.json");
-        Need(inventory.GetProperty("blocks").GetArrayLength() == 34 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "Route 5 Day Care script closure differs.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
-        {
-            string sourcePath = entry.GetString()!, text = new UTF8Encoding(false, true).GetString(raw[sourcePath]);
-            if (sourcePath.EndsWith("/text.inc", StringComparison.Ordinal) || sourcePath.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(sourcePath, text);
-            else
-            {
-                string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(label.Length > 0, "Missing Route 5 Day Care script label.");
-                scripts.Add(new(sourcePath, text, new(SourceKind.Pret,sourcePath,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["PARTY_SIZE"] == 6 && constants["GAME_STAT_USED_DAYCARE"] == 47 &&
             constants["YES"] == 1 && constants["MUS_PEWTER"] == 314,
             "Route 5 Day Care source party/stat/music constants differ.");
-        Need(inventory.GetProperty("futureUnsupportedRoots")[0].GetString() == "EventScript_EggHatch" &&
-            inventory.GetProperty("futureUnsupportedSpecials")[0].GetString() == "EggHatch" &&
-            !source.Document("contracts.json").GetProperty("service").GetProperty("eggHatchingAdmitted").GetBoolean(),
-            "Shared egg-hatch evidence must remain outside Route 5 Day Care admission.");
-        return new(source, house, scripts.ToImmutable(), texts.ToImmutable(), constants);
+        return new(source, house, constants);
     }
 
     private static void ValidateTown(SilphSourcePackage source, string dependencyRoot)

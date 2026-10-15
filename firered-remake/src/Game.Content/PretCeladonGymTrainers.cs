@@ -17,9 +17,6 @@ public static class PretCeladonGymTrainers
     public const int TrainerCount=8,PartyMemberCount=21,RequiredMoveCount=17;
     public static CeladonGymTrainerDocument LoadDocument(string root)
     {
-        using var sourceLock=JsonDocument.Parse(Read(root,"scripts/celadon-gym-trainers.lock.json"));
-        var s=sourceLock.RootElement;
-        Require(s.GetProperty("schemaVersion").GetInt32()==1&&s.GetProperty("gameEdition").GetString()=="FIRERED"&&s.GetProperty("romRevision").GetInt32()==0,"Celadon Gym source identity differs.");
         var d=ContentJson.ParseStrict<CeladonGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/celadon-gym-trainers/trainers.json")),ContentJson.CreateOptions());
         Require(d.SchemaVersion==1&&!d.CompleteSourceRoster&&
             d.Trainers.Select(x=>x.Id).Distinct().Count()==8&&d.Trainers.Sum(x=>x.Party.Length)==21&&d.ResolvedMoves.GetArrayLength()==8&&!d.Limitations.IsDefaultOrEmpty,"Celadon Gym document scope differs.");

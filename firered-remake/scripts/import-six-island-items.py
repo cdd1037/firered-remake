@@ -2,6 +2,8 @@
 """Import Six Island items, source shop/pickups and exact 38x132 teaching. No upstream execution."""
 import argparse,  json, re, subprocess
 from pathlib import Path
+from machine_catalog import compatibility_additions
+ROOT=Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 def need(v,m):
  if not v:raise ValueError(m)
@@ -13,9 +15,6 @@ def generate(reference,root):
    inputs[path]=dict(path=path);texts[path]=b.decode()
   return texts[path]
  def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
- def dependency(path):
-  b=(root/path).read_bytes()
-  dependencies.append(dict(path=path));return json.loads(b)
  items_text=source('src/data/items.json');source_items=json.loads(items_text)['items']
  constants=source('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}
  def metadata(symbol):
@@ -33,15 +32,9 @@ def generate(reference,root):
  need(items[0]['item']['sourceItemId']==93 and items[0]['item']['fieldUseFunction']=='FieldUseFunc_EvoItem','Sun Stone source evolution use')
  need(items[1]['item']['sourceItemId']==201 and items[1]['item']['holdEffect']=='HOLD_EFFECT_DRAGON_SCALE' and items[1]['item']['holdEffectParam']==10,'Dragon Scale is not Dragon Fang')
  need(items[2]['item']['sourceItemId']==130 and items[2]['item']['fieldUseFunction']=='FieldUseFunc_Mail','Dream Mail source identity')
- four=dependency('content/generated/four-island-items/items.json')
- old_ids=[r['item']['value'][5:] for r in four['machineAdditions']]+['ITEM_HM07'];need(len(set(old_ids))==38,'Inherited machine set')
- owned=[(r['species']['value'][5:],r['sourceSpeciesId']) for r in four['hm07']['compatibility']]
- added=[('SPECIES_SENTRET',161),('SPECIES_FURRET',162),('SPECIES_NATU',177),('SPECIES_XATU',178),('SPECIES_YANMA',193),('SPECIES_WOBBUFFET',202),('SPECIES_BELLOSSOM',182)]
- need(len(owned)==125 and not set(owned)&set(added),'Owned predecessor');owned+=added
- text=source('src/data/pokemon/tmhm_learnsets.h');matches={m[1]:m for m in re.finditer(r'\[(SPECIES_\w+)\]\s*=\s*TMHM_LEARNSET\((.*?)\),',text,re.S)}
- def cell(species,source_id,item):
-  m=matches[species];return dict(species={'value':'pret:'+species},sourceSpeciesId=source_id,canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',m[2])),source=ref('src/data/pokemon/tmhm_learnsets.h',species,text[:m.start()].count('\n')+1,text[:m.end()].count('\n')+1))
- additions=[dict(item={'value':'pret:'+item},compatibility=[cell(s,n,item) for s,n in added]) for item in sorted(old_ids)]
+ additions=compatibility_additions(ROOT, 'content/generated/six-island-items/items.json', 'machineAdditions')
+ need(len(additions)==38, 'Exact admitted machine scope')
+ dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
  stock_path='data/maps/SixIsland_Mart/scripts.inc';stock_text=source(stock_path);stock=re.search(r'^SixIsland_Mart_Items::\n((?:\t\.2byte ITEM_\w+\n)+)',stock_text,re.M)
  symbols=re.findall(r'\t\.2byte (ITEM_\w+)',stock[1]);need(symbols.pop()=='ITEM_NONE' and len(symbols)==8,'Mart stock')
  shop=dict(id='SixIsland_Mart_Items',items=[dict(value='pret:'+s) for s in symbols],source=ref(stock_path,'SixIsland_Mart_Items',stock_text[:stock.start()].count('\n')+1,stock_text[:stock.end()].count('\n')+1))
@@ -75,7 +68,7 @@ def main():
  for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
  p.add_argument('--check',action='store_true');a=p.parse_args();doc,evidence=generate(a.reference,a.dependency)
  files={'content/generated/six-island-items/'+name:(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode() for name,value in [('items.json',doc),('source-input-hashes.json',evidence)]}
- lock=dict(sourceCommit=COMMIT,profile='firered-six-island-items-v1',files=[dict(path=k) for k,v in sorted(files.items())]);files['scripts/six-island-items.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
+ lock=dict(sourceCommit=COMMIT,profile='firered-six-island-items-v1',files=[dict(path=k) for k,v in sorted(files.items())])
  for name,data in files.items():
   dest=a.output/name
   if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

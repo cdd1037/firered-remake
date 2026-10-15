@@ -53,7 +53,7 @@ internal static class FightingDojoPresentationAssets
             int width = asset.GetProperty("width").GetInt32(), height = asset.GetProperty("height").GetInt32();
             string path = asset.GetProperty("texturePath").GetString()!;
             if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var rgba) ||
-                PngRgba8.Decode(rgba, width, height).Length != width * height * 4)
+                !NativeImages.HasSize(rgba, width, height))
                 throw new InvalidDataException("Fighting Dojo pixels differ: " + path);
         }
         var dex = JsonSerializer.Deserialize<FightingDojoDexDocument>(files[Base + "dex-entries.json"], new JsonSerializerOptions

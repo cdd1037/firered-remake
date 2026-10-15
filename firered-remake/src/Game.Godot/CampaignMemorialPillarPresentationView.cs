@@ -31,7 +31,7 @@ public partial class CampaignView
             int species = row.GetProperty("sourceSpeciesId").GetInt32();
             string side = row.GetProperty("side").GetString()!;
             bool shiny = row.GetProperty("paletteVariant").GetString() == "shiny";
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
+            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], 64, 64);
             var texture = SceneTextures.FromImage(image);
             _battleArt.Add((species, side, shiny), new(texture, new(row.GetProperty("x").GetInt32(), row.GetProperty("y").GetInt32())));
             if (side == "front" && !shiny) _portraits.Add(species, texture);

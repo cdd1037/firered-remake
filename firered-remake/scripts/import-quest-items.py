@@ -165,8 +165,7 @@ def import_catalog(raw, out):
 
     catalog = dict(sourceCommit=COMMIT, profile=PROFILE, completeItemCatalog=False,
                    limits=dict(keyItemSlots=key_slots, ballSlots=ball_slots, maximumStack=limits[0]), items=items)
-    document = dict(schemaVersion=1, inputs=[inputs[x] for x in sorted(inputs)], rulesSources=rules,
-                    limitations=[
+    document = dict(schemaVersion=1, inputs=[inputs[x] for x in sorted(inputs)], limitations=[
                         "Only Oak's Parcel and Poke Ball storage is executable; this is not a complete item catalog.",
                         'Only the additional Key Items and Poke Balls pockets are validated by this module; ordinary Items/PC retain their existing validator.',
                         'Item use, capture, shops, tossing, giving and registered-item actions are not implemented by storage metadata.',

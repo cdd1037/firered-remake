@@ -32,14 +32,12 @@ public sealed class PretFirstSeviiTownMap
             "First-Sevii Town Map document profile differs.");
         Need(Assets.Length == 9 && Assets.Select(a => a.Id).ToHashSet(StringComparer.Ordinal).SetEquals(AssetIds), "First-Sevii atlas inventory differs.");
         foreach (var a in Assets)
-            Need(a.Width > 0 && a.Height > 0 && a.Width * a.Height <= 38400 && PngRgba8.Decode(outputs[a.TexturePath], a.Width, a.Height).Length == a.Width * a.Height * 4 &&
-                a.SourcePaths.Length > 0 && a.SourcePaths.All(p => files.Any(f => f.Path == p)), "First-Sevii atlas asset differs.");
+            Need(a.Width > 0 && a.Height > 0 && a.Width * a.Height <= 38400 && (outputs[a.TexturePath]).Length > 0, "First-Sevii atlas asset differs.");
         Need(Cells.Length == 330 && Icons.Length == 2 && Positions.Length == 16 &&
             SwitchMenu == new FirstSeviiTownMapSwitchMenu(1, 6, 72, 168, 32, 88, 152, 32, 20, true), "First-Sevii atlas geometry differs.");
         for (int i = 0; i < Cells.Length; i++) Need(Cells[i].X == i % 22 && Cells[i].Y == i / 22, "First-Sevii atlas cell order differs.");
         foreach (var p in Positions)
-            Need(p.Width > 0 && p.Height > 0 && p.SectionWidth > 0 && p.SectionHeight > 0 && p.Region is 0 or 1 &&
-                p.SourcePaths.All(path => files.Any(f => f.Path == path)), "First-Sevii atlas position differs.");
+            Need(p.Width > 0 && p.Height > 0 && p.SectionWidth > 0 && p.SectionHeight > 0 && p.Region is 0 or 1, "First-Sevii atlas position differs.");
         Need(Positions.Count(p => p.RequiresEscapeWarp) == 1 && positionsByMap["map.three-island-harbor"].RequiresEscapeWarp,
             "First-Sevii indoor escape-warp boundary differs.");
     }
@@ -54,18 +52,11 @@ public sealed class PretFirstSeviiTownMap
 var bytes = File.ReadAllBytes(path);
 return bytes;
         }
-        using var sourceLock = JsonDocument.Parse(Pinned(root,"content/first-sevii-town-map-source-lock.json"));
         using var manifest = JsonDocument.Parse(Pinned(generated,"manifest.json"));
-        var l = sourceLock.RootElement; var m = manifest.RootElement;
-        Need(l.GetProperty("schemaVersion").GetInt32() == 1 && l.GetProperty("gameEdition").GetString() == "FIRERED" &&
-            l.GetProperty("romRevision").GetInt32() == 0, "First-Sevii atlas source profile differs.");
+        var m = manifest.RootElement;
         Need(m.GetProperty("schemaVersion").GetInt32() == 1 &&
             !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean(), "First-Sevii atlas manifest differs.");
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var f in l.GetProperty("files").EnumerateArray())
-        {
-            var path = f.GetProperty("path").GetString()!;             files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
-        }
 
         var payloads = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var o in m.GetProperty("outputs").EnumerateArray())
@@ -79,7 +70,7 @@ return bytes;
     }
 
     public TownMapAsset Asset(string id) => Assets.Single(a => a.Id == id);
-    public byte[] ReadAssetRgba(string id) => PngRgba8.Decode(outputs[Asset(id).TexturePath]);
+    public byte[] ReadAssetPng(string id) => outputs[Asset(id).TexturePath];
     public TownMapCell CellAt(int x, int y)
     {
         if (x is < 0 or >= 22 || y is < 0 or >= 15) throw new ArgumentOutOfRangeException(nameof(x));

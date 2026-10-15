@@ -8,10 +8,10 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record PretEarlyShopIcon(ItemId Item, int Width, int Height, string PngPath, OpeningItemSourceRef Source,
-    OpeningItemSourceRef PaletteSource, OpeningItemSourceRef BindingSource);
+    OpeningItemSourceRef PaletteSource, OpeningItemSourceRef BindingSource, ImageRegion? Region = null);
 public sealed record PretEarlyShopText(string Symbol, string Text, OpeningItemSourceRef Source);
 public sealed record PretEarlyShopDocument(int SchemaVersion, ImmutableArray<PretOpeningItemInput> Inputs,
-    ImmutableArray<OpeningItemSourceRef> RulesSources, EarlyShopCatalog Catalog, ImmutableArray<PretEarlyShopIcon> Icons,
+    EarlyShopCatalog Catalog, ImmutableArray<PretEarlyShopIcon> Icons,
     ImmutableArray<PretEarlyShopText> Texts, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates the complete pinned catalog, source texts, effect bytes and icon RGBA.
@@ -25,7 +25,7 @@ public static class PretEarlyShop
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
         var document = ContentJson.ParseStrict<PretEarlyShopDocument>(json, options);
         if (document.SchemaVersion != 1 || document.Inputs.IsDefault ||
-            document.RulesSources.IsDefaultOrEmpty || document.Icons.IsDefault || document.Icons.Length != 8 ||
+            document.Icons.IsDefault || document.Icons.Length != 8 ||
             document.Texts.IsDefault || document.Texts.Length != 18 || document.Limitations.IsDefaultOrEmpty)
             throw ContentJson.Error("early_shop_profile", "$", "Incomplete early-shop document.");
         try { EarlyShopInventoryRules.ValidateCatalog(document.Catalog); }
@@ -48,11 +48,13 @@ public static class PretEarlyShop
             Path.IsPathRooted(icon.PngPath) || icon.PngPath.Contains('\\') ||
             icon.PngPath.Split('/').Any(part => part is "" or "." or "..") || !icon.PngPath.EndsWith(".png", StringComparison.Ordinal))
             throw new InvalidDataException("Item icon metadata differs.");
+        if (icon.Region is {} region && (region.X < 0 || region.Y < 0 || region.Width != icon.Width || region.Height != icon.Height))
+            throw new InvalidDataException("Item icon atlas region differs.");
     }
 
-    public static byte[] IconRgba(PretEarlyShopIcon icon, byte[] png)
+    public static byte[] TexturePage(PretEarlyShopIcon icon, byte[] png)
     {
         ValidateIcon(icon);
-        return PngRgba8.Decode(png, icon.Width, icon.Height);
+        return png;
     }
 }

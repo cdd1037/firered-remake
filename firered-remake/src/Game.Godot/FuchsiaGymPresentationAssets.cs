@@ -46,7 +46,7 @@ internal static class FuchsiaGymPresentationAssets
                 row.GetProperty("trainerPic").GetString()!, row.GetProperty("encounterMusicGender").GetInt32()));
         }
         if (new[] { "juggler-front", "tamer-front", "koga-front" }
-            .Any(id => !files.TryGetValue(id + ".png", out var pixels) || PngRgba8.Decode(pixels, 64, 64).Length != 64 * 64 * 4))
+            .Any(id => !files.TryGetValue(id + ".png", out var pixels) || !NativeImages.HasSize(pixels, 64, 64)))
             throw new InvalidDataException("Fuchsia Gym presentation inventory differs.");
         return new(files, trainers);
     }

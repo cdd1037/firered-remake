@@ -99,23 +99,20 @@ def verified_recipe(root=ROOT, reference=REFERENCE):
     if recipe["sourceCommit"] != COMMIT or recipe["schemaVersion"] != 1 or len(prior) != 209 or len(prior_ids) != 209:
         raise ValueError("prior209 inventory differs")
     region = json.loads(inputs["content/generated/vermilion-region/vermilion-catalog.json"])
-    scripts = json.loads(inputs["content/generated/vermilion-region/scripts.json"])
+    script_blocks = json.loads(read(root, "scripts/vermilion-synth.lock.json"))["scriptBlocks"]
     pokemon = json.loads(inputs["content/generated/vermilion-pokemon/catalog.json"])
     supplement = json.loads(inputs["content/generated/vermilion-pokemon/supplement.json"])
     if len(region["maps"]) != 10 or {s["sourceSpeciesId"] for s in pokemon["species"]} != set(NEW_CRIES):
         raise ValueError("bounded region/species inventory differs")
     field = {json.loads(source["data/maps/" + m["sourceName"] + "/map.json"])["music"] for m in region["maps"]}
-    for block in scripts["blocks"]:
-        ref = block["sourceRef"]
-        raw = source[ref["path"]]
-        if ref['commit'] != COMMIT:
-            raise ValueError("imported script source identity differs")
-        original = raw.decode().splitlines()
-        for line in block["lines"]:
-            if original[line["line"] - 1] != line["text"]:
-                raise ValueError("imported script line differs")
-            field.update(re.findall(r"\b(?:MUS|SE)_\w+", line["text"]))
-            for name in re.findall(r"playmoncry\s+SPECIES_(\w+)", line["text"]):
+    for block in script_blocks:
+        original = source[block["path"]].decode().splitlines()
+        label = original[block["labelLine"] - 1].split('@')[0].strip().rstrip(':')
+        if label != block["label"]:
+            raise ValueError("source script label differs")
+        for line in original[block["startLine"] - 1:block["endLine"]]:
+            field.update(re.findall(r"\b(?:MUS|SE)_\w+", line))
+            for name in re.findall(r"playmoncry\s+SPECIES_(\w+)", line):
                 field.add("CRY_" + name + "_NORMAL")
     if field - prior_ids != NEW_MUSIC:
         raise ValueError("new region BGM/effect repertoire differs")

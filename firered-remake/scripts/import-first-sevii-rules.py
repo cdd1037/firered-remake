@@ -5,12 +5,23 @@ _constant_scripts = str(_ConstantPath(__file__).resolve().parent)
 if _constant_scripts not in _constant_sys.path:
     _constant_sys.path.insert(0, _constant_scripts)
 from shared_constants import read_values
-import json,re,sys,subprocess
+import json,re,sys,subprocess,importlib.util
 from pathlib import Path
 check="--check" in sys.argv
 reference,preparation,out=map(Path,[a for a in sys.argv[1:] if a!="--check"])
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
-decl=json.loads((preparation/'declarations.json').read_text())
+def importer(name, path):
+ spec=importlib.util.spec_from_file_location(name,path);value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
+reader=importer('first_sevii_rule_source',_ConstantPath(__file__).with_name('import-cinnabar-source-preparation.py'))
+prep=importer('first_sevii_rule_declarations',_ConstantPath(__file__).parent/'first-sevii-preparation/prepare_first_sevii.py')
+source=reader.Source(reference)
+worlds=[dict(events=source.json('data/maps/'+name+'/map.json')) for name in prep.CORE+prep.SUPPORT]
+script_index=prep.script_index(source,reader)
+canonical=json.loads((_ConstantPath(__file__).resolve().parents[1]/'content/generated/canonical-pokemon/catalog.json').read_text())
+decl=prep.declarations(source,script_index,worlds,canonical)
+prep.item_declarations(source,script_index,worlds,decl)
+# Preserve the deterministic field ordering of the previous importer handoff.
+decl=json.loads(json.dumps(decl,sort_keys=True))
 def write(name,content):
  target=out/name
  if check:assert target.read_text()==content,'Regeneration differs: '+str(target)

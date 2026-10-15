@@ -15,16 +15,14 @@ public sealed class PretMagikarpContract
 {
     public const string Profile = "firered-route4-magikarp-source-contract-v1";
     public const string SourceCommit = "037335f4c725d7c9aecdac87066f2002b4bd7e14";
-    public ImmutableArray<PretMagikarpSourceFile> SourceFiles { get; }
     public ImmutableArray<string> RequiredCommonScriptLabels { get; }
     public ImmutableArray<string> RequiredCommonTextLabels { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public JsonElement Document { get; }
 
-    private PretMagikarpContract(JsonElement document, ImmutableArray<PretMagikarpSourceFile> sources)
+    private PretMagikarpContract(JsonElement document)
     {
         Document = document.Clone();
-        SourceFiles = sources;
         RequiredCommonScriptLabels = document.GetProperty("commonScripts").EnumerateArray().Select(e => e.GetString()!).ToImmutableArray();
         RequiredCommonTextLabels = document.GetProperty("commonTexts").EnumerateArray().Select(e => e.GetString()!).ToImmutableArray();
         Constants = document.GetProperty("constants").EnumerateObject().ToImmutableDictionary(p => p.Name, p => p.Value.GetInt32(), StringComparer.Ordinal);
@@ -43,18 +41,8 @@ public sealed class PretMagikarpContract
         using var document = JsonDocument.Parse(contractBytes);
         var d = document.RootElement;
             Require(            !d.GetProperty("gameplayEnabled").GetBoolean(), "Magikarp contract identity differs.");
-        var sources = ImmutableArray.CreateBuilder<PretMagikarpSourceFile>();
-        var paths = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var entry in d.GetProperty("sourceFiles").EnumerateArray())
-        {
-            var source = new PretMagikarpSourceFile(entry.GetProperty("path").GetString()!,entry.GetProperty("sourceDirectory").GetString()!);
-            Require(source.SourceDirectory == PretSourcePaths.FireRedRawDirectory && paths.Add(source.Path), "Magikarp source path differs.");
-                var bytes = ReadPinned(root,source.SourceDirectory + "/" + source.Path);
-            _ = new UTF8Encoding(false, true).GetString(bytes);
-            sources.Add(source);
-        }
-        Require(sources.Count == 29, "Magikarp source inventory is incomplete.");
-        return new(d, sources.ToImmutable());
+        return new(d);
+
     }
 
     private static byte[] ReadPinned(string root, string relative)

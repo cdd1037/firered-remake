@@ -9,7 +9,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import importlib.util
 import json
@@ -102,10 +102,6 @@ def load_lock(path=None):
     return lock
 
 
-def raw_manifest(lock):
-    return canonical(dict(schemaVersion=1, profile=PROFILE, commit=COMMIT,
-
-                          inputCount=len(lock['files'])))
 
 
 def read_sources(lock, raw, repository=None):
@@ -315,7 +311,7 @@ def import_content(raw, out, repository=None, lock_path=None):
     # Parse/render/authenticate everything, then preflight every target before the first write.
     material = {(raw, p): b for p, b in sources.items()} if repository is not None else {}
     if repository is not None:
-        material[(raw_metadata_directory(raw, 'forest-pokemon'), 'manifest.json')] = raw_manifest(lock)
+        pass
     material.update({(out, p): b for p, b in outputs.items()})
     targets = [(safe(root, p), safe(root, p + '.tmp'), b) for (root, p), b in material.items()]
     if any(p.exists() and not p.is_file() for target, stage, _ in targets for p in (target, stage)):

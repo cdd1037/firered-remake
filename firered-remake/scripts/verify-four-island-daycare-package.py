@@ -76,9 +76,9 @@ def main():
         need([m['score'] for m in contract['service']['compatibilityMessages']] == [70,50,20,0] and
              all(m['symbol'] in (raw / 'src/strings.c').read_text() for m in contract['service']['compatibilityMessages']),
              'four original compatibility texts in source order')
+        graphics = doc(dependency / 'content/generated/shared-overworld/catalog.json')
         for actor in doc(gen / 'npc-source.json')['graphics']:
-            b = (dependency / actor['texturePath']).read_bytes()
-            need(actor['reuseExisting'] and bool(b), 'reused actor ' + actor['graphicsId'])
+            need(actor['graphicsId'] in graphics, 'shared actor ' + actor['graphicsId'])
         need(len(checks) > 100, 'nonempty independent package verification')
         result = dict(passed=True, checkCount=len(checks), checks=checks, scope='Source and compact map evidence only; Application, save flow, UI, breeding and audio acceptance are separate; no C# compilation was run by this verifier.')
     except Exception as ex:

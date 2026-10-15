@@ -71,16 +71,15 @@ public partial class CampaignView
         var source=PretVermilionGymAssets.Load(_root);
         foreach(var portrait in source.Portraits)
         {
-            using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,portrait.Rgba);
+            using var image=NativeImages.LoadPng(portrait.Png, 64, 64);
             _forestTrainerPortraits.Add(portrait.Id,ImageTexture.CreateFromImage(image));
         }
         var icon=source.Document.Icon;
-        using(var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("vermilion-gym-assets", icon)))
-            _earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
+        _earlyItemIcons.Add(icon.Item,ItemTexture("vermilion-gym-assets", icon));
         var field=PretVermilionGymFieldMoveArt.Load(_root);
         Texture2D Sheet(string id,int width,int height)
         {
-            using var image=Image.CreateFromData(width,height,false,Image.Format.Rgba8,field.ReadRgba(id));
+            using var image=NativeImages.LoadPng(field.ReadPng(id), width, height);
             return ImageTexture.CreateFromImage(image);
         }
         _fieldCutRed=Sheet("red-field-move",80,32);_fieldCutGreen=Sheet("green-field-move",80,32);

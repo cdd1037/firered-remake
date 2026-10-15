@@ -27,13 +27,13 @@ public partial class CampaignView
         var art = _catalog.CinnabarArt ?? throw new InvalidDataException("Cinnabar art catalog missing.");
         foreach (var sprite in art.Sprites)
         {
-            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
+            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var icon in art.Icons)
         {
-            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
+            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
             for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
                 for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, rgba);
@@ -41,7 +41,7 @@ public partial class CampaignView
         }
         foreach (var footprint in art.Footprints)
         {
-            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[footprint.TexturePath], footprint.Width, footprint.Height));
+            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
             _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
         }
         foreach (var sprite in art.Sprites.Where(s => s.Side == "front" && s.PaletteVariant == "normal"))
@@ -57,8 +57,8 @@ public partial class CampaignView
         foreach(var row in art.TrainerManifest.GetProperty("portraits").EnumerateArray())
         {
             string id=row.GetProperty("id").GetString()!,picture=row.GetProperty("trainerPic").GetString()!;
-            byte[] rgba=PngRgba8.Decode(art.TrainerFiles[row.GetProperty("texturePath").GetString()!]);
-            if(!(_forestTrainerPortraits.TryGetValue(id,out var old))){using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,rgba);_forestTrainerPortraits.Add(id,(ImageTexture)SceneTextures.FromImage(image));}
+            byte[] png = art.TrainerFiles[row.GetProperty("texturePath").GetString()!];
+            if(!(_forestTrainerPortraits.TryGetValue(id,out var old))){using var image=NativeImages.LoadPng(png, 64, 64);_forestTrainerPortraits.Add(id,(ImageTexture)SceneTextures.FromImage(image));}
             _cinnabarTrainerPortraits.Add(picture,id);
         }
         foreach(var row in art.TrainerClasses)_cinnabarTrainerClasses.Add(row.Key,row.Value);
@@ -66,7 +66,7 @@ public partial class CampaignView
             if(!_cinnabarTrainerPortraits.ContainsKey(trainer.TrainerPic)||!_cinnabarTrainerClasses.ContainsKey(trainer.TrainerClass))throw new InvalidDataException("Cinnabar trainer presentation missing.");
         foreach(var tile in art.Field.Tiles)_cinnabarTiles.Add((tile.Family,tile.MetatileId),tile);
         foreach(var layer in art.Field.Layers)
-        {using var image=Image.CreateFromData(layer.Width,layer.Height,false,Image.Format.Rgba8,PngRgba8.Decode(art.FieldFiles[layer.TexturePath], layer.Width, layer.Height));_cinnabarTileLayers.Add((layer.Family,layer.Layer switch {"bottom"=>0,"middle"=>1,_=>2}),SceneTextures.FromImage(image));}
+        {using var image=NativeImages.LoadPng(art.FieldFiles[layer.TexturePath], layer.Width, layer.Height);_cinnabarTileLayers.Add((layer.Family,layer.Layer switch {"bottom"=>0,"middle"=>1,_=>2}),SceneTextures.FromImage(image));}
     }
     private string? VisibleCinnabarTrainerClass() => _session.State.ForestTrainerBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerClasses[trainer.TrainerClass] : null;
     private string? VisibleCinnabarTrainerPortrait() => _session.State.ForestTrainerBattle is {} battle && _catalog.CinnabarTrainerParties?.Trainers.TryGetValue(battle.Trainer,out var trainer)==true ? _cinnabarTrainerPortraits[trainer.TrainerPic] : null;

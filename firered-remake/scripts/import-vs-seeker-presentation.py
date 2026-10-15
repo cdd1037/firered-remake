@@ -105,7 +105,7 @@ def generate(reference,dependency):
     need(cues[0]['id'] not in [c['id'] for c in baseline] and cues[1]['id'] in [c['id'] for c in baseline],'Exactly one new cue')
     schedule = dict(normalFrames=[0, 1, 5, 6] + [7, 8] * 7 + [6, 1, 0], bikeFrames=[0, 1, 2, 3] + [4, 5] * 7 + [3, 2, 1, 0], frameTicks=4, signalParentTaskTicks=[31, 42], responseWaitTicks=48, acceptedStepTicks=4, iconFrameTicks=[4, 4, 52], iconSourceFrames=dict(unfought=[0, 1, 2], accepted=[3, 4, 5], declined=[6, 7, 8]), jumpYOffsets=jump, swimXOffsets=swim, readyFrame=9, jumpMiddleWaitTicks=17, jumpRestTicks=81, readyJumpPeriodTicks=126, readySwimPeriodTicks=66, sourceQuestLogTransitionTicks=89)
     lock=dict(schemaVersion=1,profile=PROFILE,repository='pret/pokefirered',sourceCommit=COMMIT,sourceFiles=[inputs[p] for p in sorted(inputs)],reusedInputs=[reused[p] for p in sorted(reused)])
-    lockbytes=encoded(lock);files['scripts/vs-seeker-presentation.lock.json']=lockbytes
+    lockbytes=encoded(lock)
     manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,assets=assets,itemDefinition=definition,texts=texts,audioCues=cues,timing=schedule,outputs=[dict(path=p) for p,b in sorted(files.items()) if p.startswith(BASE)],limitations=['Resource and pure presentation contract only; Application owns charge, RNG, replies and durable rematches.','Source-local animation ticks are separate from field-effect task/held-movement completion.','Icons outlive the 48-tick response wait. No ring or scanner beam exists in the original effect.','No native rendering, physical listening or bit-perfect certification.'])
     files[BASE+'manifest.json']=encoded(manifest)
     return files,manifest
@@ -117,4 +117,4 @@ if __name__=='__main__':
         target=a.output/path
         if a.check:need(target.read_bytes()==data,'Exact regeneration '+path)
         else:target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
-    print(json.dumps(dict(passed=True,checked=a.check,files=len(files),assets=len(manifest['assets']),newTextures=6,sourceFiles=len(json.loads(files['scripts/vs-seeker-presentation.lock.json'])['sourceFiles']),manifestBytes=len(files[BASE+'manifest.json']),lockBytes=len(files['scripts/vs-seeker-presentation.lock.json']),cues=manifest['audioCues'],jumpYOffsets=manifest['timing']['jumpYOffsets'],swimXOffsets=manifest['timing']['swimXOffsets'])))
+    print(json.dumps(dict(passed=True,checked=a.check,files=len(files),assets=len(manifest['assets']),newTextures=6,sourceFiles=len(lock['sourceFiles']),manifestBytes=len(files[BASE+'manifest.json']),cues=manifest['audioCues'],jumpYOffsets=manifest['timing']['jumpYOffsets'],swimXOffsets=manifest['timing']['swimXOffsets'])))

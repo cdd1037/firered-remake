@@ -7,6 +7,8 @@ sys.dont_write_bytecode = True
 SPEC = importlib.util.spec_from_file_location('saffron_import', Path(__file__).with_name('import-saffron-gym-catalogs.py'))
 BASE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BASE)
+import machine_catalog as shared_machines
+
 COMMIT, TREE = BASE.COMMIT, BASE.TREE
 PROFILE = 'firered-cinnabar-items-source-v1'
 MACHINES = BASE.MACHINES + ('TM04',)
@@ -36,23 +38,9 @@ def convert(source, dependency):
     def ref(path, symbol, match):
         return dict(path=path, symbol=symbol, startLine=text[path].count('\n', 0, match.start()) + 1,
                     endLine=text[path].count('\n', 0, match.end()) + 1)
-    baseline = BASE.safe(dependency, 'scripts/fuchsia-gym-baseline.lock.json').read_bytes()
-    owned = json.loads(baseline)['species'] + ['CHANSEY', 'SCYTHER', 'TAUROS', 'PSYDUCK', 'GOLDUCK', 'LAPRAS', 'KRABBY', 'KINGLER']
-    need(len(owned) == len(set(owned)) == 115, 'Expected 115 owned species')
-    def row(short, tm):
-        symbol = 'SPECIES_' + short
-        path = 'src/data/pokemon/tmhm_learnsets.h'
-        match = one(path, r'^    \[' + symbol + r'\]\s*= TMHM_LEARNSET\((.*?)\),')
-        tokens = re.findall(r'TMHM\((\w+)\)', match[1])
-        need(not re.sub(r'TMHM\(\w+\)|\||\s|0', '', match[1]), 'Unhandled source compatibility syntax')
-        return dict(species=ident(symbol), sourceSpeciesId=number('include/constants/species.h', symbol),
-                    canLearn=any(t.startswith(tm + '_') for t in tokens), source=ref(path, symbol, match))
-    path = 'src/data/party_menu.h'
-    mapping_match = one(path, r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};')
-    mapping = re.findall(r'MOVE_\w+', mapping_match[1])
-    need(len(mapping) == 58, '58 machine source mapping differs')
-    refs = [ref(path, 'sTMHMMoves', mapping_match)]
-    definitions, new = [], []
+    catalog = shared_machines.load_catalog(dependency)
+    definitions = []
+    new = shared_machines.machine_definitions(dependency, 'content/generated/cinnabar-items/machines.json')
     for short in ITEMS:
         symbol = 'ITEM_' + short
         item = next(i for i in json.loads(text['src/data/items.json'])['items'] if i['itemId'] == symbol)
@@ -73,26 +61,17 @@ def convert(source, dependency):
             description, description_ref = json.loads(match[1]), ref(path, 'gMoveDescription_' + item['moveId'], match)
         metadata = dict(item=definition, description=description, declarationDescription=declaration, descriptionSource=description_ref)
         definitions.append(dict(metadata=metadata, effectBytes=[], effectSource=None))
-        if short in NEW_MACHINES:
-            move = mapping[int(short[2:]) - 1]
-            need(move == 'MOVE_' + re.sub(r'([a-z])([A-Z])', r'\1_\2', item['moveId']).upper(), 'Item and machine move mapping disagree')
-            path = 'src/data/battle_moves.h'
-            match = one(path, r'^    \[' + move + r'\] =\n    \{(.*?)^    \},')
-            refs.append(ref(path, move, match))
-            new.append(dict(machine=metadata, move=ident(move), sourceMoveId=number('include/constants/moves.h', move),
-                movePp=int(re.search(r'\.pp = (\d+),', match[1])[1]),
-                compatibility=sorted([row(s, short) for s in owned], key=lambda r: r['sourceSpeciesId'])))
     path = 'data/maps/CinnabarIsland_Mart/scripts.inc'
     match = one(path, r'^CinnabarIsland_Mart_Items::\s*\n((?:\s*\.2byte ITEM_\w+\n)+)')
     stock = re.findall(r'\.2byte (ITEM_\w+)', match[1])
     need(stock == ['ITEM_ULTRA_BALL', 'ITEM_GREAT_BALL', 'ITEM_HYPER_POTION', 'ITEM_REVIVE', 'ITEM_FULL_HEAL', 'ITEM_ESCAPE_ROPE', 'ITEM_MAX_REPEL', 'ITEM_NONE'], 'Cinnabar Mart source stock differs')
     mart = dict(id='CinnabarIsland_Mart_Items', items=[ident(s) for s in stock[:-1]], source=ref(path, 'CinnabarIsland_Mart_Items', match))
     items = dict(schemaVersion=1, profile='firered-cinnabar-items-v1', sourceCommit=COMMIT, items=definitions,
-                 mart=mart, rulesSources=refs, limitations=['Only Secret Key extends the inherited ordinary inventory; all predecessor item definitions retain identity.',
+                 mart=mart, limitations=['Only Secret Key extends the inherited ordinary inventory; all predecessor item definitions retain identity.',
                  'TM14, TM22 and TM38 belong in the separate TM Case; item declarations do not grant rewards or implement field scripts.'])
     machines = dict(schemaVersion=1, profile='firered-cinnabar-machines-v1', sourceCommit=COMMIT,
         inheritedItemIds=[ident('ITEM_' + m) for m in MACHINES],
-        additions=[dict(item=ident('ITEM_' + m), compatibility=[row(s, m) for s in ('KRABBY', 'KINGLER')]) for m in MACHINES],
+        additions=shared_machines.compatibility_additions(dependency, 'content/generated/cinnabar-items/machines.json'),
         newMachines=new, limitations=['All 3164 inherited compatibility cells retain object identity; 56 appended cells add only Krabby and Kingler.',
         'Three new matrices contain all 115 owned species in source species-ID order; opponent-only Alakazam, Slowbro and Mr. Mime remain excluded.'])
     return items, machines

@@ -8,8 +8,7 @@ namespace Game.Content;
 
 public sealed record ViridianGymTrainerDocument(string SourceCommit, string Profile, bool CompleteSourceRoster,
     ImmutableArray<TrainerDefinition> Trainers, ImmutableArray<CeruleanTrainerBattleDefinition> Battles, JsonElement ResolvedMoves);
-public sealed record ViridianGymMachineDocument(string SourceCommit, string Profile, PewterAdditionalMachine Machine,
-    ImmutableArray<OpeningItemSourceRef> RulesSources);
+public sealed record ViridianGymMachineDocument(string SourceCommit, string Profile, PewterAdditionalMachine Machine);
 
 /// <summary>Hash-locked rules from pinned Git blobs; loads no new species or move metadata.</summary>
 public static class PretViridianGymRules
@@ -17,7 +16,7 @@ public static class PretViridianGymRules
     private static T Read<T>(string root,string file)
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/viridian-gym-rules", file));
-        return JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+        return JsonSerializer.Deserialize<T>(bytes, SharedMachineCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))
             ?? throw new InvalidDataException("Missing Viridian Gym source document.");
     }
     public static ViridianGymTrainerDocument LoadDocument(string root)
@@ -38,7 +37,7 @@ public static class PretViridianGymRules
     public static ViridianGymMachineDocument LoadMachines(string root)
     {
         var document = Read<ViridianGymMachineDocument>(root,"machines.json");
-        if (            document.Machine?.Machine?.Item?.Id != ViridianGymMachineCatalog.Tm26Id || document.RulesSources.IsDefaultOrEmpty)
+        if (            document.Machine?.Machine?.Item?.Id != ViridianGymMachineCatalog.Tm26Id)
             throw new InvalidDataException("Viridian Gym machine scope differs.");
         return document;
     }

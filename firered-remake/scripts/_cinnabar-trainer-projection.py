@@ -1,21 +1,21 @@
 """Test fixture conversion from source preparation; does not execute upstream code."""
-import hashlib,json,re,sys
+import json,re,sys
 from pathlib import Path
 base,source,out=map(Path,sys.argv[1:])
-decl=json.loads((source/'content/generated/cinnabar-source-preparation/declarations.json').read_text())
-text={}; hashes={}
+decl=json.load(sys.stdin)
+text={}
 def read(p):
  if p not in text:
   choices=[source/'content/raw/pokefirered/037335f4'/p,base/'content/raw/pokefirered/037335f4'/p]
   f=next((x for x in choices if x.exists()),None)
   if f is None: raise ValueError('missing source '+p)
-  data=f.read_bytes();text[p]=data.decode();hashes[p]=hashlib.sha256(data).hexdigest()
+  data=f.read_bytes();text[p]=data.decode()
  return text[p]
 def one(p,pattern):
  matches=list(re.finditer(pattern,read(p),re.M|re.S))
  if len(matches)!=1:raise ValueError((p,pattern,len(matches)))
  return matches[0]
-def ref(p,s,m):return dict(path=p,symbol=s,startLine=read(p).count('\n',0,m.start())+1,endLine=read(p).count('\n',0,m.end())+1,sha256=hashes[p])
+def ref(p,s,m):return dict(path=p,symbol=s,startLine=read(p).count('\n',0,m.start())+1,endLine=read(p).count('\n',0,m.end())+1)
 def num(p,s):return int(one(p,r'^#define '+s+r'\s+(\d+)\b[^\n]*')[1])
 def encode(s):return [int(one('charmap.txt',"^'"+re.escape(c)+r"'[ \t]+=[ \t]+([A-F0-9]{2})[ \t]*$")[1],16) for c in s]
 def expr(s):

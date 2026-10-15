@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Text;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 
 namespace Game.Domain.Pokemon;
@@ -8,6 +6,8 @@ namespace Game.Domain.Pokemon;
 public enum MoveTutorEligibility { Able, Incompatible, AlreadyKnown, Egg }
 public sealed record MoveTutorDefinition(int Index, MoveId Move, int SourceMoveId, int Pp,
     ImmutableDictionary<SpeciesId, bool> Compatibility);
+public sealed record MoveTutorCompatibility(SpeciesId Species, ImmutableArray<int> Tutors);
+public sealed record MoveTutorMove(int Index, MoveId Move, int SourceMoveId);
 public sealed record MoveTutorResult(PartyPokemon Pokemon, string? Error, int LearnedSlot = -1)
 {
     public bool Succeeded => Error is null;
@@ -23,48 +23,40 @@ public sealed partial class MoveTutorCatalog
     private MoveTutorCatalog(PokemonCatalog pokemon, ImmutableDictionary<int, MoveTutorDefinition> definitions, ImmutableDictionary<string, string> texts)
     { Pokemon = pokemon; Definitions = definitions; Texts = texts; }
 
-    public static MoveTutorCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> learnsets, ReadOnlySpan<byte> strings, ReadOnlySpan<byte> moveConstants)
+    public static MoveTutorCatalog Authenticate(PokemonCatalog owned, ImmutableArray<MoveTutorMove> moves,
+        ImmutableArray<MoveTutorCompatibility> compatibility, ImmutableDictionary<string, string> texts)
     {
         if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
             throw new ArgumentException("move_tutor_source_authentication");
-        var source = Encoding.UTF8.GetString(learnsets);
-        var rows = Regex.Matches(source, @"\[(SPECIES_[A-Z0-9_]+)\]\s*=\s*([^,]+),", RegexOptions.CultureInvariant)
-            .ToDictionary(m => "pret:" + m.Groups[1].Value, m => m.Groups[2].Value, StringComparer.Ordinal);
-        var constants = Regex.Matches(Encoding.UTF8.GetString(moveConstants), @"(?m)^#define (MOVE_[A-Z0-9_]+|MOVETUTOR_[A-Z0-9_]+)\s+(\d+)\s*$", RegexOptions.CultureInvariant)
-            .ToDictionary(m => m.Groups[1].Value, m => int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture), StringComparer.Ordinal);
+        if (moves.IsDefault || moves.Length != 15 ||
+            !moves.Select(m => m.Index).Order().SequenceEqual(Enumerable.Range(0, 15)) ||
+            moves.Select(m => m.Move).Distinct().Count() != 15 || compatibility.IsDefaultOrEmpty ||
+            compatibility.Select(c => c.Species).Distinct().Count() != compatibility.Length ||
+            compatibility.Any(c => c.Tutors.IsDefault || c.Tutors.Any(i => i is < 0 or > 14) ||
+                c.Tutors.Distinct().Count() != c.Tutors.Length))
+            throw new ArgumentException("move_tutor_table_invalid");
+        var rows = compatibility.ToImmutableDictionary(c => c.Species, c => c.Tutors);
         var definitions = ImmutableDictionary.CreateBuilder<int, MoveTutorDefinition>();
-        // Both the tutor index and move identity come from the original table/constants.
-        // This bounded admission list does not add any map or Pokémon species.
-        foreach (Match entry in Regex.Matches(source, @"\[TUTOR_(MOVE_[A-Z0-9_]+)\]\s*=\s*(MOVE_[A-Z0-9_]+),", RegexOptions.CultureInvariant))
+        foreach (var entry in moves)
         {
-            string symbol = entry.Groups[1].Value;
-            if (symbol != entry.Groups[2].Value || !constants.TryGetValue("MOVETUTOR_" + symbol[5..], out int index))
-                throw new ArgumentException("move_tutor_table_source_invalid");
-            if (index is < 0 or > 14) throw new ArgumentException("move_tutor_index_invalid");
-            var move = new MoveId("pret:" + symbol);
-            if (!owned.Moves.TryGetValue(move, out var definition) || definition.SourceMoveId != constants[symbol] ||
-                !PokemonMoveRules.IsLearningSupported(owned, move)) throw new ArgumentException("move_tutor_move_unsupported");
-            var compatibility = ImmutableDictionary.CreateBuilder<SpeciesId, bool>();
-            foreach (var species in owned.Species.Values)
+            if (!owned.Moves.TryGetValue(entry.Move, out var move) || move.SourceMoveId != entry.SourceMoveId ||
+                !PokemonMoveRules.IsLearningSupported(owned, entry.Move))
+                throw new ArgumentException("move_tutor_move_unsupported");
+            var admitted = ImmutableDictionary.CreateBuilder<SpeciesId, bool>();
+            foreach (var species in owned.Species.Keys)
             {
-                if (!rows.TryGetValue(species.Id.Value, out var expression)) throw new ArgumentException("move_tutor_species_source_missing");
-                compatibility.Add(species.Id, expression.Contains("TUTOR(" + symbol + ")", StringComparison.Ordinal));
+                if (!rows.TryGetValue(species, out var tutors)) throw new ArgumentException("move_tutor_species_source_missing");
+                admitted.Add(species, tutors.Contains(entry.Index));
             }
-            definitions.Add(index, new(index, move, definition.SourceMoveId, definition.Pp, compatibility.ToImmutable()));
+            definitions.Add(entry.Index, new(entry.Index, entry.Move, move.SourceMoveId, move.Pp, admitted.ToImmutable()));
         }
-        if (definitions.Count != 15) throw new ArgumentException("move_tutor_table_source_missing");
-        var textSource = Encoding.UTF8.GetString(strings);
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
         foreach (string symbol in new[] { "gText_TeachWhichPokemon", "gText_PkmnCantLearnMove", "gText_PkmnAlreadyKnows",
             "gText_PkmnNeedsToReplaceMove", "gText_StopLearningMove2", "gText_MoveNotLearned", "gText_WhichMoveToForget",
             "gText_12PoofForgotMove", "gText_PkmnLearnedMove3", "gText_PokeSum_HmMovesCantBeForgotten",
             "gText_Able2", "gText_NotAble", "gText_Learned" })
-        {
-            var match = Regex.Match(textSource, "const u8 " + symbol + "\\[\\] = _\\(\"([^\"]*)\"\\);", RegexOptions.CultureInvariant);
-            if (!match.Success) throw new ArgumentException("move_tutor_text_missing");
-            texts.Add(symbol, match.Groups[1].Value);
-        }
-        return new(owned, definitions.ToImmutable(), texts.ToImmutable());
+            if (!texts.TryGetValue(symbol, out var text) || string.IsNullOrEmpty(text))
+                throw new ArgumentException("move_tutor_text_missing");
+        return new(owned, definitions.ToImmutable(), texts);
     }
 }
 

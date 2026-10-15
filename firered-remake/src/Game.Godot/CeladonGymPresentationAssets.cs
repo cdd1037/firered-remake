@@ -25,7 +25,7 @@ internal static class CeladonGymPresentationAssets
             string name=row.GetProperty("path").GetString()!;
             result.Add(name,Read("content/generated/celadon-gym-art/"+name));
         }
-        if(new[]{"beauty-front","cooltrainer-f-front","erika-front"}.Any(id=>PngRgba8.Decode(result[id+".png"]).Length!=64*64*4))throw new InvalidDataException("CeladonGym art inventory differs.");
+        if(new[]{"beauty-front","cooltrainer-f-front","erika-front"}.Any(id=>!NativeImages.HasSize(result[id+".png"], 64, 64)))throw new InvalidDataException("CeladonGym art inventory differs.");
         return result;
     }
 }

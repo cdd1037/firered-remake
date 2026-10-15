@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Import authenticated Fame Checker presentation from pinned Git blobs, without ROM execution.
 
-REFERENCE OUTPUT [--check]. Requires Pillow. Original source sheets stay compact;
-the runtime crops source frames and composes tilemap layers, never baked variants.
+REFERENCE OUTPUT [--check]. Requires Pillow. Fixed palette variants and layers
+are packed offline; the runtime selects regions and scrolls the prepared layers.
 """
 import argparse
-import binascii
 import io
 import json
 import os
@@ -13,7 +12,6 @@ from pathlib import Path
 import re
 import struct
 import subprocess
-import zlib
 from PIL import Image
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -42,11 +40,9 @@ def safe(root, path):
 
 
 def png(width, height, rgba):
-    def chunk(kind, value):
-        return struct.pack('>I', len(value)) + kind + value + struct.pack('>I', binascii.crc32(kind + value) & 0xffffffff)
-    scan = b''.join(b'\0' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
-    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)) +
-            chunk(b'IDAT', zlib.compress(scan, 9)) + chunk(b'IEND', b''))
+    output = io.BytesIO()
+    Image.frombytes('RGBA', (width, height), rgba).save(output, format='PNG', compress_level=9)
+    return output.getvalue()
 
 
 def gba_colors(colors):
@@ -342,6 +338,8 @@ def generate(reference):
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT,
                     assets=assets, portraits=portraits, factIconSymbols=facts, objectIcons=icon_rows, audio=dict(cues=cues),
                     outputs=[dict(path=p) for p, d in sorted(outputs.items())])
+    from presentation_atlas import bake_fame
+    outputs, manifest = bake_fame(outputs, manifest)
     result = {RAW + p: d for p, d in sources.items()}
     result.update({BASE + p: d for p, d in outputs.items()})
     result[BASE + 'manifest.json'] = encoded(manifest)

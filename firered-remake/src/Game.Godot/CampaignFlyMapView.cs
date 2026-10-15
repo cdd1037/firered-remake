@@ -26,8 +26,8 @@ public partial class CampaignView
         {
             if (_townMapTextures.ContainsKey(id)) continue;
             var asset = _flyMap.Asset(id);
-            using var image = Image.CreateFromData(asset.Width, asset.Height, false, Image.Format.Rgba8, _flyMap.ReadAssetRgba(id));
-            _townMapTextures.Add(id, ImageTexture.CreateFromImage(image));
+            using var image = NativeImages.LoadPng(_flyMap.ReadAssetPng(id), asset.Width, asset.Height);
+            _townMapTextures.Add(id, SceneTextures.FromImage(image));
         }
         var p = _session.State.World.Player;
         var definition = _catalog.MapDefinition(p.MapId);
@@ -38,24 +38,18 @@ public partial class CampaignView
         _townMapPlayerKnown = _flyMap.TryPositionForOutdoorMap(definition.RegionMapSection, definition.SourceMapSymbol,
             definition.MapType, sourceMap.Width, sourceMap.Height, p.X, p.Y, out var point);
         if (!_townMapPlayerKnown) throw new InvalidDataException("field_fly_map_position_missing");
-        var pixels = _flyMap.ReadBackgroundRgba(_townMapPage, CurrentMapFlags, _catalog.TownMap!, _firstSeviiTownMap!);
-        SetBackground("fly-current", pixels);
-        for (int i = 0; i < pixels.Length; i += 4)
-            for (int c = 0; c < 3; c++)
-            {
-                int five = (pixels[i + c] * 31 + 127) / 255;
-                five += (-five * _catalog.TownMap!.Layout.NameWindowDarkeningCoefficient) >> 4;
-                pixels[i + c] = (byte)(five * 255 / 31);
-            }
-        SetBackground("dark-fly-current", pixels);
+        SetMapBackground("fly-current", false);
+        SetMapBackground("dark-fly-current", true);
         return point;
+    }
 
-        void SetBackground(string id, byte[] rgba)
-        {
-            if (_townMapTextures.Remove(id, out var previous)) previous.Dispose();
-            using var image = Image.CreateFromData(240, 160, false, Image.Format.Rgba8, rgba);
-            _townMapTextures.Add(id, ImageTexture.CreateFromImage(image));
-        }
+    private void SetMapBackground(string id, bool dark)
+    {
+        var background = _flyMap!.Background(_townMapPage, CurrentMapFlags, dark);
+        var r = background.Region;
+        _townMapTextures[id] = SceneTextures.NativeTexture(
+            System.IO.Path.Combine(_flyMap.GeneratedDirectory, background.TexturePath),
+            new Rect2I(r.X, r.Y, r.Width, r.Height));
     }
 
     private bool TrySelectFlyDestination()

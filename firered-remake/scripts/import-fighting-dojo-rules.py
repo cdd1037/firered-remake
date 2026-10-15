@@ -8,6 +8,10 @@ import re
 import subprocess
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from machine_catalog import compatibility_additions, machine_definitions, admission_species
+
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 TRAINERS = ('BLACK_BELT_KOICHI', 'BLACK_BELT_MIKE', 'BLACK_BELT_HIDEKI', 'BLACK_BELT_AARON', 'BLACK_BELT_HITOSHI')
@@ -127,15 +131,7 @@ def generate(reference, dependency):
             members.append(dict(species=member['species'],level=member['level'],fixedIv=member['sourceIv']*31//255,personality=pid,nature=pid%25,abilitySlot=pid&1,ability=p['ability2'] if pid&1 and p['ability2']!='ABILITY_NONE' else p['ability1'],gender='genderless' if ratio==255 else 'female' if ratio==254 or ratio!=0 and (pid&255)<ratio else 'male',heldItem=member['heldItem'],moves=[identity(m) for m in moves['moves']]))
         identities.append(dict(trainer=trainer['id'],members=members,basePrize=4*trainer['baseMoney']*trainer['party'][-1]['level']))
     need([t['basePrize'] for t in identities]==[888,744,768,864,744],'Exact source rewards')
-    tm='src/data/pokemon/tmhm_learnsets.h';cells=[]
-    machine_ids=[r['item']['value'][5:] for r in previous['machines']]+[r['machine']['item']['id']['value'][5:] for r in previous['newMachines']]
-    need(len(machine_ids)==len(set(machine_ids))==41,'Forty-one retained machines')
-    for item in sorted(machine_ids):
-        rows=[]
-        for name in additions:
-            match=one(tm,r'^    \['+name+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),')
-            rows.append(dict(species=identity(name),sourceSpeciesId=species[name]['sourceSpeciesId'],canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',match[1])),source=ref(tm,name,match)))
-        cells.append(dict(item=identity(item),compatibility=rows))
+    cells=compatibility_additions(dependency, 'content/generated/fighting-dojo-rules/machines.json')
     for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/battle_script_commands.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h','include/random.h','include/constants/pokemon.h','include/constants/flags.h','include/constants/items.h','src/script_pokemon_util.c','data/maps/SaffronCity_Dojo/text.inc']:read(path)
     need('givemon VAR_TEMP_1, 25' in read('data/maps/SaffronCity_Dojo/scripts.inc'),'Level 25 source gift')
     need('TRAINER_BATTLE_CONTINUE_SCRIPT' in read('asm/macros/event.inc'),'Trainer continuation macro')
@@ -175,7 +171,6 @@ def main():
     files.update({'content/generated/fighting-dojo-rules/'+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()})
     files.update({'content/raw/pokefirered/037335f4/'+n:data for n,data in raw.items()})
     lock=dict(sourceCommit=COMMIT,profile='firered-fighting-dojo-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/fighting-dojo-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

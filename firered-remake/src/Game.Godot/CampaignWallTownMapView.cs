@@ -22,23 +22,8 @@ public partial class CampaignView
             new(_catalog.TownMap!.Layout.Cancel.X, _catalog.TownMap.Layout.Cancel.Y);
         // WALL and FLY share the source border/background, but only FLY draws
         // destination icons and accepts a destination selection.
-        byte[] pixels = _flyMap.ReadBackgroundRgba(_townMapPage, CurrentMapFlags, _catalog.TownMap!, _firstSeviiTownMap!);
-        SetBackground("wall-current", pixels);
-        for (int i = 0; i < pixels.Length; i += 4)
-            for (int c = 0; c < 3; c++)
-            {
-                int five = (pixels[i + c] * 31 + 127) / 255;
-                five += (-five * _catalog.TownMap!.Layout.NameWindowDarkeningCoefficient) >> 4;
-                pixels[i + c] = (byte)(five * 255 / 31);
-            }
-        SetBackground("dark-wall-current", pixels);
+        SetMapBackground("wall-current", false);
+        SetMapBackground("dark-wall-current", true);
         return point;
-
-        void SetBackground(string id, byte[] rgba)
-        {
-            if (_townMapTextures.Remove(id, out var previous)) previous.Dispose();
-            using var image = Image.CreateFromData(240, 160, false, Image.Format.Rgba8, rgba);
-            _townMapTextures.Add(id, ImageTexture.CreateFromImage(image));
-        }
     }
 }

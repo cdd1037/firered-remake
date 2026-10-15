@@ -364,9 +364,7 @@ def main():
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
         index = dict(manifest,  generatedDirectory='content/generated/' + PACKAGE,
                      currentCity=dict(path='content/generated/' + CITY_PATH,  operation='reuse-unchanged'))
-        writes = [(target / 'scripts/cerulean-cave-resources.lock.json', lock_bytes),
-                  (target / 'scripts/cerulean-cave-resources.contract.json', canonical(contracts)),
-                  (target / 'docs/cerulean-cave-resource-index.json', canonical(index))]
+        writes = [(target / 'scripts/cerulean-cave-resources.contract.json', canonical(contracts)), (target / 'docs/cerulean-cave-resource-index.json', canonical(index))]
         writes += [(target / 'content/raw/pokefirered/037335f4' / p, data) for p, data in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

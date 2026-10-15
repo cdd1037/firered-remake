@@ -22,34 +22,12 @@ public sealed partial class PretCampaignCatalog
     public SeviiRubyItemContent? SeviiRubyItems { get; }
     public bool SeviiRubyEnabled => SeviiRubyRegion is not null;
 
-    private static void AppendSeviiRubySources(PretSeviiRubyRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in region.Scripts)
-        {
-            if (previous.TryGetValue(file.Path, out var old))
-            {
-                if (old.Text != file.Text)
-                    throw new InvalidDataException("sevii_ruby_source_conflict: " + file.Path);
-            }
-            else { previous.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-    }
+
 
     private static void ValidateSeviiRubyAnchors(PretSeviiRubyRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
-        if (region.NewMaps.Count != 11 || region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("sevii_ruby_predecessor_maps");
-        foreach (var (name, events) in region.ReusedAnchorEvents)
-        {
-            var map = maps.Values.SingleOrDefault(m => m.SourceRef.Path == "data/maps/" + name + "/map.json");
-            if (map is null || !JsonElement.DeepEquals(map.Events, events))
-                throw new InvalidDataException("sevii_ruby_anchor_events: " + name);
-        }
+        if (region.NewMaps.Keys.Any(maps.ContainsKey))
+            throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
     private static IEnumerable<KeyValuePair<int, string>> SeviiRubySpeciesNames(PretPokedexMenu pokedex,SeviiRubyOwnedPokemonCatalog owned) =>

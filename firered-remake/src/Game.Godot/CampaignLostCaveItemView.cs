@@ -10,9 +10,7 @@ public partial class CampaignView
         {
             if (_catalog.EarlyShop!.Items.All(item => item.Id != icon.Item))
                 throw new InvalidDataException("Lost Cave icon lacks its authenticated inventory item.");
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8,
-                PretLostCaveItems.LoadIconRgba(_root, icon.Item));
-            _earlyItemIcons.Add(icon.Item, ImageTexture.CreateFromImage(image));
+            _earlyItemIcons.Add(icon.Item, ItemTexture(icon));
         }
     }
 }

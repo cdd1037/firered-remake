@@ -55,7 +55,7 @@ internal static class ViridianGymPresentationAssets
         var portraits = m.GetProperty("portraits").EnumerateArray().Select(row => new ViridianGymPortraitPresentation(
             row.GetProperty("id").GetString()!, row.GetProperty("trainerPic").GetString()!, row.GetProperty("sourceTrainerPicId").GetInt32(),
             row.GetProperty("texturePath").GetString()!, row.GetProperty("inherited").GetBoolean())).ToArray();
-        if (portraits.Any(p => !files.TryGetValue(p.TexturePath, out var rgba) || PngRgba8.Decode(rgba, 64, 64).Length != 64 * 64 * 4))
+        if (portraits.Any(p => !files.TryGetValue(p.TexturePath, out var rgba) || !NativeImages.HasSize(rgba, 64, 64)))
             throw new InvalidDataException("Viridian Gym portrait dimensions differ.");
         if (!portraits.Select(p => p.SourceTrainerPicId).ToHashSet().SetEquals([103, 105, 108, 110]))
             throw new InvalidDataException("Viridian Gym presentation inventory differs.");

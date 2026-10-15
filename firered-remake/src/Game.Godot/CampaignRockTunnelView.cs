@@ -41,12 +41,12 @@ public partial class CampaignView
             _storageIcons.Add(new(icon.SpeciesId), ImageTexture.CreateFromImage(display));
         }
         var assets=RockTunnelPresentationAssets.Load(_root);
-        using(var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,PngRgba8.Decode(assets["pokemaniac-front.png"])))_forestTrainerPortraits.Add("pokemaniac-front",ImageTexture.CreateFromImage(image));
-        using(var image=Image.CreateFromData(256,80,false,Image.Format.Rgba8,PngRgba8.Decode(assets["indoor-streaks.png"])))_fieldFlashStreaks=ImageTexture.CreateFromImage(image);
+        using(var image=NativeImages.LoadPng(assets["pokemaniac-front.png"], 64, 64))_forestTrainerPortraits.Add("pokemaniac-front",ImageTexture.CreateFromImage(image));
+        using(var image=NativeImages.LoadPng(assets["indoor-streaks.png"], 256, 80))_fieldFlashStreaks=ImageTexture.CreateFromImage(image);
         foreach(var icon in PretRockTunnelMachines.LoadProject(_root).Icons.Concat(PretRockTunnelItems.LoadProject(_root).Icons))
         {
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba("rocktunnel-items", icon));
-            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ImageTexture.CreateFromImage(image));
+            
+            if(!(_earlyItemIcons.TryGetValue(icon.Item,out var existing)))_earlyItemIcons.Add(icon.Item,ItemTexture("rocktunnel-items", icon));
         }
     }
     private Texture2D? _fieldFlashStreaks;

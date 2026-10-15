@@ -51,7 +51,7 @@ public partial class CampaignView
                 throw new InvalidDataException("Fighting Dojo dex metadata differs from the authenticated source menu.");
         foreach (var row in art.Manifest.GetProperty("footprints").EnumerateArray())
         {
-            using var image = Image.CreateFromData(16, 16, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[row.GetProperty("texturePath").GetString()!]));
+            using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], 16, 16);
             _route22Footprints.Add(row.GetProperty("sourceSpeciesId").GetInt32(), SceneTextures.FromImage(image));
         }
         _fightingDojoArt = art;
@@ -62,7 +62,7 @@ public partial class CampaignView
         _fightingDojoTrainers.TryGetValue(battle.Trainer.Value, out var row) ? row.GetProperty(key).GetString() : null;
     private CaptureDexEntry? FightingDojoCaptureDexEntry(int species) => _fightingDojoArt?.DexEntries.GetValueOrDefault(species) is not { } e ? null :
         new(e.SourceSpeciesId, e.NationalNumber, e.Name, e.Category, e.DisplayCategory, e.HeightDecimeters, e.WeightHectograms,
-            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle, e.Source, e.DescriptionSource);
+            e.HeightDisplay, e.WeightDisplay, e.Description, e.Footprint!.TexturePath, e.Portrait!.TexturePath, e.HabitatTitle);
     private PokedexMenuPage? FightingDojoPokedexPage(int species, PokedexMenuPage page) =>
         _fightingDojoArt?.DexEntries.GetValueOrDefault(species) is { } entry
             ? page with { Portrait = entry.Portrait, Footprint = page.Caught ? entry.Footprint : null } : null;

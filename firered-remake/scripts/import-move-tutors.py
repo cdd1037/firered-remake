@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Copy only authenticated, fixed-revision Move tutor inputs; never execute source."""
+"""Compile fixed-revision move tutor definitions and text; never execute source."""
 import argparse,  json, pathlib, re, subprocess
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-def read(path, size):
+def read(path, size=None):
     with path.open('rb') as f:
         import os
+        if size is None: size = os.fstat(f.fileno()).st_size
         if os.fstat(f.fileno()).st_size != size: raise ValueError('source size: ' + str(path))
         data = f.read(size + 1)
         if len(data) != size or os.fstat(f.fileno()).st_size != size: raise ValueError('source changed')
@@ -72,9 +73,38 @@ def actor_bindings(files):
         '    private sealed record TutorActorBinding(int Index, string Map, string SourceMap, FieldActorDefinition Actor, string Entry, string Flag);\n'
         '    private static readonly ImmutableArray<TutorActorBinding> TutorBindings =\n    [\n' + ',\n'.join(rows) + '\n    ];\n}\n').encode()
 
+def catalog(files, commit):
+    source = files['src/data/pokemon/tutor_learnsets.h'].decode()
+    constants = {name: int(value) for name, value in re.findall(
+        r'^#define (MOVE_[A-Z0-9_]+|MOVETUTOR_[A-Z0-9_]+)\s+(\d+)\s*$',
+        files['include/constants/moves.h'].decode(), re.M)}
+    moves = []
+    for symbol, target in re.findall(r'\[TUTOR_(MOVE_[A-Z0-9_]+)\]\s*=\s*(MOVE_[A-Z0-9_]+),', source):
+        if symbol != target: raise ValueError('tutor move identity')
+        moves.append(dict(index=constants['MOVETUTOR_' + symbol[5:]],
+            move=dict(value='pret:' + symbol), sourceMoveId=constants[symbol]))
+    if sorted(m['index'] for m in moves) != list(range(15)): raise ValueError('tutor closure')
+    indices = {m['move']['value'][5:]: m['index'] for m in moves}
+    compatibility = []
+    for species, expression in re.findall(r'\[(SPECIES_[A-Z0-9_]+)\]\s*=\s*([^,]+),', source):
+        symbols = re.findall(r'TUTOR\((MOVE_[A-Z0-9_]+)\)', expression)
+        remaining = re.sub(r'TUTOR\(MOVE_[A-Z0-9_]+\)', '', expression)
+        if remaining.strip().strip('| \n\r\t') not in ('', '0'): raise ValueError('tutor compatibility expression')
+        compatibility.append(dict(species=dict(value='pret:' + species), tutors=sorted(indices[m] for m in symbols)))
+    texts = {}
+    for symbol in ('gText_TeachWhichPokemon', 'gText_PkmnCantLearnMove', 'gText_PkmnAlreadyKnows',
+            'gText_PkmnNeedsToReplaceMove', 'gText_StopLearningMove2', 'gText_MoveNotLearned', 'gText_WhichMoveToForget',
+            'gText_12PoofForgotMove', 'gText_PkmnLearnedMove3', 'gText_PokeSum_HmMovesCantBeForgotten',
+            'gText_Able2', 'gText_NotAble', 'gText_Learned'):
+        matches = re.findall(r'const u8 ' + symbol + r'\[\] = _\("([^"]*)"\);', files['src/strings.c'].decode())
+        if len(matches) != 1: raise ValueError('tutor text: ' + symbol)
+        texts[symbol] = matches[0]
+    return (json.dumps(dict(schemaVersion=1, sourceCommit=commit, moves=moves,
+        compatibility=compatibility, texts=texts), ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode()
+
 def main():
     p=argparse.ArgumentParser();sources=p.add_mutually_exclusive_group();sources.add_argument('--source',type=pathlib.Path);sources.add_argument('--source-git',type=pathlib.Path);p.add_argument('--check',action='store_true');a=p.parse_args()
-    raw=read(ROOT/'scripts/move-tutors.lock.json',7385)
+    raw=read(ROOT/'scripts/move-tutors.lock.json')
     lock=json.loads(raw); output=ROOT/'content/raw/pokefirered/037335f4'; source=a.source or output
     rows=[]
     for f in lock['files']:
@@ -82,14 +112,15 @@ def main():
         if rel.is_absolute() or '..' in rel.parts:raise ValueError('unsafe path')
         if a.source_git:
             data=subprocess.check_output(['git','-C',str(a.source_git),'show',lock['commit']+':'+str(rel)])
-            if len(data)!=f['bytes']:raise ValueError('source size: '+f['path'])
+            if 'bytes' in f and len(data)!=f['bytes']:raise ValueError('source size: '+f['path'])
         else:
             src=source/rel
             if src.is_symlink():raise ValueError('source symlink')
-            data=read(src,f['bytes'])
+            data=read(src,f.get('bytes'))
         rows.append((output/rel,data))
     files = {f['path']: data for f, (_, data) in zip(lock['files'], rows, strict=True)}
     rows.append((ROOT/'src/Game.Application/CampaignMoveTutorBindings.cs', actor_bindings(files)))
+    rows.append((ROOT/'content/generated/move-tutors/catalog.json', catalog(files, lock['commit'])))
     for path,data in rows:
         if a.check:
             if read(path,len(data))!=data:raise ValueError('output differs')

@@ -32,9 +32,7 @@ DIRECTORY = 'fuchsia-city-house-2'
 TILESETS = {'gTileset_Building':'primary/building', 'gTileset_Museum':'secondary/museum'}
 CITY_PACKAGE = 'content/generated/fuchsia-route-region'
 CITY_RESOURCE = 'fuchsia-city/runtime-map.json'
-NPC_REUSE = {
- 'OBJ_EVENT_GFX_FISHER': 'content/generated/city-services/npc/fisher.png',
- 'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_FISHER', 'OBJ_EVENT_GFX_RED_NORMAL'}
 ORDINARY_SYMBOLS = ('MAP_CELADON_CITY','MAP_CERULEAN_CAVE_1F','MAP_CERULEAN_CAVE_B1F','MAP_CERULEAN_CITY',
  'MAP_CINNABAR_ISLAND','MAP_FUCHSIA_CITY','MAP_PALLET_TOWN','MAP_ROUTE10','MAP_ROUTE11','MAP_ROUTE12','MAP_ROUTE13',
  'MAP_ROUTE21_NORTH','MAP_ROUTE21_SOUTH','MAP_ROUTE22','MAP_ROUTE23','MAP_ROUTE24','MAP_ROUTE25','MAP_ROUTE4','MAP_ROUTE6',
@@ -225,10 +223,6 @@ def main():
     with tempfile.TemporaryDirectory(prefix='good-rod-',dir=target) as temp:
         stage=Path(temp);shared.import_map(src,MAP,MAP_ID,stage/DIRECTORY)
         npcs=shared.npc_inventory(src,[world],stage/'npc');need({r['graphicsId'] for r in npcs['graphics']}==set(NPC_REUSE),'Good Rod actor cohort differs')
-        for row in npcs['graphics']:
-            path=NPC_REUSE[row['graphicsId']];existing=current/path;rendered=stage/row['texturePath'];need(rendered.read_bytes() == existing.read_bytes(),'Reused Good Rod actor differs')
-            row.update(texturePath=path,reuseExisting=True);rendered.unlink()
-        (stage/'npc').rmdir()
         items=item_inventory(src,constants,stage,dep)
         path=stage/DIRECTORY/'runtime-map.json';rich=path.read_bytes();compact=converter.normalize_runtime(json.loads(rich));util.compact_check(compact,world,src)
         data=converter.encode(compact);(stage/DIRECTORY/'runtime-map.json').write_bytes(data)
@@ -243,7 +237,7 @@ def main():
           inputCount=len(src.entries),mapCount=1,cellCount=100,borderCellCount=4,directedWarpCount=7,objectCount=1,reusedNpcGraphicsCount=2,itemCount=1,
           ordinaryGoodRodTableCount=22,sourceOnlyTableCount=8,scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest);(stage/'manifest.json').write_bytes(manifest_bytes)
-        writes=[(target/'scripts/good-rod-service.lock.json',lock_bytes),(target/'scripts/good-rod-service.contract.json',canonical(contract))]
+        writes=[(target / 'scripts/good-rod-service.contract.json', canonical(contract))]
         writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:

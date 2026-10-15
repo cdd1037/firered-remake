@@ -16,13 +16,13 @@ SHARED=load_helper('_regional_service_shared', Path(__file__).with_name('_region
 CONVERTER=load_helper('_regional_service_compact', ROOT/'scripts/export-runtime-maps.py')
 canonical=SHARED.canonical
 original_read_lock=SHARED.read_lock
-def read_lock(path=None):return original_read_lock(path or ROOT/'content/sources/regional-service-maps.lock.json')
+def read_lock(path=None):return original_read_lock(path or ROOT/'scripts/import-config/regional-service-maps.json')
 for k in ('ROOT','COMMIT','PROFILE','MAPS','TILESETS','read_lock'):setattr(SHARED,k,globals()[k])
 INVENTORY.PROFILE=PROFILE;INVENTORY.SERVICE_MAPS=[n for n,_,_ in MAPS]
 
 def protect(target,role):
     target=Path(target);SHARED.require_safe_target(ROOT,target)
-    for p in [ROOT/x for x in ['tools','src','tests','proof','evidence','content/sources','content/'+('generated' if role=='raw' else 'raw')]]:
+    for p in [ROOT/x for x in ['tools','src','tests','proof','evidence','scripts/import-config','content/'+('generated' if role=='raw' else 'raw')]]:
         if target.resolve().is_relative_to(p.resolve()) or p.resolve().is_relative_to(target.resolve()):raise ValueError('Protected source/output overlap')
 
 def warp_inventory(src,worlds):

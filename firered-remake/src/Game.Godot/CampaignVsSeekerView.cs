@@ -55,8 +55,8 @@ public partial class CampaignView
         var art = VsSeekerArt; var item = art.ItemDefinition; var icon = art.Asset("item-vs-seeker");
         string positionIcon = document.Items[0].Icon;
         var position = document.Assets.Single(a => a.Id == positionIcon);
-        using var image = Image.CreateFromData(24, 24, false, Image.Format.Rgba8, art.ReadItemIconRgba());
-        _questPocketTextures.Add(icon.Id, ImageTexture.CreateFromImage(image));
+        using var image = NativeImages.LoadPng(art.ReadItemIconPng(), 24, 24);
+        _questPocketTextures.Add(icon.Id, SceneTextures.FromImage(image));
         document = document with
         {
             Items = document.Items.Add(new("pret:ITEM_VS_SEEKER", "ITEM_VS_SEEKER", item.GetProperty("name").GetString()!,

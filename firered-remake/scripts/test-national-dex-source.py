@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Focused offline source semantics and optional regeneration checks; never builds the product."""
-import argparse, ast, json, re, subprocess, sys, tempfile
+import argparse, ast, importlib.util, json, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,9 +14,9 @@ def main():
     parser.add_argument('--project-root', type=Path, default=ROOT)
     args = parser.parse_args(); root = args.project_root.absolute()
     generated = root / 'content/generated' / PACKAGE
-    lock_path = root / 'content/sources' / (PACKAGE + '.lock.json')
-    lock = load(lock_path); manifest = load(generated / 'manifest.json')
-    scripts = load(generated / 'scripts.json'); constants = load(generated.parent / 'shared-constants/values.json'); contract = load(generated / 'contracts.json')
+    manifest = load(generated / 'manifest.json')
+    constants = load(generated.parent / 'shared-constants/values.json'); contract = load(generated / 'contracts.json')
+    lock = dict(files=contract['inputFiles'], commit=contract['sourceCommit'])
     raw = {}
     for entry in lock['files']:
         p = entry['path']; raw[p] = (root / 'content/raw/pokefirered/037335f4' / p).read_text()
@@ -24,6 +24,15 @@ def main():
         load(generated / entry['path'])
     need(contract['inputFiles'] == lock['files'] and manifest['mapCount'] == contract['mapCount'] == 0 and not contract['runtimeIntegrated'], 'Package admits maps/runtime')
     need(len(raw) == manifest['inputCount'] == 31, 'Unexpected input count')
+    spec = importlib.util.spec_from_file_location('national_dex_import', ROOT / 'scripts/import-national-dex-source.py')
+    importer = importlib.util.module_from_spec(spec); spec.loader.exec_module(importer)
+    class LocalSource:
+        def text(self, path): return raw[path]
+        def ref(self, path, symbol, line=None):
+            result = dict(kind='pret', repository='pret/pokefirered', commit=lock['commit'], path=path, symbol=symbol)
+            if line is not None: result['line'] = line
+            return result
+    scripts, _ = importer.script_inventory(LocalSource())
     blocks = {b['label']: b for b in scripts['blocks']}
     def commands(label): return [r['text'].split('@')[0].strip() for r in blocks[label]['lines'] if r['text'].split('@')[0].strip()]
     for b in scripts['blocks'] + scripts['dispatchBlocks']:

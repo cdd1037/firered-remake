@@ -12,26 +12,23 @@ public sealed class PretFossilLabRegion
 {
     public const string ResourceId = "firered-fossil-lab-region-v1";
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement ScriptInventory { get; }
+
     public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
     /// <summary>Contains authenticated project-relative bindings to existing NPC textures.</summary>
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretFossilLabRegion(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableArray<PretSourceScriptFile> scripts, ImmutableDictionary<string, string> texts,
         ImmutableDictionary<string, int> constants)
     {
-        NewMaps = maps; Scripts = scripts; TextSources = texts; Constants = constants;
-        SourceFiles = source.Files; GeneratedDirectory = source.Directory;
+        NewMaps = maps; Constants = constants;
+        SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty; GeneratedDirectory = source.Directory;
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        ScriptInventory = source.Document("scripts.json"); NpcSources = source.Document("npc-source.json");
+        NpcSources = source.Document("npc-source.json");
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -58,17 +55,13 @@ public sealed class PretFossilLabRegion
 
     public static PretFossilLabRegion Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot,"fossil-lab-region",            "scripts/fossil-lab-region.lock.json");
-        foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
-        {
-            Need(texture.GetProperty("reuseExisting").GetBoolean(), "Fossil lab NPC textures must use existing resources.");
-        }
+        var source = new SilphSourcePackage(projectRoot,"fossil-lab-region");
         var catalog = source.Document("catalog.json");
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Cinnabar fossil lab catalog source identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Cinnabar fossil lab resources; current-game admission is separate.", ResourceId, source.Files);
-        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
+            "Original Cinnabar fossil lab resources; current-game admission is separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
@@ -76,32 +69,18 @@ public sealed class PretFossilLabRegion
             string path = spec.GetProperty("path").GetString()!;
             Need(path == relative + "/runtime-map.json" ,
                 "Cinnabar fossil lab compact resource binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
+            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id && runtime.Width == (id.EndsWith("-entrance", StringComparison.Ordinal) ? 28 : 15) && runtime.Height == 11,
                 "Cinnabar fossil lab map identity/dimensions differ.");
             maps.Add(new(id), PretWorldMap.FromRuntime(runtime, metadata,
                 PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/silph-region/npc/red-normal.png"), MapIdFromSourceSymbol));
+                PretRuntimeMapValidation.SafeFile(projectRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol));
         }
         Need(maps.Keys.ToHashSet().SetEquals(new[] { new MapId("map.cinnabar-island-pokemon-lab-entrance"),new MapId("map.cinnabar-island-pokemon-lab-experiment-room") }) ,
             "Cinnabar fossil lab map/warp collection differs.");
-        var inventory = source.Document("scripts.json");
-        Need(inventory.GetProperty("blocks").GetArrayLength() == 82 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "Cinnabar fossil lab script inventory differs.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
-        {
-            string path = entry.GetString()!,text = new UTF8Encoding(false, true).GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(label.Length > 0, "Missing Cinnabar fossil lab script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
+
+        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
+        
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["HELIX_FOSSIL"] == 1 && constants["DOME_FOSSIL"] == 2 && constants["OLD_AMBER"] == 3 &&
             constants["VAR_MAP_SCENE_CINNABAR_ISLAND_POKEMON_LAB_EXPERIMENT_ROOM_WHICH_FOSSIL"] == 0x4069 &&
@@ -123,7 +102,7 @@ public sealed class PretFossilLabRegion
                 "CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_Garett" &&
             !contracts.GetProperty("revivalState").GetProperty("timerBased").GetBoolean(),
             "Fossil lab explicit unsupported boundaries or readiness contract differ.");
-        return new(source, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
+        return new(source, maps.ToImmutable(), constants);
     }
     private static void Need(bool condition, string message) => SilphSourcePackage.Need(condition, message);
 }

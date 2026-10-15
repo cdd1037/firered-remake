@@ -7,8 +7,7 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record SafariItemsDocument(int SchemaVersion,string Profile,string SourceCommit,
-    ImmutableArray<ForestPokemonInput> Inputs,ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<ForestPokemonInput> Inputs,ImmutableArray<PretBillSourceItem> Items,ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<string> Limitations,ImmutableArray<SnorlaxArtOutput> Outputs);
 public sealed record SafariMachineAddition(ItemId Item,ImmutableArray<PewterMachineCompatibility> Compatibility);
 public sealed record SafariMachinesDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<ItemId> InheritedItemIds,
@@ -37,13 +36,7 @@ public sealed class PretSafariItems
         string root=Path.GetFullPath(projectRoot);
         var doc=SafariSource.Parse<SafariItemsDocument>(SafariSource.Read(root,GeneratedDirectory+"items.json"));
         SafariSource.Require(doc.SchemaVersion==1&&
-            doc.Items.Length==12&&doc.Icons.Length==12&&!doc.RulesSources.IsDefaultOrEmpty&&!doc.Limitations.IsDefaultOrEmpty,"Safari item scope differs.");
-        var lines=new Dictionary<string,int>(StringComparer.Ordinal);
-        foreach(var i in doc.Inputs)
-        {
-            var bytes=SafariSource.Read(root,PretSourcePaths.FireRedRawDirectory + "/"+i.Path);
-            lines.Add(i.Path,i.Path.EndsWith(".png",StringComparison.Ordinal)?1:new UTF8Encoding(false,true).GetString(bytes).Count(c=>c=='\n')+1);
-        }
+            doc.Items.Length==12&&doc.Icons.Length==12&&!doc.Limitations.IsDefaultOrEmpty,"Safari item scope differs.");
         SafariSource.Require(doc.Items.Select(i=>i.Metadata.Item.Id).SequenceEqual(new[]{"HM03","HM04","GOLD_TEETH","TM11","TM47","TM32","MAX_POTION","FULL_RESTORE","LEAF_STONE","PROTEIN","QUICK_CLAW","MAX_REVIVE"}.Select(s=>new ItemId("pret:ITEM_"+s))),"Safari item identity differs.");
         foreach(var i in doc.Items)
         {
@@ -51,14 +44,14 @@ public sealed class PretSafariItems
                 i.EffectBytes.IsEmpty&&i.EffectSource is null,"Safari key/HM properties differ.");
         }
         var files=ImmutableDictionary.CreateBuilder<string,byte[]>(StringComparer.Ordinal);
-        foreach(var o in doc.Outputs)files.Add(o.Path,SafariSource.Read(root,GeneratedDirectory+o.Path));
+        foreach(var o in doc.Outputs)files.Add(o.Path,SafariSource.Read(root,o.Path.StartsWith("content/generated/", StringComparison.Ordinal) ? o.Path : GeneratedDirectory+o.Path));
         foreach(var i in doc.Icons)
         {
-            var rgba=PngRgba8.Decode(files[i.PngPath], i.Width, i.Height);
-            SafariSource.Require(i.Width==24&&i.Height==24&&rgba.Length==24*24*4&&
+            var pngBytes=files[i.PngPath];
+            SafariSource.Require(i.Width==24&&i.Height==24&&pngBytes.Length > 0&&
                 files.ContainsKey(i.PngPath),"Safari item pixels differ.");
         }
-        var machines=SafariSource.Parse<SafariMachinesDocument>(SafariSource.Read(root,GeneratedDirectory+"machines.json"));
+        var machines=SafariSource.Parse<SafariMachinesDocument>(SafariSource.Read(root,GeneratedDirectory+"machines.json"), root);
         SafariSource.Require(machines.SchemaVersion==1&&
             machines.InheritedItemIds.Length==19&&machines.Additions.Length==19&&machines.NewMachines.Length==5&&
             machines.Additions.Select(a=>a.Item).SequenceEqual(machines.InheritedItemIds)&&

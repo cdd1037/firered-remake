@@ -61,8 +61,11 @@ def run(project,preparation,output,check=False):
   entries.append(dict(stableId=s['stableId'], path=path))
   specs.append(dict(stableId=s['stableId'],sourceName=s['sourceName'],sourceMapSymbol=compact['sourceRef']['symbol'],directory=name,width=compact['width'],height=compact['height']))
  for p,b in assets.items():
-  if p.startswith('assets/npc/') or p.startswith('assets/patches/'): payload[region+p.removeprefix('assets/')]=b
- for name in ['dependencies','npc-source','scripts','spin-routes','rocket-hideout']:payload[region+name+'.json']=assets['overlays/'+name+'.json']
+  if p.startswith('assets/patches/'): payload[region+p.removeprefix('assets/')]=b
+ for name in ['dependencies','npc-source','spin-routes','rocket-hideout']:payload[region+name+'.json']=assets['overlays/'+name+'.json']
+ npcs=json.loads(assets['overlays/npc-source.json'])
+ npcs['graphics']=[{'graphicsId':row['graphicsId']} for row in npcs['graphics']]
+ payload[region+'npc-source.json']=encode(npcs)
  constants=json.loads(assets['overlays/constants.json'])
  publish_constants(output / 'content/generated', constants, check=check)
  inventory=json.loads(assets['overlays/scripts.json']);scriptpaths=sorted({b['sourceRef']['path'] for b in inventory['blocks']})

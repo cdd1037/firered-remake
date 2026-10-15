@@ -5,10 +5,15 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+import sys
+sys.path.insert(0, str(ROOT / "scripts"))
+from machine_catalog import load_catalog, machine_reference, compatibility_reference
+sys.path.insert(0, str(ROOT/'scripts'))
+from item_icon_exports import item_icon_path, output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-mtmoon-items-v1'
@@ -43,7 +48,6 @@ def lock_read(path=None):
  d=json.loads(b,object_pairs_hook=pairs)
  if (d['schemaVersion'], d['repository'], d['commit'], d['profile'], len(d['files'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 45): raise ValueError('Source identity differs')
  return d
-def raw_manifest(): return encoded(dict(profile=PROFILE,sourceCommit=COMMIT,inputCount=45))
 def read_sources(lock,raw,repo=None):
  data={}
  if repo is not None:
@@ -126,21 +130,12 @@ def convert(lock,data):
    p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
   image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
   if (w,h)!=(24,24):raise ValueError('Icon size differs')
-  png=codec.png(w,h,rgba);file=symbol.lower()+'.png';outputs[file]=png
+  png=codec.png(w,h,rgba);file=item_icon_path(image,palette);outputs[file]=png
   icons.append(dict(item=ident(symbol),width=w,height=h,pngPath=file,source=ref(image,m[1]),paletteSource=ref(palette,m[2]),bindingSource=binding))
+ shared = load_catalog(ROOT)
  def compatibility(tm):
-  result=[];p='src/data/pokemon/tmhm_learnsets.h'
-  for s in SPECIES:
-   full='SPECIES_'+s;m=match(p,r'^    \['+full+r'\]\s*= TMHM_LEARNSET\((.*?)\),');tokens=re.findall(r'TMHM\((\w+)\)',m[1])
-   remaining=re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1])
-   if remaining or len(tokens)!=len(set(tokens)) or not tokens and m[1].strip()!='0':raise ValueError('Unsupported TM compatibility syntax')
-   result.append(dict(species=ident(full),sourceSpeciesId=constant('include/constants/species.h',full),canLearn=tm in tokens,source=ref(p,full,m)))
-  return result
- p='src/data/party_menu.h';m=match(p,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'\bMOVE_\w+\b',m[1]);rules.append(ref(p,'sTMHMMoves',m))
- for tm,move in [('TM05','ROAR'),('TM09','BULLET_SEED'),('TM46','THIEF')]:
-  if len(mapping)!=58 or mapping[int(tm[2:])-1]!='MOVE_'+move:raise ValueError('Source TM move map differs')
-  p='src/data/battle_moves.h';m=match(p,r'^    \[MOVE_'+move+r'\] =\n    \{(.*?)^    \},');pp=int(re.search(r'\.pp = (\d+),',m[1])[1]);rules.append(ref(p,'MOVE_'+move,m))
-  machines.append(dict(machine=next(x['metadata'] for x in defs if x['metadata']['item']['sourceItemSymbol']=='ITEM_'+tm),move=ident('MOVE_'+move),sourceMoveId=constant('include/constants/moves.h','MOVE_'+move),movePp=pp,compatibility=compatibility(tm+'_'+move)))
+  return [compatibility_reference(shared, 'pret:ITEM_' + tm[:4], 'pret:SPECIES_' + species) for species in SPECIES]
+ machines = [machine_reference(shared, 'pret:ITEM_' + item, ['pret:SPECIES_' + species for species in SPECIES]) for item in ['TM05','TM09','TM46']]
  pickups=[]
  for map_name in ['MtMoon_1F','MtMoon_B1F','MtMoon_B2F','Route4']:
   p='data/maps/'+map_name+'/map.json';d=json.loads(text[p],object_pairs_hook=pairs)
@@ -160,7 +155,7 @@ def convert(lock,data):
   fossils.append(dict(item=ident(item),script=label,source=ref(p,label,m)))
  for p,s,pat in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','CheckBagHasSpace',r'^bool8 CheckBagHasSpace\(.*?^\}'),('src/pokemon.c','PokemonUseItemEffects',r'^bool8 PokemonUseItemEffects\([^;]*?\n\{.*?^\}'),('src/pokemon.c','AdjustFriendship',r'^void AdjustFriendship\([^;]*?\n\{.*?^\}'),('src/party_menu.c','Task_LearnedMove',r'^static void Task_LearnedMove\([^;]*?\n\{.*?^\}')]:rules.append(ref(p,s,match(p,pat)))
  for p in ['include/constants/item_effects.h','src/data/items.json.txt','tools/gbagfx/gfx.c','tools/gbagfx/convert_png.c']:rules.append(ref(p,'bounded source declaration and conversion'))
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,items=defs,machines=machines,tm39Compatibility=compatibility('TM39_ROCK_TOMB'),icons=icons,pickups=pickups,fossils=fossils,
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],items=defs,machines=machines,tm39Compatibility=compatibility('TM39_ROCK_TOMB'),icons=icons,pickups=pickups,fossils=fossils,
   limitations=['Eighteen MtMoon pickups, two mutually exclusive fossil dependencies, and Route4 east TM05 only; application owns scripts and flags.', 'Nine additions to the original eight-item shop catalog preserve original stock; three TMs remain in the machine pocket.', 'Rare Candy and Escape Rope execution remains deferred; Moon Stone execution is a separately integrated Domain transaction.', 'Revive and Ether pure field use only; no new battle item routing.', 'Four bounded TMs with exact 56-species compatibility; no other TM/HM or fossil revival.', 'Source imports and pure rules do not imply playable/native/audio acceptance.'])
  outputs['mtmoon-items.json']=encoded(doc)
  outputs['manifest.json']=encoded(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=45,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
@@ -179,8 +174,8 @@ def run(raw,out,repo=None,lock_path=None):
    p=protected.absolute()
    if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
- materials={(out,p):b for p,b in outputs.items()}
- if repo is not None:materials.update({(raw,p):b for p,b in data.items()});materials[(raw_metadata_directory(raw, 'mtmoon-items'),'manifest.json')]=raw_manifest()
+ materials=output_materials(out,outputs)
+ if repo is not None:materials.update({(raw,p):b for p,b in data.items()})
  targets=[]
  for (root,p),b in materials.items():
   target=safe(root,p);stage=safe(root,p+'.tmp');directory(target.parent)

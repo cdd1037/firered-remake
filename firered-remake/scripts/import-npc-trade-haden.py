@@ -29,12 +29,7 @@ MAPS = ['Route18', 'Route18_EastEntrance_1F', 'Route18_EastEntrance_2F']
 TILESETS = {'gTileset_General': 'primary/general', 'gTileset_Building': 'primary/building',
     'gTileset_CeladonCity': 'secondary/celadon_city', 'gTileset_GenericBuilding2': 'secondary/generic_building_2'}
 CITY_PATH = 'content/generated/fuchsia-route-region/fuchsia-city/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_BOY': 'content/generated/silph-region/npc/boy.png',
-    'OBJ_EVENT_GFX_POLICEMAN': 'content/generated/vermilion-region/npc/policeman.png',
-    'OBJ_EVENT_GFX_ROCKER': 'content/generated/silph-region/npc/rocker.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
-}
+NPC_REUSE = {'OBJ_EVENT_GFX_BOY', 'OBJ_EVENT_GFX_POLICEMAN', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_ROCKER'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -189,7 +184,7 @@ def main():
             backgroundEventCount=4, reusedNpcGraphicsCount=4, scriptBlockCount=len(scripts['blocks']),
             unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage/'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target/'scripts/npc-trade-haden.lock.json', lock_bytes)]
+        writes = []
         writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

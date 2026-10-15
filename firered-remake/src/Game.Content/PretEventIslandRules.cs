@@ -24,7 +24,7 @@ public static class PretEventIslandRules
     }
     public static EventIslandSpeciesDocument LoadDocument(string root)
     {
-        var d = JsonSerializer.Deserialize<EventIslandSpeciesDocument>(Read(root,"content/generated/event-island-species/catalog.json"), Options)
+        var d = JsonSerializer.Deserialize<EventIslandSpeciesDocument>(Read(root,"content/generated/event-island-species/catalog.json"), SharedMachineCatalog.Options(root, Options))
             ?? throw new InvalidDataException("event_island_source_missing");
         if (d.Machines.IsDefault || d.Items.IsDefault) throw new InvalidDataException("event_island_catalog_arrays_missing");
         return d;

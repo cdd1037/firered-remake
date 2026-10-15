@@ -3,6 +3,8 @@
 import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT/'scripts'))
+from item_icon_exports import item_icon_path, output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-bill-items-v1'
@@ -98,7 +100,7 @@ def convert(lock,data):
    p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
   image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
   if (w,h)!=(24,24):raise ValueError('Item icon dimensions differ')
-  png=codec.png(w,h,rgba);png_name=symbol.lower()+'.png';outputs[png_name]=png
+  png=codec.png(w,h,rgba);png_name=item_icon_path(image,palette);outputs[png_name]=png
   icons.append(dict(item=ident(symbol),width=w,height=h,pngPath=png_name,source=ref(image,symbols[0]),paletteSource=ref(palette,symbols[1]),bindingSource=binding))
  pickups=[]
  for map_name in ['Route24','Route25']:
@@ -143,7 +145,7 @@ def convert(lock,data):
  if re.findall(r'FLAG_\w+',modes[0])!=['FLAG_GET_SEEN','FLAG_GET_CAUGHT','FLAG_SET_SEEN','FLAG_SET_CAUGHT']:raise ValueError('Pokedex source enum differs')
  screen=match('src/pokedex_screen.c',r'case FLAG_SET_SEEN:(.*?)break;')
  if 'owned' in screen[1] or 'pokedex.seen[index] |= mask;' not in screen[1]:raise ValueError('Seen-only mutation differs')
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,items=defs,icons=icons,pickups=pickups,rewards=rewards,dexViews=dex,limitations=[
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],items=defs,icons=icons,pickups=pickups,rewards=rewards,dexViews=dex,limitations=[
   'The shop composition appends only Nugget, Fame Checker and S.S. Ticket to the historical eighteen items; all three shops remain unchanged.',
   'Elixir, Ether, Pecha/Oran/Bluk berries and Berry Pouch are authenticated source data; no new berry pocket or Elixir execution is claimed by this content import.',
   'Two visible TMs and five hidden items preserve original coordinates, object IDs, quantities, flags and pockets; application owns availability and collection.',
@@ -166,7 +168,7 @@ def run(raw,out,repo=None,lock_path=None):
    p=protected.absolute()
    if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
- materials={(out,p):b for p,b in outputs.items()}
+ materials=output_materials(out,outputs)
  if repo is not None:materials.update({(raw,p):b for p,b in data.items()})
  targets=[]
  for (root,p),b in materials.items():

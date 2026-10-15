@@ -2,6 +2,8 @@
 """Import Four Island items, source shop/pickups and exact 38x125 teaching. No upstream execution."""
 import argparse,  json, re, subprocess
 from pathlib import Path
+from machine_catalog import admission_view, compatibility_additions
+ROOT=Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 def need(v,m):
  if not v:raise ValueError(m)
@@ -13,9 +15,6 @@ def generate(reference,root):
    inputs[path]=dict(path=path);texts[path]=b.decode()
   return texts[path]
  def ref(path,symbol,start,end):return dict(path=path,symbol=symbol,startLine=start,endLine=end)
- def dependency(path):
-  b=(root/path).read_bytes()
-  dependencies.append(dict(path=path));return json.loads(b)
  items_text=source('src/data/items.json');source_items=json.loads(items_text)['items']
  constants=source('include/constants/items.h');constant={m[1]:int(m[2],0) for m in re.finditer(r'^#define\s+(ITEM_\w+)\s+(0x[0-9A-Fa-f]+|\d+)\b',constants,re.M)}
  def metadata(symbol):
@@ -32,16 +31,11 @@ def generate(reference,root):
  move_constants=source('include/constants/moves.h');need(re.search(r'^#define\s+MOVE_WATERFALL\s+127\b',move_constants,re.M),'Waterfall move id')
  moves=source('src/data/battle_moves.h');waterfall=re.search(r'\[MOVE_WATERFALL\]\s*=\s*\{(.*?)\n\s*\}',moves,re.S)
  need(waterfall and all(re.search(r'\.'+k+r'\s*=\s*'+v+r'\b',waterfall[1]) for k,v in [('effect','EFFECT_HIT'),('power','80'),('type','TYPE_WATER'),('accuracy','100'),('pp','15')]),'Gen3 Waterfall source')
- ruby=dependency('content/generated/sevii-ruby-items/items.json')
- old_ids=[r['item']['value'][5:] for r in ruby['machineAdditions']]+['ITEM_HM06'];need(len(set(old_ids))==37,'Inherited machine set')
- owned=[(r['species']['value'][5:],r['sourceSpeciesId']) for r in ruby['hm06']['compatibility']]
- added=[('SPECIES_SEEL',86),('SPECIES_DEWGONG',87),('SPECIES_WOOPER',194),('SPECIES_QUAGSIRE',195),('SPECIES_SWINUB',220),('SPECIES_PILOSWINE',221),('SPECIES_DELIBIRD',225)]
- need(len(owned)==118 and not set(owned)&set(added),'Owned predecessor');owned+=added
- text=source('src/data/pokemon/tmhm_learnsets.h');matches={m[1]:m for m in re.finditer(r'\[(SPECIES_\w+)\]\s*=\s*TMHM_LEARNSET\((.*?)\),',text,re.S)}
- def cell(species,source_id,item):
-  m=matches[species];return dict(species={'value':'pret:'+species},sourceSpeciesId=source_id,canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',m[2])),source=ref('src/data/pokemon/tmhm_learnsets.h',species,text[:m.start()].count('\n')+1,text[:m.end()].count('\n')+1))
- additions=[dict(item={'value':'pret:'+item},compatibility=[cell(s,n,item) for s,n in added]) for item in sorted(old_ids)]
- hm=dict(machine=items[1],move={'value':'pret:MOVE_WATERFALL'},sourceMoveId=127,movePp=15,compatibility=[cell(s,n,'ITEM_HM07') for s,n in sorted(owned,key=lambda p:p[1])])
+ additions=compatibility_additions(ROOT, 'content/generated/four-island-items/items.json', 'machineAdditions')
+ need(len(additions)==37, 'Exact admitted machine scope')
+ dependencies.extend(dict(path=p) for p in ['scripts/import-config/machine-admissions.json', 'scripts/import-config/machine-catalog.json'])
+ hm=admission_view(ROOT, 'content/generated/four-island-items/items.json', '/hm07')
+ need(len(hm['species'])==125, 'Exact admitted HM07 species scope')
  stock_path='data/maps/FourIsland_Mart/scripts.inc';stock_text=source(stock_path);stock=re.search(r'^FourIsland_Mart_Items::\n((?:\t\.2byte ITEM_\w+\n)+)',stock_text,re.M)
  symbols=re.findall(r'\t\.2byte (ITEM_\w+)',stock[1]);need(symbols.pop()=='ITEM_NONE' and len(symbols)==8,'Mart stock')
  shop=dict(id='FourIsland_Mart_Items',items=[dict(value='pret:'+s) for s in symbols],source=ref(stock_path,'FourIsland_Mart_Items',stock_text[:stock.start()].count('\n')+1,stock_text[:stock.end()].count('\n')+1))
@@ -75,7 +69,7 @@ def main():
  for name in ['reference','dependency','output']:p.add_argument(name,type=Path)
  p.add_argument('--check',action='store_true');a=p.parse_args();doc,evidence=generate(a.reference,a.dependency)
  files={'content/generated/four-island-items/'+name:(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode() for name,value in [('items.json',doc),('source-input-hashes.json',evidence)]}
- lock=dict(sourceCommit=COMMIT,profile='firered-four-island-items-v1',files=[dict(path=k) for k,v in sorted(files.items())]);files['scripts/four-island-items.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
+ lock=dict(sourceCommit=COMMIT,profile='firered-four-island-items-v1',files=[dict(path=k) for k,v in sorted(files.items())])
  for name,data in files.items():
   dest=a.output/name
   if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

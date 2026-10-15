@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Trainers;
@@ -18,13 +17,7 @@ public static class PretVermilionTrainers
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/vermilion-trainers.lock.json"));
-        var s=sourceLock.RootElement;
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var doc=ContentJson.ParseStrict<VermilionTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-trainers/trainers.json")),ContentJson.CreateOptions());
+        var doc=ContentJson.ParseStrict<VermilionTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-trainers/trainers.json")),ContentJson.CreateOptions());
                 if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("Vermilion trainer document identity differs.");
         var catalog=new VermilionTrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         VermilionTrainerPartyFactory.ValidateCatalog(catalog);return catalog;

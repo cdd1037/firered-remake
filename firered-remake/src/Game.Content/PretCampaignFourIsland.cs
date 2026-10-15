@@ -25,34 +25,12 @@ public sealed partial class PretCampaignCatalog
     public FourIslandWaterEncounterCatalog? FourIslandWaterEncounters { get; }
     public bool FourIslandEnabled => FourIslandRegion is not null;
 
-    private static void AppendFourIslandSources(PretFourIslandRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in region.Scripts)
-        {
-            if (previous.TryGetValue(file.Path, out var old))
-            {
-                if (old.Text != file.Text)
-                    throw new InvalidDataException("four_island_source_conflict: " + file.Path);
-            }
-            else { previous.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-    }
+
 
     private static void ValidateFourIslandAnchors(PretFourIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
         if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("four_island_predecessor_maps");
-        foreach (var name in region.ReusedAnchorEvents.Keys)
-        {
-            var map = maps.Values.SingleOrDefault(m => m.SourceRef.Path == "data/maps/" + name + "/map.json");
-            if (map is null)
-                throw new InvalidDataException("four_island_anchor_events: " + name);
-        }
+            throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
     private static IEnumerable<KeyValuePair<int, string>> FourIslandSpeciesNames(PretPokedexMenu pokedex,FourIslandOwnedPokemonCatalog owned) =>
@@ -82,22 +60,5 @@ public sealed partial class PretCampaignCatalog
                 throw new InvalidDataException("four_island_excluded_map_admitted");
     }
 
-    private static PretStoryCompilation CompleteFourIslandSourceFallthrough(PretStoryCompilation compiled)
-    {
-        StoryProgram Program(string label, int[] lines, string[] opcodes)
-        {
-            var program = compiled.FindProgram(label) ?? throw new InvalidDataException("four_island_fallthrough_missing: " + label);
-            if (!program.Instructions.Select(i => i.Source.Line).SequenceEqual(lines) ||
-                !program.Instructions.Select(i => i.Opcode).SequenceEqual(opcodes) ||
-                program.Instructions.Any(i => i.Source.Path != "data/scripts/field_moves.inc" || i.Source.Symbol != label))
-                throw new InvalidDataException("four_island_fallthrough_identity: " + label);
-            return program;
-        }
-        var cant = Program("EventScript_CantUseWaterfall", [192], ["lockall"]);
-        var wall = Program("EventScript_WaterCrashingDown", [194], ["msgbox"]);
-        var end = Program("EventScript_EndWaterfall", [196, 197], ["releaseall", "end"]);
-        return compiled with { Programs = compiled.Programs
-            .SetItem(cant.Id, cant with { Instructions = cant.Instructions.AddRange(wall.Instructions).AddRange(end.Instructions) })
-            .SetItem(wall.Id, wall with { Instructions = wall.Instructions.AddRange(end.Instructions) }) };
-    }
+
 }

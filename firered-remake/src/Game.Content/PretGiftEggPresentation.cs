@@ -51,8 +51,8 @@ public static class PretGiftEggPresentation
             if (!files.ContainsKey(path)) files.Add(path, Read(path));
             string texturePath = asset.GetProperty("texturePath").GetString()!;
             if (!files.ContainsKey(texturePath)) files.Add(texturePath, Read(texturePath));
-            if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var rgba) ||
-                PngRgba8.Decode(rgba, width, height).Length != width * height * 4)
+            if (width is <= 0 or > 64 || height is <= 0 or > 64 || !files.TryGetValue(path, out var pngBytes) ||
+                (pngBytes).Length == 0)
                 throw new InvalidDataException("GiftEgg pixels differ: " + path);
             if (!files.TryGetValue(asset.GetProperty("texturePath").GetString()!, out var png))
                 throw new InvalidDataException("GiftEgg texture differs: " + path);

@@ -5,7 +5,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import json,pathlib,re
 from decimal import Decimal
 ROOT=pathlib.Path(__file__).resolve().parent.parent
@@ -86,6 +86,5 @@ doc=dict(schemaVersion=1,profile='firered-starter-instances-v1',sourceCommit=loc
 OUT.mkdir(parents=True,exist_ok=True)
 data=(json.dumps(doc,indent=2,ensure_ascii=False)+'\n').encode();target=OUT/'starter-catalog.json';target.write_bytes(data)
 manifest=dict(schemaVersion=1,repository=lock['repository'],commit=lock['commit'],inputs=lock['files'],outputs=[dict(path='content/generated/pokemon/starter-catalog.json')],counts=dict(species=len(species),moves=len(moves),levelUpEntries=sum(len(s['levelUpMoves']) for s in species)),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False)
-raw_metadata_directory(RAW, 'pokemon').mkdir(parents=True, exist_ok=True)
-(OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n', encoding='utf-8', newline='\n');(raw_metadata_directory(RAW, 'pokemon')/'manifest.json').write_text(json.dumps(lock,indent=2)+'\n', encoding='utf-8', newline='\n')
+(OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n', encoding='utf-8', newline='\n')
 print(json.dumps(dict(path=str(target.relative_to(ROOT)),counts=manifest['counts'])))

@@ -1,23 +1,16 @@
 using System.Collections.Immutable;
 using System.Text;
-using System.Text.RegularExpressions;
 namespace Game.Content;
 
-/// <summary>Bounded C text extraction for the lab battle. Does not execute C or silently discard unknown controls.</summary>
+/// <summary>Imported battle text and presentation control expansion.</summary>
 public static class PretBattleText
 {
     public static ImmutableSortedDictionary<string,string> Load(string root)
     {
-        var result=ImmutableSortedDictionary.CreateBuilder<string,string>(StringComparer.Ordinal);
-        foreach (var path in new[] { "src/battle_message.c", "src/strings.c" })
-        {
-            var bytes=File.ReadAllBytes(Path.Combine(root,PretSourcePaths.FireRedRawDirectory,path));
-            foreach(Match m in Regex.Matches(Encoding.UTF8.GetString(bytes),"(?:static )?const u8 ([A-Za-z0-9_]+)\\[\\] = _\\(\"((?:\\\\.|[^\"\\\\])*)\"\\);",RegexOptions.CultureInvariant))
-                result.TryAdd(m.Groups[1].Value,m.Groups[2].Value);
-        }
-        foreach(var symbol in new[]{"sText_Trainer1WantsToBattle","sText_Trainer1SentOutPkmn","sText_GoPkmn","gText_ForPetesSake","gText_TheTrainerThat","gText_TryBattling","gText_KeepAnEyeOnHP","gText_PkmnHPRestoredByVar2","gText_InflictingDamageIsKey","gText_LoweringStats","gText_OakNoRunningFromATrainer","gText_WinEarnsPrizeMoney","gText_HowDissapointing","gText_OakImportantToGetToKnowPokemonThroughly","gText_OakThisIsListOfPokemon","sText_AttackerUsedX","sText_AttackMissed","sText_DefendersStatFell","sText_StatsWontDecrease","sText_CriticalHit","sText_TargetFainted","sText_PkmnHitWithRecoil","sText_PkmnGainedEXP","sText_PkmnGrewToLv","sText_PlayerGotMoney"})
-            if(!result.ContainsKey(symbol))throw new InvalidDataException("Battle text missing: "+symbol);
-        return result.ToImmutable();
+        using var stream = File.OpenRead(Path.Combine(root, "content/generated/battle-text/catalog.json"));
+        var texts = System.Text.Json.JsonSerializer.Deserialize<SortedDictionary<string, string>>(stream)
+            ?? throw new InvalidDataException("Battle text catalog is empty.");
+        return texts.ToImmutableSortedDictionary(StringComparer.Ordinal);
     }
     public static ImmutableArray<string> Pages(IReadOnlyDictionary<string,string> source,string symbol,IReadOnlyDictionary<string,string> values)
     {

@@ -31,10 +31,7 @@ DIRECTORY = 'four-island-pokemon-day-care'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_FanClubDaycare': 'secondary/fan_club_daycare'}
 TOWN_PACKAGE = 'content/generated/four-island-region'
 TOWN_RESOURCE = 'four-island/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_OLD_WOMAN': 'content/generated/four-island-region/npc/old-woman.png',
-    'OBJ_EVENT_GFX_OLD_MAN_1': 'content/generated/four-island-region/npc/old-man-1.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_OLD_MAN_1', 'OBJ_EVENT_GFX_OLD_WOMAN', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -231,12 +228,6 @@ def main():
         npc_world = dict(events=dict(object_events=[retained['dayCareMan']['actor']]))
         npcs = shared.npc_inventory(src, [world, npc_world], stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'House actor cohort differs')
-        for row in npcs['graphics']:
-            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
-            rendered = stage / row['texturePath']
-            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
-        (stage / 'npc').rmdir()
         path = stage / DIRECTORY / 'runtime-map.json'; rich = path.read_bytes()
         compact = converter.normalize_runtime(json.loads(rich)); util.compact_check(compact, world, src)
         data = converter.encode(compact); (stage / DIRECTORY / 'runtime-map.json').write_bytes(data)

@@ -138,7 +138,7 @@ def import_catalog(raw, out):
                         'Party creation is pure; battle effects, AI execution, money, experience and event mutation are outside this catalog.',
                         'Random32 is sequenced low-half then high-half; no source-ROM or frame-timing parity is claimed.',
                         'Source TERRY bytes determine personality; displayed rival names and player-derived OT name/met fields are separate.'
-                    ], rulesSources=rules_sources, trainers=trainers, battles=battles)
+                    ], trainers=trainers, battles=battles)
     data = (json.dumps(document, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
     output = dict(path='lab-trainers.json')
     manifest = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, trainerCount=len(trainers),

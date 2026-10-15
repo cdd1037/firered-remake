@@ -11,7 +11,7 @@ public sealed record VermilionGymPortraitSource(string Id, int Width, int Height
     string SourceImage, string SourcePalette);
 public sealed record PretVermilionGymAssetsDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<VermilionGymLocalInput> LocalInputs,
-    ImmutableArray<OpeningItemSourceRef> RulesSources, PewterAdditionalMachine Tm34,
+    PewterAdditionalMachine Tm34,
     PretPewterMachineIcon Icon, ImmutableArray<VermilionGymPortraitSource> Portraits,
     ImmutableArray<string> Limitations);
 
@@ -33,26 +33,25 @@ public sealed class PretVermilionGymAssets
     {
         Document = document; SourceFiles = sourceFiles; _outputs = outputs;
         Portraits = document.Portraits.Select(p => new ForestTrainerPortrait(p.Id, p.X, p.Y,
-            PngRgba8.Decode(outputs[p.Id + ".png"]))).ToImmutableArray();
+            outputs[p.Id + ".png"])).ToImmutableArray();
     }
 
     public byte[] ReadPng(string id) => ReadAsset(id);
-    public byte[] ReadRgba(string id) => PngRgba8.Decode(ReadAsset(id));
+
     public byte[] ReadSynthManifestCandidate() => (byte[])_outputs["synth-manifest-candidate.json"].Clone();
     private byte[] ReadAsset(string id) => _outputs.TryGetValue(id + ".png", out var bytes)
         ? (byte[])bytes.Clone() : throw new InvalidDataException("Unknown Gym asset: " + id);
 
-    public static PretVermilionGymAssetsDocument LoadDocument(string json)
+    public static PretVermilionGymAssetsDocument LoadDocument(string json, SharedMachineCatalog machines)
     {
-        var document = ContentJson.ParseStrict<PretVermilionGymAssetsDocument>(json, ContentJson.CreateOptions());
+        var document = ContentJson.ParseStrict<PretVermilionGymAssetsDocument>(json, machines.CreateJsonOptions());
         Require(document.SchemaVersion == 1 && document.Portraits.Length == 2 &&
-            document.Tm34.Compatibility.Length == 73 && !document.RulesSources.IsDefaultOrEmpty &&
-            !document.Limitations.IsDefaultOrEmpty, "Gym asset scope differs.");
+            document.Tm34.Compatibility.Length == 73 && !document.Limitations.IsDefaultOrEmpty, "Gym asset scope differs.");
         var inputs = document.Inputs.ToDictionary(i => i.Path, StringComparer.Ordinal);
         Require(document.Tm34.Machine.Item.Id == PewterMachineRules.Tm34Id &&
             document.Tm34.Move == PewterMachineRules.ShockWaveId && document.Tm34.SourceMoveId == 351 &&
             document.Tm34.MovePp == 20 && document.Icon.Item == PewterMachineRules.Tm34Id &&
-            document.Icon.PngPath == "item_tm34.png", "Gym TM34 identity differs.");
+            document.Icon.Region is not null, "Gym TM34 identity differs.");
         PretPewterMachines.ValidateIcon(document.Icon);
         for (int n = 0; n < 2; n++)
         {
@@ -77,17 +76,17 @@ var generated = manifest.RootElement;
         foreach (var output in generated.GetProperty("outputs").EnumerateArray())
         {
             string path = output.GetProperty("path").GetString()!;
-            Require(outputs.TryAdd(path, Read(root,"content/generated/vermilion-gym-assets/" + path)), "Duplicate Gym output.");
+            Require(outputs.TryAdd(path, Read(root,path.StartsWith("content/generated/", StringComparison.Ordinal) ? path : "content/generated/vermilion-gym-assets/" + path)), "Duplicate Gym output.");
         }
-        var document = LoadDocument(Utf8.GetString(outputs["assets.json"]));
+        var document = LoadDocument(Utf8.GetString(outputs["assets.json"]), SharedMachineCatalog.LoadProject(root));
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach (var input in document.Inputs)
         {
-            files.Add(new(input.Path,                $"https://github.com/pret/pokefirered/blob/{SourceCommit}/{input.Path}"));
+            files.Add(new(input.Path));
         }
-        _ = PretPewterMachines.IconRgba(document.Icon, outputs[document.Icon.PngPath]);
+        _ = PretPewterMachines.TexturePage(document.Icon, outputs[document.Icon.PngPath]);
         foreach (var portrait in document.Portraits)
-            Require(PngRgba8.Decode(outputs[portrait.Id + ".png"]).Length == 64 * 64 * 4 , "Gym portrait pixels differ.");
+            Require((outputs[portrait.Id + ".png"]).Length > 0, "Gym portrait pixels differ.");
         Require(outputs["synth-manifest-candidate.json"].Length == SynthManifestBytes , "Gym synth candidate differs.");
         return new(document, files.ToImmutable(), outputs.ToImmutable());
     }

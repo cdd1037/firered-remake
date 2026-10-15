@@ -18,7 +18,7 @@ public partial class CampaignView
     {
         _silphPad = null; _silphDoorTiles.Clear(); _silphTrainerPortraits.Clear(); _silphItemArt = null; _silphInterface = null; _silphScrollUp = null; _silphScrollDown = null;
         foreach (string key in _questPocketTextures.Keys.Where(k => k.StartsWith("silph-", StringComparison.Ordinal)).ToArray())
-        { _questPocketTextures[key].Dispose(); _questPocketTextures.Remove(key); }
+        { _questPocketTextures.Remove(key); }
         Array.Clear(_silphDoorLayers);
     }
 
@@ -28,12 +28,12 @@ public partial class CampaignView
         var art = _catalog.SilphArt ?? throw new InvalidDataException("Silph art catalog missing.");
         foreach (var sprite in art.Sprites)
         {
-            using var image = Image.CreateFromData(sprite.Width, sprite.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[sprite.TexturePath], sprite.Width, sprite.Height));
+            using var image = NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"), new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         foreach (var icon in art.Icons)
         {
-            var rgba = PngRgba8.Decode(art.Files[icon.TexturePath], icon.Width, icon.Height);
+            var rgba = NativeImages.ReadPixels(art.Files[icon.TexturePath], icon.Width, icon.Height);
             for (int i = 0; i < rgba.Length; i += 4) if (rgba[i + 3] != 0)
                 for (int c = 0; c < 3; c++) { int v = rgba[i + c] >> 3; rgba[i + c] = (byte)((v << 3) | (v >> 2)); }
             using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, rgba);
@@ -41,20 +41,20 @@ public partial class CampaignView
         }
         foreach (var footprint in art.Footprints)
         {
-            using var image = Image.CreateFromData(footprint.Width, footprint.Height, false, Image.Format.Rgba8, PngRgba8.Decode(art.Files[footprint.TexturePath], footprint.Width, footprint.Height));
+            using var image = NativeImages.LoadPng(art.Files[footprint.TexturePath], footprint.Width, footprint.Height);
             _route22Footprints.Add(footprint.SourceSpeciesId, SceneTextures.FromImage(image));
         }
         foreach (int species in new[] { 65, 122, 131 }) _portraits.Add(species, _battleArt[(species, "front", false)].Texture);
         LoadSilphTrainerArt(); LoadSilphItemArt();
         _silphInterface = PretSilphInterface.Load(_root);
-        using (var image = Image.CreateFromData(16, 16, false, Image.Format.Rgba8, PngRgba8.Decode(_silphInterface.Files[_silphInterface.Up.TexturePath]))) _silphScrollUp = SceneTextures.FromImage(image);
-        using (var image = Image.CreateFromData(16, 16, false, Image.Format.Rgba8, PngRgba8.Decode(_silphInterface.Files[_silphInterface.Down.TexturePath]))) _silphScrollDown = SceneTextures.FromImage(image);
+        using (var image = NativeImages.LoadPng(_silphInterface.Files[_silphInterface.Up.TexturePath], 16, 16)) _silphScrollUp = SceneTextures.FromImage(image);
+        using (var image = NativeImages.LoadPng(_silphInterface.Files[_silphInterface.Down.TexturePath], 16, 16)) _silphScrollDown = SceneTextures.FromImage(image);
         var doors = PretSilphDoorArt.Load(_root);
         foreach (var tile in doors.Tiles) _silphDoorTiles.Add(tile.MetatileId, tile);
         for (int layer = 0; layer < 3; layer++)
         {
             var row = doors.Layers[layer];
-            using var image = Image.CreateFromData(row.Width, row.Height, false, Image.Format.Rgba8, PngRgba8.Decode(doors.Files[row.TexturePath]));
+            using var image = NativeImages.LoadPng(doors.Files[row.TexturePath], row.Width, row.Height);
             _silphDoorLayers[layer] = SceneTextures.FromImage(image);
         }
         Write("silphPresentation", new { enemyOnlySpecies = new[] { 65, 122 }, audibleOutputVerified = false, originalVisualParityVerified = false });
@@ -63,8 +63,8 @@ public partial class CampaignView
     {
         foreach (var row in PretSilphTrainerArt.Load(_root))
         {
-            byte[] rgba = row.Rgba.ToArray();
-            if(!(_forestTrainerPortraits.TryGetValue(row.Id, out var old))){ using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, rgba); _forestTrainerPortraits.Add(row.Id, (ImageTexture)SceneTextures.FromImage(image)); }
+            byte[] png = row.Png;
+            if(!(_forestTrainerPortraits.TryGetValue(row.Id, out var old))){ using var image = NativeImages.LoadPng(png, 64, 64); _forestTrainerPortraits.Add(row.Id, (ImageTexture)SceneTextures.FromImage(image)); }
         }
         _silphTrainerPortraits.Add("TRAINER_PIC_ROCKET_GRUNT_M", "rocket-grunt-m-front");
         _silphTrainerPortraits.Add("TRAINER_PIC_ROCKET_GRUNT_F", "rocket-grunt-f-front");
@@ -79,24 +79,13 @@ public partial class CampaignView
     private string? VisibleSilphTrainerClass() => _session.State.ForestTrainerBattle is { } battle &&
         _catalog.SilphTrainers?.Trainers.TryGetValue(battle.Trainer, out var trainer) == true ? trainer.TrainerClass switch
         { "TRAINER_CLASS_TEAM_ROCKET" => "TEAM ROCKET", "TRAINER_CLASS_SCIENTIST" => "SCIENTIST", "TRAINER_CLASS_RIVAL_LATE" => "RIVAL", "TRAINER_CLASS_BOSS" => "BOSS", "TRAINER_CLASS_JUGGLER" => "JUGGLER", _ => throw new InvalidDataException("Unsupported Silph trainer class.") } : null;
-    private byte[] SilphItemDisplayRgba(PretPewterMachineIcon icon)
-    {
-        byte[] rgba = ReadItemIconRgba("silph-item-art", icon);
-        // These three inherited Safari icons use the source-floor RGB555 expansion.
-        // Preserve that exact presentation (including transparent RGB) before byte comparison.
-        if (icon.Item.Value is "pret:ITEM_MAX_POTION" or "pret:ITEM_MAX_REVIVE" or "pret:ITEM_PROTEIN")
-            for (int i = 0; i < rgba.Length; i += 4)
-                for (int c = 0; c < 3; c++) rgba[i + c] = (byte)((rgba[i + c] >> 3) * 255 / 31);
-        return rgba;
-    }
     private void LoadSilphItemArt()
     {
         var items = _catalog.SilphItems ?? throw new InvalidDataException("Silph item metadata missing.");
         _silphItemArt = PretSilphItemArt.Load(_root);
         foreach (var icon in _silphItemArt.Icons)
         {
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, SilphItemDisplayRgba(icon));
-            if(!(_earlyItemIcons.TryGetValue(icon.Item, out var old)))_earlyItemIcons.Add(icon.Item, (ImageTexture)SceneTextures.FromImage(image));
+            if (!_earlyItemIcons.ContainsKey(icon.Item)) _earlyItemIcons.Add(icon.Item, ItemTexture("silph-item-art", icon));
         }
         var document = _questPocketUi ?? throw new InvalidDataException("Silph item pockets missing.");
         var position = document.Assets.Single(a => a.Id == document.Items[0].Icon);
@@ -105,8 +94,7 @@ public partial class CampaignView
             if (document.Items.Any(i => i.Id == id.Value)) continue;
             var metadata = items.Items.Single(i => i.Metadata.Item.Id == id).Metadata;
             var icon = _silphItemArt.Icons.Single(i => i.Item == id); string assetId = "silph-" + id.Value[10..].ToLowerInvariant();
-            using var image = Image.CreateFromData(icon.Width, icon.Height, false, Image.Format.Rgba8, SilphItemDisplayRgba(icon));
-            _questPocketTextures.Add(assetId, ImageTexture.CreateFromImage(image));
+            _questPocketTextures.Add(assetId, ItemTexture("silph-item-art", icon));
             document = document with { Items = document.Items.Add(new(id.Value, metadata.Item.SourceItemSymbol, metadata.Item.Name, metadata.Description, assetId, metadata.Item.FieldUseFunction)),
                 Assets = document.Assets.Add(new(assetId,icon.PngPath,icon.Width,icon.Height,position.X,position.Y)) };
         }

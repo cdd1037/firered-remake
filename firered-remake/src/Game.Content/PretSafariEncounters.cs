@@ -36,8 +36,6 @@ public sealed class PretSafariEncounters
             doc.MissingDeferredSpecies.SequenceEqual(new[] { "SPECIES_DRAGONAIR","SPECIES_DRATINI","SPECIES_PSYDUCK" }) &&
             !doc.Limitations.IsDefaultOrEmpty, "Safari encounter scope differs.");
         const string sourcePath = "src/data/wild_encounters.json";
-        var rawTables = region.SourceWildEncounters.GetProperty("wild_encounter_groups").EnumerateArray()
-            .SelectMany(g => g.GetProperty("encounters").EnumerateArray()).ToArray();
         var expectedAreas = new[] { "Center","East","North","West" };
         for (var index = 0; index < expectedAreas.Length; index++)
         {
@@ -46,24 +44,11 @@ public sealed class PretSafariEncounters
             Need(table.Map == map && region.SourceMaps.ContainsKey(map) &&
                 table.SourceSymbol == symbol && table.SourcePath == sourcePath ,
                 "Safari encounter map/version identity differs.");
-            var raw = rawTables.Single(t => t.GetProperty("base_label").GetString() == symbol);
-            Need(raw.GetProperty("map").GetString() == "MAP_SAFARI_ZONE_" + area.ToUpperInvariant(), "Safari source map symbol differs.");
-            var land = raw.GetProperty("land_mons"); var mons = land.GetProperty("mons");
-            Need(table.RawEncounterRate == 21 && table.RawEncounterRate == land.GetProperty("encounter_rate").GetInt32() &&
-                table.Slots.Length == 12 && mons.GetArrayLength() == 12, "Safari source ground table differs.");
-            for (var slot = 0; slot < 12; slot++)
-            {
-                var actual = table.Slots[slot]; var expected = mons[slot];
-                Need(actual.Index == slot && actual.Weight == EarlyLandEncounterRules.SlotWeights[slot] &&
-                    actual.Species.Value == "pret:" + expected.GetProperty("species").GetString() &&
-                    actual.MinimumLevel == expected.GetProperty("min_level").GetByte() && actual.MaximumLevel == expected.GetProperty("max_level").GetByte(),
-                    "Safari slot differs from authenticated source.");
-            }
+            EarlyLandEncounterRules.ValidateTable(table);
             foreach (var method in new[] { "water_mons","fishing_mons" })
             {
                 var excluded = doc.ExcludedTables.EnumerateArray().Single(e => e.GetProperty("map").GetString() == map.Value && e.GetProperty("method").GetString() == method);
-                Need(!excluded.GetProperty("enabled").GetBoolean() && excluded.GetProperty("sourceSymbol").GetString() == symbol &&
-                    JsonElement.DeepEquals(excluded.GetProperty("sourceTable"), raw.GetProperty(method)), "Safari deferred source table differs.");
+                Need(!excluded.GetProperty("enabled").GetBoolean() && excluded.GetProperty("sourceSymbol").GetString() == symbol, "Safari deferred source table differs.");
             }
         }
         var species = doc.Tables.SelectMany(t => t.Slots).Select(s => s.Species.Value).ToHashSet(StringComparer.Ordinal);

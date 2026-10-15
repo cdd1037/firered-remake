@@ -32,8 +32,8 @@ public partial class CampaignView
         {
             var icon=icons.Single(a=>a.Item==item.Item.Id);
             string id="city-service-"+item.Item.SourceItemSymbol;
-            using var image=Image.CreateFromData(icon.Width,icon.Height,false,Image.Format.Rgba8,ReadItemIconRgba(icon.Item.Value switch { "pret:ITEM_GOOD_ROD" => "good-rod-service", "pret:ITEM_SUPER_ROD" => "super-rod-service", "pret:ITEM_COIN_CASE" => "game-corner-coins", _ => "city-services" }, icon));
-            _questPocketTextures.Add(id,ImageTexture.CreateFromImage(image));
+            
+            _questPocketTextures.Add(id,ItemTexture(icon.Item.Value switch { "pret:ITEM_GOOD_ROD" => "good-rod-service", "pret:ITEM_SUPER_ROD" => "super-rod-service", "pret:ITEM_COIN_CASE" => "game-corner-coins", _ => "city-services" }, icon));
             document=document with
             {
                 Assets=document.Assets.Add(new(id,icon.PngPath,icon.Width,icon.Height,position.X,position.Y)),
@@ -48,7 +48,7 @@ public partial class CampaignView
         var source=PretCityCycleArt.Load(_root);
         foreach(var asset in source.Assets)
         {
-            var pixels=source.ReadRgba(asset.Gender);
+            var pixels=NativeImages.ReadPixels(source.ReadTexture(asset.Gender));
             // Match the original 5-bit display expansion already used by the walking avatar.
             ExpandCityPlayerPixels(pixels);
             using var image=Image.CreateFromData(asset.Width,asset.Height,false,Image.Format.Rgba8,pixels);
@@ -57,8 +57,9 @@ public partial class CampaignView
         }
         foreach(var asset in source.Fishing.Assets)
         {
-            var pixels=source.ReadFishingRgba(asset.Gender);ExpandCityPlayerPixels(pixels);
-            using var image=Image.CreateFromData(asset.Width,asset.Height,false,Image.Format.Rgba8,pixels);
+            var pixels = NativeImages.ReadPixels(source.ReadFishingTexture(asset.Gender), asset.Width, asset.Height);
+            ExpandCityPlayerPixels(pixels);
+            using var image = Image.CreateFromData(asset.Width, asset.Height, false, Image.Format.Rgba8, pixels);
             _cityFishingSprites.Add(asset.Gender,new(ImageTexture.CreateFromImage(image),asset.FrameWidth,asset.FrameHeight,
                 asset.FrameCount,new(8-asset.DrawOffsetFromTileOrigin.X,8-asset.DrawOffsetFromTileOrigin.Y),false));
         }

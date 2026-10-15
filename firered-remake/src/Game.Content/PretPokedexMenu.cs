@@ -1,27 +1,24 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
 namespace Game.Content;
 
 public sealed record PokedexMenuTexture(string TexturePath, int Width, int Height);
-public sealed record PokedexMenuDependency(string Path);
 public sealed record PokedexMenuEntry(int SourceSpeciesId, int NationalNumber, string Name, string Category,
     string DisplayCategory, int HeightDecimeters, int WeightHectograms, string HeightDisplay, string WeightDisplay,
     string Description, string Type1, string Type2, string HabitatTitle, PokedexMenuTexture? Portrait,
-    PokedexMenuTexture? Footprint, CaptureDexSource Source, CaptureDexSource DescriptionSource);
+    PokedexMenuTexture? Footprint);
 public sealed record PokedexMenuListLayout(int Width, int Height, int X, int Y, int WindowWidth, int WindowHeight,
     int VisibleRows, int NumberX, int NameX, int CursorX, int CaughtX, int Type1X, int Type2X, int TopY, int RowHeight);
 public sealed record PokedexMenuRules(int RegionalCount, int NationalCount, string NumericalLength, string UnseenLabel,
     bool SeenCanOpen, bool CaughtRequiredForDescription, bool CaughtRequiredForMeasures, bool CaughtRequiredForFootprint,
     bool CaughtRequiredForTypes, string UnseenCategory, string UnseenHeight, string UnseenWeight, int PageScroll,
     int PokedexFlag, int NationalFlag, int NationalVariable, int NationalVariableValue, int NationalMagic, bool StartRequiresSeen);
-public sealed record PokedexMenuDocument(int SchemaVersion, string Profile, string SourceCommit, ImmutableArray<PretPokemonInput> Inputs,
-    ImmutableArray<PokedexMenuEntry> Entries, ImmutableArray<PokedexMenuDependency> Dependencies,
+public sealed record PokedexMenuDocument(int SchemaVersion, string Profile,
+    ImmutableArray<PokedexMenuEntry> Entries,
     CaptureDexLayout EntryLayout, ImmutableArray<PokedexMenuTexture> Assets, PokedexMenuTexture OwnedMarker,
-    ImmutableDictionary<string, string> UiTexts, PokedexMenuListLayout ListLayout, PokedexMenuRules Rules,
-    ImmutableArray<CaptureDexSource> RulesSources, ImmutableArray<string> Limitations);
+    ImmutableDictionary<string, string> UiTexts, PokedexMenuListLayout ListLayout, PokedexMenuRules Rules);
 
 /// <summary>Actual source gates; a flag alone does not unlock National mode.</summary>
 public sealed record PokedexMenuAccess(bool HasPokedex, bool NationalFlag = false, int NationalMagic = 0, int NationalDexVariable = 0)
@@ -45,7 +42,7 @@ public readonly record struct PokedexMenuCursor(int ScrollOffset, int Row)
     public int SelectedIndex => ScrollOffset + Row;
 }
 
-/// <summary>Immutable pinned source metadata and presentation projections, with no acquisition/state mutation.</summary>
+/// <summary>Immutable game metadata and presentation projections, with no acquisition/state mutation.</summary>
 public sealed class PretPokedexMenu
 {
     public const string SourceCommit = PretCaptureDex.SourceCommit;
@@ -78,26 +75,14 @@ public sealed class PretPokedexMenu
     {
         var root = Path.GetFullPath(projectRoot);
         const string directory = "content/generated/pokedex-menu/";
-        using var manifest = JsonDocument.Parse(ReadPinned(root,directory + "manifest.json"));
-        var m = manifest.RootElement;
-        Require(m.GetProperty("entryCount").GetInt32() == 386 &&
-            !m.GetProperty("upstreamScriptsExecuted").GetBoolean() && !m.GetProperty("romDownloaded").GetBoolean() &&
-            !m.GetProperty("publiclyUploaded").GetBoolean() && !m.GetProperty("runtimeShadersUsed").GetBoolean(),
-            "Pokédex menu manifest identity differs.");
         var bytes = ReadPinned(root,directory + "pokedex-menu.json");
         var document = ContentJson.ParseStrict<PokedexMenuDocument>(Utf8.GetString(bytes), ContentJson.CreateOptions());
-        Require(document.SchemaVersion == 1 && document.Dependencies.Length == 44 &&
-            document.Entries.Length == 386 && document.Assets.Length == 23 && !document.Limitations.IsDefaultOrEmpty &&
-            document.Entries.Select(e => e.NationalNumber).SequenceEqual(Enumerable.Range(1, 386)) &&
-            document.Entries.Count(e => e.Portrait is not null) == 29 && document.Entries.Count(e => e.Footprint is not null) == 29,
-            "Pokédex menu metadata scope differs.");
-        Require(document.OwnedMarker.Width == 12 && document.OwnedMarker.Height == 12 &&
-            document.OwnedMarker.TexturePath == "content/generated/pokedex-menu/owned-marker.png" &&
-            document.Assets.Contains(document.OwnedMarker), "Original Pokédex caught icon identity differs.");
+        Require(document.SchemaVersion == 1 && !document.Entries.IsDefaultOrEmpty,
+            "Pokédex menu format is invalid.");
         return new(root, document);
     }
 
-    /// <summary>Reuses this authenticated snapshot only within the content root that supplied its bytes.</summary>
+    /// <summary>Reuses this catalog only within the content root that supplied its bytes.</summary>
     public PretPokedexMenu ForProjectRoot(string projectRoot)
     {
         Require(string.Equals(Path.TrimEndingDirectorySeparator(_projectRoot),

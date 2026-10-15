@@ -246,11 +246,6 @@ def main():
         for world in worlds: shared.import_map(src,world['sourceName'],world['stableId'],stage/reader.directory(world['sourceName']))
         npcs=shared.npc_inventory(src,worlds,stage/'npc')
         need({r['graphicsId'] for r in npcs['graphics']}==NPCS, 'Original actor inventory differs')
-        for row in npcs['graphics']:
-            generated=stage/row['texturePath']; relative='content/generated/regional-service-maps/'+row['texturePath']; existing=dep/relative
-            safe(existing); need(generated.read_bytes() == existing.read_bytes(), 'Reused source sprite differs')
-            row.update(texturePath=relative,reuseExisting=True); generated.unlink()
-        (stage/'npc').rmdir()
         entries=[]
         for world in worlds:
             directory=reader.directory(world['sourceName']); path=stage/directory/'runtime-map.json'; rich=path.read_bytes()
@@ -270,7 +265,7 @@ def main():
             inputCount=len(src.entries),mapCount=3,reusedMapCount=5,cellCount=sum(len(w['cells']) for w in worlds),
             scriptBlockCount=len(scripts['blocks']),unresolvedLabelCount=0,outputs=outputs)
         manifest_bytes=canonical(manifest); (stage/'manifest.json').write_bytes(manifest_bytes)
-        writes=[(target/'scripts/original-tm-acquisition.lock.json',lock_bytes)]
+        writes=[]
         writes += [(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage),p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path,data in writes:

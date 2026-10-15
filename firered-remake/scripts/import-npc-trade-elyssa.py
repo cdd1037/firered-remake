@@ -22,10 +22,7 @@ MAP = 'VermilionCity_House2'
 MAP_ID = 'map.vermilion-city-house2'
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding1': 'secondary/generic_building_1'}
 CITY_PATH = 'content/generated/vermilion-region/vermilion-city/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_LITTLE_GIRL': 'content/generated/vermilion-region/npc/little-girl.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/silph-region/npc/red-normal.png',
-}
+NPC_REUSE = {'OBJ_EVENT_GFX_LITTLE_GIRL', 'OBJ_EVENT_GFX_RED_NORMAL'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -149,7 +146,7 @@ def main():
             inputCount=len(src.entries), mapCount=1, cellCount=99, borderCellCount=4, objectCount=1,
             itemCount=1, reusedNpcGraphicsCount=2, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage/'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target/'scripts/npc-trade-elyssa.lock.json', lock_bytes)]
+        writes = []
         writes += [(target/'content/raw/pokefirered/037335f4'/p, b) for p,b in sorted(src.data.items())]
         writes += [(target/'content/generated'/PACKAGE/p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

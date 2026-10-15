@@ -28,15 +28,7 @@ DIRECTORIES = ['saffron-city-copycats-house-1f', 'saffron-city-copycats-house-2f
 TILESETS = {'gTileset_Building': 'primary/building', 'gTileset_GenericBuilding1': 'secondary/generic_building_1'}
 TOWN_PACKAGE = 'content/generated/silph-region'
 TOWN_RESOURCE = 'saffron-city/runtime-map.json'
-NPC_REUSE = {
-    'OBJ_EVENT_GFX_BALDING_MAN': 'content/generated/pewter-region/npc/balding-man.png',
-    'OBJ_EVENT_GFX_WOMAN_3': 'content/generated/viridian-region/npc/woman-3.png',
-    'OBJ_EVENT_GFX_CHANSEY': 'content/generated/fuchsia-route-region/npc/chansey.png',
-    'OBJ_EVENT_GFX_DODUO': 'content/generated/first-sevii-region/npc/doduo.png',
-    'OBJ_EVENT_GFX_PIKACHU': 'content/generated/city-services/npc/pikachu.png',
-    'OBJ_EVENT_GFX_JIGGLYPUFF': 'content/generated/pewter-region/npc/jigglypuff.png',
-    'OBJ_EVENT_GFX_LITTLE_GIRL': 'content/generated/pewter-region/npc/little-girl.png',
-    'OBJ_EVENT_GFX_RED_NORMAL': 'content/generated/city-services/npc/red-normal.png'}
+NPC_REUSE = {'OBJ_EVENT_GFX_BALDING_MAN', 'OBJ_EVENT_GFX_CHANSEY', 'OBJ_EVENT_GFX_DODUO', 'OBJ_EVENT_GFX_JIGGLYPUFF', 'OBJ_EVENT_GFX_LITTLE_GIRL', 'OBJ_EVENT_GFX_PIKACHU', 'OBJ_EVENT_GFX_RED_NORMAL', 'OBJ_EVENT_GFX_WOMAN_3'}
 
 
 def canonical(value): return (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
@@ -133,12 +125,6 @@ def main():
         for name, directory in zip(MAPS, DIRECTORIES, strict=True): shared.import_map(src, name, 'map.' + directory, stage / directory)
         npcs = shared.npc_inventory(src, worlds, stage / 'npc')
         need({r['graphicsId'] for r in npcs['graphics']} == set(NPC_REUSE), 'House actor cohort differs')
-        for row in npcs['graphics']:
-            path = NPC_REUSE[row['graphicsId']]; existing = current / path; safe(existing)
-            rendered = stage / row['texturePath']
-            need(rendered.read_bytes() == existing.read_bytes(), 'Reused actor differs')
-            row.update(texturePath=path,  reuseExisting=True); rendered.unlink()
-        (stage / 'npc').rmdir()
         entries = []
         for world, directory in zip(worlds, DIRECTORIES, strict=True):
             path = stage / directory / 'runtime-map.json'; rich = path.read_bytes()
@@ -161,8 +147,7 @@ def main():
             cellCount=238, borderCellCount=8, directedWarpCount=6, objectCount=7, reusedNpcGraphicsCount=8,
             scriptBlockCount=len(scripts['blocks']), unresolvedLabelCount=0, outputs=outputs)
         manifest_bytes = canonical(manifest); (stage / 'manifest.json').write_bytes(manifest_bytes)
-        writes = [(target / 'scripts/copycat-house.lock.json', lock_bytes),
-                  (target / 'scripts/copycat-house.contract.json', canonical(contract))]
+        writes = [(target / 'scripts/copycat-house.contract.json', canonical(contract))]
         writes += [(target / 'content/raw/pokefirered/037335f4' / p, b) for p, b in sorted(src.data.items())]
         writes += [(target / 'content/generated' / PACKAGE / p.relative_to(stage), p.read_bytes()) for p in sorted(stage.rglob('*')) if p.is_file()]
         for path, data in writes:

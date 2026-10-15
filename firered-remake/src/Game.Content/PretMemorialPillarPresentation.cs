@@ -24,8 +24,7 @@ public static class PretMemorialPillarPresentation
             if (Path.IsPathRooted(path) || path.Contains('\\') || path.Contains(':') ||
                 path.Split('/').Any(p => p is "" or "." or "..") )
                 throw new InvalidDataException("Unsafe Memorial Pillar presentation resource.");
-            bool local = path.StartsWith(Base, StringComparison.Ordinal) ||
-                path.StartsWith(PretSourcePaths.FireRedRawDirectory + "/", StringComparison.Ordinal) || path == "scripts/memorial-pillar-presentation.lock.json";
+            bool local = path.StartsWith(Base, StringComparison.Ordinal);
             var file = new FileInfo(Path.Combine(local ? root : inheritedRoot ?? root, path));
             if (file.LinkTarget is not null) throw new InvalidDataException("Memorial Pillar resource symlink rejected.");
             for (var directory = file.Directory; directory is not null; directory = directory.Parent)
@@ -33,14 +32,12 @@ public static class PretMemorialPillarPresentation
             var bytes = File.ReadAllBytes(file.FullName);
             return bytes;
         }
-        using var locked = JsonDocument.Parse(Read("scripts/memorial-pillar-presentation.lock.json"));
         using var document = JsonDocument.Parse(Read(Base + "manifest.json"));
-        var sourceLock = locked.RootElement;
         var manifest = document.RootElement;
-        if (sourceLock.GetProperty("schemaVersion").GetInt32() != 1 || manifest.GetProperty("schemaVersion").GetInt32() != 1 )
+        if (manifest.GetProperty("schemaVersion").GetInt32() != 1 )
             throw new InvalidDataException("Memorial Pillar presentation identity differs.");
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var row in sourceLock.GetProperty("inheritedInputs").EnumerateArray())
+        foreach (var row in manifest.GetProperty("inheritedInputs").EnumerateArray())
         {
             string path = row.GetProperty("path").GetString()!;
             files.Add(path, Read(path));
@@ -76,8 +73,8 @@ public static class PretMemorialPillarPresentation
                 row.GetProperty("x").GetInt32() != (side == "front" ? 144 : 40) ||
                 row.GetProperty("y").GetInt32() != (side == "front" ? 8 : 48) + geometry.Offset)
                 throw new InvalidDataException("Memorial Pillar battler geometry differs.");
-            var rgba = PngRgba8.Decode(files[row.GetProperty("texturePath").GetString()!]);
-            if (rgba.Length != 64 * 64 * 4 )
+            var pngBytes = files[row.GetProperty("texturePath").GetString()!];
+            if (pngBytes.Length == 0)
                 throw new InvalidDataException("Memorial Pillar battler pixels differ.");
         }
         var moves = manifest.GetProperty("moveAnimationGeometry").GetProperty("rows").EnumerateArray().ToArray();

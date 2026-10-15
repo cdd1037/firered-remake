@@ -9,8 +9,7 @@ using Game.Domain.Ids;
 namespace Game.Content;
 
 public sealed record PretRockTunnelItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
     ImmutableArray<PretMtMoonPickup> Pickups, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates seven RockTunnel item declarations, icons and fifteen source pickups.</summary>
@@ -26,7 +25,7 @@ public static class PretRockTunnelItems
         var document = ContentJson.ParseStrict<PretRockTunnelItemsDocument>(json, options);
         Require(document.SchemaVersion == 1 && document.Items.Length == 7 && document.Icons.Length == 7 &&
             document.Pickups.Length == 15 &&
-            !document.RulesSources.IsDefaultOrEmpty && !document.Limitations.IsDefaultOrEmpty,
+            !document.Limitations.IsDefaultOrEmpty,
             "RockTunnel item scope differs.");
         string[] items = ["MAX_ETHER", "PERSIM_BERRY", "NANAB_BERRY", "REVIVE", "EVERSTONE", "PEARL", "HARD_STONE"];
         var definitions = document.Items;

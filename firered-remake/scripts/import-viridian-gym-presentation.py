@@ -5,10 +5,9 @@ import io
 import json
 import pathlib
 import re
-import struct
 import subprocess
-import zlib
 from PIL import Image
+from item_icon_exports import decode_icon_page
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -30,6 +29,8 @@ CUES = ['MUS_GYM', 'MUS_ENCOUNTER_BOY', 'MUS_ENCOUNTER_ROCKET', 'MUS_VS_TRAINER'
     'MUS_VS_GYM_LEADER', 'MUS_VICTORY_TRAINER', 'MUS_VICTORY_GYM_LEADER', 'MUS_OBTAIN_BADGE',
     'MUS_LEVEL_UP', 'SE_M_RAZOR_WIND2']
 
+from image_io import png as encode_rgba_png
+
 def require(value, message):
     if not value:
         raise ValueError(message)
@@ -45,11 +46,7 @@ def safe(root, relative):
     require(not any(p.is_symlink() for p in (path, *path.parents)), 'Resource symlink rejected')
     return path
 
-def png(width, height, rgba):
-    def chunk(kind, data):
-        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
-    scan = b''.join(b'\0' + rgba[y*width*4:(y+1)*width*4] for y in range(height))
-    return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(scan, 9)) + chunk(b'IEND', b'')
+png = encode_rgba_png
 
 def pixels(image, palette):
     im = Image.open(io.BytesIO(image))
@@ -124,7 +121,8 @@ def build(lock, raw, reused):
     for symbol in ['TM26', 'TM28']:
         require(re.search(r'\[ITEM_' + symbol + r'\]\s*= \{gItemIcon_TMHM, gItemIconPalette_GroundTMHM\}', source('src/data/item_icon_table.h')), 'Ground machine icon binding differs')
     size, icon = pixels(raw['graphics/items/icons/tm_hm.png'], raw['graphics/items/icon_palettes/ground_tm_hm.pal'])
-    old_icon = Image.open(io.BytesIO(reused['content/generated/bill-machines/item_tm28.png'])).convert('RGBA')
+    icon_row = next(i for i in json.loads(reused['content/generated/bill-machines/bill-machines.json'])['icons'] if i['item']['value']=='pret:ITEM_TM28')
+    old_icon = decode_icon_page(reused[icon_row['pngPath']],icon_row)
     require(size == old_icon.size == (24, 24) and old_icon.tobytes() == icon, 'Inherited Ground TM pixels differ')
     card = json.loads(reused['content/generated/trainer-card/trainer-card.json'])
     require(any(b['flag'] == 'FLAG_BADGE08_GET' and b['assetId'] == 'badge-8' for b in card['layout']['badges']), 'Earth Badge art missing')

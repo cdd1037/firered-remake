@@ -17,6 +17,6 @@ internal static class RockTunnelPresentationAssets
         var m=manifest.RootElement;        if(m.GetProperty("schemaVersion").GetInt32()!=1||m.GetProperty("profile").GetString()!="firered-rocktunnel-art-v1")throw new InvalidDataException("RockTunnel art provenance differs.");
         var result=new Dictionary<string,byte[]>(StringComparer.Ordinal);
         foreach(var row in m.GetProperty("outputs").EnumerateArray()){string p=row.GetProperty("path").GetString()!;result.Add(p,Read("content/generated/rocktunnel-art/"+p));}
-        if(PngRgba8.Decode(result["pokemaniac-front.png"]).Length!=16384||PngRgba8.Decode(result["indoor-streaks.png"]).Length!=81920)throw new InvalidDataException("RockTunnel art inventory differs.");return result;
+        if(!NativeImages.HasSize(result["pokemaniac-front.png"],64,64)||!NativeImages.HasSize(result["indoor-streaks.png"],256,80))throw new InvalidDataException("RockTunnel art inventory differs.");return result;
     }
 }

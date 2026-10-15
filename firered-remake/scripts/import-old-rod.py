@@ -40,7 +40,12 @@ def convert(sources):
  if not skip or 'task->tStep += 3;' not in skip[1] or 'gMain.newKeys' in skip[1]: raise ValueError('Source skips reel window through Fishing7')
  magikarp=re.search(r'^    \[SPECIES_MAGIKARP\] =\s*\n    \{\n(.*?)^    \},',sources['src/data/pokemon/species_info.h'].decode(),re.M|re.S)
  if not magikarp or '.itemCommon = ITEM_NONE,' not in magikarp[1] or '.itemRare = ITEM_NONE,' not in magikarp[1]: raise ValueError('Magikarp held items differ')
- return dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tables=tables,castDelayFrames=60,dotDelayFrames=20,firstRoundMinimumDots=4,firstRoundMaximumDots=10,biteDrawBound=2,biteSuccessRoll=0,reelReactionReachable=False,inFlightCancelSupported=False,minimumRoundDrawBound=1,heldItemDrawBound=100,heldItem='ITEM_NONE',limitations=['On-foot Old Rod only; Surf, Good Rod and Super Rod are not admitted.', 'One invocation corresponds to one source Task_Fishing update. Rendering and text-completion inputs do not consume gameplay RNG.', 'Original VBlank Random() and wall-clock draw interleaving are intentionally excluded from this deterministic command projection.', 'No reel input or retry round is executed: FireRed Fishing7 jumps directly to Fishing10.', 'Encounter creation does not guarantee a successful capture; ordinary battle/capture rules follow separately.'])
+ texts={}
+ for symbol in ('gText_PokemonOnHook','gText_NotEvenANibble'):
+  matches=re.findall(r'^const u8 '+symbol+r'\[\] = _\("([^"]*)"\);$',sources['src/strings.c'].decode(),re.M)
+  if len(matches)!=1 or not matches[0].endswith('{PAUSE_UNTIL_PRESS}'): raise ValueError('Old Rod result text control differs')
+  texts[symbol]=matches[0]
+ return dict(texts=texts,schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,tables=tables,castDelayFrames=60,dotDelayFrames=20,firstRoundMinimumDots=4,firstRoundMaximumDots=10,biteDrawBound=2,biteSuccessRoll=0,reelReactionReachable=False,inFlightCancelSupported=False,minimumRoundDrawBound=1,heldItemDrawBound=100,heldItem='ITEM_NONE',limitations=['On-foot Old Rod only; Surf, Good Rod and Super Rod are not admitted.', 'One invocation corresponds to one source Task_Fishing update. Rendering and text-completion inputs do not consume gameplay RNG.', 'Original VBlank Random() and wall-clock draw interleaving are intentionally excluded from this deterministic command projection.', 'No reel input or retry round is executed: FireRed Fishing7 jumps directly to Fishing10.', 'Encounter creation does not guarantee a successful capture; ordinary battle/capture rules follow separately.'])
 
 def run(repo,raw,out,check=False):
  raw,out=pathlib.Path(raw).absolute(),pathlib.Path(out).absolute()
@@ -52,7 +57,7 @@ def run(repo,raw,out,check=False):
  if repo:
   repo=pathlib.Path(repo).absolute()
   if overlap(repo,raw) or overlap(repo,out): raise ValueError('Reference/output paths overlap')
- lb=safe(ROOT,'content/sources/old-rod.lock.json').read_bytes()
+ lb=safe(ROOT,'scripts/import-config/old-rod.json').read_bytes()
  lock=json.loads(lb)
  if (lock['commit'], lock['profile'], lock['repository']) != (COMMIT, PROFILE, 'pret/pokefirered') or tuple((x['path'] for x in lock['files'])) != PATHS: raise ValueError('Source identity differs')
  sources={}

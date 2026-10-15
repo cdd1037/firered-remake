@@ -5,7 +5,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import ast
 import collections
@@ -62,8 +62,6 @@ def read_lock(path=None):
     return lock
 
 
-def raw_manifest(lock):
-    return dict(schemaVersion=1, commit=COMMIT,  inputCount=len(lock['files']))
 
 
 def materialize(raw, reference_repo, lock_path=None):
@@ -81,13 +79,10 @@ def materialize(raw, reference_repo, lock_path=None):
         safe(raw, raw / entry['path'])
         data = git('cat-file', 'blob', COMMIT + ':' + entry['path'])
         verified[entry['path']] = data
-    safe(raw_metadata_directory(raw, 'pokemon-storage'), raw_metadata_directory(raw, 'pokemon-storage') / 'manifest.json')
     for path, data in verified.items():
         target = raw / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    raw_metadata_directory(raw, 'pokemon-storage').mkdir(parents=True, exist_ok=True)
-    (raw_metadata_directory(raw, 'pokemon-storage') / 'manifest.json').write_text(canonical(raw_manifest(lock)), encoding='utf-8')
 
 
 class Source:

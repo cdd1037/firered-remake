@@ -2,7 +2,7 @@
 """Rebuild the bounded first-Sevii presentation from immutable local Git blobs.
 No ROM download, source execution, audio rendering, or map rerendering.
 """
-import argparse,  io, json, pathlib, re, struct, subprocess, zlib
+import argparse, io, json, pathlib, re, struct, subprocess
 from PIL import Image
 
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -14,6 +14,8 @@ PORTRAITS = (('aroma_lady','AromaLady'),('biker','Biker'),('cue_ball','CueBall')
 ITEMS = ('METEORITE','TRI_PASS','IAPAPA_BERRY','MAX_ELIXIR','RAZZ_BERRY','PINAP_BERRY','FRESH_WATER','SODA_POP')
 CUES = ('MUS_SEVII_123','MUS_NET_CENTER','SE_SHIP')
 
+from image_io import png as encode_rgba_png
+
 def need(ok, message):
     if not ok: raise ValueError(message)
 def canonical(d): return (json.dumps(d,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n').encode()
@@ -22,13 +24,7 @@ def safe(root, rel):
     p=pathlib.Path(root).absolute()/rel
     need(not any(x.is_symlink() for x in (p,*p.parents)), 'Symlink rejected')
     return p
-def png(w,h,rgba):
-    def chunk(t,d): return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
-    scan=b''.join(b'\0'+rgba[y*w*4:(y+1)*w*4] for y in range(h))
-    # Uncompressed zlib blocks keep the byte identity independent of compressor versions.
-    chunks=[scan[i:i+65535] for i in range(0,len(scan),65535)]
-    compressed=b'\x78\x01'+b''.join(bytes([int(i==len(chunks)-1)])+struct.pack('<HH',len(b),len(b)^65535)+b for i,b in enumerate(chunks))+struct.pack('>I',zlib.adler32(scan)&0xffffffff)
-    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0,0))+chunk(b'IDAT',compressed)+chunk(b'IEND',b'')
+png = encode_rgba_png
 
 class Source:
     def __init__(self, root, reference):

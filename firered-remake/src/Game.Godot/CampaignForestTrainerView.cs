@@ -25,7 +25,7 @@ public partial class CampaignView
         if (!_catalog.ForestTrainersEnabled) return;
         foreach (var asset in PretForestTrainerArt.Load(_root).Concat(_catalog.PewterEnabled?PretPewterTrainerArt.Load(_root):[]).Concat(_catalog.Route22Enabled?PretRoute22TrainerArt.Load(_root):[]).Concat(_catalog.Route3Enabled?PretRoute3TrainerArt.Load(_root):[]))
         {
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, asset.Rgba);
+            using var image = NativeImages.LoadPng(asset.Png, 64, 64);
             _forestTrainerPortraits.Add(asset.Id, ImageTexture.CreateFromImage(image));
         }
     }

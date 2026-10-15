@@ -5,7 +5,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse,importlib.util,json,pathlib,re,struct,subprocess,sys
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parent.parent
@@ -49,7 +49,6 @@ def safe(root,relative=None):
  if any(p.is_symlink() for p in [target,*target.parents]):raise ValueError('Symlink path')
  return target
 
-def raw_manifest():return canonical(dict(schemaVersion=1,profile=PROFILE,commit=COMMIT,inputCount=len(PATHS)))
 def load_sources(lock,raw,repo):
  out={}
  for e in lock['files']:
@@ -129,11 +128,11 @@ def import_content(raw,out,repo=None,lock_path=None):
  raw=safe(raw);out=safe(out)
  if raw.is_relative_to(out) or out.is_relative_to(raw):raise ValueError('Overlapping directories')
  if repo is not None and any(p.resolve().is_relative_to(pathlib.Path(repo).resolve()) or pathlib.Path(repo).resolve().is_relative_to(p.resolve()) for p in (raw,out)):raise ValueError('Output overlaps source repository')
- lb=safe(lock_path or ROOT / 'content/first-sevii-town-map-source-lock.json').read_bytes()
+ lb=safe(lock_path or ROOT / 'scripts/import-config/first-sevii-town-map.json').read_bytes()
  lock=json.loads(lb,object_pairs_hook=pairs)
  if (lock['commit'], lock['profile'], lock['repository'], lock['gameEdition'], lock['romRevision']) != (COMMIT, PROFILE, 'pret/pokefirered', 'FIRERED', 0) or len(lock['files']) != len(PATHS) or {e['path'] for e in lock['files']} != PATHS:raise ValueError('Source profile differs')
  s=load_sources(lock,raw,repo);outfiles=convert(s)
- material=[(raw,p,b) for p,b in s.items()]+[(raw_metadata_directory(raw, 'first-sevii-town-map'),'manifest.json',raw_manifest())] if repo is not None else []
+ material=[(raw,p,b) for p,b in s.items()]+[] if repo is not None else []
  material += [(out,p,b) for p,b in outfiles.items()]
  for root,p,b in material:
   target=safe(root,p);stage=safe(root,p+'.tmp');target.parent.mkdir(parents=True,exist_ok=True);stage.write_bytes(b);stage.replace(target)

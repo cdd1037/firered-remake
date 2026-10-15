@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Game.Domain.Encounters;
 using Game.Domain.Ids;
 
@@ -12,7 +10,7 @@ public sealed record OldRodDocument(int SchemaVersion, string Profile, string So
     ImmutableArray<OldRodEncounterTable> Tables, int CastDelayFrames, int DotDelayFrames,
     int FirstRoundMinimumDots, int FirstRoundMaximumDots, int BiteDrawBound, int BiteSuccessRoll,
     bool ReelReactionReachable, bool InFlightCancelSupported, int MinimumRoundDrawBound,
-    int HeldItemDrawBound, string HeldItem, ImmutableArray<string> Limitations);
+    int HeldItemDrawBound, string HeldItem, ImmutableDictionary<string, string> Texts, ImmutableArray<string> Limitations);
 
 /// <summary>Authenticates both source evidence and the exact bounded Old Rod output.</summary>
 public sealed class PretOldRod
@@ -30,33 +28,18 @@ public sealed class PretOldRod
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock = JsonDocument.Parse(Read("content/sources/old-rod.lock.json"));
-        var s = sourceLock.RootElement;
-        if (s.GetProperty("schemaVersion").GetInt32() != 1 )
-            throw new InvalidDataException("Old Rod source identity differs.");
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        foreach (var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p = f.GetProperty("path").GetString()!;
-                    var b = Read(PretSourcePaths.FireRedRawDirectory + "/" + p);
-            if (p == "src/strings.c")
-                        foreach (string symbol in new[] { "gText_PokemonOnHook","gText_NotEvenANibble" })
-                {
-                    var match = Regex.Match(Encoding.UTF8.GetString(b), "^const u8 " + symbol + @"\[\] = _\(""([^""]*)""\);$", RegexOptions.Multiline);
-                    if (!match.Success || !match.Groups[1].Value.EndsWith("{PAUSE_UNTIL_PRESS}", StringComparison.Ordinal))
-                        throw new InvalidDataException("Old Rod result text must preserve source pause-for-button control.");
-                    texts.Add(symbol, match.Groups[1].Value);
-                }
-        }
-                var document = ContentJson.ParseStrict<OldRodDocument>(Encoding.UTF8.GetString(Read("content/generated/old-rod/old-rod.json")), ContentJson.CreateOptions());
+        var document = ContentJson.ParseStrict<OldRodDocument>(Encoding.UTF8.GetString(Read("content/generated/old-rod/old-rod.json")), ContentJson.CreateOptions());
                 if (document.SchemaVersion != 1 ||
             document.Tables.IsDefault || document.Tables.Length != 10 || document.CastDelayFrames != 60 || document.DotDelayFrames != 20 ||
             document.FirstRoundMinimumDots != 4 || document.FirstRoundMaximumDots != 10 || document.BiteDrawBound != 2 || document.BiteSuccessRoll != 0 ||
             document.ReelReactionReachable || document.InFlightCancelSupported || document.MinimumRoundDrawBound != 1 ||
             document.HeldItemDrawBound != 100 || document.HeldItem != "ITEM_NONE" || document.Limitations.IsDefaultOrEmpty)
             throw new InvalidDataException("Old Rod source scope differs.");
+        foreach (string symbol in new[] { "gText_PokemonOnHook", "gText_NotEvenANibble" })
+            if (!document.Texts.TryGetValue(symbol, out var text) || !text.EndsWith("{PAUSE_UNTIL_PRESS}", StringComparison.Ordinal))
+                throw new InvalidDataException("Old Rod result text must preserve pause-for-button control.");
         foreach (var table in document.Tables) OldRodEncounterRules.ValidateTable(table);
-                return new(document.Tables.ToImmutableDictionary(t => t.Map),texts.ToImmutable());
+                return new(document.Tables.ToImmutableDictionary(t => t.Map),document.Texts);
     }
 
     private static string SafeFile(string root, string relative)

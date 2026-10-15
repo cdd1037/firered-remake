@@ -39,10 +39,9 @@ public partial class CampaignView
         if (!_session.IsCurrentGame || !_catalog.PowerPlantEnabled)
             throw new InvalidDataException("Trainer Tower requires the current Power Plant presentation predecessor.");
         var catalog = PretTrainerTowerPresentation.Load(_root); _trainerTowerArt = catalog;
-        byte[] Pixels(JsonElement row) => PngRgba8.Decode(File.ReadAllBytes(Path.Combine(_root, row.GetProperty("texturePath").GetString()!)), row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
         Texture2D TextureFor(JsonElement row)
         {
-            using var image = Image.CreateFromData(row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32(), false, Image.Format.Rgba8, Pixels(row));
+            using var image = NativeImages.LoadPng(File.ReadAllBytes(Path.Combine(_root, row.GetProperty("texturePath").GetString()!)), row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
             return SceneTextures.FromImage(image);
         }
         foreach (var row in catalog.GetProperty("sprites").EnumerateArray())

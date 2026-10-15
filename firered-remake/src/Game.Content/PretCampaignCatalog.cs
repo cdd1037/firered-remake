@@ -280,7 +280,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         PretPokemonLeagueRegion pokemonLeague,
         PokemonLeagueTrainerCatalog pokemonLeagueTrainers,
         PokemonLeagueOpponentPokemonCatalog pokemonLeagueOpponents,
-        PretNationalDexSource nationalDexSource,
+        bool nationalDexEnabled,
         PretSeviiRubyRegion seviiRuby,
         SeviiRubyOwnedPokemonCatalog seviiRubyOwned,
         SeviiRubyOpponentPokemonCatalog seviiRubyOpponents,
@@ -383,7 +383,7 @@ public sealed partial class PretCampaignCatalog : ICampaignCatalog
         SeviiRubyOpponents = seviiRubyOpponents;
         SeviiRubyTrainers = seviiRubyTrainers;
         SeviiRubyItems = seviiRubyItems;
-        NationalDexSource = nationalDexSource;
+        NationalDexEnabled = nationalDexEnabled;
         PokemonLeagueRegion = pokemonLeague;
         PokemonLeagueTrainerParties = pokemonLeagueTrainers;
         PokemonLeagueOpponents = pokemonLeagueOpponents;

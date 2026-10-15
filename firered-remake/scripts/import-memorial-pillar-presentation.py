@@ -147,15 +147,12 @@ def build(target, dependency, reference, check):
             geometry.append(dict(species=number, side=side, yOffset=y, elevation=elevation if side == 'front' else 0,
                                  sourceWidth=width, sourceHeight=height))
         entry = next(e for e in dex['entries'] if e['sourceSpeciesId'] == number)
-        for field in ['source', 'descriptionSource']:
-            ref = entry[field]
-            source.read(ref['path']); need(ref['commit'] == COMMIT, 'Dex metadata source hash differs')
-        declaration = re.search(r'\[NATIONAL_DEX_' + name.upper() + r'\]\s*=\s*\{(.*?)\n\s*\}', source.text(entry['source']['path']), re.S)[1]
+        declaration = re.search(r'\[NATIONAL_DEX_' + name.upper() + r'\]\s*=\s*\{(.*?)\n\s*\}', source.text('src/data/pokemon/pokedex_entries.h'), re.S)[1]
         need(entry['name'] == name.upper() and entry['nationalNumber'] == number and
              re.search(r'\.categoryName\s*=\s*_\("' + entry['category'] + r'"\)', declaration) and
              int(re.search(r'\.height\s*=\s*(\d+)', declaration)[1]) == entry['heightDecimeters'] and
              int(re.search(r'\.weight\s*=\s*(\d+)', declaration)[1]) == entry['weightHectograms'], 'Dex metadata differs')
-        description = re.search(r'const u8 g' + name + r'PokedexText\[\]\s*=\s*_\((.*?)\);', source.text(entry['descriptionSource']['path']), re.S)[1]
+        description = re.search(r'const u8 g' + name + r'PokedexText\[\]\s*=\s*_\((.*?)\);', source.text('src/data/pokemon/pokedex_text_fr.h'), re.S)[1]
         text = ''.join(json.loads('"' + s + '"') for s in re.findall(r'"([^"\n]*)"', description))
         need(text == entry['description'], 'Dex description differs')
         front = next(s for s in sprites if (s['sourceSpeciesId'], s['side'], s['paletteVariant']) == (number, 'front', 'normal'))
@@ -215,7 +212,7 @@ def build(target, dependency, reference, check):
                 'No new move animation coverage; native visual and audible output remain unverified.'],
         outputs=[dict(path=p) for p, b in sorted(outputs.items())])
     mb = canonical(manifest)
-    writes = [(target / ('scripts/' + PACKAGE + '.lock.json'), lb), (target / BASE / 'manifest.json', mb)]
+    writes = [(target / BASE / 'manifest.json', mb)]
     writes += [(target / RAW / p, b) for p, b in sorted(source.data.items()) if p not in SHARED_RAW]
     writes += [(target / BASE / p, b) for p, b in sorted(outputs.items())]
     for p, b in writes:

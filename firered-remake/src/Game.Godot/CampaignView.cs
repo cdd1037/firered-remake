@@ -119,7 +119,7 @@ public partial class CampaignView:Node2D
         return MapCache.Get(PresentationMapKey(id),owner=>
         {
             var source=PresentationSourceMap(id);
-            Texture2D MapTexture(string path)=>owner.Texture(path);
+            Texture2D MapTexture(string path)=>owner.MapTexture(path);
             var npcs=new Dictionary<string,SpriteAsset>(StringComparer.Ordinal);
             var binding=(_mapPresentation??=PretCampaignMapPresentation.Create(_catalog))[id];
             if(binding.NpcSourcePath is {} npcSource)npcs=LoadRegionNpcs(npcSource,owner);
@@ -141,7 +141,7 @@ public partial class CampaignView:Node2D
             BorderArt? borderArt=null;
             if(_borderSources.TryGetValue(id,out var border))borderArt=new(border.BorderWidth,border.BorderHeight,MapTexture(border.BottomTexturePath),MapTexture(border.MiddleTexturePath),MapTexture(border.TopTexturePath));
             else if(binding.UsesLocalBorder)borderArt=new(source.BorderWidth,source.BorderHeight,MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-bottom.png")),MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-middle.png")),MapTexture(System.IO.Path.Combine(source.DirectoryPath,"border-top.png")));
-            return new(source,MapTexture(source.BottomTexturePath),MapTexture(source.MiddleTexturePath),MapTexture(source.TopTexturePath),new(MapTexture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,borderArt);
+            return new(source,MapTexture(source.BottomTexturePath),MapTexture(source.MiddleTexturePath),MapTexture(source.TopTexturePath),new(owner.Texture(source.PlayerTexturePath),16,32,9,new(8,24),false),npcs,borderArt);
         });
     }
     private void LoadMap(MapId id)

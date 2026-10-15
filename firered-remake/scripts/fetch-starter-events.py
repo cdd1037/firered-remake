@@ -3,7 +3,7 @@
 import pathlib,json,hashlib,urllib.request
 ROOT=pathlib.Path(__file__).resolve().parent.parent
 lock=json.loads((ROOT/'scripts/fetch-starter-events.lock.json').read_text(encoding='utf-8'))
-assert lock['commit']==json.loads((ROOT/'content/source-lock.json').read_text(encoding='utf-8'))['source']['sourceCommit']
+assert lock['commit']==json.loads((ROOT/'scripts/import-config/source.json').read_text(encoding='utf-8'))['source']['sourceCommit']
 for entry in lock['files']:
  path=pathlib.PurePosixPath(entry['path'])
  if path.is_absolute() or '..' in path.parts:raise ValueError('Unsafe source path')

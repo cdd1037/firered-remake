@@ -27,25 +27,19 @@ public partial class CampaignView
         }
         foreach (var portrait in art.Portraits)
         {
-            byte[] rgba = PngRgba8.Decode(art.Files[portrait.TexturePath]);
+            byte[] png = art.Files[portrait.TexturePath];
             if (portrait.Inherited)
             {
                 if (!_forestTrainerPortraits.TryGetValue(portrait.Id, out var old)) throw new InvalidDataException("Inherited gym portrait missing.");
             }
             else
             {
-                using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, rgba);
+                using var image = NativeImages.LoadPng(png, 64, 64);
                 _forestTrainerPortraits.Add(portrait.Id, (ImageTexture)SceneTextures.FromImage(image));
             }
         }
         if (!_earlyItemIcons.TryGetValue(new("pret:ITEM_TM28"), out var groundIcon)) throw new InvalidDataException("Inherited Ground machine icon missing.");
-        using (var image = groundIcon.GetImage())
-        {
-            image.Convert(Image.Format.Rgba8);
-            if (image.GetWidth() != 24 || image.GetHeight() != 24)
-                throw new InvalidDataException("Ground TM26 icon pixels differ.");
-            _earlyItemIcons.Add(new("pret:ITEM_TM26"), (ImageTexture)SceneTextures.FromImage(image));
-        }
+        _earlyItemIcons.Add(new("pret:ITEM_TM26"), groundIcon);
         _viridianGymPresentation = art;
         Write("viridianGymPresentation", new { ViridianGymPresentationAssets.SourceCommit,             map = "map.viridian-city-gym",
         leaderIntroMusic = "MUS_ENCOUNTER_ROCKET", physicalAudioVerified = false });

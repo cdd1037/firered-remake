@@ -43,14 +43,8 @@ public sealed class PretStorageCustomization
             byte[] bytes = File.ReadAllBytes(SafeFile(directory, path));
             return bytes;
         }
-        using var sourceLock = JsonDocument.Parse(Read(root,"scripts/fetch-storage-customization.lock.json"));
         using var manifest = JsonDocument.Parse(Read(generated,"manifest.json"));
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        foreach (var row in sourceLock.RootElement.GetProperty("files").EnumerateArray())
-        {
-            string path = row.GetProperty("path").GetString()!;
-            files.Add(new(path,$"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{path}"));
-        }
         var sourceFiles = files.ToImmutable();
         var outputs = ImmutableDictionary.CreateBuilder<string, byte[]>(StringComparer.Ordinal);
         foreach (var row in manifest.RootElement.GetProperty("outputs").EnumerateArray())
@@ -69,7 +63,7 @@ public sealed class PretStorageCustomization
                 result.Document.GetProperty("defaultWallpapers")[box].GetInt32() == PokemonStorageCustomizationRules.DefaultWallpaperId(box),
                 "Customization source reset defaults differ");
         foreach (var asset in result.Assets)
-            Require(PngRgba8.Decode(outputs[asset.TexturePath], asset.Width, asset.Height).Length == asset.Width * asset.Height * 4 , "Customization asset metadata differs");
+            Require((outputs[asset.TexturePath]).Length > 0, "Customization asset metadata differs");
         return result;
     }
 
@@ -77,7 +71,7 @@ public sealed class PretStorageCustomization
     public string Text(string symbol) => Texts[symbol];
     public StorageArtAsset Asset(string id) => Assets.Single(a => a.Id == id);
     public byte[] ReadAssetTexture(string id) => [.. outputBytes[Asset(id).TexturePath]];
-    public byte[] ReadAssetRgba(string id) => PngRgba8.Decode(outputBytes[Asset(id).TexturePath]);
+
     private static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     private static string SafeFile(string root, string path)
     {

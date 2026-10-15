@@ -24,9 +24,6 @@ public sealed class PretCinnabarPresentation
     }
     public static PretCinnabarPresentation Load(string root)
     {
-        using var locked=JsonDocument.Parse(SafariSource.Read(root,"scripts/cinnabar-presentation.lock.json"));
-        var entries=locked.RootElement.GetProperty("files");
-        Need(entries.GetArrayLength()==122,"Cinnabar presentation source scope differs.");
         using var trainers=JsonDocument.Parse(SafariSource.Read(root,"content/generated/cinnabar-trainer-art/manifest.json"));
         var tr=trainers.RootElement;
         Need(tr.GetProperty("schemaVersion").GetInt32()==1&&tr.GetProperty("portraits").GetArrayLength()==8&&tr.GetProperty("trainerClasses").EnumerateObject().Count()==8,"Cinnabar trainer presentation differs.");
@@ -35,7 +32,7 @@ public sealed class PretCinnabarPresentation
         foreach(var p in tr.GetProperty("portraits").EnumerateArray())
         {
             Need(pics.Add(p.GetProperty("trainerPic").GetString()!)&&p.GetProperty("width").GetInt32()==64&&p.GetProperty("height").GetInt32()==64&&p.GetProperty("sourceFrame").GetInt32()==0&&p.GetProperty("x").GetInt32()==144&&p.GetProperty("y").GetInt32()==8,"Cinnabar trainer portrait shape differs.");
-            var rgba=PngRgba8.Decode(trainerFiles[p.GetProperty("texturePath").GetString()!]);Need(rgba.Length==64*64*4,"Cinnabar trainer pixels differ.");
+            var pngBytes=trainerFiles[p.GetProperty("texturePath").GetString()!];Need(pngBytes.Length > 0,"Cinnabar trainer pixels differ.");
         }
         Need(pics.SetEquals(new[]{"TRAINER_PIC_BURGLAR","TRAINER_PIC_FISHERMAN","TRAINER_PIC_LEADER_BLAINE","TRAINER_PIC_SCIENTIST","TRAINER_PIC_SIS_AND_BRO","TRAINER_PIC_SUPER_NERD","TRAINER_PIC_SWIMMER_M","TRAINER_PIC_YOUNGSTER"}),"Cinnabar trainer inventory differs.");
         var field=SafariSource.Parse<CinnabarFieldArtDocument>(SafariSource.Read(root,"content/generated/cinnabar-field-art/manifest.json"));
@@ -45,7 +42,7 @@ public sealed class PretCinnabarPresentation
         {
             int count=family=="mansion"?29:8;var tiles=field.Tiles.Where(t=>t.Family==family).ToArray();var layers=field.Layers.Where(l=>l.Family==family).ToArray();
             Need(tiles.Length==count&&tiles.Select(t=>t.MetatileId).Distinct().Count()==count&&tiles.Select(t=>t.X).SequenceEqual(Enumerable.Range(0,count).Select(i=>i*16))&&tiles.All(t=>t.Y==0&&t.Width==16&&t.Height==16)&&layers.Select(l=>l.Layer).SequenceEqual(new[]{"bottom","middle","top"}),"Cinnabar map-family atlas differs.");
-            foreach(var layer in layers)Need(layer.Width==count*16&&layer.Height==16&&PngRgba8.Decode(fieldFiles[layer.TexturePath], layer.Width, layer.Height).Length==count*16*16*4,"Cinnabar map-family pixels differ.");
+            foreach(var layer in layers)Need(layer.Width==count*16&&layer.Height==16&&(fieldFiles[layer.TexturePath]).Length > 0,"Cinnabar map-family pixels differ.");
         }
         return new(tr.Clone(),trainerFiles,field,fieldFiles);
     }

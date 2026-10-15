@@ -8,19 +8,22 @@ public sealed class SourceMailScreen : IDisposable
 {
     private readonly PretMailPresentation _content;
     private readonly string _fontDirectory;
+    private readonly string _projectRoot;
+    private readonly CampaignResourceCache.Owner _resources;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.Ordinal);
     private readonly Dictionary<string, SourceGameFont> _fonts = new(StringComparer.Ordinal);
     public PretMailPresentation Content => _content;
-    public SourceMailScreen(PretMailPresentation content, string sourceFontDirectory)
-    { _content = content; _fontDirectory = sourceFontDirectory; }
+    public SourceMailScreen(PretMailPresentation content, string sourceFontDirectory, string projectRoot, CampaignResourceCache.Owner resources)
+    { _content = content; _fontDirectory = sourceFontDirectory; _projectRoot = projectRoot; _resources = resources; }
     public Texture2D Texture(string id)
     {
         if (_textures.TryGetValue(id, out var existing)) return existing;
-        var asset = _content.Assets[id]; using var image = new Image();
-        if (image.LoadPngFromBuffer(_content.PngFiles[id]) != Error.Ok || image.GetWidth() != asset.Width || image.GetHeight() != asset.Height ||
-            image.GetFormat() != Image.Format.Rgba8)
+        var asset = _content.Assets[id];
+        var texture = _resources.NativeTexture(System.IO.Path.Combine(_projectRoot, asset.PngPath),
+            asset.Region is {} r ? new Rect2I(r.X, r.Y, r.Width, r.Height) : null);
+        if (texture.GetWidth() != asset.Width || texture.GetHeight() != asset.Height)
             throw new InvalidDataException("mail_original_pixels:" + id);
-        var texture = ImageTexture.CreateFromImage(image); _textures.Add(id, texture); return texture;
+        _textures.Add(id, texture); return texture;
     }
     public SourceGameFont Font(ImmutableArray<byte> foreground, ImmutableArray<byte> shadow)
     {
@@ -126,7 +129,7 @@ public sealed class SourceMailScreen : IDisposable
     }
     public void Dispose()
     {
-        foreach (var texture in _textures.Values) texture.Dispose(); _textures.Clear();
+        _textures.Clear();
         foreach (var font in _fonts.Values) font.Dispose(); _fonts.Clear();
     }
 }

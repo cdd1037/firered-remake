@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Trainers;
@@ -18,14 +17,7 @@ public static class PretSsAnneTrainers
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/ssanne-trainers.lock.json"));
-        var s=sourceLock.RootElement;
-        if(            s.GetProperty("gameEdition").GetString()!="FIRERED" || s.GetProperty("romRevision").GetInt32()!=0 || s.GetProperty("schemaVersion").GetInt32()!=1 ) throw new InvalidDataException("SsAnne trainer source identity differs.");
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var doc=ContentJson.ParseStrict<SsAnneTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/ssanne-trainers/trainers.json")),ContentJson.CreateOptions());
+        var doc=ContentJson.ParseStrict<SsAnneTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/ssanne-trainers/trainers.json")),ContentJson.CreateOptions());
                 if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("SsAnne trainer document identity differs.");
         var catalog=new SsAnneTrainerCatalog(doc.SourceCommit,doc.Profile,false,doc.Trainers.ToImmutableDictionary(t=>t.Id),doc.Battles.ToImmutableDictionary(t=>t.Trainer));
         SsAnneTrainerPartyFactory.ValidateCatalog(catalog);return catalog;

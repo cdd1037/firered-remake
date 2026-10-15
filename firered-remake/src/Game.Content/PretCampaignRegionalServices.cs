@@ -52,45 +52,7 @@ public sealed partial class PretCampaignCatalog
         }
     }
 
-    private static void AppendRegionalServiceSources(string root,PretRegionalServiceMaps region,PretRegionalGiftContract gift,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var paths = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        void Script(PretSourceScriptFile source)
-        {
-            if (paths.TryGetValue(source.Path, out var prior))
-            {
-                if (prior.Text != source.Text)
-                    throw new InvalidDataException("regional_services_script_conflict: " + source.Path);
-                return;
-            }
-            paths.Add(source.Path, source); sources.Add(source);
-            if (!texts.Contains(source.Text, StringComparer.Ordinal)) texts.Add(source.Text);
-        }
-        foreach (var source in region.Scripts) Script(source);
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
 
-        // Most contract inputs are already included by the map or common-script packages.
-        // Import the remaining event and text sources.
-        foreach (var file in gift.SourceFiles.Where(f => f.Path == "data/event_scripts.s" ||
-            f.Path.StartsWith("data/scripts/", StringComparison.Ordinal) || f.Path.StartsWith("data/text/", StringComparison.Ordinal) ||
-            f.Path.StartsWith("data/maps/", StringComparison.Ordinal) && f.Path.EndsWith(".inc", StringComparison.Ordinal)))
-        {
-            if (paths.ContainsKey(file.Path))
-            {
-                continue;
-            }
-            var bytes = File.ReadAllBytes(Path.Combine(root, PretSourcePaths.FireRedRawDirectory, file.Path));
-            string text = Encoding.UTF8.GetString(bytes);
-            if (file.Path.StartsWith("data/text/", StringComparison.Ordinal) || file.Path.EndsWith("/text.inc", StringComparison.Ordinal))
-            {
-                if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-            }
-            else Script(new(file.Path, text, new(SourceKind.Pret,file.Path,"regional-services","pret/pokefirered",PretWorldMap.SourceCommit)));
-        }
-        MergeRegionalServiceConstants(constants, region.Constants);
-        MergeRegionalServiceConstants(constants, gift.Constants);
-    }
 
     private static void ValidateRegionalServiceComposition(PretRegionalServiceMaps region,PretRegionalGiftContract gift,ImmutableDictionary<MapId, PretWorldMap> maps,ImmutableDictionary<MapId, PretWorldMap> predecessorMaps,CampaignPokemonContent pokemon,CampaignPokemonContent predecessorPokemon,PretStoryCompilation scripts,ImmutableDictionary<string, string>.Builder texts)
     {

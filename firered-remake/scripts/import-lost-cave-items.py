@@ -89,7 +89,7 @@ def generate(reference, dependency):
         icons.append(icon); generated[icon['texturePath']] = png
     contract_bytes = (dependency / CONTRACT).read_bytes()
     contract = json.loads(contract_bytes)
-    pickups = [re.search(r'finditem\s+(ITEM_\w+)', '\n'.join(line['text'] for line in row['script']['lines']))[1] for row in contract['itemPickups']]
+    pickups = [row['item'] for row in contract['itemPickups']]
     pickups += [row['event']['item'] for row in contract['hiddenItems']]
     reward_path = 'src/field_specials.c'
     deluxe = one(reward_path, r'^static const u16 sResortGorgeousDeluxeRewards\[\] = \{(.*?)^\};')
@@ -110,8 +110,6 @@ def generate(reference, dependency):
                     dependencyInputs=[dict(path=CONTRACT)])
     files = {BASE + 'items.json': encoded(items), BASE + 'source-contract.json': encoded(facts),
              BASE + 'source-input-hashes.json': encoded(evidence), **generated, **raw}
-    files['scripts/lost-cave-items.lock.json'] = encoded(dict(sourceCommit=COMMIT,  profile=PROFILE,
-         files=[dict(path=p) for p, b in sorted(files.items())]))
     return files, items
 
 if __name__ == '__main__':

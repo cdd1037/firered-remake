@@ -7,8 +7,7 @@ using Game.Domain.Ids;
 namespace Game.Content;
 
 public sealed record PretRocketHideoutItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
-    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<OpeningItemSourceRef> RulesSources,
-    ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
+    ImmutableArray<PretPewterMachineInput> Inputs, ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons, ImmutableArray<string> Limitations);
 public sealed record PretRocketHideoutPickup(string Map, string Kind, int? LocalId, int? EventIndex,
     int X, int Y, int Elevation, string Flag, int SourceFlagId, bool InitiallyHidden, bool Underfoot,
     ItemId Item, int Quantity, string? Script, string? ScriptCommand, OpeningItemSourceRef MapSource,
@@ -25,8 +24,7 @@ public static class PretRocketHideoutItems
     {
         var options = ContentJson.CreateOptions(); options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,false));
         var document = ContentJson.ParseStrict<PretRocketHideoutItemsDocument>(json,options);
-        Require(document.SchemaVersion == 1 && document.Items.Length == 10 && document.Icons.Length == 10 && !document.RulesSources.IsDefaultOrEmpty &&
-            !document.Limitations.IsDefaultOrEmpty,"Rocket Hideout item scope differs.");
+        Require(document.SchemaVersion == 1 && document.Items.Length == 10 && document.Icons.Length == 10 && !document.Limitations.IsDefaultOrEmpty,"Rocket Hideout item scope differs.");
         foreach (var item in document.Items)
         {
             RocketHideoutItemRules.ValidateSourceItem(item.Metadata,item.EffectBytes,item.EffectSource);
@@ -34,7 +32,7 @@ public static class PretRocketHideoutItems
         Require(document.Items.Select(i => i.Metadata.Item.Id).Distinct().Count() == 10,"Duplicate Rocket Hideout source items.");
         foreach (var icon in document.Icons)
         {
-            Require(document.Items.Any(i => i.Metadata.Item.Id == icon.Item) && icon.PngPath == icon.Item.Value[5..].ToLowerInvariant()+".png","Rocket Hideout icon identity differs.");
+            Require(document.Items.Any(i => i.Metadata.Item.Id == icon.Item) && icon.Region is not null,"Rocket Hideout icon identity differs.");
 PretPewterMachines.ValidateIcon(icon);
         }
         Require(document.Icons.Select(i => i.Item).Distinct().Count() == 10,"Duplicate Rocket Hideout icons.");

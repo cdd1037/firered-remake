@@ -61,13 +61,10 @@ public sealed class PretSafariPokemon
             doc.Machines.Length == 3 && doc.SafariRates.Length == 3 && doc.SourceEvolutions.Length == 3 &&
             doc.Cries.Length == 3 && doc.NaturalLevelLimit is null && !doc.Limitations.IsDefaultOrEmpty , "Safari source document scope differs.");
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
-        var lineCounts = new Dictionary<string,int>(StringComparer.Ordinal);
+        
         foreach (var input in doc.Inputs)
         {
-            var source = SafariSource.Read(root,PretSourcePaths.FireRedRawDirectory + "/" + input.Path);
-            if (!input.Path.EndsWith(".png", StringComparison.Ordinal) && !input.Path.EndsWith(".wav", StringComparison.Ordinal))
-                lineCounts.Add(input.Path, new UTF8Encoding(false,true).GetString(source).Count(c => c == '\n') + 1);
-            files.Add(new(input.Path,                $"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{input.Path}"));
+            files.Add(new(input.Path));
         }
         var canonical = PretCanonicalPokemonCatalog.Load(dependency, dependency);
         var moveSource = PretMetronomeMoveCatalog.Load(dependency);
@@ -113,7 +110,7 @@ internal static class SafariSource
     internal static void Require(bool condition, string message) { if (!condition) throw new InvalidDataException(message); }
     internal static byte[] Read(string root, string relative)
         => File.ReadAllBytes(PretRuntimeMapValidation.SafeFile(root, relative));
-    internal static T Parse<T>(byte[] bytes)
+    internal static T Parse<T>(byte[] bytes, string? machineRoot = null)
     {
         using var json = JsonDocument.Parse(bytes, new JsonDocumentOptions { MaxDepth = 64 });
         void Unique(JsonElement e)
@@ -131,6 +128,7 @@ internal static class SafariSource
             RespectRequiredConstructorParameters = true, MaxDepth = 64 };
         options.Converters.Add(new SafariEnumConverter<GrowthRate>());
         options.Converters.Add(new SafariEnumConverter<PokemonEvolutionMethod>());
+        if (machineRoot is not null) SharedMachineCatalog.AddConverters(options, machineRoot);
         return JsonSerializer.Deserialize<T>(bytes, options) ?? throw new InvalidDataException("Null Safari document.");
     }
     private sealed class SafariEnumConverter<T> : JsonConverter<T> where T : struct, Enum

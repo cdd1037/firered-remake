@@ -95,8 +95,18 @@ def generate(reference, dependency, region):
         data = (root / path).read_bytes()
         dependencies.append(dict(path=path))
         return json.loads(data)
-    declarations = dependent(region, 'content/generated/sevii-ruby-region/declarations.json')
     canonical = dependent(dependency, 'content/generated/canonical-pokemon/catalog.json')
+    # Reuse the region's original extractor in memory; no source snapshot is published.
+    import importlib.util
+    def importer(name, path):
+        spec=importlib.util.spec_from_file_location(name,path);value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
+    ruby=importer('ruby_rule_region',Path(__file__).with_name('import-sevii-ruby-region.py'))
+    reader=ruby.module(Path(__file__).with_name('import-cinnabar-source-preparation.py'),'ruby_rule_source')
+    prep=ruby.module(Path(__file__).parent/'first-sevii-preparation/prepare_first_sevii.py','ruby_rule_scripts')
+    prep.CORE=ruby.CORE;prep.SUPPORT=ruby.SUPPORT;prep.ANCHOR=['OneIsland_PokemonCenter_1F']
+    source=reader.Source(reference)
+    worlds=[dict(events=source.json('data/maps/'+name+'/map.json')) for name in ruby.CORE+ruby.SUPPORT]
+    declarations=json.loads(json.dumps(ruby.declarations(source,prep.script_index(source,reader),worlds,canonical),sort_keys=True))
     species = {s['id']['value'][5:]: s for s in canonical['species']}
     battles = []
     for occurrence in declarations['battleOccurrences']:
@@ -178,7 +188,6 @@ def main():
     files.update({'content/raw/pokefirered/037335f4/'+n:d for n,d in raw.items()})
     lock=dict(sourceCommit=COMMIT,profile='firered-sevii-ruby-rules-v1',
         files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/sevii-ruby-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

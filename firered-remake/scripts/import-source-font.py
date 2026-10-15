@@ -1,87 +1,43 @@
 #!/usr/bin/env python3
 """Convert pinned English glyph pixels/advances, without ROMs or upstream programs."""
 import argparse
-import binascii
+import io
 import importlib.util
 import json
 import pathlib
 import re
-import struct
 import sys
-import zlib
 
 sys.dont_write_bytecode = True
+from PIL import Image
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+if str(ROOT / 'scripts') not in sys.path:
+    sys.path.insert(0, str(ROOT / 'scripts'))
+from image_io import png
 spec = importlib.util.spec_from_file_location('source_font_inputs', ROOT / 'scripts/fetch-source-font.py')
 inputs = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(inputs)
-SIGNATURE = b'\x89PNG\r\n\x1a\n'
 FACES = (('normal', 16, 16, 14), ('small', 8, 32, 13))
 
 
 def decode_indices(data, height):
-    """Strict 256-wide, indexed 2bpp PNG reader; independent tests use Pillow."""
-    if not data.startswith(SIGNATURE):
-        raise ValueError('Invalid PNG signature')
-    offset, chunks = 8, []
-    while offset < len(data):
-        if offset + 12 > len(data):
-            raise ValueError('Truncated PNG')
-        size = struct.unpack_from('>I', data, offset)[0]
-        tag = data[offset + 4:offset + 8]
-        end = offset + 12 + size
-        if end > len(data):
-            raise ValueError('Truncated PNG chunk')
-        payload = data[offset + 8:end - 4]
-        if binascii.crc32(tag + payload) & 0xffffffff != struct.unpack_from('>I', data, end - 4)[0]:
-            raise ValueError('PNG CRC mismatch')
-        chunks.append((tag, payload))
-        offset = end
-    expected = ([b'IHDR', b'PLTE', b'IDAT', b'IEND'] if height == 512 else
-                [b'IHDR', b'iCCP', b'PLTE', b'bKGD', b'pHYs', b'tIME', b'IDAT', b'IEND'])
-    if [tag for tag, _ in chunks] != expected:
-        raise ValueError('Unsupported PNG chunk profile')
-    chunks = dict(chunks)
-    if chunks[b'IHDR'] != struct.pack('>IIBBBBB', 256, height, 2, 3, 0, 0, 0):
-        raise ValueError('Unsupported source font dimensions/format')
-    if chunks[b'PLTE'] != bytes([144, 200, 255, 56, 56, 56, 216, 216, 216, 255, 255, 255]) or chunks[b'IEND']:
-        raise ValueError('Unexpected source font roles/palette')
-    decoder = zlib.decompressobj()
-    scan = decoder.decompress(chunks[b'IDAT'], height * 65 + 1)
-    if len(scan) != height * 65 or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:
-        raise ValueError('PNG decompressed size/termination differs')
-    result, previous = bytearray(), [0] * 64
-    for y in range(height):
-        method, row = scan[y * 65], []
-        if method not in range(5):
-            raise ValueError('Invalid PNG filter')
-        for x, value in enumerate(scan[y * 65 + 1:(y + 1) * 65]):
-            a, b, c = row[x - 1] if x else 0, previous[x], previous[x - 1] if x else 0
-            estimate = a + b - c
-            distances = [abs(estimate - a), abs(estimate - b), abs(estimate - c)]
-            prediction = [0, a, b, (a + b) // 2, [a, b, c][distances.index(min(distances))]][method]
-            v = (value + prediction) & 255
-            row.append(v)
-            result.extend((v >> 6, (v >> 4) & 3, (v >> 2) & 3, v & 3))
-        previous = row
-    return bytes(result)
-
-
-def png_chunk(tag, data):
-    return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', binascii.crc32(tag + data) & 0xffffffff)
+    """Read glyph roles as palette indices, never as RGB or grayscale values."""
+    with Image.open(io.BytesIO(data)) as image:
+        if image.format != 'PNG' or image.mode != 'P' or image.size != (256, height):
+            raise ValueError('Unsupported source font dimensions/format')
+        if image.getpalette('RGB') != [144, 200, 255, 56, 56, 56, 216, 216, 216, 255, 255, 255]:
+            raise ValueError('Unexpected source font roles/palette')
+        indices = image.tobytes()
+        if any(index > 3 for index in indices):
+            raise ValueError('Source glyph role exceeds two bits')
+        return indices
 
 
 def encode_png(rgba, width, height):
     if len(rgba) != width * height * 4:
         raise ValueError('RGBA length differs')
-    scan = b''.join(b'\0' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
-    stream = b'\x78\x01'
-    for start in range(0, len(scan), 65535):
-        part = scan[start:start + 65535]
-        stream += bytes([int(start + len(part) == len(scan))]) + struct.pack('<HH', len(part), len(part) ^ 65535) + part
-    stream += struct.pack('>I', zlib.adler32(scan) & 0xffffffff)
-    return (SIGNATURE + png_chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0))
-            + png_chunk(b'IDAT', stream) + png_chunk(b'IEND', b''))
+    return png(width, height, rgba)
 
 
 def character_map(text):
@@ -213,7 +169,7 @@ def convert(lock, sources):
         commit=inputs.COMMIT,  inputs=lock['files'],
         outputs=[dict(path=path) for path, data in sorted(outputs.items())],
         upstreamScriptsExecuted=False, romDownloaded=False, publiclyUploaded=False))
-    # This companion has a separate profile/manifest, leaving every byte of the original v1 assets intact.
+    # This companion has a separate profile/manifest, preserving the original v1 glyph pixels and metrics.
     outputs.update(level_prefix_outputs( sources, foreground, shadow))
     return outputs
 
@@ -223,7 +179,7 @@ def main():
     parser.add_argument('--raw', type=pathlib.Path, default=ROOT / 'content/raw/pokefirered/037335f4')
     parser.add_argument('--out', type=pathlib.Path, default=ROOT / 'content/generated/source-font')
     parser.add_argument('--lock', type=pathlib.Path, default=ROOT / 'scripts/source-font.lock.json')
-    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'content/source-lock.json')
+    parser.add_argument('--project-lock', type=pathlib.Path, default=ROOT / 'scripts/import-config/source.json')
     args = parser.parse_args()
     lock = inputs.load_lock(args.lock, args.project_lock)
     outputs = convert(lock, inputs.read_verified(lock, args.raw))

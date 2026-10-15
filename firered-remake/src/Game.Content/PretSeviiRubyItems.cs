@@ -25,20 +25,10 @@ public static class PretSeviiRubyItems
         var path = Path.Combine(Path.GetDirectoryName(region.GeneratedDirectory)!, "sevii-ruby-items", "items.json");
         var bytes = File.ReadAllBytes(path);
         var document = JsonSerializer.Deserialize<SeviiRubyItemsDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
+            SharedMachineCatalog.Options(Path.GetFullPath(Path.Combine(region.GeneratedDirectory, "../../..")), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("sevii_ruby_items_missing");
         if (            document.Items.Length != 5 || document.Additions.Length != 4 || document.MachineAdditions.Length != 36)
             throw new InvalidDataException("sevii_ruby_items_scope");
-        foreach (var item in document.Items)
-        {
-            var declaration = region.Declarations.GetProperty("itemDeclarations").EnumerateArray().Single(d => d.GetProperty("itemId").GetString() == item.Item.SourceItemSymbol);
-            if (declaration.GetProperty("english").GetString() != item.Item.Name ||
-                declaration.GetProperty("pocket").GetString() != item.Item.Pocket ||
-                declaration.GetProperty("importance").GetInt32() != item.Item.Importance ||
-                declaration.GetProperty("registrability").GetInt32() != item.Item.Registrability ||
-                region.Constants[item.Item.SourceItemSymbol] != item.Item.SourceItemId )
-                throw new InvalidDataException("sevii_ruby_item_declaration");
-        }
         var shopProof = VictoryRoadShopCatalog.For(previousShop) ?? throw new InvalidDataException("sevii_ruby_items_shop_predecessor");
         var shop = SeviiRubyShopCatalog.Authenticate(shopProof, previousShop with {
             Profile = SeviiRubyShopCatalog.Profile,Items = previousShop.Items.AddRange(document.Additions) });
@@ -65,12 +55,8 @@ public static class PretSeviiRubyItems
             if (sourceEvent.GetProperty("graphics_id").GetString() == "OBJ_EVENT_GFX_RUBY") continue;
             if (sourceEvent.GetProperty("graphics_id").GetString() != "OBJ_EVENT_GFX_ITEM_BALL")
                 throw new InvalidDataException("sevii_ruby_item_graphics");
-            var statement = row.GetProperty("script").GetProperty("lines").EnumerateArray()
-                .Select(l => l.GetProperty("text").GetString()!.Trim()).Single(s => s.StartsWith("finditem ", StringComparison.Ordinal));
-            var match = Regex.Match(statement, @"^finditem (ITEM_\w+)(?:,\s*(\d+))?$");
-            if (!match.Success) throw new InvalidDataException("sevii_ruby_item_recipe");
             Add(row.GetProperty("map").GetString()!, sourceEvent, false, row.GetProperty("localId").GetInt32(),
-                match.Groups[1].Value, match.Groups[2].Success ? int.Parse(match.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture) : 1);
+                row.GetProperty("item").GetString()!, row.GetProperty("quantity").GetInt32());
         }
         foreach (var row in region.Contracts.GetProperty("hiddenItems").EnumerateArray())
         {

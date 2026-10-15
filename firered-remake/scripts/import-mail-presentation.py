@@ -12,7 +12,6 @@ from pathlib import Path
 import re
 import struct
 import sys
-import zlib
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = 'firered-mail-presentation-v1'
@@ -26,6 +25,8 @@ HELPERS = (
     'fetch-lab-battle-ui.py',
 )
 NAMES = ['orange','harbor','glitter','mech','wood','wave','bead','shadow','tropic','dream','fab','retro']
+
+from image_io import png as encode_rgba_png
 
 def need(ok, message):
     if not ok: raise ValueError(message)
@@ -44,9 +45,7 @@ def generate(reference, dependency):
         return match, dict(path=path,symbol=symbol,startLine=text[:match.start()].count('\n')+1,
                            endLine=text[:match.end()].count('\n')+1)
     def block(path, name): return capture(path,r'^static const [^\n]*\b'+name+r'\[\][^=]*= \{(.*?)^\};',name)
-    def png(w,h,pixels):
-        scan=b''.join(b'\0'+pixels[y*w*4:(y+1)*w*4] for y in range(h))
-        return b'\x89PNG\r\n\x1a\n'+codec.chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0,0))+codec.chunk(b'IDAT',zlib.compress(scan,9))+codec.chunk(b'IEND',b'')
+    png = encode_rgba_png
     def asset(identifier,w,h,pixels,source_paths, reuse=None):
         data=png(w,h,pixels); path=BASE+identifier+'.png'; shared=False
         if reuse:
@@ -222,7 +221,7 @@ def main():
     args=parser.parse_args();ref,dep,target=[Path(os.path.abspath(p)) for p in (args.reference_root,args.dependency_root,args.project_root)]
     for p in (ref,dep,target):safe(p)
     need(target!=ref and not target.is_relative_to(ref) and not ref.is_relative_to(target),'Source/output overlap')
-    raw,outputs,locked,doc=generate(ref,dep);lock=encoded(locked);writes={**raw,**outputs,'scripts/mail-presentation.lock.json':lock}
+    raw,outputs,locked,doc=generate(ref,dep);lock=encoded(locked);writes={**raw, **outputs}
     for path,data in sorted(writes.items()):
         file=target/path;safe(file)
         if args.check:need(file.is_file() and file.read_bytes()==data,'Regeneration differs: '+path)

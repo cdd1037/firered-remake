@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Text;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 
 namespace Game.Domain.Pokemon;
@@ -14,20 +12,17 @@ public sealed class MoveDeleterCatalog
     private MoveDeleterCatalog(PokemonCatalog pokemon, ImmutableDictionary<string, string> texts)
     { Pokemon = pokemon; Texts = texts; }
 
-    public static MoveDeleterCatalog Authenticate(PokemonCatalog owned, ReadOnlySpan<byte> strings)
+    public static MoveDeleterCatalog Authenticate(PokemonCatalog owned, ImmutableDictionary<string, string> texts)
     {
         if (OwnedBattlePokemonCatalog.For(owned) is null || owned.SourceCommit != PokemonFactory.SourceCommit)
             throw new ArgumentException("move_deleter_source_authentication");
-        var text = new UTF8Encoding(false, true).GetString(strings);
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
         foreach (string symbol in new[] { "gText_ChoosePokemon", "gText_PokeSum_PageName_KnownMoves",
             "gText_PokeSum_Controls_PickDelete", "gFameCheckerText_Cancel" })
         {
-            var match = Regex.Match(text, "const u8 " + symbol + "\\[\\] = _\\(\"([^\"]*)\"\\);", RegexOptions.CultureInvariant);
-            if (!match.Success) throw new ArgumentException("move_deleter_text_missing: " + symbol);
-            texts.Add(symbol, match.Groups[1].Value);
+            if (!texts.TryGetValue(symbol, out var text) || string.IsNullOrEmpty(text))
+                throw new ArgumentException("move_deleter_text_missing: " + symbol);
         }
-        return new(owned, texts.ToImmutable());
+        return new(owned, texts);
     }
 }
 

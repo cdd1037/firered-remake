@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Trainers;
@@ -22,14 +21,7 @@ public static class PretRockTunnelTrainers
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/rocktunnel-trainers.lock.json"));
-        var s=sourceLock.RootElement;
-        if(            s.GetProperty("gameEdition").GetString()!="FIRERED" || s.GetProperty("romRevision").GetInt32()!=0 || s.GetProperty("schemaVersion").GetInt32()!=1 ) throw new InvalidDataException("RockTunnel trainer source identity differs.");
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var doc=ContentJson.ParseStrict<RockTunnelTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/rocktunnel-trainers/trainers.json")),ContentJson.CreateOptions());
+        var doc=ContentJson.ParseStrict<RockTunnelTrainerDocument>(Encoding.UTF8.GetString(Read("content/generated/rocktunnel-trainers/trainers.json")),ContentJson.CreateOptions());
                 if(doc.SchemaVersion!=1 || doc.CompleteSourceRoster) throw new InvalidDataException("RockTunnel trainer document identity differs.");
         if (doc.Trainers.IsDefault || doc.Battles.IsDefault || doc.Limitations.IsDefaultOrEmpty ||
             doc.Trainers.Length != TrainerCount || doc.Battles.Length != TrainerCount ||

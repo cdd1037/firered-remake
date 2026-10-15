@@ -8,7 +8,7 @@ namespace Game.Content;
 
 public sealed record PretSaffronGymItemsDocument(int SchemaVersion, string Profile, string SourceCommit,
     ImmutableArray<PretBillSourceItem> Items, ImmutableArray<PretPewterMachineIcon> Icons,
-    ImmutableArray<OpeningItemSourceRef> RulesSources, ImmutableArray<string> Limitations)
+    ImmutableArray<string> Limitations)
 {
     [JsonIgnore] public SaffronGymMachinesDocument Machines { get; internal init; } = null!;
 }
@@ -30,7 +30,7 @@ public static class PretSaffronGymItems
         var source = SaffronGymSource.Catalogs(root); var d = source.Parse<PretSaffronGymItemsDocument>("items.json");
         SilphSourcePackage.Need(d.SchemaVersion == 1 &&
             d.Items.Select(i => i.Metadata.Item.Id).SequenceEqual([Tm04Id, MaxRepelId]) && d.Icons.Length == 1 &&
-            !d.RulesSources.IsDefaultOrEmpty && !d.Limitations.IsDefaultOrEmpty, "Saffron Gym item scope differs.");
+            !d.Limitations.IsDefaultOrEmpty, "Saffron Gym item scope differs.");
         foreach (var item in d.Items)
         {
             var i = item.Metadata.Item;             SilphSourcePackage.Need(item.EffectBytes.IsEmpty && item.EffectSource is null && i.Importance == 0 && i.Registrability == 0 &&
@@ -44,7 +44,7 @@ public static class PretSaffronGymItems
             max.Pocket == "POCKET_ITEMS" && max.Type == "ITEM_TYPE_BAG_MENU" && max.HoldEffectParam == 250 && max.FieldUseFunction == "FieldUseFunc_Repel" &&
             d.Items[1].Metadata.Description == "Prevents weak wild POKéMON from\nappearing for 250 steps.", "Saffron Gym TM04/Max Repel source values differ.");
         var icon = d.Icons[0];
-        SilphSourcePackage.Need(icon.Item == Tm04Id && icon.Width == 24 && icon.Height == 24 && icon.PngPath == "item_tm04.png" , "TM04 source icon differs.");
+        SilphSourcePackage.Need(icon.Item == Tm04Id && icon.Width == 24 && icon.Height == 24 && icon.Region is not null , "TM04 source icon differs.");
 PretPewterMachines.ValidateIcon(icon);
         var machines = source.Parse<SaffronGymMachinesDocument>("machines.json");
         SilphSourcePackage.Need(machines.SchemaVersion == 1 &&
@@ -64,10 +64,9 @@ PretPewterMachines.ValidateIcon(icon);
     }
     public static EarlyShopStock MartStock(PretSaffronGymRegion region)
     {
-        var source = region.Scripts.Single(s => s.Path == "data/maps/SaffronCity_Mart/scripts.inc");
-        return new("SaffronCity_Mart_Items", [new("pret:ITEM_GREAT_BALL"), new("pret:ITEM_HYPER_POTION"), new("pret:ITEM_REVIVE"),
-            new("pret:ITEM_FULL_HEAL"), new("pret:ITEM_ESCAPE_ROPE"), new("pret:ITEM_MAX_REPEL")],
-            new(source.Path,"SaffronCity_Mart_Items",24,31));
+        return new("SaffronCity_Mart_Items",
+            region.Contracts.GetProperty("martStock").EnumerateArray().Select(item => new ItemId("pret:" + item.GetString()!)).ToImmutableArray(),
+            new("data/maps/SaffronCity_Mart/scripts.inc", "SaffronCity_Mart_Items", 24, 31));
     }
     /// <summary>Exactly one ordinary item, retaining all predecessor objects by reference. Caller authenticates successor shop proof.</summary>
     public static EarlyShopCatalog Extend(EarlyShopCatalog previous, PretSaffronGymItemsDocument items)

@@ -30,34 +30,12 @@ public sealed partial class PretCampaignCatalog
         ["SixIsland_House", "SixIsland_WaterPath_House1", "SixIsland_WaterPath_House2", "SixIsland_PokemonCenter_2F",
          "SixIsland_GreenPath", "FiveIsland", "SevenIsland", "DreamMail.ComposeAttachSend", "VsSeeker.Rematch"];
 
-    private static void AppendSixIslandSources(PretSixIslandRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var previous = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in region.Scripts)
-        {
-            if (previous.TryGetValue(file.Path, out var old))
-            {
-                if (old.Text != file.Text)
-                    throw new InvalidDataException("six_island_source_conflict: " + file.Path);
-            }
-            else { previous.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-    }
+
 
     private static void ValidateSixIslandAnchors(PretSixIslandRegion region,ImmutableDictionary<MapId, PretWorldMap> maps)
     {
         if (region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("six_island_predecessor_maps");
-        foreach (var name in region.ReusedAnchorEvents.Keys)
-        {
-            var map = maps.Values.SingleOrDefault(m => m.SourceRef.Path == "data/maps/" + name + "/map.json");
-            if (map is null)
-                throw new InvalidDataException("six_island_anchor_events: " + name);
-        }
+            throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
     private static IEnumerable<KeyValuePair<int, string>> SixIslandSpeciesNames(PretPokedexMenu pokedex,SixIslandOwnedPokemonCatalog owned) =>

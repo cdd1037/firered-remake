@@ -60,7 +60,7 @@ public sealed class PretSnorlaxPokemon
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach (var input in doc.Inputs)
         {
-            files.Add(new(input.Path,                $"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{input.Path}"));
+            files.Add(new(input.Path));
         }
         var s = doc.Species.Single();
         Require(s.Id.Value == "pret:SPECIES_SNORLAX" && s.SourceSpeciesId == 143 && s.LevelUpMoves.Length == 14 &&

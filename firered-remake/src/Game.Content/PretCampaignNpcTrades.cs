@@ -35,8 +35,6 @@ public sealed partial class PretCampaignCatalog
     public bool IsNpcTradeStablePosition(MapId map,int x,int y) => !NpcTradeHaden.NewMaps.ContainsKey(map) || NpcTradeHaden.AllowsFootDestination(map,x,y);
     public NpcTradePokemonCatalog NpcTrades => NpcTradeContent.Trades;
 
-    private static void AppendNpcTradeSources(PretNpcTrades content,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants) =>
-        AppendAuthenticatedRegionalSources(content.Scripts,content.TextSources.Values,content.Constants,sources,texts,constants);
 
     private static void ValidateNpcTradeComposition(PretNpcTrades trades,ImmutableDictionary<MapId,PretWorldMap> maps,ImmutableDictionary<MapId,PretWorldMap> previous,PretStoryCompilation scripts)
     {

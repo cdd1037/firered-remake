@@ -57,7 +57,7 @@ def compose(generated, output, directories, *, previous=None, expected_count=Non
     data = encode(dict(schemaVersion=2, converterVersion=VERSION, sourceCommit=COMMIT, maps=entries,
                        sourceRegistry=dict(path='map-source-registry.json')))
     target = safe(output, 'manifest.json')
-    obsolete = [p for leaf in ('world.json', 'runtime-map.json', 'source-registry.json') for p in output.rglob(leaf)] if output.exists() else []
+    obsolete = [p for leaf in ('world.json', 'runtime-map.json', 'source-registry.json', '*source-lock.json') for p in output.rglob(leaf)] if output.exists() else []
     for path in obsolete:
         safe(output, path.relative_to(output).as_posix())
     if check:

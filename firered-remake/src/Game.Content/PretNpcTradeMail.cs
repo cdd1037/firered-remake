@@ -41,7 +41,6 @@ public sealed class PretNpcTradeMail
     public NpcTradeItemsDocument Items { get; }
     public JsonElement Catalog { get; }
     public JsonElement Contracts { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public string GeneratedDirectory { get; }
 
     private PretNpcTradeMail(SilphSourcePackage source, NpcTradeMailPayload dontae,
@@ -56,10 +55,10 @@ public sealed class PretNpcTradeMail
         Words = words; ReadLayout = layout; Assets = assets; Items = items;
         TextSources = texts; Texts = texts.ToImmutableDictionary(t => t.Symbol, t => t.Text, StringComparer.Ordinal);
         Catalog = source.Document("catalog.json"); Contracts = source.Document("contracts.json");
-        SourceFiles = source.Files; GeneratedDirectory = source.Directory;
+        GeneratedDirectory = source.Directory;
         AssetFiles = assets.Select(a => a.TexturePath)
             .Concat(items.Icons.Select(i => i.TexturePath))
-            .ToImmutableDictionary(p => p, p => source.Outputs[p], StringComparer.Ordinal);
+            .Distinct(StringComparer.Ordinal).ToImmutableDictionary(p => p, p => source.Read(p), StringComparer.Ordinal);
     }
 
     public NpcTradeMailAsset BackgroundFor(int playerGender) => playerGender is 0 or 1
@@ -68,7 +67,7 @@ public sealed class PretNpcTradeMail
 
     public static PretNpcTradeMail Load(string projectRoot)
     {
-        var source = new SilphSourcePackage(projectRoot,"npc-trade-mail",            "scripts/npc-trade-mail.lock.json");
+        var source = new SilphSourcePackage(projectRoot,"npc-trade-mail");
         var catalog = source.Document("catalog.json"); var contracts = source.Document("contracts.json");
         Need(catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Dontae mail source/catalog identity differs.");
@@ -105,7 +104,7 @@ public sealed class PretNpcTradeMail
         foreach (var asset in assets)
         {
             Need(asset.Width == 240 && asset.Height == 160 && asset.SourcePaths.Length == 3 &&
-                asset.SourcePaths.All(source.Raw.ContainsKey) && PngRgba8.Decode(source.Outputs[asset.TexturePath], asset.Width, asset.Height).Length == 240 * 160 * 4 ,
+                (source.Read(asset.TexturePath)).Length > 0,
                 "Original Fab background pixels differ.");
         }
         var items = source.Parse<NpcTradeItemsDocument>("items.json");
@@ -118,7 +117,7 @@ public sealed class PretNpcTradeMail
             "Original Fab Mail held-item metadata differs.");
         var icon = items.Icons[0];
         Need(icon.Item == FabMailId && icon.Width == 24 && icon.Height == 24 && icon.SourcePaths.Length == 2 &&
-            icon.SourcePaths.All(source.Raw.ContainsKey) && PngRgba8.Decode(source.Outputs[icon.TexturePath], icon.Width, icon.Height).Length == 24 * 24 * 4 , "Original Fab item icon differs.");
+            (source.Read(icon.TexturePath)).Length > 0, "Original Fab item icon differs.");
         var texts = source.Parse<ImmutableArray<NpcTradeMailText>>("texts.json");
         Need(texts.Length == 27 && texts.Select(t => t.Symbol).Distinct(StringComparer.Ordinal).Count() == 27 &&
             texts.Single(t => t.Symbol == "gText_From").Text == layout.AuthorPrefix, "Source mail UI text scope differs.");

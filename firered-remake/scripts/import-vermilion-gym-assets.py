@@ -7,7 +7,7 @@ from pathlib import Path as _SourcePath
 _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
-from raw_source_paths import raw_metadata_directory
+
 import argparse
 import base64
 import importlib.util
@@ -17,6 +17,7 @@ import re
 import struct
 import subprocess
 import sys
+import machine_catalog as shared_machines
 
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -56,13 +57,10 @@ def read_lock(path=None):
     path = safe(path or ROOT / 'scripts/vermilion-gym-assets.lock.json')
     data = read(path.parent, path.name)
     lock = json.loads(data, object_pairs_hook=pairs)
-    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameVersion'], lock['revision'], len(lock['files']), len(lock['inputs'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0, 36, 4):
+    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameVersion'], lock['revision'], len(lock['files']), len(lock['inputs'])) != (1, 'pret/pokefirered', COMMIT, PROFILE, 'FIRERED', 0, 36, 5):
         raise ValueError('Gym asset lock identity differs')
     return lock
 
-def raw_manifest(lock):
-    return encoded(dict(profile=PROFILE, sourceCommit=COMMIT,
-                         inputCount=len(lock['files'])))
 
 def authenticated_inputs(lock, raw, repository=None, root=ROOT):
     sources, inputs = {}, {}
@@ -110,7 +108,7 @@ def sound_closure(script, moves):
         result[move] = dict(effects=sorted(effects), labels=sorted(seen))
     return result
 
-def build(lock, sources, inputs):
+def build(lock, sources, inputs, root=ROOT):
     text = {p: b.decode() for p, b in sources.items() if not p.endswith(('.png', '.mid'))}
     entries = {e['path']: e for e in lock['files']}
     rules = []
@@ -129,46 +127,7 @@ def build(lock, sources, inputs):
         return int(m[1])
     def ident(symbol): return dict(value='pret:' + symbol)
 
-    prior = json.loads(inputs['content/generated/ssanne-machines/ssanne-machines.json'], object_pairs_hook=pairs)
-    if (prior['profile'], len(prior['machines']), len(prior['machines'][0]['compatibility'])) != (
-            'firered-ssanne-machines-v1', 11, 73): raise ValueError('Historical machine scope differs')
-    compatibility = []
-    for original in prior['machines'][0]['compatibility']:
-        symbol = original['species']['value'][5:]
-        path = 'src/data/pokemon/tmhm_learnsets.h'
-        m = match(path, r'^    \[' + symbol + r'\]\s*= TMHM_LEARNSET\((.*?)\),')
-        tokens = re.findall(r'TMHM\((\w+)\)', m[1])
-        if re.sub(r'TMHM\(\w+\)|\||\s|0', '', m[1]) or len(tokens) != len(set(tokens)):
-            raise ValueError('Unsupported source TM compatibility syntax')
-        source = ref(path, symbol, m)
-        species_id = constant('include/constants/species.h', symbol)
-        if source != original['source'] or species_id != original['sourceSpeciesId']:
-            raise ValueError('Historical 73-species identity/source spans changed')
-        compatibility.append(dict(species=ident(symbol), sourceSpeciesId=species_id,
-                                  canLearn='TM34_SHOCK_WAVE' in tokens, source=source))
-    all_items = json.loads(text['src/data/items.json'], object_pairs_hook=pairs)['items']
-    chosen = [i for i in all_items if i['itemId'] == 'ITEM_TM34']
-    if len(chosen) != 1: raise ValueError('TM34 item nonunique')
-    i = chosen[0]
-    m = match('src/data/items.json', r'^    \{\n      "english": "TM34",.*?^    \}')
-    definition = dict(id=ident(i['itemId']), sourceItemSymbol=i['itemId'], sourceItemId=constant('include/constants/items.h', i['itemId']),
-        name=i['english'], price=i['price'], importance=i['importance'], registrability=i['registrability'], pocket=i['pocket'],
-        type=str(i['type']), holdEffect=i['holdEffect'], holdEffectParam=i['holdEffectParam'], fieldUseFunction=i['fieldUseFunc'],
-        battleUsage=i['battleUsage'], battleUseFunction=i['battleUseFunc'], secondaryId=i['secondaryId'],
-        canToss=i['importance'] == 0, canSell=i['price'] != 0, canGive=i['importance'] == 0, source=ref('src/data/items.json', i['itemId'], m))
-    m = match('src/move_descriptions.c', r'^const u8 gMoveDescription_ShockWave\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
-    machine = dict(item=definition, description=json.loads(m[1]), declarationDescription=i['description_english'].replace('\\n', '\n'),
-                   descriptionSource=ref('src/move_descriptions.c', 'gMoveDescription_ShockWave', m))
-    m = match('src/data/party_menu.h', r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};')
-    mapping = re.findall(r'\bMOVE_\w+', m[1])
-    if len(mapping) != 58 or mapping[33] != 'MOVE_SHOCK_WAVE': raise ValueError('TM34 source move map differs')
-    rules.append(ref('src/data/party_menu.h', 'sTMHMMoves', m))
-    m = match('src/data/battle_moves.h', r'^    \[MOVE_SHOCK_WAVE\] =\n    \{(.*?)^    \},')
-    pp = int(re.search(r'\.pp = (\d+),', m[1])[1])
-    move_id = constant('include/constants/moves.h', 'MOVE_SHOCK_WAVE')
-    if (definition['sourceItemId'], move_id, pp) != (322, 351, 20): raise ValueError('TM34 source identity differs')
-    rules.append(ref('src/data/battle_moves.h', 'MOVE_SHOCK_WAVE', m))
-    tm34 = dict(machine=machine, move=ident('MOVE_SHOCK_WAVE'), sourceMoveId=move_id, movePp=pp, compatibility=compatibility)
+    tm34 = shared_machines.admission_view(root, 'content/generated/vermilion-gym-assets/assets.json', '/tm34')
     m = match('data/maps/VermilionCity_Gym/scripts.inc', r'^VermilionCity_Gym_EventScript_GiveTM34::.*?^\tend$')
     rules.append(ref('data/maps/VermilionCity_Gym/scripts.inc', 'VermilionCity_Gym_EventScript_GiveTM34', m))
 
@@ -282,7 +241,7 @@ def build(lock, sources, inputs):
          resolvedTrainers=resolved, moves=closure, fieldCues=sorted(field),
         extraCues=sorted(NEW_CUES),  recordingsWritten=False))
     document = dict(schemaVersion=1, profile=PROFILE, sourceCommit=COMMIT, inputs=lock['files'], localInputs=lock['inputs'],
-                    rulesSources=rules, tm34=tm34, icon=icon, portraits=portraits, limitations=[
+                    tm34=tm34, icon=icon, portraits=portraits, limitations=[
                     'One new machine over the unchanged 73-species S.S. Anne scope; historical eleven-machine profiles remain exact.',
                     'Two original trainer portraits only; Sailor and Gentleman are reused from the existing ship art.',
                     'Four new original-source synthesized effects; candidate manifest preserves all historical239 cue records.',
@@ -306,11 +265,10 @@ def run(raw, out, repository=None, lock_path=None, root=ROOT, check=False):
                 raise ValueError('Legacy/dependency output overlap')
     lock = read_lock(lock_path)
     sources, inputs = authenticated_inputs(lock, raw, repository, root)
-    outputs = build(lock, sources, inputs)
+    outputs = build(lock, sources, inputs, root)
     materials = {(out, p): b for p, b in outputs.items()}
     if repository:
         materials.update({(raw, p): b for p, b in sources.items()})
-        materials[(raw_metadata_directory(raw, 'vermilion-gym-assets'), 'manifest.json')] = raw_manifest(lock)
     # Preflight every target before any writes; an untrusted failed input cannot alter output.
     targets = []
     for (parent, path), data in materials.items():
@@ -326,7 +284,7 @@ def run(raw, out, repository=None, lock_path=None, root=ROOT, check=False):
             target.parent.mkdir(parents=True, exist_ok=True)
             stage.write_bytes(data)
             stage.replace(target)
-    return dict(passed=True, sourceFiles=36, localInputs=4, species=73, machines=12, newPortraits=2,
+    return dict(passed=True, sourceFiles=36, localInputs=5, species=73, machines=12, newPortraits=2,
                 newSynthCues=4, candidateCueCount=243,
                  outputs=len(outputs), recordingsWritten=False)
 

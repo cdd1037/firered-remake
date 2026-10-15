@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Game.Content;
 
-public sealed record Route11StatusAsset(string Id, int Width, int Height, int X, int Y, byte[] Rgba);
+public sealed record Route11StatusAsset(string Id, int Width, int Height, int X, int Y, byte[] Png);
 public sealed record Route11ArtBundle(ImmutableArray<ForestTrainerPortrait> Portraits,
     ImmutableArray<Route11StatusAsset> StatusAssets);
 
@@ -37,19 +37,18 @@ public static class PretRoute11Art
             var e = Expected[id];
             Require((I(asset, "width"), I(asset, "height"), I(asset, "x"), I(asset, "y")) == (e.W, e.H, e.X, e.Y),
                 "Route11 asset layout differs.");
-            var pixels = PngRgba8.Decode(Read(root, Generated + S(asset, "texturePath")), e.W, e.H);
-            Require(pixels.Length == e.W * e.H * 4, "Route11 pixel buffer size differs.");
-            Require(Enumerable.Range(0, pixels.Length / 4).All(i => pixels[4 * i + 3] is 0 or 255)
-                && Enumerable.Range(0, pixels.Length / 4).Any(i => pixels[4 * i + 3] == 255), "Route11 pixel alpha differs.");
+            var png = Read(root, Generated + S(asset, "texturePath"));
+            Require(png.Length > 0, "Route11 PNG payload differs.");
+
             if (id == "gamer-front")
             {
                 Require(S(asset, "kind") == "trainer", "GAMER asset kind differs.");
-                portraits.Add(new(id, e.X, e.Y, pixels));
+                portraits.Add(new(id, e.X, e.Y, png));
             }
             else
             {
                 Require(S(asset, "kind") == "status", "Freeze kind differs.");
-                statuses.Add(new(id, e.W, e.H, e.X, e.Y, pixels));
+                statuses.Add(new(id, e.W, e.H, e.X, e.Y, png));
             }
         }
         Require(portraits.Count == 1 && statuses.Count == 3 && seen.SetEquals(Expected.Keys), "Route11 art bundle incomplete.");

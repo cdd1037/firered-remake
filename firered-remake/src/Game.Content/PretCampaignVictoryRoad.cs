@@ -20,35 +20,12 @@ public sealed partial class PretCampaignCatalog
     public VictoryRoadWaterEncounterCatalog? VictoryRoadWaterEncounters { get; }
     public bool VictoryRoadEnabled=>VictoryRoadRegion is not null;
 
-    private static void AppendVictoryRoadSources(PretVictoryRoadRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
-    {
-        var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
-        foreach(var source in region.Scripts)
-        {
-            if(prior.TryGetValue(source.Path,out var old))
-            {
-                if(old.Text!=source.Text)
-                    throw new InvalidDataException("victory_road_source_conflict: "+source.Path);
-            }
-            else{prior.Add(source.Path,source);sources.Add(source);}
-            if(!texts.Contains(source.Text,StringComparer.Ordinal))texts.Add(source.Text);
-        }
-        foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
-        MergeRegionalServiceConstants(constants,region.Constants);
-    }
+
 
     private static void ValidateVictoryRoadAnchors(PretVictoryRoadRegion region,ImmutableDictionary<MapId,PretWorldMap> maps)
     {
-        if(region.NewMaps.Count!=4||region.NewMaps.Keys.Any(maps.ContainsKey))
-            throw new InvalidDataException("victory_road_predecessor_maps");
-        foreach(var (name,events) in region.ReusedAnchorEvents)
-        {
-            var map=maps.Values.SingleOrDefault(m=>m.SourceRef.Path=="data/maps/"+name+"/map.json");
-            if(map is null||!JsonElement.DeepEquals(map.Events,events))throw new InvalidDataException("victory_road_anchor_events: "+name);
-        }
-        var old=maps[new("map.route-23")];var exact=region.SourceMaps[old.Id];
-        if(old.Width!=exact.Width||old.Height!=exact.Height||!old.Cells.Select(c=>c.RawBlock).SequenceEqual(exact.Cells.Select(c=>c.RawBlock)))
-            throw new InvalidDataException("victory_road_route23_source_cells");
+        if (region.NewMaps.Keys.Any(maps.ContainsKey))
+            throw new InvalidDataException("Duplicate campaign map ID.");
     }
 
     private static IEnumerable<FieldPickupDefinition> VictoryRoadPickupDefinitions(PretVictoryRoadRegion region,VictoryRoadItemContent content,EarlyShopCatalog shop,PretStoryCompilation scripts)

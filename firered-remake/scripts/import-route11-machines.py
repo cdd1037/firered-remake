@@ -3,6 +3,9 @@
 import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+from machine_catalog import load_catalog, machine_reference
+
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-route11-machines-v1'
@@ -65,28 +68,9 @@ def convert(lock,data):
  def ident(s):return dict(value='pret:'+s)
  def constant(p,s):
   m=match(p,r'^#define '+s+r'[ \t]+(\d+)[ \t]*(?://[^\n]*)?$');rules.append(ref(p,s,m));return int(m[1])
- def compatibility(tm):
-  result=[];p='src/data/pokemon/tmhm_learnsets.h'
-  for s in SPECIES:
-   full='SPECIES_'+s;m=match(p,r'^    \['+full+r'\]\s*= TMHM_LEARNSET\((.*?)\),');tokens=re.findall(r'TMHM\((\w+)\)',m[1])
-   remaining=re.sub(r'TMHM\(\w+\)|\||\s|0','',m[1])
-   if remaining or len(tokens)!=len(set(tokens)) or not tokens and m[1].strip()!='0':raise ValueError('Unsupported TM compatibility syntax')
-   result.append(dict(species=ident(full),sourceSpeciesId=constant('include/constants/species.h',full),canLearn=tm in tokens,source=ref(p,full,m)))
-  return result
- all_items=json.loads(text['src/data/items.json'],object_pairs_hook=pairs)['items'];machines=[]
- p='src/data/party_menu.h';m=match(p,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'\bMOVE_\w+\b',m[1]);rules.append(ref(p,'sTMHMMoves',m))
- for name,move,move_id,move_pp in MACHINES:
-  symbol='ITEM_'+name;chosen=[i for i in all_items if i['itemId']==symbol]
-  if len(chosen)!=1:raise ValueError('Nonunique machine item')
-  i=chosen[0];p='src/data/items.json';m=match(p,r'^    \{\n      "english": "'+name+r'",.*?^    \}')
-  source=ref(p,symbol,m);definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=constant('include/constants/items.h',symbol),name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
-  declaration=i['description_english'].replace('\\n','\n');p='src/move_descriptions.c';m=match(p,r'^const u8 gMoveDescription_'+i['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
-  wrapped=dict(item=definition,description=json.loads(m[1]),declarationDescription=declaration,descriptionSource=ref(p,'gMoveDescription_'+i['moveId'],m))
-  if len(mapping)!=58 or mapping[(50 if name.startswith('HM') else 0)+int(name[2:])-1]!='MOVE_'+move:raise ValueError('Source TM move map differs')
-  p='src/data/battle_moves.h';m=match(p,r'^    \[MOVE_'+move+r'\] =\n    \{(.*?)^    \},');pp=int(re.search(r'\.pp = (\d+),',m[1])[1]);rules.append(ref(p,'MOVE_'+move,m))
-  source_move_id=constant('include/constants/moves.h','MOVE_'+move)
-  if (source_move_id,pp)!=(move_id,move_pp):raise ValueError('Source machine move differs')
-  machines.append(dict(machine=wrapped,move=ident('MOVE_'+move),sourceMoveId=source_move_id,movePp=pp,compatibility=compatibility(name+'_'+move)))
+ shared = load_catalog(ROOT)
+ machines = [machine_reference(shared, 'pret:ITEM_' + name,
+     ['pret:SPECIES_' + species for species in SPECIES]) for name, _, _, _ in MACHINES]
  if constant('include/constants/global.h','BAG_TMHM_COUNT')!=58 or constant('include/constants/global.h','BAG_KEYITEMS_COUNT')!=30:raise ValueError('Pocket capacity differs')
  codec_path=ROOT/'scripts/import-lab-battle-ui.py'
  spec=importlib.util.spec_from_file_location('ssanne_machines_existing_png_codec',codec_path);codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
@@ -118,7 +102,7 @@ def convert(lock,data):
   ('data/scripts/item_ball_scripts.inc','Route25_EventScript_ItemTM43',r'^Route25_EventScript_ItemTM43::\n\tfinditem ITEM_TM43\n\tend$'),
   ('asm/macros/event.inc','giveitem_msg',r'^\s*\.macro giveitem_msg[^\n]*\n.*?\s*\.endm')]:rules.append(ref(p,s,match(p,pat)))
  for p in ['src/data/items.json.txt','tools/gbagfx/gfx.c','tools/gbagfx/convert_png.c']:rules.append(ref(p,'bounded source declaration and conversion'))
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,machines=machines,icons=icons,limitations=[
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],machines=machines,icons=icons,limitations=[
   'Thirteen machines across exactly 79 source species; all twelve Gym machines retain their original first 73 compatibility rows.',
   'Historical 70-species machine metadata and compatibility rows are preserved at composition, including source spans.',
   'Existing reward and pickup source references are preserved; ship application owns the new pickup, captain reward, flags and teaching selections.',

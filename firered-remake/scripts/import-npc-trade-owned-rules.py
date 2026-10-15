@@ -10,6 +10,10 @@ import re
 import subprocess
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from machine_catalog import compatibility_additions, machine_definitions, admission_species
+
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 SPECIES = {"SPECIES_MR_MIME": 122, "SPECIES_JYNX": 124}
@@ -17,8 +21,6 @@ SHARED_RAW = "content/raw/pokefirered/037335f4/"
 DEPENDENCIES = (
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/fossil-lab-rules/pokemon.json',
-    'content/generated/fossil-lab-rules/machines.json',
-    'scripts/fossil-lab-rules.lock.json',
 )
 
 
@@ -56,11 +58,8 @@ def generate(reference, dependency):
         dependencies.append(dict(path=path))
         return json.loads(data)
 
-    canonical, previous, previous_machines, previous_lock = [dependent(path) for path in DEPENDENCIES]
-    need(canonical["sourceCommit"] == previous["sourceCommit"] == previous_machines["sourceCommit"] == previous_lock["sourceCommit"] == COMMIT,
-         "Exact source commit across dependencies")
-    need(previous["ownedSpeciesCount"] == 159 and previous["opponentSpeciesCount"] == 190 and
-         previous_machines["speciesCount"] == 159 and previous_machines["machineCount"] == 41, "Exact fossil predecessor")
+    canonical, previous = [dependent(path) for path in DEPENDENCIES]
+    need(previous['ownedSpeciesCount'] == 159 and previous['opponentSpeciesCount'] == 190, 'Exact fossil ownership')
     need(len(canonical["species"]) == 386, "Complete canonical species dependency")
     promoted = []
     for species, source_id in SPECIES.items():
@@ -78,19 +77,7 @@ def generate(reference, dependency):
         need(not re.search(rf"^\s*\[{species}\]\s*=", evolution, re.M), "No source evolution: " + species)
         promoted.append(dict(definition=definition, metadata=metadata))
 
-    machine_ids = [row["item"]["value"][5:] for row in previous_machines["additions"]]
-    need(len(machine_ids) == len(set(machine_ids)) == 41, "Exactly 41 existing machines")
-    tm_path = "src/data/pokemon/tmhm_learnsets.h"
-    machine_rows = [dict(item=identity(item), compatibility=[]) for item in sorted(machine_ids)]
-    for species, source_id in SPECIES.items():
-        match = one(tm_path, rf"^    \[{species}\]\s*=\s*TMHM_LEARNSET\((.*?)\),")
-        tokens = re.findall(r"TMHM\(((?:TM|HM)\d{2})_[A-Z0-9_]+\)", match[1])
-        need(tokens and len(tokens) == len(set(tokens)) and
-             not re.sub(r"TMHM\((?:TM|HM)\d{2}_[A-Z0-9_]+\)|[|\s]", "", match[1]), "Source machine row syntax")
-        source = ref(tm_path, species, match)
-        for row in machine_rows:
-            row["compatibility"].append(dict(species=identity(species), sourceSpeciesId=source_id,
-                                            canLearn=row["item"]["value"][10:] in tokens, source=source))
+    machine_rows = compatibility_additions(dependency, 'content/generated/npc-trade-owned-rules/machines.json')
     docs = {
         "pokemon.json": dict(sourceCommit=COMMIT,  profile="firered-npc-trade-owned-pokemon-v1",
 

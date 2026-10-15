@@ -11,6 +11,50 @@ COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 NEW_SPECIES=['AMPHAROS','BLISSEY','CORSOLA','DUNSPARCE','ESPEON','FERALIGATR','FLAREON','GRANBULL','LEDIAN','MAGBY','MANTINE','POLITOED','POLIWRATH','PORYGON2','QWILFISH','SMOOCHUM','TOGEPI','VAPOREON']
 # Meowth and Seaking are already admitted species; Tower needs their source shiny forms.
 SPECIES=sorted(NEW_SPECIES+['MEOWTH','SEAKING'])
+# Earlier packages own these identical pixels. Tower retains its own geometry and
+# source annotations, and checks the shared image against its source conversion.
+SHARED_ART = {'aroma-lady-front': 'content/generated/first-sevii-presentation/first-sevii-aroma-lady-front.png',
+ 'beauty-front': 'content/generated/celadon-gym-art/beauty-front.png',
+ 'biker-front': 'content/generated/celadon-approach-art/biker-front.png',
+ 'black-belt-front': 'content/generated/viridian-gym-presentation/black-belt-front.png',
+ 'bug-catcher-front': 'content/generated/forest-trainer-art/bug-catcher-front.png',
+ 'burglar-front': 'content/generated/cinnabar-trainer-art/burglar-front.png',
+ 'camper-front': 'content/generated/pewter-trainer-art/camper-front.png',
+ 'cool-couple-front': 'content/generated/seven-island-presentation/cool-couple-front.png',
+ 'cooltrainer-f-front': 'content/generated/celadon-gym-art/cooltrainer-f-front.png',
+ 'cooltrainer-m-front': 'content/generated/viridian-gym-presentation/cooltrainer-m-front.png',
+ 'crush-girl-front': 'content/generated/sevii-ruby-presentation/crush-girl-front.png',
+ 'crush-kin-front': 'content/generated/sevii-ruby-presentation/crush-kin-front.png',
+ 'cue-ball-front': 'content/generated/first-sevii-presentation/first-sevii-cue-ball-front.png',
+ 'engineer-front': 'content/generated/vermilion-gym-assets/engineer-front.png',
+ 'fisherman-front': 'content/generated/ssanne-battle-art/fisherman-front.png',
+ 'gentleman-front': 'content/generated/ssanne-battle-art/gentleman-front.png',
+ 'hiker-front': 'content/generated/mtmoon-trainer-art/hiker-front.png',
+ 'juggler-front': 'content/generated/fuchsia-gym-presentation/juggler-front.png',
+ 'lass-front': 'content/generated/route3-trainer-art/lass-front.png',
+ 'meowth-back-normal': 'content/generated/vermilion-pokemon/meowth-back-normal.png',
+ 'meowth-back-shiny': 'content/generated/vermilion-pokemon/meowth-back-shiny.png',
+ 'meowth-front-normal': 'content/generated/vermilion-pokemon/meowth-front-normal.png',
+ 'meowth-front-shiny': 'content/generated/vermilion-pokemon/meowth-front-shiny.png',
+ 'picnicker-front': 'content/generated/cerulean-trainers/picnicker-front.png',
+ 'pokemon-ranger-f-front': 'content/generated/sevii-ruby-presentation/pokemon-ranger-f-front.png',
+ 'pokemon-ranger-m-front': 'content/generated/sevii-ruby-presentation/pokemon-ranger-m-front.png',
+ 'psychic-f-front': 'content/generated/seven-island-presentation/psychic-f-front.png',
+ 'psychic-m-front': 'content/generated/saffron-gym-trainer-art/psychic-m-front.png',
+ 'sailor-front': 'content/generated/ssanne-battle-art/sailor-front.png',
+ 'scientist-front': 'content/generated/silph-trainer-art/scientist-front.png',
+ 'seaking-back-normal': 'content/generated/rocktunnel-pokemon/seaking-back-normal.png',
+ 'seaking-back-shiny': 'content/generated/rocktunnel-pokemon/seaking-back-shiny.png',
+ 'seaking-front-normal': 'content/generated/rocktunnel-pokemon/seaking-front-normal.png',
+ 'seaking-front-shiny': 'content/generated/rocktunnel-pokemon/seaking-front-shiny.png',
+ 'sis-and-bro-front': 'content/generated/cinnabar-trainer-art/sis-and-bro-front.png',
+ 'super-nerd-front': 'content/generated/mtmoon-trainer-art/super-nerd-front.png',
+ 'swimmer-f-front': 'content/generated/first-sevii-presentation/first-sevii-swimmer-f-front.png',
+ 'swimmer-m-front': 'content/generated/cerulean-trainers/swimmer-m-front.png',
+ 'tuber-f-front': 'content/generated/first-sevii-presentation/first-sevii-tuber-f-front.png',
+ 'twins-front': 'content/generated/double-battle-ui/twins-front.png',
+ 'young-couple-front': 'content/generated/seven-island-presentation/young-couple-front.png',
+ 'youngster-front': 'content/generated/route3-trainer-art/youngster-front.png'}
 def canonical(v):return (json.dumps(v,sort_keys=True,indent=2)+'\n').encode()
 def need(v,m):
     if not v:raise ValueError(m)
@@ -26,8 +70,16 @@ def build(target,dep,ref,check):
         rgba=bytes(v for i in im.tobytes() for v in (*colors[i],255 if i else 0));return im.size,rgba
     def emit(identity,image,pal,shape=None,floor=False):
         (width,height),rgba=indexed(image,pal,shape,floor);im=Image.frombytes('RGBA',(width,height),rgba);buf=io.BytesIO();im.save(buf,format='PNG',optimize=False,compress_level=9)
-        out[identity+'.png']=buf.getvalue()
-        row = dict(id=identity, width=width, height=height, texturePath=f'content/generated/{PACKAGE}/{identity}.png', sourcePaths=[image, pal], paletteExpansion='floor(rgb5 * 255 / 31)' if floor else 'replicate rgb5 bits', transparentIndex=0)
+        texture_path = SHARED_ART.get(identity, f'content/generated/{PACKAGE}/{identity}.png')
+        if identity in SHARED_ART:
+            shared = dep / texture_path
+            safe(shared)
+            with Image.open(shared) as existing:
+                need(existing.size == (width, height) and existing.convert('RGBA').tobytes() == rgba,
+                     'Shared Tower artwork differs: ' + texture_path)
+        else:
+            out[identity+'.png']=buf.getvalue()
+        row = dict(id=identity, width=width, height=height, texturePath=texture_path, sourcePaths=[image, pal], paletteExpansion='floor(rgb5 * 255 / 31)' if floor else 'replicate rgb5 bits', transparentIndex=0)
         assets.append(row);return row
     graphics=src.text('src/data/graphics/pokemon.h');constants=src.text('include/constants/species.h');sprites=[]
     for name in SPECIES:
@@ -81,7 +133,7 @@ def build(target,dep,ref,check):
     lock=src.lock();lock.update(gameVersion='FIRERED',revision=0,completeGame=False);lb=canonical(lock)
     manifest=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputCount=len(src.entries),outputCount=len(out),spriteCount=len(sprites),portraitCount=len(portraits),itemIconCount=len(icons),assetCount=len(assets),authorDependencies=[dict(path='scripts/import-cinnabar-source-preparation.py')],outputs=[dict(path=p) for p,b in sorted(out.items())])
     mb=canonical(manifest)
-    writes=[(target/'scripts/trainer-tower-presentation.lock.json',lb),(target/'content/generated'/PACKAGE/'manifest.json',mb)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p,b) for p,b in sorted(out.items())]
+    writes=[(target / 'content/generated' / PACKAGE / 'manifest.json', mb)]+[(target/'content/raw/pokefirered/037335f4'/p,b) for p,b in sorted(src.data.items())]+[(target/'content/generated'/PACKAGE/p,b) for p,b in sorted(out.items())]
     for p,b in writes:
         safe(p)
         if check:need(p.is_file() and p.read_bytes()==b,'Regeneration differs '+str(p))

@@ -8,6 +8,10 @@ import re
 import subprocess
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from machine_catalog import compatibility_additions, machine_definitions, admission_species
+
 COMMIT = "037335f4c725d7c9aecdac87066f2002b4bd7e14"
 TREE = "7515cd4067ea55f8cdbc73624478afd2736c58b9"
 TRAINERS = ('SWIMMER_MALE_REECE', 'SWIMMER_MALE_RICHARD', 'SWIMMER_MALE_TONY', 'SWIMMER_MALE_MATTHEW', 'SWIMMER_MALE_DOUGLAS', 'SWIMMER_MALE_DAVID', 'SWIMMER_MALE_AXLE', 'SWIMMER_FEMALE_ALICE', 'SWIMMER_FEMALE_CONNIE', 'SWIMMER_FEMALE_ANYA', 'SIS_AND_BRO_LIA_LUC', 'SWIMMER_FEMALE_MELISSA', 'PICNICKER_MISSY', 'SWIMMER_FEMALE_NORA', 'BIRD_KEEPER_ROGER', 'SWIMMER_MALE_DEAN', 'PICNICKER_IRENE', 'SWIMMER_MALE_BARRY', 'SWIMMER_MALE_DARRIN', 'SWIMMER_FEMALE_SHIRLEY', 'SWIMMER_FEMALE_TIFFANY')
@@ -17,8 +21,6 @@ RAW = "content/raw/pokefirered/037335f4/"
 DEPENDENCIES = (
     'content/generated/canonical-pokemon/catalog.json',
     'content/generated/npc-trade-owned-rules/pokemon.json',
-    'content/generated/npc-trade-owned-rules/machines.json',
-    'scripts/npc-trade-owned-rules.lock.json',
 )
 
 
@@ -110,8 +112,8 @@ def generate(reference, dependency):
     def dependent(path):
         data=(dependency/path).read_bytes()
         dependencies.append(dict(path=path)); return json.loads(data)
-    canonical,previous,previous_machines,previous_lock=[dependent(p) for p in DEPENDENCIES]
-    need(previous['ownedSpeciesCount']==161 and previous['opponentSpeciesCount']==190 and previous_machines['speciesCount']==161 and previous_machines['machineCount']==41,'Exact NPC trade predecessor')
+    canonical,previous=[dependent(p) for p in DEPENDENCIES]
+    need(previous['ownedSpeciesCount']==161 and previous['opponentSpeciesCount']==190,'Exact NPC trade ownership')
     species={s['id']['value'][5:]:s for s in canonical['species']}; metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
     additions=['SPECIES_ARTICUNO']
     need(len(species)==386,'Complete shared source mechanics')
@@ -175,9 +177,7 @@ def generate(reference, dependency):
     creation_path='src/script_pokemon_util.c';creation=one(creation_path,r'^void CreateScriptedWildMon\([^\n]+\)\n\{\n.*?^\}')
     need('CreateMon(&gEnemyParty[0], species, level, 32, 0, 0, OT_ID_PLAYER_ID, 0);' in creation[0],'Original static player OT random PID/IV')
     static=dict(map=dict(value=MAPS['SeafoamIslands_B4F']),localId=3,x=9,y=2,elevation=4,species=identity('SPECIES_ARTICUNO'),level=50,heldItem='ITEM_NONE',modernFatefulEncounter=False,shinyLocked=False,generationDraws=4,source=ref(art_path,'SeafoamIslands_B4F_EventScript_Articuno',art),creationSource=ref(creation_path,'CreateScriptedWildMon',creation))
-    machineids=sorted(r['item']['value'][5:] for r in previous_machines['additions']); need(len(machineids)==41,'Exactly41 existing machines')
-    tm='src/data/pokemon/tmhm_learnsets.h';tmrow=one(tm,r'^    \[SPECIES_ARTICUNO\]\s*=\s*TMHM_LEARNSET\((.*?)\),')
-    cells=[dict(item=identity(item),compatibility=[dict(species=identity('SPECIES_ARTICUNO'),sourceSpeciesId=144,canLearn=bool(re.search(r'TMHM\('+item[5:]+r'_',tmrow[1])),source=ref(tm,'SPECIES_ARTICUNO',tmrow))]) for item in machineids]
+    cells=compatibility_additions(dependency, 'content/generated/seafoam-rules/machines.json')
     for path in ['src/pokemon.c','src/battle_main.c','src/battle_setup.c','src/wild_encounter.c','data/scripts/trainer_battle.inc','asm/macros/event.inc','include/constants/battle.h','src/data/pokemon/evolution.h','include/random.h','include/constants/pokemon.h','include/constants/flags.h','include/constants/items.h']:read(path)
     need('if (!(gBattleTypeFlags & (BATTLE_TYPE_POKEDUDE | BATTLE_TYPE_LEGENDARY | BATTLE_TYPE_TRAINER)))' in read('src/pokemon.c'),'Legendary held assignment bypass')
     def draw(seed):
@@ -239,7 +239,6 @@ def main():
     files.update({BASE+n:(json.dumps(d,indent=2,ensure_ascii=False)+'\n').encode() for n,d in docs.items()})
     files.update({RAW+n:data for n,data in raw.items()})
     lock=dict(sourceCommit=COMMIT,profile='firered-seafoam-rules-v1',files=[dict(path=k) for k,v in sorted(files.items())])
-    files['scripts/seafoam-rules.lock.json']=(json.dumps(lock,indent=2)+'\n').encode()
     for name,data in files.items():
         dest=a.output/name
         if a.check:need(dest.read_bytes()==data,'Regeneration differs: '+name)

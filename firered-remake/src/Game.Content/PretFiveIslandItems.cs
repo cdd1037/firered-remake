@@ -22,7 +22,7 @@ public static partial class PretFiveIslandItems
     {
         var bytes = File.ReadAllBytes(Path.Combine(root, "content/generated/five-island-rules/items.json"));
         var document = JsonSerializer.Deserialize<FiveIslandItemsDocument>(bytes,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })
+            SharedMachineCatalog.Options(root, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase,Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } }))
             ?? throw new InvalidDataException("five_island_items_missing");
         if (            document.Items.Length != 9 || document.Additions.Length != 3 || document.MachineAdditions.Length != 38 ||
             document.Pickups.Length != 8 || document.Pickups.Count(p => p.Hidden) != 2)

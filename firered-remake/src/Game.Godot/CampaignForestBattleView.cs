@@ -17,25 +17,21 @@ public partial class CampaignView
         var source = _catalog.ForestPokemon ?? throw new InvalidDataException("Forest Pokemon content is missing.");
         foreach (var sprite in source.Sprites)
         {
-            var pixels = PngRgba8.Decode(System.IO.File.ReadAllBytes(System.IO.Path.Combine(source.GeneratedDirectory, sprite.TexturePath)), sprite.Width, sprite.Height);
-            if (pixels.Length != 64 * 64 * 4)
-                throw new InvalidDataException("Forest sprite RGBA differs: " + sprite.TexturePath);
-            using var image = Image.CreateFromData(64, 64, false, Image.Format.Rgba8, pixels);
+            using var image = NativeImages.LoadPng(System.IO.File.ReadAllBytes(System.IO.Path.Combine(source.GeneratedDirectory, sprite.TexturePath)), 64, 64);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
                 new(ImageTexture.CreateFromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         var evolution= PretEvolutionArt.Load(_root);
         foreach(var sprite in evolution.Sprites)
         {
-            using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,evolution.ReadRgba(new(sprite.SpeciesId),sprite.Side,sprite.PaletteVariant=="shiny"));
+            using var image=NativeImages.LoadPng(evolution.ReadTexture(new(sprite.SpeciesId),sprite.Side,sprite.PaletteVariant=="shiny"), 64, 64);
             _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
         }
         if(_catalog.PewterPokemon is {} pewter)
         {
             foreach(var sprite in pewter.Sprites)
             {
-                var bytes=PngRgba8.Decode(System.IO.File.ReadAllBytes(System.IO.Path.Combine(pewter.GeneratedDirectory,sprite.TexturePath)), sprite.Width, sprite.Height);
-                using var image=Image.CreateFromData(64,64,false,Image.Format.Rgba8,bytes);
+                using var image = NativeImages.LoadPng(System.IO.File.ReadAllBytes(System.IO.Path.Combine(pewter.GeneratedDirectory,sprite.TexturePath)), 64, 64);
                 _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
             }
         }

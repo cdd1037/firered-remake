@@ -15,21 +15,5 @@ public sealed partial class PretCampaignCatalog
     public EventIslandMachineCatalog EventIslandMachines { get; }
     public EventIslandShopCatalog EventIslandShop { get; }
 
-    private static void AppendEventIslandSources(PretEventIslandRegion region,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string, int> constants)
-    {
-        var prior = sources.ToDictionary(s => s.Path, StringComparer.Ordinal);
-        foreach (var file in region.Scripts)
-        {
-            if (prior.TryGetValue(file.Path, out var old))
-            {
-                if (old.Text != file.Text)
-                    throw new InvalidDataException("event_island_source_conflict:" + file.Path);
-            }
-            else { prior.Add(file.Path, file); sources.Add(file); }
-            if (!texts.Contains(file.Text, StringComparer.Ordinal)) texts.Add(file.Text);
-        }
-        foreach (var text in region.TextSources.Values)
-            if (!texts.Contains(text, StringComparer.Ordinal)) texts.Add(text);
-        MergeRegionalServiceConstants(constants, region.Constants);
-    }
+
 }

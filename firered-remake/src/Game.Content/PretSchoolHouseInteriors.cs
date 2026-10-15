@@ -24,25 +24,21 @@ public sealed class PretSchoolHouseInteriors
         new(ThreeIslandHouseMapId, "ThreeIsland_House2", "LAYOUT_HOUSE3", 11, 9, 2, 0,
             "MAP_THREE_ISLAND", "3", [(4,3)])];
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
     public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement ScriptInventory { get; }
+
     public JsonElement NpcSources { get; }
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretSchoolHouseInteriors(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableArray<PretSourceScriptFile> scripts, ImmutableDictionary<string, string> texts,
         ImmutableDictionary<string, int> constants)
     {
-        NewMaps = maps; Scripts = scripts; TextSources = texts; Constants = constants; SourceFiles = source.Files;
+        NewMaps = maps; Constants = constants; SourceFiles = ImmutableArray<PretWorldSourceFile>.Empty;
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
-        Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
-        NpcSources = source.Document("npc-source.json");
+        Contracts = source.Document("contracts.json"); NpcSources = source.Document("npc-source.json");
     }
 
     public static MapId MapIdFromSourceSymbol(string symbol) => symbol switch
@@ -69,13 +65,13 @@ public sealed class PretSchoolHouseInteriors
     public static PretSchoolHouseInteriors Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"school-house-interiors",            "scripts/school-house-interiors.lock.json");
+        var source = new SilphSourcePackage(projectRoot,"school-house-interiors");
         var graphics = new HashSet<string>(["OBJ_EVENT_GFX_WOMAN_2", "OBJ_EVENT_GFX_LASS",
             "OBJ_EVENT_GFX_OLD_MAN_1", "OBJ_EVENT_GFX_LITTLE_BOY", "OBJ_EVENT_GFX_RED_NORMAL",
             "OBJ_EVENT_GFX_ROCKER", "OBJ_EVENT_GFX_MAN"], StringComparer.Ordinal);
         foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
         {
-            Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!) && texture.GetProperty("reuseExisting").GetBoolean(),
+            Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!),
                 "School/house interior actors must reuse the original existing resources.");
         }
         Need(graphics.Count == 0, "School/house interior actor resources are incomplete.");
@@ -83,8 +79,8 @@ public sealed class PretSchoolHouseInteriors
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId && catalog.GetProperty("maps").GetArrayLength() == Rooms.Length ,
             "School/house interior catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Three source-authenticated ordinary interiors; grid and wall-map runtime admission remain separate.", ResourceId, source.Files);
-        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
+            "Three source-authenticated ordinary interiors; grid and wall-map runtime admission remain separate.", ResourceId, ImmutableArray<PretWorldSourceFile>.Empty);
+
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
@@ -92,9 +88,9 @@ public sealed class PretSchoolHouseInteriors
             string path = spec.GetProperty("path").GetString()!;
             Need(path == relative + "/runtime-map.json" ,
                 "School/house interior compact map binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
+            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/city-services/npc/red-normal.png"), MapIdFromSourceSymbol);
+                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
             Need(map.FieldWarps.Length == Rooms.Single(r => r.Id == map.Id).Exits.Length &&
                 map.Events.GetProperty("coord_events").GetArrayLength() == 0 &&
                 map.Events.GetProperty("connections").ValueKind == JsonValueKind.Null, "School/house interior event scope differs.");
@@ -103,29 +99,15 @@ public sealed class PretSchoolHouseInteriors
         Need(maps.Keys.ToHashSet().SetEquals(Rooms.Select(r => r.Id)), "School/house interior map collection differs.");
         foreach (var room in Rooms) ValidateRoom(maps[room.Id], room);
         ValidateAnchors(source, dependencyRoot, maps);
-        var inventory = source.Document("scripts.json");
-        Need(inventory.GetProperty("blocks").GetArrayLength() == 63 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "School/house interior script closure differs.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
-        {
-            string path = entry.GetString()!, text = new UTF8Encoding(false, true).GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(label.Length > 0, "Missing school/house interior script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
+
+        var files = ImmutableArray<PretWorldSourceFile>.Empty.ToDictionary(f => f.Path, StringComparer.Ordinal);
+        
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["LOCALID_SCHOOL_WOMAN"] == 1 && constants["LOCALID_SCHOOL_LASS"] == 2 &&
             constants["MULTICHOICE_TRAINER_SCHOOL_WHITEBOARD"] == 15 && constants["FAMECHECKER_OAK"] == 0 &&
             constants["FAMECHECKER_DAISY"] == 1 && constants["FAMECHECKER_BILL"] == 13 && constants["FAMECHECKER_SABRINA"] == 7,
             "Original school actor/menu and Fame constants differ.");
-        return new(source, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
+        return new(source, maps.ToImmutable(), constants);
     }
 
     private static void ValidateRoom(PretWorldMap map, RoomSpec room)

@@ -19,9 +19,6 @@ public static class PretFuchsiaGymTrainers
     public const int TrainerCount=7,PartyMemberCount=18,RequiredMoveCount=24;
     public static FuchsiaGymTrainerDocument LoadDocument(string root)
     {
-        using var sourceLock=JsonDocument.Parse(Read(root,"scripts/fuchsia-gym-trainers.lock.json"));
-        var s=sourceLock.RootElement;
-        Require(s.GetProperty("schemaVersion").GetInt32()==1&&s.GetProperty("gameEdition").GetString()=="FIRERED"&&s.GetProperty("romRevision").GetInt32()==0,"Fuchsia Gym source identity differs.");
         var d=ContentJson.ParseStrict<FuchsiaGymTrainerDocument>(Encoding.UTF8.GetString(Read(root,"content/generated/fuchsia-gym-trainers/trainers.json")),ContentJson.CreateOptions());
         Require(d.SchemaVersion==1&&!d.CompleteSourceRoster&&
             d.Trainers.Select(x=>x.Id).Distinct().Count()==7&&d.Trainers.Sum(x=>x.Party.Length)==18&&d.ResolvedMoves.GetArrayLength()==7&&!d.Limitations.IsDefaultOrEmpty,"Fuchsia Gym document scope differs.");

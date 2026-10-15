@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
-using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Game.Domain.Ids;
 using Game.Domain.World;
 using Game.Domain.Pokemon;
@@ -15,29 +13,21 @@ public sealed class PretCapeBrinkTutor
     public static MapId CapeMapId { get; } = new("map.two-island-cape-brink");
     public static MapId HouseMapId { get; } = new("map.two-island-cape-brink-house");
     public ImmutableDictionary<MapId, PretWorldMap> NewMaps { get; }
-    public ImmutableArray<PretSourceScriptFile> Scripts { get; }
-    public ImmutableDictionary<string, string> TextSources { get; }
     public ImmutableDictionary<string, int> Constants { get; }
-    public ImmutableArray<PretWorldSourceFile> SourceFiles { get; }
     public JsonElement MapCatalog { get; }
     public JsonElement Contracts { get; }
-    public JsonElement ScriptInventory { get; }
     public JsonElement NpcSources { get; }
     public JsonElement EncountersAndItems { get; }
-    public JsonElement NativeInventory { get; }
-    private readonly SilphSourcePackage _source;
     public string GeneratedDirectory { get; }
     public string NpcSourcePath => Path.Combine(GeneratedDirectory, "npc-source.json");
 
     private PretCapeBrinkTutor(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap> maps,
-        ImmutableArray<PretSourceScriptFile> scripts, ImmutableDictionary<string, string> texts,
         ImmutableDictionary<string, int> constants)
     {
-        _source = source;
-        EncountersAndItems = source.Document("encounters-items.json"); NativeInventory = source.Document("native.json");
-        NewMaps = maps; Scripts = scripts; TextSources = texts; Constants = constants; SourceFiles = source.Files;
+        EncountersAndItems = source.Document("encounters-items.json");
+        NewMaps = maps; Constants = constants;
         GeneratedDirectory = source.Directory; MapCatalog = source.Document("catalog.json");
-        Contracts = source.Document("contracts.json"); ScriptInventory = source.Document("scripts.json");
+        Contracts = source.Document("contracts.json");
         NpcSources = source.Document("npc-source.json");
     }
 
@@ -67,11 +57,11 @@ public sealed class PretCapeBrinkTutor
     public static PretCapeBrinkTutor Load(string projectRoot, string? dependencyRoot = null)
     {
         dependencyRoot ??= projectRoot;
-        var source = new SilphSourcePackage(projectRoot,"cape-brink-tutor",            "scripts/cape-brink-tutor.lock.json");
+        var source = new SilphSourcePackage(projectRoot,"cape-brink-tutor");
         var graphics = new HashSet<string>(["OBJ_EVENT_GFX_CHANNELER", "OBJ_EVENT_GFX_RED_NORMAL"], StringComparer.Ordinal);
         foreach (var texture in source.Document("npc-source.json").GetProperty("graphics").EnumerateArray())
         {
-            Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!) && texture.GetProperty("reuseExisting").GetBoolean(),
+            Need(graphics.Remove(texture.GetProperty("graphicsId").GetString()!),
                 "Cape Brink actors must reuse the original existing resources.");
         }
         Need(graphics.Count == 0, "Cape Brink actor resources are incomplete.");
@@ -79,8 +69,7 @@ public sealed class PretCapeBrinkTutor
         Need(            catalog.GetProperty("resourceId").GetString() == ResourceId ,
             "Cape Brink catalog identity differs.");
         var metadata = new PretWorldMetadata("pret/pokefirered", PretWorldMap.SourceCommit,             "Local source evidence; redistribution rights are not inferred.",
-            "Original Cape Brink and ultimate tutor house; current-game admission is separate.", ResourceId, source.Files);
-        var raw = source.Raw.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
+            "Original Cape Brink and ultimate tutor house; current-game admission is separate.", ResourceId, []);
         var maps = ImmutableDictionary.CreateBuilder<MapId, PretWorldMap>();
         foreach (var spec in catalog.GetProperty("maps").EnumerateArray())
         {
@@ -88,38 +77,21 @@ public sealed class PretCapeBrinkTutor
             string path = spec.GetProperty("path").GetString()!;
             Need(path == relative + "/runtime-map.json" ,
                 "Cape Brink compact map binding differs.");
-            var runtime = PretRuntimeMapData.Decode(source.Outputs[path], id, MapIdFromSourceSymbol);
+            var runtime = PretRuntimeMapData.Decode(source.Read(path), id, MapIdFromSourceSymbol);
             Need(MapIdFromSourceSymbol(runtime.SourceRef.Symbol).Value == id, "Cape Brink source identity differs.");
             var map = PretWorldMap.FromRuntime(runtime, metadata, PretRuntimeMapValidation.SafeFile(source.Directory, relative),
-                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/city-services/npc/red-normal.png"), MapIdFromSourceSymbol);
+                PretRuntimeMapValidation.SafeFile(dependencyRoot, "content/generated/shared-overworld/red-normal.png"), MapIdFromSourceSymbol);
             Need(map.FieldWarps.Length == 1 && map.Events.GetProperty("coord_events").GetArrayLength() == 0,
                 "Cape Brink event scope differs.");
             maps.Add(map.Id, map);
         }
         Need(maps.Keys.ToHashSet().SetEquals([CapeMapId, HouseMapId]), "Cape Brink map collection differs.");
         ValidateMaps(source, maps);
-        var inventory = source.Document("scripts.json");
-        Need(inventory.GetProperty("blocks").GetArrayLength() == 76 && inventory.GetProperty("unresolvedLabelReferences").GetArrayLength() == 0,
-            "Cape Brink script closure differs.");
-        var scripts = ImmutableArray.CreateBuilder<PretSourceScriptFile>();
-        var texts = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.Ordinal);
-        var files = source.Files.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        foreach (var entry in inventory.GetProperty("sourcePaths").EnumerateArray())
-        {
-            string path = entry.GetString()!,text = new UTF8Encoding(false, true).GetString(raw[path]);
-            if (path.EndsWith("/text.inc", StringComparison.Ordinal) || path.StartsWith("data/text/", StringComparison.Ordinal)) texts.Add(path, text);
-            else
-            {
-                string label = Regex.Match(text, @"^(\w+)::?", RegexOptions.Multiline | RegexOptions.CultureInvariant).Groups[1].Value;
-                Need(label.Length > 0, "Missing Cape Brink script label.");
-                scripts.Add(new(path, text, new(SourceKind.Pret,path,label,"pret/pokefirered",PretWorldMap.SourceCommit)));
-            }
-        }
         var constants = PretSharedConstants.ForPackage(source.Directory);
         Need(constants["MOVETUTOR_FRENZY_PLANT"] == 15 && constants["MOVETUTOR_BLAST_BURN"] == 16 &&
             constants["MOVETUTOR_HYDRO_CANNON"] == 17 && constants["LOCALID_CAPE_BRINK_TUTOR"] == 1,
             "Cape Brink teaching indexes differ.");
-        return new(source, maps.ToImmutable(), scripts.ToImmutable(), texts.ToImmutable(), constants);
+        return new(source, maps.ToImmutable(), constants);
     }
 
     private static void ValidateMaps(SilphSourcePackage source, ImmutableDictionary<MapId, PretWorldMap>.Builder maps)

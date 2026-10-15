@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Game.Domain.Encounters;
@@ -21,13 +20,7 @@ public sealed class PretVermilionEncounters
         {
             return File.ReadAllBytes(SafeFile(root, path));
         }
-        using var sourceLock=JsonDocument.Parse(Read("scripts/vermilion-encounters.lock.json"));
-        var s=sourceLock.RootElement;
-        foreach(var f in s.GetProperty("files").EnumerateArray())
-        {
-            string p=f.GetProperty("path").GetString()!;
-        }
-                var d=ContentJson.ParseStrict<VermilionEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-encounters/encounters.json")),ContentJson.CreateOptions());
+        var d=ContentJson.ParseStrict<VermilionEncounterDocument>(Encoding.UTF8.GetString(Read("content/generated/vermilion-encounters/encounters.json")),ContentJson.CreateOptions());
                 if(d.SchemaVersion!=1 || d.Tables.Length!=2 ||
             d.HeldItemDrawBound!=100 || d.MeowthRareItem!="ITEM_NUGGET" || d.MeowthRareMinimumRoll!=95 || d.Limitations.IsDefaultOrEmpty)
             throw new InvalidDataException("Vermilion encounter document scope differs.");

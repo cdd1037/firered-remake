@@ -3,6 +3,8 @@
 import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT/'scripts'))
+from item_icon_exports import item_icon_path, output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-ssanne-items-v1'
@@ -105,7 +107,7 @@ def convert(lock,data):
    p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
   image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
   if (w,h)!=(24,24):raise ValueError('Item icon dimensions differ')
-  png=codec.png(w,h,rgba);png_name=symbol.lower()+'.png';outputs[png_name]=png
+  png=codec.png(w,h,rgba);png_name=item_icon_path(image,palette);outputs[png_name]=png
   icons.append(dict(item=ident(symbol),width=w,height=h,pngPath=png_name,source=ref(image,symbols[0]),paletteSource=ref(palette,symbols[1]),bindingSource=binding))
  pickups=[]
  for map_name in MAPS:
@@ -121,7 +123,7 @@ def convert(lock,data):
  for p,s,pat in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','CheckBagHasSpace',r'^bool8 CheckBagHasSpace\(.*?^\}'),('src/pokemon.c','PokemonUseItemEffects',r'^bool8 PokemonUseItemEffects\([^;]*?\n\{.*?^\}')]:rules.append(ref(p,s,match(p,pat)))
  if constant('include/constants/global.h','BAG_BERRIES_COUNT')!=43:raise ValueError('Berry pocket capacity differs')
  for p in ['include/constants/item_effects.h','src/data/items.json.txt','tools/gbagfx/gfx.c','tools/gbagfx/convert_png.c']:rules.append(ref(p,'bounded source declaration and conversion'))
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,items=defs[:14],berryPouch=defs[14],icons=icons,pickups=pickups,limitations=[
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],items=defs[:14],berryPouch=defs[14],icons=icons,pickups=pickups,limitations=[
   'Fourteen exact ship item declarations and one source Berry Pouch dependency; twelve pickups retain original coordinates, flags and local IDs.',
   'Great Ball capture, X Attack battle use and Lava Cookie all-status/confusion use remain deferred; their original metadata and effect bytes are authenticated without claiming execution.',
   'Ship berry storage uses the original 43-slot pocket and automatic Berry Pouch insertion. Application owns FLAG_SYS_GOT_BERRY_POUCH.',
@@ -144,7 +146,7 @@ def run(raw,out,repo=None,lock_path=None):
    p=protected.absolute()
    if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
- materials={(out,p):b for p,b in outputs.items()}
+ materials=output_materials(out,outputs)
  if repo is not None:materials.update({(raw,p):b for p,b in data.items()})
  targets=[]
  for (root,p),b in materials.items():

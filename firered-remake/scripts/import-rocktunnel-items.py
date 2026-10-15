@@ -3,6 +3,8 @@
 import argparse, base64,  importlib.util, json, pathlib, re, subprocess, sys
 sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT/'scripts'))
+from item_icon_exports import item_icon_path, output_materials
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE = '7515cd4067ea55f8cdbc73624478afd2736c58b9'
 PROFILE = 'firered-rocktunnel-items-v1'
@@ -110,7 +112,7 @@ def convert(lock,data):
    p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
   image,palette=paths;w,h,idx,_=codec.indexed_png(data[image]);rgba=codec.rgba(idx,codec.palette(data[palette]))
   if (w,h)!=(24,24):raise ValueError('Item icon dimensions differ')
-  png=codec.png(w,h,rgba);png_name=symbol.lower()+'.png';outputs[png_name]=png
+  png=codec.png(w,h,rgba);png_name=item_icon_path(image,palette);outputs[png_name]=png
   icons.append(dict(item=ident(symbol),width=w,height=h,pngPath=png_name,source=ref(image,symbols[0]),paletteSource=ref(palette,symbols[1]),bindingSource=binding))
  pickups=[]
  for map_name in MAPS:
@@ -128,7 +130,7 @@ def convert(lock,data):
  for p,s in [('data/maps/Route10_PokemonCenter_1F/scripts.inc','Route10_PokemonCenter_1F_EventScript_Aide'),('data/scripts/aide.inc','Aide shared source'),('src/prof_pc.c','GetPokedexCount'),('src/overworld.c','UpdateEscapeWarp')]:rules.append(ref(p,s))
  aide_text=text['data/maps/Route10_PokemonCenter_1F/scripts.inc']
  if '.equ REQUIRED_OWNED_MONS, 20' not in aide_text or 'checkitemspace ITEM_EVERSTONE' not in aide_text or 'setflag FLAG_GOT_EVERSTONE_FROM_OAKS_AIDE' not in aide_text:raise ValueError('Everstone aide source differs')
- doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],rulesSources=rules,items=defs[:-1],icons=icons[:-1],pickups=pickups,limitations=[
+ doc=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,inputs=lock['files'],items=defs[:-1],icons=icons[:-1],pickups=pickups,limitations=[
   'Six additions to the unchanged 32-item Route11 inventory: Max Ether, Persim Berry, Nanab Berry, Everstone, Pearl and Hard Stone. Revive is re-authenticated but inherited with its existing field-use support.',
   'Fifteen pickups preserve original coordinates, flags, quantities, object IDs and scripts; existing Chesto Berry is inherited. No Max Revive pickup exists here.',
   'New active item effects remain unsupported; source effect bytes and held metadata do not enable them. Existing medicine behavior is retained.',
@@ -161,7 +163,7 @@ def run(raw,out,repo=None,lock_path=None):
    p=protected.absolute()
    if any(q==p or q in p.parents or p in q.parents for q in [raw,out]):raise ValueError('Legacy/dependency output overlap')
  lock=lock_read(lock_path);data=read_sources(lock,raw,repo);outputs=convert(lock,data)
- materials={(out,p):b for p,b in outputs.items()}
+ materials=output_materials(out,outputs)
  if repo is not None:materials.update({(raw,p):b for p,b in data.items()})
  targets=[]
  for (root,p),b in materials.items():

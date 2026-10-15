@@ -22,22 +22,7 @@ public sealed partial class PretCampaignCatalog
     public CinnabarWaterEncounterCatalog? CinnabarWaterEncounters{get;}
     public bool CinnabarEnabled=>CinnabarRegion is not null;
 
-    private static void AppendCinnabarSources(PretCinnabarRegion region,PretCinnabarItemsDocument items,List<PretSourceScriptFile> sources,List<string> texts,Dictionary<string,int> constants)
-    {
-        var prior=sources.ToDictionary(s=>s.Path,StringComparer.Ordinal);
-        foreach(var source in region.Scripts)
-        {
-            if(prior.TryGetValue(source.Path,out var old))
-            {
-                if(old.Text!=source.Text)
-                    throw new InvalidDataException("cinnabar_source_conflict: "+source.Path);
-            }
-            else{prior.Add(source.Path,source);sources.Add(source);}
-            if(!texts.Contains(source.Text,StringComparer.Ordinal))texts.Add(source.Text);
-        }
-        foreach(var text in region.TextSources.Values)if(!texts.Contains(text,StringComparer.Ordinal))texts.Add(text);
-        MergeRegionalServiceConstants(constants,region.Constants);
-    }
+
     private string? CinnabarSpeciesName(int species)=>CinnabarPokemon?.SpeciesNames.FirstOrDefault(n=>
         CinnabarPokemon.Species.Concat(CinnabarPokemon.OpponentSpecies).Any(s=>s.SourceSpeciesId==species&&s.Id==n.Id))?.Name;
 

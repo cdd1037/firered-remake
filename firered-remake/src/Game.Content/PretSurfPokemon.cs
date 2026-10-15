@@ -62,7 +62,7 @@ public sealed class PretSurfPokemon
         var files = ImmutableArray.CreateBuilder<PretWorldSourceFile>();
         foreach (var input in doc.Inputs)
         {
-            files.Add(new(input.Path,                $"https://raw.githubusercontent.com/pret/pokefirered/{SourceCommit}/{input.Path}"));
+            files.Add(new(input.Path));
         }
         SafariSource.Require(doc.Species.Select(s => s.SourceSpeciesId).SequenceEqual([54,55]), "Surf exact species delta differs.");
         var species = baseCatalog.Species.ToBuilder();

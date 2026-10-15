@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Rebuild bounded Victory Road presentation from locked pret bytes and predecessor resources."""
-import argparse,  importlib.util, io, json, pathlib, re, struct, subprocess, zlib
+import argparse, importlib.util, io, json, pathlib, re, struct, subprocess
 from PIL import Image
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -14,15 +14,15 @@ ITEMS=[('TM02','TMHM','DragonTMHM','tm_hm','dragon_tm_hm'),('TM07','TMHM','IceTM
  ('GUARD_SPEC','BattleStatItem','GuardSpec','battle_stat_item','guard_spec'),('SITRUS_BERRY','SitrusBerry','SitrusBerry','sitrus_berry','sitrus_berry')]
 MAPS=['Route23','VictoryRoad_1F','VictoryRoad_2F','VictoryRoad_3F','IndigoPlateau_Exterior']
 CUES=['MUS_VICTORY_ROAD','MUS_MT_MOON','MUS_ENCOUNTER_BOY','MUS_ENCOUNTER_GIRL','MUS_VS_TRAINER','MUS_VICTORY_TRAINER','MUS_VS_WILD','MUS_VICTORY_WILD','MUS_SURF','SE_M_STRENGTH','SE_FALL','SE_ICE_BREAK','MUS_OBTAIN_ITEM','MUS_OBTAIN_TMHM']
+from image_io import png as encode_rgba_png
+
 def need(v,m):
  if not v:raise ValueError(m)
 def encode(v):return (json.dumps(v,indent=2,ensure_ascii=False)+'\n').encode()
 def safe(root,path):
  need(path and not pathlib.PurePosixPath(path).is_absolute() and '\\' not in path and ':' not in path and all(p not in ('','.','..') for p in path.split('/')),'Unsafe resource path')
  p=pathlib.Path(root).absolute()/path;need(not any(x.is_symlink() for x in (p,*p.parents)),'Resource symlink rejected');return p
-def png(w,h,rgba):
- def chunk(k,d):return struct.pack('>I',len(d))+k+d+struct.pack('>I',zlib.crc32(k+d)&0xffffffff)
- return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(b''.join(b'\0'+rgba[y*w*4:(y+1)*w*4] for y in range(h)),9))+chunk(b'IEND',b'')
+png = encode_rgba_png
 def palette(b):
  lines=b.decode().splitlines();need(lines[:3]==['JASC-PAL','0100','16'] and len(lines)==19,'Source palette shape');return [tuple(((int(v)>>3)<<3)|((int(v)>>3)>>2) for v in row.split()) for row in lines[3:]]
 def pixels(image,pal):

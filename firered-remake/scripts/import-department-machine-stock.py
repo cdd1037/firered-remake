@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read pinned original Git blobs; reuse imported source files, emit no art or audio."""
 import argparse,  json, pathlib, re, subprocess
+from machine_catalog import admission_rows, admission_view
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 
 def canonical(v): return json.dumps(v, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
@@ -10,30 +11,12 @@ def main():
     raw={}; inputs=[]
     for row in contract['inputs']:
         data=subprocess.check_output(['git','-C',args.source,'show',COMMIT+':'+row['path']])
-        raw[row['path']]=data.decode(); inputs.append(row)
-    def ref(path,symbol,start,end): return {'path':path,'symbol':symbol,'startLine':start,'endLine':end}
-    path='src/data/items.json'; text=raw[path]; all_items=json.loads(text)['items']; item=next(x for x in all_items if x['itemId']=='ITEM_TM15')
-    pos=text.index('"itemId": "ITEM_TM15"'); start=text.rfind('{',0,pos); end=text.index('}',pos)
-    # Existing machine metadata references start at the english field, matching the source import convention.
-    start=text.index('"english"',start); item_ref=ref(path,'ITEM_TM15',text[:start].count('\n')+1,text[:end].count('\n'))
-    match=re.search(r'#define ITEM_TM15\s+(\d+)',raw['include/constants/items.h']); assert match
-    id=int(match.group(1)); assert id==303
-    value={'id':{'value':'pret:ITEM_TM15'},'sourceItemSymbol':'ITEM_TM15','sourceItemId':id,'name':item['english'],
-        'price':item['price'],'importance':item['importance'],'registrability':item['registrability'],'pocket':item['pocket'],'type':item['type'],
-        'holdEffect':item['holdEffect'],'holdEffectParam':item['holdEffectParam'],'fieldUseFunction':item['fieldUseFunc'],
-        'battleUsage':item['battleUsage'],'battleUseFunction':item['battleUseFunc'],'secondaryId':item['secondaryId'],
-        'canToss':True,'canSell':True,'canGive':True,'source':item_ref}
-    path='src/move_descriptions.c'; text=raw[path]; match=re.search(r'const u8 gMoveDescription_HyperBeam\[\] = _\("(.*?)"\);',text); assert match
-    description=json.loads('"'+match.group(1)+'"'); line=text[:match.start()].count('\n')+1
-    machine={'item':value,'description':description,'declarationDescription':item['description_english'].replace('\\n','\n'),
-        'descriptionSource':ref(path,'gMoveDescription_HyperBeam',line,line)}
-    path='src/data/pokemon/tmhm_learnsets.h'; text=raw[path]; rows=[]
-    for species in contract['ownedSpecies']:
-        match=re.search(r'\['+species['symbol']+r'\]\s*=\s*TMHM_LEARNSET\((.*?)\),',text,re.S); assert match, species
-        start=text[:match.start()].count('\n')+1; end=start+match.group(0).count('\n')
-        rows.append({'species':{'value':'pret:'+species['symbol']},'sourceSpeciesId':species['sourceSpeciesId'],
-            'canLearn':'TMHM(TM15_HYPER_BEAM)' in match.group(0),'source':ref(path,species['symbol'],start,end)})
-    tm15={'machine':machine,'move':{'value':'pret:MOVE_HYPER_BEAM'},'sourceMoveId':63,'movePp':5,'compatibility':rows}
+        raw[row['path']]=data.decode(); inputs.append({key:row[key] for key in ('path','localPath')})
+    all_items=json.loads(raw['src/data/items.json'])['items']
+    relative='content/generated/department-machine-stock/machines.json'
+    tm15=admission_view(root, relative, '/tm15')
+    rows=admission_rows(root, relative, '/tm15')
+    assert tm15['item']=='pret:ITEM_TM15' and len(rows)==163
     assert re.search(r'#define MOVE_HYPER_BEAM\s+63\b',raw['include/constants/moves.h'])
     battle=raw['src/data/battle_moves.h']; match=re.search(r'\[MOVE_HYPER_BEAM\]\s*=\s*\{(.*?)\},',battle,re.S); assert match
     for key,expected in [('effect','EFFECT_RECHARGE'),('power','150'),('type','TYPE_NORMAL'),('accuracy','90'),('pp','5')]:
