@@ -22,9 +22,14 @@ public partial class Bootstrap : Node2D
         {
             var environment=System.Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(e=>(string)e.Key,e=>(string?)e.Value,StringComparer.Ordinal);
-            startup=GameStartupSelection.Resolve(OS.GetCmdlineUserArgs(),environment);
+            string resourceRoot=OS.HasFeature("editor")
+                ?System.IO.Path.GetFullPath(ProjectSettings.GlobalizePath("res://../.."))
+                :System.IO.Path.GetDirectoryName(OS.GetExecutablePath())!;
+            startup=GameStartupSelection.Resolve(OS.GetCmdlineUserArgs(),environment,resourceRoot);
+            if(startup.Mode==GameStartupMode.Current && !System.IO.Directory.Exists(System.IO.Path.Combine(startup.ProjectRoot,"content","generated")))
+                throw new InvalidOperationException("Missing game resources: expected content/generated beside the game executable. Restore the complete game folder.");
         }
-        catch(InvalidOperationException error)
+        catch(Exception error) when(error is InvalidOperationException or ArgumentException or System.IO.IOException or NotSupportedException)
         {
             GD.PushError(error.Message);GetTree().Quit(22);return;
         }
@@ -67,7 +72,7 @@ public partial class Bootstrap : Node2D
         }
         var missing = "火红工程验证方向键确认退出等待按键".Where(c => !_font.HasChar(c)).ToArray();
         Record("CHINESE_GLYPHS " + (missing.Length == 0 ? "PASS" : "MISSING " + new string(missing)));
-        if (_story) { AddChild(new CampaignView{Startup=startup}); return; }
+        if (_story) { DisplayServer.WindowSetTitle("FireRed Remake"); AddChild(new CampaignView{Startup=startup}); return; }
         if (_harness) { AddChild(new EngineeringHarness()); return; }
         var spriteImage = Image.CreateEmpty(12, 12, false, Image.Format.Rgba8);
         spriteImage.Fill(Colors.Transparent);

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """One reproducible entry point. Never install, relax a gate, or rewrite golden results implicitly."""
-import sys, os, json, subprocess, pathlib, hashlib, re, shutil, tarfile, zipfile, shlex
+import sys, os, json, subprocess, pathlib, hashlib, re, shutil, tarfile, zipfile, shlex, tempfile
 ROOT=pathlib.Path(__file__).resolve().parent
 LOCK=json.loads((ROOT/'toolchain.lock.json').read_text(encoding='utf-8'))
 for variable,filename in [('FIRERED_TOOLCHAIN_ROOT','toolchain-root'),('FIRERED_ORIGINAL_REFERENCE','reference-root')]:
@@ -108,11 +108,52 @@ def probe():
  return 0
 
 
-def export():
- dest=ROOT/'exports/linux/firered-probe.x86_64';dest.parent.mkdir(parents=True,exist_ok=True)
- run([GODOT,'--headless','--path','src/Game.Godot','--export-release','Linux x86_64',dest],'p0-export.log')
- run([dest,'--headless','--','--probe'],'p0-export-runtime.log',{'FIRERED_EVIDENCE':str(ROOT/'evidence/p0-export-runtime.json')})
+def play(arguments):
+ if len(arguments)>1:raise ValueError('Usage: python dev run [current-checkpoint.json]')
+ extra={'FIRERED_PROJECT_ROOT':str(ROOT),'FIRERED_CAMPAIGN_CHECKPOINT':''}
+ if arguments:
+  checkpoint=pathlib.Path(arguments[0]).resolve()
+  if not checkpoint.is_file():raise FileNotFoundError(checkpoint)
+  extra['FIRERED_CAMPAIGN_CHECKPOINT']=str(checkpoint)
+ # Ordinary play uses the OS user-data directory, never the build tool's XDG cache.
+ extra.update({key:os.environ.get(key,str(pathlib.Path.home()/default)) for key,default in
+               [('XDG_DATA_HOME','.local/share'),('XDG_CONFIG_HOME','.config'),('XDG_CACHE_HOME','.cache')]})
+ run([GODOT,'--headless','--editor','--path','src/Game.Godot','--import','--quit'])
+ run([GODOT,'--path','src/Game.Godot'],extra=extra)
  return 0
+
+
+def export():
+ if sys.platform!='linux':raise RuntimeError('Current packaging supports Linux x86_64 only.')
+ template=pathlib.Path(ENV['XDG_DATA_HOME'])/'godot/export_templates/4.7.2.stable.mono/linux_release.x86_64'
+ if not template.is_file():
+  raise FileNotFoundError(f'Missing official Godot 4.7.2 .NET Linux export template: {template}. Install the matching official templates before exporting; no package was created.')
+ generated=ROOT/'content/generated'
+ if not generated.is_dir() or not any(generated.iterdir()):raise FileNotFoundError('Missing content/generated: restore the private resources before exporting.')
+ destination=ROOT/'exports/linux'
+ if destination.exists():raise FileExistsError(f'{destination} already exists. Move the previous package aside before exporting.')
+ destination.parent.mkdir(parents=True,exist_ok=True)
+ # Stage a complete package; a failed export must never look like a finished release.
+ with tempfile.TemporaryDirectory(prefix='firered-linux-') as temporary:
+  stage=pathlib.Path(temporary);executable=stage/'firered.x86_64'
+  run([GODOT,'--headless','--editor','--path','src/Game.Godot','--import','--quit'],'current-export-import.log')
+  run([GODOT,'--headless','--path','src/Game.Godot','--export-release','Linux x86_64',executable],'current-export.log')
+  for required in ('Game.Godot.dll','libcoreclr.so','System.Private.CoreLib.dll'):
+   if not any(stage.rglob(required)):raise RuntimeError(f'Export did not bundle required .NET runtime output: {required}')
+  shutil.copytree(generated,stage/'content/generated')
+  shutil.copy2(ROOT/'src/Game.Godot/Assets/FONT-LICENSE.txt',stage/'FONT-LICENSE.txt')
+  # Verify the actual Current entry using only package files and bundled .NET.
+  clean={key:value for key,value in os.environ.items() if not key.startswith(('FIRERED_','DOTNET_')) and key not in ('GODOT','NUGET_PACKAGES','LD_LIBRARY_PATH')}
+  clean['PATH']=os.defpath
+  with tempfile.TemporaryDirectory(prefix='firered-package-check-') as isolated:
+   clean.update({key:str(pathlib.Path(isolated)/name) for key,name in [('HOME','home'),('XDG_DATA_HOME','data'),('XDG_CONFIG_HOME','config'),('XDG_CACHE_HOME','cache')]})
+   checked=subprocess.run([str(executable),'--headless','--quit-after','120'],cwd=isolated,env=clean,capture_output=True,text=True,timeout=120)
+  log=checked.stdout+checked.stderr
+  (ROOT/'evidence/current-export-runtime.log').write_text(log,encoding='utf-8')
+  if checked.returncode or re.search(r'^ERROR:',log,re.M) or 'playerEntryReady' not in log or 'audioCatalog' not in log or 'audioFault' in log or '"runtimeMajor": 10' not in log:
+   raise RuntimeError('Exported Current startup failed; see evidence/current-export-runtime.log. No finished package was created.')
+  shutil.move(str(stage),str(destination))
+ return output({'package':str(destination),'startup':'Current headless passed','note':'Window, New Game/save/Continue and real audio require separate acceptance.'})
 
 
 def verify_p0():
@@ -137,7 +178,7 @@ def verify_p0():
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','env [--json]','setup','build','test','probe','export linux','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
+ if not args or args in (['-h'],['--help']):return output({'commands':['doctor','env [--json]','setup','build','test','probe','run [current-checkpoint.json]','export linux','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
  if args==['doctor']:return doctor()
  if args in (['env'],['env','--json']):
   exported={key:ENV[key] for key in ('FIRERED_TOOLCHAIN_ROOT','FIRERED_DOTNET','FIRERED_GODOT_NUGET_SOURCE','DOTNET_ROOT','GODOT','DOTNET_CLI_HOME','NUGET_PACKAGES','XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','DOTNET_NOLOGO','DOTNET_CLI_TELEMETRY_OPTOUT','DOTNET_MULTILEVEL_LOOKUP')}
@@ -149,6 +190,7 @@ def main():
  if args==['build']:return build()
  if args and args[0]=='test':return test(args[1:])
  if args==['probe']:return probe()
+ if args and args[0]=='run':return play(args[1:])
  if args==['export','linux']:return export()
  if args==['verify','p0']:return verify_p0()
  if args[0] in ['content','scenario','save','convert-current-checkpoint']:

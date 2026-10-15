@@ -129,7 +129,7 @@ public sealed class LocalSaveStorage : ISaveStorage
             return bytes;
         }
     }
-    public void WriteStaged(string slot,byte[] bytes)
+    public void WriteStaged(string slot,ReadOnlySpan<byte> bytes)
     {
         if(bytes.Length>MaximumSaveBytes)throw new System.IO.InvalidDataException("save_file_too_large");
         System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(slot)!);

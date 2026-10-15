@@ -16,6 +16,8 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task MapAtlases() => Run("test-map-atlases.py");
     [TestMethod]
+    public Task CeladonApproachEncounters() => Run("test-celadon-approach-encounters.py");
+    [TestMethod]
     public Task FieldTilesetRegeneration() => Run("test-field-tilesets.py");
     [TestMethod]
     public Task FameChecker() => Run("test-fame-checker-importer.py", "--git-dir", TestAssets.Source);

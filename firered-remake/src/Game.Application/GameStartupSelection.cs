@@ -66,7 +66,7 @@ public sealed record GameStartupSelection(GameStartupMode Mode,string ProjectRoo
         "FIRERED_VIRIDIAN_REGION",
     ];
 
-    public static GameStartupSelection Resolve(IReadOnlyList<string> args,IReadOnlyDictionary<string,string?> environment)
+    public static GameStartupSelection Resolve(IReadOnlyList<string> args,IReadOnlyDictionary<string,string?> environment,string? defaultResourceRoot=null)
     {
         ArgumentNullException.ThrowIfNull(args);ArgumentNullException.ThrowIfNull(environment);
         string Env(string key)=>environment.GetValueOrDefault(key)??"";
@@ -107,7 +107,10 @@ public sealed record GameStartupSelection(GameStartupMode Mode,string ProjectRoo
             if(Env(name).Length>0)throw new InvalidOperationException("startup_selector_retired: "+name);
         if(Env("FIRERED_COMPACT_MAPS") is not ("" or "1"))throw new InvalidOperationException("startup_compact_maps_required");
         string root=Env("FIRERED_PROJECT_ROOT"),checkpoint=Env("FIRERED_CAMPAIGN_CHECKPOINT");
-        if(mode==GameStartupMode.Current && string.IsNullOrWhiteSpace(root))throw new InvalidOperationException("Use scripts/dev/launch-current.sh: FIRERED_PROJECT_ROOT is required.");
+        // The host supplies its executable directory (or the editor project root).
+        // Never search the working directory or fall back to a development tree.
+        if(string.IsNullOrWhiteSpace(root))root=defaultResourceRoot??AppContext.BaseDirectory;
+        root=Path.GetFullPath(root);
         if(mode!=GameStartupMode.Current && checkpoint.Length>0)throw new InvalidOperationException("startup_checkpoint_requires_current");
         return new(mode,root,checkpoint);
     }

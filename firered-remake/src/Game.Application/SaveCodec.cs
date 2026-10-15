@@ -74,7 +74,8 @@ public static class SaveCodec
 public interface ISaveStorage
 {
     byte[]? Read(string slot);
-    void WriteStaged(string slot, byte[] bytes);
+    // The service retains the verified buffer; adapters may only read or copy it.
+    void WriteStaged(string slot, ReadOnlySpan<byte> bytes);
     void Commit(string slot, bool preservePrimary);
 }
 public sealed class SaveService(ISaveStorage storage)
@@ -94,7 +95,8 @@ public sealed class SaveService(ISaveStorage storage)
         storage.WriteStaged(slot, bytes);
         var staged = storage.Read(slot + ".tmp") ?? throw new IOException("save_stage_missing");
         if (!staged.AsSpan().SequenceEqual(bytes)) throw new InvalidDataException("save_stage_changed");
-        _ = SaveCodec.Decode<T>(staged, rules, content, validate: validate);
+        // Exact equality reuses the roundtrip checksum/semantic validation above.
+        // Decoding these same bytes again cannot add an integrity check.
         // Storage backs up the last verified primary only. Keep that contract explicit.
         bool preserve = false;
         try

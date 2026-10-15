@@ -229,7 +229,7 @@ public sealed class SaveOperationTests
         public Action? BeforeCommit { get; init; }
         public Action? AfterCommit { get; init; }
         public byte[]? Read(string slot) { BeforeRead?.Invoke(slot); return storage.Read(slot); }
-        public void WriteStaged(string slot, byte[] bytes) { BeforeStage?.Invoke(); storage.WriteStaged(slot, bytes); }
+        public void WriteStaged(string slot, ReadOnlySpan<byte> bytes) { BeforeStage?.Invoke(); storage.WriteStaged(slot, bytes); }
         public void Commit(string slot, bool preservePrimary)
         { BeforeCommit?.Invoke(); storage.Commit(slot, preservePrimary); AfterCommit?.Invoke(); }
     }

@@ -87,3 +87,10 @@ window. The existing verified backup remained byte-identical. No real player sav
 was modified. Runtime command hashes and default detailed evidence were removed;
 explicit diagnostics and save integrity remain. See [quality review](project-quality-review.md)
 for remaining work and measurement boundaries.
+
+A subsequent governance integration built the complete solution with zero warnings
+or errors, then ran all affected Domain (163), Application (147), Content (181)
+and ResourceImport (21) cases: 512 passed, no failures or skips. Battle/Audio
+were not rerun for those non-battle/audio changes. Ordinary settled wild-history
+retention and its remaining special-ledger limitations are documented in
+[wild history retention](wild-history-retention.md).

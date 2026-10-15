@@ -330,7 +330,7 @@ public sealed partial class CampaignSession
     public static CampaignSession CreateCurrent(ICampaignCatalog content,CampaignNewGameOptions? options=null)=>new(content,options,BindCurrentCatalog(content));
     public static CampaignSession RestoreCurrent(ICampaignCatalog content,CampaignState state,long revision)=>new(content,state,revision,BindCurrentCatalog(content));
     public CommandOutcome<CampaignState> Execute(string id,long revision,CampaignCommand command)=>
-        _commands.Execute(new(id,revision,RulesVersion,_content.ContentVersion,command),Decide);
+        _commands.Execute(new(id,revision,RulesVersion,_content.ContentVersion,command),DecideWithWildHistoryRetention);
     public string? ValidatePlayerSave(CampaignState s)
     {
         if(s is null||s.World is null||s.World.Player is null||s.Script is null||s.Actors is null||s.PlayerName is null||s.RivalName is null||s.EntryPrograms.IsDefault||s.Motions.IsDefault||s.PresentationEffects.IsDefault||s.Party.IsDefault||s.SeenSpecies is null||s.CaughtSpecies is null||s.TextBuffers is null||s.SettledBattles is null||s.BattledTrainers is null||s.BattleHistory.IsDefault)return "save_structure_invalid";

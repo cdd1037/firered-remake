@@ -18,7 +18,7 @@ sealed class MemoryStorage : ISaveStorage
     public bool FailCommit;
     public bool CorruptStage;
     public byte[]? Read(string slot) => Files.GetValueOrDefault(slot);
-    public void WriteStaged(string slot, byte[] bytes) => Files[slot + ".tmp"] = CorruptStage ? SaveCodec.Encode(new Counter(0), 0, "wrong", "wrong") : bytes;
+    public void WriteStaged(string slot, ReadOnlySpan<byte> bytes) => Files[slot + ".tmp"] = CorruptStage ? SaveCodec.Encode(new Counter(0), 0, "wrong", "wrong") : bytes.ToArray();
     public void Commit(string slot, bool preservePrimary)
     {
         if (FailCommit)

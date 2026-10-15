@@ -65,7 +65,7 @@ public static class PlayerSaveOperations
             Path = slot; Bytes = bytes;
             return bytes;
         }
-        public void WriteStaged(string slot, byte[] bytes) => throw new NotSupportedException("load_is_read_only");
+        public void WriteStaged(string slot, ReadOnlySpan<byte> bytes) => throw new NotSupportedException("load_is_read_only");
         public void Commit(string slot, bool preservePrimary) => throw new NotSupportedException("load_is_read_only");
     }
 
@@ -73,7 +73,7 @@ public static class PlayerSaveOperations
     {
         public bool CommitStarted { get; private set; }
         public byte[]? Read(string slot) => storage.Read(slot);
-        public void WriteStaged(string slot, byte[] bytes) => storage.WriteStaged(slot, bytes);
+        public void WriteStaged(string slot, ReadOnlySpan<byte> bytes) => storage.WriteStaged(slot, bytes);
         public void Commit(string slot, bool preservePrimary)
         {
             CommitStarted = true;

@@ -53,12 +53,12 @@ public sealed class WildBattleFlowTests : WildBattleFixture
         _ = b.State;
         Assert.IsTrue(CanonicalJson.Hash(b.Frame) == before, "read projection consumes no RNG or mutation");
         var xp = session.State.Party.Sum(p => (long)p.Pokemon.Experience);
-        int history = session.State.Exploration!.Battles.Length;
+        long nextId = session.State.Exploration!.NextWildBattleId;
         int slot = Enumerable.Range(0, b.State.Player.Pokemon.Moves.Length).Where(i => b.State.Player.Pokemon.Moves[i].CurrentPp > 0).OrderByDescending(i => catalog.Moves[b.State.Player.Pokemon.Moves[i].Move].Power).First();
         Send(session, new("battle_move", MoveSlot: slot));
         Drain(session);
         Assert.IsTrue(session.State.WildBattle is null, "ordinary KO completes entire modal lifecycle");
-        Assert.IsTrue(session.State.Exploration!.Battles.Length == history + 1 && session.State.Exploration.Battles[^1].Outcome == WildBattleOutcome.Won, "one terminal history");
+        Assert.IsTrue(session.State.Exploration!.NextWildBattleId == nextId && session.State.Exploration.Battles.Count(h => h.Id == b.Id) == 1 && session.State.Exploration.Battles[^1].Outcome == WildBattleOutcome.Won, "one terminal history");
         Assert.IsTrue(session.State.Party.Sum(p => (long)p.Pokemon.Experience) - xp == session.State.Exploration.Battles[^1].ExperienceGained, "exactly once canonical EXP credited");
         StrictRoundtrip(session);
     }

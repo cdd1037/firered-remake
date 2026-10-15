@@ -52,8 +52,7 @@ public static class StoryRules
     private static bool ValidMenuChoice(StoryState state,IStoryCatalog catalog,int? choice)
     {
         if(choice is null)return false;
-        // Identify the suspended source instruction, not a global widening of every menu.
-        // The four previews and Exit belong only to Bill's authenticated five-row menu.
+        // Resolve the actual suspended instruction; definitions apply only to their own menu.
         if(!state.Stack.IsEmpty)
         {
             var frame=state.Stack[^1];var program=catalog.FindProgram(frame.ProgramId);int index=frame.InstructionIndex-1;
@@ -61,6 +60,7 @@ public static class StoryRules
             {
                 var instruction=program.Instructions[index];
                 if(instruction.Opcode=="multichoicegrid")return StoryGridMenuRules.Resolve(instruction,catalog)?.Accepts(choice)==true;
+                if(StoryMenuRules.HasDefinition(instruction,catalog))return StoryMenuRules.Resolve(instruction,catalog)?.Accepts(choice)==true;
                 if(GameCornerPrizeSource.MenuKind(instruction) is not null)return choice==127||choice>=0&&choice<6;
                 if(GameCornerCoinSource.IsMenu(instruction))return choice is 0 or 1 or 2 or 127;
                 if(DepartmentRooftopSource.Menu(instruction) is {} roofMenu)return choice==127||choice>=0&&choice<roofMenu.Rows.Length;
@@ -180,6 +180,8 @@ public static class StoryRules
                     case StoryOp.Release:state=state with{Locked=false};Effect(i);break;
                     case StoryOp.Dialog:Effect(i,a.Length>1&&a[1]=="MSGBOX_YESNO"?StoryWaitKind.Choice:StoryWaitKind.Dialog);break;
                     case StoryOp.Multichoice:
+                        if(StoryMenuRules.HasDefinition(i,catalog)&&StoryMenuRules.Resolve(i,catalog) is null)
+                            return Fault("event_menu_invalid","Invalid catalog menu definition or operands.");
                         if(i.Opcode=="multichoicegrid"&&StoryGridMenuRules.Resolve(i,catalog) is null)
                             return Fault("event_grid_menu_invalid","Unknown source menu or invalid grid operands.");
                         Effect(i,StoryWaitKind.MenuChoice);break;

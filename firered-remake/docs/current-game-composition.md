@@ -7,18 +7,17 @@
 在工程目录执行：
 
 ```sh
-source scripts/env.sh
-dotnet build FireRed.Current.slnx
-bash scripts/dev/launch-current.sh
+python dev build
+python dev run
 # 可选：加载明确的当前检查点
-bash scripts/dev/launch-current.sh /path/to/current-checkpoint.json
+python dev run /path/to/current-checkpoint.json
 ```
 
-该Bash入口设置开发资源根、菜单与音频，使用隔离的.play/current存档目录。正常运行不默认打开完整状态证据；显式设置FIRERED_EVIDENCE或FIRERED_VERBOSE用于诊断。普通用户包与跨平台启动尚待交付收口，不应把以上命令当已发布成品。
+这个入口使用正常 OS 用户存档目录；旧 Bash 诊断入口 `scripts/dev/launch-current.sh` 仍使用隔离的 `.play/current`。正常运行默认启用玩家入口和音频，不默认打开完整状态证据；显式设置 FIRERED_EVIDENCE 或 FIRERED_VERBOSE 用于诊断。Linux 无开发变量启动已核验，实际独立导出仍因缺官方模板而未验收。
 
 GameStartupSelection解析参数/环境快照；Godot Bootstrap组合实际游戏。current是正常模式，probe/harness仅为显式工程夹具，不能拿它们通过代替Current可运行。
 
-旧地区启动参数和互相冲突的选择会明确失败。当前仍需要FIRERED_PROJECT_ROOT；独立可执行包的默认资源定位见[质量审核Q04](project-quality-review.md)。
+旧地区启动参数和互相冲突的选择会明确失败。编辑器默认定位工程根，成品默认读取可执行文件旁的 content/generated；FIRERED_PROJECT_ROOT 仅作显式开发覆盖。完整交付边界见[质量审核Q04](project-quality-review.md)。
 
 ## 应用与状态
 

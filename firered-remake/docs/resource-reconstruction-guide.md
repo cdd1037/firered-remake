@@ -86,8 +86,7 @@ python3 scripts/checks/test-pokemon-import.py
 
 通过这些检查不等于整条游戏路线重放、每个旧入口的冷重建、真实扬声器听感验收或素材公开授权。缺失的旧研究记录不应通过伪造报告、放宽玩法断言或重新塞回运行时来源依赖来补齐。
 
-当前另一个再生边界：Celadon approach 的 encounter 资源尚未找到现存对应 producer。
-本轮已比较其遇敌率、槽位、等级和权重前后不变，但未将此现存资源称作已冷重建。
+Celadon approach 遇敌表由 `python scripts/imports/story/import-celadon-approach-encounters.py` 从固定 raw 的 wild_encounters.json、species_info.h、pokemon.c 重建。`--check` 核对现存 JSON，`--raw` / `--out` 支持隔离输出。两张地图、24 个槽位及携带物品玩法字段与保留资源逐字段等价；当前输出已删除不参与业务的 sourcePath 和 excludedTables。
 
 共享地图属性表使用当前schema3地图及raw的src/data/tilesets/headers.h、metatiles.h和实际属性bin再生。运行import-field-tilesets.py后用--check核对；不能仅保留旧地图文件名对应的layout。
 

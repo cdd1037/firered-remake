@@ -21,7 +21,7 @@ public partial class CampaignView
 
     private void LoadSourceAudio()
     {
-        if(OS.GetEnvironment("FIRERED_AUDIO")!="1")return;
+        if(OS.GetEnvironment("FIRERED_AUDIO")=="0")return;
         string backend=OS.GetEnvironment("FIRERED_AUDIO_BACKEND");
         if(backend==""||backend=="synth")
         {

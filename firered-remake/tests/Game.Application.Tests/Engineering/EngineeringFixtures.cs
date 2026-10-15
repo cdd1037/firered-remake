@@ -48,7 +48,7 @@ sealed class IsolatedFileStorage : ISaveStorage, IDisposable
     }
 
     public byte[]? Read(string slot) => File.Exists(slot) ? File.ReadAllBytes(slot) : null;
-    public void WriteStaged(string slot, byte[] bytes) => File.WriteAllBytes(slot + ".tmp", SubstituteStage ?? bytes);
+    public void WriteStaged(string slot, ReadOnlySpan<byte> bytes) => File.WriteAllBytes(slot + ".tmp", SubstituteStage is {} replacement ? replacement : bytes);
     public void Commit(string slot, bool preservePrimary)
     {
         if (preservePrimary)
@@ -70,7 +70,7 @@ sealed class ObservedMemoryStorage : ISaveStorage
     public int WrongCommitCount { get; private set; }
 
     public byte[]? Read(string slot) => Files.GetValueOrDefault(slot);
-    public void WriteStaged(string slot, byte[] bytes)
+    public void WriteStaged(string slot, ReadOnlySpan<byte> bytes)
     {
         lock (this)
         {
@@ -78,8 +78,8 @@ sealed class ObservedMemoryStorage : ISaveStorage
             MaxWriters = Math.Max(MaxWriters, _writers);
         }
 
-        _expectedStage.Value = bytes;
-        Files[slot + ".tmp"] = bytes;
+        _expectedStage.Value = bytes.ToArray();
+        Files[slot + ".tmp"] = bytes.ToArray();
         Thread.Sleep(2); // Widen the historical overwrite window without dictating ordering.
     }
 

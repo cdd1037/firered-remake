@@ -41,7 +41,7 @@ public partial class CampaignView
 
     private bool InitializePlayerEntry(string checkpoint,bool force=false)
     {
-        if(!force&&(OS.GetEnvironment("FIRERED_PLAYER_ENTRY")!="1"||checkpoint.Length!=0))return false;
+        if(!force&&(OS.GetEnvironment("FIRERED_PLAYER_ENTRY")=="0"||checkpoint.Length!=0))return false;
         if(!_catalog.PokemonStorageEnabled)throw new InvalidDataException("Player entry requires the current complete menu profile.");
         _entrySource=PretMainMenuSource.Load(_root);
         static Color Rgb(System.Collections.Immutable.ImmutableArray<int> c)=>Color.Color8((byte)c[0],(byte)c[1],(byte)c[2]);
@@ -346,7 +346,7 @@ public partial class CampaignView
         private readonly LocalSaveStorage storage=new();
         private void Check(){if(fingerprint()!=expected)throw new IOException("save_file_changed_before_commit");}
         public byte[]? Read(string slot)=>storage.Read(slot);
-        public void WriteStaged(string slot,byte[] bytes){Check();storage.WriteStaged(slot,bytes);}
+        public void WriteStaged(string slot,ReadOnlySpan<byte> bytes){Check();storage.WriteStaged(slot,bytes);}
         public void Commit(string slot,bool preservePrimary){Check();storage.Commit(slot,preservePrimary);}
     }
     public override void _ExitTree()

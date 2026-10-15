@@ -33,7 +33,11 @@ dotnet build FireRed.Current.slnx --no-restore
 
 ## 开发启动
 
-Linux/Bash：`bash scripts/dev/launch-current.sh [current-checkpoint.json]`。当前正常启动仍依赖开发资源根；Windows正常启动及独立游戏包尚待收口，不以构建成功冒充成品交付。参数与存档边界见 [当前组合](docs/current-game-composition.md)。
+先执行 `python dev build`，再执行 `python dev run [current-checkpoint.json]`。也可直接在 Godot 打开并运行工程；正常入口不再强制要求 FIRERED 环境变量，默认启用玩家入口和音频。Linux 已做无 FIRERED 变量、隔离用户目录的启动检查；Windows 尚未实测。Bash 旧入口 `scripts/dev/launch-current.sh` 仍可用于显式开发参数。
+
+Linux 私有成品包入口为 `python dev export linux`，需要在开发工具的 XDG 模板目录安装匹配的官方 Godot 4.7.2 .NET Linux 导出模板。模板缺失时明确失败，不产生冒充完成的包。成品包含可执行文件、PCK、Godot 导出的 .NET 数据目录和旁置 `content/generated`，应整体分发。当前环境缺模板，尚未完成实际独立导出验收；音频仍需真实听测。用户存档继续位于原有 user:// 应用目录。
+
+参数与存档边界见 [当前组合](docs/current-game-composition.md)。
 
 ## 当前测试入口
 
