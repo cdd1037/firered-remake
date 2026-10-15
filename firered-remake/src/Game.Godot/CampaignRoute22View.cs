@@ -20,7 +20,7 @@ public partial class CampaignView
             if(image.GetWidth()!=64||image.GetHeight()!=64)
                 throw new InvalidDataException("Route22 sprite pixels differ.");
             _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),
-                new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
+                new(SceneTextures.FromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
         }
         foreach(var foot in source.Footprints)
         {

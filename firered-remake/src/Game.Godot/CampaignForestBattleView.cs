@@ -19,20 +19,20 @@ public partial class CampaignView
         {
             using var image = NativeImages.LoadPng(System.IO.File.ReadAllBytes(System.IO.Path.Combine(source.GeneratedDirectory, sprite.TexturePath)), 64, 64);
             _battleArt.Add((sprite.SourceSpeciesId, sprite.Side, sprite.PaletteVariant == "shiny"),
-                new(ImageTexture.CreateFromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
+                new(SceneTextures.FromImage(image), new(sprite.SingleBattleTopLeft.X, sprite.SingleBattleTopLeft.Y)));
         }
         var evolution= PretEvolutionArt.Load(_root);
         foreach(var sprite in evolution.Sprites)
         {
             using var image=NativeImages.LoadPng(evolution.ReadTexture(new(sprite.SpeciesId),sprite.Side,sprite.PaletteVariant=="shiny"), 64, 64);
-            _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
+            _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(SceneTextures.FromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
         }
         if(_catalog.PewterPokemon is {} pewter)
         {
             foreach(var sprite in pewter.Sprites)
             {
                 using var image = NativeImages.LoadPng(System.IO.File.ReadAllBytes(System.IO.Path.Combine(pewter.GeneratedDirectory,sprite.TexturePath)), 64, 64);
-                _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
+                _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(SceneTextures.FromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
             }
         }
         LoadRoute22PokemonPresentation();

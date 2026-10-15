@@ -75,7 +75,7 @@ public partial class CampaignView
         image.Convert(Image.Format.Rgba8);var pixels=image.GetData();
         for(int i=0;i<pixels.Length;i+=4)if(pixels[i+3]!=0)for(int c=0;c<3;c++){int v=pixels[i+c]>>3;pixels[i+c]=(byte)((v<<3)|(v>>2));}
         using var display=Image.CreateFromData(image.GetWidth(),image.GetHeight(),false,Image.Format.Rgba8,pixels);
-        var texture=ImageTexture.CreateFromImage(display);_pokedexTextures.Add(asset.TexturePath,texture);return texture;
+        var texture=SceneTextures.FromImage(display);_pokedexTextures.Add(asset.TexturePath,texture);return texture;
     }
     private void DrawPokedexMenu()
     {

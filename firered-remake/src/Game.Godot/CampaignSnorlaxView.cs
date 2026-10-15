@@ -14,7 +14,7 @@ public partial class CampaignView
         foreach(var sprite in art.Sprites)
         {
             using var image=NativeImages.LoadPng(art.Files[sprite.TexturePath], sprite.Width, sprite.Height);
-            _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(ImageTexture.CreateFromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
+            _battleArt.Add((sprite.SourceSpeciesId,sprite.Side,sprite.PaletteVariant=="shiny"),new(SceneTextures.FromImage(image),new(sprite.SingleBattleTopLeft.X,sprite.SingleBattleTopLeft.Y)));
         }
         foreach(var icon in art.Icons)
         {

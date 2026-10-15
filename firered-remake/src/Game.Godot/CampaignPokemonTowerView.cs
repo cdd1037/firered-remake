@@ -28,7 +28,7 @@ public partial class CampaignView
         ImageTexture Rgba(JsonElement row)
         {
             using var image = NativeImages.LoadPng(art.Files[row.GetProperty("texturePath").GetString()!], row.GetProperty("width").GetInt32(), row.GetProperty("height").GetInt32());
-            return ImageTexture.CreateFromImage(image);
+            return (ImageTexture)SceneTextures.FromImage(image);
         }
         PokedexMenuTexture DexTexture(JsonElement row)
         {
