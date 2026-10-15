@@ -97,8 +97,15 @@ class LateMachineImporterTests(unittest.TestCase):
             self.compare('content/generated/victory-road-rules/machines.json', outputs['machines.json'])
 
     def test_sevii_species_machine_outputs_use_direct_shared_views(self):
+        # These converters expose a real raw-input route. Keep the test at that
+        # boundary instead of pretending the project is the upstream Git tree.
+        for family in ('celio-pokemon', 'cerulean-cave-pokemon'):
+            with self.subTest(family=family), patch('subprocess.run',
+                    side_effect=AssertionError('Raw conversion invoked a process')):
+                documents = load(f'import-{family}.py').generate(None, ROOT, raw=RAW)
+                self.compare(f'content/generated/{family}/machines.json', documents['machines.json'])
         with patch('subprocess.check_output', read_source):
-            for family in ('celio-pokemon', 'cerulean-cave-pokemon', 'seven-island-rules'):
+            for family in ('seven-island-rules',):
                 with self.subTest(family=family):
                     documents = load(f'import-{family}.py').generate(ROOT, ROOT)
                     self.compare(f'content/generated/{family}/machines.json', documents['machines.json'])

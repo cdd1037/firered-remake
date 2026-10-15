@@ -2,7 +2,10 @@
 """Offline source-authenticated Rocket Hideout species, moves, trainer teams and art.
 The complete source learnset is metadata; no battle effect is enabled by importing it.
 """
-import argparse,importlib.util,json,pathlib,re,sys
+import argparse,json,pathlib,re,sys
+import pokemon_import as pokemon
+from pokemon_import import learn_rows
+from pokemon_import_io import safe, load_recipe, read_sources
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -15,13 +18,6 @@ TRAINERS=tuple('TEAM_ROCKET_GRUNT_'+str(i) for i in range(7,19))+('BOSS_GIOVANNI
 SCRIPT_PATHS=tuple('data/maps/'+m+'/scripts.inc' for m in ('CeladonCity_GameCorner','RocketHideout_B1F','RocketHideout_B2F','RocketHideout_B3F','RocketHideout_B4F'))
 def source_symbol(name):return name.upper()
 def canonical(v):return (json.dumps(v,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
-def safe(root,p=None):
- if p is not None and (not p or pathlib.PurePosixPath(p).is_absolute() or ':' in p or '\\' in p or any(x in ('','.','..') for x in p.split('/'))):raise ValueError('Unsafe relative path')
- q=pathlib.Path(root).absolute() if p is None else pathlib.Path(root).absolute()/p
- if '..' in q.parts or any(x.is_symlink() for x in (q,*q.parents)):raise ValueError('Unsafe root or symlink')
- return q
-def load(path,name):
- spec=importlib.util.spec_from_file_location(name,path);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
 def trainer_convert(lock,sources):
  text={p:b.decode() for p,b in sources.items() if not p.endswith(('.png','.wav'))};entries={e['path']:e for e in lock['files']}
@@ -207,33 +203,28 @@ def metadata(lock, sources):
 
 
 def rebuild(project,target,check=False):
- global rock,learn_rows
  recipe_bytes=safe(ROOT,'scripts/rocket-hideout-catalog.recipe.json').read_bytes()
  recipe=json.loads(recipe_bytes)
- rock=load(safe(project,'scripts/import-rocktunnel-pokemon.py'),'rocket_existing_pokemon_codecs')
- rock.ROOT=project;rock.PROFILE=rock.base.PROFILE=PROFILE
- rock.NEW_SPECIES=rock.base.NEW_SPECIES=NEW_SPECIES;rock.ART_SPECIES=rock.base.ART_SPECIES=ART_SPECIES
  prior=json.loads(safe(project,'content/generated/celadon-gym-pokemon/supplement.json').read_bytes())
- rock.base.LEGACY_SPECIES=tuple(w['speciesId'][13:] for w in prior['weights'])
- if len(rock.base.LEGACY_SPECIES)!=98:raise ValueError('Exact 98 prior species required')
+ previous_species=tuple(w['speciesId'][13:] for w in prior['weights'])
+ if len(previous_species)!=98:raise ValueError('Exact 98 prior species required')
  results=[]
  for stem in ('rocket-hideout-pokemon','rocket-hideout-trainers'):
-  lock_bytes=safe(ROOT,'scripts/'+stem+'.lock.json').read_bytes()
-  lock=json.loads(lock_bytes)
-  if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != (1, 'pret/pokefirered', COMMIT, 'firered-' + stem + '-v1', 'FIRERED', 0):raise ValueError('Source identity differs')
-  sources={}
-  for e in lock['files']:
-   b=safe(target,'content/raw/pokefirered/037335f4/'+e['path']).read_bytes()
-   if e['path'] in sources:raise ValueError('Repeated input')
-   sources[e['path']]=b
+  lock = load_recipe(ROOT / ('scripts/' + stem + '.lock.json'), commit=COMMIT, profile='firered-' + stem + '-v1')
+  sources = read_sources(lock, target / 'content/raw/pokefirered/037335f4')
   trainers=trainer_convert(lock,sources)
   if len(trainers['trainers'])!=13 or sum(len(t['party']) for t in trainers['trainers'])!=36 or len(trainers['moves'])!=38:raise ValueError('Exact source trainer closure differs')
   if stem.endswith('pokemon'):
-   doc=metadata(lock,sources);outputs=rock.base.art(lock,sources)
-   art=json.loads(outputs['battle-art.json']);art['limitations'][0]='Kangaskhan original front/back frame zero, normal and shiny palettes.';outputs['battle-art.json']=canonical(art)
-   outputs['catalog.json']=canonical(doc);outputs.update(rock.supplement(lock,sources))
+   doc = metadata(lock, sources)
+   outputs = pokemon.battle_art(lock, sources, profile=PROFILE, species=ART_SPECIES,
+       limitation='Kangaskhan original front/back frame zero, normal and shiny palettes.')
+   # This file historically writes the art document in compact JSON form.
+   outputs['battle-art.json'] = canonical(json.loads(outputs['battle-art.json']))
+   outputs['catalog.json'] = canonical(doc)
+   outputs.update(pokemon.supplement(lock, sources, profile=PROFILE, species=ART_SPECIES,
+       weight_species=previous_species + tuple(name.upper() for name in NEW_SPECIES), natural_level_limit=None))
    declarations=[];text=sources['src/data/pokemon/species_info.h'].decode();m=re.search(r'^    \[SPECIES_KANGASKHAN\] =\s*\n    \{\n(.*?)^    \},',text,re.M|re.S)
-   declarations.append(dict(species=dict(value='pret:SPECIES_KANGASKHAN'),fields=dict(re.findall(r'^\s*\.(\w+) = (.*),$',m[1],re.M)),declaration=m[0],source=rock.battle.reference(lock,sources,'src/data/pokemon/species_info.h','SPECIES_KANGASKHAN',m[0])))
+   declarations.append(dict(species=dict(value='pret:SPECIES_KANGASKHAN'),fields=dict(re.findall(r'^\s*\.(\w+) = (.*),$',m[1],re.M)),declaration=m[0],source=pokemon.reference(lock,sources,'src/data/pokemon/species_info.h','SPECIES_KANGASKHAN',m[0])))
    outputs['source-species.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,species=declarations))
    old_moves={}
    for row in recipe['dependencies']:

@@ -36,7 +36,12 @@ class LateMachineImporterTests(unittest.TestCase):
  def test_source_projections_preserve_gameplay_and_shared_references(self):
   for name in ['power-plant-pokemon','fighting-dojo-rules','fossil-lab-rules','npc-trade-owned-rules','seafoam-rules','super-rod-species']:
    m=load(name)
-   with patch('subprocess.check_output',git):result=m.generate(root,root)
+   if name=='power-plant-pokemon':
+    # Exercise its explicit retained-raw reader; no Git transport is needed.
+    with patch('subprocess.run', side_effect=AssertionError('Raw conversion invoked a process')):
+     result=m.generate(None,root,raw=raw)
+   else:
+    with patch('subprocess.check_output',git):result=m.generate(root,root)
    if name=='power-plant-pokemon':docs={'catalog.json':result[0]}
    elif isinstance(result,tuple):docs=result[0]
    else:docs=result

@@ -42,7 +42,7 @@ public partial class CampaignView
             _playTimeTicks.Acknowledge(ticks);
             PreservePlayTimeRevisionGuards(before, result.Revision);
             // Do not Synchronize: this transaction changes only authoritative time.
-            Write("playTimeClock", new { ticks, result.Revision, result.State.PlayTime });
+            if (_diagnostics.Verbose) Write("playTimeClock", new { ticks, result.Revision, result.State.PlayTime });
         }
         return true;
     }

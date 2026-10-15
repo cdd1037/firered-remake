@@ -69,14 +69,17 @@ public sealed class SharedMachineCatalog
     public static void AddConverters(JsonSerializerOptions options, string root) => AddConverters(options, () => LoadProject(root));
     private static void AddConverters(JsonSerializerOptions options, Func<SharedMachineCatalog> catalog)
     {
+        var references = ContentJson.CreateOptions();
+        references.MakeReadOnly(populateMissingResolver: true);
         options.Converters.Add(new MachineItemConverter(catalog));
-        options.Converters.Add(new MachineConverter(catalog));
-        options.Converters.Add(new CompatibilityConverter(catalog));
+        options.Converters.Add(new MachineConverter(catalog, references));
+        options.Converters.Add(new CompatibilityConverter(catalog, references));
     }
     private sealed record MachineReference(string Item, ImmutableArray<string> Species);
     private sealed record CompatibilityReference(string Item, string Species);
     private sealed class MachineItemConverter(Func<SharedMachineCatalog> catalog) : JsonConverter<PewterMachineItem>
     {
+        private readonly System.Runtime.CompilerServices.ConditionalWeakTable<JsonSerializerOptions, JsonSerializerOptions> _ordinaryOptions = new();
         public override PewterMachineItem Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
         {
             using var document = JsonDocument.ParseValue(ref reader);
@@ -87,28 +90,33 @@ public sealed class SharedMachineCatalog
                 return catalog().Definition(new(item.GetString()!)).Machine;
             }
             // Ordinary items (including the TM Case) retain their own item metadata.
-            var ordinary = new JsonSerializerOptions(options);
-            for (var index = ordinary.Converters.Count - 1; index >= 0; index--)
-                if (ordinary.Converters[index] is MachineItemConverter) ordinary.Converters.RemoveAt(index);
+            var ordinary = _ordinaryOptions.GetValue(options, source =>
+            {
+                var copy = new JsonSerializerOptions(source);
+                for (var index = copy.Converters.Count - 1; index >= 0; index--)
+                    if (copy.Converters[index] is MachineItemConverter) copy.Converters.RemoveAt(index);
+                copy.MakeReadOnly(populateMissingResolver: true);
+                return copy;
+            });
             return data.Deserialize<PewterMachineItem>(ordinary) ?? throw new JsonException("Missing item metadata.");
         }
         public override void Write(Utf8JsonWriter writer, PewterMachineItem value, JsonSerializerOptions options) => throw new NotSupportedException();
     }
-    private sealed class MachineConverter(Func<SharedMachineCatalog> catalog) : JsonConverter<PewterAdditionalMachine>
+    private sealed class MachineConverter(Func<SharedMachineCatalog> catalog, JsonSerializerOptions references) : JsonConverter<PewterAdditionalMachine>
     {
         public override PewterAdditionalMachine Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
         {
-            var reference = JsonSerializer.Deserialize<MachineReference>(ref reader, ContentJson.CreateOptions()) ?? throw new JsonException("Missing machine reference.");
+            var reference = JsonSerializer.Deserialize<MachineReference>(ref reader, references) ?? throw new JsonException("Missing machine reference.");
             return catalog().Project(new(reference.Item), reference.Species.Select(s => new SpeciesId(s)).ToImmutableArray());
         }
         public override void Write(Utf8JsonWriter writer, PewterAdditionalMachine value, JsonSerializerOptions options) =>
             JsonSerializer.Serialize(writer, new MachineReference(value.Machine.Item.Id.Value, value.Compatibility.Select(c => c.Species.Value).ToImmutableArray()), options);
     }
-    private sealed class CompatibilityConverter(Func<SharedMachineCatalog> catalog) : JsonConverter<PewterMachineCompatibility>
+    private sealed class CompatibilityConverter(Func<SharedMachineCatalog> catalog, JsonSerializerOptions references) : JsonConverter<PewterMachineCompatibility>
     {
         public override PewterMachineCompatibility Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
         {
-            var reference = JsonSerializer.Deserialize<CompatibilityReference>(ref reader, ContentJson.CreateOptions()) ?? throw new JsonException("Missing machine compatibility reference.");
+            var reference = JsonSerializer.Deserialize<CompatibilityReference>(ref reader, references) ?? throw new JsonException("Missing machine compatibility reference.");
             return catalog().Compatibility(new(reference.Item), new(reference.Species));
         }
         public override void Write(Utf8JsonWriter writer, PewterMachineCompatibility value, JsonSerializerOptions options) => throw new NotSupportedException("Compatibility references require their machine identity.");

@@ -10,6 +10,32 @@ namespace FireRed.Tests.Content;
 public sealed class SharedMachineCatalogTests
 {
     [TestMethod]
+    public void ReusedConverterOptionsPreserveStrictReferencesAndOrdinaryItems()
+    {
+        var catalog = SharedMachineCatalog.LoadProject(TestAssets.Root);
+        var options = catalog.CreateJsonOptions();
+        const string valid = """{"item":"pret:ITEM_TM39","species":"pret:SPECIES_BULBASAUR"}""";
+        for (var i = 0; i < 3; i++)
+            Assert.AreSame(catalog.Compatibility(new("pret:ITEM_TM39"), new("pret:SPECIES_BULBASAUR")),
+                JsonSerializer.Deserialize<PewterMachineCompatibility>(valid, options));
+        foreach (var invalid in new[] {
+            """{"item":"pret:ITEM_TM39"}""",
+            """{"item":null,"species":"pret:SPECIES_BULBASAUR"}""",
+            """{"item":"pret:ITEM_TM39","species":"pret:SPECIES_BULBASAUR","extra":1}""" })
+            Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<PewterMachineCompatibility>(invalid, options));
+        Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<PewterAdditionalMachine>(
+            """{"item":"pret:ITEM_TM39","species":[],"extra":1}""", options));
+        var ordinary = PretPewterMachines.LoadProject(TestAssets.Root).TmCase;
+        var json = JsonSerializer.Serialize(ordinary, ContentJson.CreateOptions());
+        for (var i = 0; i < 3; i++)
+            Assert.AreEqual(ordinary, JsonSerializer.Deserialize<PewterMachineItem>(json, options));
+        Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<PewterMachineItem>(json[..^1] + ",\"extra\":1}", options));
+        // A caller may copy options and change its ordinary-item policy; the converter must not reuse another context's options.
+        var permissive = new JsonSerializerOptions(options) { UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip };
+        Assert.AreEqual(ordinary, JsonSerializer.Deserialize<PewterMachineItem>(json[..^1] + ",\"extra\":1}", permissive));
+    }
+
+    [TestMethod]
     public void MachineReferencesShareDefinitionsAndCompatibilityAcrossProjections()
     {
         var catalog = SharedMachineCatalog.LoadProject(TestAssets.Root);

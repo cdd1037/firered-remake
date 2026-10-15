@@ -2,10 +2,10 @@
 """Extract bounded Route 1 Pokemon data from verified text; never execute upstream code."""
 import argparse
 from decimal import Decimal
-import importlib.util
 import json
 import pathlib
 import re
+from pokemon_import_io import load_recipe, read_sources, safe
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
@@ -14,14 +14,11 @@ SPECIES = [('BULBASAUR', 1), ('IVYSAUR', 2), ('VENUSAUR', 3), ('CHARMANDER', 4),
            ('CHARMELEON', 5), ('CHARIZARD', 6), ('SQUIRTLE', 7), ('WARTORTLE', 8),
            ('BLASTOISE', 9), ('PIDGEY', 16), ('PIDGEOTTO', 17), ('PIDGEOT', 18),
            ('RATTATA', 19), ('RATICATE', 20)]
-spec = importlib.util.spec_from_file_location('route1_pokemon_fetch', ROOT / 'scripts/fetch-route1-pokemon.py')
-fetcher = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(fetcher)
 
 
 def import_catalog(raw, out, lock_path=None):
-    # This verifies the reviewed lock, fixed tree and every source byte before extraction.
-    lock, verified = fetcher.verify_sources(raw, lock_path=lock_path)
+    lock = load_recipe(lock_path or ROOT / 'scripts/route1-pokemon.lock.json', commit=COMMIT, profile=PROFILE)
+    verified = read_sources(lock, raw)
     if lock['commit'] != COMMIT or lock['profile'] != PROFILE or lock['speciesSymbols'] != ['SPECIES_' + n for n, _ in SPECIES]:
         raise ValueError('Unknown source identity or species scope')
     sources = {p: b.decode('utf-8') for p, b in verified.items()}
@@ -166,7 +163,7 @@ def import_catalog(raw, out, lock_path=None):
     raw_root, out_root = raw.resolve(), out.resolve()
     if raw_root == out_root or raw_root in out_root.parents or out_root in raw_root.parents:
         raise ValueError('Raw and generated output must not overlap')
-    targets = [fetcher.safe_path(out, name) for name in ['catalog.json', 'manifest.json']]
+    targets = [safe(out, name) for name in ['catalog.json', 'manifest.json']]
     out.mkdir(parents=True, exist_ok=True)
     targets[0].write_bytes(data)
     targets[1].write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')

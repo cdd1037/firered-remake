@@ -39,3 +39,9 @@ Story programs store their shared source path once per program, instruction line
 Generated PNG encoding uses exact RGBA palette entries where this is smaller, including RGB values under zero alpha. All 2,077 images decoded identically in native Godot across 18,532,236 pixels; total PNG size is 2,208,552 bytes (previously 27,087,301). This is a disk/transfer reduction, not a claim of reduced decoded texture memory or faster rendering.
 
 After these changes the full maintained solution build passed with zero warnings/errors and all 2,431 tests passed. The generated-only checkpoint retained generation 57604 and its payload hash. A second graphical check rendered the indexed map/NPC assets, moved two steps, displayed the town sign dialogue, and closed normally without logged errors.
+
+## Runtime diagnostics
+
+Ordinary player sessions log compact ready/command summaries and errors; they do not serialize the complete campaign state or emit routine play-time clock records. Set `FIRERED_VERBOSE=1` for detailed console diagnostics, or set `FIRERED_EVIDENCE` to capture the established detailed evidence format. Evidence capture deliberately includes full ready/command state for verification tools; do not enable it for normal play.
+
+The startup simplification passed a zero-warning solution build and all 2,435 maintained tests. Native checkpoint runs with diagnostics off and evidence on retained the same generation/payload hash; the detailed evidence payload remains available only when explicitly requested. The Pokemon import-family refactor compared 645 temporary output files, including all JSON fields and 508 decoded PNGs, without changing runtime resources.

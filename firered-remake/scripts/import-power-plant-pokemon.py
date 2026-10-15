@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Import the bounded Power Plant catalog from pinned local Git objects; --check is byte exact.
+"""Import the bounded Power Plant catalog from local raw files or pinned Git objects; --check is byte exact.
 No reference repository code is executed. Includes the Thunder Stone ownership closure.
 """
-import argparse,  json, re, subprocess
+import argparse,  json, re
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pokemon_import_io import safe, read_source, write_files
 from machine_catalog import compatibility_additions, machine_definitions, admission_species
 
+ROOT=Path(__file__).resolve().parents[1]
 COMMIT='037335f4c725d7c9aecdac87066f2002b4bd7e14'
 TREE='7515cd4067ea55f8cdbc73624478afd2736c58b9'
 SPECIES=['SPECIES_ELECTABUZZ','SPECIES_JOLTEON','SPECIES_ZAPDOS']
@@ -210,11 +212,8 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
          return read(path).decode()
 
      def reuse(path):
-         need(path and not pathlib.PurePosixPath(path).is_absolute() and '\\' not in path and ':' not in path and
-              all(p not in ('', '.', '..') for p in path.split('/')), 'Unsafe inherited path')
-         file = dependency_root / path
-         need(not any(p.is_symlink() for p in (file, *file.parents)), 'Inherited symlink rejected')
-         data = file.read_bytes()
+         need(':' not in path, 'Unsafe inherited path')
+         data = safe(dependency_root, path).read_bytes()
          row = dict(path=path)
          if DEPENDENCY_PINS:
              need(DEPENDENCY_PINS.get(path) == row, 'Pinned inherited bytes differ: ' + path)
@@ -461,11 +460,12 @@ def build_power_plant_presentation(read_source_bytes,dependency_root):
      return files, dict(manifest=manifest, sourceLock=lock, report=report, itemIcons=item_icons)
  return build_presentation(read_source_bytes,dependency_root)
 
-def generate(reference,dependency):
+def generate(reference,dependency,raw=None):
+ raw_root=raw if raw is not None else ROOT/RAW
  inputs={};raw={};dependencies=[]
  def readbytes(path):
   if path not in raw:
-   b=subprocess.check_output(['git','show',COMMIT+':'+path],cwd=reference);raw[path]=b
+   b=read_source(raw_root,path,commit=COMMIT,repository=reference);raw[path]=b
    inputs[path]=dict(path=path)
   return raw[path]
  def read(path):return readbytes(path).decode()
@@ -473,7 +473,7 @@ def generate(reference,dependency):
   m=list(re.finditer(pattern,read(path),re.M|re.S));need(len(m)==1,'Unique source: '+pattern);return m[0]
  def ref(path,symbol,m):return dict(path=path,symbol=symbol,startLine=read(path).count('\n',0,m.start())+1,endLine=read(path).count('\n',0,m.end())+1)
  def dep(path):
-  b=(dependency/path).read_bytes()
+  b=safe(dependency,path).read_bytes()
   dependencies.append(dict(path=path));return json.loads(b)
  d={p:dep(p) for p in DEPENDENCIES};canonical=d['content/generated/canonical-pokemon/catalog.json']
  species={s['id']['value'][5:]:s for s in canonical['species']};metadata={s['id']['value'][5:]:s for s in canonical['metadata']}
@@ -553,14 +553,15 @@ def generate(reference,dependency):
  code='''using System.Collections.Immutable;\nusing Game.Domain.Ids;\nnamespace Game.Domain.Encounters;\n\npublic sealed record PowerPlantHeldItemSource(SpeciesId Species, string Common, string Rare);\n/// <summary>Exact FireRed Power Plant table, generated only from pinned source.</summary>\npublic static class PowerPlantEncounterTables\n{\n'''+f'''    public static MapId Map {{ get; }} = new("map.power-plant");\n    public static EarlyLandEncounterTable Land {{ get; }} = new(Map, EarlyLandEncounterRules.SourceCommit,\n        EarlyLandEncounterRules.SourcePath, "sPowerPlant_FireRed", 7,\n        [{slots}]);\n    public static ImmutableArray<PowerPlantHeldItemSource> HeldItems {{ get; }} = [\n        {heldrows}];\n}}\n'''
  return doc,raw,{'src/Game.Domain/Encounters/PowerPlantEncounterTables.cs':code.encode()}
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('reference',type=Path);p.add_argument('output',type=Path);p.add_argument('--dependency-root',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args()
- doc,raw,files=generate(a.reference,a.dependency_root);files[BASE+'catalog.json']=encoded(doc)
- presentation,art=build_power_plant_presentation(lambda path:subprocess.check_output(['git','show',COMMIT+':'+path],cwd=a.reference),a.dependency_root);files.update(presentation)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('reference',type=Path,nargs='?',help='Optional pinned local Git repository');p.add_argument('--raw-root',type=Path,help='Local raw input directory when no reference repository is selected');p.add_argument('output',type=Path);p.add_argument('--dependency-root',type=Path,required=True);p.add_argument('--check',action='store_true');a=p.parse_args()
+ if a.reference is not None and a.raw_root is not None:p.error('Choose either REFERENCE or --raw-root')
+ raw_root=a.raw_root if a.raw_root is not None else ROOT/RAW
+ doc,raw,files=generate(a.reference,a.dependency_root,raw_root);files[BASE+'catalog.json']=encoded(doc)
+ presentation,art=build_power_plant_presentation(lambda path:read_source(raw_root,path,commit=COMMIT,repository=a.reference),a.dependency_root);files.update(presentation)
  for path,b in raw.items():files[RAW+path]=b
  lock=dict(sourceCommit=COMMIT,profile=doc['profile'],files=[dict(path=p) for p,b in sorted(files.items())])
- for path,b in files.items():
-  dst=a.output/path
-  if a.check:need(dst.read_bytes()==b,'Regeneration differs: '+path)
-  else:dst.parent.mkdir(parents=True,exist_ok=True);dst.write_bytes(b)
+ if a.check:
+  for path,b in files.items():need(safe(a.output,path).read_bytes()==b,'Regeneration differs: '+path)
+ else:write_files(a.output,files)
  print(json.dumps(dict(checked=a.check,inputs=len(raw),presentation=art['report']),indent=2))
 if __name__=='__main__':main()

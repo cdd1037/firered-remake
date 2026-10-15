@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Rebuild Celio's three species and 117 machine cells from pinned local Git objects.
-Usage: REFERENCE DEPENDENCY OUTPUT [--check]. Never executes upstream code.
+"""Rebuild Celio's three species and 117 machine cells from local raw files or pinned Git objects.
+Usage: [REFERENCE] DEPENDENCY OUTPUT [--raw-root PATH] [--check]. Never executes upstream code.
 """
 import argparse
 import json
 import re
-import subprocess
 from pathlib import Path
+from pokemon_import_io import safe, read_source, write_files
 from machine_catalog import compatibility_additions
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,16 +23,17 @@ def need(value, message):
     if not value: raise ValueError(message)
 def encoded(value): return (json.dumps(value, indent=2, ensure_ascii=False) + '\n').encode()
 
-def generate(reference, dependency):
+def generate(reference, dependency, raw=None):
+    raw_root = raw if raw is not None else ROOT / "content/raw/pokefirered/037335f4"
     texts, inputs, dependencies = {}, {}, []
     def read(path):
         if path not in texts:
-            data = subprocess.check_output(['git', 'show', COMMIT + ':' + path], cwd=reference)
+            data = read_source(raw_root, path, commit=COMMIT, repository=reference)
             inputs[path] = dict(path=path)
             texts[path] = data.decode()
         return texts[path]
     def dep(path):
-        data = (dependency / path).read_bytes()
+        data = safe(dependency, path).read_bytes()
         dependencies.append(dict(path=path))
         return json.loads(data)
     def one(path, pattern):
@@ -98,14 +99,18 @@ def generate(reference, dependency):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ['reference', 'dependency', 'output']: parser.add_argument(name, type=Path)
+    parser.add_argument('reference', type=Path, nargs='?', help='Optional local Git repository at the pinned revision')
+    for name in ['dependency', 'output']: parser.add_argument(name, type=Path)
+    parser.add_argument('--raw-root', type=Path, help='Local raw input directory when no reference repository is selected')
     parser.add_argument('--check', action='store_true'); args = parser.parse_args()
-    docs = generate(args.reference, args.dependency)
+    if args.reference is not None and args.raw_root is not None: parser.error('Choose either REFERENCE or --raw-root')
+    docs = generate(args.reference, args.dependency, args.raw_root)
     files = {'content/generated/celio-pokemon/' + name: encoded(value) for name, value in docs.items()}
     lock = dict(sourceCommit=COMMIT,  profile='firered-celio-pokemon-source-v1', files=[dict(path=path) for path, data in sorted(files.items())])
-    for path, data in files.items():
-        target = args.output / path
-        if args.check: need(target.read_bytes() == data, 'Deterministic regeneration differs: ' + path)
-        else: target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+    if args.check:
+        for path, data in files.items():
+            need(safe(args.output, path).read_bytes() == data, 'Deterministic regeneration differs: ' + path)
+    else:
+        write_files(args.output, files)
     print(json.dumps(dict(checked=args.check, owned=docs['pokemon.json']['ownedSpeciesCount'], opponents=docs['pokemon.json']['opponentSpeciesCount'], machines=39, cells=117), indent=2))
 if __name__ == '__main__': main()

@@ -59,6 +59,7 @@ public partial class CampaignView:Node2D
     private string? _blockedAutomaticWait;
     private bool _lastCommandFault;
     private bool _quitRequested;
+    private CampaignDiagnostics _diagnostics = new(null, null);
     private StoryWaitKind? _waitKind;
     public GameStartupSelection? Startup { private get; set; }
     public override void _Ready()
@@ -70,6 +71,7 @@ public partial class CampaignView:Node2D
             var startup=Startup??throw new InvalidOperationException("current_startup_selection_missing");
             if(startup.Mode!=GameStartupMode.Current)throw new InvalidOperationException("current_startup_mode_invalid");
             _root=startup.ProjectRoot;_evidence=OS.GetEnvironment("FIRERED_EVIDENCE");
+            _diagnostics=new(_evidence,OS.GetEnvironment("FIRERED_VERBOSE"));
             _font=GD.Load<FontFile>("res://Assets/ProbeFont.ttc");
             var fontDirectory=System.IO.Path.Combine(_root,"content/generated/source-font");
             _sourceNormal=SourceGameFont.Load(fontDirectory,colorProfile:SourceGameFont.ColorProfile.MgbaBitReplicated);_sourceSmall=SourceGameFont.Load(fontDirectory,"small",colorProfile:SourceGameFont.ColorProfile.MgbaBitReplicated);
@@ -93,7 +95,7 @@ public partial class CampaignView:Node2D
             }
             ResetPlayTimeHost();
             LoadSourceAudio();LoadMap(_session.State.World.Player.MapId);if(!InitializePlayerEntry(checkpoint))Synchronize(null,_session.State);
-            Write("ready",new{scope="source-driven opening and starter gift/nickname; first lab battle semantic profile; original menu art, animation, audio and exact timing incomplete",_catalog.ContentVersion,state=_session.State});
+            Write("ready",_diagnostics.Payload(new{_catalog.ContentVersion,_session.Revision},()=>new{scope="source-driven opening and starter gift/nickname; first lab battle semantic profile; original menu art, animation, audio and exact timing incomplete",_catalog.ContentVersion,state=_session.State}));
         }
         catch(Exception e){GD.PushError(e.ToString());GetTree().Quit(21);}
     }
@@ -441,7 +443,7 @@ public partial class CampaignView:Node2D
         CommitTrainerTowerTime(true);_busy=true;
         var before=_session.State;_fieldStepTicks=command.Kind=="move"?FieldStepTicksForDirection(before,command.Direction):16;var result=_session.Execute("ui:"+(_sequence++),_session.Revision,command);
         if(command.Kind=="slot_tick")Write("slotFrame",new{command.SlotInput,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,phase=result.State.SlotMachine?.Phase.ToString(),step=result.State.SlotMachine?.MainStep,coins=result.State.Coins});
-        else Write("command",new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,state=result.State});
+        else Write("command",_diagnostics.Payload(new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash},()=>new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,state=result.State}));
         if(result.Status==CommandStatus.Accepted){_lastCommandFault=false;_blockedAutomaticWait=null;if(command.Kind=="slot_tick"&&result.State.SlotMachine is not null){SynchronizeSlotMachine();SynchronizeSourceAudio(before,result.State);}else{Synchronize(before,result.State);SynchronizeRegionalSignInput(before,result.State);}_status="方向键移动 · Enter对话 · F5保存 / F9读取";}
         else if(result.Error=="sevii_first_visit_not_yet_available")
         {_regionalServiceNotice="The trip to ONE ISLAND is not\navailable yet.";_held=null;_repeat=0;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}

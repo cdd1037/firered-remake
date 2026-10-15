@@ -8,7 +8,11 @@ _script_directory = str(_SourcePath(__file__).resolve().parent)
 if _script_directory not in _path_sys.path:
     _path_sys.path.insert(0, _script_directory)
 
-import argparse,base64,copy,importlib.util,json,pathlib,re,subprocess,sys
+import argparse,json,pathlib,re,sys
+import pokemon_import as pokemon
+from pokemon_import import learn_rows
+from pokemon_import_io import safe, unique_pairs, load_recipe, read_sources
+from image_io import indexed_png, png
 sys.dont_write_bytecode=True
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 import sys
@@ -24,28 +28,11 @@ TRAINERS=('TRAINER_LASS_KAY','TRAINER_BEAUTY_BRIDGET','TRAINER_PICNICKER_TINA','
 def source_symbol(name):return name.upper()
 def source_stem(name):return name.lower()
 def canonical(data):return (json.dumps(data,sort_keys=True,separators=(',',':'),ensure_ascii=False)+'\n').encode()
-def unique_pairs(rows):
-    result={}
-    for key,value in rows:
-        if key in result:raise ValueError('Duplicate JSON property: '+key)
-        result[key]=value
-    return result
 
-def safe(root,relative=None):
-    if '..' in pathlib.Path(root).parts:raise ValueError('Parent traversal root rejected')
-    if relative is not None and (not relative or pathlib.PurePosixPath(relative).is_absolute() or '\\' in relative or any(x in ('','.','..') for x in relative.split('/'))):raise ValueError('Unsafe relative path')
-    path=pathlib.Path(root).absolute() if relative is None else pathlib.Path(root).absolute()/relative
-    for parent in (path,*path.parents):
-        if parent.is_symlink():raise ValueError('Symlink path rejected: '+str(parent))
-    return path
 
 def read_json(path):return json.loads(safe(path).read_bytes(),object_pairs_hook=unique_pairs)
-def git(repo,*args):return subprocess.check_output(['git','-C',str(repo),*args])
-def load_module(path,name):
-    spec=importlib.util.spec_from_file_location(name,safe(path));module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
 def trainer_parties(lock,sources):
-    rock.TRAINERS=TRAINERS
     # Read original roster using the common source parser, with this exact inventory check.
     result=[]
     text={p:b.decode() for p,b in sources.items() if p.endswith(('.h','.inc'))}
@@ -66,7 +53,7 @@ def trainer_parties(lock,sources):
                 for m in learn_rows(text['src/data/pokemon/level_up_learnsets.h'],learn):
                     if int(m[1])<=level and m[2] not in moves:moves=(moves+[m[2]])[-4:]
             mons.append(dict(iv=int(row[1]),level=level,species=row[3],moves=moves))
-        result.append(dict(trainer=symbol,party=mons,trainerSource=battle.reference(lock,sources,'src/data/trainers.h',symbol,record[0]),partySource=battle.reference(lock,sources,'src/data/trainer_parties.h',party_symbol,party[0])))
+        result.append(dict(trainer=symbol,party=mons,trainerSource=pokemon.reference(lock,sources,'src/data/trainers.h',symbol,record[0]),partySource=pokemon.reference(lock,sources,'src/data/trainer_parties.h',party_symbol,party[0])))
     if len(result)!=8 or sum(len(t['party']) for t in result)!=21:raise ValueError('Celadon Gym roster differs')
     return result
 
@@ -206,46 +193,38 @@ def item_outputs(lock,sources,project):
     path='src/data/item_icon_table.h';m=match(path,r'^    \[ITEM_TM19\][ \t]*= \{(\w+), (\w+)\},');binding=ref(path,'ITEM_TM19',m);icon_symbols=m.groups();paths=[]
     for symbol in icon_symbols:
         path='src/data/graphics/items.h';m=match(path,r'^const u32 '+symbol+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(path,symbol,m));paths.append(m[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))
-    image,palette=paths;codec=load_module(project/'scripts/import-lab-battle-ui.py','celadon_gym_item_codec')
-    w,h,indices,_=codec.indexed_png(sources[image]);rgba=codec.rgba(indices,codec.palette(sources[palette]));png=codec.png(w,h,rgba)
+    image,palette=paths
+    w,h,indices,_=indexed_png(sources[image]);rgba=pokemon.rgba(indices,pokemon.icon_palette(sources[palette]));image_png=png(w,h,rgba)
     if (w,h)!=(24,24):raise ValueError('TM19 icon size differs')
     icon=dict(item=ident('ITEM_TM19'),width=w,height=h,pngPath='item_tm19.png',source=ref(image,icon_symbols[0]),paletteSource=ref(palette,icon_symbols[1]),bindingSource=binding)
     for path,symbol,pattern in [('src/item.c','AddBagItem',r'^bool8 AddBagItem\(.*?^\}'),('src/item.c','RemoveBagItem',r'^bool8 RemoveBagItem\(.*?^\}'),('src/party_menu.c','Task_LearnedMove',r'^static void Task_LearnedMove\([^;]*?\n\{.*?^\}'),('src/pokemon.c','CanMonLearnTMHM',r'^u32 CanMonLearnTMHM\([^;]*?\n\{.*?^\}'),('data/maps/CeladonCity_Gym/scripts.inc','CeladonCity_Gym_EventScript_GiveTM19',r'^CeladonCity_Gym_EventScript_GiveTM19::.*?^\tend$')]:rules.append(ref(path,symbol,match(path,pattern)))
     limitations=['Exactly one TM19 item extends the unchanged 45-item predecessor; all five shop stocks remain unchanged.','Fifteen original machines have exactly 98 source compatibility rows; inherited14x94 records are identical.','TM19 is source Giga Drain, consumed once after successful teaching. No Leaf Stone or department-store stock is introduced.','Catalog metadata alone does not activate rewards, battle effects, field moves or application profiles.']
     return {'celadon-gym-items.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-items-v1',sourceCommit=COMMIT,inputs=lock['files'],items=[dict(metadata=wrapped,effectBytes=[],effectSource=None)],icons=[icon],limitations=limitations)),
-      'celadon-gym-machines.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-machines-v1',sourceCommit=COMMIT,inputs=lock['files'],machines=values,icons=[icon],limitations=limitations)),'item_tm19.png':png}
+      'celadon-gym-machines.json':canonical(dict(schemaVersion=1,profile='firered-celadon-gym-machines-v1',sourceCommit=COMMIT,inputs=lock['files'],machines=values,icons=[icon],limitations=limitations)),'item_tm19.png':image_png}
 
-def configure(project):
-    global rock,battle,learn_rows
-    recipe_bytes=safe(ROOT,'scripts/celadon-gym-catalog.recipe.json').read_bytes()
-    recipe=json.loads(recipe_bytes,object_pairs_hook=unique_pairs)
-    rock=load_module(project/'scripts/import-rocktunnel-pokemon.py','celadon_gym_existing_pokemon_helpers')
-    rock.ROOT=project;rock.PROFILE=rock.base.PROFILE=PROFILE;rock.NEW_SPECIES=rock.base.NEW_SPECIES=NEW_SPECIES;rock.ART_SPECIES=rock.base.ART_SPECIES=ART_SPECIES
-    rock.base.LEGACY_SPECIES=tuple(species[13:] for species in admission_species(project,'content/generated/celadon-gym-items/celadon-gym-machines.json','/machines/0') if species[13:] not in {name.upper() for name in NEW_SPECIES})
-    return recipe
 
-def load_sources(stem,raw,repo,recipe):
-    lock_bytes=safe(ROOT,'scripts/'+stem+'.lock.json').read_bytes()
-    lock=json.loads(lock_bytes,object_pairs_hook=unique_pairs)
-    profile='firered-'+stem+'-v1'
-    if (lock['schemaVersion'], lock['repository'], lock['commit'], lock['profile'], lock['gameEdition'], lock['romRevision']) != (1, 'pret/pokefirered', COMMIT, profile, 'FIRERED', 0):raise ValueError('Pinned source identity differs')
-    if repo is not None and git(repo, 'rev-parse', 'HEAD').decode().strip() != COMMIT:raise ValueError('Pinned repository identity differs')
-    data={}
-    for e in lock['files']:
-        if repo is None:b=safe(raw,e['path']).read_bytes()
-        else:
-            b=git(repo,'cat-file','blob',COMMIT + ':' + e['path'])
-        if e['path'] in data:raise ValueError('Duplicate source entry')
-        data[e['path']]=b
-    return lock,data
+def load_sources(stem, raw, repo):
+    lock = load_recipe(ROOT / ('scripts/' + stem + '.lock.json'),
+                       commit=COMMIT, profile='firered-' + stem + '-v1')
+    return lock, read_sources(lock, raw, repo)
+
 
 def pokemon_outputs(lock,sources,project):
-    catalog=metadata(lock,sources);outputs=rock.base.art(lock,sources);art=json.loads(outputs['battle-art.json']);art['limitations'][0]='Four Celadon Gym species, original front/back frame zero, normal and shiny palettes.';outputs['battle-art.json']=canonical(art)
-    outputs['catalog.json']=canonical(catalog);outputs.update(rock.supplement(lock,sources))
+    catalog = metadata(lock, sources)
+    outputs = pokemon.battle_art(lock, sources, profile=PROFILE, species=ART_SPECIES,
+        limitation='Four Celadon Gym species, original front/back frame zero, normal and shiny palettes.')
+    outputs['battle-art.json'] = canonical(json.loads(outputs['battle-art.json']))
+    # Preserve the admitted predecessor order, then append this region's additions.
+    previous = tuple(species[13:] for species in admission_species(project,
+        'content/generated/celadon-gym-items/celadon-gym-machines.json', '/machines/0')
+        if species[13:] not in {name.upper() for name in NEW_SPECIES})
+    outputs['catalog.json'] = canonical(catalog)
+    outputs.update(pokemon.supplement(lock, sources, profile=PROFILE, species=ART_SPECIES,
+        weight_species=previous + tuple(name.upper() for name in NEW_SPECIES), natural_level_limit=None))
     declarations=[];text=sources['src/data/pokemon/species_info.h'].decode()
     for name in NEW_SPECIES:
         symbol='SPECIES_'+name.upper();m=re.search(r'^    \['+symbol+r'\] =\s*\n    \{\n(.*?)^    \},',text,re.M|re.S)
-        declarations.append(dict(species={'value':'pret:'+symbol},fields={r[1]:r[2] for r in re.finditer(r'^\s*\.(\w+) = (.*),$',m[1],re.M)},declaration=m[0],source=battle.reference(lock,sources,'src/data/pokemon/species_info.h',symbol,m[0])))
+        declarations.append(dict(species={'value':'pret:'+symbol},fields={r[1]:r[2] for r in re.finditer(r'^\s*\.(\w+) = (.*),$',m[1],re.M)},declaration=m[0],source=pokemon.reference(lock,sources,'src/data/pokemon/species_info.h',symbol,m[0])))
     outputs['source-species.json']=canonical(dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,species=declarations))
     trainers=trainer_parties(lock,sources);actual=sorted({m for t in trainers for mon in t['party'] for m in mon['moves']})
     existing=set();existing_abilities=set()
@@ -258,7 +237,7 @@ def pokemon_outputs(lock,sources,project):
     return outputs
 
 def materialize(project,target,repo=None,check=False):
-    project,target=safe(project),safe(target);recipe=configure(project);results=[]
+    project,target=safe(project),safe(target);results=[]
     for stem in ('celadon-gym-pokemon','celadon-gym-items'):
         raw=safe(target,'content/raw/pokefirered/037335f4');out=safe(target,'content/generated/'+stem)
         if repo is not None:
@@ -268,7 +247,7 @@ def materialize(project,target,repo=None,check=False):
             for directory in (project/'content'/kind).iterdir():
                 if directory.name==stem:continue
                 if any(p==directory or p in directory.parents or directory in p.parents for p in (raw,out)):raise ValueError('Output overlaps protected predecessor')
-        lock,sources=load_sources(stem,raw,repo,recipe)
+        lock,sources=load_sources(stem,raw,repo)
         profile='firered-'+stem+'-v1'
         outputs=pokemon_outputs(lock,sources,project) if stem.endswith('pokemon') else item_outputs(lock,sources,project)
         manifest=canonical(dict(schemaVersion=1,profile=profile,sourceCommit=COMMIT,inputCount=len(sources),upstreamScriptsExecuted=False,romDownloaded=False,publiclyUploaded=False,outputs=[dict(path=p) for p,b in sorted(outputs.items())]))
