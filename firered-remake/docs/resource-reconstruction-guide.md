@@ -88,3 +88,7 @@ python3 scripts/checks/test-pokemon-import.py
 
 当前另一个再生边界：Celadon approach 的 encounter 资源尚未找到现存对应 producer。
 本轮已比较其遇敌率、槽位、等级和权重前后不变，但未将此现存资源称作已冷重建。
+
+共享地图属性表使用当前schema3地图及raw的src/data/tilesets/headers.h、metatiles.h和实际属性bin再生。运行import-field-tilesets.py后用--check核对；不能仅保留旧地图文件名对应的layout。
+
+音频从零恢复是独立输入合同：主pack需要现有pack或合法自备ROM，旧normal-cries目录生成还需要对应inventory及其ROM/ELF/map来源。目前八份早期cue配方缺失；在这些闭包补齐前保留现有私有音频资源，不宣称完整冷重建。

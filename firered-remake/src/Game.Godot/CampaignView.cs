@@ -91,7 +91,7 @@ public partial class CampaignView:Node2D
             {
                 var saved=new SaveService(new LocalSaveStorage()).Load<CampaignState>(checkpoint,_session.RulesVersion,_catalog.ContentVersion,_session.ValidatePlayerSave);
                 _session=CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation);_sequence=saved.Generation;
-                Write("checkpointLoaded",new{saved.Source,saved.Generation,hash=CanonicalJson.Hash(saved.State)});
+                Write("checkpointLoaded",_diagnostics.Payload(new{saved.Source,saved.Generation},()=>new{saved.Source,saved.Generation,hash=CanonicalJson.Hash(saved.State)}));
             }
             ResetPlayTimeHost();
             LoadSourceAudio();LoadMap(_session.State.World.Player.MapId);if(!InitializePlayerEntry(checkpoint))Synchronize(null,_session.State);
@@ -402,21 +402,8 @@ public partial class CampaignView:Node2D
                 else if(_session.State.Script.Completed)Apply(new("interact"));
             }
             if(key.Keycode==Key.Backspace&&_session.State.Script.Wait?.Kind is StoryWaitKind.Choice or StoryWaitKind.MenuChoice){_held=null;Apply(new("ack",Choice:_session.State.Script.Wait.Kind==StoryWaitKind.MenuChoice?127:0));}
-            if(key.Keycode==Key.F5)
-            {
-                try{if(_tracks.Any(t=>t.Time<t.Duration))throw new InvalidDataException("presentation_active");if(RequestEntrySaveOverwrite()){GetViewport().SetInputAsHandled();return;}var path=ProjectSettings.GlobalizePath("user://campaign-save.json");SaveCampaignWithTrainerTowerClock(path);EntrySaveSucceeded();_status="已保存";Write("saved",new{hash=CanonicalJson.Hash(_session.State)});}
-                catch(Exception e){_status="此处不能保存："+e.Message;if(_session.State.Battle is not null)_battleNotice="You can't save during a battle.";if(PresentedWildBattle is not null)_wildNotice="You can't save during a battle.";if(DoubleBattleVisible)_doubleNotice="You can't save during a battle.";if(_session.State.ItemMenu is not null)_itemNotice="Close the menu before saving.";if(_session.State.Shop is not null)_shopNotice="Finish shopping before saving.";if(_session.State.Pc is not null)_pcNotice="Log off from the PC before saving.";Write("saveRejected",new{error=e.Message});}
-            }
-            if(key.Keycode==Key.F9)
-            {
-                try
-                {
-                    if(_tracks.Any(t=>t.Time<t.Duration)||_session.ValidatePlayerSave(_session.State) is not null)throw new InvalidDataException("current_event_or_presentation_active");
-                    var path=ProjectSettings.GlobalizePath("user://campaign-save.json");var saved=_entrySource is null?new SaveService(new LocalSaveStorage()).Load<CampaignState>(path,_session.RulesVersion,_catalog.ContentVersion,_session.ValidatePlayerSave):LoadEntryProtectedSave();
-                    _session=CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation);ResetPlayTimeHost();_trainerTowerFrames.Reset();_entryOverwritePending=false;_sequence=saved.Generation;_lastFanfareSequence=0;_fanfareRemaining=0;_blockedAutomaticWait=null;_lastCommandFault=false;_waitId=null;_waitKind=null;ResetSourceAudio();LoadMap(saved.State.World.Player.MapId);Synchronize(null,saved.State);_status="已读取";Write("loaded",new{hash=CanonicalJson.Hash(saved.State),saved.Source});
-                }
-                catch(Exception e){_status="不能读取："+e.Message;if(_session.State.Battle is not null)_battleNotice="You can't load during a battle.";if(PresentedWildBattle is not null)_wildNotice="You can't load during a battle.";if(DoubleBattleVisible)_doubleNotice="You can't load during a battle.";if(_session.State.ItemMenu is not null)_itemNotice="Close the menu before loading.";if(_session.State.Shop is not null)_shopNotice="Finish shopping before loading.";if(_session.State.Pc is not null)_pcNotice="Log off from the PC before loading.";Write("loadRejected",new{error=e.Message});}
-            }
+            if(key.Keycode==Key.F5)ShowPlayerSaveResult(AttemptPlayerSave());
+            if(key.Keycode==Key.F9)ShowPlayerSaveResult(AttemptPlayerLoad());
             if(key.Keycode==Key.F12&&_evidence.Length>0)GetViewport().GetTexture().GetImage().SavePng(System.IO.Path.ChangeExtension(_evidence,"png"));
             if(key.Keycode==Key.Escape)RequestQuit();
         }
@@ -428,8 +415,12 @@ public partial class CampaignView:Node2D
         if(!CommitPlayTime(true))return false;
         CommitTrainerTowerTime(true);_busy=true;
         var before=_session.State;_fieldStepTicks=command.Kind=="move"?FieldStepTicksForDirection(before,command.Direction):16;var result=_session.Execute("ui:"+(_sequence++),_session.Revision,command);
-        if(command.Kind=="slot_tick")Write("slotFrame",new{command.SlotInput,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,phase=result.State.SlotMachine?.Phase.ToString(),step=result.State.SlotMachine?.MainStep,coins=result.State.Coins});
-        else Write("command",_diagnostics.Payload(new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash},()=>new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,state=result.State}));
+        if(command.Kind=="slot_tick")
+        {
+            // Frame evidence is opt-in and remains a slot summary, not a full state dump.
+            if(_diagnostics.Verbose)Write("slotFrame",new{command.SlotInput,status=result.Status.ToString(),result.Error,result.Revision,StateHash=CanonicalJson.Hash(result.State),phase=result.State.SlotMachine?.Phase.ToString(),step=result.State.SlotMachine?.MainStep,coins=result.State.Coins});
+        }
+        else Write("command",_diagnostics.Payload(new{command,status=result.Status.ToString(),result.Error,result.Revision},()=>new{command,status=result.Status.ToString(),result.Error,result.Revision,StateHash=CanonicalJson.Hash(result.State),state=result.State}));
         if(result.Status==CommandStatus.Accepted){_lastCommandFault=false;_blockedAutomaticWait=null;if(command.Kind=="slot_tick"&&result.State.SlotMachine is not null){SynchronizeSlotMachine();SynchronizeSourceAudio(before,result.State);}else{Synchronize(before,result.State);SynchronizeRegionalSignInput(before,result.State);}_status="方向键移动 · Enter对话 · F5保存 / F9读取";}
         else if(result.Error=="sevii_first_visit_not_yet_available")
         {_regionalServiceNotice="The trip to ONE ISLAND is not\navailable yet.";_held=null;_repeat=0;_lastCommandFault=false;_status="The trip to ONE ISLAND is not available yet.";}

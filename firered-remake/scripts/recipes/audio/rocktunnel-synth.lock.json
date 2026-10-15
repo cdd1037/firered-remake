@@ -105,7 +105,7 @@
       "path": "scripts/lib/audit-early-audio.py"
     },
     {
-      "path": "scripts/synth-rocktunnel-cues.json"
+      "path": "scripts/recipes/audio/synth-rocktunnel-cues.json"
     }
   ]
 }

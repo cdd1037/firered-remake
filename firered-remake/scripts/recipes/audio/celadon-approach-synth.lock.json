@@ -99,7 +99,7 @@
       "path": "scripts/lib/audit-early-audio.py"
     },
     {
-      "path": "scripts/synth-celadon-approach-cues.json"
+      "path": "scripts/recipes/audio/synth-celadon-approach-cues.json"
     }
   ]
 }

@@ -46,3 +46,7 @@ python scripts/checks/test-importer-png-semantics.py
 部分早期音频增量转换依赖当前工程未携带的 `recipes/audio/synth-*-cues.json`。这些文件原本就缺失，未伪造或用现有最终音频目录替代；相关早期冷重建仍不在已验证范围。完整边界见[资源再生成说明](../docs/resource-reconstruction-guide.md)。
 
 单文件资源转换的 `--out` / `--output` 现在指定 JSON 文件，而不是同名目录。训练家转换同时发布共享定义；输出通常放在 `<generated>/data/trainer-battles/<区域>.json`，任意其他文件位置须用 `--generated-root` 显式指定共享目录。临时独立道具图标位于 `sprites/item-icons/`，最终精确图集为 `sprites/items.png`；执行 `python scripts/lib/item_icon_exports.py --project-root <工程>` 完成部分重建合并，不会创建 `.png` 目录。
+
+## Python 环境
+
+当前验证组合为Python 3.12与Pillow 12.3.0。可在普通venv内执行`python -m pip install -r requirements-dev.txt`；从工程目录运行。该依赖声明只服务导入/资源测试，C#规则测试不需要Python。NumPy/SciPy等音频研究依赖不属于普通维护入口。

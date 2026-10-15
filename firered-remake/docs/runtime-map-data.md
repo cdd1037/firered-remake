@@ -1,35 +1,23 @@
-# Runtime map data
+# 运行时地图数据
 
-The generated-resource refactor on 2026-10-15 uses one map format. Every map is a `runtime-map.json` with schema 2 and converter `firered-runtime-map-v2`. The runtime no longer reads `world.json`, reconstructs embedded source documents, or selects a rich-format fallback.
+当前格式是紧凑schema3。地图按实际地区平铺为JSON文件，使用有含义的变体后缀；不再要求每张图独占runtime-map.json目录。具体目录见[资源布局](resource-layout.md)。
 
-## Stored data
+地图保留ID、原图业务标识、尺寸、事件、warp、脚本分派路径、16位blocks、属性字和渲染引用。唯一metatile行是[id, attributes]；不存每格来源记录或属性文件索引。不要把实际事件源端点与已经删除的导入证明混为一类。
 
-Each compact map retains its stable ID, source map path/symbol/commit, dimensions, PNG layer references, optional technical spawn, and complete event header. Original little-endian 16-bit blocks remain packed in canonical base64; both collision bits and all elevation bits are preserved. Unique metatile rows retain the original attribute words and attribute-file indices. Behavior names and all decoded attributes remain available through `GetSourceCell` when needed.
+运行只读取转换数据，不打开原作脚本文本。地图集合只引用实际地图文件，不重复完整地图payload。Seafoam和Trainer Tower等真实布局变体保留，不能仅按同一MapId合并。
 
-Script paths are import provenance only. Runtime programs and texts load from `story/runtime.json`; no original script is opened during game startup. Script and text bodies are not duplicated in generated maps. Map-level source metadata remains available; per-cell source records are reconstructed from the metatile table only on request.
+## 再生
 
-Complete events stay in each map because they are runtime inputs. Seafoam stopped-current layouts and Trainer Tower battle-format layouts keep their explicit existing directory names and original event headers. Maps are never merged solely by stable ID.
-
-The 15 cumulative map catalogs contain direct paths relative to `content/generated`; they no longer contain copied map payloads. A single `map-source-registry.json` supplies the original base-map source inventory. Region loaders read generated metadata only. Five Pallet `border.json` files now contain map references, repeat rules and PNG references; geometry and blocks come from the compact map, and field behavior/attributes come from the compiled `field-tilesets.json`. Image references resolve through the regional render atlas.
-
-## Regeneration
-
-Map renderers produce only compact runtime maps. Their temporary in-memory source cells are checked against original block/attribute bytes before conversion. `scripts/lib/map_runtime.py` owns that conversion; `scripts/lib/runtime_map_manifest.py` creates cumulative catalogs without copying map payloads. `scripts/imports/maps/import-pallet.py` also creates the shared base source registry.
-
-Run the applicable source importer first, then its catalog builder. The base catalog can be rebuilt or checked with:
+scripts/lib/map_runtime.py负责格式转换和扁平发布，runtime_map_manifest.py负责实际加载索引。地图导入后按相应说明生成集合、共享tilesets和渲染图集。
 
 ```sh
-python3 scripts/imports/maps/export-runtime-maps.py
-python3 scripts/imports/maps/export-runtime-maps.py --check
-python3 scripts/imports/maps/export-runtime-maps.py --resolve map.pallet-town 6 7
+python scripts/imports/maps/import-field-tilesets.py
+python scripts/imports/maps/import-field-tilesets.py --check
+python scripts/imports/maps/import-map-atlases.py --check
 ```
 
-The source lookup reports the compact map path, original attribute-file path and byte offset, raw block, collision/elevation, attributes and behavior. It does not require a rich development map.
+maps/tilesets.json保存实际地图引用的完整primary/secondary属性表，包括初始网格未使用但游戏会切换到的图块。生产者由raw data/layouts/layouts.json、src/data/tilesets/headers.h、metatiles.h及引用的属性bin解析；缺少输入或有效地图为空必须报错。数量由当前输入决定，不用历史246/45等数值作为运行门槛。
 
-## Bounded verification
+## 验证边界
 
-The migration compared all 1,464 old runtime payloads, including blocks, borders, attributes, behaviors, event data and artifact references. Every live script body matched its shared raw file. Conversion checked 93,992 rich map/border cells against original bytes. Variant paths were retained whenever their complete payload differed.
-
-The prior 156 `world.json` files used 80,957,734 bytes, and the 1,464 runtime copies used 15,793,206 bytes. The resulting 386 canonical maps and explicit variants use 2,425,743 bytes. These figures exclude PNGs, other region metadata and the shared raw tree. The previous 15 identical source registries are now one file. One-time migration reports are kept outside the source project.
-
-The format change does not change gameplay IDs, rules, events or saved-game fields. Current New Game and generation-57604 Continue checks are owned by the enclosing resource-refactor verification; no new full campaign replay is implied by this map migration.
+维护检查包括schema3生成、合法/错误引用、图层key实际解析、逐像素图集重建、tileset再生及真实loader。普通Gameplay/存读和Godot地图显示各自验证，不能以某一层通过替代其他层，也无需为打包重放全部历史路线。

@@ -26,10 +26,10 @@ public sealed class CommandTests
         var second = session.Execute("audit:second", 1, new("move", Direction.West));
         var duplicate = session.Execute("audit:first", 0, new("move", Direction.East));
         Assert.IsTrue(first.Status == CommandStatus.Accepted && second.Status == CommandStatus.Accepted, "Setup moves failed.");
-        Assert.IsTrue(duplicate.Status == CommandStatus.Rejected && duplicate.Error == "stale_revision" && duplicate.StateHash == second.StateHash && ReferenceEquals(duplicate.State, session.State) && duplicate.Revision == 2, "Delayed stale retry did not preserve the current committed outcome.");
+        Assert.IsTrue(duplicate.Status == CommandStatus.Rejected && duplicate.Error == "stale_revision" && ReferenceEquals(duplicate.State, second.State) && ReferenceEquals(duplicate.State, session.State) && duplicate.Revision == 2, "Delayed stale retry did not preserve the current committed outcome.");
         Assert.IsTrue(session.Revision == 2 && session.State.World.StepCount == 2 && session.State.World.Player.X == 2, "Duplicate rewound or advanced authoritative state.");
         var conflict = session.Execute("audit:first", 0, new("move", Direction.North));
-        Assert.IsTrue(conflict.Status == CommandStatus.Rejected && conflict.Error == "stale_revision" && conflict.StateHash == second.StateHash && session.Revision == 2, "Changed payload bypassed the stale revision guard.");
+        Assert.IsTrue(conflict.Status == CommandStatus.Rejected && conflict.Error == "stale_revision" && ReferenceEquals(conflict.State, second.State) && session.Revision == 2, "Changed payload bypassed the stale revision guard.");
         return;
     }
 
@@ -67,7 +67,7 @@ public sealed class CommandTests
             return new(CommandStatus.Accepted, new(state.Value + delta));
         })));
         var stale = outcomes.Count(o => o.Status == CommandStatus.Rejected && o.Error == "stale_revision");
-        Assert.IsTrue(ruleCalls == 1 && stale == 99 && outcomes.Count(o => o.Status == CommandStatus.Accepted) == 1 && outcomes.All(o => o.StateHash == CanonicalJson.Hash(session.State)) && session.Revision == 1 && session.State.Value == 1, "Concurrent duplicate executed rules repeatedly or bypassed the revision guard.");
+        Assert.IsTrue(ruleCalls == 1 && stale == 99 && outcomes.Count(o => o.Status == CommandStatus.Accepted) == 1 && outcomes.All(o => ReferenceEquals(o.State, session.State) && o.Revision == session.Revision) && session.Revision == 1 && session.State.Value == 1, "Concurrent duplicate executed rules repeatedly or bypassed the revision guard.");
         return;
     }
 }

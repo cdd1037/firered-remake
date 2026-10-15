@@ -17,6 +17,14 @@ internal static class TestAssets
         return p;
     }
 
+    public static TemporaryDirectory TemporaryOutput() => new(Output());
+
+    internal sealed class TemporaryDirectory(string path) : IDisposable
+    {
+        public string Path { get; } = path;
+        public void Dispose() => Directory.Delete(Path, recursive: true);
+    }
+
     private static readonly ConcurrentDictionary<string, object> Cache = new();
     public static T Cached<T>(Func<T> factory, [CallerArgumentExpression(nameof(factory))] string key = "")
         where T : notnull => (T)Cache.GetOrAdd(key, _ => factory());

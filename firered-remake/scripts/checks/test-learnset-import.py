@@ -221,6 +221,46 @@ class LearnsetImportTests(unittest.TestCase):
                 self.assertEqual(original.size, rebuilt.size)
                 self.assertEqual(original.convert('RGBA').tobytes(), rebuilt.convert('RGBA').tobytes())
 
+    def test_item_atlas_rewrites_normalized_references_and_is_idempotent(self):
+        from item_icon_exports import ATLAS_PATH, decode_icon_page, pack_project
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary)
+            package = project / 'content/generated/data/items'
+            image = package / 'fixture/icon.asset'
+            image.parent.mkdir(parents=True)
+            # Image contents, not the filename suffix, determine valid input.
+            Image.new('RGBA', (24, 24), (11, 22, 33, 128)).save(image, format='PNG')
+            document = package / 'fixture.json'
+            original = {
+                'icon': {'item': {'value': 'pret:ITEM_POTION'}, 'width': 24, 'height': 24,
+                         'pngPath': 'fixture//./icon.asset'},
+                'references': ['fixture/icon.asset', str(image),
+                               'content/generated/data/items/fixture/./icon.asset'],
+                'aliases': {'relative': 'fixture//./icon.asset', 'absolute': str(image),
+                            'rooted': 'content/generated/data/items/fixture/./icon.asset',
+                            'unrelated': 'Text mentioning icon.asset is not a path'},
+                'outputs': [{'path': 'fixture/icon.asset'}, {'path': str(image)}]}
+            document.write_text(json.dumps(original))
+            result = pack_project(project)
+            self.assertEqual(1, result['retiredPngFiles'])
+            rebuilt = json.loads(document.read_text())
+            self.assertEqual(ATLAS_PATH, rebuilt['icon']['pngPath'])
+            self.assertEqual({'relative': ATLAS_PATH, 'absolute': ATLAS_PATH, 'rooted': ATLAS_PATH,
+                              'unrelated': original['aliases']['unrelated']}, rebuilt['aliases'])
+            self.assertEqual([{'path': ATLAS_PATH}], rebuilt['outputs'])
+            # Non-record string arrays have never been reference records.
+            self.assertEqual(original['references'], rebuilt['references'])
+            png = (project / ATLAS_PATH).read_bytes()
+            decoded = decode_icon_page(png, rebuilt['icon'])
+            self.assertEqual(Image.new('RGBA', (24, 24), (11, 22, 33, 128)).tobytes(), decoded.tobytes())
+            self.assertFalse(image.exists())
+            again = pack_project(project)
+            self.assertEqual(0, again['retiredPngFiles'])
+            self.assertEqual(0, again['updatedDocuments'])
+            self.assertEqual(png, (project / ATLAS_PATH).read_bytes())
+            self.assertEqual(rebuilt, json.loads(document.read_text()))
+
     def test_shared_and_late_json_writers_are_compact_and_lossless(self):
         from pokemon_import_io import canonical as encode
         value = {'text': 'Pokémon \n text', 'array': [3, 1, {'nested': True}], 'null': None}

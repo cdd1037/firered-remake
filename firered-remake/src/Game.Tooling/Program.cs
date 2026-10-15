@@ -59,7 +59,7 @@ if (args.Length == 2 && args[0] == "scenario" && args[1] == "smoke")
     var battle = BattleSnapshot.Create(new("fixture:battle"),EngineeringSession.Content,actor("fixture:player",BattleSide.Player,13),actor("fixture:opponent",BattleSide.Opponent,10),12345);
     var session = new EngineeringSession(map, content, battle);
     var hashes = new List<string>(); int commands=0;
-    void apply(EngineeringCommand c) {var r=session.Execute("scenario:"+(commands++),session.Revision,c);if(r.Status!=CommandStatus.Accepted)throw new InvalidOperationException(r.Error);hashes.Add(r.StateHash);}
+    void apply(EngineeringCommand c) {var r=session.Execute("scenario:"+(commands++),session.Revision,c);if(r.Status!=CommandStatus.Accepted)throw new InvalidOperationException(r.Error);hashes.Add(CanonicalJson.Hash(r.State));}
     apply(new("move",Direction.East)); apply(new("reward"));apply(new("reward"));apply(new("battle"));
     for(var i=0;session.State.Battle is not null && i<100;i++)apply(new("attack"));
     if(session.State.Battle is not null || session.State.Money!=100)throw new InvalidOperationException("scenario_invariant");

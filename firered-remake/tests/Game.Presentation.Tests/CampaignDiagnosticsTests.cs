@@ -23,9 +23,9 @@ public sealed class CampaignDiagnosticsTests
         {
             Assert.IsTrue(diagnostics.Verbose);
             var calls = 0;
-            var payload = diagnostics.Payload(new { revision = 7 }, () => { calls++; return new { state = new { revision = 7 } }; });
+            var payload = diagnostics.Payload(new { revision = 7 }, () => { calls++; return new { StateHash = "explicit-diagnostic-hash", state = new { revision = 7 } }; });
             Assert.AreEqual(1, calls);
-            Assert.AreEqual("{\"state\":{\"revision\":7}}", JsonSerializer.Serialize(payload));
+            Assert.AreEqual("{\"StateHash\":\"explicit-diagnostic-hash\",\"state\":{\"revision\":7}}", JsonSerializer.Serialize(payload));
         }
     }
 }

@@ -114,16 +114,18 @@ public sealed class SaveService(ISaveStorage storage)
     private LoadedSave<T> LoadExclusive<T>(string slot, string rules, string content, Func<T, string?>? validate)
     {
         var errors = new List<string>();
+        var failures = new List<Exception>();
         foreach (var path in new[] { slot, slot + ".bak" })
         {
             try
             {
                 var bytes = storage.Read(path);
-                if (bytes is null) { errors.Add(path + ":missing"); continue; }
+                if (bytes is null) { errors.Add(path + ":missing"); failures.Add(new FileNotFoundException("save_missing")); continue; }
                 return SaveCodec.Decode<T>(bytes, rules, content, path, validate);
             }
-            catch (Exception ex) when (ex is JsonException or InvalidDataException or IOException) { errors.Add(path + ":" + ex.Message); }
+            catch (Exception ex) when (ex is JsonException or InvalidDataException or IOException or UnauthorizedAccessException)
+            { errors.Add(path + ":" + ex.Message); failures.Add(ex); }
         }
-        throw new InvalidDataException("save_unrecoverable: " + string.Join(";", errors));
+        throw new InvalidDataException("save_unrecoverable: " + string.Join(";", errors), new AggregateException(failures));
     }
 }

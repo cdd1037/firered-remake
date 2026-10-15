@@ -34,9 +34,9 @@ public abstract class WildBattleFixture
     [TestInitialize]
     public void SetUp()
     {
-        content = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
+        content = CurrentCampaignFixture.Catalog;
         validator = CampaignSession.CreateCurrent(content);
-        checkpoint = SaveCodec.Decode<CampaignState>(File.ReadAllBytes(TestAssets.Checkpoint), validator.RulesVersion, content.ContentVersion, validate: validator.ValidatePlayerSave);
+        checkpoint = CurrentCampaignFixture.Checkpoint;
         ownership = content.PokemonContent!.Pokemon;
         mechanics = ownership.Mechanics;
         catalog = mechanics.Catalog;
@@ -56,7 +56,6 @@ public abstract class WildBattleFixture
         if (session.State.WildBattle?.Frame is { } frame)
         {
             Assert.IsTrue(SourceBattleIdentityRules.Validate(frame)is null, "frame structural identity");
-            Assert.IsTrue(typeof(SourceBattleFrame).GetProperty("WildTurn")?.GetValue(frame)is null && typeof(SourceBattleFrame).GetProperty("SinglesEncoding")?.GetValue(frame)is null, "no competing singles owner");
             Assert.IsTrue(frame.Party(BattleSide.Player).Members.Select(m => CanonicalJson.Hash(m.Pokemon)).SequenceEqual(session.State.Party.Select(p => CanonicalJson.Hash(p.Pokemon))), "canonical party projection");
         }
     }
@@ -162,7 +161,8 @@ public abstract class WildBattleFixture
     private protected CampaignSession StartField()
     {
         var fixture = FieldFixture();
-        Assert.IsTrue(validator.ValidatePlayerSave(fixture)is null, "controlled current field fixture: " + validator.ValidatePlayerSave(fixture));
+        var validationError = validator.ValidatePlayerSave(fixture);
+        Assert.IsNull(validationError, "controlled current field fixture: " + validationError);
         var session = CampaignSession.RestoreCurrent(content, fixture, checkpoint.Generation);
         Send(session, new("turn", Direction: Direction.North));
         Drain(session);
@@ -172,7 +172,8 @@ public abstract class WildBattleFixture
 
     private protected void StrictRoundtrip(CampaignSession session)
     {
-        Assert.IsTrue(session.ValidatePlayerSave(session.State)is null, "strict current save: " + session.ValidatePlayerSave(session.State));
+        var validationError = session.ValidatePlayerSave(session.State);
+        Assert.IsNull(validationError, "strict current save: " + validationError);
         var bytes = SaveCodec.Encode(session.State, session.Revision, session.RulesVersion, content.ContentVersion);
         var decoded = SaveCodec.Decode<CampaignState>(bytes, session.RulesVersion, content.ContentVersion, validate: session.ValidatePlayerSave);
         var restored = CampaignSession.RestoreCurrent(content, decoded.State, decoded.Generation);

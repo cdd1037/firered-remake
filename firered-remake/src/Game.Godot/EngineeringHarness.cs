@@ -73,7 +73,7 @@ public partial class EngineeringHarness : Node2D
             {
                 var result=_session.Execute("ui:"+(_sequence++),_session.Revision,command);
                 _status=result.Error??(result.Status==CommandStatus.Accepted?"B对战 Enter攻击/奖励 F5存 F9读":"拒绝");
-                WriteEvidence("command",new{command,status=result.Status.ToString(),result.Error,result.Revision,result.StateHash,state=result.State});
+                WriteEvidence("command",new{command,status=result.Status.ToString(),result.Error,result.Revision,StateHash=CanonicalJson.Hash(result.State),state=result.State});
             }
             if(key.Keycode is Key.F5 or Key.F9 && _session.State.Battle is not null)
             {
@@ -113,14 +113,21 @@ public sealed class LocalSaveStorage : ISaveStorage
     public const int MaximumSaveBytes = 16 * 1024 * 1024;
     public byte[]? Read(string slot)
     {
-        if(!System.IO.File.Exists(slot))return null;
-        using var stream=new System.IO.FileStream(slot,System.IO.FileMode.Open,System.IO.FileAccess.Read,System.IO.FileShare.Read);
-        long length=stream.Length;
-        if(length>MaximumSaveBytes)throw new System.IO.InvalidDataException("save_file_too_large");
-        byte[] bytes=new byte[(int)length];
-        stream.ReadExactly(bytes);
-        if(stream.Length!=length||stream.ReadByte()!=-1)throw new System.IO.IOException("save_file_changed_during_read");
-        return bytes;
+        System.IO.FileStream stream;
+        try{stream=new(slot,System.IO.FileMode.Open,System.IO.FileAccess.Read,System.IO.FileShare.Read);}
+        catch(System.IO.FileNotFoundException){return null;}
+        catch(System.IO.DirectoryNotFoundException){return null;}
+        // File.Exists also returns false for access/IO failures. Preserve those
+        // errors so callers can distinguish unreadable files and try a valid backup.
+        using(stream)
+        {
+            long length=stream.Length;
+            if(length>MaximumSaveBytes)throw new System.IO.InvalidDataException("save_file_too_large");
+            byte[] bytes=new byte[(int)length];
+            stream.ReadExactly(bytes);
+            if(stream.Length!=length||stream.ReadByte()!=-1)throw new System.IO.IOException("save_file_changed_during_read");
+            return bytes;
+        }
     }
     public void WriteStaged(string slot,byte[] bytes)
     {

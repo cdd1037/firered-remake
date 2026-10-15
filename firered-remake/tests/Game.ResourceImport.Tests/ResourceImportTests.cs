@@ -10,6 +10,14 @@ public sealed class ResourceImportTests
     [TestMethod]
     public Task SingleFileImportPublishing() => Run("test-single-file-imports.py");
     [TestMethod]
+    public Task ImageIo() => Run("test-image-io.py");
+    [TestMethod]
+    public Task ImporterPngSemantics() => Run("test-importer-png-semantics.py");
+    [TestMethod]
+    public Task MapAtlases() => Run("test-map-atlases.py");
+    [TestMethod]
+    public Task FieldTilesetRegeneration() => Run("test-field-tilesets.py");
+    [TestMethod]
     public Task FameChecker() => Run("test-fame-checker-importer.py", "--git-dir", TestAssets.Source);
     [TestMethod]
     public Task NationalDex() => Run("test-national-dex-source.py");
@@ -37,11 +45,19 @@ public sealed class ResourceImportTests
         await Run("test-shop-machine-importers.py");
     }
     [TestMethod]
-    public Task SourceHit() => Run("test-source-hit-import.py", Path.Combine(TestAssets.Output(), "results"));
+    public async Task SourceHit()
+    {
+        using var output = TestAssets.TemporaryOutput();
+        await Run("test-source-hit-import.py", Path.Combine(output.Path, "results"));
+    }
     [TestMethod]
     public Task TeachyTv() => Run("test-teachy-tv-importer.py", "--git-dir", TestAssets.Source);
     [TestMethod]
-    public Task TrainerFanClub() => Run("test-trainer-fan-club-importer.py", "--project-root", TestAssets.Root, "--dependency-root", TestAssets.Root, "--reference-root", TestAssets.Source, "--output", Path.Combine(TestAssets.Output(), "result.json"));
+    public async Task TrainerFanClub()
+    {
+        using var output = TestAssets.TemporaryOutput();
+        await Run("test-trainer-fan-club-importer.py", "--project-root", TestAssets.Root, "--dependency-root", TestAssets.Root, "--reference-root", TestAssets.Source, "--output", Path.Combine(output.Path, "result.json"));
+    }
     [TestMethod]
     public Task VsSeeker() => Run("test-vs-seeker-importer.py", "--git-dir", TestAssets.Source);
     public TestContext TestContext { get; set; } = null !;
@@ -60,6 +76,7 @@ public sealed class ResourceImportTests
             StandardErrorEncoding = System.Text.Encoding.UTF8
         };
         info.Environment["PYTHONIOENCODING"] = "utf-8";
+        info.Environment["PYTHONDONTWRITEBYTECODE"] = "1";
         info.ArgumentList.Add(Path.Combine(TestAssets.Root, "scripts", "checks", script));
         foreach (var arg in args)
             info.ArgumentList.Add(arg);

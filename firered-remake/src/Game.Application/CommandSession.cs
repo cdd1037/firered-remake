@@ -1,7 +1,9 @@
 namespace Game.Application;
 public enum CommandStatus { Accepted, Rejected, Fault }
 public sealed record CommandEnvelope<T>(string CommandId, long ExpectedRevision, string RulesVersion, string ContentVersion, T Payload);
-public sealed record CommandOutcome<T>(CommandStatus Status, long Revision, T State, string StateHash, string? Error);
+/// <summary>Committed immutable snapshot and revision. Hashing is an explicit
+/// save, replay or diagnostic operation, never part of a command transaction.</summary>
+public sealed record CommandOutcome<T>(CommandStatus Status, long Revision, T State, string? Error);
 public sealed record Decision<T>(CommandStatus Status, T State, string? Error = null);
 /// <summary>
 /// Single session, serialized commits guarded by the expected state revision.
@@ -26,19 +28,18 @@ public sealed class CommandSession<TState, TCommand>
             if (string.IsNullOrWhiteSpace(command.CommandId)) return Reject("command_id_required");
             if (command.ExpectedRevision != _revision) return Reject("stale_revision");
             if (command.RulesVersion != _rulesVersion || command.ContentVersion != _contentVersion) return Reject("version_mismatch");
-            if (_revision == long.MaxValue) return new(CommandStatus.Fault, _revision, _state, CanonicalJson.Hash(_state), "revision_exhausted");
+            if (_revision == long.MaxValue) return new(CommandStatus.Fault, _revision, _state, "revision_exhausted");
             Decision<TState> result;
             try { result = decide(_state, command.Payload); }
-            catch (Exception ex) { return new(CommandStatus.Fault, _revision, _state, CanonicalJson.Hash(_state), ex.GetType().Name + ": " + ex.Message); }
+            catch (Exception ex) { return new(CommandStatus.Fault, _revision, _state, ex.GetType().Name + ": " + ex.Message); }
             if (result.Status != CommandStatus.Accepted)
-                return new(result.Status, _revision, _state, CanonicalJson.Hash(_state), result.Error);
+                return new(result.Status, _revision, _state, result.Error);
             // State must be immutable: only a completed decision can become authoritative.
-            var hash = CanonicalJson.Hash(result.State);
             var nextRevision = checked(_revision + 1);
-            var outcome = new CommandOutcome<TState>(CommandStatus.Accepted, nextRevision, result.State, hash, null);
+            var outcome = new CommandOutcome<TState>(CommandStatus.Accepted, nextRevision, result.State, null);
             _state = result.State; _revision = nextRevision;
             return outcome;
         }
     }
-    private CommandOutcome<TState> Reject(string error) => new(CommandStatus.Rejected, _revision, _state, CanonicalJson.Hash(_state), error);
+    private CommandOutcome<TState> Reject(string error) => new(CommandStatus.Rejected, _revision, _state, error);
 }

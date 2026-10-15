@@ -1,59 +1,11 @@
-# Revision-only command handling
+# 命令revision与业务防重
 
-The shared `CommandSession<TState,TCommand>` now owns only the current state,
-its revision, fixed rules/content identities and a serialization lock. It
-retains no outcome history, command IDs, fingerprints, eviction ring or
-tombstones. UI and automation use the same implementation; there is no
-Debug/Release split or alternate ledger policy.
+CommandId只用于跟踪，不是历史命令去重键。CommandSession只持有当前不可变状态与revision，不保存旧完整状态或固定长度命令队列。
 
-The [actual-use review](command-receipt-usage-review.md) found that production
-callers generate fresh trace IDs synchronously. Retrying a full envelope to
-retrieve a historical accepted result was exercised only by deliberate tests.
-The user approved removing that unused contract before the new archive.
+命令版本/期望revision不匹配会拒绝；仅Accepted的完整决定发布新状态并递增revision。拒绝/故障不能发布部分业务修改。
 
-## Current API contract
+一次性奖励、捕获、训练家结算和物品所有权由各自flag/业务状态保证。复用trace ID但携带当前revision可能表达新的操作，UI不能假定这会自动复用旧结果。
 
-- `CommandId` remains a required nonblank diagnostic trace label. It is not a
-  deduplication key and has no uniqueness guarantee across requests/sessions.
-- `ExpectedRevision` must equal the current authoritative revision. An old
-  envelope, including one submitted again after intervening commands, returns
-  `Rejected / stale_revision` with the **current** state, revision and hash.
-  The rule delegate does not run and current state remains unchanged.
-- Reusing a trace ID with a current revision is a new request. Changed payloads
-  are evaluated normally. There is no `command_id_conflict`,
-  `command_retry_expired`, or `IsDuplicate` result anymore.
-- Rules/content mismatches still reject before rule execution. Only accepted
-  immutable decisions atomically replace state and increment revision. Rule
-  rejections, explicit faults, exceptions and exhausted revisions cannot publish
-  partially changed state.
-- Concurrent requests using one revision can commit at most one transition,
-  regardless of whether their IDs are identical. Other callers see a stale
-  revision and must inspect current state before deciding on a new request.
+完整状态Hash用于明确的存档、诊断或确定性比较，不是日常命令提交的前提。存档保存业务状态和generation，Continue以这些值建立新会话。
 
-This is not an exactly-once transport or lost-response recovery protocol.
-Blindly changing an old request's revision to resubmit a purchase/action can
-request that action again. The current UI does not perform such transport
-retries. One-time rewards, trainer/capture settlement and inventory ownership
-continue to use their domain state and source flags, independently of trace IDs.
-
-Save bytes, schema, content/rules IDs and canonical state hashing are unchanged.
-Only game state and generation are saved, as before. Continue constructs a fresh
-session with those values. State memory may legitimately grow with game content;
-the narrower claim is that this command dispatcher no longer roots past states
-or accumulates command-ID history.
-
-## Verification
-
-`./dev test-command-retention` retains its existing CLI name to avoid breaking
-runbooks, but runs the current `command-revision-no-history` suite: delayed stale
-requests, reused trace IDs at current revision, concurrency, failure atomicity,
-overflow, save round trips, business reward flags, and 4,096 transitions followed
-by full collection. Its weak references require exactly the current full state
-and no original command-ID strings to remain alive through the session.
-
-Campaign drivers keep their deliberate retry attempts. Their assertions now
-require rejection and preservation of the live state; delayed retries compare
-against the later state, not a historical outcome. Fixed-SHA audits keep their
-original source/expectations and are labeled historical rather than relabeled
-as new-contract regressions. The final checkpoint validation matrix records
-the exact current-source runs separately.
+现行协议验证在tests/Game.Application.Tests/Protocols与Engineering下，使用标准dotnet test入口。不要恢复旧test-command-retention调度器、历史队列或逐阶段回放框架。

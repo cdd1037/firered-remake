@@ -14,8 +14,6 @@ namespace FireRed.Tests.Application.FieldItems;
 public sealed class StoneEvolutionTests
 {
     private global::Game.Content.PretCampaignCatalog catalog = default !;
-    private global::Game.Application.CampaignSession owner = default !;
-    private global::Game.Application.LoadedSave<global::Game.Application.CampaignState> checkpoint = default !;
     private global::Game.Application.CampaignState original = default !;
     private long generation = default !;
     private global::Game.Domain.Pokemon.CampaignPokemonContent content = default !;
@@ -25,9 +23,8 @@ public sealed class StoneEvolutionTests
     [TestInitialize]
     public void SetUp()
     {
-        catalog = TestAssets.Cached(() => Game.Content.PretCampaignCatalog.LoadCurrent(TestAssets.Root));
-        owner = CampaignSession.CreateCurrent(catalog);
-        checkpoint = SaveCodec.Decode<CampaignState>(File.ReadAllBytes(TestAssets.Checkpoint), owner.RulesVersion, catalog.ContentVersion, validate: owner.ValidatePlayerSave);
+        catalog = CurrentCampaignFixture.Catalog;
+        var checkpoint = CurrentCampaignFixture.Checkpoint;
         original = checkpoint.State;
         generation = checkpoint.Generation;
         content = catalog.PokemonContent!;
@@ -104,7 +101,8 @@ public sealed class StoneEvolutionTests
 
     private CampaignSession Session(CampaignState state)
     {
-        Assert.IsTrue(inspector.ValidatePlayerSave(state)is null, "strict player boundary before test: " + inspector.ValidatePlayerSave(state));
+        var validationError = inspector.ValidatePlayerSave(state);
+        Assert.IsNull(validationError, "strict player boundary before test: " + validationError);
         return CampaignSession.RestoreCurrent(catalog, state, generation);
     }
 
@@ -136,7 +134,8 @@ public sealed class StoneEvolutionTests
 
     private void Save(CampaignSession session, string name)
     {
-        Assert.IsTrue(session.ValidatePlayerSave(session.State)is null, name + " strict stable save: " + session.ValidatePlayerSave(session.State));
+        var validationError = session.ValidatePlayerSave(session.State);
+        Assert.IsNull(validationError, name + " strict stable save: " + validationError);
         var bytes = SaveCodec.Encode(session.State, session.Revision, session.RulesVersion, catalog.ContentVersion);
         var decoded = SaveCodec.Decode<CampaignState>(bytes, session.RulesVersion, catalog.ContentVersion, validate: session.ValidatePlayerSave);
         var restored = CampaignSession.RestoreCurrent(catalog, decoded.State, decoded.Generation);

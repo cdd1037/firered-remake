@@ -10,7 +10,7 @@ public sealed class CampaignCompositionTests
 {
     private Game.Domain.World.ICampaignCatalog catalog = null !;
     [TestInitialize]
-    public void SetUp() => catalog = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
+    public void SetUp() => catalog = CurrentCampaignFixture.Catalog;
     [TestMethod]
     public void DefaultStartupSelectsCurrentGame()
     {
@@ -53,7 +53,8 @@ public sealed class CampaignCompositionTests
         Assert.IsTrue(restored.ValidatePlayerSave(restored.State)is null, "continued checkpoint remains valid");
         using var convertedJson = JsonDocument.Parse(converted);
         Assert.IsTrue(JsonElement.DeepEquals(document.RootElement.GetProperty("Payload"), convertedJson.RootElement.GetProperty("Payload")), "conversion changes no payload fields");
-        string destination = Path.Combine(TestAssets.Output(), "continued-checkpoint.json");
+        using var output = TestAssets.TemporaryOutput();
+        string destination = Path.Combine(output.Path, "continued-checkpoint.json");
         using (var file = new FileStream(destination, FileMode.CreateNew, FileAccess.Write))
             file.Write(converted);
         Assert.IsTrue(File.ReadAllBytes(TestAssets.Checkpoint).AsSpan().SequenceEqual(source), "source checkpoint preserved");

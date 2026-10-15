@@ -1,0 +1,2 @@
+# Validated image tooling dependency; no platform-specific wheel hashes.
+Pillow==12.3.0

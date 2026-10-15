@@ -50,12 +50,12 @@ Not all optional content or dedicated move animations are implemented. Native
 checks use Dummy audio and do not establish audible output. Some original audio
 cue recipes are absent, so a complete cold resource rebuild is not claimed.
 
-## Measured cleanup results
+## Measured cleanup baseline
 
 Against the preceding local revision `53435c7`, generated JSON decreased from
 20,792,637 to 16,962,939 bytes (1,241 to 1,192 files). All generated files total
 22,098,167 bytes. The intermediate directory-layout baseline had 806 directories;
-the current layout has 327, with six top-level categories instead of 363.
+the measured layout has 327, with six top-level categories instead of 363.
 These are on-disk source-resource sizes, not exported game or GPU-memory sizes.
 
 Independent Release measurements taken before the final directory migration showed
@@ -67,8 +67,8 @@ benchmarks. The final nested-field cleanup was not assigned invented timing gain
 ## Verified local checkpoint
 
 The final serialized solution build completed with zero warnings and errors.
-The eight maintained MSTest suites passed 2,606 cases with zero failures or
-skips, summed from their TRX counters: Application 95, Audio 574, Battle 1587, Content 177, Domain 144, Presentation 12, Process 1, ResourceImport 16.
+The eight maintained MSTest suites passed 2,646 cases with zero failures or
+skips, summed from their TRX counters: Application 128, Audio 574, Battle 1587, Content 177, Domain 144, Presentation 15, Process 1, ResourceImport 20.
 
 Godot 4.7.2 loaded the current checkpoint from a generated-only resource root.
 Map/character rendering, movement and the right-click menu were checked after
@@ -80,3 +80,10 @@ The import checks include real raw-to-runtime regeneration and pixel comparisons
 Five presentation importers now compare JSON types/values/array order and PNG
 dimensions/RGBA for --check; irrelevant object-key ordering and PNG compression
 do not cause false failures. Other binary formats remain byte-exact.
+
+The governance batch additionally exercised unreadable primary-save recovery via
+Continue, visible permission failure, and a successful retry in an isolated native
+window. The existing verified backup remained byte-identical. No real player save
+was modified. Runtime command hashes and default detailed evidence were removed;
+explicit diagnostics and save integrity remain. See [quality review](project-quality-review.md)
+for remaining work and measurement boundaries.

@@ -194,15 +194,6 @@ public partial class CampaignView
             Write("trainerTowerClock", new { frames, result.Revision, timer = _session.State.TrainerTower?.CurrentRecord.TimerFrames });
         }
     }
-    private void SaveCampaignWithTrainerTowerClock(string path)
-    {
-        if(!CommitPlayTime(true))throw new InvalidDataException("play_time_not_committed");
-        CommitTrainerTowerTime(true);
-        ulong started = Time.GetTicksUsec();
-        try { new SaveService(EntrySaveStorage()).Save(path, _session.State, _session.Revision, _session.RulesVersion, _catalog.ContentVersion, _session.ValidatePlayerSave); }
-        finally { _trainerTowerFrames.ExcludeSaveWrite((Time.GetTicksUsec() - started) / 1_000_000d); }
-    }
-
     private void SynchronizeTrainerTowerMenu()
     {
         if (!TrainerTowerMenuActive) { _trainerTowerMenu = null; _trainerTowerMenuWait = null; return; }

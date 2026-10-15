@@ -17,7 +17,6 @@ public sealed class FieldItemTests
 {
     private global::Game.Content.PretCampaignCatalog catalog = default !;
     private global::Game.Application.CampaignSession fresh = default !;
-    private byte[] originalBytes = default !;
     private global::Game.Application.LoadedSave<global::Game.Application.CampaignState> checkpoint = default !;
     private global::Game.Application.CampaignState baseFixture = default !;
     private global::Game.Domain.Pokemon.PartyPokemon lead = default !;
@@ -28,10 +27,9 @@ public sealed class FieldItemTests
     [TestInitialize]
     public void SetUp()
     {
-        catalog = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(TestAssets.Root));
+        catalog = CurrentCampaignFixture.Catalog;
         fresh = CampaignSession.CreateCurrent(catalog);
-        originalBytes = File.ReadAllBytes(TestAssets.Checkpoint);
-        checkpoint = SaveCodec.Decode<CampaignState>(originalBytes, CurrentGameProfile.RulesVersion, catalog.ContentVersion, validate: fresh.ValidatePlayerSave);
+        checkpoint = CurrentCampaignFixture.Checkpoint;
         baseFixture = CurrentFixturePokemon.BringToLead(catalog, checkpoint.State, 130);
         lead = baseFixture.Party[0];
         prepared = lead.Pokemon with
@@ -85,7 +83,8 @@ public sealed class FieldItemTests
 
     private CampaignSession Restore(CampaignState state)
     {
-        Assert.IsTrue(fresh.ValidatePlayerSave(state)is null, "controlled checkpoint strictly valid: " + fresh.ValidatePlayerSave(state));
+        var validationError = fresh.ValidatePlayerSave(state);
+        Assert.IsNull(validationError, "controlled checkpoint strictly valid: " + validationError);
         var session = CampaignSession.RestoreCurrent(catalog, state, checkpoint.Generation);
         Same(state, session.State, "Restore preserves full state");
         return session;

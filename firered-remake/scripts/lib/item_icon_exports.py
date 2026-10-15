@@ -67,6 +67,7 @@ def pack_project(project):
     import hashlib
     import io
     import json
+    from os.path import normcase
     from PIL import Image
     from presentation_atlas import pack
     project = Path(project)
@@ -117,8 +118,18 @@ def pack_project(project):
     # Capture old standalone paths before editing any document. Atlas aliases have
     # separate rectangles, so their identity includes the old region, never path only.
     standalone = {p for p in originals if p != project / ATLAS_PATH}
+    # Every reference is still checked. Most strings in generated documents are
+    # gameplay/text values, so reject impossible filenames before constructing a
+    # Path for them. This is only a prefilter: positive candidates retain Path's
+    # relative-path and platform case semantics below.
+    original_names = {normcase(path.name) for path in originals}
     changed = []
     for document, data in documents.items():
+        def is_original(value):
+            normalized = normcase(value)
+            if not any(name in normalized for name in original_names):
+                return False
+            return absolute(document, value) in originals
         before = json.dumps(data, sort_keys=True)
         for row in nodes(data):
             for field,region_field in (('pngPath','region'),('texturePath','region'),('tmTexture','tmRegion')):
@@ -130,14 +141,14 @@ def pack_project(project):
                         raise ValueError('Inventory image reference lacks dimensions: ' + str(document))
                     row[field] = ATLAS_PATH; row[region_field] = regions[old_regions[token]]
             for field,value in list(row.items()):
-                if isinstance(value,str) and absolute(document,value) in originals:
+                if isinstance(value,str) and is_original(value):
                     row[field]=ATLAS_PATH
             for collection in ('outputs','inheritedInputs','reusedInputs','inputs'):
                 if not isinstance(row.get(collection),list):continue
                 outputs=[];seen=set()
                 for output in row[collection]:
                     if isinstance(output,dict) and isinstance(output.get('path'),str):
-                        if absolute(document,output['path']) in originals: output['path']=ATLAS_PATH
+                        if is_original(output['path']): output['path']=ATLAS_PATH
                         identity=output['path']
                         if identity in seen and (collection=='outputs' or identity==ATLAS_PATH):continue
                         seen.add(identity)

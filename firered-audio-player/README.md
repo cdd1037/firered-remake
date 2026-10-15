@@ -4,11 +4,11 @@ Original C#/.NET 10 implementation, private work in progress. No agbplay depende
 
 ## Current route integration
 
-Phase7 adds original player slots/pause/gain controls,262 tests and144 admitted route IDs. All111 noncry cues and25 loop cases pass; [PHASE7-REPORT.md](PHASE7-REPORT.md) separates core acceptance from the main-game default-host acceptance. The user selected custom synthesis as default and excluded converted recordings from backup.
+Phase7 adds original player slots/pause/gain controls,262 tests and144 admitted route IDs. All111 noncry cues and25 loop cases pass; PHASE7-REPORT.md（历史研究报告，当前工程未携带） separates core acceptance from the main-game default-host acceptance. The user selected custom synthesis as default and excluded converted recordings from backup.
 
 ## Previous frozen candidate
 
-Phase6: 386 ordinary cries with authenticated optional catalog, 12 additional representative BGM/SE/fanfare pieces, all five voice families, 178 tests and an isolated 58-second Godot PCM demonstration. See [PHASE6-REPORT.md](PHASE6-REPORT.md), [INTEGRATION-CANDIDATE.md](INTEGRATION-CANDIDATE.md) and [independent review](specs/PHASE6-REVIEW.md). Earlier phase sections below preserve historical scope. Main-game integration remains separate.
+Phase6: 386 ordinary cries with authenticated optional catalog, 12 additional representative BGM/SE/fanfare pieces, all five voice families, 178 tests and an isolated 58-second Godot PCM demonstration. See PHASE6-REPORT.md（历史研究报告，当前工程未携带）, INTEGRATION-CANDIDATE.md（历史研究报告，当前工程未携带） and [independent review](specs/PHASE6-REVIEW.md). Earlier phase sections below preserve historical scope. Main-game integration remains separate.
 
 ## Original scope and gates
 1. Bounds-checked compact external resource reader, fixed SHA-1 source identity, song/voice/sample validation.

@@ -22,7 +22,6 @@ namespace FireRed.Tests.Application.TrainerBattles;
 [TestClass, TestCategory("Game")]
 public sealed class TrainerBattleTests
 {
-    private string root = default !;
     private global::Game.Content.PretCampaignCatalog current = default !;
     private global::Game.Application.CampaignSession owner = default !;
     private byte[] sourceBytes = default !;
@@ -36,11 +35,10 @@ public sealed class TrainerBattleTests
     [TestInitialize]
     public void SetUp()
     {
-        root = Path.GetFullPath(TestAssets.Root);
-        current = TestAssets.Cached(() => PretCampaignCatalog.LoadCurrent(root));
+        current = CurrentCampaignFixture.Catalog;
         owner = CampaignSession.CreateCurrent(current);
         sourceBytes = File.ReadAllBytes(TestAssets.Checkpoint);
-        checkpoint = SaveCodec.Decode<CampaignState>(sourceBytes, owner.RulesVersion, current.ContentVersion, validate: owner.ValidatePlayerSave);
+        checkpoint = CurrentCampaignFixture.Checkpoint;
         currentState = checkpoint.State;
         currentState = currentState with
         {
@@ -49,7 +47,8 @@ public sealed class TrainerBattleTests
                 BagItems = currentState.Inventory!.BagItems.RemoveAll(x => x.Item.Value == "pret:ITEM_REVIVE").Add(new(new("pret:ITEM_REVIVE"), 5))
             }
         };
-        Assert.IsTrue(owner.ValidatePlayerSave(currentState)is null, "current fixture strict validity: " + owner.ValidatePlayerSave(currentState));
+        var validationError = owner.ValidatePlayerSave(currentState);
+        Assert.IsNull(validationError, "current fixture strict validity: " + validationError);
         Assert.IsTrue(Environment.Version.Major == 10, "actual runtime10");
         sequence = 0;
         replacements = 0;
@@ -186,7 +185,8 @@ public sealed class TrainerBattleTests
 
     private void SaveCheck(string key, CampaignSession session, ICampaignCatalog content)
     {
-        Assert.IsTrue(session.ValidatePlayerSave(session.State)is null, key + " final strict save validity: " + session.ValidatePlayerSave(session.State));
+        var validationError = session.ValidatePlayerSave(session.State);
+        Assert.IsNull(validationError, key + " final strict save validity: " + validationError);
         var bytes = SaveCodec.Encode(session.State, session.Revision, session.RulesVersion, content.ContentVersion);
         var decoded = SaveCodec.Decode<CampaignState>(bytes, session.RulesVersion, content.ContentVersion, validate: session.ValidatePlayerSave);
         var continued = CampaignSession.RestoreCurrent(content, decoded.State, decoded.Generation);

@@ -217,7 +217,7 @@
   ],
   "inputs": [
     {
-      "path": "scripts/synth-bill-cues.json"
+      "path": "scripts/recipes/audio/synth-bill-cues.json"
     },
     {
       "path": "content/generated/audio/synth/firered.pack"

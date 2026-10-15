@@ -51,7 +51,7 @@
       "path": "scripts/lib/audit-early-audio.py"
     },
     {
-      "path": "scripts/synth-city-services-cues.json"
+      "path": "scripts/recipes/audio/synth-city-services-cues.json"
     },
     {
       "path": "scripts/recipes/audio/synth-ssanne-cues.json"

@@ -15,7 +15,7 @@ dotnet build
 dotnet test
 ```
 
-完整测试中的资源导入检查需要 Python 3；普通 C# 测试没有 Python 依赖。定向运行与各项目职责见 [测试说明](tests/README.md)。直接构建和测试使用标准 NuGet 还原，不需要先执行 `dev env`。
+完整测试中的资源导入检查使用 Python 3.12 和 requirements-dev.txt 中的 Pillow；普通 C# 测试没有 Python 依赖。定向运行与各项目职责见 [测试说明](tests/README.md)。直接构建和测试使用标准 NuGet 还原，不需要先执行 `dev env`。
 
 需要本机工具诊断或使用 Godot 安装目录内的包时，可选用 `python dev doctor`、`python dev build`。Windows 也可执行 `.\dev.cmd build`；Linux 可执行 `./dev build`。这些开发辅助入口需要 Python，不自动安装工具。目标框架仍为 net10.0，Godot 仍为 4.7.2 .NET。
 
@@ -30,6 +30,10 @@ $toolEnv = python dev env --json | ConvertFrom-Json
 $toolEnv.psobject.Properties | ForEach-Object { Set-Item -LiteralPath "Env:$($_.Name)" -Value $_.Value }
 dotnet build FireRed.Current.slnx --no-restore
 ```
+
+## 开发启动
+
+Linux/Bash：`bash scripts/dev/launch-current.sh [current-checkpoint.json]`。当前正常启动仍依赖开发资源根；Windows正常启动及独立游戏包尚待收口，不以构建成功冒充成品交付。参数与存档边界见 [当前组合](docs/current-game-composition.md)。
 
 ## 当前测试入口
 

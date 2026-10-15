@@ -13,6 +13,7 @@ public partial class CampaignView
     private LoadedSave<CampaignState>? _entrySave;
     private string _entryMode="closed",_entryPlayerName="RED",_entryRivalName="BLUE";
     private string? _entryNotice;
+    private bool _entryLoadCanRetry;
     private int _entryCursor,_entryGender;
     private bool _entryHasExistingFiles,_entryOverwritePending,_entryOverwriteConfirmed;
     private string? _entryObservedSlot,_entryPromptSlot,_entrySaveAttemptSlot;
@@ -74,19 +75,13 @@ public partial class CampaignView
     private void ReadEntrySave()
     {
         ResetPlayTimeHost();
-        _entrySave=null;_entryCursor=0;_entryNotice=null;
-        try
-        {
-            string observed=EntrySlotFingerprint();_entryHasExistingFiles=observed!="missing|missing";
-            if(!_entryHasExistingFiles)_entryObservedSlot=observed;
-            else
-            {
-                _entrySave=LoadEntryProtectedSave();
-                if(_entrySave.Source.EndsWith(".bak",StringComparison.Ordinal))_entryNotice="The primary save could not be read.\nA verified backup is available.";
-            }
-        }
-        catch(Exception error) when(error is InvalidDataException or IOException or UnauthorizedAccessException)
-        {_entryHasExistingFiles=true;_entryNotice="No compatible save could be loaded.\nThe existing files have been kept.";Write("playerEntryLoadRefused",new{error=error.Message});}
+        _entrySave=null;_entryCursor=0;_entryNotice=null;_entryLoadCanRetry=false;
+        var attempt=ReadPlayerSave();
+        _entrySave=attempt.Saved;
+        _entryHasExistingFiles=attempt.Result.Status!=SaveOperationStatus.Missing;
+        if(!_entryHasExistingFiles)_entryObservedSlot="missing|missing";
+        else if(!attempt.Result.Succeeded)SetEntryLoadFailure(attempt.Result);
+        else if(attempt.Result.FromBackup)_entryNotice="The primary save could not be read.\nA verified backup is available.";
         // The original empty-save branch enters New Game directly. This bounded
         // entry starts identity selection; the original Oak introduction is pending.
         _entryMode=_entryNotice is not null?"notice":_entrySave is not null?"menu":"gender";
@@ -122,19 +117,24 @@ public partial class CampaignView
         var session=CampaignSession.CreateCurrent(_catalog,options);
         _entryOverwritePending=_entryHasExistingFiles;
         EnterPlayerSession(session);
-        Write("playerNewGame",new{options,hash=CanonicalJson.Hash(_session.State),existingSavePreserved=_entryOverwritePending});
+        Write("playerNewGame",_diagnostics.Payload(new{options,_session.Revision,existingSavePreserved=_entryOverwritePending},
+            ()=>new{options,hash=CanonicalJson.Hash(_session.State),existingSavePreserved=_entryOverwritePending}));
     }
     private void ContinueChosenGame()
     {
-        try
-        {
-            // Re-read and validate at selection: a summary is not permission to use stale bytes.
-            var saved=LoadEntryProtectedSave();
-            EnterPlayerSession(CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation));_entryOverwritePending=false;
-            Write("playerContinue",new{saved.Source,saved.Generation,hash=CanonicalJson.Hash(_session.State)});
-        }
-        catch(Exception error) when(error is InvalidDataException or IOException or UnauthorizedAccessException)
-        {_entrySave=null;_entryMode="notice";_entryNotice="The save changed or could not be read.\nThe existing files have been kept.";Write("playerEntryLoadRefused",new{error=error.Message});}
+        // Re-read and validate at selection: a summary is not permission to use stale bytes.
+        var attempt=ReadPlayerSave();
+        if(!attempt.Result.Succeeded){_entrySave=null;_entryMode="notice";SetEntryLoadFailure(attempt.Result);return;}
+        var saved=attempt.Saved!;
+        EnterPlayerSession(CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation));_entryOverwritePending=false;
+        Write("playerContinue",_diagnostics.Payload(new{saved.Source,saved.Generation},
+            ()=>new{saved.Source,saved.Generation,hash=CanonicalJson.Hash(_session.State)}));
+        if(attempt.Result.FromBackup)ShowPlayerSaveResult(attempt.Result);
+    }
+    private void SetEntryLoadFailure(SaveOperationResult result)
+    {
+        _entryLoadCanRetry=true;_entryNotice=CampaignSaveFeedback.Message(result);
+        Write("playerEntryLoadRefused",new{result.Status,result.Files,error=result.DiagnosticDetail});
     }
     private void EnterPlayerSession(CampaignSession session)
     {
@@ -152,7 +152,11 @@ public partial class CampaignView
             else RequestQuit();return;
         }
         if(_entryMode=="notice")
-        {if(key is Key.Enter or Key.Backspace){_entryNotice=null;_entryMode=_entrySave is null?"gender":"menu";}return;}
+        {
+            if(_entryLoadCanRetry&&key==Key.Enter){ReadEntrySave();return;}
+            if(key is Key.Enter or Key.Backspace){_entryNotice=null;_entryLoadCanRetry=false;_entryMode=_entrySave is null?"gender":"menu";}
+            return;
+        }
         if(_entryMode is "player-name" or "rival-name")return;
         if(key is Key.Up or Key.Down)_entryCursor=_entryMode=="menu"
             ?Math.Clamp(_entryCursor+(key==Key.Up?-1:1),0,1):_entryCursor^1;
@@ -268,12 +272,14 @@ public partial class CampaignView
             else if(_entryMode=="confirm")
             {SourceText(_sourceNormal,new(24,42),"PLAYER: "+_entryPlayerName);SourceText(_sourceNormal,new(24,58),"RIVAL: "+_entryRivalName);SourceText(_sourceNormal,new(40,88),"START ADVENTURE");SourceText(_sourceNormal,new(40,104),"CHANGE NAMES");SourceText(_sourceNormal,new(26,88+_entryCursor*16),"▶");}
         }
+        if(_entryLoadCanRetry&&_entryMode=="notice")
+        {SourceText(_sourceSmall,new(24,52),"Enter: retry reading save");SourceText(_sourceSmall,new(24,68),"Backspace: NEW GAME");}
         if(_entryNotice is not null)ItemMessageBox(_entryNotice);
     }
     private bool RequestEntrySaveOverwrite()
     {
         if(_entrySource is null)return false;
-        if(_session.ValidatePlayerSave(_session.State) is not null||_tracks.Any(t=>t.Time<t.Duration))return false;
+        // AttemptPlayerSave owns the current-state/presentation preflight.
         string current=EntrySlotFingerprint();_entrySaveAttemptSlot=current;
         bool changed=current!=_entryObservedSlot;
         if(!_entryOverwritePending&&!changed)return false;
@@ -285,33 +291,55 @@ public partial class CampaignView
     {
         string One(string path)
         {
-            if(!File.Exists(path))return "missing";
-            using var stream=new FileStream(path,FileMode.Open,System.IO.FileAccess.Read,FileShare.Read);
-            // Observe every byte, including invalid oversized companions, without
-            // allocating their contents. Candidate decoding has its own size cap.
-            // A corrupt primary/backup must not hide the other valid candidate.
-            long length=stream.Length;
-            using var hash=IncrementalHash.CreateHash(HashAlgorithmName.SHA256);byte[] buffer=new byte[8192];long remaining=length;
-            while(remaining>0){int n=stream.Read(buffer,0,(int)Math.Min(buffer.Length,remaining));if(n==0)throw new IOException("save_file_changed");hash.AppendData(buffer,0,n);remaining-=n;}
-            if(stream.Length!=length||stream.ReadByte()!=-1)throw new IOException("save_file_changed");
-            return length+":"+Convert.ToHexStringLower(hash.GetHashAndReset());
+            FileStream stream;
+            try{stream=new FileStream(path,FileMode.Open,System.IO.FileAccess.Read,FileShare.Read);}
+            catch(FileNotFoundException){return "missing";}
+            catch(DirectoryNotFoundException){return "missing";}
+            using(stream)
+            {
+                // Saving requires a complete bounded observation. If a companion is
+                // inaccessible or oversized, refuse replacement rather than assuming it is safe.
+                long length=stream.Length;
+                if(length>LocalSaveStorage.MaximumSaveBytes)throw new InvalidDataException("save_file_too_large");
+                using var hash=IncrementalHash.CreateHash(HashAlgorithmName.SHA256);byte[] buffer=new byte[8192];long remaining=length;
+                while(remaining>0){int n=stream.Read(buffer,0,(int)Math.Min(buffer.Length,remaining));if(n==0)throw new IOException("save_file_changed");hash.AppendData(buffer,0,n);remaining-=n;}
+                if(stream.Length!=length||stream.ReadByte()!=-1)throw new IOException("save_file_changed");
+                return length+":"+Convert.ToHexStringLower(hash.GetHashAndReset());
+            }
         }
         return One(PlayerSavePath)+"|"+One(PlayerSavePath+".bak");
     }
     private LoadedSave<CampaignState> LoadEntryProtectedSave()
     {
-        string observed=EntrySlotFingerprint();
-        var saved=new SaveService(new LocalSaveStorage()).Load<CampaignState>(PlayerSavePath,_session.RulesVersion,_catalog.ContentVersion,_session.ValidatePlayerSave);
-        if(EntrySlotFingerprint()!=observed)throw new IOException("save_file_changed_during_load");
+        var candidate=PlayerSaveOperations.LoadVerifiedCandidate<CampaignState>(new LocalSaveStorage(),PlayerSavePath,
+            _session.RulesVersion,_catalog.ContentVersion,_session.ValidatePlayerSave);
+        _entryObservedSlot=null;
+        string observed;
+        try{observed=EntrySlotFingerprint();}
+        catch(Exception error) when(SaveOperationResult.IsExpectedFailure(error))
+        {
+            // A verified candidate remains usable when its companion is unreadable.
+            // Saving will still require the complete observation and must refuse if it fails.
+            Write("playerEntryObservationUnavailable",new{candidate.Saved.Source,error=error.ToString()});
+            return candidate.Saved;
+        }
+        string selected=observed.Split('|')[candidate.Saved.Source==PlayerSavePath?0:1];
+        if(selected!=candidate.Fingerprint)throw new IOException("save_file_changed_during_load");
         _entryObservedSlot=observed;
-        return saved;
+        return candidate.Saved;
     }
     private ISaveStorage EntrySaveStorage()=>_entrySource is null?new LocalSaveStorage()
         :new EntryCheckedSaveStorage(EntrySlotFingerprint,_entrySaveAttemptSlot??throw new InvalidOperationException("save_observation_missing"));
     private void EntrySaveSucceeded()
     {
         _entryOverwritePending=false;
-        if(_entrySource is not null)_entryObservedSlot=EntrySlotFingerprint();
+        if(_entrySource is null)return;
+        // The staged transaction already committed. A later observation failure must
+        // not report that the save failed; require fresh overwrite confirmation next time.
+        _entryObservedSlot=null;
+        try{_entryObservedSlot=EntrySlotFingerprint();}
+        catch(Exception error) when(SaveOperationResult.IsExpectedFailure(error))
+        {Write("playerSaveObservationFailed",new{saveCommitted=true,error=error.ToString()});}
     }
     private sealed class EntryCheckedSaveStorage(Func<string> fingerprint,string expected):ISaveStorage
     {

@@ -2,7 +2,7 @@ using Game.Domain.Pokemon;
 using Godot;
 
 /// <summary>Normal-field start menu and a bounded, truthful party/summary view.
-/// Party changes and field moves use authoritative commands; saving uses the existing handler.</summary>
+/// Party changes and field moves use authoritative commands; saving shares the typed player-save operation.</summary>
 public partial class CampaignView
 {
     private readonly record struct FieldMenuEntry(string Id, string Label);
@@ -226,11 +226,10 @@ public partial class CampaignView
     private void SaveFromFieldMenu()
     {
         ResetFieldMenu();
-        using var save = new InputEventKey { Keycode = Key.F5, Pressed = true };
-        _UnhandledInput(save);
-        if(_fieldMenuMode=="save-overwrite")return;
+        var result = AttemptPlayerSave();
+        if (result.Status == Game.Application.SaveOperationStatus.OverwriteRequired) return;
         _fieldMenuMode = "start"; _fieldNoticeCloses = true;
-        _fieldMenuNotice = _status == "已保存" ? _session.State.PlayerName + " saved the game." : "The game could not be saved\nhere. Return to a stable field.";
+        ShowPlayerSaveResult(result);
     }
 
     // Uses the existing mouse press/release/double-click/focus and coordinate gates.
@@ -264,7 +263,7 @@ public partial class CampaignView
             SourceText(_sourceNormal, new(176, 8 + _fieldMenuCursor * 15), "▶");
             if (_fieldMenuMode is "save-confirm" or "save-overwrite")
             {
-                ItemMessageBox(_fieldMenuMode=="save-overwrite"?"A different adventure is saved.\nReplace that save with this game?":"Would you like to\nsave the game?");
+                ItemMessageBox(_fieldMenuMode=="save-overwrite"?"A save already exists.\nReplace it with this game?":"Would you like to\nsave the game?");
                 _battleSkin.DrawUserFrame(this, new(176, 64, 64, 48));
                 SourceText(_sourceNormal, new(192, 73), "YES"); SourceText(_sourceNormal, new(192, 89), "NO");
                 SourceText(_sourceNormal, new(182, 73 + 16 * _fieldSaveChoice), "▶");

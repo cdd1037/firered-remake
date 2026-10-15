@@ -27,13 +27,14 @@ def main():
     spec = importlib.util.spec_from_file_location('national_dex_import', ROOT / 'scripts/imports/pokemon/import-national-dex-source.py')
     importer = importlib.util.module_from_spec(spec); spec.loader.exec_module(importer)
     raw = {}
+    source_commit = importer.reader().COMMIT
     class LocalSource:
         def text(self, path):
             if path not in raw: raw[path] = (root / 'content/raw/pokefirered/037335f4' / path).read_text()
             return raw[path]
         def json(self, path): return json.loads(self.text(path))
         def ref(self, path, symbol, line=None):
-            result = dict(kind='pret', repository='pret/pokefirered', commit=importer.reader().COMMIT, path=path, symbol=symbol)
+            result = dict(kind='pret', repository='pret/pokefirered', commit=source_commit, path=path, symbol=symbol)
             if line is not None: result['line'] = line
             return result
     source = LocalSource()

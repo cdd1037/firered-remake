@@ -88,7 +88,7 @@
       "path": "scripts/lib/audit-early-audio.py"
     },
     {
-      "path": "scripts/synth-route11-cues.json"
+      "path": "scripts/recipes/audio/synth-route11-cues.json"
     }
   ]
 }
