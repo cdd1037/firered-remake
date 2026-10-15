@@ -1,4 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><TreatWarningsAsErrors>true</TreatWarningsAsErrors><InvariantGlobalization>true</InvariantGlobalization><Optimize>true</Optimize><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
   <ItemGroup><Compile Include="../src/Resources.cs" Link="Resources.cs"/><Compile Include="../src/Sequence.cs" Link="Sequence.cs"/><Compile Include="../src/Synth.cs" Link="Synth.cs"/><Compile Include="../src/PsgSynth.cs" Link="PsgSynth.cs"/><Compile Include="../src/Profiles.cs" Link="Profiles.cs"/><Compile Include="../src/Cry.cs" Link="Cry.cs"/><Compile Include="../src/CryCatalog.cs" Link="CryCatalog.cs"/></ItemGroup>
-</Project>
+<ItemGroup><InternalsVisibleTo Include="Game.Audio.Tests" /></ItemGroup></Project>

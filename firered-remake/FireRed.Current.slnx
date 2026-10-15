@@ -4,16 +4,16 @@
   <Project Path="src/Game.Content/Game.Content.csproj" />
   <Project Path="src/Game.Godot/Game.Godot.csproj" />
   <Project Path="src/Game.Tooling/Game.Tooling.csproj" />
-  <Project Path="tests/Game.CurrentComposition.Tests/Game.CurrentComposition.Tests.csproj" />
-  <Project Path="tests/Game.SourceLifecycle.Tests/Game.SourceLifecycle.Tests.csproj" />
-  <Project Path="tests/Game.SourceTrainerPolicy.Tests/Game.SourceTrainerPolicy.Tests.csproj" />
-  <Project Path="tests/Game.CanonicalWildApplication.Tests/Game.CanonicalWildApplication.Tests.csproj" />
-  <Project Path="tests/Game.CanonicalTrainerApplication.Tests/Game.CanonicalTrainerApplication.Tests.csproj" />
-  <Project Path="tests/Game.CurrentFieldItems.Tests/Game.CurrentFieldItems.Tests.csproj" />
-  <Project Path="tests/Game.Domain.Tests/Game.Domain.Tests.csproj" />
-  <Project Path="tests/Game.Integration.Tests/Game.Integration.Tests.csproj" />
-  <Project Path="tests/Game.GrowthCapture.Tests/Game.GrowthCapture.Tests.csproj" />
-  <Project Path="tests/Game.Audit.Tests/Game.Audit.Tests.csproj" />
-  <Project Path="tests/Game.Story.Tests/Game.Story.Tests.csproj" />
-  <Project Path="tests/fixtures/content/ContentFixtureVerifier.csproj" />
+  <Project Path="../firered-audio-player/src/FireRedAudio.csproj" />
+  <Project Path="../firered-audio-player/core/FireRedAudio.Core.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="tests/Game.Domain.Tests/Game.Domain.Tests.csproj" />
+    <Project Path="tests/Game.Battle.Tests/Game.Battle.Tests.csproj" />
+    <Project Path="tests/Game.Application.Tests/Game.Application.Tests.csproj" />
+    <Project Path="tests/Game.Content.Tests/Game.Content.Tests.csproj" />
+    <Project Path="tests/Game.Audio.Tests/Game.Audio.Tests.csproj" />
+    <Project Path="tests/Game.Presentation.Tests/Game.Presentation.Tests.csproj" />
+    <Project Path="tests/Game.ResourceImport.Tests/Game.ResourceImport.Tests.csproj" />
+    <Project Path="tests/Game.Process.Tests/Game.Process.Tests.csproj" />
+  </Folder>
 </Solution>

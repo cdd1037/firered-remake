@@ -18,7 +18,7 @@ Phase6: 386 ordinary cries with authenticated optional catalog, 12 additional re
 
 No full-library, general cry-mode, hardware-bit-perfect, target-device realtime or listening-test claim. Without the optional catalog, the original API supports only normal Charmander cry. With authenticated catalog, all 386 real species have mode0 support; special cry modes remain unsupported. Unsupported opcodes and sample formats are errors, never substituted tones or ignored operations. Original game resources stay external and private; code publication does not authorize publishing those assets.
 
-Fixed source: pret/pokefirered 037335f4c725d7c9aecdac87066f2002b4bd7e14, ROM SHA-1 41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc. Audio resource address range [0x08489968,0x086fbea4). Toolchain: existing official .NET 10 in ../firered-toolchains/dotnet. No packages beyond the SDK/standard library.
+Fixed source: pret/pokefirered 037335f4c725d7c9aecdac87066f2002b4bd7e14, ROM SHA-1 41cb23d8dccc8ebd7c649cd8fbb58eeace6e2fdc. Audio resource address range [0x08489968,0x086fbea4). Toolchain: installed official .NET 10. Build/run scripts use FIRERED_DOTNET when set, otherwise an existing FIRERED_TOOLCHAIN_ROOT/dotnet installation or dotnet on PATH. No packages beyond the SDK/standard library.
 
 ## Build and run
 
@@ -27,7 +27,7 @@ From the workspace root:
 ```
 ./firered-audio-player/build.sh
 ./firered-audio-player/run.sh pack audio-reference-build/pokefirered/pokefirered.gba firered-audio-player/resources/firered.pack
-./firered-audio-player/run.sh selftest firered-audio-player/resources/firered.pack
+dotnet test firered-remake/tests/Game.Audio.Tests/Game.Audio.Tests.csproj --filter TestCategory=Audio
 ./firered-audio-player/run.sh render firered-audio-player/resources/firered.pack pallet 95 firered-audio-player/results/pallet.wav
 ./firered-audio-player/run.sh render firered-audio-player/resources/firered.pack select 3 firered-audio-player/results/select.wav
 ./firered-audio-player/run.sh render firered-audio-player/resources/firered.pack mix 12 firered-audio-player/results/mix.wav
@@ -77,5 +77,5 @@ The existing public cry API remains Charmander-only pending explicit catalog pro
 
 ### Runtime catalog and Godot experiment
 
-Phase5 promotes the authenticated optional386-species normal catalog (see `specs/PHASE5-CATALOG.md`). Run `python3 tools/build_cry_catalog.py`, then `catalog-selftest <pack> <catalog>` to verify the public API.
+Phase5 promotes the authenticated optional386-species normal catalog (see `specs/PHASE5-CATALOG.md`). Run `python3 tools/build_cry_catalog.py`, then `dotnet test firered-remake/tests/Game.Audio.Tests/Game.Audio.Tests.csproj --filter FullyQualifiedName~NormalCryCatalogTests` to verify the public API. The historical phase4 PCM hash comparison requires its missing research baseline and is not claimed by the maintained tests.
 `PHASE5-REPORT.md` records representative music gaps and the independent `demo/` real PCM stream experiment. The normal core has no Godot dependency; only this separate host project references the installed Godot SDK.

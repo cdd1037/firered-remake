@@ -12,9 +12,9 @@ spec = importlib.util.spec_from_file_location('vs_seeker_importer', root / 'scri
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 lock, sources = module.read_sources(args.git_dir, root / 'scripts/vs-seeker.lock.json')
-catalog = module.extract(lock, sources)
+catalog = module.extract(sources)
 raw = module.json_bytes(catalog)
-assert raw == module.json_bytes(module.extract(lock, sources))
+assert raw == module.json_bytes(module.extract(sources))
 assert len(catalog['rematches']) == 221 and len(catalog['actorBindings']) == 234
 assert len(catalog['rosterRequirements']) == 351
 assert sum(t['doubleBattle'] for t in catalog['rosterRequirements']) == 25
@@ -23,7 +23,7 @@ assert next(b for b in catalog['actorBindings'] if b['trainerSymbol'] == 'TRAINE
 missing = dict(sources)
 del missing['data/maps/Route21_South/map.json']
 try:
-    module.extract(lock, missing)
+    module.extract(missing)
 except ValueError as error:
     assert str(error) == 'vs_seeker_binding_coverage'
 else:

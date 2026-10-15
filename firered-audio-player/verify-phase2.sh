@@ -4,7 +4,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PACK="$ROOT/resources/firered.pack"
 OUT="$ROOT/results/phase2"
 "$ROOT/build.sh" > "$OUT/build.log"
-"$ROOT/run.sh" selftest "$PACK" > "$OUT/tests.txt"
+dotnet test "$ROOT/../firered-remake/tests/Game.Audio.Tests/Game.Audio.Tests.csproj" --filter TestCategory=Audio > "$OUT/tests.txt"
 for profile in modern-dry source-gain source-linear source-pitch source-envelope source-reverb source-bandlimited source-filtered; do
     "$ROOT/run.sh" render "$PACK" select 3 "$OUT/select-$profile.wav" "$profile"
     "$ROOT/run.sh" render "$PACK" pallet 95 "$OUT/pallet-$profile.wav" "$profile"

@@ -1,1 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType></PropertyGroup><ItemGroup><ProjectReference Include="../../src/Game.Content/Game.Content.csproj"/><ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj"/></ItemGroup><ItemGroup><None Update="*.json" CopyToOutputDirectory="PreserveNewest"/></ItemGroup></Project>

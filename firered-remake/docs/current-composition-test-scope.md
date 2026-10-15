@@ -1,6 +1,6 @@
 # Current composition smoke
 
-`tests/Game.CurrentComposition.Tests` loads the current game, creates a seeded New Game,
+`tests/Game.Application.Tests/Campaign/CampaignCompositionTests.cs` loads the current game, creates a seeded New Game,
 round-trips a save through the production codec, restores it, and executes a public movement
 command. It checks actual maps and move definitions rather than a historical resource digest
 or a fixed count from an earlier milestone.
@@ -9,7 +9,7 @@ Run after the current product build:
 
 ```sh
 source scripts/env.sh
-dotnet run --project tests/Game.CurrentComposition.Tests --no-restore -- "$PWD" /tmp/current-composition-output
+dotnet test tests/Game.Application.Tests/Game.Application.Tests.csproj --filter FullyQualifiedName~CampaignCompositionTests
 ```
 
 An optional final argument is a real current-rules checkpoint. That mode reads the old content

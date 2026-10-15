@@ -1,0 +1,10 @@
+<RunSettings>
+  <RunConfiguration>
+    <MaxCpuCount>1</MaxCpuCount>
+    <TreatNoTestsAsError>true</TreatNoTestsAsError>
+  </RunConfiguration>
+  <MSTest>
+    <TestTimeout>360000</TestTimeout>
+    <TreatDiscoveryWarningsAsErrors>true</TreatDiscoveryWarningsAsErrors>
+  </MSTest>
+</RunSettings>

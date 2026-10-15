@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../src/Game.Application/Game.Application.csproj" />
+    <ProjectReference Include="../Helpers/HashProbe/Game.Audit.HashProbe.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <Target Name="CopyHashProbe" AfterTargets="Build">
+    <ItemGroup><HashProbeFiles Include="$(MSBuildProjectDirectory)/../Helpers/HashProbe/bin/$(Configuration)/net10.0/*" /></ItemGroup>
+    <Copy SourceFiles="@(HashProbeFiles)" DestinationFolder="$(OutDir)HashProbe" />
+  </Target>
+</Project>

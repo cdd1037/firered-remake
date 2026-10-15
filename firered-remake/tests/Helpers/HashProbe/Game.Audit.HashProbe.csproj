@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Game.Process.Tests/HashProbeScenario.cs" Link="HashProbeScenario.cs" />
+    <ProjectReference Include="../../../src/Game.Application/Game.Application.csproj" />
+  </ItemGroup>
+</Project>

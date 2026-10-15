@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild the pinned original VS SEEKER rules catalog from authenticated local Git objects.
+"""Rebuild the original VS SEEKER rules catalog from pinned Git objects or extracted sources.
 
 No upstream program is executed. Generated catalog/raw evidence stays out of Git exports.
 """
@@ -28,12 +28,12 @@ def read_sources(git_dir, lock_path):
     lock = json.loads(raw_lock)
     need((lock['commit'], lock['profile']) == (COMMIT, PROFILE), 'vs_seeker_lock_identity')
     def git(*args):
-        return subprocess.check_output(['git', '--git-dir=' + str(git_dir), *args])
+        return subprocess.check_output(['git', '--git-dir=' + str(git_dir / '.git' if (git_dir / '.git').exists() else git_dir), *args])
     sources = {}
     for entry in lock['files']:
         path = entry['path']
         need(path not in sources and not Path(path).is_absolute() and '..' not in Path(path).parts, 'vs_seeker_source_path')
-        raw = git('show', COMMIT + ':' + path)
+        raw = (git_dir / path).read_bytes() if not (git_dir / 'HEAD').exists() and not (git_dir / '.git').exists() else git('show', COMMIT + ':' + path)
         sources[path] = raw.decode()
     return lock, sources
 

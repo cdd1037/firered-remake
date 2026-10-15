@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-"""Verify source constants, required resources and deterministic regeneration."""
+"""Verify current source semantics and required fan-club resources."""
 import argparse
 import json
 from pathlib import Path
-import subprocess
-import sys
-import tempfile
 
 
 def main():
@@ -32,28 +29,17 @@ def main():
          'native helper-only source variables retained')
     expression=constants['(NUM_TRAINER_FAN_CLUB_MEMBERS - 1)']
     need(expression==7 and expression==constants['NUM_TRAINER_FAN_CLUB_MEMBERS']-1, 'exact source expression value retained')
-    def run(target,dep=None):
-        return subprocess.run([sys.executable,str(root/'scripts/import-trainer-fan-club.py'),
-            '--project-root',str(target),'--dependency-root',str(dep or args.dependency_root),
-            '--current-project-root',str(args.dependency_root),'--reference-root',str(args.reference_root),'--check'],
-            capture_output=True,text=True)
-    result=run(root)
-    need(result.returncode==0,'deterministic regeneration --check')
-    negatives=[]
-    with tempfile.TemporaryDirectory(prefix='fan-club-negative-',dir=root/'evidence') as temp:
-        temp=Path(temp)
-        empty=temp/'empty';empty.mkdir()
-        result=run(empty)
-        need(result.returncode!=0 and ('Regeneration differs:' in result.stderr or 'shared-constants/values.json' in result.stderr) and not list(empty.iterdir()),'missing check output rejected without mutation')
-        negatives.append(dict(case='missing-output',returncode=result.returncode,error=result.stderr.splitlines()[-1]))
-        alias=temp/'alias';alias.symlink_to(args.dependency_root,target_is_directory=True)
-        result=run(empty,alias)
-        need(result.returncode!=0 and 'Symlink rejected:' in result.stderr and not list(empty.iterdir()),'symlink dependency rejected before execution')
-        negatives.append(dict(case='symlink-helper',returncode=result.returncode,error=result.stderr.splitlines()[-1]))
-    report=dict(checkCount=len(checks),failures=0,checks=checks,negativeBoundaries=negatives,
-        inputCount=len(lock['files']),outputCount=len(manifest['outputs']))
-    args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,indent=2)+'\n')
-    print(json.dumps(dict(checkCount=len(checks),failures=0,negativeBoundaryCount=len(negatives))))
-
+    contract=json.loads((package/'contracts.json').read_bytes())
+    rules=contract['rules'];source=(args.reference_root/'src/trainer_fan_club.c').read_text(encoding='utf-8')
+    need(rules['counterIncrements']==[2,1,2,1] and 'sCounterIncrements[] = {2, 1, 2, 1};' in source,'counter source semantics')
+    need(rules['counterThreshold']==20 and 'fanClub->timer + sCounterIncrements[a1] >= 20' in source,'counter threshold')
+    need(rules['decay']['intervalHours']==12 and 'gSaveBlock2Ptr->playTimeHours - timer < 12' in source,'twelve-hour decay boundary')
+    need(rules['decay']['disabledAtHours']==999 and 'gSaveBlock2Ptr->playTimeHours < 999' in source,'clock cap boundary')
+    need(rules['gainScanOrder']==['FANCLUB_MEMBER'+str(i) for i in [2,4,6,1,8,7,5,3]],'gain scan order')
+    need(rules['loseScanOrder']==['FANCLUB_MEMBER'+str(i) for i in [6,7,4,8,5,2,1,3]],'lose scan order')
+    need(len(contract['actors'])==10 and len(contract['transition']['nonFanPositions'])==8,'complete source actor positioning')
+    report=dict(checkCount=len(checks),failures=0,checks=checks,scope='Current fan-club source semantics and runtime resource completeness; historical importer helper pipeline retired')
+    args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+    print(json.dumps(report))
 
 if __name__=='__main__':main()

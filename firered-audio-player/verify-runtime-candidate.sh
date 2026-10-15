@@ -6,8 +6,8 @@ OUT=${1:-"$ROOT/results/candidate-verification"}
 mkdir -p "$OUT/music"
 python3 tools/build_cry_catalog.py > "$OUT/catalog-identity.json"
 ./build.sh > "$OUT/build.log"
-./run.sh selftest resources/firered.pack > "$OUT/music/tests.txt"
-./run.sh catalog-selftest resources/firered.pack resources/normal-cries.bin > "$OUT/music/catalog-tests.json"
+dotnet test "$ROOT/../firered-remake/tests/Game.Audio.Tests/Game.Audio.Tests.csproj" --filter TestCategory=Audio > "$OUT/music/tests.txt"
+dotnet test "$ROOT/../firered-remake/tests/Game.Audio.Tests/Game.Audio.Tests.csproj" --filter FullyQualifiedName~NormalCryCatalogTests > "$OUT/music/catalog-tests.log"
 ./research-music/run.sh "$OUT/music" > "$OUT/music.log"
 python3 - "$OUT" <<'PY'
 import hashlib,json,pathlib,subprocess,sys

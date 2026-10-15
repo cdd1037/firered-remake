@@ -1,5 +1,7 @@
 # Battle-system completion matrix
 
+Maintenance note (2026-10-15): suite/evidence references below are historical. Current executable coverage is in [maintained tests](../tests/README.md); deleted suites are listed in [retirement reasons](test-retirement-20261015.json).
+
 Inventory: 2026-10-10 UTC. Product base `67c89d36c0dbdeabfe906ff73a00d9c4c7ce3cba`; fixed FireRed reference `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
 Current integrated checkpoint: **working tree based on `194227ef455811343144eec43c0ee2129da00572`**, inspected 2026-10-11 UTC. Four-slot recipe admission is **354 / 354**, with **0 gated by recipe identity**; the public full-turn inventory completed 1,416 controlled turns at `f95f065`. This does not establish all interactions or special battle modes. Dedicated script coverage is **20 / 354**, with **334 remaining**, including the new three-root trace batch's isolated source/host proof; current combined host verification is recorded separately. Neither figure is a complete battle-system percentage.

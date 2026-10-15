@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Extract the complete pinned Fame Checker catalog. No upstream code is executed.
-Only local Git objects are read. --output contains one small deterministic JSON resource.
-The checked-in source lock is immutable; a mismatching source or output fails closed.
+Reads pinned local Git objects or an existing extracted source tree.
+--output contains one small deterministic JSON resource. The checked-in lock
+declares the source inventory; extracted files are checked by the converter's
+format and semantic rules, not authenticated against Git object hashes.
 """
 import argparse
 import json
@@ -29,13 +31,13 @@ def read_sources(git_dir, lock_path):
     need(lock['commit'] == COMMIT and lock['profile'] == PROFILE,
          'fame_checker_lock_identity')
     def git(*args):
-        return subprocess.check_output(['git', '--git-dir=' + str(git_dir), *args])
+        return subprocess.check_output(['git', '--git-dir=' + str(git_dir / '.git' if (git_dir / '.git').exists() else git_dir), *args])
     sources = {}
     for row in lock['files']:
         path = row['path']
         need(path not in sources and not Path(path).is_absolute() and '..' not in Path(path).parts,
              'fame_checker_source_path')
-        raw = git('show', COMMIT + ':' + path)
+        raw = (git_dir / path).read_bytes() if not (git_dir / 'HEAD').exists() and not (git_dir / '.git').exists() else git('show', COMMIT + ':' + path)
         sources[path] = raw.decode('utf-8')
     return lock, sources
 

@@ -1,5 +1,7 @@
 # FireRed ability gap map at db8579a
 
+Maintenance note (2026-10-15): suite/evidence references below are historical. Current executable coverage is in [maintained tests](../tests/README.md); deleted suites are listed in [retirement reasons](test-retirement-20261015.json).
+
 Product `db8579a28734e83ead8c3fa77bd57825a84370d3`; pinned FireRed `037335f4c725d7c9aecdac87066f2002b4bd7e14`.
 
 Read-only static inspection. No build, test, GUI or network execution; no main changes and no completion-matrix edits. Retained test locations are source evidence only. Nothing here grants fresh execution acceptance.

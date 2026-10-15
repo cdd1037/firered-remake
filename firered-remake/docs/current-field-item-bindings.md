@@ -1,5 +1,7 @@
 # Current field encounter and item bindings
 
+Maintenance note (2026-10-15): suite/evidence references below are historical. Current executable coverage is in [maintained tests](../tests/README.md); deleted suites are listed in [retirement reasons](test-retirement-20261015.json).
+
 This follow-up to `d3b2eb9` removes unreachable predecessor-runtime choices after `BindCurrentCatalog` has authenticated the one supported composition. The current capability guard remains at construction; source ownership, map classification and actor/story conditions retain their own validation.
 
 ## Field encounter generation
@@ -20,7 +22,7 @@ Rare Candy now takes the authenticated `OwnedBattlePokemonCatalog` explicitly al
 
 The current binding's owned catalog and ownership proof are non-null by construction. Normal session creation and Restore authenticate them before any field command. This is a stronger current contract, not an automatic migration of old saves.
 
-The fixed current field-item suite passes 225 checks / 83 public commands. Of the original 61 observations, 60 remain byte-identical; only the intended Candy admission changes from atomic Fault to Accepted. Added cases cover clone/wrong-proof refusal, level-100 nonconsumption, Charizard level-64 learning with Cut/HM protection and retained PP Ups, and Ekans evolution with explicit post-evolution move choice. The main 17-project build passes with zero warnings/errors. See [fixed results](../evidence/current-item-dispatch-20261013/afterfix-summary.json) and [maintained test](../tests/Game.CurrentFieldItems.Tests/README.md). No original-ROM, full historical-route, native framebuffer or physical-audio verification is implied.
+The fixed current field-item suite passes 225 checks / 83 public commands. Of the original 61 observations, 60 remain byte-identical; only the intended Candy admission changes from atomic Fault to Accepted. Added cases cover clone/wrong-proof refusal, level-100 nonconsumption, Charizard level-64 learning with Cut/HM protection and retained PP Ups, and Ekans evolution with explicit post-evolution move choice. The main 17-project build passes with zero warnings/errors. See [fixed results](../evidence/current-item-dispatch-20261013/afterfix-summary.json) and [maintained test](../tests/Game.Application.Tests/FieldItems/README.md). No original-ROM, full historical-route, native framebuffer or physical-audio verification is implied.
 
 ## Moon/Sun Stone use and saved lineage
 

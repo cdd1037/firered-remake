@@ -1,18 +1,38 @@
 #!/usr/bin/env python3
 """One reproducible entry point. Never install, relax a gate, or rewrite golden results implicitly."""
-import sys, os, json, subprocess, pathlib, hashlib, re, shutil, tarfile, zipfile
+import sys, os, json, subprocess, pathlib, hashlib, re, shutil, tarfile, zipfile, shlex
 ROOT=pathlib.Path(__file__).resolve().parent
 LOCK=json.loads((ROOT/'toolchain.lock.json').read_text(encoding='utf-8'))
 for variable,filename in [('FIRERED_TOOLCHAIN_ROOT','toolchain-root'),('FIRERED_ORIGINAL_REFERENCE','reference-root')]:
  local=ROOT/'.tools'/filename
  if variable not in os.environ and local.is_file():os.environ[variable]=local.read_text(encoding='utf-8').strip()
 TOOLS=pathlib.Path(os.environ.get('FIRERED_TOOLCHAIN_ROOT','/workspace/shared/firered-toolchains'))
-DOTNET=TOOLS/'dotnet/dotnet'
-GODOT=TOOLS/'godot/Godot_v4.7.2-stable_mono_linux_x86_64/Godot_v4.7.2-stable_mono_linux.x86_64'
+
+def find_tool(variable, name, candidates):
+ explicit=os.environ.get(variable)
+ if explicit:
+  resolved=shutil.which(explicit)
+  return pathlib.Path(resolved or explicit).resolve()
+ for candidate in candidates:
+  if candidate.is_file():return candidate.resolve()
+ return pathlib.Path(shutil.which(name) or candidates[0]).resolve()
+
+DOTNET=find_tool('FIRERED_DOTNET','dotnet',[TOOLS/('dotnet/dotnet.exe' if os.name=='nt' else 'dotnet/dotnet')])
+godot_candidates=[]
+if os.name=='nt':
+ godot_candidates.extend(sorted((TOOLS/'godot').glob('**/Godot_v4.7.2-stable_mono_win64_console.exe')))
+else:
+ godot_candidates.append(TOOLS/'godot/Godot_v4.7.2-stable_mono_linux_x86_64/Godot_v4.7.2-stable_mono_linux.x86_64')
+if not godot_candidates:godot_candidates=[TOOLS/'godot/godot.exe']
+GODOT=find_tool('GODOT','godot',godot_candidates)
+# A PATH launcher may sit next to the real executable and GodotSharp packages.
+NUPKGS=pathlib.Path(os.environ.get('FIRERED_GODOT_NUGET_SOURCE',str(GODOT.parent/'GodotSharp/Tools/nupkgs'))).resolve()
 ENV=os.environ.copy()
 ENV['FIRERED_TOOLCHAIN_ROOT']=str(TOOLS)
 ENV.update(DOTNET_ROOT=str(DOTNET.parent),DOTNET_CLI_HOME=str(ROOT/'.toolhome'),NUGET_PACKAGES=str(ROOT/'.toolhome/nuget'),XDG_DATA_HOME=str(ROOT/'.toolhome/share'),XDG_CONFIG_HOME=str(ROOT/'.toolhome/config'),XDG_CACHE_HOME=str(ROOT/'.toolhome/cache'),DOTNET_NOLOGO='1',DOTNET_CLI_TELEMETRY_OPTOUT='1',DOTNET_MULTILEVEL_LOOKUP='0')
 ENV['GODOT']=str(GODOT)
+ENV['FIRERED_DOTNET']=str(DOTNET)
+ENV['FIRERED_GODOT_NUGET_SOURCE']=str(NUPKGS)
 ENV['PATH']=str(DOTNET.parent)+os.pathsep+ENV.get('PATH','')
 for key in ('DOTNET_CLI_HOME','NUGET_PACKAGES','XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME'): pathlib.Path(ENV[key]).mkdir(parents=True,exist_ok=True)
 (ROOT/'evidence').mkdir(exist_ok=True)
@@ -22,19 +42,27 @@ def output(value, code=0):
 
 def run(args,log=None,extra=None,cwd=ROOT):
  env=ENV| (extra or {})
- p=subprocess.run([str(a) for a in args],cwd=cwd,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
- if log:(ROOT/'evidence'/log).write_text(p.stdout, encoding='utf-8', newline='\n')
- print(p.stdout,end='')
- if p.returncode or re.search(r'^ERROR:',p.stdout,re.M): raise RuntimeError(f'command failed ({p.returncode}): {args}')
- return p.stdout
+ print('Running: '+subprocess.list2cmdline([str(a) for a in args]),flush=True)
+ lines=[]
+ with subprocess.Popen([str(a) for a in args],cwd=cwd,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',errors='replace') as p:
+  for line in p.stdout:
+   lines.append(line);print(line,end='',flush=True)
+  code=p.wait()
+ stdout=''.join(lines)
+ if log:(ROOT/'evidence'/log).write_text(stdout, encoding='utf-8', newline='\n')
+ if code or re.search(r'^ERROR:',stdout,re.M): raise RuntimeError(f'command failed ({code}): {args}')
+ return stdout
 
 
 def doctor():
  checks=[]
- for label,path,args,expected in [('dotnetSdk',DOTNET,['--version'],LOCK['dotnetSdk']),('godot',GODOT,['--version'],'4.7.2.stable.mono')]:
+ for label,path,args,expected in [('dotnetSdk',DOTNET,['--version'],'10.0 (stable SDK >= 10.0.100)'),('godot',GODOT,['--version'],'4.7.2.stable.mono')]:
   if not path.exists():checks.append({'id':label,'passed':False,'error':'missing_tool','path':str(path)});continue
-  result=subprocess.run([str(path),*args],cwd=ROOT,env=ENV,capture_output=True,text=True)
-  actual=result.stdout.strip();checks.append({'id':label,'passed':result.returncode==0 and actual.startswith(expected),'actual':actual,'expected':expected})
+  result=subprocess.run([str(path),*args],cwd=ROOT,env=ENV,capture_output=True,text=True,encoding='utf-8',errors='replace')
+  actual=result.stdout.strip()
+  compatible=bool(re.fullmatch(r'10\.0\.\d+',actual)) and int(actual.rsplit('.',1)[1])>=100 if label=='dotnetSdk' else actual.startswith(expected)
+  checks.append({'id':label,'passed':result.returncode==0 and compatible,'path':str(path),'actual':actual,'expected':expected,'error':result.stderr.strip() if result.returncode else None})
+ checks.append({'id':'godotNugetPackages','passed':(NUPKGS/f"Godot.NET.Sdk.{LOCK['godotSdk']}.nupkg").is_file(),'path':str(NUPKGS)})
  result={'stage':'doctor','passed':all(c['passed'] for c in checks),'checks':checks,'note':'Tool availability is not P0 compatibility or audio acceptance.'}
  (ROOT/'evidence/doctor.json').write_text(json.dumps(result,indent=2)+'\n', encoding='utf-8', newline='\n');return output(result,0 if result['passed'] else 1)
 
@@ -42,6 +70,8 @@ def doctor():
 def setup():
  # Explicit only. Official archives and hash values are fixed in the reviewed lock file.
  import urllib.request
+ if sys.platform!='linux':
+  return output({'error':'setup_platform_unsupported','help':'The pinned download bundle is Linux-only. Install .NET 10 SDK and Godot 4.7.2 .NET for your OS, add them to PATH or set FIRERED_DOTNET and GODOT, then run python dev doctor.'},2)
  target=TOOLS/'downloads';target.mkdir(parents=True,exist_ok=True)
  for a in LOCK['assets']:
   p=target/a['name'];alg='sha512' if 'sha512'in a else 'sha256'
@@ -57,23 +87,17 @@ def setup():
  dest=pathlib.Path(ENV['XDG_DATA_HOME'])/'godot/export_templates/4.7.2.stable.mono';dest.mkdir(parents=True,exist_ok=True)
  with zipfile.ZipFile(target/'Godot_v4.7.2-stable_mono_export_templates.tpz') as z:
   for name in ['linux_debug.x86_64','linux_release.x86_64','version.txt']:(dest/name).write_bytes(z.read('templates/'+name))
- local=GODOT.parent/'GodotSharp/Tools/nupkgs'
- (ROOT/'NuGet.Config').write_text(f'<?xml version="1.0" encoding="utf-8"?><configuration><packageSources><clear/><add key="official-godot-local" value="{local}"/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources></configuration>\n', encoding='utf-8', newline='\n')
  return doctor()
 
 
 def build():
- run([DOTNET,'restore','FireRed.Current.slnx','--locked-mode','--disable-parallel','--source',GODOT.parent/'GodotSharp/Tools/nupkgs','-p:NuGetAudit=false','-m:1','-nr:false'],'restore.log')
+ if doctor():return 1
+ run([DOTNET,'restore','FireRed.Current.slnx','--disable-parallel','--source',NUPKGS,'--source','https://api.nuget.org/v3/index.json','-p:NuGetAudit=false','-m:1','-nr:false'],'restore.log')
  run([DOTNET,'build','FireRed.Current.slnx','--no-restore','-m:1','-nr:false'],'build.log');return 0
 
 
-def test():
- run([DOTNET,'run','--project','tests/Game.CurrentComposition.Tests','--no-build','--',ROOT,ROOT/'evidence/current-default'],'Game.CurrentComposition.Tests.json')
- run([DOTNET,'run','--project','tests/Game.SourceLifecycle.Tests','--no-build','--',ROOT],'Game.SourceLifecycle.Tests.json')
- run([DOTNET,'run','--project','tests/Game.SourceTrainerPolicy.Tests','--no-build','--',ROOT],'Game.SourceTrainerPolicy.Tests.log')
- for name in ['Game.Domain.Tests','Game.Integration.Tests','Game.GrowthCapture.Tests','Game.Audit.Tests','Game.Story.Tests']:
-  run([DOTNET,'run','--project',f'tests/{name}','--no-build'],name+'.json')
- run([DOTNET,'run','--project','tests/fixtures/content/ContentFixtureVerifier.csproj','--no-build','--','tests/fixtures/content'],'Game.Content.Tests.json')
+def test(arguments=()):
+ run([DOTNET,'test','FireRed.Current.slnx','-m:1','-nr:false',*arguments])
  return 0
 
 
@@ -113,29 +137,17 @@ def verify_p0():
 
 def main():
  args=sys.argv[1:]
- if not args:return output({'commands':['doctor','setup','build','test','test-current-checkpoints HANDOFF_SAVE BILL_SAVE OUTPUT_DIRECTORY','test-current-battles CURRENT_CHECKPOINT OUTPUT_DIRECTORY','test-current-items CURRENT_CHECKPOINT OUTPUT_JSON','probe','export linux','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
+ if not args:return output({'commands':['doctor','env [--json]','setup','build','test','probe','export linux','verify p0','content validate FILE','scenario smoke','convert-current-checkpoint SOURCE NEW_DESTINATION'],'scope':'Current product and maintained contracts only. Historical per-stage runners are retained in Git history; see docs/runtime-retirement.md.'})
  if args==['doctor']:return doctor()
+ if args in (['env'],['env','--json']):
+  exported={key:ENV[key] for key in ('FIRERED_TOOLCHAIN_ROOT','FIRERED_DOTNET','FIRERED_GODOT_NUGET_SOURCE','DOTNET_ROOT','GODOT','DOTNET_CLI_HOME','NUGET_PACKAGES','XDG_DATA_HOME','XDG_CONFIG_HOME','XDG_CACHE_HOME','DOTNET_NOLOGO','DOTNET_CLI_TELEMETRY_OPTOUT','DOTNET_MULTILEVEL_LOOKUP')}
+  if args==['env','--json']:return output(exported|{'PATH':ENV['PATH']})
+  for key,value in exported.items():
+   print(f'export {key}={shlex.quote(value)}')
+  return 0
  if args==['setup']:return setup()
  if args==['build']:return build()
- if args==['test']:return test()
- if len(args)==3 and args[0]=='test-current-items':
-  checkpoint=pathlib.Path(args[1]).resolve(); destination=pathlib.Path(args[2]).resolve()
-  if not checkpoint.is_file():raise ValueError('A strict current checkpoint is required.')
-  if destination.exists():raise ValueError('Refusing to replace prior evidence.')
-  destination.parent.mkdir(parents=True,exist_ok=True)
-  run([DOTNET,'run','--project','tests/Game.CurrentFieldItems.Tests','--no-build','--',ROOT,checkpoint,destination]);return 0
- if len(args)==3 and args[0]=='test-current-battles':
-  checkpoint=pathlib.Path(args[1]).resolve(); destination=pathlib.Path(args[2]).resolve()
-  prerequisites=[checkpoint,ROOT/'evidence/current-composition-20261013/conversion-run01/current.json',ROOT/'tests/Game.FiveIslandCampaign.Tests/evidence/recovery-20261013-run02/before-gideon.json']
-  for path in prerequisites:
-   if not path.is_file():raise ValueError('Missing documented current battle test input: '+str(path))
-  if destination.exists():raise ValueError('Refusing to replace prior evidence.')
-  destination.mkdir(parents=True)
-  run([DOTNET,'run','--project','tests/Game.CanonicalWildApplication.Tests','--no-build','--',ROOT,checkpoint,destination/'wild.json'])
-  run([DOTNET,'run','--project','tests/Game.CanonicalTrainerApplication.Tests','--no-build','--',ROOT,destination/'trainer.json'])
-  return 0
- if len(args)==4 and args[0]=='test-current-checkpoints':
-  run([DOTNET,'run','--project','tests/Game.CurrentComposition.Tests','--no-build','--',ROOT,*args[1:]],'current-checkpoint-tests.log');return 0
+ if args and args[0]=='test':return test(args[1:])
  if args==['probe']:return probe()
  if args==['export','linux']:return export()
  if args==['verify','p0']:return verify_p0()

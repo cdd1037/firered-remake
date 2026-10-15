@@ -20,8 +20,8 @@ def check(condition, label):
     checks.append(label)
 
 lock, sources = module.read_sources(args.git_dir, path.with_name('fame-checker.lock.json'))
-result = module.extract(lock, sources)
-check(module.json_bytes(result) == module.json_bytes(module.extract(lock, sources)), 'deterministic_output')
+result = module.extract(sources)
+check(module.json_bytes(result) == module.json_bytes(module.extract(sources)), 'deterministic_output')
 check(len(result['persons']) == 16 and sum(len(p['facts']) for p in result['persons']) == 96, 'complete_table_cross_product')
 check(len(result['collectionEvents']) == 118, 'complete_famechecker_macro_inventory')
 check(sum(e['explicitlyUnused'] for e in result['collectionEvents']) == 5, 'unused_original_duplicates_explicit')

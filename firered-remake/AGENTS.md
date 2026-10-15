@@ -3,6 +3,7 @@
 ## Outcome and gates
 - Target a complete single-player FireRed recreation: Kanto, main story, reachable post-game and side content. The first badge is a milestone, not final scope.
 - Hard baseline: official Godot 4.7.2 .NET, target net10.0, actual hosted runtime major 10. Never substitute another engine or runtime without approval.
+- Development SDK policy: stable .NET 10.0 SDK >= 10.0.100, with feature-band/patch roll-forward. The Linux download manifest is a historical toolchain baseline, not an exact SDK requirement. Discover installed Windows/Linux tools through `dev`; do not require cross-platform Godot package content hashes to match.
 - P0 remains incomplete until actual audio output is verified. The user has authorized continued complete-game development while this gap stays explicit. Advance region by region with source and playable-flow checks; never call the full P0/audio gate passed from the Dummy backend. Keep failed checks and never label skipped work passed.
 - No ROM downloads, public distribution or upload of Pokémon assets. Source research is local and pinned.
 

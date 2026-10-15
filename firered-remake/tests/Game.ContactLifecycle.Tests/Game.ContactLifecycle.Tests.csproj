@@ -1,1 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType></PropertyGroup><ItemGroup><ProjectReference Include="../../src/Game.Domain/Game.Domain.csproj"/><ProjectReference Include="../../src/Game.Content/Game.Content.csproj"/></ItemGroup><ItemGroup><None Include="singles-baseline-2c3e33e6.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup></Project>

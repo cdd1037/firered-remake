@@ -202,12 +202,12 @@ def read_sources(git_dir, lock_path):
     lock=json.loads(raw)
     need((lock['commit'], lock['profile']) == (COMMIT, PROFILE), 'teachy_tv_lock_identity')
     def git(*args):
-        return subprocess.check_output(['git','--git-dir='+str(git_dir),*args],timeout=30)
+        return subprocess.check_output(['git','--git-dir='+str(git_dir/'.git' if (git_dir/'.git').exists() else git_dir),*args],timeout=30)
     sources={}
     for row in lock['files']:
         path=row['path']
         need(not Path(path).is_absolute() and '..' not in Path(path).parts and path not in sources,'teachy_tv_path')
-        raw=git('show',COMMIT+':'+path)
+        raw=(git_dir/path).read_bytes() if not (git_dir/'HEAD').exists() and not (git_dir/'.git').exists() else git('show',COMMIT+':'+path)
         sources[path]=raw
     return lock,sources
 
@@ -221,7 +221,7 @@ def main():
     args=parser.parse_args()
     lock,sources=read_sources(args.git_dir,args.lock)
     data=encoded(convert(lock,sources))
-    # No files are written until all source identities and the complete conversion pass.
+    # No files are written until source loading and the complete conversion pass.
     for directory in [args.output,args.raw_output]:
         need(not any(p.is_symlink() for p in [directory,*directory.parents]),'teachy_tv_output_symlink')
     for path,raw in sources.items():

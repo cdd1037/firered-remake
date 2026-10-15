@@ -1,0 +1,200 @@
+using System.Collections.Immutable;
+using System.Reflection;
+using System.Text.Json;
+using Game.Application;
+using Game.Content;
+using Game.Domain;
+using Game.Domain.Battle;
+using Game.Domain.Capture;
+using Game.Domain.Encounters;
+using Game.Domain.Events;
+using Game.Domain.Growth;
+using Game.Domain.Ids;
+using Game.Domain.Items;
+using Game.Domain.Pokemon;
+using Game.Domain.Randomness;
+using Game.Domain.Roaming;
+using Game.Domain.WildBattle;
+using Game.Domain.World;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FireRed.Tests;
+
+
+namespace FireRed.Tests.Application.WildBattles;
+[TestClass, TestCategory("Game")]
+public sealed class WildBattleFlowTests : WildBattleFixture
+{
+
+    [TestMethod]
+    public void public_ordinary_entry_frame_authority_KO_rewards_once_current_save()
+    {
+        var session = StartField();
+        var b = session.State.WildBattle!;
+        var frame = b.Frame!;
+        Assert.IsTrue(typeof(CampaignWildBattle).GetField("_legacyState", BindingFlags.Instance | BindingFlags.NonPublic)is null, "canonical instance stores no legacy snapshot");
+        Assert.IsTrue(validator.ValidatePlayerSave(session.State) == "save_event_active", "active canonical battle save refusal");
+        Assert.IsTrue(typeof(CampaignWildBattle).GetProperty("State")!.SetMethod is null && typeof(CampaignWildBattle).GetProperty("PendingMoves")!.SetMethod is null, "combat and learning views are read-only");
+        bool guarded = false;
+        try
+        {
+            _ = b with
+            {
+                Frame = null !
+            };
+        }
+        catch (InvalidDataException)
+        {
+            guarded = true;
+        }
+
+        Assert.IsTrue(guarded, "canonical frame cannot be removed");
+        string before = CanonicalJson.Hash(frame);
+        _ = b.State;
+        _ = b.State;
+        Assert.IsTrue(CanonicalJson.Hash(b.Frame) == before, "read projection consumes no RNG or mutation");
+        var xp = session.State.Party.Sum(p => (long)p.Pokemon.Experience);
+        int history = session.State.Exploration!.Battles.Length;
+        int slot = Enumerable.Range(0, b.State.Player.Pokemon.Moves.Length).Where(i => b.State.Player.Pokemon.Moves[i].CurrentPp > 0).OrderByDescending(i => catalog.Moves[b.State.Player.Pokemon.Moves[i].Move].Power).First();
+        Send(session, new("battle_move", MoveSlot: slot));
+        Drain(session);
+        Assert.IsTrue(session.State.WildBattle is null, "ordinary KO completes entire modal lifecycle");
+        Assert.IsTrue(session.State.Exploration!.Battles.Length == history + 1 && session.State.Exploration.Battles[^1].Outcome == WildBattleOutcome.Won, "one terminal history");
+        Assert.IsTrue(session.State.Party.Sum(p => (long)p.Pokemon.Experience) - xp == session.State.Exploration.Battles[^1].ExperienceGained, "exactly once canonical EXP credited");
+        StrictRoundtrip(session);
+    }
+
+    [TestMethod]
+    public void voluntary_switch_and_medicine_retain_real_party_ownership()
+    {
+        var a = Owned("PIDGEY", 20, 101, "GROWL");
+        var b = Owned("RATTATA", 30, 102, "TACKLE");
+        b = b with
+        {
+            Pokemon = b.Pokemon with
+            {
+                CurrentHp = b.Pokemon.Stats.MaxHp - 10
+            }
+        };
+        var enemy = Owned("PIDGEY", 4, 201, "GROWL");
+        var session = Controlled([a, b], enemy);
+        Send(session, new("battle_switch", PartyIndex: 1));
+        Drain(session);
+        Assert.IsTrue(session.State.WildBattle!.ActivePartyIndex == 1 && session.State.WildBattle.Frame!.Get(new(0)).Member!.Value.Index == 1, "switch updates canonical active identity");
+        Assert.IsTrue(session.State.Party[0].Pokemon.Personality == a.Pokemon.Personality && session.State.Party[1].Pokemon.Personality == b.Pokemon.Personality, "switch retains permanent identities");
+        Send(session, new("battle_medicine", Text: "pret:ITEM_POTION", PartyIndex: 1) { TargetInstanceId = b.InstanceId });
+        Drain(session);
+        Assert.IsTrue(session.State.Party[1].Pokemon.CurrentHp == b.Pokemon.Stats.MaxHp && !session.State.Inventory!.BagItems.Any(s => s.Item.Value == "pret:ITEM_POTION"), "prepared medicine applies and pays once before same canonical queue");
+        Send(session, new("battle_move", MoveSlot: 0));
+        Drain(session);
+        Assert.IsTrue(session.State.WildBattle is null, "switch then KO complete");
+    }
+
+    [TestMethod]
+    public void faint_replacement_preserves_continuation_and_charges_friendship_once()
+    {
+        var a = Owned("PIDGEY", 3, 101, "GROWL");
+        a = a with
+        {
+            Pokemon = a.Pokemon with
+            {
+                CurrentHp = 1
+            }
+        };
+        var b = Owned("RATTATA", 70, 102, "TACKLE");
+        var enemy = Owned("PIDGEY", 30, 201, "TACKLE");
+        var session = Controlled([a, b], enemy);
+        Send(session, new("battle_move", MoveSlot: 0));
+        Drain(session);
+        Assert.IsTrue(session.State.WildBattle is { Replacement: CampaignReplacementStage.UseNext }, "actual faint exposes replacement modal");
+        var frame = session.State.WildBattle!.Frame!;
+        var rng = frame.Rng;
+        int friendship = session.State.Party[0].Pokemon.Friendship;
+        Send(session, new("battle_next", Choice: 1));
+        Assert.IsTrue(session.State.WildBattle!.Frame == frame && session.State.World.Rng == rng, "party menu selection advances no battle/RNG");
+        Send(session, new("battle_switch", PartyIndex: 1));
+        Drain(session);
+        Assert.IsTrue(session.State.Party[0].Pokemon.Friendship == friendship && friendship == a.Pokemon.Friendship - 1, "faint friendship once across continuation");
+        Assert.IsTrue(session.State.WildBattle!.Frame!.Get(new(0)).Member!.Value.Index == 1, "replacement installs actual reserve");
+        Send(session, new("battle_move", MoveSlot: 0));
+        Drain(session);
+        Assert.IsTrue(session.State.WildBattle is null, "replacement resumed through terminal KO");
+    }
+
+    [TestMethod]
+    public void EXP_learning_pause_uses_frame_cursor_and_never_reapplies_reward()
+    {
+        var a = Owned("BULBASAUR", 19, 101, "TACKLE", "GROWL", "LEECH_SEED", "VINE_WHIP");
+        var species = catalog.Species[a.Pokemon.Species];
+        var target = species.LevelUpMoves.First(m => m.Level > 19 && m.Level < 40 && !a.Pokemon.Moves.Any(x => x.Move == m.Move));
+        a = Owned("BULBASAUR", target.Level - 1, 101, "TACKLE", "GROWL", "LEECH_SEED", "VINE_WHIP");
+        a = a with
+        {
+            Pokemon = a.Pokemon with
+            {
+                Experience = GrowthRules.ExperienceAtLevel(species.GrowthRate, target.Level) - 1
+            }
+        };
+        var enemy = Owned("PIDGEY", 2, 201, "GROWL");
+        enemy = enemy with
+        {
+            Pokemon = enemy.Pokemon with
+            {
+                CurrentHp = 1
+            }
+        };
+        var session = Controlled([a], enemy);
+        Send(session, new("battle_move", MoveSlot: 0));
+        Drain(session, stopLearning: true);
+        var b = session.State.WildBattle!;
+        Assert.IsTrue(b.Frame!.Rewards?.Pending is not null && b.PendingMoves[0].Move == target.Move, "canonical learning cursor exposed");
+        long xp = session.State.Party[0].Pokemon.Experience;
+        var rewardFrame = b.Frame;
+        var rejected = session.Execute("wrong-learning", session.Revision, new("wild_learn", MoveSlot: 4));
+        Assert.IsTrue(rejected.Status == CommandStatus.Rejected && ReferenceEquals(session.State.WildBattle!.Frame, rewardFrame), "bad learning choice leaves canonical state identical");
+        Send(session, new("wild_learn", MoveSlot: 0));
+        Drain(session);
+        Assert.IsTrue(session.State.WildBattle is null && session.State.Party[0].Pokemon.Experience == xp, "learning resumes without duplicate EXP");
+        Assert.IsTrue(session.State.Party[0].Pokemon.Moves[0].Move == target.Move, "chosen learning persisted");
+    }
+
+    [TestMethod]
+    public void Transform_retains_permanent_identity_and_PP_through_escape()
+    {
+        var ditto = Owned("DITTO", 50, 101, "TRANSFORM");
+        var enemy = Owned("PIDGEY", 20, 201, "GROWL");
+        var session = Controlled([ditto], enemy);
+        Send(session, new("battle_move", MoveSlot: 0));
+        Drain(session);
+        Assert.IsTrue(session.State.WildBattle!.Frame!.Get(new(0)).Body!.Transform is not null, "actual shared Transform recipe executed");
+        Assert.IsTrue(session.State.Party[0].Pokemon.Species == ditto.Pokemon.Species && session.State.Party[0].Pokemon.Personality == ditto.Pokemon.Personality, "Transform preserves permanent species/personality");
+        for (int i = 0; i < 10 && session.State.WildBattle is not null; i++)
+        {
+            Send(session, new("battle_menu", Text: "run"));
+            Drain(session);
+        }
+
+        Assert.IsTrue(session.State.WildBattle is null && session.State.Party[0].Pokemon.Species == ditto.Pokemon.Species && session.State.Party[0].Pokemon.Moves[0].Move == ditto.Pokemon.Moves[0].Move && session.State.Party[0].Pokemon.Moves[0].CurrentPp == ditto.Pokemon.Moves[0].CurrentPp - 1, "escape persists original Transform PP exactly once");
+    }
+
+    [TestMethod]
+    public void Poke_Flute_uses_canonical_item_action_and_keeps_reusable_key_item()
+    {
+        var a = Owned("PIDGEY", 20, 101, "GROWL")with
+        {
+            Status = 3
+        };
+        var enemy = Owned("PIDGEY", 4, 201, "GROWL")with
+        {
+            Status = 3
+        };
+        var session = Controlled([a], enemy);
+        int before = session.State.Inventory!.KeyItems!.Value.Single(i => i.Item.Value == "pret:ITEM_POKE_FLUTE").Quantity;
+        Send(session, new("battle_poke_flute", Text: "pret:ITEM_POKE_FLUTE"));
+        Drain(session);
+        Assert.IsTrue(session.State.Party[0].Status == 0 && session.State.WildBattle!.Frame!.Party(BattleSide.Opponent).Members[0].Status == 0, "flute wakes actual canonical parties");
+        Assert.IsTrue(session.State.Inventory!.KeyItems!.Value.Single(i => i.Item.Value == "pret:ITEM_POKE_FLUTE").Quantity == before, "reusable flute retained");
+        Send(session, new("battle_menu", Text: "run"));
+        Drain(session);
+        Assert.IsTrue(session.State.WildBattle is null, "flute lifecycle completes through escape");
+    }
+}

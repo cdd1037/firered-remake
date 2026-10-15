@@ -68,7 +68,9 @@ public sealed partial class CampaignSession
     {
         if (EarlyShopInventoryRules.Validate(ShopCatalog, inventory) is {} error) throw new InvalidDataException(error);
         return inventory with { BagItems = inventory.BagItems.RemoveAll(s => IsSeafoamSupplementItem(s.Item)),
-            PcItems = inventory.PcItems.RemoveAll(s => IsSeafoamSupplementItem(s.Item)) };
+            PcItems = inventory.PcItems.RemoveAll(s => IsSeafoamSupplementItem(s.Item)),
+            KeyItems = inventory.KeyItems?.RemoveAll(s => IsSeafoamSupplementItem(s.Item)),
+            Balls = inventory.Balls?.RemoveAll(s => IsSeafoamSupplementItem(s.Item)) };
     }
     private InventoryState RestoreSeafoamInventory(InventoryState original, InventoryState changed)
     {
@@ -82,7 +84,9 @@ public sealed partial class CampaignSession
             return output.ToImmutable();
         }
         if (SeafoamShopProof.ValidateInventory(changed) is {} invalid) throw new InvalidDataException(invalid);
-        var result = changed with { BagItems = Restore(original.BagItems, changed.BagItems), PcItems = Restore(original.PcItems, changed.PcItems) };
+        var result = changed with { BagItems = Restore(original.BagItems, changed.BagItems), PcItems = Restore(original.PcItems, changed.PcItems),
+            KeyItems = original.KeyItems is {} keys ? Restore(keys, changed.KeyItems ?? []) : changed.KeyItems,
+            Balls = original.Balls is {} balls ? Restore(balls, changed.Balls ?? []) : changed.Balls };
         if (EarlyShopInventoryRules.Validate(ShopCatalog, result) is {} error) throw new InvalidDataException(error);
         return result;
     }

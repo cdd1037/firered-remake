@@ -1,0 +1,761 @@
+{
+  "date": "2026-10-15",
+  "sourceRevision": "f91b9f7df7bde14f65a3eee9332ed21ec2113d72",
+  "audit": {
+    "projects": 93,
+    "compilable": 21,
+    "obsoleteApiProjects": 72,
+    "compiler": "10.0.102",
+    "command": "dotnet build .toolhome/AllTests.slnx --source GODOT_NUPKGS -p:NuGetAudit=false -m:1 -nr:false"
+  },
+  "reason": "Historical comparison suites refer to retired scalar/singles/campaign APIs. They are removed rather than restoring a second production rules owner. This does not claim their unique historical comparisons were rerun or replaced one-for-one.",
+  "retired": [
+    {
+      "project": "tests/Game.BattleMedicine.Tests/Game.BattleMedicine.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“ForestTrainerCombatRules”",
+        "error CS0117: “WildBattleRules”未包含“ResolveMedicine”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolvePotion”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatState”(是否缺少 using 指令或程序集引用?)",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerMedicineResult”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.CalledPartyEffects.Tests/Game.CalledPartyEffects.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledVolatileEndTurn”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.CalledScalarDamage.Tests/Game.CalledScalarDamage.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.CalledTurnLocks.Tests/Game.CalledTurnLocks.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveContinuation”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledTurnLockEndTurn”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.ContactLifecycle.Tests/Game.ContactLifecycle.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchSourceWildPlayer”的定义",
+        "error CS1061: “WildBattleSourceWildState”未包含“Turn”的定义，并且找不到可接受第一个“WildBattleSourceWildState”类型参数的可访问扩展方法“Turn”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.CopyMoveRules.Tests/Game.CopyMoveRules.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“CampaignSaveUpgrade”",
+        "error CS0117: “PretCampaignCatalog”未包含“LoadFuchsiaGymProfile”的定义",
+        "error CS0117: “PretCampaignCatalog”未包含“LoadFuchsiaRouteProfile”的定义",
+        "error CS0117: “WildBattleRules”未包含“IsSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“ReplaceSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveBall”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.DamageAbilityGaps.Tests/Game.DamageAbilityGaps.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.DynamicPower.Tests/Game.DynamicPower.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS8321: 声明了本地函数“Hash”，但从未使用过"
+      ]
+    },
+    {
+      "project": "tests/Game.FixedDamage.Tests/Game.FixedDamage.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.FourCallers.Tests/Game.FourCallers.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.FourContact.Tests/Game.FourContact.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS8321: 声明了本地函数“Hash”，但从未使用过"
+      ]
+    },
+    {
+      "project": "tests/Game.FourEndTurnParity.Tests/Game.FourEndTurnParity.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“WildBattleSourceEndTurnBoundary”",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceEndTurnPhase”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义",
+        "error CS0246: 未能找到类型或命名空间名“WildBattleSourceEndTurnCursor”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.FourEntryAbilities.Tests/Game.FourEntryAbilities.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.FourProtection.Tests/Game.FourProtection.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.FourRewards.Tests/Game.FourRewards.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.FourStruggle.Tests/Game.FourStruggle.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.FourSwitchingParity.Tests/Game.FourSwitchingParity.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ChooseSourceWildParty”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchSourceWildPlayer”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.FourVolatileTargets.Tests/Game.FourVolatileTargets.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.FuchsiaDefenseBadge.Tests/Game.FuchsiaDefenseBadge.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.HeldItemCompletion.Tests/Game.HeldItemCompletion.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “SourceBattleEventAdapter”未包含“Import”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“Run”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“TryRunAfterFaint”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.ResidualStatus.Tests/Game.ResidualStatus.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceEndTurnPhase”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS8321: 声明了本地函数“Hash”，但从未使用过"
+      ]
+    },
+    {
+      "project": "tests/Game.Route11Battle.Tests/Game.Route11Battle.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“WildVictoryRewards”",
+        "error CS0117: “WildBattleRules”未包含“ReplaceFaintedPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“Run”的定义",
+        "error CS0117: “WildBattleRules”未包含“Start”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchPlayer”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.Route3Battle.Tests/Game.Route3Battle.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolvePokeBall”的定义",
+        "error CS0117: “WildBattleRules”未包含“Run”的定义",
+        "error CS0117: “WildBattleRules”未包含“Start”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedBasicStatStatus.Tests/Game.SharedBasicStatStatus.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS8321: 声明了本地函数“Hash”，但从未使用过"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedChargeMoves.Tests/Game.SharedChargeMoves.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveContinuation”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedConditionalHit.Tests/Game.SharedConditionalHit.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedCopyState.Tests/Game.SharedCopyState.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchSourceWildPlayer”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedCriticalStatus.Tests/Game.SharedCriticalStatus.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedDelayedAttacks.Tests/Game.SharedDelayedAttacks.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledVolatileEndTurn”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedEncoreImprison.Tests/Game.SharedEncoreImprison.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedFieldRecipes.Tests/Game.SharedFieldRecipes.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedFreezeHit.Tests/Game.SharedFreezeHit.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedHitItems.Tests/Game.SharedHitItems.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedHitSequence.Tests/Game.SharedHitSequence.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedItemTransfer.Tests/Game.SharedItemTransfer.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义",
+        "error CS8321: 声明了本地函数“Hash”，但从未使用过"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedLateTurn.Tests/Game.SharedLateTurn.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveContinuation”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedMiscTargets.Tests/Game.SharedMiscTargets.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS8321: 声明了本地函数“Hash”，但从未使用过"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedPartyHealing.Tests/Game.SharedPartyHealing.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedPreparedMoves.Tests/Game.SharedPreparedMoves.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedPursuitBeatUp.Tests/Game.SharedPursuitBeatUp.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchSourceWildPlayer”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedRechargeRampage.Tests/Game.SharedRechargeRampage.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveContinuation”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledTurnLockEndTurn”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedRecoil.Tests/Game.SharedRecoil.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedSelectedVolatiles.Tests/Game.SharedSelectedVolatiles.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateSourceMoveSelection”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedSpikesParity.Tests/Game.SharedSpikesParity.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchSourceWildPlayer”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedStockpileCharge.Tests/Game.SharedStockpileCharge.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SharedSubstitute.Tests/Game.SharedSubstitute.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SleepResidual.Tests/Game.SleepResidual.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceEndTurnPhase”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS8321: 声明了本地函数“Hash”，但从未使用过"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceActionCancellers.Tests/Game.SourceActionCancellers.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveContinuation”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceCaptureBalls.Tests/Game.SourceCaptureBalls.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ReplaceSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveBall”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义",
+        "error CS1061: “WildBattleSourceWildState”未包含“Turn”的定义，并且找不到可接受第一个“WildBattleSourceWildState”类型参数的可访问扩展方法“Turn”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceChoiceBand.Tests/Game.SourceChoiceBand.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ChooseSourceWildParty”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“Start”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceColorChange.Tests/Game.SourceColorChange.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceContactAbsorb.Tests/Game.SourceContactAbsorb.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “PretCampaignCatalog”未包含“LoadFuchsiaGymProfile”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceEndTurn.Tests/Game.SourceEndTurn.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“WildBattleSourceEndTurnBoundary”",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceEndTurnPhase”的定义",
+        "error CS0117: “WildBattleRules”未包含“ValidateCalledMoveActionState”的定义",
+        "error CS0246: 未能找到类型或命名空间名“WildBattleSourceEndTurnCursor”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceFocusBand.Tests/Game.SourceFocusBand.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “SourceBattleEventAdapter”未包含“Import”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolvePotion”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“Start”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceMechanicsAdmission.Tests/Game.SourceMechanicsAdmission.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “SourceMechanicsCatalog”未包含“SemanticSha256”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“Start”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义",
+        "error CS1061: “WildBattleSourceWildState”未包含“Turn”的定义，并且找不到可接受第一个“WildBattleSourceWildState”类型参数的可访问扩展方法“Turn”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceMechanicsParity.Tests/Game.SourceMechanicsParity.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“ForestTrainerCombatRules”",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0122: “SourceTrainerAi”不可访问，因为它具有一定的保护级别"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceMoneyItems.Tests/Game.SourceMoneyItems.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ReplaceSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“SwitchSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceObedience.Tests/Game.SourceObedience.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveContinuation”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceSharedKernel.Tests/Game.SourceSharedKernel.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS0117: “WildBattleRules”未包含“Validate”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTargeting.Tests/Game.SourceTargeting.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTraceForecast.Tests/Game.SourceTraceForecast.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “SourceBattleEventAdapter”未包含“Import”的定义",
+        "error CS0117: “WildBattleRules”未包含“ReplaceSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTrainerAi.Tests/Game.SourceTrainerAi.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“ForestTrainerCombatRules”",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0122: “SourceTrainerAi”不可访问，因为它具有一定的保护级别",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatState”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTrainerEntry.Tests/Game.SourceTrainerEntry.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“ForestTrainerCombatRules”",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatResult”(是否缺少 using 指令或程序集引用?)",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatState”(是否缺少 using 指令或程序集引用?)",
+        "error CS1503: 参数 1: 无法从“(string, System.Collections.Immutable.ImmutableArray<Game.Domain.Ids.TrainerId>, lambda 表达式, lambda 表达式)”转换为“(string Name, System.Collections.Immutable.ImmutableArray<Game.Domain.Ids.TrainerId> Ids, System.Func<Game.Domain.Ids.TrainerId, System.Collections.Immutable.ImmutableArray<Game.Domain.WildBattle.WildBattleCombatant>, int, Game.Domain.Randomness.RngState, ForestTrainerCombatResult> Source, System.Func<Game.Domain.Ids.TrainerId, Game.Domain.WildBattle.WildBattleCombatant, Game.Domain.Randomness.RngState, ForestTrainerCombatResult> Legacy)”"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTrainerItems.Tests/Game.SourceTrainerItems.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“ForestTrainerCombatRules”",
+        "error CS0117: “PretCampaignCatalog”未包含“LoadFuchsiaGymProfile”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatResult”(是否缺少 using 指令或程序集引用?)",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatState”(是否缺少 using 指令或程序集引用?)",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerMedicineResult”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTrainerTurns.Tests/Game.SourceTrainerTurns.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“ForestTrainerCombatRules”",
+        "error CS0117: “WildBattleRules”未包含“ValidateSourceMoveSelection”的定义",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatResult”(是否缺少 using 指令或程序集引用?)",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatState”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTrainerValidation.Tests/Game.SourceTrainerValidation.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“ForestTrainerCombatRules”",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0122: “SourceTrainerAi”不可访问，因为它具有一定的保护级别",
+        "error CS0246: 未能找到类型或命名空间名“ForestTrainerCombatState”(是否缺少 using 指令或程序集引用?)"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTrappingAbilities.Tests/Game.SourceTrappingAbilities.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ChooseSourceWildParty”的定义",
+        "error CS0117: “WildBattleRules”未包含“ReplaceSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“Run”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceTurnCycleAbilities.Tests/Game.SourceTurnCycleAbilities.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ChooseSourceWildParty”的定义",
+        "error CS0117: “WildBattleRules”未包含“ReplaceSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceWeatherAbilities.Tests/Game.SourceWeatherAbilities.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0103: 当前上下文中不存在名称“SinglesBattleAdapter”",
+        "error CS0117: “SourceBattleEventAdapter”未包含“Import”的定义",
+        "error CS0117: “WildBattleRules”未包含“ReplaceSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceEndTurnPhase”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceWildTurns.Tests/Game.SourceWildTurns.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “PretCampaignCatalog”未包含“LoadFuchsiaGymProfile”的定义",
+        "error CS0117: “WildBattleRules”未包含“ChooseSourceWildParty”的定义",
+        "error CS0117: “WildBattleRules”未包含“ReplaceFaintedPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ReplaceSourceWildPlayer”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveBall”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMedicine”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.SourceWonderGuard.Tests/Game.SourceWonderGuard.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledPartySwitch”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveSourceMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义"
+      ]
+    },
+    {
+      "project": "tests/Game.WeatherHit.Tests/Game.WeatherHit.Tests.csproj",
+      "reason": "retired API dependency",
+      "diagnostics": [
+        "error CS0117: “WildBattleRules”未包含“ResolveCalledMoveAction”的定义",
+        "error CS0117: “WildBattleRules”未包含“ResolveMove”的定义",
+        "error CS0117: “WildBattleRules”未包含“StartSourceWild”的定义",
+        "error CS8321: 声明了本地函数“Hash”，但从未使用过"
+      ]
+    }
+  ],
+  "retiredCases": [
+    {
+      "suite": "Game.TextProgress.Tests",
+      "reason": "Unavailable source-identity/97-frame historical trace prerequisites; retain literal frame cadence and Unicode/input/reset contracts."
+    },
+    {
+      "suite": "Game.SharedSpikes.Tests",
+      "reason": "Missing historical 7,221,510-vector source harness output; retain independent layer fractions and current public hazard/PP/replacement turns."
+    },
+    {
+      "suite": "Game.CanonicalTrainerApplication.Tests",
+      "reason": "Missing pre-Gideon and conversion checkpoints; current re-entry is separately exercised without forged victory/acquisition receipts."
+    },
+    {
+      "suite": "Game.FourSwitching.Tests",
+      "reason": "Old opponent egg flags are invalid under current party ownership. Six valid non-egg C oracle cases retained; real player eggs are covered by EggFactory."
+    },
+    {
+      "suite": "import-source-hit",
+      "reason": "Removed byte-identity and sparse-size gates do not describe current importers; retain image format failures, deterministic CLI output and publication behavior."
+    },
+    {
+      "suite": "import-trainer-fan-club",
+      "reason": "Historical full-regeneration test depends on removed helper modules; retained the current resource inventory and fan-counter/clock/scan-order source semantics. No full historical re-import pass claimed."
+    }
+  ]
+}

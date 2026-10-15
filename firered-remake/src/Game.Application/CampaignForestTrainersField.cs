@@ -120,9 +120,18 @@ public sealed partial class CampaignSession
     private CampaignState ReleaseForestTrainerPostDialogue(CampaignState before, CampaignState next)
     {
         if (_content.ForestTrainersEnabled && before.ForestTrainerBattle is null &&
-            before.Dialogue is { CloseOnCompletion: true } dialogue && dialogue.Page + 1 == dialogue.Pages.Length &&
-            OrdinaryTrainerScripts.Any(b => b.PostBattleText == dialogue.TextSymbol && before.BattledTrainers.Contains(b.Trainer.Value)))
-            return next with { Script = next.Script with { Locked = false } };
+            before.Dialogue is { CloseOnCompletion: true } dialogue && dialogue.Page + 1 == dialogue.Pages.Length)
+        {
+            var frame = before.Script.Stack.IsEmpty ? null : before.Script.Stack[^1];
+            var program = frame is null ? null : _content.FindProgram(frame.ProgramId);
+            var instruction = program is not null && frame!.InstructionIndex > 0 && frame.InstructionIndex <= program.Instructions.Length
+                ? program.Instructions[frame.InstructionIndex - 1] : null;
+            // Std_MsgboxAutoclose releases field controls before returning. Post-battle
+            // scripts can choose another text (for example Gideon's completed-quest branch).
+            bool autoclose = instruction?.Opcode == "msgbox" && instruction.Args.Length > 1 && instruction.Args[1] == "MSGBOX_AUTOCLOSE";
+            if (autoclose || OrdinaryTrainerScripts.Any(b => b.PostBattleText == dialogue.TextSymbol && before.BattledTrainers.Contains(b.Trainer.Value)))
+                return next with { Script = next.Script with { Locked = false } };
+        }
         return next;
     }
 

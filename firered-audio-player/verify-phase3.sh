@@ -4,7 +4,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PACK="$ROOT/resources/firered.pack"
 OUT="$ROOT/results/phase3"
 "$ROOT/build.sh" > "$OUT/build.log"
-"$ROOT/run.sh" selftest "$PACK" > "$OUT/tests.txt"
+dotnet test "$ROOT/../firered-remake/tests/Game.Audio.Tests/Game.Audio.Tests.csproj" --filter TestCategory=Audio > "$OUT/tests.txt"
 python3 "$ROOT/tools/inventory_cry.py" > "$OUT/inventory.log"
 "$ROOT/run.sh" render "$PACK" cry-charmander 4 "$OUT/charmander.wav" source-filtered
 "$ROOT/run.sh" render "$PACK" cry-charmander 4 "$OUT/charmander-repeat.wav" source-filtered

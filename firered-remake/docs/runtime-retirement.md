@@ -46,41 +46,11 @@ recorded in [the current integration status](project-refactor-plan.md#2026-10-13
 
 ## Default build/test and historical source
 
-`./dev build` restores/builds all 17 projects in `FireRed.Current.slnx`: the five
-product assemblies, current composition, shared lifecycle and trainer-policy
-contracts, canonical wild/trainer Application suites, five foundational
-Domain/transaction/story suites, the current field-item Application suite and the original content fixture verifier.
-Current locked restore uses the installed, toolchain-hash-verified official
-Godot package directory; it does not perform a network vulnerability lookup for
-this offline-only package set.
+The maintained solution has fifteen projects: five game assemblies, two audio projects and eight dependency-scoped MSTest projects. A dedicated cross-process hash helper is built transitively. Game and audio cases run directly in MSTest, with independent discovery and filtering. Only Python resource checks and cross-process determinism start child processes. `dotnet test` is the single solution entry; see [test organization](../tests/README.md) for project-scoped commands. The console-suite registry, adapter project and per-feature executable projects were removed.
 
-`./dev test` runs eight contract suites: CurrentComposition, SourceLifecycle,
-SourceTrainerPolicy and the five foundation suites, plus the content verifier.
-The two canonical Application suites compile by default but run only through
-`./dev test-current-battles CURRENT_CHECKPOINT OUTPUT_DIRECTORY`, which requires
-a strict current checkpoint and a new output directory. The trainer suite also
-requires its two exact private proof inputs documented in
-[its README](../tests/Game.CanonicalTrainerApplication.Tests/README.md); passing
-an unrelated current checkpoint does not replace those inputs. The dispatcher
-checks their presence and refuses an existing output directory before either
-Application suite runs.
+See [the maintained test contract](../tests/README.md). The 93-project audit found 72 projects referring to removed APIs; they were deleted with per-project diagnostics in [the retirement inventory](test-retirement-20261015.json). Historical comparisons were not rerun or replaced one-for-one. No legacy production dispatcher was restored.
 
-`./dev test-current-checkpoints HANDOFF BILL NEW_OUTPUT` adds the two selected
-real checkpoint checks. Authenticated source content must be available under
-the project root, as for current gameplay. Missing fixtures are prerequisite
-failures, not skipped passes.
-
-The larger `FireRed.sln` remains an optional source-test index. Exactly 52 test
-projects that compile against deleted campaign APIs are removed from it. Their
-paths, triggering source files and reasons are in
-[historical-test-projects.json](historical-test-projects.json). No test source, checkpoint or unique evidence file was deleted. The one project
-descriptor with an explicit include of deleted `SaveUpgradeProfiles.cs` is kept
-as `Game.ToolingUpgrade.Tests.csproj.archived`; there is no dangling active
-Compile include or runtime stub. Other historical
-fixtures may still compile but cannot demand an old runtime from the current-only
-constructor. Named historical `dev` runners have been deleted from the current
-dispatcher. Use the historical source revision to reproduce historical results.
-No full historical solution or journey replay is an acceptance gate here.
+Current trainer cases consume a validated current checkpoint. Completed Gideon re-entry is distinct from the missing historical pre-Gideon victory/conversion proof.
 
 After physical battle-owner retirement, the two source-wild migration comparison
 suites preserve their original program/project/runner/lock files under `archive/`
@@ -116,4 +86,4 @@ public commands. These were actual combined-tree runs. See
 [build evidence](../evidence/refactor-final-20261013/build.log) and
 [the integration result and subsequent field-dispatch closure](project-refactor-plan.md#2026-10-13-content-specialization-and-battle-owner-retirement).
 
-The current field-item Application project also compiles by default. Run `./dev test-current-items CURRENT_CHECKPOINT OUTPUT_JSON` explicitly using the generation-47819 current checkpoint described in its [README](../tests/Game.CurrentFieldItems.Tests/README.md). This fixture-dependent gate covers current items and the repaired owned-catalog Candy and Moon/Sun Stone admission; it is not part of the fixture-free default test command.
+Current field-item and stone-evolution cases are native MSTest tests included by default. Their current checkpoint inputs and controlled setup are documented in [the test contract](../tests/README.md); the old `dev test-current-items` console command is retired.

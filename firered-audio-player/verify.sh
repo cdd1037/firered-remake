@@ -3,7 +3,7 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PACK="$ROOT/resources/firered.pack"
 "$ROOT/build.sh" > "$ROOT/results/build.log"
-"$ROOT/run.sh" selftest "$PACK" > "$ROOT/results/tests.txt"
+dotnet test "$ROOT/../firered-remake/tests/Game.Audio.Tests/Game.Audio.Tests.csproj" --filter TestCategory=Audio > "$ROOT/results/tests.txt"
 for config in 'select 3' 'pallet 95' 'mix 12'; do
     set -- $config
     "$ROOT/run.sh" render "$PACK" "$1" "$2" "$ROOT/results/$1.wav"

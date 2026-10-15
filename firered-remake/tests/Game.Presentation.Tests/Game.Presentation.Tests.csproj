@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <Compile Include="../../src/Game.Godot/SourceTextProgress.cs" Link="SourceTextProgress.cs" />
+  </ItemGroup>
+</Project>

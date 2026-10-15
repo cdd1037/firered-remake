@@ -4,17 +4,16 @@ using System.Text.Json;
 using FireRedAudio;
 if (args.Length == 0)
 {
-    Console.WriteLine("render <rom-or-pack> <pallet|select|mix|cry-charmander|cry-mix> <seconds> <output.wav> [profile] | selftest <rom-or-pack>");
+    Console.WriteLine("render <rom-or-pack> <pallet|select|mix|cry-charmander|cry-mix> <seconds> <output.wav> [profile]");
     return;
 }
 try
 {
-    if (args[0] is not ("pack" or "catalog-selftest" or "selftest" or "benchmark" or "benchmark-cry" or "render"))
+    if (args[0] is not ("pack" or "benchmark" or "benchmark-cry" or "render"))
         throw new ArgumentException("Unsupported command");
     int required = args[0] switch
     {
         "pack" => 3,
-        "catalog-selftest" => 3,
         "render" => 5,
         _ => 2
     };
@@ -30,16 +29,6 @@ try
     if (args[0] == "benchmark" || args[0] == "benchmark-cry")
     {
         Benchmark.Run(r, args.Length == 3 ? ParseProfile(args[2]) : AudioProfile.ModernDryV1, args[0] == "benchmark-cry");
-        return;
-    }
-    if (args[0] == "catalog-selftest")
-    {
-        CatalogVerification.Run(r, args[2]);
-        return;
-    }
-    if (args[0] == "selftest")
-    {
-        Tests.Run(r);
         return;
     }
     string mode = args[2];
@@ -162,68 +151,6 @@ static class Wav
         w.Write((short)16);
         w.Write("data"u8);
         w.Write(frames * 4);
-    }
-}
-static class Tests
-{
-    public static void Run(Resources r)
-    {
-        int passed = 0;
-        void Assert(bool c, string name)
-        {
-            if (!c)
-                throw new Exception("FAIL " + name);
-            passed++;
-            Console.WriteLine("PASS " + name);
-        }
-        void Reject(Action a, string name)
-        {
-            try
-            {
-                a();
-            }
-            catch (InvalidDataException)
-            {
-                passed++;
-                Console.WriteLine("PASS " + name);
-                return;
-            }
-            throw new Exception("FAIL " + name);
-        }
-        Reject(() => r.U32(Resources.End - 3), "bounds end");
-        Reject(() => r.U8(Resources.Base - 1), "bounds start");
-        Reject(() => r.Offset(uint.MaxValue, 4), "address overflow");
-        Reject(() => r.Offset(Resources.Base, -1), "negative length");
-        var a = new Synth(r) { EnableTrace = false };
-        var b = new Synth(r) { EnableTrace = false };
-        a.Start(0x086dd844, 0);
-        b.Start(0x086dd844, 0);
-        var x = new float[48000 * 2];
-        a.Render(x);
-        var y = new float[x.Length];
-        for (int pos = 0; pos < y.Length;)
-        {
-            int n = Math.Min(514, y.Length - pos);
-            b.Render(y.AsSpan(pos, n));
-            pos += n;
-        }
-        Assert(x.SequenceEqual(y), "block-size independent exact output");
-        Assert(x.All(float.IsFinite), "finite samples");
-        Assert(x.Any(v => v != 0), "real nonzero synthesis");
-        Assert(a.MaxPcm <= 5, "five PCM cap");
-        Assert(a.GameFrames == 1 + 48000L * Synth.Cpu / (Synth.Rate * Synth.FrameCycles), "fractional frame clock");
-        a.Stop(0);
-        a.Render(x);
-        Assert(x.All(v => v == 0), "hard stop clears voices");
-        a.Start(0x086b5720, 1);
-        a.Render(x);
-        Assert(x.Any(v => v != 0), "SE synthesis");
-        a.Render(x);
-        Assert(a.Ended, "SE ends");
-        passed += Verification.Run(r);
-        passed += ProfileVerification.Run(r);
-        passed += CryVerification.Run(r);
-        Console.WriteLine($"{passed} tests passed");
     }
 }
 static class Benchmark

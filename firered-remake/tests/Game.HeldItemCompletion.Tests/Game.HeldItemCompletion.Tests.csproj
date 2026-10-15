@@ -1,6 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>Exe</OutputType><SourceRoot Condition="'$(SourceRoot)' == ''">../..</SourceRoot></PropertyGroup>
-  <ItemGroup><ProjectReference Include="$(SourceRoot)/src/Game.Domain/Game.Domain.csproj"/><ProjectReference Include="$(SourceRoot)/src/Game.Content/Game.Content.csproj"/></ItemGroup>
-  <ItemGroup Condition="'$(Parity)' != 'true'"><Compile Remove="BaselineParity.cs"/></ItemGroup>
-  <ItemGroup Condition="'$(Parity)' == 'true'"><Compile Remove="Program.cs"/></ItemGroup>
-</Project>
