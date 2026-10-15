@@ -255,7 +255,9 @@ def dependency_inventory(src, worlds, scripts, constants):
     trainers.sort(key=lambda t:t['sourceTrainerId'])
     if [t['sourceTrainerId'] for t in trainers]!=[91,108,109,120,121,169,170,181,351,352,353,354]:
         raise ValueError('Mt. Moon trainer roster differs')
-    species=[];moves=set()
+    # Validate referenced source declarations and learnsets during import only.
+    # Runtime species, moves and items are owned by their shared catalogs.
+    moves=set()
     for symbol in sorted(species_symbols):
         path='src/data/pokemon/species_info.h'
         m=one(r'^    \['+symbol+r'\] =\s*\n?    ?\{\n(.*?)^    \},',path)
@@ -263,18 +265,17 @@ def dependency_inventory(src, worlds, scripts, constants):
         lm=one(r'^static const u16 '+pointer+r'\[\] = \{\n(.*?)^\};','src/data/pokemon/level_up_learnsets.h')
         rows=lm[1].splitlines()
         if rows[-1].strip()!='LEVEL_UP_END': raise ValueError('Learnset terminator absent')
-        learns=[]
         for line in rows[:-1]:
             row=re.fullmatch(r'    LEVEL_UP_MOVE\((\d+), (MOVE_\w+)\),',line)
             if not row: raise ValueError('Unparsed level-up move')
-            learns.append(dict(level=int(row[1]),move=row[2]));moves.add(row[2])
-        species.append(dict(symbol=symbol,sourceSpeciesId=constant(symbol),declaration=fields(m[1]),
-            sourceRef=reference(path,symbol,m),levelUpMoves=learns,
-            learnsetSourceRef=reference('src/data/pokemon/level_up_learnsets.h',pointer,lm),runtimeStatus='sourceOnly'))
-    move_rows=[]
+            int(row[1])
+            moves.add(row[2])
+        constant(symbol)
+        fields(m[1])
     for symbol in sorted(moves):
         path='src/data/battle_moves.h';m=one(r'^    \['+symbol+r'\] =\s*\n?    ?\{\n(.*?)^    \},',path)
-        move_rows.append(dict(symbol=symbol,sourceMoveId=constant(symbol),declaration=fields(m[1]),sourceRef=reference(path,symbol,m),runtimeStatus='sourceOnly'))
+        constant(symbol)
+        fields(m[1])
     blocks={b['label']:b for b in scripts['blocks']}
     objects=[];pickups=[]
     for w in worlds:
@@ -291,17 +292,15 @@ def dependency_inventory(src, worlds, scripts, constants):
                 pickups.append(dict(map=w['events']['id'],kind='hidden',item=event['item'],quantity=event['quantity'],flag=event['flag'],x=event['x'],y=event['y'],underfoot=event['underfoot'],sourceRef=w['sourceRef']))
     if len(pickups)!=18 or sum(p['kind']=='hidden' for p in pickups)!=8: raise ValueError('Mt. Moon item inventory differs')
     item_symbols={p['item'] for p in pickups}|{'ITEM_DOME_FOSSIL','ITEM_HELIX_FOSSIL'}
-    # The generated item table uses TM aliases; retain both the script identifier and table itemId.
+    # Match script item identifiers to table TM aliases by their numeric value.
     item_source=src.json('src/data/items.json')['items']
-    item_rows=[]
     for symbol in sorted(item_symbols):
         number=constant(symbol)
         row=next((r for r in item_source if r['itemId'] in constants['values'] and constant(r['itemId'])==number),None)
         if row is None: raise ValueError('Missing item table: '+symbol)
-        item_rows.append(dict(symbol=symbol,sourceItemId=number,declaration=row,sourceRef=src.ref('src/data/items.json',row['itemId']),runtimeStatus='sourceOnly'))
     fossil_labels=[b for label,b in blocks.items() if label.startswith('MtMoon_B2F_') and any(s in label for s in ('Fossil','Miguel','OnTransition'))]
     return dict(schemaVersion=1,completeGame=False,
-        trainers=trainers,encounters=encounters,species=species,moves=move_rows,objects=objects,pickups=pickups,items=item_rows,
+        trainers=trainers,encounters=encounters,objects=objects,pickups=pickups,
         trainerBattleModes=[dict(symbol=t['symbol'],mode='noIntro' if t['symbol']=='TRAINER_SUPER_NERD_MIGUEL' else 'single',
             introPresentation='explicitSourceMessageBeforeBattle' if t['symbol']=='TRAINER_SUPER_NERD_MIGUEL' else 'trainerBattleIntro',
             continuation='MtMoon_B2F_EventScript_BattleMiguel' if t['symbol']=='TRAINER_SUPER_NERD_MIGUEL' else None) for t in trainers],

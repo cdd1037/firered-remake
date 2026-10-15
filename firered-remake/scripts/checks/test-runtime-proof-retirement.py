@@ -29,6 +29,37 @@ def load(name):
 
 
 class RuntimeProofRetirementTests(unittest.TestCase):
+    def test_mtmoon_dependencies_keep_business_values_and_source_validation(self):
+        module = load('imports/maps/import-mtmoon-region.py')
+        source = module.Source(ROOT / 'content/raw/pokefirered/037335f4')
+        layouts = source.json('data/layouts/layouts.json')['layouts']
+        worlds = []
+        # Dependency conversion needs source events and dimensions, not rendered PNGs.
+        for name, _, _ in module.MAPS:
+            path = f'data/maps/{name}/map.json'
+            events = source.json(path)
+            layout = next(row for row in layouts if row.get('id') == events['layout'])
+            worlds.append(dict(events=events, width=layout['width'], height=layout['height'],
+                               sourceRef=source.ref(path, events['id'])))
+        scripts = module.script_inventory(source, worlds)
+        constants = module.constants_inventory(source, worlds, scripts)
+        actual = module.dependency_inventory(source, worlds, scripts, constants)
+        expected = json.loads((ROOT / 'content/generated/maps/regions/mtmoon/dependencies.json').read_text())
+        self.assertEqual(expected, actual)
+        self.assertTrue(actual['trainers'] and actual['encounters'] and actual['pickups'])
+        self.assertTrue({'moves', 'species', 'items'}.isdisjoint(actual))
+        # Omitted inventories must not hide malformed referenced raw declarations.
+        for path in ('src/data/pokemon/level_up_learnsets.h',
+                     'src/data/battle_moves.h', 'src/data/items.json'):
+            with self.subTest(path=path):
+                original = source.data[path]
+                try:
+                    source.data[path] = (b'{"items":[]}' if path.endswith('.json') else b'')
+                    with self.assertRaises(ValueError):
+                        module.dependency_inventory(source, worlds, scripts, constants)
+                finally:
+                    source.data[path] = original
+
     def test_pokemon_outputs_are_only_runtime_catalogs(self):
         for family in ('safari', 'surf', 'fuchsia-route'):
             with self.subTest(family=family):

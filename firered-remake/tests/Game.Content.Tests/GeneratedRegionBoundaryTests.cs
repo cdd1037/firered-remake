@@ -7,6 +7,20 @@ namespace FireRed.Tests.Content;
 public sealed class GeneratedRegionBoundaryTests
 {
     [TestMethod]
+    public void MtMoonLoadsBusinessDefinitionsWithoutDuplicateSharedCatalogs()
+    {
+        var region = PretMtMoonRegion.Load(TestAssets.Root);
+        foreach (string omitted in new[] { "moves", "species", "items" })
+            Assert.IsFalse(region.Dependencies.TryGetProperty(omitted, out _), omitted);
+        Assert.AreEqual(3, region.NewMaps.Count);
+        Assert.AreEqual(12, region.Trainers.Length);
+        Assert.AreEqual(3, region.Encounters.GetArrayLength());
+        Assert.AreEqual(18, region.Pickups.GetArrayLength());
+        Assert.AreEqual("FLAG_GOT_FOSSIL_FROM_MT_MOON", region.FossilChoice.GetProperty("completedFlag").GetString());
+        Assert.IsFalse(region.ProgressionBoundary.GetProperty("enabled").GetBoolean());
+    }
+
+    [TestMethod]
     public void RegionAndServiceWrappersLoadFromGeneratedDataWithoutSourceTrees()
     {
         string root = TestAssets.Output();
