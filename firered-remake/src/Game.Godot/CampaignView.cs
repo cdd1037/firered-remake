@@ -100,6 +100,16 @@ public partial class CampaignView:Node2D
         catch(Exception e){GD.PushError(e.ToString());GetTree().Quit(21);}
     }
     private Texture2D Texture(string path,bool darkened=false)=>SceneTextures.Texture(path,darkened);
+    // These resources are constructed directly, not borrowed from SceneTextures.
+    private void DisposeCorePresentation()
+    {
+        _sourceNormal?.Dispose(); _sourceSmall?.Dispose(); _sourceWhite?.Dispose();
+        _sourceSmallWhite?.Dispose(); _sourceInactiveCursor?.Dispose();
+        _sourceNormal=_sourceSmall=_sourceWhite=_sourceSmallWhite=_sourceInactiveCursor=null!;
+        _itemSkin?.Dispose(); _itemSkin=null!;
+        _uiCorrections?.Dispose(); _uiCorrections=null!;
+        _textCursor?.Dispose(); _textCursor=null!;
+    }
     private void DisposeMapResources()
     {
         ReleaseMapEdits();_drawMapEditOwner?.Dispose();_drawMapEditOwner=null;

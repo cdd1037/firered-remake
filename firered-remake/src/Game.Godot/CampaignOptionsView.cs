@@ -21,6 +21,13 @@ public partial class CampaignView
         }
         SynchronizeOptionFrames();
     }
+    private void DisposeOptionsPresentation()
+    {
+        _optionValueFont?.Dispose(); _optionValueFont=null!;
+        _battleSkin?.SetUserWindowAssets(null);
+        // NativeTexture assets (including atlas regions) belong to SceneTextures.
+        _optionFrameTextures.Clear();
+    }
     private void SynchronizeOptionFrames()
     {
         int frame=_catalog.PokemonStorageEnabled?_session.EffectiveOptions.Frame:0;

@@ -80,6 +80,16 @@ public partial class CampaignView
         _questPocketUi=pocket with { Items=pocket.Items.Add(new(flute.Item.Id.Value,flute.Item.SourceItemSymbol,flute.Item.Name,flute.Description,fluteId,flute.Item.FieldUseFunction)),
             Assets=pocket.Assets.Add(new(fluteId,fluteIcon.PngPath,fluteIcon.Width,fluteIcon.Height,position.X,position.Y)) };
     }
+    private void DisposePokemonTowerPresentation()
+    {
+        foreach(var texture in _towerMosaic.Values)texture.Dispose();
+        _towerMosaic.Clear();
+        _towerTerrain?.Dispose(); _towerTerrain=null;
+        _towerFog?.Dispose(); _towerFog=null;
+        _towerGhost?.Dispose(); _towerGhost=null;
+        // Other Tower sprites live in mixed-ownership presentation dictionaries;
+        // do not dispose those dictionaries as if every entry belonged to Tower.
+    }
     private CaptureDexEntry? TowerCaptureDexEntry(int species)
     {
         if(!_towerDexEntries.TryGetValue(species,out var d))return null;

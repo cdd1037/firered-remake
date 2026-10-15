@@ -354,6 +354,9 @@ public partial class CampaignView
         DisposeSourceMoveAnimation();DisposeSlotMachinePresentation();DisposeFameCheckerPresentation();DisposeTeachyTvPresentation();DisposeVsSeekerPresentation();
         _saffronGymTrainerPortraits.Clear(); _saffronGymTrainerClasses.Clear();
         DisposeMailPresentation();_lostCaveTrainerPresentation.Clear();DisposeGiftEggPresentation();DisposeMemorialPillarPresentation();DisposeOrdinaryEvolutionPresentation();DisposeBreedingPresentation();DisposeGameCornerPresentation();DisposeStoneEvolutionPresentation();DisposeQwilfishPresentation();DisposeSeafoamPresentation();DisposeFossilLabPresentation();DisposeFightingDojoPresentation();DisposePowerPlantPresentation();DisposeEventIslandPresentation();DisposeSevenIslandPresentation();DisposeLeagueRematchPresentation();DisposeMewtwoPresentation();DisposeCelioPresentation();DisposeFiveIslandPresentation();DisposeSixIslandPresentation();DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
+        DisposeOptionsPresentation();DisposeCapturePresentation();DisposeStorageCustomizationPresentation();
+        DisposePokemonTowerPresentation();DisposeCenterHealingPresentation();DisposeOldManPresentation();
+        DisposeBattlePresentation();DisposeCorePresentation();
         DisposeMapResources();
         _entryHeadingFont?.Dispose();foreach(var font in _entryGenderFonts.Values)font.Dispose();_entryGenderFonts.Clear();
         _femalePlayer?.Texture.Dispose();DisposeTownMapPresentation();DisposeCityServicesPresentation();

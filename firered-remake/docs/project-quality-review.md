@@ -203,3 +203,9 @@ Route11/RockTunnel 的实际 JSON 编辑已贯穿候选生成、公开进入/结
 这不代表Route22自己的Content约束、任意物种或后期特殊receipt已全面可编辑。普通旧捕获/历史仍依当前表验证，删除旧取得物种/等级范围可能让旧档不兼容，本轮没有静默迁移旧档。
 
 音频pack/catalog仅保留主游戏 generated/audio/synth 的canonical副本，库与CLI仍接受显式外部路径。删除两个无当前消费者的旧导出/验证入口；历史研究规格保留为历史，不假装缺失基线已恢复。两份重复素材减少2,571,624字节；移出前后Audio574项通过，CLI/demo构建通过，等参数短PCM字节一致。没有真实设备听测结论。
+
+## 显式图形资源退出清理
+
+已按模块补齐明确自有的基础字体/UI、battle字体/skin/darkArt、options、capture、storage、Tower独立纹理、center/oldman资源，Dispose后清空引用；SourceGameFont释放幂等。混合所有权字典不盲目遍历Dispose，既有SceneTextures/HallPc/MapCache路径保留。
+
+Godot构建零警告/错误。独立headless宿主验证正常退出、8模块重复释放与部分初始化失败：136个已创建自有包装对象释放后失效，40个借用options纹理仍有效，随后ExitTree再清理正常。缺catalog用例按预期退出21，无附带清理异常。以上不是全GPU释放、显存泄漏、FPS或听测结论；混合容器中其他自建纹理的归属与同步启动耗时仍是后续项。

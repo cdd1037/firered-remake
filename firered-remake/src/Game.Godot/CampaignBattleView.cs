@@ -56,6 +56,22 @@ public partial class CampaignView
             _battleDarkArt.Add(pair.Key,new(ImageTexture.CreateFromImage(display),pair.Value.Position));
         }
     }
+    private void DisposeBattlePresentation()
+    {
+        _battleSkin?.SetUserWindowAssets(null); // Selected option frames are borrowed.
+        _battleSkin?.Dispose(); _battleSkin=null!;
+        _battleDarkSkin?.Dispose(); _battleDarkSkin=null!;
+        _battleWhite?.Dispose(); _battleMenuFont?.Dispose(); _battleMoveFont?.Dispose();
+        _healthFont?.Dispose(); _healthDarkFont?.Dispose(); _healthMale?.Dispose(); _healthFemale?.Dispose();
+        _healthDarkMale?.Dispose(); _healthDarkFemale?.Dispose();
+        _battleWhite=_battleMenuFont=_battleMoveFont=_healthFont=_healthDarkFont=_healthMale=_healthFemale=_healthDarkMale=_healthDarkFemale=null!;
+        foreach(var font in _battlePpFont)font?.Dispose();
+        foreach(var font in _battlePpSmallFont)font?.Dispose();
+        Array.Clear(_battlePpFont); Array.Clear(_battlePpSmallFont);
+        // Unlike the mixed-ownership _battleArt, these derived textures are all owned here.
+        foreach(var art in _battleDarkArt.Values)art.Texture.Dispose();
+        _battleDarkArt.Clear();
+    }
     private string BattleName(FirstBattleSide side)=>side==FirstBattleSide.Player?_session.State.Battle!.OwnedBefore.Nickname:_catalog.PokemonContent!.SpeciesNames[_session.State.Battle!.State.Opponent.Pokemon.SourceSpeciesId];
     private ImmutableArray<string> BattleSourcePages(string symbol,params (string Key,string Value)[] extra)
     {

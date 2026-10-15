@@ -13,6 +13,7 @@ public sealed class SourceGameFont : IDisposable
     public const int LevelPrefixCodepoint = 0xE000;
     private readonly HashSet<int> _characters;
     private readonly HashSet<int> _warned = [];
+    private bool _disposed;
 
     public FontFile Font { get; }
     public int Size { get; }
@@ -178,5 +179,10 @@ public sealed class SourceGameFont : IDisposable
         return result;
     }
 
-    public void Dispose() => Font.Dispose();
+    public void Dispose()
+    {
+        if(_disposed)return;
+        _disposed=true;
+        Font.Dispose();
+    }
 }

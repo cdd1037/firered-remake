@@ -38,6 +38,14 @@ public partial class CampaignView
             StorageRgb555(title.TitleTextRgb555), StorageRgb555(title.TitleShadowRgb555));
     }
 
+    private void DisposeStorageCustomizationPresentation()
+    {
+        foreach(var texture in _storageCustomizationTextures.Values)texture.Dispose();
+        _storageCustomizationTextures.Clear(); _storageCustomizationArt=null;
+        _storageTitleFont?.Dispose(); _storageTitleFont=null;
+        ResetStorageCustomizationPresentation();
+    }
+
     private static Color StorageRgb555(int packed)
     {
         static float Channel(int value) => ((value << 3) | (value >> 2)) / 255f;

@@ -70,6 +70,16 @@ public partial class CampaignView
         _captureDex = document;
     }
 
+    private void DisposeCapturePresentation()
+    {
+        foreach(var texture in _captureTextures.Values)texture.Dispose();
+        _captureTextures.Clear(); _captureDex=null;
+        _captureDexNormal?.Dispose(); _captureDexSmall?.Dispose(); _captureDexDescription?.Dispose();
+        _captureDexTitle?.Dispose(); _captureDexFooter?.Dispose();
+        _captureDexNormal=_captureDexSmall=_captureDexDescription=_captureDexTitle=_captureDexFooter=null!;
+        // Back sprites in _battleArt were acquired through Texture(), not this owner.
+    }
+
     private ImmutableArray<InventoryStack> CaptureBagStacks => _session.State.Inventory is not { } inventory ? [] :
         _captureBerries ? inventory.Berries ?? [] : _captureBagPocket switch { 0 => inventory.BagItems, 1 => inventory.KeyItems ?? [], _ => inventory.Balls ?? [] };
 

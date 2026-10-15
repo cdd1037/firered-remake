@@ -15,8 +15,7 @@ public partial class CampaignView
 
     private void LoadCenterHealingPresentation()
     {
-        foreach (var texture in _centerHealingTextures.Values) texture.Dispose();
-        _centerHealingTextures.Clear(); _centerHealingArt = null; ResetCenterHealing();
+        DisposeCenterHealingPresentation();
         if (!_catalog.ViridianCenterEnabled) return;
         var directory = System.IO.Path.Combine(_root, "content/generated/ui/center-healing-art");
         var document = PretCenterHealingArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(directory, "center-healing-art.json")));
@@ -34,9 +33,14 @@ public partial class CampaignView
         }
         catch
         {
-            foreach (var texture in _centerHealingTextures.Values) texture.Dispose();
-            _centerHealingTextures.Clear(); throw;
+            DisposeCenterHealingPresentation(); throw;
         }
+    }
+
+    private void DisposeCenterHealingPresentation()
+    {
+        foreach(var texture in _centerHealingTextures.Values)texture.Dispose();
+        _centerHealingTextures.Clear(); _centerHealingArt=null; ResetCenterHealing();
     }
 
     private void ResetCenterHealing()

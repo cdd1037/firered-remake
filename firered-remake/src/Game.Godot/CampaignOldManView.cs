@@ -22,8 +22,7 @@ public partial class CampaignView
 
     private void LoadOldManPresentation()
     {
-        foreach (var texture in _oldManTextures.Values) texture.Dispose();
-        _oldManTextures.Clear(); _oldManArt = null; ResetOldManPresentation();
+        DisposeOldManPresentation();
         if (!_catalog.OldManTutorialEnabled) return;
         var directory = System.IO.Path.Combine(_root, "content/generated/sprites/pokemon/old-man");
         var document = PretOldManArt.Load(System.IO.File.ReadAllText(System.IO.Path.Combine(directory, "old-man-art.json")));
@@ -41,9 +40,14 @@ public partial class CampaignView
         }
         catch
         {
-            foreach (var texture in _oldManTextures.Values) texture.Dispose();
-            _oldManTextures.Clear(); throw;
+            DisposeOldManPresentation(); throw;
         }
+    }
+
+    private void DisposeOldManPresentation()
+    {
+        foreach(var texture in _oldManTextures.Values)texture.Dispose();
+        _oldManTextures.Clear(); _oldManArt=null; ResetOldManPresentation();
     }
 
     private void ResetOldManPresentation()
