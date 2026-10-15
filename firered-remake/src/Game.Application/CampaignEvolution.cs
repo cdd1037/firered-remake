@@ -275,9 +275,6 @@ public sealed partial class CampaignSession
         return species == owned.Pokemon.SourceSpeciesId;
     }
 
-    private IEnumerable<int> EvolvedSpecies(CampaignState state) => _content.ForestEnabled && state.EvolutionHistory is { } history
-        ? history.Where(e => e is not null).Select(e => e.TargetSpeciesId) : [];
-
     private static CampaignNormalEvolutionTrigger? NormalEvolutionTrigger(PokemonEvolutionMethod method, PokemonInstance pokemon) =>
         method == PokemonEvolutionMethod.Level ? null : method == PokemonEvolutionMethod.Friendship
             ? new(Friendship: pokemon.Friendship) : new(Attack: pokemon.Stats.Attack, Defense: pokemon.Stats.Defense);
@@ -299,7 +296,7 @@ public sealed partial class CampaignSession
             return state.Evolution is not null || state.EvolutionHistory is not null ? "save_evolution_profile_missing" : null;
         if (state.Evolution is not null) return "save_event_active";
         var history = state.EvolutionHistory ?? [];
-        var allOwned = HistoricalPokemon(state);
+        var allOwned = OwnedPokemon(state);
         if (history.IsDefault || history.Length > allOwned.Length * 2) return "save_evolution_history_invalid";
         var used = new HashSet<(string?, long)>();
         var latestLevel = new Dictionary<long, int>();
@@ -375,7 +372,6 @@ public sealed partial class CampaignSession
                 return "save_evolution_dex_invalid";
             latestLevel[entry.InstanceId] = entry.Level;
         }
-        if ((state.GameStats?.GetValueOrDefault(EvolutionCountStat) ?? 0) != history.Length) return "save_evolution_stat_invalid";
         return null;
     }
 }

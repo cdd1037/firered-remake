@@ -107,10 +107,12 @@ public sealed partial class CampaignSession
         {
             var fossil = FossilLabDefinitions.SingleOrDefault(f => f.Kind == receipt.FossilKind);
             if (fossil is null || receipt.SourceItemId != fossil.ItemNumber || receipt.SourceSpeciesId != fossil.Species ||
-                receipt.InstanceId < 2 || receipt.InstanceId >= state.NextPokemonId || receipt.Ivs is null ||
+                receipt.InstanceId < 2 || receipt.InstanceId >= state.NextPokemonId || receipt.Ivs is null || receipt.Ivs.Values.Any(v => v is < 0 or > 31) ||
                 !state.Script.Flags.GetValueOrDefault(fossil.AcquiredFlag)) return "save_fossil_lab_receipt_origin";
-            var matching = HistoricalPokemon(state).Where(p => p.InstanceId == receipt.InstanceId).ToArray();
-            if (matching.Length != 1) return "save_fossil_lab_receipt_instance";
+            var matching = OwnedPokemon(state).Where(p => p.InstanceId == receipt.InstanceId).ToArray();
+            if (matching.Length > 1 || !state.CaughtSpecies.Contains(fossil.Species) || !state.SeenSpecies.Contains(fossil.Species))
+                return "save_fossil_lab_receipt_instance";
+            if (matching.Length == 0) continue;
             var mon = matching[0];
             if (!EvolutionSpeciesMatchesOrigin(state, mon, fossil.Species) || mon.Pokemon.Personality != receipt.Personality ||
                 mon.Pokemon.Ivs != receipt.Ivs || mon.Pokemon.OriginalTrainerId != state.TrainerId ||

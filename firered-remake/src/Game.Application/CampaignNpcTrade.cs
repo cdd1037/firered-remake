@@ -165,6 +165,7 @@ public sealed partial class CampaignSession
                     CaughtSpecies = state.CaughtSpecies.Add(incoming.Pokemon.SourceSpeciesId),
                     NpcTrade = prepared with { Phase = CampaignNpcTradePhase.Presenting, Incoming = incoming },
                     Dialogue = null, ScreenIsBlack = false, PresentationTicks = NpcTradePresentationTicks };
+                next = CompactCurrentPokemonSources(next);
                 break;
         }
         return true;

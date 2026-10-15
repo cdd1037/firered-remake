@@ -4,7 +4,7 @@
 
 - `firered-remake/`：游戏工程。维护解决方案 `FireRed.Current.slnx`；Godot 工程 `src/Game.Godot/project.godot`。
 - `firered-audio-player/`：自定义合成器源码、开发工具和必要资源。主游戏继续使用合成音频。
-- `checkpoints/`：保留的代表存档与说明。当前 `current-catalogs-v4-20261015/continued-checkpoint.json` 为 generation 57604；不会自动覆盖用户存档槽。
+- `checkpoints/`：保留的代表存档与说明。当前 `current-ownership-v3-20261015/continued-checkpoint.json` 为 generation 57604；不会自动覆盖用户存档槽。
 
 ## 开发和运行
 

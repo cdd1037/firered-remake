@@ -144,10 +144,8 @@ public sealed partial class CampaignSession
     private string? ValidateCapturedParty(CampaignState state)
     {
         if(!_content.CaptureEnabled)return state.Exploration?.Captured is null?null:"save_capture_profile_missing";
-        var allOwned=HistoricalPokemon(state);int gifts=GiftCount(state), trades=NpcTradeCount(state), eggs=EggAcquisitionCount(state);
-        // Capture history is lifetime acquisition proof, not current capacity. Released/traded
-        // identities remain historical; delivery and storage validators bound current ownership.
-        if(state.Exploration?.Captured is not {} captures||captures.IsDefault||state.NextPokemonId!=(allOwned.IsEmpty?1:captures.Length+gifts+trades+eggs+2L)||allOwned.Length!=(allOwned.IsEmpty?0:captures.Length+gifts+trades+eggs+1))return "save_capture_party_count";
+        var allOwned=OwnedPokemon(state);
+        if(state.Exploration?.Captured is not {} captures||captures.IsDefault)return "save_capture_party_count";
         if(captures.Length>0&&!state.Script.Flags.GetValueOrDefault("FLAG_SYS_POKEDEX_GET"))return "save_capture_before_pokedex";
         var ids=new HashSet<long>();var battles=new HashSet<string>(StringComparer.Ordinal);
         foreach(var capture in captures)
@@ -164,7 +162,6 @@ public sealed partial class CampaignSession
             if(owned is null||!EvolutionSpeciesMatchesOrigin(state,owned,capture.SourceSpeciesId)||owned.Pokemon.Personality!=capture.Personality||owned.Pokemon.Ivs!=capture.Ivs||owned.MetLevel!=capture.MetLevel||owned.MetLocation!=capture.MetLocation||owned.Ball!=(capture.Ball??"ITEM_POKE_BALL"))return "save_capture_instance_mismatch";
             if(!state.Exploration.Battles.Any(b=>b.Id==capture.BattleId&&b.SourceSpeciesId==capture.SourceSpeciesId&&b.Level==capture.MetLevel&&b.Outcome==WildBattleOutcome.Caught&&b.ExperienceGained==0&&(b.RockSmashReceipt is null?capture.RockSmash is null:IsRockSmashCapture(state,capture))&&(b.SourceTableReceipt is null?capture.SourceTable is null:IsSourceTableCapture(state,capture))&&b.Fishing==capture.Fishing&&(b.SeafoamReceipt is null?capture.Seafoam is null:IsSeafoamCapture(state,capture))&&(b.PowerPlantReceipt is null?capture.PowerPlant is null:IsPowerPlantCapture(state,capture))&&(b.EventIslandReceipt is null?capture.EventIsland is null:IsEventIslandCapture(state,capture))&&b.CeruleanCaveOrigin==capture.CeruleanCaveOrigin&&(b.SevenIsland is null?capture.SevenIsland is null:IsSevenIslandCapture(state,capture))&&(b.CelioRoamer is null?capture.CelioRoamer is null:IsCelioRoamerCapture(state,capture))&&(b.FiveIsland is null?capture.FiveIsland is null:IsFiveIslandCapture(state,capture))&&(b.SixIsland is null?capture.SixIsland is null:IsSixIslandCapture(state,capture))&&(b.FourIsland is null?capture.FourIsland is null:IsFourIslandCapture(state,capture))&&(b.SeviiRuby is null||IsSeviiRubyCapture(state,capture))&&(b.VictoryRoad is null||_content.MapDefinition(b.VictoryRoad.Map).RegionMapSection==capture.MetLocation)))return "save_capture_history_missing";
         }
-        if(state.Exploration.Battles.Any(b=>b.Outcome==WildBattleOutcome.Caught&&!battles.Contains(b.Id)))return "save_capture_delivery_missing";
         return null;
     }
 
@@ -178,7 +175,7 @@ public sealed partial class CampaignSession
             _content.MapDefinition(origin.Map).RegionMapSection!=capture.MetLocation)return false;
         if(origin.Kind!=CeruleanCaveEncounterKind.Mewtwo)return true;
         var initial=history.MewtwoReceipt!.InitialPokemon;
-        var owned=HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
+        var owned=OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
         return capture.Personality==initial.Personality&&capture.Ivs==initial.Ivs&&initial.OriginalTrainerId==state.TrainerId&&
             owned is not null&&SourceOwnedIdentity(owned.Pokemon,initial);
     }

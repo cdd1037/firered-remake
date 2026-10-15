@@ -8,7 +8,6 @@ namespace Game.Application;
 
 public sealed partial class CampaignSession
 {
-    private bool SeenByRockSmash(CampaignState state,int species)=>state.Exploration?.Battles.Any(b=>b.SourceSpeciesId==species&&IsRockSmashHistory(b))==true;
     private bool IsRockSmashReceipt(CampaignRockSmashReceipt receipt)
     {
         if (receipt.Origin is not { } origin || (_content.FieldRockSmash is null || !_content.Maps.ContainsKey(origin.Map) || _content.FieldRockSmash.EncountersFor(origin.Map) is null) || receipt.InitialPokemon is not { } initial ||
@@ -44,7 +43,7 @@ public sealed partial class CampaignSession
             capture.SourceSpeciesId != history.SourceSpeciesId || capture.MetLevel != history.Level ||
             capture.MetLocation != _content.MapDefinition(origin.Map).RegionMapSection) return false;
         var initial = history.RockSmashReceipt.InitialPokemon;
-        var owned = HistoricalPokemon(state).FirstOrDefault(p => p.InstanceId == capture.InstanceId);
+        var owned = OwnedPokemon(state).FirstOrDefault(p => p.InstanceId == capture.InstanceId);
         return owned is not null && !owned.ModernFatefulEncounter && initial.OriginalTrainerId == state.TrainerId &&
             capture.Personality == initial.Personality && capture.Ivs == initial.Ivs &&
             owned.Pokemon.OriginalTrainerId == initial.OriginalTrainerId && owned.Pokemon.Personality == initial.Personality &&

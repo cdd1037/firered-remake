@@ -18,17 +18,10 @@ public sealed record CampaignPokemonLeagueCompletion(CampaignPokemonLeagueComple
 public sealed record CampaignHallOfFamePokemon(int PartySlot,long InstanceId,int SpeciesOrEgg,uint OriginalTrainerId,
     uint Personality,int Level,string Nickname,ImmutableArray<byte> NicknameBytes);
 public sealed record CampaignHallOfFameTeam(int ChallengeNumber,string TrainerBattleId,ImmutableArray<CampaignHallOfFamePokemon> Members);
-public sealed record CampaignHallOfFameRibbonRecipient(long InstanceId,int ChallengeNumber);
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record CampaignHallOfFameArchive(
     [property: JsonRequired] ImmutableArray<CampaignHallOfFameTeam> Teams,
-    [property: JsonRequired] int? FirstHallOfFamePlayTime)
-{
-    // Display teams roll over after fifty entries. Ribbon provenance must survive
-    // that rollover, so retain each recipient's first award independently.
-    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)]
-    public ImmutableArray<CampaignHallOfFameRibbonRecipient>? RibbonRecipients { get; init; }
-}
+    [property: JsonRequired] int? FirstHallOfFamePlayTime);
 public sealed record CampaignHallOfFameSaveRequest(string RequestId,CampaignState ContinueState,long Generation,string PayloadHash);
 
 /// <summary>Hall-of-Fame gameplay commits are independent from file I/O. The save
@@ -72,8 +65,6 @@ public sealed partial class CampaignSession
             throw new InvalidDataException("pokemon_league_hof_entry_context");
         var champion=(state.ForestTrainerHistory??[]).LastOrDefault(h=>h.PokemonLeagueChallenge==pending.ChallengeNumber&&IsPokemonLeagueChampion(new(h.TrainerId))&&h.Outcome==WildBattleOutcome.Won)
             ??throw new InvalidDataException("pokemon_league_champion_receipt_missing");
-        var recipients=PokemonLeagueRibbonRecipients(state.HallOfFame).AddRange(state.Party.Where(p=>!p.IsEgg&&!p.ChampionRibbon)
-            .Select(p=>new CampaignHallOfFameRibbonRecipient(p.InstanceId,pending.ChallengeNumber)));
         bool ribbon=state.Party.Any(p=>!p.IsEgg&&!p.ChampionRibbon);
         var party=state.Party.Select(p=>Game.Domain.FirstBattle.LabBattleRewards.Heal(BattlePokemon,p) with{ChampionRibbon=p.ChampionRibbon||!p.IsEgg}).ToImmutableArray();
         var members=party.Select((p,i)=>new CampaignHallOfFamePokemon(i,p.InstanceId,NameRaterRules.SpeciesOrEgg(p),p.Pokemon.OriginalTrainerId,
@@ -89,7 +80,7 @@ public sealed partial class CampaignSession
         if(ribbon){flags=flags.SetItem("FLAG_SYS_RIBBON_GET",true);stats=stats.SetItem("GAME_STAT_RECEIVED_RIBBONS",Math.Min(0xffffff,stats.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")+1));}
         return GrantEventIslandTicketsForHall(state with{Party=party,GameStats=stats,Script=state.Script with{Flags=flags},
             HallOfFame=new((state.HallOfFame?.Teams??[]).Add(new(pending.ChallengeNumber,champion.Id,members)).TakeLast(50).ToImmutableArray(),
-                firstTime){RibbonRecipients=recipients},
+                firstTime),
             PokemonLeagueCompletion=pending with{Stage=CampaignPokemonLeagueCompletionStage.AwaitingSave}},ribbon);
     }
     private CampaignState PokemonLeagueContinueSnapshot(CampaignState state)
@@ -157,29 +148,19 @@ public sealed partial class CampaignSession
             default:decision=new(CommandStatus.Rejected,state,"pokemon_league_soft_reset_required");return true;
         }
     }
-    private static ImmutableArray<CampaignHallOfFameRibbonRecipient> PokemonLeagueRibbonRecipients(CampaignHallOfFameArchive? archive)
-    {
-        if(archive is null)return [];
-        if(archive.RibbonRecipients is {} recorded)return recorded;
-        // The pre-extension archive contained exactly the first complete team.
-        // Recover its awards from those immutable snapshots, never today's party.
-        return archive.Teams.SelectMany(t=>t.Members.Where(m=>m.SpeciesOrEgg!=412)
-            .Select(m=>new CampaignHallOfFameRibbonRecipient(m.InstanceId,t.ChallengeNumber)))
-            .DistinctBy(r=>r.InstanceId).ToImmutableArray();
-    }
     private string? ValidatePokemonLeagueHallOfFame(CampaignState state)
     {
         var completions=(state.PokemonLeague?.Resets??[]).Where(r=>r.Reason=="hall-of-fame").ToArray();
         if(state.HallOfFame is not {} archive)
-            return state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")||HistoricalPokemon(state).Any(p=>p.ChampionRibbon)||completions.Length!=0||
-                (state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")>0||state.GameStats?.GetValueOrDefault(FirstHallOfFameTimeStat)>0)?"save_pokemon_league_hof_missing":null;
+            return state.Script.Flags.GetValueOrDefault("FLAG_SYS_GAME_CLEAR")||OwnedPokemon(state).Any(p=>p.ChampionRibbon)||completions.Length!=0||
+                (state.Script.Flags.GetValueOrDefault("FLAG_SYS_RIBBON_GET")||state.GameStats?.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")>0||
+                 state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")>0||state.GameStats?.GetValueOrDefault(FirstHallOfFameTimeStat)>0)?"save_pokemon_league_hof_missing":null;
         if(!PokemonLeagueCompletedContinue(state)||archive.Teams.IsDefault||archive.Teams.Length is <1 or >50||
             archive.Teams.Length!=Math.Min(50,completions.Length)||archive.Teams.Any(t=>t is null)||
             !ValidHallOfFamePlayTime(state,archive)||!_content.NationalDexEnabled&&(state.LastHealingLocation!="HEAL_LOCATION_PALLET_TOWN"||
             state.Script.Variables.GetValueOrDefault("VAR_MAP_SCENE_PALLET_TOWN_OAK")!=2)||state.Script.Flags.GetValueOrDefault("FLAG_HIDE_POSTGAME_GOSSIPERS")||
 
-            state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")!=Math.Min(999,completions.Length)||
-            archive.RibbonRecipients is null&&completions.Length!=1)return "save_pokemon_league_hof_state";
+            state.GameStats?.GetValueOrDefault("GAME_STAT_ENTERED_HOF")!=Math.Min(999,completions.Length))return "save_pokemon_league_hof_state";
         if(!archive.Teams.Select(t=>t.ChallengeNumber).SequenceEqual(completions.TakeLast(50).Select(r=>r.ChallengeNumber)))return "save_pokemon_league_hof_receipt";
         foreach(var team in archive.Teams)
         {
@@ -190,28 +171,23 @@ public sealed partial class CampaignSession
                 team.Members.Length is <1 or >6||team.Members.Select(m=>m.InstanceId).Distinct().Count()!=team.Members.Length)return "save_pokemon_league_hof_receipt";
             for(int i=0;i<team.Members.Length;i++)
             {
-                var m=team.Members[i];var p=HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==m.InstanceId);
-                if(p is null||m.PartySlot!=i||m.SpeciesOrEgg is <1 or >412||m.OriginalTrainerId!=p.Pokemon.OriginalTrainerId||
-                    m.Personality!=p.Pokemon.Personality||m.Level is <1 or >100||m.Level>p.Pokemon.Level||m.Nickname is null||
-                    m.Nickname.Length is <1 or >10||(m.SpeciesOrEgg==412?m.Nickname!="EGG":m.Nickname.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c)))||m.NicknameBytes.IsDefault||
-                    m.SpeciesOrEgg!=NameRaterRules.SpeciesOrEgg(p)&&!(m.SpeciesOrEgg==412&&HasHatchedEggReceipt(state,p.InstanceId))&&!(state.EvolutionHistory??[]).Any(e=>e.InstanceId==p.InstanceId&&e.PreviousSpeciesId==m.SpeciesOrEgg&&e.Level>=m.Level)||
-                    !m.NicknameBytes.SequenceEqual(PokemonLeagueNicknameBytes(m.Nickname))||m.SpeciesOrEgg!=412&&!p.ChampionRibbon)
+                var m=team.Members[i];
+                // These are display snapshots, not references to today's owned entities.
+                // Renaming, evolution, hatching, trading and release cannot rewrite them.
+                if(m.PartySlot!=i||m.InstanceId<=0||m.InstanceId>=state.NextPokemonId||
+                    m.SpeciesOrEgg!=412&&!BattlePokemon.Species.Values.Any(s=>s.SourceSpeciesId==m.SpeciesOrEgg)||
+                    m.Level is <1 or >100||m.Nickname is null||m.Nickname.Length is <1 or >10||
+                    (m.SpeciesOrEgg==412?m.Nickname!="EGG":m.Nickname.Any(c=>!PokemonStateValidator.NicknameAlphabet.Contains(c)))||
+                    m.NicknameBytes.IsDefault||!m.NicknameBytes.SequenceEqual(PokemonLeagueNicknameBytes(m.Nickname)))
                     return "save_pokemon_league_hof_member";
             }
         }
-        var recipients=PokemonLeagueRibbonRecipients(archive);
-        if(recipients.IsDefault||recipients.Any(r=>r is null)||recipients.Select(r=>r.InstanceId).Distinct().Count()!=recipients.Length||
-            recipients.Any(r=>!completions.Any(c=>c.ChallengeNumber==r.ChallengeNumber)||!HistoricalPokemon(state).Any(p=>p.InstanceId==r.InstanceId&&!p.IsEgg&&p.ChampionRibbon)))
-            return "save_pokemon_league_hof_ribbon";
-        foreach(var team in archive.Teams)
-        {
-            if(team.Members.Any(m=>m.SpeciesOrEgg!=412&&!recipients.Any(r=>r.InstanceId==m.InstanceId&&r.ChallengeNumber<=team.ChallengeNumber))||
-                recipients.Any(r=>r.ChallengeNumber==team.ChallengeNumber&&!team.Members.Any(m=>m.InstanceId==r.InstanceId&&m.SpeciesOrEgg!=412)))
-                return "save_pokemon_league_hof_ribbon";
-        }
-        if(HistoricalPokemon(state).Any(p=>p.ChampionRibbon&&!recipients.Any(r=>r.InstanceId==p.InstanceId))||
-            state.Script.Flags.GetValueOrDefault("FLAG_SYS_RIBBON_GET")!=(recipients.Length>0)||
-            state.GameStats!.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS")!=Math.Min(0xffffff,recipients.Select(r=>r.ChallengeNumber).Distinct().Count()))
+        // Ribbon statistics and the unlock flag are cumulative gameplay facts. They
+        // survive the departure of every recipient and the fifty-team display rollover.
+        int ribbons=state.GameStats!.GetValueOrDefault("GAME_STAT_RECEIVED_RIBBONS");
+        if(ribbons<0||ribbons>Math.Min(0xffffff,completions.Length)||
+            state.Script.Flags.GetValueOrDefault("FLAG_SYS_RIBBON_GET")!=(ribbons>0)||
+            (OwnedPokemon(state).Any(p=>p.ChampionRibbon)||archive.Teams.Any(t=>t.Members.Any(m=>m.SpeciesOrEgg!=412)))&&ribbons==0)
             return "save_pokemon_league_hof_ribbon";
         return null;
     }

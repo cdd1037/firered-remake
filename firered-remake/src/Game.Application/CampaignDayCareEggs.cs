@@ -25,10 +25,6 @@ public sealed record CampaignEggHatch(int PartyIndex, long InstanceId, int Sourc
 
 public sealed partial class CampaignSession
 {
-    private static int EggAcquisitionCount(CampaignState state) => (state.DayCareEggs ?? []).Length + (state.GiftEggs ?? []).Length;
-    private static IEnumerable<int> HatchedEggSpecies(CampaignState state) =>
-        (state.DayCareEggs ?? []).Where(e => e.Hatch is not null).Select(e => e.SourceSpeciesId)
-            .Concat((state.GiftEggs ?? []).Where(e => e.Hatch is not null).Select(e => e.SourceSpeciesId));
     private SourceEggTrainer EggTrainer(CampaignState state) => new(state.TrainerId, state.PlayerName, state.PlayerGender);
 
     private CampaignState ApplyDayCareWalkingStep(CampaignState state)
@@ -70,7 +66,7 @@ public sealed partial class CampaignSession
 
     private PartyPokemon RebuildEggParent(CampaignEggParent parent, CampaignState state)
     {
-        if (parent is null || parent.Ivs is null || parent.Moves.IsDefaultOrEmpty || parent.Moves.Length > 4 || parent.Moves.Distinct().Count() != parent.Moves.Length)
+        if (parent is null || parent.InstanceId < 1 || parent.Ivs is null || parent.Moves.IsDefaultOrEmpty || parent.Moves.Length > 4 || parent.Moves.Distinct().Count() != parent.Moves.Length)
             throw new InvalidDataException("save_daycare_parent_receipt");
         var content = _content.PokemonContent!;
         var species = content.Catalog.Species.Values.Single(p => p.SourceSpeciesId == parent.SourceSpeciesId);
@@ -87,21 +83,12 @@ public sealed partial class CampaignSession
             2, "MAPSEC_FOUR_ISLAND", 0, 4, "ITEM_POKE_BALL", parent.HeldItem);
     }
 
-    private static bool DayCareParentSpeciesMatches(CampaignState state, PartyPokemon actual, int receivedSpecies)
-    {
-        if (actual.Pokemon.SourceSpeciesId == receivedSpecies) return true;
-        int species = receivedSpecies;
-        foreach (var entry in (state.EvolutionHistory ?? []).Where(e => e is not null && e.InstanceId == actual.InstanceId))
-            if (entry.PreviousSpeciesId == species) species = entry.TargetSpeciesId;
-        return species == actual.Pokemon.SourceSpeciesId;
-    }
-
     private string? ValidateDayCareEggReceipts(CampaignState state)
     {
         var receipts = state.DayCareEggs ?? [];
         if (receipts.IsDefault || receipts.Any(e => e is null)) return "save_daycare_egg_receipts";
-        var history = HistoricalPokemon(state);
-        if (history.Any(p => p.IsEgg && !EggAcquisitionIds(state).Contains(p.InstanceId))) return "save_daycare_egg_acquisition_missing";
+        var ownedPokemon = OwnedPokemon(state);
+        if (ownedPokemon.Any(p => p.IsEgg && !EggAcquisitionIds(state).Contains(p.InstanceId))) return "save_daycare_egg_acquisition_missing";
         var ids = new HashSet<long>(); long lastId = 1; ulong lastCursor = 0;
         foreach (var receipt in receipts)
         {
@@ -110,16 +97,10 @@ public sealed partial class CampaignSession
                 receipt.First.InstanceId >= receipt.InstanceId || receipt.Second.InstanceId >= receipt.InstanceId || receipt.PendingPersonality == 0 ||
                 receipt.ReceivedLocation != "MAPSEC_FOUR_ISLAND" || receipt.RngBefore.Cursor < lastCursor || receipt.RngAfter.Cursor > state.World.Rng.Cursor)
                 return "save_daycare_egg_origin";
-            var owned = history.SingleOrDefault(p => p.InstanceId == receipt.InstanceId);
+            var owned = ownedPokemon.SingleOrDefault(p => p.InstanceId == receipt.InstanceId);
             if (owned is null || owned.Pokemon.Personality != receipt.Personality || owned.Pokemon.Ivs != receipt.Ivs || owned.MetLevel != 0 ||
                 owned.Pokemon.OriginalTrainerId != state.TrainerId || owned.Ball != "ITEM_POKE_BALL" || owned.MetGame != 4 ||
                 owned.ModernFatefulEncounter || !EvolutionSpeciesMatchesOrigin(state, owned, receipt.SourceSpeciesId)) return "save_daycare_egg_identity";
-            foreach (var parent in new[] { receipt.First, receipt.Second })
-            {
-                var actual = history.SingleOrDefault(p => p.InstanceId == parent.InstanceId);
-                if (actual is null || actual.Pokemon.Personality != parent.Personality || actual.Pokemon.Ivs != parent.Ivs ||
-                    actual.Pokemon.OriginalTrainerId != parent.TrainerId || !DayCareParentSpeciesMatches(state, actual, parent.SourceSpeciesId)) return "save_daycare_egg_parent_identity";
-            }
             try
             {
                 var parents = new FourIslandDayCareState(new(RebuildEggParent(receipt.First, state), 0), new(RebuildEggParent(receipt.Second, state), 0), receipt.PendingPersonality, 0);

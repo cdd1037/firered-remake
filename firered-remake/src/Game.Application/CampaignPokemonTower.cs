@@ -14,7 +14,6 @@ public sealed partial class CampaignSession
     private const string TowerHouseSource="data/maps/LavenderTown_VolunteerPokemonHouse/scripts.inc";
     private static bool TowerMap(string map)=>map.StartsWith("map.pokemon-tower-",StringComparison.Ordinal);
     private bool HasSilphScope(CampaignState s)=>OpeningInventoryRules.Quantity(s.Inventory?.KeyItems??[],RocketHideoutItemRules.SilphScopeId)==1;
-    private bool SeenByTowerMarowak(CampaignState s,int species)=>_content.PokemonTowerEnabled&&species==105&&HasSilphScope(s)&&(s.Exploration?.Battles.Any(b=>b.ScriptedMarowak&&b.SourceSpeciesId==105)??false);
     private bool IsTowerButton(CampaignState s)=>_content.PokemonTowerEnabled&&s.Script.Wait?.Kind==StoryWaitKind.ButtonPress&&s.World.Player.MapId.Value=="map.pokemon-tower-6f"&&!s.Script.Stack.IsEmpty&&s.Script.Stack[^1].ProgramId=="PokemonTower_6F_EventScript_DefeatedMarowakGhost";
     private Decision<CampaignState> DecideTowerButton(CampaignState s,CampaignCommand c)
     {

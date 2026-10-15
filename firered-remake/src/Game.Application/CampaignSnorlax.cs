@@ -16,7 +16,6 @@ public sealed partial class CampaignSession
     private static int SnorlaxRoute(string map)=>map switch{"map.route-12"=>12,"map.route-16"=>16,_=>0};
     private static string SnorlaxHideFlag(int route)=>"FLAG_HIDE_ROUTE_"+route+"_SNORLAX";
     private static string SnorlaxScript(int route)=>"Route"+route+"_EventScript_Snorlax";
-    private bool SeenBySnorlax(CampaignState s,int species)=>_content.SnorlaxEnabled&&species==143&&s.Exploration!.Battles.Any(b=>b.ScriptedSnorlaxRoute is 12 or 16);
     private bool IsSnorlaxHistory(CampaignWildHistory b)=>_content.SnorlaxEnabled&&b.ScriptedSnorlaxRoute is 12 or 16&&!b.ScriptedMarowak&&b.SourceSpeciesId==143&&b.Level==30&&
         (b.Outcome==WildBattleOutcome.Won||b.ExperienceGained==0);
     private bool IsSnorlaxCapture(CampaignState s,CampaignCapturedPokemon c)=>c.SourceSpeciesId==143&&c.MetLevel==30&&s.Exploration!.Battles.Any(b=>b.Id==c.BattleId&&IsSnorlaxHistory(b)&&b.Outcome==WildBattleOutcome.Caught&&c.MetLocation=="MAPSEC_ROUTE_"+b.ScriptedSnorlaxRoute);

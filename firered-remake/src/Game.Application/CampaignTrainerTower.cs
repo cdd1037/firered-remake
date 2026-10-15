@@ -85,9 +85,6 @@ public sealed partial class CampaignSession
         }
         return null;
     }
-    private bool SeenByTrainerTower(CampaignState state,int species) => _content.TrainerTowerCatalog is {} catalog &&
-        (state.TrainerTowerHistory??[]).Any(h=>catalog.DescribeBattle(h.Course,h.FloorIndex,h.TrainerIndex,h.Level).Members
-            .Where((m,i)=>h.OpponentsSeen.Contains(i)).Any(m=>m.Template.SourceSpeciesId==species));
 
     private bool TryApplyTrainerTowerEffect(CampaignState state,StoryEffect effect,out CampaignState next)
     {

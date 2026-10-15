@@ -6,7 +6,6 @@ _bootstrap_sys.path.insert(0, str(_BootstrapPath(__file__).resolve().parents[2] 
 from project_paths import PROJECT_ROOT as _PROJECT_ROOT
 
 import argparse
-import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -21,7 +20,6 @@ a = p.parse_args()
 root, source, output = a.project_root.resolve(), a.source.resolve(), a.output.resolve()
 output.mkdir(parents=True, exist_ok=False)
 original = source.read_bytes()
-original_sha = hashlib.sha256(original).hexdigest()
 observations = []
 
 def run(name, src, dst, success):
@@ -32,31 +30,42 @@ def run(name, src, dst, success):
     assert (result.returncode == 0) == success, (name, result.returncode, result.stderr[-1000:])
     assert source.read_bytes() == original, "original milestone was modified"
     observations.append({"case": name, "exitCode": result.returncode,
-                         "sourceSha256Unchanged": original_sha})
+                         "sourceBytesUnchanged": True})
 
 target = output / "current.json"
 run("valid", source, target, True)
 converted = target.read_bytes()
 old, new = json.loads(original), json.loads(converted)
-assert new["RulesVersion"] == "firered-current-campaign-v2"
-assert new["ContentVersion"] == "firered-current-content-v4"
-assert old["ContentVersion"] != new["ContentVersion"]
+assert old["RulesVersion"] == "firered-current-campaign-v2"
+assert new["RulesVersion"] == "firered-current-campaign-v3"
+assert new["ContentVersion"] == old["ContentVersion"] == "firered-current-content-v4"
 expected_payload = json.loads(json.dumps(old["Payload"]))
-removed_origins = []
-def remove_old_origin(node, path="Payload"):
-    if isinstance(node, dict):
-        for key, value in list(node.items()):
-            if key == "NpcTradeOrigin" and isinstance(value, dict) and "CatalogFingerprint" in value:
-                assert set(value) == {"CatalogFingerprint", "TradeId", "ReceivedLevel"}
-                del value["CatalogFingerprint"]
-                removed_origins.append(path + ".NpcTradeOrigin.CatalogFingerprint")
-            remove_old_origin(value, path + "." + key)
-    elif isinstance(node, list):
-        for index, value in enumerate(node):
-            remove_old_origin(value, path + f"[{index}]")
-if old["ContentVersion"] == "firered-current-content-v3":
-    remove_old_origin(expected_payload)
-assert expected_payload == new["Payload"], "conversion changed actual gameplay values"
+expected_payload.pop("ReleasedPokemon", None)
+if expected_payload.get("HallOfFame"):
+    expected_payload["HallOfFame"].pop("RibbonRecipients", None)
+owned = list(expected_payload["Party"])
+owned += [p for box in expected_payload["Storage"]["Boxes"] for p in box["Slots"] if p]
+if (expected_payload.get("Route5DayCare") or {}).get("Resident"):
+    owned.append(expected_payload["Route5DayCare"]["Resident"]["Pokemon"])
+for slot in ("First", "Second"):
+    if (expected_payload.get("FourIslandDayCare") or {}).get(slot):
+        owned.append(expected_payload["FourIslandDayCare"][slot]["Pokemon"])
+ids = {p["InstanceId"] for p in owned}
+for key in ("EvolutionHistory", "PrizePokemon", "DayCareEggs"):
+    if expected_payload.get(key) is not None:
+        expected_payload[key] = [p for p in expected_payload[key] if p["InstanceId"] in ids]
+exploration = expected_payload["Exploration"]
+if exploration.get("Captured") is not None:
+    exploration["Captured"] = [p for p in exploration["Captured"] if p["InstanceId"] in ids]
+# Retained settlements must be an unchanged ordered subset. All other remaining
+# values are compared exactly; the CLI also applies the current semantic validator.
+retained = new["Payload"]["Exploration"]["Battles"]
+remaining = iter(exploration["Battles"])
+for row in retained:
+    assert any(candidate == row for candidate in remaining), "settlement changed or reordered"
+assert retained[-1:] == exploration["Battles"][-1:]
+exploration["Battles"] = retained
+assert expected_payload == new["Payload"], "conversion changed remaining gameplay values"
 assert old["Generation"] == new["Generation"]
 assert old["SchemaVersion"] == new["SchemaVersion"]
 assert old["GameEdition"] == new["GameEdition"]
@@ -82,13 +91,12 @@ for name, arguments in [
     assert not Path(arguments[-1]).exists(), "retired command published an output"
     assert source.read_bytes() == original, "original milestone was modified"
     observations.append({"case": name, "exitCode": result.returncode,
-                         "sourceSha256Unchanged": original_sha})
+                         "sourceBytesUnchanged": True})
 assert not list(output.glob(".firered-checkpoint-*.tmp"))
 report = {"passed": True, "cases": observations, "source": str(source),
-          "target": str(target), "sourceSha256": original_sha,
-          "targetSha256": hashlib.sha256(converted).hexdigest(),
+          "target": str(target), "sourceBytesUnchanged": True,
           "generation": new["Generation"], "payloadHash": new["PayloadHash"],
-          "wholeGameplayPayloadUnchanged": True, "removedObsoleteOriginFields": removed_origins}
+          "remainingGameplayValuesUnchanged": True, "retiredEntityFieldsRemoved": True}
 (output / "result.json").write_text(json.dumps(report, indent=2) + "\n")
 print(json.dumps({"passed": True, "cases": len(observations),
                   "generation": new["Generation"], "target": str(target)}))

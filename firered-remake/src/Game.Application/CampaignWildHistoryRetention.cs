@@ -59,22 +59,10 @@ public static class CampaignWildHistoryRetention
             referenced.Add(hiddenMewtwoEscape);
         if (marowakVictory is not null) referenced.Add(marowakVictory);
         var retained = ImmutableArray.CreateBuilder<CampaignWildHistory>();
-        var rockSmashSeen = new HashSet<int>();
-        var seafoamSeen = new HashSet<int>();
-        var powerPlantSeen = new HashSet<int>();
-        var sevenIslandSeen = new HashSet<int>();
         for (var i = 0; i < exploration.Battles.Length; i++)
         {
             var battle = exploration.Battles[i];
-            // Evaluate first-sighting membership even when another reference keeps this row.
-            // Unown uses its first sighting unless a (separately retained) capture supersedes it.
-            bool firstSighting = false;
-            if (battle.RockSmashReceipt is not null) firstSighting |= rockSmashSeen.Add(battle.SourceSpeciesId);
-            if (battle.SeafoamReceipt is { Origin.Kind: not SeafoamEncounterKind.Articuno }) firstSighting |= seafoamSeen.Add(battle.SourceSpeciesId);
-            if (battle.PowerPlantReceipt is { Origin.Kind: PowerPlantEncounterKind.Land }) firstSighting |= powerPlantSeen.Add(battle.SourceSpeciesId);
-            if (battle.SevenIsland is not null) firstSighting |= sevenIslandSeen.Add(battle.SourceSpeciesId);
-            if (i == exploration.Battles.Length - 1 || battle.Outcome == WildBattleOutcome.Caught ||
-                referenced.Contains(battle.Id) || firstSighting)
+            if (i == exploration.Battles.Length - 1 || referenced.Contains(battle.Id))
                 retained.Add(battle);
         }
         var removed = exploration.Battles.Length - retained.Count;

@@ -22,8 +22,6 @@ public sealed partial class CampaignSession
     private const string MewtwoFought="FLAG_FOUGHT_MEWTWO";
     private static bool IsMewtwoBattle(CampaignWildBattle battle)=>
         battle.Frame.WildEncounter?.CeruleanCave?.Kind==CeruleanCaveEncounterKind.Mewtwo;
-    private bool SeenByMewtwo(CampaignState s,int species)=>species==150&&
-        s.Exploration?.Battles.Any(IsMewtwoHistory)==true;
 
     private static void ValidateCeruleanCaveCatalog(ICampaignCatalog content)
     {

@@ -53,7 +53,7 @@ public sealed partial class CampaignSession
         return new(CommandStatus.Accepted, next);
     }
 
-    // The held cursor participates in the same acquisition/retirement and Mail proofs as
+    // The held cursor participates in the same current ownership and Mail checks as
     // party/boxes. Stable save validation continues to reject the open native PC first.
     private string? ValidateStorageMoveOwnership(CampaignState state) =>
         ValidateStorageState(state) ?? ValidateCampaignMail(state) ?? ValidateNpcTradeHistory(state) ?? ValidateCapturedParty(state);

@@ -40,7 +40,7 @@ explicit residual layout debt, not required historical compatibility layers.
 ## Checkpoints and verification limits
 
 The current content version is `firered-current-content-v4`; campaign rules remain
-`firered-current-campaign-v2`. Use the explicit offline
+`firered-current-campaign-v3`. Use the explicit offline
 `convert-current-checkpoint SOURCE NEW_DESTINATION` tooling command for older
 checkpoints. Normal Continue does not silently migrate schemas. Save integrity
 and all actual player state remain part of the save contract.
@@ -94,3 +94,21 @@ and ResourceImport (21) cases: 512 passed, no failures or skips. Battle/Audio
 were not rerun for those non-battle/audio changes. Ordinary settled wild-history
 retention and its remaining special-ledger limitations are documented in
 [wild history retention](wild-history-retention.md).
+
+## Current ownership rules (campaign v3)
+
+Released Pokemon and ribbon-recipient proof lists are no longer persisted.
+Acquisition/evolution sources are retained for current ownership and active work;
+finite gift/trade completion, independent Hall of Fame snapshots, Pokedex facts
+and cumulative statistics survive an entity leaving. IDs remain monotonic.
+
+The explicit prior-rules checkpoint conversion preserves RNG, generation and the
+original input file. The current representative checkpoint is 196,808 bytes,
+compared with 205,104 bytes after the preceding battle-history reduction. This
+8,296-byte difference is the ownership cleanup's incremental change, not the
+entire reduction from the older 315,347-byte file.
+
+Final affected-project verification: Application 202/202 and ResourceImport 23/23,
+zero failures or skips; complete solution build zero warnings/errors. Other focused
+groups overlap and are not added to those totals. See [retention contract](wild-history-retention.md)
+for remaining finite receipts and unrelated long-running-history limits.

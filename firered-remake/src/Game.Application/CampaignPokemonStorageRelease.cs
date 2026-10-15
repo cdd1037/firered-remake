@@ -26,8 +26,8 @@ public sealed partial class CampaignSession
                 : PokemonStorageReleaseRules.ReleaseHeld(_content.PokemonContent, state.Party, storage, pc.MoveCursor, pending.InstanceId);
             if (!released.Succeeded) return No(released.Diagnostic!.Code);
             var next = state with { Party = released.Party, Storage = released.Storage,
-                Pc = pc with { MoveCursor = released.Cursor, ReleaseTarget = null },
-                ReleasedPokemon = (state.ReleasedPokemon ?? []).Add(released.ReleasedPokemon!) };
+                Pc = pc with { MoveCursor = released.Cursor, ReleaseTarget = null } };
+            next = CompactCurrentPokemonSources(next);
             if (ValidateStorageMoveOwnership(next) is {} error) return No(error);
             return new(CommandStatus.Accepted, next);
         }
@@ -57,30 +57,4 @@ public sealed partial class CampaignSession
             : No(check.Diagnostic!.Code);
     }
 
-    // Release is retirement, never a new acquisition. Keep exactly the final object, including
-    // its departing held item. The existing capture/gift/trade/evolution/Hall validators continue
-    // to resolve the identity through HistoricalPokemon after this structural validation.
-    private string? ValidateReleasedPokemon(CampaignState state)
-    {
-        if (state.ReleasedPokemon is not {} released) return null;
-        if (released.IsDefault || released.IsEmpty) return "save_release_history_invalid";
-        var occupied = OwnedPokemon(state).Select(p => p.InstanceId).ToHashSet();
-        foreach (var trade in state.NpcTrades ?? [])
-            if (trade?.Outgoing is {} outgoing) occupied.Add(outgoing.InstanceId);
-        foreach (var pokemon in released)
-        {
-            if (PokemonStateValidator.ValidateParty(_content.PokemonContent, pokemon) is not null ||
-                pokemon.InstanceId >= state.NextPokemonId || pokemon.IsEgg || pokemon.Mail != SourceMailState.NoMail ||
-                SourceMailRules.IsMailItem(pokemon.HeldItem)) return "save_release_pokemon_invalid";
-            if (!occupied.Add(pokemon.InstanceId)) return "save_release_ownership_duplicate";
-            if (!state.CaughtSpecies.Contains(pokemon.Pokemon.SourceSpeciesId) ||
-                !HasSupportedCampaignOriginalTrainer(state, pokemon) || pokemon.Language != 2 || pokemon.MetGame != 4 ||
-                ((!_content.CaptureEnabled || pokemon.InstanceId == 1) &&
-                    (pokemon.MetLocation != "MAPSEC_PALLET_TOWN" || pokemon.MetLevel != 5)) ||
-                pokemon.Ball != "ITEM_POKE_BALL" && !(pokemon.InstanceId != 1 &&
-                    (AdditionalCaptureBallSupported(pokemon.Ball) || pokemon.Ball == "ITEM_SAFARI_BALL" && _content.SafariEnabled)) ||
-                !OwnedHeldItemSupported(state, pokemon)) return "save_release_origin_invalid";
-        }
-        return null;
-    }
 }

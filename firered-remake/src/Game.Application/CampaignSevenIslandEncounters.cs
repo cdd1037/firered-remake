@@ -50,12 +50,11 @@ public sealed partial class CampaignSession
                 history.SevenIslandReceipt.RngAfter.Cursor > state.World.Rng.Cursor) return "save_seven_island_wild_receipt";
             if (history.SourceSpeciesId == 201 && !state.Script.Flags.GetValueOrDefault("FLAG_SYS_UNLOCKED_TANOBY_RUINS")) return "save_unown_locked_origin";
         }
-        var sightings = histories.Where(h => h.SourceSpeciesId == 201).ToArray();
-        var first = sightings.FirstOrDefault(h => h.Outcome == WildBattleOutcome.Caught) ?? sightings.FirstOrDefault();
-        uint? expected = first?.SevenIslandReceipt?.InitialPokemon.Personality;
-        if (state.SeenSpecies.Contains(201) != (first is not null) ||
-            state.CaughtSpecies.Contains(201) != sightings.Any(h => h.Outcome == WildBattleOutcome.Caught) ||
-            state.UnownPokedexPersonality != expected) return "save_unown_pokedex_representative";
+        // This is a Pokédex fact: the first capture replaces the first-seen form,
+        // and releasing that individual never changes the representative.
+        if (state.SeenSpecies.Contains(201) != state.UnownPokedexPersonality.HasValue ||
+            state.SeenSpecies.Contains(201) && !state.Script.Flags.GetValueOrDefault("FLAG_SYS_UNLOCKED_TANOBY_RUINS"))
+            return "save_unown_pokedex_representative";
         return null;
     }
 }

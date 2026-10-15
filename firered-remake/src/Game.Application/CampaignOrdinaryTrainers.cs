@@ -68,7 +68,5 @@ public sealed partial class CampaignSession
         "TRAINER_CLASS_BIRD_KEEPER"=>"BIRD KEEPER","TRAINER_CLASS_ROCKER"=>"ROCKER","TRAINER_CLASS_BIKER"=>"BIKER","TRAINER_CLASS_BEAUTY"=>"BEAUTY","TRAINER_CLASS_COOLTRAINER"=>"COOLTRAINER",
         _=>throw new InvalidDataException("ordinary_trainer_class_unsupported")
     };
-    private bool SeenByOrdinaryTrainer(CampaignState state,int species)=>_content.ForestTrainersEnabled&&(state.ForestTrainerHistory??[]).Any(h=>
-        OrdinaryTrainerIds.Contains(new TrainerId(h.TrainerId))&&h.OpponentsSent.Any(n=>n>=0&&n<OrdinaryTrainer(new TrainerId(h.TrainerId)).Party.Length&&OrdinaryTrainer(new TrainerId(h.TrainerId)).Party[n].SourceSpeciesId==species));
     private int OrdinaryWonFlagCount(CampaignState state)=>state.BattledTrainers.Count(x=>OrdinaryTrainerIds.Contains(new TrainerId(x)));
 }

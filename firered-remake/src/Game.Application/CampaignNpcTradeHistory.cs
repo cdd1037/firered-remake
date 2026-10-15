@@ -20,15 +20,6 @@ public sealed record CampaignNpcTradeReceipt(int TradeId, int PartyIndex, PartyP
 
 public sealed partial class CampaignSession
 {
-    // History resolution is deliberately separate from current gameplay ownership.
-    // ValidateStorageState checks released snapshots before acquisition/origin validation uses history.
-    private ImmutableArray<PartyPokemon> HistoricalPokemon(CampaignState state) =>
-        OwnedPokemon(state).AddRange((state.NpcTrades ?? []).Select(t => t.Outgoing)).AddRange(state.ReleasedPokemon ?? []);
-
-    private static int NpcTradeCount(CampaignState state) => (state.NpcTrades ?? []).Length;
-    private static IEnumerable<int> NpcTradeSourceSpecies(CampaignState state) =>
-        (state.NpcTrades ?? []).Select(t => t.Incoming.Pokemon.SourceSpeciesId);
-
     private bool HasSupportedCampaignOriginalTrainer(CampaignState state, PartyPokemon owned)
     {
         if (owned.Pokemon.NpcTradeOrigin is null)
@@ -101,12 +92,10 @@ public sealed partial class CampaignSession
             lastCursor = receipt.RngAfter.Cursor;
         }
 
-        var history = HistoricalPokemon(state);
-        if (history.Select(p => p.InstanceId).Distinct().Count() != history.Length)
-            return "save_npc_trade_ownership_duplicate";
-        // Every ID is acquired exactly once and remains either live or retired exactly once.
+        // Only current identities need acquisition sources. Completed finite exchanges
+        // remain business receipts without requiring either creature to stay owned.
         var acquisitions = new HashSet<long>();
-        if (!history.IsEmpty) acquisitions.Add(1);
+        if (state.NextPokemonId > 1) acquisitions.Add(1);
         var captures = state.Exploration?.Captured ?? [];
         var fossils = state.FossilRevivals ?? [];
         if (captures.IsDefault || fossils.IsDefault || captures.Any(c => c is null) || fossils.Any(f => f is null))
@@ -117,26 +106,15 @@ public sealed partial class CampaignSession
             state.LaprasGift?.InstanceId, state.DojoGift?.InstanceId };
         foreach (var id in gifts.OfType<long>().Concat(fossils.Select(f => f.InstanceId)).Concat((state.PrizePokemon ?? []).Select(p => p.InstanceId)).Concat(incoming).Concat(EggAcquisitionIds(state)))
             if (!acquisitions.Add(id)) return "save_npc_trade_acquisition_duplicate";
-        if (state.NextPokemonId != acquisitions.Count + 1L || acquisitions.Any(id => id < 1 || id >= state.NextPokemonId) ||
-            !acquisitions.SetEquals(history.Select(p => p.InstanceId))) return "save_npc_trade_acquisition_missing";
-        foreach (var pokemon in history)
-        {
-            if (!HasSupportedCampaignOriginalTrainer(state, pokemon)) return "save_npc_trade_origin_missing";
-            // Retirement does not relax the campaign metadata contract previously applied to
-            // every living party/box entry. General Domain syntax alone admits other games/languages.
-            if (pokemon.Language != (pokemon.IsEgg ? 1 : 2) || pokemon.MetGame != 4 ||
-                ((!_content.CaptureEnabled || pokemon.InstanceId == 1) &&
-                    (pokemon.MetLocation != "MAPSEC_PALLET_TOWN" || pokemon.MetLevel != 5)) ||
-                pokemon.Ball != "ITEM_POKE_BALL" && !(pokemon.InstanceId != 1 &&
-                    (AdditionalCaptureBallSupported(pokemon.Ball) || pokemon.Ball == "ITEM_SAFARI_BALL" && _content.SafariEnabled)) ||
-                !OwnedHeldItemSupported(state, pokemon)) return "save_npc_trade_origin_invalid";
+        if (acquisitions.Any(id => id < 1 || id >= state.NextPokemonId) ||
+            owned.Any(p => !acquisitions.Contains(p.InstanceId))) return "save_npc_trade_acquisition_missing";
+        foreach (var pokemon in owned)
             if (incoming.Contains(pokemon.InstanceId) != (pokemon.Pokemon.NpcTradeOrigin is not null))
                 return "save_npc_trade_origin_mismatch";
-        }
         foreach (var receipt in receipts)
         {
-            var current = history.Single(p => p.InstanceId == receipt.Incoming.InstanceId);
-            if (!NpcTradeIdentityMatches(state, current, receipt.Incoming) ||
+            var current = owned.SingleOrDefault(p => p.InstanceId == receipt.Incoming.InstanceId);
+            if (current is not null && !NpcTradeIdentityMatches(state, current, receipt.Incoming) ||
                 !state.CaughtSpecies.Contains(receipt.Incoming.Pokemon.SourceSpeciesId) ||
                 !state.SeenSpecies.Contains(receipt.Incoming.Pokemon.SourceSpeciesId)) return "save_npc_trade_received_identity";
         }

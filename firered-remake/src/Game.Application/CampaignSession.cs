@@ -21,6 +21,7 @@ public sealed record CampaignNickname(int PartyIndex,string OriginalName,bool Su
 }
 public sealed record CampaignSignMessage(bool Cancelable=false,bool WalkawayDisabled=false,int InhibitTicks=0,bool SignStyle=false);
 public sealed record CampaignNewGameOptions(uint TrainerId=0,string PlayerName="RED",string RivalName="BLUE",int PlayerGender=0,uint RngSeed=1);
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record CampaignState(WorldSnapshot World,StoryState Script,ImmutableSortedDictionary<string,CampaignActor> Actors,
     ImmutableArray<string> EntryPrograms,Direction? ArrivalFacing,string? LastTalked,CampaignDialogue? Dialogue,
     ImmutableArray<CampaignMotion> Motions,int PresentationTicks,string LastHealingLocation,string TextColor,string Music,
@@ -135,8 +136,7 @@ public sealed record CampaignState(WorldSnapshot World,StoryState Script,Immutab
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignDayCareEggReceipt>? DayCareEggs{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<CampaignGiftEggReceipt>? GiftEggs{get;init;}
     [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public CampaignEggHatch? EggHatch{get;init;}
-    // Final snapshots of released identities; absence preserves existing saves byte-for-byte.
-    [JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] public ImmutableArray<PartyPokemon>? ReleasedPokemon{get;init;}
+    // Monotonic allocation; departed creatures leave legal gaps and never recycle IDs.
     public long NextPokemonId{get;init;}=1;
     public CampaignMonPicture? MonPicture{get;init;}
     public CampaignNickname? Nickname{get;init;}
@@ -431,21 +431,22 @@ public sealed partial class CampaignSession
             if(scene>4&&_content.QuestItems is null)return "save_parcel_content_missing";
             var selected=choices.Single(c=>c.Index==index);
             var requiredSeen=scene>=4?new[]{selected.SourceSpeciesId,selected.RivalSourceSpeciesId}:new[]{selected.SourceSpeciesId};
-            bool seenValid=state.Exploration is null?state.SeenSpecies.SetEquals(requiredSeen):requiredSeen.All(state.SeenSpecies.Contains)&&state.SeenSpecies.All(n=>requiredSeen.Contains(n)||WildSpeciesSupported(n)||EvolvedSpecies(state).Contains(n)||SeenByOrdinaryTrainer(state,n)||SeenByTwins(state,n)||SeenByTrainerTower(state,n)||SeenByTowerMarowak(state,n)||SeenBySnorlax(state,n)||SeenByMewtwo(state,n)||SeenByEventIsland(state,n)||SeenByPowerPlant(state,n)||SeenByRockSmash(state,n)||SeenBySeafoam(state,n)||SeenByLostelleHypno(state,n)||SeenByCelioRoamer(state,n)||IsGiftSpecies(state,n)||NpcTradeSourceSpecies(state).Contains(n)||HatchedEggSpecies(state).Contains(n)||(_content.BillEnabled&&state.Script.Flags.GetValueOrDefault("FLAG_GOT_SS_TICKET")&&BillSourcePresentation.PcSpecies.Contains(n)));
-            // Field Switch changes slots only in the normal early-starter profile. The gift and
-            // its first-battle history remain attached to instance 1, including after evolution.
-            var starter=_content.EarlyStarterEnabled?HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==1):state.Party[0];
-            if(starter is null||!EvolutionSpeciesMatchesOrigin(state,starter,selected.SourceSpeciesId)||starter.InstanceId!=1||state.NextPokemonId!=(_content.CaptureEnabled?2L+(state.Exploration!.Captured?.Length??0)+GiftCount(state)+NpcTradeCount(state)+EggAcquisitionCount(state):2)||!seenValid||!state.CaughtSpecies.SetEquals(new[]{selected.SourceSpeciesId}.Concat(_content.CaptureEnabled?state.Exploration!.Captured!.Value.Select(c=>c.SourceSpeciesId):[]).Concat(GiftSourceSpecies(state)).Concat(NpcTradeSourceSpecies(state)).Concat(HatchedEggSpecies(state)).Concat(EvolvedSpecies(state))))return "save_starter_identity_inconsistent";
+            bool seenValid=requiredSeen.All(state.SeenSpecies.Contains);
+            // The selected starter and first-battle facts survive its later release or exchange.
+            var starter=OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==1);
+            if(state.NextPokemonId<2||!seenValid||!state.CaughtSpecies.Contains(selected.SourceSpeciesId)||
+                starter is not null&&!EvolutionSpeciesMatchesOrigin(state,starter,selected.SourceSpeciesId)||
+                scene==3&&starter is null)return "save_starter_identity_inconsistent";
             if(scene>=4)
             {
                 var trainer=_content.BattleContent!.Trainers.Trainers.Values.Single(t=>t.Party.Single().SourceSpeciesId==selected.RivalSourceSpeciesId).Id.Value;
                 var history=state.BattleHistory[0];
                 if(history is null||history.BattleId!="lab-battle:1"||history.TrainerId!=trainer||state.NextBattleId!=2||!state.SettledBattles.Contains(history.BattleId)||!state.BattledTrainers.Contains(trainer)||!Enum.IsDefined(history.Outcome)||history.Outcome==Game.Domain.FirstBattle.FirstBattleOutcome.Ongoing||history.QuestLogRequested!=(history.Outcome==Game.Domain.FirstBattle.FirstBattleOutcome.Won))return "save_first_battle_history_invalid";
-                var won=history.Outcome==Game.Domain.FirstBattle.FirstBattleOutcome.Won;var pokemon=starter.Pokemon;
+                var won=history.Outcome==Game.Domain.FirstBattle.FirstBattleOutcome.Won;var pokemon=starter?.Pokemon;
                 var rival=content.Catalog.Species.Values.Single(s=>s.SourceSpeciesId==selected.RivalSourceSpeciesId);
                 int xp=rival.ExperienceYield*5/7*150/100;
                 if(history.ExperienceGained!=(won?xp:0)||history.MoneyGained<0||history.MoneyGained>(won?80:0)||(won?history.HpFraction is not (0 or 1 or 2):history.HpFraction is not null))return "save_first_battle_reward_history_invalid";
-                if(won&&(pokemon.Level<6||pokemon.Experience<135u+(uint)xp||pokemon.Evs.Hp<rival.EvYield.Hp||pokemon.Evs.Attack<rival.EvYield.Attack||pokemon.Evs.Defense<rival.EvYield.Defense||pokemon.Evs.Speed<rival.EvYield.Speed||pokemon.Evs.SpecialAttack<rival.EvYield.SpecialAttack||pokemon.Evs.SpecialDefense<rival.EvYield.SpecialDefense))return "save_first_battle_growth_missing";
+                if(won&&pokemon is not null&&(pokemon.Level<6||pokemon.Experience<135u+(uint)xp||pokemon.Evs.Hp<rival.EvYield.Hp||pokemon.Evs.Attack<rival.EvYield.Attack||pokemon.Evs.Defense<rival.EvYield.Defense||pokemon.Evs.Speed<rival.EvYield.Speed||pokemon.Evs.SpecialAttack<rival.EvYield.SpecialAttack||pokemon.Evs.SpecialDefense<rival.EvYield.SpecialDefense))return "save_first_battle_growth_missing";
             }
             if(choices.Any(c=>state.Script.Flags.GetValueOrDefault(c.BallHideFlag)!=(c.BallId==selected.BallId||c.BallId==selected.RivalBallId)))return "save_starter_ball_flags_inconsistent";
         }

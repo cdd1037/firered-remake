@@ -11,7 +11,7 @@ namespace Game.Application;
 public static class CurrentGameProfile
 {
     public const string Id = "current";
-    public const string RulesVersion = "firered-current-campaign-v2";
+    public const string RulesVersion = "firered-current-campaign-v3";
 }
 
 internal sealed record CampaignCatalogBinding(string RulesVersion, string EncounterRulesVersion, PokemonCatalog Pokemon, GamePokemonCatalog Ownership);

@@ -43,7 +43,7 @@ public sealed partial class CampaignSession
 
     private string? ValidateStorageState(CampaignState state)
     {
-        if(!_content.PokemonStorageEnabled)return state.Storage is not null||state.Pc is not null||state.ReleasedPokemon is not null?"save_storage_profile_missing":null;
+        if(!_content.PokemonStorageEnabled)return state.Storage is not null||state.Pc is not null?"save_storage_profile_missing":null;
         if(!_content.EarlyPartyEnabled)return "storage_requires_early_party_profile";
         if(state.Pc?.MoveCursor is not null&&state.Pc.View!=CampaignPcView.Move)return "storage_move_cursor_context";
         if(state.Pc is {ItemCursor:not null} or {ItemPrompt:not null} or {ItemBagTarget:not null} && state.Pc.View!=CampaignPcView.MoveItems)return "storage_item_cursor_context";
@@ -54,9 +54,9 @@ public sealed partial class CampaignSession
         if(ValidateStorageSummaryState(state) is {} summaryError)return summaryError;
         var owned=OwnedPokemon(state);
         if(owned.Select(p=>p.InstanceId).Distinct().Count()!=owned.Length)return "storage_duplicate_instance_id";
-        if(owned.Any(p=>p.InstanceId>=state.NextPokemonId))return "storage_next_instance_id";
+        if(owned.Any(p=>p.InstanceId<1||p.InstanceId>=state.NextPokemonId))return "storage_next_instance_id";
         if(state.Script.Variables.GetValueOrDefault("VAR_PC_BOX_TO_SEND_MON")>=PokemonStorageState.BoxCount)return "save_storage_delivery_box";
-        return ValidateReleasedPokemon(state);
+        return null;
     }
 
     // Native menu rows are indices into the visible list. The source script deliberately uses

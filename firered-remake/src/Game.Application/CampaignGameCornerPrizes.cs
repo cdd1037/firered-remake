@@ -45,11 +45,11 @@ public sealed partial class CampaignSession
         if (receipts.IsDefault || receipts.Any(r => r is null)) return "save_prize_receipts_invalid";
         if (_content.GameCornerPrizes is not {} catalog) return receipts.IsEmpty ? null : "save_prize_catalog_missing";
         long previous = 0;
-        var history = HistoricalPokemon(state);
+        var ownedPokemon = OwnedPokemon(state);
         foreach (var receipt in receipts)
         {
             var source = catalog.PokemonPrizes.SingleOrDefault(p => p.SourceRewardId == receipt.SourceSpeciesId);
-            var matching = history.Where(p => p.InstanceId == receipt.InstanceId).ToArray();
+            var matching = ownedPokemon.Where(p => p.InstanceId == receipt.InstanceId).ToArray();
             if (source is null || receipt.Ivs is null || receipt.InstanceId <= previous || receipt.InstanceId < 2 ||
                 receipt.InstanceId >= state.NextPokemonId || matching.Length != 1) return "save_prize_identity";
             var mon = matching[0];

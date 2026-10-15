@@ -25,9 +25,6 @@ public sealed partial class CampaignSession
 
     private static IEnumerable<long> EggAcquisitionIds(CampaignState state) =>
         (state.DayCareEggs ?? []).Select(e => e.InstanceId).Concat((state.GiftEggs ?? []).Select(e => e.InstanceId));
-    private static bool HasHatchedEggReceipt(CampaignState state, long instanceId) =>
-        (state.DayCareEggs ?? []).Any(e => e.InstanceId == instanceId && e.Hatch is not null) ||
-        (state.GiftEggs ?? []).Any(e => e.InstanceId == instanceId && e.Hatch is not null);
 
     private static CampaignDayCareHatchReceipt? EggHatchReceipt(CampaignState state, long instanceId)
     {
@@ -64,13 +61,13 @@ public sealed partial class CampaignSession
             if (receipt.InstanceId < 2 || receipt.InstanceId >= state.NextPokemonId || receipt.SourceSpeciesId != 175 ||
                 receipt.Source is null || GiftEggCreationInstruction()?.Source != receipt.Source || receipt.Ivs is null ||
                 receipt.RngAfter.Cursor > state.World.Rng.Cursor) return "save_gift_egg_origin";
-            var matches = HistoricalPokemon(state).Where(p => p.InstanceId == receipt.InstanceId).ToArray();
-            if (matches.Length != 1) return "save_gift_egg_identity";
-            var owned = matches[0];
-            if (owned.Pokemon.Personality != receipt.Personality || owned.Pokemon.Ivs != receipt.Ivs || owned.MetLevel != 0 ||
+            var matches = OwnedPokemon(state).Where(p => p.InstanceId == receipt.InstanceId).ToArray();
+            if (matches.Length > 1) return "save_gift_egg_identity";
+            var owned = matches.SingleOrDefault();
+            if (owned is not null && (owned.Pokemon.Personality != receipt.Personality || owned.Pokemon.Ivs != receipt.Ivs || owned.MetLevel != 0 ||
                 owned.Pokemon.OriginalTrainerId != state.TrainerId || owned.OriginalTrainerName != state.PlayerName ||
                 owned.OriginalTrainerGender != state.PlayerGender || owned.Ball != "ITEM_POKE_BALL" || owned.MetGame != 4 ||
-                owned.ModernFatefulEncounter || !EvolutionSpeciesMatchesOrigin(state, owned, receipt.SourceSpeciesId))
+                owned.ModernFatefulEncounter || !EvolutionSpeciesMatchesOrigin(state, owned, receipt.SourceSpeciesId)))
                 return "save_gift_egg_identity";
             try
             {
@@ -80,13 +77,13 @@ public sealed partial class CampaignSession
                     return "save_gift_egg_creation";
                 if (receipt.Hatch is not {} hatch)
                 {
-                    if (!owned.IsEgg || owned.MetLocation != SourceGiftEggRules.MetLocation ||
+                    if (owned is null || !owned.IsEgg || owned.MetLocation != SourceGiftEggRules.MetLocation ||
                         owned.Pokemon.EggStatCalculationIvs != made.Egg.Pokemon.Ivs ||
                         !owned.Pokemon.Moves.SequenceEqual(made.Egg.Pokemon.Moves)) return "save_gift_egg_unhatched_identity";
                 }
                 else
                 {
-                    if (owned.IsEgg || owned.Language != 2 || owned.MetLocation != hatch.Location ||
+                    if (owned is not null && (owned.IsEgg || owned.Language != 2 || owned.MetLocation != hatch.Location) ||
                         hatch.RngBefore.Cursor < receipt.RngAfter.Cursor || hatch.RngAfter.Cursor > state.World.Rng.Cursor ||
                         !_content.Maps.Keys.Any(m => _content.MapDefinition(m).RegionMapSection == hatch.Location))
                         return "save_gift_egg_hatch_identity";

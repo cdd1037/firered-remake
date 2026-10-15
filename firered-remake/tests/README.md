@@ -57,7 +57,7 @@ dotnet test --logger 'trx;LogFilePrefix=tests' --results-directory .toolhome/tes
 
 - 游戏资源需已在 `content/raw` 和 `content/generated`；导入器读取 `content/raw/pokefirered/037335f4`，测试不下载素材或安装编译器。
 - 音频需要 `../firered-audio-player/resources/firered.pack` 和普通叫声目录。
-- 应用与 Continue 默认使用 `../checkpoints/current-catalogs-v4-20261015/continued-checkpoint.json`，可用 `FIRERED_TEST_CHECKPOINT` 指定有效的当前存档。部分用例在内存中准备位置、HP、PP、EXP 等受控状态，不代表自然路线重放或历史缺失证明已恢复。
+- 应用与 Continue 默认使用 `../checkpoints/current-ownership-v3-20261015/continued-checkpoint.json`，可用 `FIRERED_TEST_CHECKPOINT` 指定有效的当前存档。部分用例在内存中准备位置、HP、PP、EXP 等受控状态，不代表自然路线重放或历史缺失证明已恢复。
 - 数值与冻结夹具放在对应功能的 `Fixtures` 或 `fixtures` 目录，普通测试只读取。Python 独立计算参考值，以及从固定原版 C 函数提取的参考向量，保留显式生成器；生成候选需人工审阅，不允许按产品输出重写预期。
 - 文件系统用例使用唯一的 `.toolhome/mstest` 临时目录；TRX 使用标准结果目录或显式 `--results-directory`。
 

@@ -52,18 +52,22 @@ public sealed partial class CampaignSession
         if ((state.DojoGift is not null) != got || lee && chan || (lee || chan) != got) return "save_dojo_gift_flags";
         if (state.DojoGift is not { } gift) return null;
         if (gift.SourceSpeciesId is not (106 or 107) || gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId ||
-            gift.Ivs is null || lee != (gift.SourceSpeciesId == 106)) return "save_dojo_gift_origin";
-        var matching = HistoricalPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
-        if (matching.Length != 1) return "save_dojo_gift_instance";
-        var mon = matching[0];
-        if (mon.Pokemon.SourceSpeciesId != gift.SourceSpeciesId || mon.Pokemon.Personality != gift.Personality || mon.Pokemon.Ivs != gift.Ivs ||
-            mon.Pokemon.OriginalTrainerId != state.TrainerId || mon.OriginalTrainerName != state.PlayerName ||
-            mon.OriginalTrainerGender != state.PlayerGender || mon.Language != 2 || mon.MetGame != 4 ||
-            mon.MetLocation != "MAPSEC_SAFFRON_CITY" || mon.MetLevel != 25 || mon.Ball != "ITEM_POKE_BALL" || mon.ModernFatefulEncounter ||
-            !state.CaughtSpecies.Contains(gift.SourceSpeciesId) || !state.SeenSpecies.Contains(gift.SourceSpeciesId) ||
-            state.Exploration?.Captured is not { } captures || captures.IsDefault || captures.Any(c => c is null || c.InstanceId == gift.InstanceId) ||
-            state.MagikarpGift?.InstanceId == gift.InstanceId || state.EeveeGift?.InstanceId == gift.InstanceId || state.LaprasGift?.InstanceId == gift.InstanceId)
-            return "save_dojo_gift_instance";
+            gift.Ivs is null || gift.Ivs.Values.Any(v => v is < 0 or > 31) || lee != (gift.SourceSpeciesId == 106)) return "save_dojo_gift_origin";
+        var matching = OwnedPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
+        if (matching.Length > 1) return "save_dojo_gift_instance";
+        if (!state.CaughtSpecies.Contains(gift.SourceSpeciesId) || !state.SeenSpecies.Contains(gift.SourceSpeciesId)) return "save_dojo_gift_instance";
+        if (matching.Length == 1)
+        {
+            var mon = matching[0];
+            if (mon.Pokemon.SourceSpeciesId != gift.SourceSpeciesId || mon.Pokemon.Personality != gift.Personality || mon.Pokemon.Ivs != gift.Ivs ||
+                mon.Pokemon.OriginalTrainerId != state.TrainerId || mon.OriginalTrainerName != state.PlayerName ||
+                mon.OriginalTrainerGender != state.PlayerGender || mon.Language != 2 || mon.MetGame != 4 ||
+                mon.MetLocation != "MAPSEC_SAFFRON_CITY" || mon.MetLevel != 25 || mon.Ball != "ITEM_POKE_BALL" || mon.ModernFatefulEncounter ||
+                !state.CaughtSpecies.Contains(gift.SourceSpeciesId) || !state.SeenSpecies.Contains(gift.SourceSpeciesId) ||
+                state.Exploration?.Captured is not { } captures || captures.IsDefault || captures.Any(c => c is null || c.InstanceId == gift.InstanceId) ||
+                state.MagikarpGift?.InstanceId == gift.InstanceId || state.EeveeGift?.InstanceId == gift.InstanceId || state.LaprasGift?.InstanceId == gift.InstanceId)
+                return "save_dojo_gift_instance";
+        }
         if (state.World.Player.MapId.Value == FightingDojoMap &&
             state.Actors.Values.Any(a => a.SourceLocalId == (gift.SourceSpeciesId == 106 ? 6 : 7) && a.Active)) return "save_dojo_gift_actor";
         // The side coordinate events set scene=1 before battle. Neither scene nor

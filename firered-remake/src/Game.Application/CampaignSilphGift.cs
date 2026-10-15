@@ -29,22 +29,25 @@ public sealed partial class CampaignSession
         bool lapras = state.Script.Flags.GetValueOrDefault(LaprasFlag), master = state.Script.Flags.GetValueOrDefault(MasterBallFlag);
         int balls = OpeningInventoryRules.Quantity(state.Inventory?.Balls ?? [], SilphMasterBallId) +
             OpeningInventoryRules.Quantity(state.Inventory?.PcItems ?? [], SilphMasterBallId) +
-            HistoricalPokemon(state).Count(p => p.HeldItem == "ITEM_MASTER_BALL") +
-            (state.Exploration?.Captured?.Count(c => c is { Ball: "ITEM_MASTER_BALL" }) ?? 0);
+            OwnedPokemon(state).Count(p => p.HeldItem == "ITEM_MASTER_BALL");
         if (!_content.SilphEnabled) return state.LaprasGift is not null || lapras || master || balls != 0 ? "save_silph_gift_profile_missing" : null;
         if (balls > 1 || balls > 0 && !master) return "save_silph_master_ball_reward_mismatch";
         if ((state.LaprasGift is not null) != lapras) return "save_lapras_flag_inconsistent";
         if (state.LaprasGift is not { } gift) return null;
-        if (gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId || gift.Ivs is null) return "save_lapras_origin_invalid";
-        var matching = HistoricalPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
-        if (matching.Length != 1) return "save_lapras_instance_mismatch";
-        var mon = matching[0];
-        if (mon.Pokemon.SourceSpeciesId != 131 || mon.Pokemon.Personality != gift.Personality || mon.Pokemon.Ivs != gift.Ivs ||
-            mon.MetLocation != "MAPSEC_SILPH_CO" || mon.MetLevel != 25 || mon.Ball != "ITEM_POKE_BALL" ||
-            !state.CaughtSpecies.Contains(131) || !state.SeenSpecies.Contains(131) ||
-            state.Exploration?.Captured is not { } captures || captures.IsDefault || captures.Any(c => c is null || c.InstanceId == gift.InstanceId) ||
-            state.MagikarpGift?.InstanceId == gift.InstanceId || state.EeveeGift?.InstanceId == gift.InstanceId)
-            return "save_lapras_instance_mismatch";
+        if (gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId || gift.Ivs is null || gift.Ivs.Values.Any(v => v is < 0 or > 31)) return "save_lapras_origin_invalid";
+        var matching = OwnedPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
+        if (matching.Length > 1) return "save_lapras_instance_mismatch";
+        if (!state.CaughtSpecies.Contains(131) || !state.SeenSpecies.Contains(131)) return "save_lapras_instance_mismatch";
+        if (matching.Length == 1)
+        {
+            var mon = matching[0];
+            if (mon.Pokemon.SourceSpeciesId != 131 || mon.Pokemon.Personality != gift.Personality || mon.Pokemon.Ivs != gift.Ivs ||
+                mon.MetLocation != "MAPSEC_SILPH_CO" || mon.MetLevel != 25 || mon.Ball != "ITEM_POKE_BALL" ||
+                !state.CaughtSpecies.Contains(131) || !state.SeenSpecies.Contains(131) ||
+                state.Exploration?.Captured is not { } captures || captures.IsDefault || captures.Any(c => c is null || c.InstanceId == gift.InstanceId) ||
+                state.MagikarpGift?.InstanceId == gift.InstanceId || state.EeveeGift?.InstanceId == gift.InstanceId)
+                return "save_lapras_instance_mismatch";
+        }
         return null;
     }
 

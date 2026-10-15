@@ -35,6 +35,7 @@ public sealed class WildHistoryRetentionTests
         var original = State(Battle(1), Battle(2, WildBattleOutcome.Caught), Battle(3),
             Battle(4) with { ScriptedMarowak = true }, Battle(5), Battle(6)) with
         { EvolutionHistory = [new(1, "wild-battle:3", 1, 2, 15, 16)] };
+        original = original with { Exploration = original.Exploration! with { Captured = [new(2, "wild-battle:2", 19, 1, new(1,1,1,1,1,1), 3, "MAPSEC_ROUTE_1")] } };
         var compacted = CampaignWildHistoryRetention.Compact(original);
         CollectionAssert.AreEqual(new[] { "wild-battle:2", "wild-battle:3", "wild-battle:4", "wild-battle:6" },
             compacted.Exploration!.Battles.Select(b => b.Id).ToArray());
@@ -82,17 +83,16 @@ public sealed class WildHistoryRetentionTests
     }
 
     [TestMethod]
-    public void SevenIslandRetainsFirstUnownAndFirstCaptureWithoutKeepingAllSightings()
+    public void UnownRepresentativeSurvivesWithoutRetainingSightingOrRetiredCaptureProofs()
     {
         var template = Battle(1) with { SourceSpeciesId = 201,
             SevenIsland = new(new("map.test"), SevenIslandEncounterKind.Land, 0) };
         var original = State(Enumerable.Range(1, 1000).Select(i => template with
-        { Id = "wild-battle:" + i, Outcome = i == 50 ? WildBattleOutcome.Caught : WildBattleOutcome.Won }).ToArray());
+        { Id = "wild-battle:" + i, Outcome = i == 50 ? WildBattleOutcome.Caught : WildBattleOutcome.Won }).ToArray()) with { UnownPokedexPersonality = 1234 };
         var compacted = CampaignWildHistoryRetention.Compact(original);
-        CollectionAssert.AreEqual(new[] { "wild-battle:1", "wild-battle:50", "wild-battle:1000" },
+        CollectionAssert.AreEqual(new[] { "wild-battle:1000" },
             compacted.Exploration!.Battles.Select(b => b.Id).ToArray());
-        Assert.AreSame(original.Exploration!.Battles[0], compacted.Exploration.Battles[0]);
-        Assert.AreSame(original.Exploration.Battles[49], compacted.Exploration.Battles[1]);
+        Assert.AreEqual(original.UnownPokedexPersonality, compacted.UnownPokedexPersonality);
     }
 
     [TestMethod]
@@ -117,7 +117,7 @@ public sealed class WildHistoryRetentionTests
     {
         var original = CurrentCampaignFixture.Checkpoint.State;
         var compacted = CampaignWildHistoryRetention.Compact(original);
-        Assert.IsTrue(compacted.Exploration!.Battles.Length < original.Exploration!.Battles.Length);
+        Assert.IsTrue(compacted.Exploration!.Battles.Length <= original.Exploration!.Battles.Length);
         Assert.AreSame(original.World, compacted.World);
         Assert.AreSame(original.Script, compacted.Script);
         Assert.IsTrue(original.Party == compacted.Party);

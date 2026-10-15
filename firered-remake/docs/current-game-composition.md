@@ -28,7 +28,7 @@ GameStartupSelection解析参数/环境快照；Godot Bootstrap组合实际游�
 
 ## 存档与显式转换
 
-当前rules ID为firered-current-campaign-v2，content ID为firered-current-content-v4。正常Continue严格匹配版本，不自动猜测或升级旧结构。
+当前rules ID为firered-current-campaign-v3，content ID为firered-current-content-v4。正常Continue严格匹配版本，不自动猜测或升级旧结构。
 
 需要转换已明确支持的旧检查点时，在工程目录运行：
 
@@ -36,6 +36,6 @@ GameStartupSelection解析参数/环境快照；Godot Bootstrap组合实际游�
 dotnet run --project src/Game.Tooling -- convert-current-checkpoint SOURCE NEW_DESTINATION
 ```
 
-工具拒绝覆盖已有目标；以实际转换器支持的输入为准，不是任意旧存档升级器。原文件保留，输出必须通过当前状态校验。v3到v4的已验证转换只移除旧NPC交换目录指纹，保留业务状态、RNG和generation。
+工具拒绝覆盖已有目标；以实际转换器支持的输入为准，不是任意旧存档升级器。原文件保留，输出必须通过当前状态校验。当前转换仅接 content-v4 / campaign-v2 的上一版代表档到 campaign-v3：删除已退休个体证明，保留当前个体、分配器、图鉴统计、特殊事件和名人堂快照；保留 RNG 与 generation。旧的更早格式不再叠加为长期兼容支路。
 
 历史runtime/profile/升级路由已退休。不要依据旧报告重建这些系统；当前回归入口是[测试说明](../tests/README.md)。

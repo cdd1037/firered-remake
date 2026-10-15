@@ -5,7 +5,7 @@ namespace Game.Domain.Pokemon;
 public enum PokemonStorageReleaseOutcome { Rejected, ConfirmationRequired, Released }
 
 /// <summary>Only Released returns ReleasedPokemon, the exact removed creature including its held
-/// item, for the caller's ownership-retirement proof. Rejections preserve every input reference.</summary>
+/// item, for the completed transaction result. Rejections preserve every input reference.</summary>
 public sealed record PokemonStorageReleaseResult(PokemonStorageReleaseOutcome Outcome,
     ImmutableArray<PartyPokemon> Party, PokemonStorageState Storage, PokemonStorageMoveCursor? Cursor,
     PartyPokemon? ReleasedPokemon = null, PokemonStorageDiagnostic? Diagnostic = null)
@@ -14,7 +14,7 @@ public sealed record PokemonStorageReleaseResult(PokemonStorageReleaseOutcome Ou
 }
 
 /// <summary>Original PC RELEASE for selected and held creatures. The caller owns mode admission,
-/// default-No confirmation, command revisions, messages/animation and durable ownership history.</summary>
+/// default-No confirmation, command revisions, messages/animation and durable ownership updates.</summary>
 public static class PokemonStorageReleaseRules
 {
     /// <summary>Original selection-menu guards, before asking for confirmation. No HM scan or mutation.</summary>

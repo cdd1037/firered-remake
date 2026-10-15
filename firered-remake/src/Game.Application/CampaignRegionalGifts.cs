@@ -13,22 +13,6 @@ public sealed partial class CampaignSession
     private const string EeveeSource = "data/maps/CeladonCity_Condominiums_RoofRoom/scripts.inc";
     private const string EeveeBallScript = "CeladonCity_Condominiums_RoofRoom_EventScript_EeveeBall";
 
-    private int GiftCount(CampaignState state) => (_content.MagikarpEnabled && state.MagikarpGift is not null ? 1 : 0) +
-        (_content.RegionalServicesEnabled && state.EeveeGift is not null ? 1 : 0) +
-        (_content.SilphEnabled && state.LaprasGift is not null ? 1 : 0) +
-        (_content.FightingDojoEnabled && state.DojoGift is not null ? 1 : 0) +
-        (_content.FossilLabEnabled ? (state.FossilRevivals ?? []).Length : 0) + (state.PrizePokemon ?? []).Length;
-    private IEnumerable<int> GiftSourceSpecies(CampaignState state)
-    {
-        foreach (var prize in state.PrizePokemon ?? []) yield return prize.SourceSpeciesId;
-        if (_content.MagikarpEnabled && state.MagikarpGift is not null) yield return 129;
-        if (_content.RegionalServicesEnabled && state.EeveeGift is not null) yield return 133;
-        if (_content.SilphEnabled && state.LaprasGift is not null) yield return 131;
-        if (_content.FightingDojoEnabled && state.DojoGift is { } dojo) yield return dojo.SourceSpeciesId;
-        if (_content.FossilLabEnabled)
-            foreach (var fossil in state.FossilRevivals ?? []) yield return fossil.SourceSpeciesId;
-    }
-
     private string? ValidateGiftIdentityUniqueness(CampaignState state)
     {
         var gifts = new List<long>();
@@ -52,16 +36,20 @@ public sealed partial class CampaignSession
         if (!_content.RegionalServicesEnabled) return state.EeveeGift is not null || got || hidden ? "save_eevee_profile_missing" : null;
         if ((state.EeveeGift is not null) != got || hidden != got) return "save_eevee_flag_inconsistent";
         if (state.EeveeGift is not { } gift) return null;
-        if (gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId || gift.Ivs is null) return "save_eevee_origin_invalid";
-        var matching = HistoricalPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
-        if (matching.Length != 1) return "save_eevee_instance_mismatch";
-        var mon = matching[0];
-        // Evolution validation uses the catalog's admitted evolution ledger; this method opens none itself.
-        if (!EvolutionSpeciesMatchesOrigin(state, mon, 133) || mon.Pokemon.Personality != gift.Personality || mon.Pokemon.Ivs != gift.Ivs ||
-            mon.MetLocation != "MAPSEC_CELADON_CITY" || mon.MetLevel != 25 || mon.Ball != "ITEM_POKE_BALL" ||
-            !state.CaughtSpecies.Contains(133) || !state.SeenSpecies.Contains(133) ||
-            state.Exploration?.Captured is not { } captures || captures.IsDefault || captures.Any(c => c is null || c.InstanceId == gift.InstanceId) ||
-            state.MagikarpGift?.InstanceId == gift.InstanceId) return "save_eevee_instance_mismatch";
+        if (gift.InstanceId < 2 || gift.InstanceId >= state.NextPokemonId || gift.Ivs is null || gift.Ivs.Values.Any(v => v is < 0 or > 31)) return "save_eevee_origin_invalid";
+        var matching = OwnedPokemon(state).Where(p => p.InstanceId == gift.InstanceId).ToArray();
+        if (matching.Length > 1) return "save_eevee_instance_mismatch";
+        if (!state.CaughtSpecies.Contains(133) || !state.SeenSpecies.Contains(133)) return "save_eevee_instance_mismatch";
+        if (matching.Length == 1)
+        {
+            var mon = matching[0];
+            // Evolution validation uses the catalog's admitted evolution ledger; this method opens none itself.
+            if (!EvolutionSpeciesMatchesOrigin(state, mon, 133) || mon.Pokemon.Personality != gift.Personality || mon.Pokemon.Ivs != gift.Ivs ||
+                mon.MetLocation != "MAPSEC_CELADON_CITY" || mon.MetLevel != 25 || mon.Ball != "ITEM_POKE_BALL" ||
+                !state.CaughtSpecies.Contains(133) || !state.SeenSpecies.Contains(133) ||
+                state.Exploration?.Captured is not { } captures || captures.IsDefault || captures.Any(c => c is null || c.InstanceId == gift.InstanceId) ||
+                state.MagikarpGift?.InstanceId == gift.InstanceId) return "save_eevee_instance_mismatch";
+        }
         return null;
     }
 

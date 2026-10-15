@@ -152,6 +152,4 @@ public sealed partial class CampaignSession
         return capture.Ivs == new SixStats(iv[0], iv[1], iv[2], iv[3], iv[4], iv[5]);
     }
 
-    private bool SeenByCelioRoamer(CampaignState state, int species) => _content.CelioEnabled &&
-        state.Exploration!.Battles.Any(h => h.SourceSpeciesId == species && h.CelioRoamer is not null && IsCelioRoamerHistory(state, h));
 }

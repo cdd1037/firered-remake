@@ -187,12 +187,10 @@ public sealed partial class CampaignSession
         if(history is null||!IsLostelleHypnoHistory(state,history)||history.Outcome!=WildBattleOutcome.Caught||capture.SourceSpeciesId!=97||
             capture.MetLevel!=30||capture.MetLocation!=LostelleRegion||capture.Personality!=history.LostelleHypno!.Generated.Personality||
             capture.Ivs!=history.LostelleHypno.Generated.Ivs)return false;
-        var owned=HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
+        var owned=OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==capture.InstanceId);
         return owned is not null&&SourceOwnedIdentity(owned.Pokemon,history.LostelleHypno.Generated)&&owned.MetLevel==30&&owned.MetLocation==LostelleRegion;
     }
 
-    private bool SeenByLostelleHypno(CampaignState state,int species)=>species==97&&
-        (state.Exploration?.Battles.Any(b=>b.LostelleHypno is not null&&IsLostelleHypnoHistory(state,b))??false);
 
     private string? ValidateFirstSeviiBattleProgress(CampaignState state)
     {
@@ -204,8 +202,6 @@ public sealed partial class CampaignSession
             if(history.LostelleHypno is null)continue;
             if(completed||!IsLostelleHypnoHistory(state,history))return "save_first_sevii_hypno_receipt";
             completed=FirstSeviiHypnoBattleContract.Resolve(history.Outcome).ContinueRescue;
-            if(history.Outcome==WildBattleOutcome.Caught&&!(state.Exploration!.Captured??[]).Any(c=>c.BattleId==history.Id&&IsLostelleHypnoCapture(state,c)))
-                return "save_first_sevii_hypno_capture";
         }
         if(completed!=state.Script.Flags.GetValueOrDefault("FLAG_RESCUED_LOSTELLE"))return "save_first_sevii_hypno_rescue";
         return null;

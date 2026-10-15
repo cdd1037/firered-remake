@@ -27,8 +27,6 @@ public sealed partial class CampaignSession
     };
     private static int EventIslandHallEntries(CampaignState s) => (s.PokemonLeague?.Resets ?? []).Count(r => r.Reason == "hall-of-fame");
     private static bool IsEventIslandBattle(CampaignWildBattle battle) => battle.Frame.WildEncounter?.EventIsland is not null;
-    private bool SeenByEventIsland(CampaignState state, int species) => state.Exploration?.Battles.Any(b =>
-        b.SourceSpeciesId == species && IsEventIslandHistory(b)) == true;
 
     private bool TryApplyEventIslandBattleEffect(CampaignState state, StoryEffect effect, out CampaignState next)
     {
@@ -120,7 +118,7 @@ public sealed partial class CampaignSession
             capture.SourceSpeciesId != history.SourceSpeciesId || capture.MetLevel != history.Level ||
             capture.MetLocation != _content.MapDefinition(origin.Map).RegionMapSection) return false;
         var initial = history.EventIslandReceipt.InitialPokemon;
-        var owned = HistoricalPokemon(state).SingleOrDefault(p => p.InstanceId == capture.InstanceId);
+        var owned = OwnedPokemon(state).SingleOrDefault(p => p.InstanceId == capture.InstanceId);
         return owned is not null && owned.ModernFatefulEncounter && initial.OriginalTrainerId == state.TrainerId &&
             capture.Personality == initial.Personality && capture.Ivs == initial.Ivs && SourceOwnedIdentity(owned.Pokemon, initial);
     }

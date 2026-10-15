@@ -28,8 +28,6 @@ public sealed partial class CampaignSession
     private static bool IsSeafoamMap(MapId map) => SeafoamEncounterTables.Land.Any(t => t.Map == map) || SeafoamEncounterTables.Water.Any(t => t.Map == map);
     private static bool IsArticunoBattle(CampaignWildBattle battle) =>
         battle.Frame.WildEncounter?.Seafoam?.Kind == SeafoamEncounterKind.Articuno;
-    private bool SeenBySeafoam(CampaignState state, int species) =>
-        state.Exploration?.Battles.Any(b => b.SourceSpeciesId == species && IsSeafoamHistory(b)) == true;
 
     private static void ValidateSeafoamEncounterCatalog(ICampaignCatalog content)
     {
@@ -230,7 +228,7 @@ public sealed partial class CampaignSession
             capture.SourceSpeciesId != history.SourceSpeciesId || capture.MetLevel != history.Level ||
             capture.MetLocation != _content.MapDefinition(origin.Map).RegionMapSection) return false;
         var initial = history.SeafoamReceipt.InitialPokemon;
-        var owned = HistoricalPokemon(state).FirstOrDefault(p => p.InstanceId == capture.InstanceId);
+        var owned = OwnedPokemon(state).FirstOrDefault(p => p.InstanceId == capture.InstanceId);
         // Evolution/training may change species/stats/moves after capture; original identity must survive.
         return owned is not null && !owned.ModernFatefulEncounter && initial.OriginalTrainerId == state.TrainerId &&
             capture.Personality == initial.Personality && capture.Ivs == initial.Ivs &&

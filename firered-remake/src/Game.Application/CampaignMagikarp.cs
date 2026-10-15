@@ -14,16 +14,16 @@ public sealed record CampaignGiftDelivery(PokemonStorageAddress? BoxAddress,int 
 
 public sealed partial class CampaignSession
 {
-    private bool IsGiftSpecies(CampaignState state,int species)=>GiftSourceSpecies(state).Contains(species);
     private string? ValidateMagikarpGift(CampaignState state)
     {
         bool bought=state.Script.Flags.GetValueOrDefault("FLAG_BOUGHT_MAGIKARP");
         if(!_content.MagikarpEnabled)return state.MagikarpGift is not null||bought?"save_magikarp_profile_missing":null;
         if((state.MagikarpGift is not null)!=bought)return "save_magikarp_flag_inconsistent";
         if(state.MagikarpGift is not {} gift)return null;
-        if(gift.InstanceId<2||gift.InstanceId>=state.NextPokemonId||gift.Ivs is null)return "save_magikarp_origin_invalid";
-        var mon=HistoricalPokemon(state).SingleOrDefault(p=>p.InstanceId==gift.InstanceId);
-        if(mon is null||!EvolutionSpeciesMatchesOrigin(state,mon,129)||mon.Pokemon.Personality!=gift.Personality||mon.Pokemon.Ivs!=gift.Ivs||mon.MetLocation!="MAPSEC_ROUTE_4"||mon.MetLevel!=5||mon.Ball!="ITEM_POKE_BALL"||!OwnedHeldItemSupported(state,mon)||!state.CaughtSpecies.Contains(129)||!state.SeenSpecies.Contains(129)||state.Exploration?.Captured is not {} captures||captures.IsDefault||captures.Any(c=>c is null||c.InstanceId==gift.InstanceId))return "save_magikarp_instance_mismatch";
+        if(gift.InstanceId<2||gift.InstanceId>=state.NextPokemonId||gift.Ivs is null || gift.Ivs.Values.Any(v => v is < 0 or > 31))return "save_magikarp_origin_invalid";
+        var mon=OwnedPokemon(state).SingleOrDefault(p=>p.InstanceId==gift.InstanceId);
+        if(!state.CaughtSpecies.Contains(129)||!state.SeenSpecies.Contains(129))return "save_magikarp_instance_mismatch";
+        if(mon is not null&&(!EvolutionSpeciesMatchesOrigin(state,mon,129)||mon.Pokemon.Personality!=gift.Personality||mon.Pokemon.Ivs!=gift.Ivs||mon.MetLocation!="MAPSEC_ROUTE_4"||mon.MetLevel!=5||mon.Ball!="ITEM_POKE_BALL"||!OwnedHeldItemSupported(state,mon)||!state.CaughtSpecies.Contains(129)||!state.SeenSpecies.Contains(129)||state.Exploration?.Captured is not {} captures||captures.IsDefault||captures.Any(c=>c is null||c.InstanceId==gift.InstanceId)))return "save_magikarp_instance_mismatch";
         return null;
     }
     private bool InMagikarpScript(CampaignState state)=>state.World.Player.MapId.Value=="map.route-4-pokemon-center-1f"&&
