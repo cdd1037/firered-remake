@@ -16,7 +16,7 @@
 
 第二批已完成定向检查与全解决方案构建；受影响的 Domain、Application、Content、ResourceImport 项目共 512 项集成回归通过（163 / 147 / 181 / 21），零失败或跳过；其余未涉及的 Battle/Audio 不重复整套执行：
 
-- Q04：普通启动不再需要开发环境变量，默认玩家入口和音频；隔离启动确认 runtime 10 与当前内容加载。Linux Current 导出入口已实现，但环境缺官方模板，尚无实际独立包验收。
+- Q04：普通启动不再需要开发环境变量，默认玩家入口和音频；隔离启动确认 runtime 10 与当前内容加载。Linux Current 已实际导出，清除开发变量并隔离HOME/XDG/cwd后启动成功；/proc/maps确认使用成品内libcoreclr和.NET10.0.12。成品窗口/新游戏存读流程及真实音频仍未验收。
 - Q07：已闭环 Trainer Tower 两个既有普通菜单，从 raw 导入、Compilation.Menus、领域/App preflight 到 Godot 键鼠共用定义。INFO 返回、鼠标第三项、五项末项/取消均已窗口验收；护士与未支持联机拒绝保持。其他动态服务仍由具名处理器负责，不声称所有菜单迁移。
 - Q10：补齐 Celadon approach 遇敌 raw→JSON 入口；Celadon、RockTunnel、Route11、Safari 四族已移除无运行用途的来源/排除表元信息，原作精确值移到测试。音频 cue/cry 输入缺口仍在，不可删除保留产物。
 - Q12：移除字节相同 staged 的重复解码/校验，写入接口使用 ReadOnlySpan；完整性、备份及错误语义保留。冻结同模型内存存储探针分配降低 21.25%，不代表磁盘或帧率测量。
@@ -209,3 +209,5 @@ Route11/RockTunnel 的实际 JSON 编辑已贯穿候选生成、公开进入/结
 已按模块补齐明确自有的基础字体/UI、battle字体/skin/darkArt、options、capture、storage、Tower独立纹理、center/oldman资源，Dispose后清空引用；SourceGameFont释放幂等。混合所有权字典不盲目遍历Dispose，既有SceneTextures/HallPc/MapCache路径保留。
 
 Godot构建零警告/错误。独立headless宿主验证正常退出、8模块重复释放与部分初始化失败：136个已创建自有包装对象释放后失效，40个借用options纹理仍有效，随后ExitTree再清理正常。缺catalog用例按预期退出21，无附带清理异常。以上不是全GPU释放、显存泄漏、FPS或听测结论；混合容器中其他自建纹理的归属与同步启动耗时仍是后续项。
+
+已取消全局NuGet锁文件生成，并删除6份仅含空目标或本地ProjectReference的冗余packages.lock.json；外部依赖版本仍由现有PackageReference固定，官方工具链下载校验不变。避免publish反复写入无意义的空RID节点。

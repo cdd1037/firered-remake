@@ -5,12 +5,11 @@
     <Nullable>enable</Nullable>
     <LangVersion>14.0</LangVersion>
     <Deterministic>true</Deterministic>
-    <!-- Exact Git/source and DLL identities live in the build evidence manifest.
-         A documentation/checkpoint commit must not rebuild unchanged game code. -->
+    <!-- Documentation-only commits should not invalidate unchanged assemblies. -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <BuildInParallel>false</BuildInParallel>
     <RestoreDisableParallel>true</RestoreDisableParallel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
   </PropertyGroup>
 </Project>

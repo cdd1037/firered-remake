@@ -13,7 +13,7 @@ python dev run
 python dev run /path/to/current-checkpoint.json
 ```
 
-这个入口使用正常 OS 用户存档目录；旧 Bash 诊断入口 `scripts/dev/launch-current.sh` 仍使用隔离的 `.play/current`。正常运行默认启用玩家入口和音频，不默认打开完整状态证据；显式设置 FIRERED_EVIDENCE 或 FIRERED_VERBOSE 用于诊断。Linux 无开发变量启动已核验，实际独立导出仍因缺官方模板而未验收。
+这个入口使用正常 OS 用户存档目录；旧 Bash 诊断入口 `scripts/dev/launch-current.sh` 仍使用隔离的 `.play/current`。正常运行默认启用玩家入口和音频，不默认打开完整状态证据；显式设置 FIRERED_EVIDENCE 或 FIRERED_VERBOSE 用于诊断。Linux 无开发变量启动已核验，Linux 独立导出与捆绑 .NET 运行时启动已验证；成品窗口全流程和真实音频不在此次范围内。
 
 GameStartupSelection解析参数/环境快照；Godot Bootstrap组合实际游戏。current是正常模式，probe/harness仅为显式工程夹具，不能拿它们通过代替Current可运行。
 

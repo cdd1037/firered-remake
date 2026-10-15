@@ -3,7 +3,6 @@
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
     <IsPackable>false</IsPackable>
-    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
     <RunSettingsFilePath>$(MSBuildThisFileDirectory)../test.runsettings</RunSettingsFilePath>
   </PropertyGroup>
   <ItemGroup>
