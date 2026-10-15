@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """One reproducible entry point. Never install, relax a gate, or rewrite golden results implicitly."""
-import sys, os, json, subprocess, pathlib, hashlib, re, shutil, tarfile, zipfile, shlex, tempfile
+import sys, os, json, subprocess, pathlib, hashlib, re, shutil, tarfile, zipfile, shlex, tempfile, selectors, time, signal, errno
 ROOT=pathlib.Path(__file__).resolve().parent
 LOCK=json.loads((ROOT/'toolchain.lock.json').read_text(encoding='utf-8'))
 for variable,filename in [('FIRERED_TOOLCHAIN_ROOT','toolchain-root'),('FIRERED_ORIGINAL_REFERENCE','reference-root')]:
@@ -123,6 +123,69 @@ def play(arguments):
  return 0
 
 
+
+def check_export_startup(executable, isolated, environment):
+ # Startup is asynchronous: frame counts are neither readiness evidence nor a timeout.
+ # This is an external startup smoke, not a normal window-close/resource-lifetime test.
+ log=bytearray();ready=False;failure=None
+ # Release stdout may be block buffered through a pipe. A PTY gives ordinary
+ # terminal line buffering without changing production logging or startup flags.
+ master,slave=os.openpty()
+ try:
+  process=subprocess.Popen([str(executable),'--headless'],cwd=isolated,env=environment,
+                           stdin=subprocess.DEVNULL,stdout=slave,stderr=subprocess.STDOUT)
+ except BaseException:
+  os.close(master);raise
+ finally:os.close(slave)
+ os.set_blocking(master,False)
+ def read_output():
+  try:return os.read(master,65536)
+  except OSError as error:
+   if error.errno==errno.EIO:return b'' # Linux PTY EOF.
+   raise
+ try:
+  with selectors.DefaultSelector() as selector:
+   selector.register(master,selectors.EVENT_READ)
+   deadline=time.monotonic()+120
+   while not ready:
+    remaining=deadline-time.monotonic()
+    if remaining<=0:failure='Startup readiness timed out.';break
+    events=selector.select(min(remaining,1))
+    if not events:
+     if process.poll() is not None:failure='Process exited before startup readiness.';break
+     continue
+    chunk=read_output()
+    if not chunk:failure='Output ended before startup readiness.';break
+    log.extend(chunk)
+    if re.search(rb'^ERROR:',log,re.M) or b'audioFault' in log:
+     failure='Startup reported an error.';break
+    ready=(b'"runtimeMajor": 10' in log and
+           all(re.search(rb'"kind"\s*:\s*"'+kind+rb'"',log) for kind in
+               (b'audioCatalog',b'playerEntryReady',b'ready')))
+   if ready and process.poll() is not None:failure='Process exited before controlled smoke termination.'
+ finally:
+  # SIGTERM is deliberate after readiness (or failure); it does not prove graceful quit.
+  if process.poll() is None:process.terminate()
+  elif ready and failure is None:failure='Process exited before controlled smoke termination.'
+  try:
+   try:process.wait(timeout=10)
+   except subprocess.TimeoutExpired:
+    process.kill();process.wait();failure='Process required forced cleanup.'
+   if process.returncode not in (0,-signal.SIGTERM):
+    failure=f'Unexpected process exit during smoke cleanup: {process.returncode}.'
+   while True:
+    try:tail=read_output()
+    except BlockingIOError:break
+    if not tail:break
+    log.extend(tail)
+  finally:os.close(master)
+  text=log.decode('utf-8',errors='replace')
+  (ROOT/'evidence/current-export-runtime.log').write_text(text,encoding='utf-8')
+ if failure or not ready or re.search(r'^ERROR:',text,re.M) or 'audioFault' in text:
+  raise RuntimeError((failure or 'Startup reported a late error.')+' See evidence/current-export-runtime.log. No finished package was created.')
+ return 'Current headless readiness passed; externally terminated'
+
+
 def export():
  if sys.platform!='linux':raise RuntimeError('Current packaging supports Linux x86_64 only.')
  template=pathlib.Path(ENV['XDG_DATA_HOME'])/'godot/export_templates/4.7.2.stable.mono/linux_release.x86_64'
@@ -147,13 +210,9 @@ def export():
   clean['PATH']=os.defpath
   with tempfile.TemporaryDirectory(prefix='firered-package-check-') as isolated:
    clean.update({key:str(pathlib.Path(isolated)/name) for key,name in [('HOME','home'),('XDG_DATA_HOME','data'),('XDG_CONFIG_HOME','config'),('XDG_CACHE_HOME','cache')]})
-   checked=subprocess.run([str(executable),'--headless','--quit-after','120'],cwd=isolated,env=clean,capture_output=True,text=True,timeout=120)
-  log=checked.stdout+checked.stderr
-  (ROOT/'evidence/current-export-runtime.log').write_text(log,encoding='utf-8')
-  if checked.returncode or re.search(r'^ERROR:',log,re.M) or 'playerEntryReady' not in log or 'audioCatalog' not in log or 'audioFault' in log or '"runtimeMajor": 10' not in log:
-   raise RuntimeError('Exported Current startup failed; see evidence/current-export-runtime.log. No finished package was created.')
+   startup=check_export_startup(executable,isolated,clean)
   shutil.move(str(stage),str(destination))
- return output({'package':str(destination),'startup':'Current headless passed','note':'Window, New Game/save/Continue and real audio require separate acceptance.'})
+ return output({'package':str(destination),'startup':startup,'note':'Window, New Game/save/Continue and real audio require separate acceptance.'})
 
 
 def verify_p0():

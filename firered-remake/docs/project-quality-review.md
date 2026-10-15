@@ -208,6 +208,10 @@ Route11/RockTunnel 的实际 JSON 编辑已贯穿候选生成、公开进入/结
 
 已按模块补齐明确自有的基础字体/UI、battle字体/skin/darkArt、options、capture、storage、Tower独立纹理、center/oldman资源，Dispose后清空引用；SourceGameFont释放幂等。混合所有权字典不盲目遍历Dispose，既有SceneTextures/HallPc/MapCache路径保留。
 
-Godot构建零警告/错误。独立headless宿主验证正常退出、8模块重复释放与部分初始化失败：136个已创建自有包装对象释放后失效，40个借用options纹理仍有效，随后ExitTree再清理正常。缺catalog用例按预期退出21，无附带清理异常。以上不是全GPU释放、显存泄漏、FPS或听测结论；混合容器中其他自建纹理的归属与同步启动耗时仍是后续项。
+Godot构建零警告/错误。独立headless宿主验证正常退出、8模块重复释放与部分初始化失败：136个已创建自有包装对象释放后失效，40个借用options纹理仍有效，随后ExitTree再清理正常。缺catalog用例按预期退出21，无附带清理异常。以上不是全GPU释放、显存泄漏、FPS或听测结论；混合容器中其他自建纹理的归属仍是后续项。
+
+启动现已把纯BCL内容目录加载放入单个后台Task；Godot资源、会话及表现初始化仍在主线程。显式ready门控覆盖输入、绘制、游玩计时与退出，离树后的旧Task不回调场景。实际headless宿主验证loading绘制、其他节点推进、加载中退出/移除后重建、F5/F9等输入阻断、计时门控以及目录缺失和后半段表现初始化失败；正常退出0，预期失败21。
+
+实际Linux异步版本再次导出成功。导出冒烟改为等待runtime/audioCatalog/playerEntryReady/ready证据，使用PTY避免Release stdout管道缓冲，并在120秒超时、提前退出或错误时失败；ready后受控终止，不当作优雅退出验收。原管道版超时失败证据保留。主线程表现初始化仍同步，未测实际屏幕、FPS或真实音频，不声称启动总耗时降低。
 
 已取消全局NuGet锁文件生成，并删除6份仅含空目标或本地ProjectReference的冗余packages.lock.json；外部依赖版本仍由现有PackageReference固定，官方工具链下载校验不变。避免publish反复写入无意义的空RID节点。

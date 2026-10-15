@@ -59,6 +59,18 @@ public partial class CampaignView:Node2D
     private string? _blockedAutomaticWait;
     private bool _lastCommandFault;
     private bool _quitRequested;
+    private bool _startupReady, _startupExited, _loadingDrawn;
+    private string _startupCheckpoint="";
+    private Task<CatalogLoadResult>? _catalogLoad;
+    private sealed record CatalogLoadResult(PretCampaignCatalog? Catalog,Exception? Error);
+
+    // This worker captures only a path. It never owns a node, session or Godot resource,
+    // and returns failures as data so an abandoned load cannot fault unobserved.
+    private static Task<CatalogLoadResult> StartCatalogLoad(string root)=>Task.Run(()=>
+    {
+        try{return new CatalogLoadResult(PretCampaignCatalog.LoadCurrent(root),null);}
+        catch(Exception error){return new CatalogLoadResult(null,error);}
+    });
     private CampaignDiagnostics _diagnostics = new(null, null);
     private StoryWaitKind? _waitKind;
     public GameStartupSelection? Startup { private get; set; }
@@ -73,31 +85,55 @@ public partial class CampaignView:Node2D
             _root=startup.ProjectRoot;_evidence=OS.GetEnvironment("FIRERED_EVIDENCE");
             _diagnostics=new(_evidence,OS.GetEnvironment("FIRERED_VERBOSE"));
             _font=GD.Load<FontFile>("res://Assets/ProbeFont.ttc");
+            if(_font is null)throw new InvalidDataException("startup_font_missing");
+            _startupCheckpoint=startup.Checkpoint;
+            _catalogLoad=StartCatalogLoad(_root);
+            QueueRedraw();
+        }
+        catch(Exception error){FailStartup(error);}
+    }
+    private void FailStartup(Exception error)
+    {
+        _quitRequested=true;_catalogLoad=null;
+        SetProcess(false);SetPhysicsProcess(false);SetProcessUnhandledInput(false);
+        GD.PushError(error.ToString());GetTree().Quit(21);
+    }
+    private void ProcessStartup()
+    {
+        QueueRedraw();
+        // Yield a submitted loading frame even when an already-warm catalog finishes quickly.
+        if(!_loadingDrawn||_catalogLoad is not {IsCompleted:true} pending)return;
+        _catalogLoad=null;
+        var result=pending.GetAwaiter().GetResult();
+        if(result.Error is {} loadError){FailStartup(loadError);return;}
+        _catalog=result.Catalog!;
+        try
+        {
+            // Godot resource creation and all session/presentation work stay on this thread.
             var fontDirectory=System.IO.Path.Combine(_root,"content/generated/ui/font");
             _sourceNormal=SourceGameFont.Load(fontDirectory,colorProfile:SourceGameFont.ColorProfile.MgbaBitReplicated);_sourceSmall=SourceGameFont.Load(fontDirectory,"small",colorProfile:SourceGameFont.ColorProfile.MgbaBitReplicated);
             _sourceWhite=SourceGameFont.Load(fontDirectory,foreground:Colors.White,shadow:new Color("636363"));_sourceSmallWhite=SourceGameFont.Load(fontDirectory,"small",Colors.White,new Color("636363"));
             _sourceInactiveCursor=SourceGameFont.Load(fontDirectory,foreground:OpeningItemUiSkin.MenuTextShadow,shadow:OpeningItemUiSkin.MenuTextColor);
             _uiCorrections=SourceUiCorrections.Load(System.IO.Path.Combine(_root,"content/generated/ui/ui-corrections"));
             _itemSkin=OpeningItemUiSkin.Load(System.IO.Path.Combine(_root,"content/generated/ui/item-ui"));_textCursor=SourceTextCursor.Load(System.IO.Path.Combine(_root,"content/generated/ui/text-cursor"));
-            _catalog=PretCampaignCatalog.LoadCurrent(_root);
             _borderSources=PretMapBorders.LoadCatalog(System.IO.Path.Combine(_root,"content/generated/maps/borders"));
             _session=CampaignSession.CreateCurrent(_catalog,new(0x11223344));
             LoadShopPresentation();LoadCenterHealingPresentation();LoadOldManPresentation();LoadQuestPocketPresentation();LoadPortraits();LoadBattlePresentation();if(_catalog.RegionEnabled)LoadWildBattlePresentation();LoadForestTrainerPresentation();LoadStoragePresentation();LoadPokedexMenuPresentation();LoadTrainerCardPresentation();LoadOptionsPresentation();LoadMtMoonPresentation();LoadCeruleanPresentation();LoadBillCreaturePresentation();LoadBillPresentation();LoadVermilionPresentation();LoadSsAnnePresentation();LoadVermilionGymPresentation();LoadCityServicesPresentation();LoadRoute11Presentation();LoadRockTunnelPresentation();LoadCeladonApproachPresentation();LoadCeladonGymPresentation();LoadRocketHideoutPresentation();LoadPokemonTowerPresentation();LoadSnorlaxPresentation();LoadRegionalServicesPresentation();LoadFuchsiaRoutePresentation();LoadFuchsiaGymPresentation();LoadSafariPresentation();LoadFieldStrengthPresentation();LoadSurfPresentation();LoadSilphPresentation();LoadSaffronGymPresentation();LoadCinnabarPresentation();LoadFirstSeviiPresentation();LoadViridianGymPresentation();LoadVictoryRoadPresentation();LoadPokemonLeaguePresentation();LoadSeviiRubyPresentation();LoadFourIslandPresentation();LoadSixIslandPresentation();LoadFiveIslandPresentation();LoadCelioPresentation();LoadMewtwoPresentation();LoadLeagueRematchPresentation();LoadSevenIslandPresentation();LoadEventIslandPresentation();LoadPowerPlantPresentation();LoadTrainerTowerPresentation();LoadFightingDojoPresentation();LoadFossilLabPresentation();LoadSeafoamPresentation();LoadQwilfishPresentation();LoadStoneEvolutionPresentation();LoadGameCornerPresentation();LoadBreedingPresentation();LoadOrdinaryEvolutionPresentation();LoadMemorialPillarPresentation();LoadGiftEggPresentation();LoadLostCaveTrainerPresentation();LoadDepartmentMachineIcon();LoadRooftopIcons();LoadGameCornerPrizeIcons();LoadFieldFlyIcon();LoadLostCaveItemIcons();if(_catalog.FieldFly is not null)LoadFieldFlyTravelPresentation();_cues=PretPresentationCues.Load(_root);
             _nicknameEdit=new LineEdit{Position=new(20,62),Size=new(200,22),MaxLength=10,Visible=false,PlaceholderText="",CaretBlink=true,KeepEditingOnTextSubmit=true};
             _nicknameEdit.AddThemeFontOverride("font",_font);_nicknameEdit.AddThemeFontSizeOverride("font_size",11);
             _nicknameEdit.TextSubmitted+=SubmitCampaignNickname;_nicknameEdit.GuiInput+=NameRaterNicknameGuiInput;_nicknameEdit.GuiInput+=GiftNicknameGuiInput;_nicknameEdit.GuiInput+=EggNicknameGuiInput;_nicknameEdit.GuiInput+=StorageBoxNameGuiInput;AddChild(_nicknameEdit);
-            var checkpoint=startup.Checkpoint;
+            var checkpoint=_startupCheckpoint;
             if(checkpoint.Length>0)
             {
                 var saved=new SaveService(new LocalSaveStorage()).Load<CampaignState>(checkpoint,_session.RulesVersion,_catalog.ContentVersion,_session.ValidatePlayerSave);
                 _session=CampaignSession.RestoreCurrent(_catalog,saved.State,saved.Generation);_sequence=saved.Generation;
                 Write("checkpointLoaded",_diagnostics.Payload(new{saved.Source,saved.Generation},()=>new{saved.Source,saved.Generation,hash=CanonicalJson.Hash(saved.State)}));
             }
-            ResetPlayTimeHost();
             LoadSourceAudio();LoadMap(_session.State.World.Player.MapId);if(!InitializePlayerEntry(checkpoint))Synchronize(null,_session.State);
+            _startupReady=true;ResetPlayTimeHost();
             Write("ready",_diagnostics.Payload(new{_catalog.ContentVersion,_session.Revision},()=>new{scope="source-driven opening and starter gift/nickname; first lab battle semantic profile; original menu art, animation, audio and exact timing incomplete",_catalog.ContentVersion,state=_session.State}));
         }
-        catch(Exception e){GD.PushError(e.ToString());GetTree().Quit(21);}
+        catch(Exception error){FailStartup(error);}
     }
     private Texture2D Texture(string path,bool darkened=false)=>SceneTextures.Texture(path,darkened);
     // These resources are constructed directly, not borrowed from SceneTextures.
@@ -225,7 +261,8 @@ public partial class CampaignView:Node2D
     }
     public override void _Process(double delta)
     {
-        if(_quitRequested||_session is null)return;
+        if(_quitRequested||_startupExited)return;
+        if(!_startupReady){ProcessStartup();return;}
         ProcessTrainerTowerTime(delta);
         if(PlayerEntryActive){QueueRedraw();return;}
         if(!CommitPlayTime(PlayTimeDisplayNeedsFlush)){QueueRedraw();return;}
@@ -295,7 +332,13 @@ public partial class CampaignView:Node2D
     }
     private async void RequestQuit()
     {
-        if(_quitRequested)return;
+        if(_quitRequested||_startupExited)return;
+        if(!_startupReady)
+        {
+            _quitRequested=true;_catalogLoad=null;
+            SetProcess(false);SetPhysicsProcess(false);SetProcessUnhandledInput(false);
+            GetTree().Quit();return;
+        }
         ResetSourceMoveAnimation("quit");
         CommitPlayTime(true);
         _quitRequested=true;_held=null;_repeat=0;ResetPlayTimeHost();
@@ -324,11 +367,18 @@ public partial class CampaignView:Node2D
     public override void _Notification(int what)
     {
         if(what==(int)NotificationWMCloseRequest){RequestQuit();return;}
+        if(!_startupReady||_quitRequested||_startupExited)return;
         if(what==(int)NotificationWMWindowFocusOut || what==(int)NotificationApplicationFocusOut)
         {_slotHeld=0;_slotFrameTime=0;_runningShiftHeld=false;_held=null;_repeat=0;_townMapHeld=null;ResetMenuMouseInput();ReleaseFieldTextInput();ResetRegionalSignInput();ResetVsSeekerInput();}
     }
     public override void _UnhandledInput(InputEvent input)
     {
+        if(_quitRequested||_startupExited)return;
+        if(!_startupReady)
+        {
+            if(input is InputEventKey {Pressed:true,Echo:false,Keycode:Key.Escape})RequestQuit();
+            GetViewport().SetInputAsHandled();return;
+        }
         if(TrySlotMachineInput(input))return;
         if(TryTeachyTvBattleInput(input))return;
         if(TryTeachyTvFieldInput(input))return;
@@ -451,6 +501,13 @@ public partial class CampaignView:Node2D
         (_session.State.ForestTrainerBattle?.Stage!=CampaignForestTrainerStage.Intro||_tracks.All(t=>t.Time>=t.Duration));
     public override void _Draw()
     {
+        if(_quitRequested||_startupExited)return;
+        if(!_startupReady)
+        {
+            DrawRect(new(0,0,240,160),new Color("101820"));
+            if(_font is not null)DrawString(_font,new(58,83),"Loading game...",fontSize:14,modulate:Colors.White);
+            _loadingDrawn=true;return;
+        }
         BeginMapFrame();
         if(_session is null)return;
         if(PlayerEntryActive){DrawPlayerEntry();return;}

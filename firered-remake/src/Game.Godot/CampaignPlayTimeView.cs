@@ -5,7 +5,7 @@ using Godot;
 public partial class CampaignView
 {
     private readonly CampaignPlayTimeTicks _playTimeTicks = new();
-    private bool PlayTimeRunning => _session is not null && !_quitRequested && !PlayerEntryActive &&
+    private bool PlayTimeRunning => _startupReady && !_startupExited && _session is not null && !_quitRequested && !PlayerEntryActive &&
         LeagueCompletion?.Stage != CampaignPokemonLeagueCompletionStage.ResetRequested;
 
     public override void _PhysicsProcess(double delta)

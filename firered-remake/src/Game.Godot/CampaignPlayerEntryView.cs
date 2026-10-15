@@ -351,6 +351,8 @@ public partial class CampaignView
     }
     public override void _ExitTree()
     {
+        // A worker may finish after this scene leaves, but has no callback or node reference.
+        _startupExited=true;_startupReady=false;_catalogLoad=null;
         DisposeSourceMoveAnimation();DisposeSlotMachinePresentation();DisposeFameCheckerPresentation();DisposeTeachyTvPresentation();DisposeVsSeekerPresentation();
         _saffronGymTrainerPortraits.Clear(); _saffronGymTrainerClasses.Clear();
         DisposeMailPresentation();_lostCaveTrainerPresentation.Clear();DisposeGiftEggPresentation();DisposeMemorialPillarPresentation();DisposeOrdinaryEvolutionPresentation();DisposeBreedingPresentation();DisposeGameCornerPresentation();DisposeStoneEvolutionPresentation();DisposeQwilfishPresentation();DisposeSeafoamPresentation();DisposeFossilLabPresentation();DisposeFightingDojoPresentation();DisposePowerPlantPresentation();DisposeEventIslandPresentation();DisposeSevenIslandPresentation();DisposeLeagueRematchPresentation();DisposeMewtwoPresentation();DisposeCelioPresentation();DisposeFiveIslandPresentation();DisposeSixIslandPresentation();DisposeFourIslandPresentation();DisposeSeviiRubyPresentation();DisposeFirstSeviiPresentation();_viridianGymPresentation=null;DisposeSilphPresentation();
