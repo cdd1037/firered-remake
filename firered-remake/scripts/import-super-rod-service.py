@@ -97,7 +97,7 @@ def item_inventory(src, constants, stage, dep):
     png=codec.png(w,h,rgba);filename='item_super_rod.png';(stage/filename).write_bytes(png)
     icon=dict(item=item['id'],width=w,height=h,pngPath=filename,
               source=ref(image,match[1]),paletteSource=ref(palette,match[2]),bindingSource=binding)
-    return dict(schemaVersion=1,profile=RESOURCE_ID,sourceCommit=COMMIT,items=[dict(item=item,description=desc,declarationDescription=desc,descriptionSource=source)],icons=[icon])
+    return dict(schemaVersion=1,profile=RESOURCE_ID,sourceCommit=COMMIT,items=[dict(item=item,description=desc)],icons=[icon])
 
 def retained_city(src,current):
     manifest=(current/CITY_PACKAGE/'manifest.json').read_bytes()

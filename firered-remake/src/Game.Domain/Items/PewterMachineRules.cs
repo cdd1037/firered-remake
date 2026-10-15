@@ -106,8 +106,8 @@ public static class PewterMachineRules
 
     private static void ValidateItem(PewterMachineItem value, bool isCase)
     {
-        if (value is null || value.Item is null || value.DescriptionSource is null ||
-            string.IsNullOrWhiteSpace(value.Description) || string.IsNullOrWhiteSpace(value.DeclarationDescription))
+        if (value is null || value.Item is null ||
+            string.IsNullOrWhiteSpace(value.Description))
             throw new NotSupportedException("Missing machine item metadata.");
         var i = value.Item;
         if (i.Id != (isCase ? TmCaseId : Tm39Id) || i.SourceItemSymbol != (isCase ? "ITEM_TM_CASE" : "ITEM_TM39") ||
@@ -118,7 +118,7 @@ public static class PewterMachineRules
             i.FieldUseFunction != (isCase ? "FieldUseFunc_TmCase" : "NULL") ||
             i.HoldEffect != "HOLD_EFFECT_NONE" || i.HoldEffectParam != 0 || i.BattleUsage != 0 ||
             i.BattleUseFunction != "NULL" || i.SecondaryId != 0 || i.CanToss != !isCase ||
-            i.CanSell != !isCase || i.CanGive != !isCase || i.Source is null)
+            i.CanSell != !isCase || i.CanGive != !isCase)
             throw new NotSupportedException("Unsupported TM39 or TM CASE metadata.");
     }
 

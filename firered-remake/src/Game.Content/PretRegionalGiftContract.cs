@@ -33,8 +33,7 @@ public sealed class PretRegionalGiftContract
         TeaItem = new(new(new("pret:ITEM_TEA"), "ITEM_TEA", 369, "TEA", 0, 1, 1,
             "POCKET_KEY_ITEMS", "ITEM_TYPE_BAG_MENU", "HOLD_EFFECT_NONE", 0, "FieldUseFunc_OakStopsYou",
             0, "NULL", 0, false, false, false, source),
-            item.GetProperty("description_english").GetString()!.Replace("\\n", "\n", StringComparison.Ordinal),
-            item.GetProperty("description_english").GetString()!, source);
+            item.GetProperty("description_english").GetString()!.Replace("\\n", "\n", StringComparison.Ordinal));
     }
 
     public static PretRegionalGiftContract Load(string projectRoot)

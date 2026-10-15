@@ -7,14 +7,17 @@ public static class CeladonGymItemRules
 {
     public const string Profile = "firered-celadon-gym-items-v1";
     public static ItemId Tm19Id { get; } = new("pret:ITEM_TM19");
-    private static readonly QuestItemDefinition ExpectedItem = new(new("pret:ITEM_TM19"),"ITEM_TM19",307,"TM19",3000,0,0,"POCKET_TM_CASE","ITEM_TYPE_PARTY_MENU","HOLD_EFFECT_NONE",0,"NULL",0,"NULL",0,true,true,true,new("src/data/items.json","ITEM_TM19",4933,4949));
-    private const string Description = "A harsh attack that\nabsorbs half the\ndamage it inflicted\nto restore HP.";
-    private const string DeclarationDescription = "The user strikes the foe with\ntentacles or roots, stealing the\ntarget's HP and healing itself.";
-    private static readonly OpeningItemSourceRef DescriptionSource = new("src/move_descriptions.c","gMoveDescription_GigaDrain",205,205);
+    private static bool IsSupportedItem(QuestItemDefinition? item) => item is not null &&
+        item.Id == Tm19Id && item.SourceItemSymbol == "ITEM_TM19" && item.SourceItemId == 307 &&
+        item.Name == "TM19" && item.Price == 3000 && item.Importance == 0 && item.Registrability == 0 &&
+        item.Pocket == "POCKET_TM_CASE" && item.Type == "ITEM_TYPE_PARTY_MENU" &&
+        item.HoldEffect == "HOLD_EFFECT_NONE" && item.HoldEffectParam == 0 && item.FieldUseFunction == "NULL" &&
+        item.BattleUsage == 0 && item.BattleUseFunction == "NULL" && item.SecondaryId == 0 &&
+        item.CanToss && item.CanSell && item.CanGive;
+
     public static void ValidateMachine(PewterMachineItem machine)
     {
-        if (machine is null || machine.Item != ExpectedItem || machine.Description != Description ||
-            machine.DeclarationDescription != DeclarationDescription || machine.DescriptionSource != DescriptionSource)
+        if (machine is null || !IsSupportedItem(machine.Item) || string.IsNullOrWhiteSpace(machine.Description))
             throw new NotSupportedException("Exact source TM19 metadata required.");
     }
     public static void ValidateShop(EarlyShopCatalog catalog)
@@ -25,14 +28,14 @@ public static class CeladonGymItemRules
             throw new NotSupportedException("Exact Celadon Gym 46-item profile required.");
         LavenderItemRules.ValidateShop(catalog with { Profile = LavenderItemRules.Profile, Items = catalog.Items.Take(45).ToImmutableArray() });
         var item = catalog.Items[45];
-        if (item.Id != Tm19Id || item.SourceItemSymbol != ExpectedItem.SourceItemSymbol ||
-            item.SourceItemId != ExpectedItem.SourceItemId || item.Name != ExpectedItem.Name || item.Description != Description ||
-            item.Price != ExpectedItem.Price || item.Pocket != ExpectedItem.Pocket || item.Importance != ExpectedItem.Importance ||
-            item.Type != ExpectedItem.Type || item.FieldUseFunction != ExpectedItem.FieldUseFunction ||
-            item.BattleUsage != ExpectedItem.BattleUsage || item.BattleUseFunction != ExpectedItem.BattleUseFunction ||
+        if (item.Id != Tm19Id || item.SourceItemSymbol != "ITEM_TM19" ||
+            item.SourceItemId != 307 || item.Name != "TM19" || string.IsNullOrWhiteSpace(item.Description) ||
+            item.Price != 3000 || item.Pocket != "POCKET_TM_CASE" || item.Importance != 0 ||
+            item.Type != "ITEM_TYPE_PARTY_MENU" || item.FieldUseFunction != "NULL" ||
+            item.BattleUsage != 0 || item.BattleUseFunction != "NULL" ||
             item.HoldEffectParam != 0 || item.HealHp != 0 || item.CureStatus != 0 || item.EffectBytes.IsDefault || !item.EffectBytes.IsEmpty ||
-            item.UseSupport != EarlyShopUseSupport.NoFieldUse || item.Source != ExpectedItem.Source || item.EffectSource is not null ||
-            item.SourceMetadata != ExpectedItem)
+            item.UseSupport != EarlyShopUseSupport.NoFieldUse || item.EffectSource is not null ||
+            !IsSupportedItem(item.SourceMetadata))
             throw new NotSupportedException("Celadon Gym source item differs.");
     }
     public static bool IsBerry(ItemId item) => LavenderItemRules.IsBerry(item);

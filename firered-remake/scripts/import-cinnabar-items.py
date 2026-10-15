@@ -54,12 +54,12 @@ def convert(source, dependency):
             secondaryId=item['secondaryId'], canToss=item['importance'] == 0, canSell=item['price'] != 0,
             canGive=item['importance'] == 0, source=item_ref)
         declaration = item['description_english'].replace(chr(92) + 'n', chr(10))
-        description, description_ref = declaration, item_ref
+        description = declaration
         if short in NEW_MACHINES:
             path = 'src/move_descriptions.c'
             match = one(path, r'^const u8 gMoveDescription_' + item['moveId'] + r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
-            description, description_ref = json.loads(match[1]), ref(path, 'gMoveDescription_' + item['moveId'], match)
-        metadata = dict(item=definition, description=description, declarationDescription=declaration, descriptionSource=description_ref)
+            description = json.loads(match[1])
+        metadata = dict(item=definition, description=description)
         definitions.append(dict(metadata=metadata, effectBytes=[], effectSource=None))
     path = 'data/maps/CinnabarIsland_Mart/scripts.inc'
     match = one(path, r'^CinnabarIsland_Mart_Items::\s*\n((?:\s*\.2byte ITEM_\w+\n)+)')

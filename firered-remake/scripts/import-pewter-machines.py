@@ -96,20 +96,18 @@ def build(lock, data):
         location = ref('src/data/items.json', symbol, m)
         declaration = i['description_english'].replace('\\n', '\n')
         description = declaration
-        description_source = location
         if symbol == 'ITEM_TM39':
             if i['moveId'] != 'RockTomb':
                 raise ValueError('TM39 move mapping differs')
             d = match('src/move_descriptions.c', r'^const u8 gMoveDescription_RockTomb\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
             description = json.loads(d.group(1))
-            description_source = ref('src/move_descriptions.c', 'gMoveDescription_RockTomb', d)
         value = dict(id={'value': 'pret:' + symbol}, sourceItemSymbol=symbol, sourceItemId=source_id,
             name=i['english'], price=i['price'], importance=i['importance'], registrability=i['registrability'],
             pocket=i['pocket'], type=str(i['type']), holdEffect=i['holdEffect'], holdEffectParam=i['holdEffectParam'],
             fieldUseFunction=i['fieldUseFunc'], battleUsage=i['battleUsage'], battleUseFunction=i['battleUseFunc'],
             secondaryId=i['secondaryId'], canToss=i['importance']==0, canSell=i['price']!=0,
             canGive=i['importance']==0, source=location)
-        return dict(item=value, description=description, declarationDescription=declaration, descriptionSource=description_source)
+        return dict(item=value, description=description)
     tm = item('ITEM_TM39',source_tm); case = item('ITEM_TM_CASE',source_case)
     map_block = match('src/data/party_menu.h', r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};')
     mapped_moves = re.findall(r'\bMOVE_\w+\b',map_block.group(1))

@@ -47,7 +47,7 @@ def outputs(lock,data,project):
   symbol='ITEM_'+short;i=next(x for x in declarations if x['itemId']==symbol);p='src/data/items.json'
   m=match(p,r'^    \{\n      "english": "[^\n]*",\n      "itemId": "'+symbol+r'",.*?^    \}');source=ref(p,symbol,m)
   definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
-  description=i['description_english'].replace('\\n','\n');wrapped=dict(item=definition,description=description,declarationDescription=description,descriptionSource=source)
+  description=i['description_english'].replace('\\n','\n');wrapped=dict(item=definition,description=description)
   effects=[];effectsource=None
   if short in ('ELIXIR','X_ACCURACY'):
    p='src/data/pokemon/item_effects.h';camel='Elixir' if short=='ELIXIR' else 'XAccuracy';m=match(p,r'^static const u8 sItemEffect_'+camel+r'\[(\d+)\] = \{\n(.*?)^\};');actual=' '.join(re.sub(r'//[^\n]*','',m[2]).split());effectsource=ref(p,'sItemEffect_'+camel,m)

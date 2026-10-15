@@ -17,7 +17,7 @@ def metadata(symbol):
  match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
  r=ref('src/data/items.json',symbol,line,line)
  value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
- return dict(item=value,description=i['description_english'].replace('\\n','\n'),declarationDescription=i['description_english'],descriptionSource=r)
+ return dict(item=value,description=i['description_english'].replace('\\n','\n'))
 move_constants=source('include/constants/moves.h')
 assert re.search(r'^#define\s+MOVE_ROCK_SMASH\s+249\b',move_constants,re.M)
 battle_moves=source('src/data/battle_moves.h')

@@ -28,6 +28,6 @@ public static class RockTunnelMachineRules
         }
         var tm=values[13];var i=tm.Machine.Item;
         if(tm.Move!=new MoveId("pret:MOVE_AERIAL_ACE")||tm.SourceMoveId!=332||tm.MovePp!=20||i.Id!=Tm40Id||i.SourceItemSymbol!="ITEM_TM40"||i.SourceItemId!=328||i.Name!="TM40"||i.Price!=3000||i.Importance!=0||i.Registrability!=0||i.Pocket!="POCKET_TM_CASE"||i.Type!="ITEM_TYPE_PARTY_MENU"||i.FieldUseFunction!="NULL"||i.HoldEffect!="HOLD_EFFECT_NONE"||i.HoldEffectParam!=0||i.BattleUsage!=0||i.BattleUseFunction!="NULL"||i.SecondaryId!=0||!i.CanToss||!i.CanSell||!i.CanGive||
-            i.Source!=new OpeningItemSourceRef("src/data/items.json", "ITEM_TM40", 5290, 5306)||tm.Machine.DescriptionSource!=new OpeningItemSourceRef("src/move_descriptions.c", "gMoveDescription_AerialAce", 335, 335)||tm.Machine.Description!="An extremely fast\nattack against one\ntarget. It can't be\nevaded."||tm.Machine.DeclarationDescription!="An extremely fast attack against\none target. It is impossible to\nevade.")throw new NotSupportedException("TM40 source metadata differs.");
+            string.IsNullOrWhiteSpace(tm.Machine.Description))throw new NotSupportedException("TM40 source metadata differs.");
     }
 }

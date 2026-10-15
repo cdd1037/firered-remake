@@ -35,10 +35,10 @@ def generate(root,dependency_root=None):
  for short in ('HM03','HM04','GOLD_TEETH','TM11','TM47','TM32','MAX_POTION','FULL_RESTORE','LEAF_STONE','PROTEIN','QUICK_CLAW','MAX_REVIVE'):
   symbol='ITEM_'+short;item=next(i for i in source_items if i['itemId']==symbol);p='src/data/items.json';im=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}');source=ref(p,symbol,im)
   definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=str(item['type']),holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,canGive=item['importance']==0,source=source)
-  declaration=item['description_english'].replace(chr(92)+'n',chr(10));description=declaration;description_source=source
+  declaration=item['description_english'].replace(chr(92)+'n',chr(10));description=declaration
   if short.startswith(('HM','TM')):
-   p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+item['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1]);description_source=ref(p,'gMoveDescription_'+item['moveId'],m)
-  wrapped=dict(item=definition,description=description,declarationDescription=declaration,descriptionSource=description_source);items.append(dict(metadata=wrapped,effectBytes=[],effectSource=None))
+   p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+item['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1])
+  wrapped=dict(item=definition,description=description);items.append(dict(metadata=wrapped,effectBytes=[],effectSource=None))
   p='src/data/item_icon_table.h';im=one(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,im);image_symbol,palette_symbol=im.groups();paths=[]
   for asset_symbol in (image_symbol,palette_symbol):
    p='src/data/graphics/items.h';am=one(p,r'^const u32 '+asset_symbol+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,asset_symbol,am));paths.append(am[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))

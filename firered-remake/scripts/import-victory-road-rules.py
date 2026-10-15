@@ -203,12 +203,12 @@ def generate(reference, dependency, region):
             holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],
             battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,
             canGive=item['importance']==0,source=item_ref)
-        description=item['description_english'].replace('\\n','\n'); description_ref=item_ref
+        description=item['description_english'].replace('\\n','\n')
         if 'moveId' in item:
             path='src/move_descriptions.c'; desc_symbol='gMoveDescription_'+item['moveId']
             m=one(path,r'^const u8 '+desc_symbol+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
-            description=json.loads(m[1]);description_ref=ref(path,desc_symbol,m)
-        metadata[symbol]=dict(item=definition,description=description,declarationDescription=item['description_english'].replace('\\n','\n'),descriptionSource=description_ref)
+            description=json.loads(m[1])
+        metadata[symbol]=dict(item=definition,description=description)
     need(len(placements)==18 and len(item_symbols)==16 and sum(p['hidden'] for p in placements)==10,'Pickup scope')
     item_doc=dict(sourceCommit=COMMIT,profile='firered-victory-road-items-v1',items=list(metadata.values()),pickups=placements,
         renewable=False,limitations=['Eighteen unique pickup flags represent sixteen item types.',

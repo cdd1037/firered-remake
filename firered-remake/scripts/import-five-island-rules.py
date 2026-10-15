@@ -172,7 +172,7 @@ def generate_items(reference,root):
   match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
   r=ref('src/data/items.json',symbol,line,line)
   value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
-  return dict(item=value,description=i['description_english'].replace('\\n','\n'),declarationDescription=i['description_english'],descriptionSource=r)
+  return dict(item=value,description=i['description_english'].replace('\\n','\n'))
  symbols=['ITEM_MAX_POTION','ITEM_PP_UP','ITEM_BIG_PEARL','ITEM_TM36','ITEM_PEARL','ITEM_UP_GRADE','ITEM_NEST_BALL','ITEM_NET_BALL','ITEM_SAPPHIRE']
  items=[metadata(s) for s in symbols]
  new=[]

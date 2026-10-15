@@ -8,7 +8,6 @@ ordered roster; they never define a cumulative compatibility delta.
 import argparse
 from collections import Counter
 import copy
-import hashlib
 import json
 from pathlib import Path
 import re
@@ -18,8 +17,6 @@ COMMIT = '037335f4c725d7c9aecdac87066f2002b4bd7e14'
 RAW_PATH = Path('content/raw/pokefirered/037335f4')
 CATALOG_PATH = Path('content/generated/machine-catalog/catalog.json')
 RECIPE_PATH = Path('scripts/import-config/machine-catalog.json')
-BASELINE_PATH = Path('evidence/shared-machine-catalog-20261015/baseline.json')
-MACHINE_BASELINE_PATH = Path('evidence/shared-machine-catalog-20261015/machine-gameplay-baseline.json')
 MACHINES = tuple(f'TM{i:02}' for i in range(1, 51)) + tuple(f'HM{i:02}' for i in range(1, 9))
 ADMITTED_MACHINES = MACHINES[:-1]
 ITEM_IDS = tuple('pret:ITEM_' + name for name in MACHINES)
@@ -58,11 +55,6 @@ def encode(value):
     return (json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\n').encode()
 
 
-def semantic_hash(value):
-    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
-                                     separators=(',', ':')).encode()).hexdigest()
-
-
 def constants(text, prefix):
     rows = re.findall(r'^#define (' + prefix + r'\w+)\s+(\d+)\b', text, re.M)
     require(len(rows) == len(dict(rows)), 'Duplicate source constants: ' + prefix)
@@ -93,7 +85,7 @@ def compile_catalog(raw, recipe):
     require([item_ids['ITEM_' + m] for m in MACHINES] == list(range(289, 347)),
             'Non-contiguous TM/HM item IDs')
     recipe_groups = ('itemFieldSpanMachines', 'itemSymbolSpanMachines',
-                     'itemDescriptionMachines', 'literalDeclarationMachines')
+                     'itemDescriptionMachines')
     for group in recipe_groups:
         require(len(recipe[group]) == len(set(recipe[group])) and
                 set(recipe[group]) <= set(ADMITTED_MACHINES), 'Invalid recipe group: ' + group)
@@ -137,15 +129,10 @@ def compile_catalog(raw, recipe):
         require(description_match is not None, 'Missing move description: ' + name)
         declaration = item['description_english'].replace('\\n', '\n')
         if name in recipe['itemDescriptionMachines']:
-            description, description_source = declaration, copy.deepcopy(item_source)
+            description = declaration
         else:
             description = json.loads(description_match[2])
-            description_source = source_ref(desc_path, description_match[1], descriptions,
-                                            description_match.start(), description_match.end())
-        machine = dict(item=value, description=description,
-                       declarationDescription=item['description_english'] if name in
-                       recipe['literalDeclarationMachines'] else declaration,
-                       descriptionSource=description_source)
+        machine = dict(item=value, description=description)
         move = 'MOVE_' + mappings[name]
         battle = re.search(r'\[' + move + r'\]\s*=\s*\{(.*?)\},',
                            texts['src/data/battle_moves.h'], re.S)
@@ -195,6 +182,8 @@ class Catalog:
         require(len(self.machines) == len(document['machines']) == 57, 'Duplicate/missing machines')
         require(len(self.species) == len(document['compatibility']) == 386, 'Duplicate/missing species')
         require(set(self.machines) == set(ITEM_IDS[:-1]), 'Unexpected admitted machine definitions')
+        for row in self.machines.values():
+            require(set(row['machine']) == {'item', 'description'}, 'Unexpected machine item fields')
         for row in self.species.values():
             require(set(row) == {'species', 'sourceSpeciesId', 'compatibleItems'},
                     'Unexpected compatibility fields')
@@ -302,37 +291,6 @@ def process_documents(project, catalog):
     return results
 
 
-def baseline_manifest(results):
-    return dict(schemaVersion=1, sourceCommit=COMMIT,
-                files=[dict(path=path, semanticSha256=semantic_hash(expanded), **counts)
-                       for path, _, _, expanded, counts in results],
-                totals=dict(files=len(results), **sum((counts for *_, counts in results), Counter())))
-
-
-def machine_value_manifest(results):
-    """Hash typed machine values and view order; compatibility has no source proof."""
-    files = []
-    for path, _, _, expanded, counts in results:
-        values = []
-        def visit(value, pointer=''):
-            if isinstance(value, dict):
-                if FULL_MACHINE_FIELDS <= value.keys() or COMPATIBILITY_FIELDS <= value.keys() or (
-                    path == 'content/generated/pewter-machines/pewter-machines.json' and pointer == '/catalog/tm39'):
-                    values.append(dict(pointer=pointer, value=value))
-                    return
-                for key, child in value.items():
-                    visit(child, pointer + '/' + key)
-            elif isinstance(value, list):
-                for index, child in enumerate(value):
-                    visit(child, pointer + '/' + str(index))
-        visit(expanded)
-        # Object member order is immaterial, but every array/view order is preserved.
-        values.sort(key=lambda row: row['pointer'])
-        files.append(dict(path=path, machineValuesSha256=semantic_hash(values), **counts))
-    return dict(schemaVersion=1, sourceCommit=COMMIT, files=files,
-                totals=dict(files=len(results), **sum((counts for *_, counts in results), Counter())))
-
-
 def require_direct_references(results):
     for path, original, compact, _, _ in results:
         require(original == compact, 'Importer emitted expanded machine data: ' + path)
@@ -344,11 +302,7 @@ def run(project, check=False, references_only=True):
     results = process_documents(project, catalog)
     if references_only:
         require_direct_references(results)
-    baseline_path = project / BASELINE_PATH
-    manifest = baseline_manifest(results)
-    baseline_matches = baseline_path.exists() and read_json(baseline_path) == manifest
-    machine_baseline = project / MACHINE_BASELINE_PATH
-    machine_parity = machine_baseline.exists() and read_json(machine_baseline) == machine_value_manifest(results)
+    totals = dict(files=len(results), **sum((counts for *_, counts in results), Counter()))
     output = {CATALOG_PATH.as_posix(): encode(document)}
     for relative, _, compact, expanded, _ in results:
         output[relative] = encode(compact)
@@ -362,9 +316,9 @@ def run(project, check=False, references_only=True):
             path.write_bytes(data)
     return dict(checked=check, sharedMachineDefinitions=57,
                 species=386, compatibilityMachines=58, compatibilityValues=386 * 58,
-                **manifest['totals'], catalogBytes=len(output[CATALOG_PATH.as_posix()]),
+                **totals, catalogBytes=len(output[CATALOG_PATH.as_posix()]),
                 regionalBytes=sum(len(data) for path, data in output.items()
-                                  if path != CATALOG_PATH.as_posix()), originalWholeDocumentParity=baseline_matches, exactMachineValueParity=machine_parity)
+                                  if path != CATALOG_PATH.as_posix()))
 
 
 def main():

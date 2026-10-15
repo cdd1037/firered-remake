@@ -202,7 +202,7 @@ def item_inventory(src, constants, stage):
             fieldUseFunction=original['fieldUseFunc'],battleUsage=original['battleUsage'],battleUseFunction=original['battleUseFunc'],
             secondaryId=secondary,canToss=original['importance']==0,canSell=original['price']!=0,canGive=original['importance']==0,source=source)
         desc=original['description_english'].replace('\\n','\n')
-        items.append(dict(item=item,description=desc,declarationDescription=desc,descriptionSource=source))
+        items.append(dict(item=item,description=desc))
         p='src/data/item_icon_table.h';match=re.search(r'^    \['+symbol+r'\]\s*=\s*\{(\w+), (\w+)\},',src.text(p),re.M)
         if match is None: raise ValueError('Missing original icon: '+symbol)
         binding=ref(p,symbol,match);paths=[]

@@ -83,7 +83,7 @@ def convert(lock,data):
   seen.add(index);effect[index]=flag if part[2]=='ITEM4_HEAL_HP' else int(part[2])
  if effect!=[0,0,0,0,4,0,50]:raise ValueError('Super Potion healing bytes differ')
  m=match(p,r'^    \[ITEM_SUPER_POTION - ITEM_POTION\][ \t]*= sItemEffect_SuperPotion,');rules.append(ref(p,'ITEM_SUPER_POTION effect binding',m))
- item=dict(metadata=dict(item=definition,description=declaration,declarationDescription=declaration,descriptionSource=source),effectBytes=effect,effectSource=effect_source,useSupport='potion')
+ item=dict(metadata=dict(item=definition,description=declaration),effectBytes=effect,effectSource=effect_source,useSupport='potion')
  p='data/maps/CeruleanCity_Mart/scripts.inc';m=match(p,r'^CeruleanCity_Mart_Items::\n((?:\t\.2byte ITEM_\w+\n)+)');stock=re.findall(r'\.2byte (ITEM_\w+)',m[1]);expected=['ITEM_'+n for n in 'POKE_BALL SUPER_POTION POTION ANTIDOTE PARALYZE_HEAL AWAKENING BURN_HEAL ESCAPE_ROPE REPEL NONE'.split()]
  if stock!=expected:raise ValueError('Cerulean source stock/order/terminator differs')
  shop=dict(id='CeruleanCity_Mart_Items',items=[ident(x) for x in stock[:-1]],source=ref(p,'CeruleanCity_Mart_Items',m))

@@ -5,8 +5,7 @@ using Game.Domain.Pokemon;
 
 namespace Game.Domain.Items;
 
-public sealed record PewterMachineItem(QuestItemDefinition Item, string Description,
-    string DeclarationDescription, OpeningItemSourceRef DescriptionSource);
+public sealed record PewterMachineItem(QuestItemDefinition Item, string Description);
 public sealed record PewterMachineCompatibility(SpeciesId Species, int SourceSpeciesId,
     bool CanLearn);
 public sealed record PewterMachineCatalog(string SourceCommit, string Profile, bool CompleteItemCatalog,

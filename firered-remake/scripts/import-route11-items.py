@@ -105,7 +105,7 @@ def convert(lock,data):
   declaration=i['description_english'].replace('\\n','\n');effect_bytes,effect_source=effect(effects[name]) if name in effects else ([],None)
   if name in effects:
    p='src/data/pokemon/item_effects.h';em=match(p,r'^    \['+symbol+r' - ITEM_POTION\][ \t]*= sItemEffect_'+effects[name]+',');rules.append(ref(p,symbol+' effect binding',em))
-  defs.append(dict(metadata=dict(item=definition,description=declaration,declarationDescription=declaration,descriptionSource=source),effectBytes=effect_bytes,effectSource=effect_source))
+  defs.append(dict(metadata=dict(item=definition,description=declaration),effectBytes=effect_bytes,effectSource=effect_source))
   p='src/data/item_icon_table.h';m=match(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,m);symbols=m.groups();paths=[]
   for sym in symbols:
    p='src/data/graphics/items.h';g=match(p,r'^const u32 '+sym+r'\[\][ \t]*= INCBIN_U32\("([^"]+)"\);');rules.append(ref(p,sym,g));paths.append(g[1].replace('.4bpp.lz','.png').replace('.gbapal.lz','.pal'))

@@ -9,6 +9,14 @@ def refs(v):
  if not isinstance(v,dict):return []
  if set(v)=={'item','species'} and isinstance(v['item'],str):return [v]
  return [r for x in v.values() for r in refs(x)]
+def wrappers(value):
+ if isinstance(value,list):return [row for child in value for row in wrappers(child)]
+ if not isinstance(value,dict):return []
+ if 'description' in value and isinstance(value.get('item'),dict) and 'sourceItemSymbol' in value['item']:
+  assert set(value)=={'item','description'}, 'Retired item proof fields emitted'
+  return [value]
+ return [row for child in value.values() for row in wrappers(child)]
+
 class EarlyMachineImporterTests(unittest.TestCase):
  def test_direct_shared_references_match_runtime_membership(self):
   for name in ['pewter-machines','mtmoon-items','cerulean-machines','bill-machines','vermilion-machines','ssanne-machines','route11-machines','rocktunnel-items','celadon-gym-catalog','rocket-hideout-items']:
@@ -26,6 +34,7 @@ class EarlyMachineImporterTests(unittest.TestCase):
     if not p.endswith('.json'):continue
     actual=refs(json.loads(b));expected=refs(json.loads((root/'content/generated'/folder/p).read_bytes()))
     assert actual==expected,(name,p,len(actual),len(expected))
+    assert wrappers(json.loads(b))==wrappers(json.loads((root/'content/generated'/folder/p).read_bytes())),(name,p,'item values differ')
   
 
 def git(args,**kwargs):

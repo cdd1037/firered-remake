@@ -22,7 +22,7 @@ def generate(reference,root):
   match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
   r=ref('src/data/items.json',symbol,line,line)
   value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
-  return dict(item=value,description=i['description_english'].replace('\\n','\n'),declarationDescription=i['description_english'],descriptionSource=r)
+  return dict(item=value,description=i['description_english'].replace('\\n','\n'))
  items=[metadata(s) for s in ['ITEM_NEVER_MELT_ICE','ITEM_HM07']]
  i=items[0]['item'];need(i['holdEffect']=='HOLD_EFFECT_ICE_POWER' and i['holdEffectParam']==10 and i['price']==100 and i['sourceItemId']==212,'NeverMeltIce original source')
  new=[{k:i[k] for k in ['id','sourceItemSymbol','sourceItemId','name','price','pocket','importance','type','fieldUseFunction','battleUsage','battleUseFunction','holdEffectParam','source']}|dict(description=items[0]['description'],healHp=0,cureStatus=0,effectBytes=[],useSupport=10,effectSource=None,sourceMetadata=i)]

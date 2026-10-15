@@ -3,6 +3,5 @@
   "sourceCommit": "037335f4c725d7c9aecdac87066f2002b4bd7e14",
   "itemFieldSpanMachines": ["HM02", "TM10", "TM13", "TM15", "TM16", "TM18", "TM20", "TM23", "TM24", "TM27", "TM29", "TM30", "TM33", "TM35", "TM42", "TM48"],
   "itemSymbolSpanMachines": ["HM06", "HM07", "TM17", "TM25", "TM36"],
-  "itemDescriptionMachines": ["HM06", "HM07", "TM36"],
-  "literalDeclarationMachines": ["HM06", "HM07", "TM17", "TM25", "TM36"]
+  "itemDescriptionMachines": ["HM06", "HM07", "TM36"]
 }

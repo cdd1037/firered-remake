@@ -83,7 +83,7 @@ def generate(reference, dependency):
         pngPath='coin-case.png',source=source(image,'gItemIcon_CoinCase'),
         paletteSource=source(palette,'gItemIconPalette_CoinCase'),bindingSource=binding_ref)
     document=dict(schemaVersion=1,profile=PROFILE,sourceCommit=COMMIT,
-        items=[dict(item=item,description=desc,declarationDescription=desc,descriptionSource=ref)],icons=[icon])
+        items=[dict(item=item,description=desc)],icons=[icon])
     # Preserve original source lines and ordered instructions for only the five ordinary services.
     blocks={}
     for path in [RESTAURANT+'scripts.inc',CORNER+'scripts.inc']:

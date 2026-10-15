@@ -185,7 +185,7 @@ def generate(reference, dependency):
      match=re.search(r'"itemId":\s*"'+symbol+r'"',items_text);line=items_text[:match.start()].count('\n')+1
      r=dict(path='src/data/items.json',symbol=symbol,startLine=line,endLine=line)
      value=dict(id={'value':'pret:'+symbol},sourceItemSymbol=symbol,sourceItemId=constant[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
-     return dict(item=value,description=i['description_english'].replace('\\n','\n'),declarationDescription=i['description_english'],descriptionSource=r)
+     return dict(item=value,description=i['description_english'].replace('\\n','\n'))
     new_items=[]
     for m in [item_metadata(n) for n in ['ITEM_KINGS_ROCK','ITEM_LUCKY_PUNCH','ITEM_HEART_SCALE']]:
         i=m['item']

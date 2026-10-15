@@ -117,13 +117,13 @@ def convert(lock,data):
    name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),
    holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],
    battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
-  declaration=i['description_english'].replace('\\n','\n');description=declaration;description_source=source
+  declaration=i['description_english'].replace('\\n','\n');description=declaration
   effect_bytes,effect_source=effect(effects[name][0]) if name in effects else ([],None)
   support=effects[name][1] if name in effects else ('fossil' if 'FOSSIL' in name else 'noFieldUse')
   if name.startswith('TM'):
    p='src/move_descriptions.c';m=match(p,r'^const u8 gMoveDescription_'+i['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
-   description=json.loads(m[1]);description_source=ref(p,'gMoveDescription_'+i['moveId'],m)
-  wrapped=dict(item=definition,description=description,declarationDescription=declaration,descriptionSource=description_source)
+   description=json.loads(m[1])
+  wrapped=dict(item=definition,description=description)
   defs.append(dict(metadata=wrapped,effectBytes=effect_bytes,effectSource=effect_source,useSupport=support))
   p='src/data/item_icon_table.h';m=match(p,r'^    \['+symbol+r'\][ \t]*= \{(\w+), (\w+)\},');binding=ref(p,symbol,m);paths=[]
   for sym in m.groups():

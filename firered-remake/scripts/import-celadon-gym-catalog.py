@@ -185,7 +185,7 @@ def item_outputs(lock,sources,project):
     m=match(path,r'^    \{\n      "english": "TM19",.*?^    \}');source=ref(path,'ITEM_TM19',m)
     definition=dict(id=ident('ITEM_TM19'),sourceItemSymbol='ITEM_TM19',sourceItemId=constant('include/constants/items.h','ITEM_TM19'),name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
     path='src/move_descriptions.c';m=match(path,r'^const u8 gMoveDescription_GigaDrain\[\] = _\(("(?:[^"\\]|\\.)*")\);$')
-    wrapped=dict(item=definition,description=json.loads(m[1]),declarationDescription=i['description_english'].replace('\\n','\n'),descriptionSource=ref(path,'gMoveDescription_GigaDrain',m))
+    wrapped=dict(item=definition,description=json.loads(m[1]))
     path='src/data/party_menu.h';m=match(path,r'^static const u16 sTMHMMoves\[\] =\n\{(.*?)^\};');mapping=re.findall(r'\bMOVE_\w+\b',m[1]);rules.append(ref(path,'sTMHMMoves',m))
     if len(mapping)!=58 or mapping[18]!='MOVE_GIGA_DRAIN':raise ValueError('TM19 source move mapping differs')
     path='src/data/battle_moves.h';m=match(path,r'^    \[MOVE_GIGA_DRAIN\] =\n    \{(.*?)^    \},');rules.append(ref(path,'MOVE_GIGA_DRAIN',m))

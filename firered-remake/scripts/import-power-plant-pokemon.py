@@ -515,10 +515,10 @@ def generate(reference,dependency,raw=None):
  def item(symbol):
   i=next(i for i in sourceitems if i['itemId']==symbol);m=one('src/data/items.json',r'"itemId":\s*"'+symbol+r'"');r=ref('src/data/items.json',symbol,m)
   meta=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=constants[symbol],name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['importance']==0,canGive=i['importance']==0,source=r)
-  description=i['description_english'].replace('\\n','\n');descriptionref=r
+  description=i['description_english'].replace('\\n','\n')
   if symbol.startswith('ITEM_TM'):
-   p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+i['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1]);descriptionref=ref(p,'gMoveDescription_'+i['moveId'],m)
-  return dict(item=meta,description=description,declarationDescription=i['description_english'],descriptionSource=descriptionref)
+   p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+i['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1])
+  return dict(item=meta,description=description)
  items=[]
  for symbol in ['ITEM_THUNDER_STONE','ITEM_TM17','ITEM_TM25']:
   wrapped=item(symbol);meta=wrapped['item'];stone=symbol=='ITEM_THUNDER_STONE';effect=None

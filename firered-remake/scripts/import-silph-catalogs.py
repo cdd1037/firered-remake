@@ -165,10 +165,10 @@ def metadata(src,dependency):
  for short in ITEMS:
   symbol='ITEM_'+short;item=next(i for i in sourceitems if i['itemId']==symbol);p='src/data/items.json';m=one(p,r'^    \{\n      "english": "'+re.escape(item['english'])+r'",.*?^    \}');r=ref(p,symbol,m)
   definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=item['english'],price=item['price'],importance=item['importance'],registrability=item['registrability'],pocket=item['pocket'],type=str(item['type']),holdEffect=item['holdEffect'],holdEffectParam=item['holdEffectParam'],fieldUseFunction=item['fieldUseFunc'],battleUsage=item['battleUsage'],battleUseFunction=item['battleUseFunc'],secondaryId=item['secondaryId'],canToss=item['importance']==0,canSell=item['price']!=0,canGive=item['importance']==0,source=r)
-  declaration=item['description_english'].replace(chr(92)+'n',chr(10));description=declaration;dr=r
+  declaration=item['description_english'].replace(chr(92)+'n',chr(10));description=declaration
   if short.startswith('TM'):
-   p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+item['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1]);dr=ref(p,'gMoveDescription_'+item['moveId'],m)
-  wrapped=dict(item=definition,description=description,declarationDescription=declaration,descriptionSource=dr);items.append(dict(metadata=wrapped,effectBytes=[],effectSource=None))
+   p='src/move_descriptions.c';m=one(p,r'^const u8 gMoveDescription_'+item['moveId']+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1])
+  wrapped=dict(item=definition,description=description);items.append(dict(metadata=wrapped,effectBytes=[],effectSource=None))
  itemdoc=dict(schemaVersion=1,profile='firered-silph-items-v1',sourceCommit=COMMIT,items=items,limitations=['23 original item definitions cover17 visible and12 hidden source pickups plus President Master Ball; metadata creates no rewards.','Inherited item objects must remain unchanged; only missing identities may extend the shop.'])
  machinedoc=dict(schemaVersion=1,profile='firered-silph-machines-v1',sourceCommit=COMMIT,inheritedItemIds=[ident('ITEM_'+x) for x in MACHINES],additions=shared_machines.compatibility_additions(dependency, 'content/generated/silph-catalogs/machines.json'),newMachines=new,limitations=['All24 inherited112-species matrices retain identity and append Lapras; TM01/TM08/TM41 add exact113 cells each.'])
  return pokemon,itemdoc,machinedoc

@@ -61,12 +61,25 @@ def references(value):
     return [ref for child in value.values() for ref in references(child)]
 
 
+def item_wrappers(value):
+    if isinstance(value, list):
+        return [row for child in value for row in item_wrappers(child)]
+    if not isinstance(value, dict):
+        return []
+    if 'description' in value and isinstance(value.get('item'), dict) and 'sourceItemSymbol' in value['item']:
+        if set(value) != {'item', 'description'}:
+            raise AssertionError('Retired item proof fields emitted')
+        return [value]
+    return [row for child in value.values() for row in item_wrappers(child)]
+
+
 class LateMachineImporterTests(unittest.TestCase):
     def compare(self, relative, value):
         expected = references(json.loads((ROOT / relative).read_bytes()))
         actual = references(value)
         self.assertTrue(expected, 'Empty machine-view assertion: ' + relative)
         self.assertEqual(expected, actual, relative)
+        self.assertEqual(item_wrappers(json.loads((ROOT / relative).read_bytes())), item_wrappers(value), relative)
 
     def test_midgame_machine_outputs_use_direct_shared_views(self):
         module = load('import-fuchsia-gym-items.py')

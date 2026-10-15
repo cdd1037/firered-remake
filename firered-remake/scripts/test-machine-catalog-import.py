@@ -46,41 +46,46 @@ class SharedMachineCatalogImport(unittest.TestCase):
         self.assertEqual(57, result['sharedMachineDefinitions'])
         self.assertEqual(386, result['species'])
         self.assertEqual(22388, result['compatibilityValues'])
-        self.assertTrue((ROOT / IMPORT.BASELINE_PATH).is_file())
-        self.assertTrue(result['exactMachineValueParity'])
 
-    def test_every_machine_value_and_order_matches_independent_captured_baseline(self):
-        baseline = IMPORT.read_json(ROOT / IMPORT.MACHINE_BASELINE_PATH)
-        self.assertEqual(baseline, IMPORT.machine_value_manifest(self.results))
-        self.assertEqual(dict(files=47, machineDefinitions=141, compatibilityCells=17896), baseline['totals'])
+    def test_regional_reference_roundtrip_preserves_order(self):
+        self.assertEqual(47, len(self.results))
         for path, compact, expected_compact, expanded, _ in self.results:
             self.assertEqual(compact, expected_compact, path)
             inherited = 'pret:ITEM_TM39' if path in IMPORT.TM39_DOCUMENTS else None
             self.assertEqual(compact, IMPORT.transform(expanded, self.catalog, path, inherited=inherited))
-        # All current fields and original text match the pre-removal projection.
-        self.assertTrue(all(re.fullmatch('[0-9a-f]{64}', row['machineValuesSha256'])
-                            for row in baseline['files']))
 
-    def test_original_source_inclusive_baseline_remains_verifiable_in_tools(self):
-        entries = source_learnsets()
-        restored = copy.deepcopy(self.results)
-        def restore(value):
-            if isinstance(value, list):
-                for child in value:
-                    restore(child)
-            elif isinstance(value, dict):
-                if set(value) == IMPORT.COMPATIBILITY_FIELDS:
-                    symbol = value['species']['value'][5:]
-                    entry = entries[symbol]
-                    value['source'] = dict(path='src/data/pokemon/tmhm_learnsets.h', symbol=symbol,
-                                           startLine=entry['start'], endLine=entry['end'])
-                else:
-                    for child in value.values():
-                        restore(child)
-        for _, _, _, expanded, _ in restored:
-            restore(expanded)
-        original = IMPORT.read_json(ROOT / 'evidence/shared-machine-catalog-20261015/machine-values-baseline.json')
-        self.assertEqual(original, IMPORT.machine_value_manifest(restored))
+    def test_machine_item_values_match_independent_raw_items(self):
+        raw = ROOT / IMPORT.RAW_PATH
+        items = {row['itemId']: row for row in json.loads((raw / 'src/data/items.json').read_text())['items']}
+        descriptions = (raw / 'src/move_descriptions.c').read_text()
+        battle_moves = (raw / 'src/data/battle_moves.h').read_text()
+        fields = {'name': 'english', 'price': 'price', 'importance': 'importance',
+                  'registrability': 'registrability', 'pocket': 'pocket',
+                  'holdEffect': 'holdEffect', 'holdEffectParam': 'holdEffectParam',
+                  'fieldUseFunction': 'fieldUseFunc', 'battleUsage': 'battleUsage',
+                  'battleUseFunction': 'battleUseFunc', 'secondaryId': 'secondaryId'}
+        self.assertEqual(57, len(self.catalog.machines))
+        for key, row in self.catalog.machines.items():
+            symbol = key[5:]
+            item = items[symbol]
+            actual = row['machine']['item']
+            for target, origin in fields.items():
+                self.assertEqual(item[origin], actual[target], (symbol, target))
+            self.assertEqual(str(item['type']), actual['type'])
+            self.assertEqual(item['importance'] == 0, actual['canToss'])
+            self.assertEqual(item['importance'] == 0, actual['canGive'])
+            self.assertEqual(item['price'] != 0, actual['canSell'])
+            if symbol in ('ITEM_HM06', 'ITEM_HM07', 'ITEM_TM36'):
+                description = item['description_english'].replace('\\n', '\n')
+            else:
+                match = re.search(r'gMoveDescription_' + item['moveId'] + r'\[\] = _\(("(?:[^"\\]|\\.)*")\)', descriptions)
+                self.assertIsNotNone(match, symbol)
+                description = json.loads(match[1])
+            self.assertEqual(description, row['machine']['description'], symbol)
+            move = row['move']['value'][5:]
+            block = re.search(r'\[' + move + r'\]\s*=\s*\{(.*?)\}', battle_moves, re.S)
+            self.assertIsNotNone(block, move)
+            self.assertEqual(int(re.search(r'\.pp\s*=\s*(\d+)', block[1])[1]), row['movePp'])
 
     def test_compatibility_schema_rejects_retired_source_proof(self):
         for row in self.document['compatibility']:
@@ -136,14 +141,37 @@ class SharedMachineCatalogImport(unittest.TestCase):
         self.assertEqual({'pret:SPECIES_GASTLY', 'pret:SPECIES_HAUNTER',
                           'pret:SPECIES_SNORLAX', 'pret:SPECIES_EEVEE'}, set(original_hm08))
 
-    def test_exact_legacy_machine_presentation_is_intentionally_preserved(self):
+    def test_generated_item_wrapper_schema_has_no_retired_proof_fields(self):
+        count = 0
+        def visit(value):
+            nonlocal count
+            if isinstance(value, list):
+                for child in value:
+                    visit(child)
+            elif isinstance(value, dict):
+                if 'description' in value and isinstance(value.get('item'), dict) and 'sourceItemSymbol' in value['item']:
+                    count += 1
+                    self.assertEqual({'item', 'description'}, set(value))
+                for child in value.values():
+                    visit(child)
+        for path in (ROOT / 'content/generated').rglob('*.json'):
+            visit(json.loads(path.read_text()))
+        self.assertGreater(count, 0, "No generated item wrappers inspected")
+
+    def test_displayed_descriptions_are_preserved_without_proof_fields(self):
+        source = json.loads((ROOT / IMPORT.RAW_PATH / 'src/data/items.json').read_text())
+        items = {row['itemId']: row for row in source['items']}
         for name in ('HM06', 'HM07', 'TM36'):
             definition = self.catalog.machines['pret:ITEM_' + name]['machine']
-            self.assertEqual('src/data/items.json', definition['descriptionSource']['path'])
-            self.assertEqual(definition['declarationDescription'].replace('\\n', '\n'),
+            self.assertEqual(items['ITEM_' + name]['description_english'].replace('\\n', '\n'),
                              definition['description'])
-        for name in ('HM06', 'HM07', 'TM17', 'TM25', 'TM36'):
-            self.assertIn('\\n', self.catalog.machines['pret:ITEM_' + name]['machine']['declarationDescription'])
+        for definition in self.catalog.machines.values():
+            self.assertEqual({'item', 'description'}, set(definition['machine']))
+        for field in ('descriptionSource', 'declarationDescription'):
+            bad = copy.deepcopy(self.document)
+            bad['machines'][0]['machine'][field] = 'retired proof'
+            with self.assertRaisesRegex(ValueError, 'Unexpected machine item fields'):
+                IMPORT.Catalog(bad)
         pewter = dict((path, compact) for path, compact, _, _, _ in self.results)[
             'content/generated/pewter-machines/pewter-machines.json']['catalog']
         self.assertEqual({'item': 'pret:ITEM_TM39'}, pewter['tm39'])

@@ -70,11 +70,11 @@ def outputs(lock,data,project):
   symbol='ITEM_'+short;i=next(x for x in declarations if x['itemId']==symbol);p='src/data/items.json'
   m=match(p,r'^    \{\n      "english": "'+re.escape(i['english'])+r'",.*?^    \}');source=ref(p,symbol,m)
   definition=dict(id=ident(symbol),sourceItemSymbol=symbol,sourceItemId=number('include/constants/items.h',symbol),name=i['english'],price=i['price'],importance=i['importance'],registrability=i['registrability'],pocket=i['pocket'],type=str(i['type']),holdEffect=i['holdEffect'],holdEffectParam=i['holdEffectParam'],fieldUseFunction=i['fieldUseFunc'],battleUsage=i['battleUsage'],battleUseFunction=i['battleUseFunc'],secondaryId=i['secondaryId'],canToss=i['importance']==0,canSell=i['price']!=0,canGive=i['importance']==0,source=source)
-  description=i['description_english'].replace('\\n','\n');description_source=source
+  description=i['description_english'].replace('\\n','\n')
   if short in TEACHING:
    move,camel=TEACHING[short];assert mapping[int(short[2:])-1]=='MOVE_'+move
-   p='src/move_descriptions.c';m=match(p,r'^const u8 gMoveDescription_'+camel+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1]);description_source=ref(p,'gMoveDescription_'+camel,m)
-  wrapped=dict(item=definition,description=description,declarationDescription=i['description_english'].replace('\\n','\n'),descriptionSource=description_source)
+   p='src/move_descriptions.c';m=match(p,r'^const u8 gMoveDescription_'+camel+r'\[\] = _\(("(?:[^"\\]|\\.)*")\);$');description=json.loads(m[1])
+  wrapped=dict(item=definition,description=description)
   effects,effect_source=effect(short);items.append(dict(metadata=wrapped,effectBytes=effects,effectSource=effect_source))
   if short in TEACHING:
    p='src/data/battle_moves.h';m=match(p,r'^    \[MOVE_'+move+r'\] =\n    \{(.*?)^    \},');pp=int(re.search(r'\.pp = (\d+),',m[1])[1]);rules.append(ref(p,'MOVE_'+move,m))

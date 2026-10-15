@@ -50,8 +50,8 @@ internal static class SsAnneMachineRules
                 i.Importance != (hm ? 1 : 0) || i.Registrability != 0 || i.Pocket != "POCKET_TM_CASE" ||
                 i.Type != "ITEM_TYPE_PARTY_MENU" || i.FieldUseFunction != "NULL" || i.HoldEffect != "HOLD_EFFECT_NONE" ||
                 i.HoldEffectParam != 0 || i.BattleUsage != 0 || i.BattleUseFunction != "NULL" || i.SecondaryId != 0 ||
-                i.CanToss == hm || i.CanSell == hm || i.CanGive == hm || i.Source is null || v.Machine.DescriptionSource is null ||
-                string.IsNullOrWhiteSpace(v.Machine.Description) || string.IsNullOrWhiteSpace(v.Machine.DeclarationDescription))
+                i.CanToss == hm || i.CanSell == hm || i.CanGive == hm ||
+                string.IsNullOrWhiteSpace(v.Machine.Description))
                 throw new NotSupportedException("S.S. Anne machine metadata differs.");
             for (int x = 0; x < 73; x++)
             {
