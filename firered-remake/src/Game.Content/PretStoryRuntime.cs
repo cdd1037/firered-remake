@@ -12,12 +12,16 @@ public sealed record PretStoryRuntime(
     string NicknameCharacters,
     ImmutableSortedDictionary<string, string> MoveNames)
 {
+    public const int CurrentSchemaVersion = 2;
+    public static JsonSerializerOptions JsonOptions { get; } = new()
+    { Converters = { new StoryProgramJsonConverter() } };
+
     public static PretStoryRuntime Load(string projectRoot)
     {
         var result = JsonSerializer.Deserialize<PretStoryRuntime>(File.ReadAllBytes(
-            Path.Combine(projectRoot, "content/generated/story/runtime.json")))
+            Path.Combine(projectRoot, "content/generated/story/runtime.json")), JsonOptions)
             ?? throw new InvalidDataException("Story runtime resource is empty.");
-        if (result.SchemaVersion != 1 || result.Compilation.Programs.Count == 0 ||
+        if (result.SchemaVersion != CurrentSchemaVersion || result.Compilation.Programs.Count == 0 ||
             result.TextBank.Count == 0 || result.NicknameCharacters.Length < 60)
             throw new InvalidDataException("Story runtime resource schema or content is invalid.");
         return result;

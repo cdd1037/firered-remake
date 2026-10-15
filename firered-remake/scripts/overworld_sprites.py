@@ -2,6 +2,7 @@
 import io
 import re
 from PIL import Image
+from image_io import encode_png
 
 
 def graphics_records(src, graphics, out, *, render=False):
@@ -40,7 +41,7 @@ def graphics_records(src, graphics, out, *, render=False):
             sheet.paste(rgba, (i * width, 0))
         filename = graphics_id.removeprefix('OBJ_EVENT_GFX_').lower().replace('_', '-') + '.png'
         if render:
-            sheet.save(out / filename, optimize=False, compress_level=9)
+            (out / filename).write_bytes(encode_png(sheet))
         records.append(dict(graphicsId=graphics_id, declaration=fields, frames=frames,
                             texturePath=('npc/' if render else '../shared-overworld/') + filename,
                             frameWidth=width, frameHeight=height, frameCount=len(frames),

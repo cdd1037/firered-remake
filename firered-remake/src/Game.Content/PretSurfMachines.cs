@@ -13,8 +13,7 @@ public static class PretSurfMachines
         var old = previous.Catalog;
         ImmutableArray<PewterMachineCompatibility> Rows(Game.Domain.Ids.ItemId machine, ImmutableArray<PewterMachineCompatibility> inherited) =>
             inherited.AddRange(pokemon.Document.Machines.Select(row => new PewterMachineCompatibility(row.Species, pokemon.Catalog.Species[row.Species].SourceSpeciesId,
-                row.MachineSymbols.Any(s => s.StartsWith(machine.Value[10..] + "_", StringComparison.Ordinal)),
-                new(row.Source.Path,row.Source.Symbol,row.Source.StartLine,row.Source.EndLine))));
+                row.MachineSymbols.Any(s => s.StartsWith(machine.Value[10..] + "_", StringComparison.Ordinal)))));
         return old with { Profile = SurfMachineCatalog.Profile,Compatibility = Rows(old.Tm39.Item.Id, old.Compatibility),AdditionalMachines = old.AdditionalMachines!.Value.Select(m => m with { Compatibility = Rows(m.Machine.Item.Id, m.Compatibility) }).ToImmutableArray() };
     }
 }

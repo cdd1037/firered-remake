@@ -8,7 +8,7 @@ var input = JsonSerializer.Deserialize<StoryImportInput>(Console.In.ReadToEnd())
 var output = StoryImport.Compile(input);
 var path = Path.Combine(root, "content/generated/story/runtime.json");
 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-using var document = JsonDocument.Parse(JsonSerializer.Serialize(output));
+using var document = JsonDocument.Parse(JsonSerializer.Serialize(output, PretStoryRuntime.JsonOptions));
 using var bytes = new MemoryStream();
 using (var writer = new Utf8JsonWriter(bytes)) WriteCanonical(writer, document.RootElement);
 var json = System.Text.Encoding.UTF8.GetString(bytes.ToArray()) + "\n";
@@ -57,7 +57,7 @@ static class StoryImport
         compiled = CompleteSurfSourceFallthrough(compiled);
         compiled = CompleteFourIslandSourceFallthrough(compiled);
         compiled = CompleteFourIslandDayCareFallthrough(compiled);
-        return new(1, compiled, input.TextBank.ToImmutableDictionary(StringComparer.Ordinal), input.StarterSpeciesNames,
+        return new(PretStoryRuntime.CurrentSchemaVersion, compiled, input.TextBank.ToImmutableDictionary(StringComparer.Ordinal), input.StarterSpeciesNames,
             input.NicknameCharacters, input.MoveNames);
     }
     private static PretStoryCompilation CompleteSurfSourceFallthrough(PretStoryCompilation compiled)

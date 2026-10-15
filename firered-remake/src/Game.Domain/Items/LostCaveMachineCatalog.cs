@@ -31,7 +31,7 @@ public sealed class LostCaveMachineCatalog
             if (before.IsDefault || before.Length != 186 || !before.Select(r => r.Species).ToHashSet().SetEquals(pokemon.Predecessor.Owned.Catalog.Species.Keys))
                 throw new ArgumentException("lost_cave_machine_previous_species");
             return before.Add(new(LostCaveOwnedPokemonCatalog.Murkrow, 198,
-                LostCaveSpeciesSource.Metadata.MachineMoves.Contains(move), LostCaveSpeciesSource.MachineSource));
+                LostCaveSpeciesSource.Metadata.MachineMoves.Contains(move)));
         }
         var catalog = predecessor with { Profile = Profile, Compatibility = Extend(predecessor.Compatibility, predecessor.Move),
             AdditionalMachines = inherited.Select(m => m with { Compatibility = Extend(m.Compatibility, m.Move) }).ToImmutableArray() };

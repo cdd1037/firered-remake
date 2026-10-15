@@ -19,11 +19,12 @@ RAW_PATH = Path('content/raw/pokefirered/037335f4')
 CATALOG_PATH = Path('content/generated/machine-catalog/catalog.json')
 RECIPE_PATH = Path('scripts/import-config/machine-catalog.json')
 BASELINE_PATH = Path('evidence/shared-machine-catalog-20261015/baseline.json')
+MACHINE_BASELINE_PATH = Path('evidence/shared-machine-catalog-20261015/machine-gameplay-baseline.json')
 MACHINES = tuple(f'TM{i:02}' for i in range(1, 51)) + tuple(f'HM{i:02}' for i in range(1, 9))
 ADMITTED_MACHINES = MACHINES[:-1]
 ITEM_IDS = tuple('pret:ITEM_' + name for name in MACHINES)
 FULL_MACHINE_FIELDS = {'machine', 'move', 'sourceMoveId', 'movePp', 'compatibility'}
-COMPATIBILITY_FIELDS = {'species', 'sourceSpeciesId', 'canLearn', 'source'}
+COMPATIBILITY_FIELDS = {'species', 'sourceSpeciesId', 'canLearn'}
 TM39_DOCUMENTS = {
     'content/generated/pewter-machines/route22-compatibility.json',
     'content/generated/pewter-machines/route3-compatibility.json',
@@ -173,14 +174,12 @@ def compile_catalog(raw, recipe):
         require(len(tokens) == len(set(tokens)), 'Duplicate learnset token: ' + symbol)
         require(all(mappings.get(name) == move for name, move in tokens),
                 'Unknown/mismatched learnset machine: ' + symbol)
-        parsed[symbol] = (match, {name for name, _ in tokens})
+        parsed[symbol] = {name for name, _ in tokens}
     require(set(real_species) <= set(parsed), 'Missing real-species learnsets')
     compatibility = []
     for symbol, number in sorted(real_species.items(), key=lambda pair: pair[1]):
-        match, choices = parsed[symbol]
+        choices = parsed[symbol]
         compatibility.append(dict(species=dict(value='pret:' + symbol), sourceSpeciesId=number,
-                                  source=source_ref(learnset_path, symbol, learnsets,
-                                                    match.start(), match.end()),
                                   compatibleItems=[dict(value='pret:ITEM_' + name)
                                                    for name in MACHINES if name in choices]))
     return dict(schemaVersion=1, sourceCommit=COMMIT, machines=definitions,
@@ -197,6 +196,8 @@ class Catalog:
         require(len(self.species) == len(document['compatibility']) == 386, 'Duplicate/missing species')
         require(set(self.machines) == set(ITEM_IDS[:-1]), 'Unexpected admitted machine definitions')
         for row in self.species.values():
+            require(set(row) == {'species', 'sourceSpeciesId', 'compatibleItems'},
+                    'Unexpected compatibility fields')
             values = [item['value'] for item in row['compatibleItems']]
             require(len(values) == len(set(values)) and set(values) <= set(ITEM_IDS),
                     'Invalid compatible item IDs')
@@ -206,8 +207,7 @@ class Catalog:
         require(species in self.species, 'Unknown compatibility species: ' + str(species))
         row = self.species[species]
         return dict(species=copy.deepcopy(row['species']), sourceSpeciesId=row['sourceSpeciesId'],
-                    canLearn=item in {x['value'] for x in row['compatibleItems']},
-                    source=copy.deepcopy(row['source']))
+                    canLearn=item in {x['value'] for x in row['compatibleItems']})
 
     def machine(self, item, species):
         require(item in self.machines, 'Unknown admitted machine: ' + str(item))
@@ -310,7 +310,7 @@ def baseline_manifest(results):
 
 
 def machine_value_manifest(results):
-    """Hash only the exact typed machine values and their ordered view positions."""
+    """Hash typed machine values and view order; compatibility has no source proof."""
     files = []
     for path, _, _, expanded, counts in results:
         values = []
@@ -347,7 +347,7 @@ def run(project, check=False, references_only=True):
     baseline_path = project / BASELINE_PATH
     manifest = baseline_manifest(results)
     baseline_matches = baseline_path.exists() and read_json(baseline_path) == manifest
-    machine_baseline = project / 'evidence/shared-machine-catalog-20261015/machine-values-baseline.json'
+    machine_baseline = project / MACHINE_BASELINE_PATH
     machine_parity = machine_baseline.exists() and read_json(machine_baseline) == machine_value_manifest(results)
     output = {CATALOG_PATH.as_posix(): encode(document)}
     for relative, _, compact, expanded, _ in results:

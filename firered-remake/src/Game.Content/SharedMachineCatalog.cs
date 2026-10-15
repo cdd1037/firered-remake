@@ -8,7 +8,7 @@ using Game.Domain.Items;
 namespace Game.Content;
 
 public sealed record SharedMachineDefinition(PewterMachineItem Machine, MoveId Move, int SourceMoveId, int MovePp);
-public sealed record SharedMachineSpecies(SpeciesId Species, int SourceSpeciesId, OpeningItemSourceRef Source,
+public sealed record SharedMachineSpecies(SpeciesId Species, int SourceSpeciesId,
     ImmutableArray<ItemId> CompatibleItems);
 public sealed record SharedMachineDocument(int SchemaVersion, string SourceCommit,
     ImmutableArray<SharedMachineDefinition> Machines, ImmutableArray<SharedMachineSpecies> Compatibility);
@@ -43,7 +43,7 @@ public sealed class SharedMachineCatalog
         return _cells.GetOrAdd((item, species), key =>
         {
             if (!_species.TryGetValue(key.Item2, out var row)) throw new InvalidDataException("machine_compatibility_species");
-            return new(row.Species, row.SourceSpeciesId, row.CompatibleItems.Contains(key.Item1), row.Source);
+            return new(row.Species, row.SourceSpeciesId, row.CompatibleItems.Contains(key.Item1));
         });
     }
     public PewterAdditionalMachine Project(ItemId item, ImmutableArray<SpeciesId> species)

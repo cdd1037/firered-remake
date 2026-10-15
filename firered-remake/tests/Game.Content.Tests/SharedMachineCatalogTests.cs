@@ -40,4 +40,23 @@ public sealed class SharedMachineCatalogTests
         Assert.ThrowsExactly<InvalidDataException>(() => catalog.Project(new("pret:ITEM_TM39"), [new("pret:SPECIES_BULBASAUR"), new("pret:SPECIES_BULBASAUR")]));
         Assert.ThrowsExactly<InvalidDataException>(() => catalog.Compatibility(new("pret:ITEM_TM99"), new("pret:SPECIES_BULBASAUR")));
     }
+    [TestMethod]
+    public void CompatibilityRowsHaveOnlyGameplayFieldsAndStillRejectInvalidTeachingData()
+    {
+        var catalog = PretPewterMachines.LoadProject(TestAssets.Root);
+        var cell = catalog.Compatibility[0];
+        using var serialized = JsonDocument.Parse(JsonSerializer.Serialize(cell));
+        CollectionAssert.AreEquivalent(new[] { "Species", "SourceSpeciesId", "CanLearn" },
+            serialized.RootElement.EnumerateObject().Select(property => property.Name).ToArray());
+        Assert.ThrowsExactly<NotSupportedException>(() => PewterMachineRules.ValidateCatalog(catalog with {
+            Compatibility = catalog.Compatibility.SetItem(0, cell with { CanLearn = !cell.CanLearn }) }));
+        Assert.ThrowsExactly<NotSupportedException>(() => PewterMachineRules.ValidateCatalog(catalog with {
+            Compatibility = catalog.Compatibility.SetItem(0, cell with { SourceSpeciesId = 999 }) }));
+        Assert.ThrowsExactly<NotSupportedException>(() => PewterMachineRules.ValidateCatalog(catalog with {
+            Compatibility = catalog.Compatibility.SetItem(0, cell with { Species = new("pret:SPECIES_EEVEE") }) }));
+        Assert.ThrowsExactly<NotSupportedException>(() => PewterMachineRules.ValidateCatalog(catalog with { MovePp = 1 }));
+        Assert.ThrowsExactly<NotSupportedException>(() => PewterMachineRules.ValidateCatalog(catalog with {
+            Move = new("pret:MOVE_TACKLE") }));
+    }
+
 }

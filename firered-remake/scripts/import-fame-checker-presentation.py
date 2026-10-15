@@ -39,10 +39,7 @@ def safe(root, path):
     return target
 
 
-def png(width, height, rgba):
-    output = io.BytesIO()
-    Image.frombytes('RGBA', (width, height), rgba).save(output, format='PNG', compress_level=9)
-    return output.getvalue()
+from image_io import png
 
 
 def gba_colors(colors):

@@ -39,7 +39,7 @@ def generate(reference,dependency):
         assets.append(dict(id=id,path=path,width=im.width,height=im.height,frameWidth=framewidth,frameHeight=im.height,frameCount=im.width//framewidth,sourcePath=sourcepath,sourceFrames=sourceframes,reused=False))
         return rgba
     def inherited(id,path,width,height,framewidth,rgba):
-        data=reuse(path);im=Image.open(io.BytesIO(data));need(im.mode=='RGBA' and im.size==(width,height) and im.tobytes()==rgba,'Reused pixels equal source '+id)
+        data=reuse(path);im=Image.open(io.BytesIO(data));need(im.size==(width,height) and im.convert('RGBA').tobytes()==rgba,'Reused pixels equal source '+id)
         assets.append(dict(id=id,path=path,width=width,height=height,frameWidth=framewidth,frameHeight=height,frameCount=width//framewidth,sourcePath='graphics/object_events/pics/people/'+id.split('-')[0]+'_item.png',sourceFrames=list(range(5)),reused=True))
     animpath='src/data/object_events/object_event_anims.h';anim=text(animpath)
     normal=block(animpath,r'static const union AnimCmd sAnim_VSSeeker\[\] = \{(.*?)\};')[1]

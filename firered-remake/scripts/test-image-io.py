@@ -2,6 +2,7 @@
 """Small regressions for offline PNG index and transparent-color semantics."""
 import io
 import unittest
+import random
 from PIL import Image
 from image_io import indexed_png, png
 
@@ -24,7 +25,24 @@ class ImageIoTests(unittest.TestCase):
         pixels = bytes([13, 27, 39, 0, 71, 91, 113, 127, 151, 173, 199, 255] * 64)
         with Image.open(io.BytesIO(png(24, 8, pixels))) as image:
             self.assertEqual(image.size, (24, 8))
-            self.assertEqual(image.tobytes(), pixels)
+            self.assertEqual(image.convert('RGBA').tobytes(), pixels)
+
+    def test_encoder_uses_exact_palette_and_falls_back_above_256_colors(self):
+        for count in (16, 256, 257):
+            colors = [(i % 256, i // 256, 39, i % 256) for i in range(count)]
+            pixels = bytes(channel for color in colors * 64 for channel in color)
+            with Image.open(io.BytesIO(png(count, 64, pixels))) as image:
+                self.assertEqual(image.convert('RGBA').tobytes(), pixels)
+                if count > 256: self.assertEqual(image.mode, 'RGBA')
+                else: self.assertIn(image.mode, ('P', 'RGBA'))
+
+    def test_palette_path_keeps_same_rgb_with_different_alpha(self):
+        colors = [(13, 27, 39, alpha) for alpha in (0, 31, 127, 255)]
+        rng = random.Random(42)
+        pixels = bytes(channel for _ in range(4096) for channel in rng.choice(colors))
+        with Image.open(io.BytesIO(png(64, 64, pixels))) as image:
+            self.assertEqual(image.mode, 'P')
+            self.assertEqual(image.convert('RGBA').tobytes(), pixels)
 
     def test_indexed_input_requires_palette_and_tile_geometry(self):
         for mode, size in [('RGB', (8, 8)), ('P', (9, 8))]:

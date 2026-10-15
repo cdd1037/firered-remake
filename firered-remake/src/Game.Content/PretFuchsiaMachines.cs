@@ -19,8 +19,7 @@ public static class PretFuchsiaMachines
         ImmutableArray<PewterMachineCompatibility> Rows(ItemId item, ImmutableArray<PewterMachineCompatibility> inherited) =>
             inherited.AddRange(pokemon.Document.Machines.Select(row => new PewterMachineCompatibility(row.Species,
                 pokemon.Catalog.Species[row.Species].SourceSpeciesId,
-                row.MachineSymbols.Any(symbol => symbol.StartsWith(item.Value[10..] + "_", StringComparison.Ordinal)),
-                new(row.Source.Path,row.Source.Symbol,row.Source.StartLine,row.Source.EndLine))));
+                row.MachineSymbols.Any(symbol => symbol.StartsWith(item.Value[10..] + "_", StringComparison.Ordinal)))));
         var result = previous with { Profile = FuchsiaMachineRules.Profile,Compatibility = Rows(previous.Tm39.Item.Id, previous.Compatibility),AdditionalMachines = previous.AdditionalMachines!.Value.Select(machine => machine with {
                 Compatibility = Rows(machine.Machine.Item.Id, machine.Compatibility) }).ToImmutableArray() };
         FuchsiaMachineRules.ValidateCatalog(result);

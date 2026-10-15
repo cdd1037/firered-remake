@@ -169,8 +169,8 @@ def pack_backgrounds(outputs, generated):
                 backgrounds.append(dict(mapRegion=region, hidden=hidden, dark=dark,
                     texturePath='backgrounds.png', region=dict(x=x,y=y,width=240,height=160)))
             row += 1
-    buffer = io.BytesIO(); atlas.save(buffer, format='PNG', compress_level=9)
-    outputs['backgrounds.png'] = buffer.getvalue()
+    from image_io import encode_png
+    outputs['backgrounds.png'] = encode_png(atlas)
     doc = json.loads(outputs['fly-map.json']); doc['backgrounds'] = backgrounds
     doc['assets'] = [asset for asset in doc['assets'] if asset['id'].startswith('fly-icon-')]
     outputs['fly-map.json'] = canonical(doc)

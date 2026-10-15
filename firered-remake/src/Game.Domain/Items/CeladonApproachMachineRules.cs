@@ -23,8 +23,7 @@ public static class CeladonApproachMachineRules
             if (compatibility.IsDefault || compatibility.Length != 94) throw new NotSupportedException("Celadon approach machine shape differs.");
             var cell = compatibility[93];
             if (cell.Species != new SpeciesId("pret:SPECIES_MUK") || cell.SourceSpeciesId != 89 ||
-                cell.CanLearn != (MukCompatibility[row] == '1') || cell.Source != new OpeningItemSourceRef(
-                    "src/data/pokemon/tmhm_learnsets.h", "SPECIES_MUK", 2035, 2063))
+                cell.CanLearn != (MukCompatibility[row] == '1'))
                 throw new NotSupportedException("Pinned Muk machine compatibility differs.");
         }
     }

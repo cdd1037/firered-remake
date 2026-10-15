@@ -7,7 +7,6 @@ public static class RockTunnelMachineRules
     public static ItemId Tm40Id { get; } = new("pret:ITEM_TM40");
     private static readonly string[] TailCompatibility = ["10011111000000", "00000001000000", "00000000000000", "11111111001111", "00010000111000", "10111111111111", "11111111111111", "10011111000000", "10111110000000", "11111111111111", "00010000001000", "01010001000001", "01100000000111", "10000110000100"];
     private const string AerialCompatibility = "000111000001001111000011000001110110000000110110000010000000000000001110011000010000110000100";
-    private static readonly (int Start, int End)[] TailSpans = [(2390, 2415), (2323, 2341), (2227, 2253), (2487, 2521), (1554, 1576), (2417, 2443), (1292, 1319), (2572, 2599), (2754, 2772), (2793, 2811), (1684, 1706), (1089, 1108), (1070, 1087), (2547, 2570)];
     public static void ValidateCatalog(PewterMachineCatalog catalog)
     {
         if(catalog.Profile!=Profile||catalog.Compatibility.IsDefault||catalog.Compatibility.Length!=93||catalog.AdditionalMachines is not {IsDefault:false,Length:13} extra)
@@ -23,8 +22,8 @@ public static class RockTunnelMachineRules
             for(int n=0;n<93;n++)
             {
                 var c=value.Compatibility[n];var basis=catalog.Compatibility[n];
-                if(c is null||basis is null||c.Species!=basis.Species||c.SourceSpeciesId!=basis.SourceSpeciesId||c.Source!=basis.Source||c.Source is not {Path:"src/data/pokemon/tmhm_learnsets.h"})throw new NotSupportedException("RockTunnel compatibility source differs.");
-                if(c.Source.StartLine<1||c.Source.EndLine<c.Source.StartLine||n>=79&&(c.Species!=new SpeciesId("pret:SPECIES_"+species[n-79])||c.SourceSpeciesId!=ids[n-79]||c.Source.Symbol!="SPECIES_"+species[n-79]||c.Source.StartLine!=TailSpans[n-79].Start||c.Source.EndLine!=TailSpans[n-79].End||c.CanLearn!=(TailCompatibility[row][n-79]=='1'))||row==13&&c.CanLearn!=(AerialCompatibility[n]=='1'))throw new NotSupportedException("RockTunnel source compatibility differs.");
+                if(c is null||basis is null||c.Species!=basis.Species||c.SourceSpeciesId!=basis.SourceSpeciesId)throw new NotSupportedException("RockTunnel compatibility source differs.");
+                if(n>=79&&(c.Species!=new SpeciesId("pret:SPECIES_"+species[n-79])||c.SourceSpeciesId!=ids[n-79]||c.CanLearn!=(TailCompatibility[row][n-79]=='1'))||row==13&&c.CanLearn!=(AerialCompatibility[n]=='1'))throw new NotSupportedException("RockTunnel source compatibility differs.");
             }
         }
         var tm=values[13];var i=tm.Machine.Item;

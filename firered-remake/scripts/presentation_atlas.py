@@ -5,10 +5,7 @@ import struct
 from PIL import Image
 
 
-def png(image):
-    output = io.BytesIO()
-    image.save(output, format='PNG', compress_level=9)
-    return output.getvalue()
+from image_io import encode_png as png
 
 
 def pack(images, path, width=1024):

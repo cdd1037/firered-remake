@@ -31,3 +31,11 @@ Original source revision and conversion commands remain in import tools. `conten
 ## Current integration check (2026-10-15)
 
 Official Godot 4.7.2 .NET on .NET 10 loaded the generated-only resource snapshot and existing Saffron checkpoint. A native graphical check exercised the town map/NPCs, contextual menu, Bag item/key-item pockets, TM Case icons/HM list and option-frame Type 1→Type 2 selection. Normal window close completed without logged errors. Audio used Dummy: synthesized music started, but this is not a real-speaker/listening check. Forced engine `--quit-after` with active audio can bypass the game's normal audio-retirement shutdown path; the ordinary window-close path was tested separately.
+
+## Compact runtime artifacts (2026-10-15)
+
+Story programs store their shared source path once per program, instruction line numbers individually, and only exceptional symbol overrides. The reader reconstructs the same typed instructions; save and gameplay types are unchanged. The artifact is 3,268,494 bytes (previously 5,378,134). Shared TM/HM compatibility retains actual species/machine eligibility without source-path proof records or Domain provenance gates.
+
+Generated PNG encoding uses exact RGBA palette entries where this is smaller, including RGB values under zero alpha. All 2,077 images decoded identically in native Godot across 18,532,236 pixels; total PNG size is 2,208,552 bytes (previously 27,087,301). This is a disk/transfer reduction, not a claim of reduced decoded texture memory or faster rendering.
+
+After these changes the full maintained solution build passed with zero warnings/errors and all 2,431 tests passed. The generated-only checkpoint retained generation 57604 and its payload hash. A second graphical check rendered the indexed map/NPC assets, moved two steps, displayed the town sign dialogue, and closed normally without logged errors.

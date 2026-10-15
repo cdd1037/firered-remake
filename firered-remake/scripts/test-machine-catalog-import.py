@@ -14,6 +14,26 @@ IMPORT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(IMPORT)
 
 
+def source_learnsets():
+    """Independent line-oriented source reader; provenance stays in this test."""
+    source = (ROOT / IMPORT.RAW_PATH / 'src/data/pokemon/tmhm_learnsets.h').read_text()
+    entries = {}
+    symbol = None
+    for number, line in enumerate(source.splitlines(), 1):
+        entry = re.match(r'\s*\[(SPECIES_\w+)\]\s*=', line)
+        if entry:
+            symbol = entry[1]
+            if symbol in entries:
+                raise AssertionError('Duplicate source learnset: ' + symbol)
+            entries[symbol] = dict(items=set(), start=number, end=number)
+        if symbol is not None:
+            entries[symbol]['items'].update(re.findall(r'TMHM\(([TH]M\d\d)_', line))
+            entries[symbol]['end'] = number
+            if '),' in line:
+                symbol = None
+    return entries
+
+
 class SharedMachineCatalogImport(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -30,42 +50,62 @@ class SharedMachineCatalogImport(unittest.TestCase):
         self.assertTrue(result['exactMachineValueParity'])
 
     def test_every_machine_value_and_order_matches_independent_captured_baseline(self):
-        baseline = IMPORT.read_json(ROOT / 'evidence/shared-machine-catalog-20261015/machine-values-baseline.json')
+        baseline = IMPORT.read_json(ROOT / IMPORT.MACHINE_BASELINE_PATH)
         self.assertEqual(baseline, IMPORT.machine_value_manifest(self.results))
         self.assertEqual(dict(files=47, machineDefinitions=141, compatibilityCells=17896), baseline['totals'])
         for path, compact, expected_compact, expanded, _ in self.results:
             self.assertEqual(compact, expected_compact, path)
             inherited = 'pret:ITEM_TM39' if path in IMPORT.TM39_DOCUMENTS else None
             self.assertEqual(compact, IMPORT.transform(expanded, self.catalog, path, inherited=inherited))
-        # Every definition/cell includes the exact source reference and original text.
+        # All current fields and original text match the pre-removal projection.
         self.assertTrue(all(re.fullmatch('[0-9a-f]{64}', row['machineValuesSha256'])
                             for row in baseline['files']))
+
+    def test_original_source_inclusive_baseline_remains_verifiable_in_tools(self):
+        entries = source_learnsets()
+        restored = copy.deepcopy(self.results)
+        def restore(value):
+            if isinstance(value, list):
+                for child in value:
+                    restore(child)
+            elif isinstance(value, dict):
+                if set(value) == IMPORT.COMPATIBILITY_FIELDS:
+                    symbol = value['species']['value'][5:]
+                    entry = entries[symbol]
+                    value['source'] = dict(path='src/data/pokemon/tmhm_learnsets.h', symbol=symbol,
+                                           startLine=entry['start'], endLine=entry['end'])
+                else:
+                    for child in value.values():
+                        restore(child)
+        for _, _, _, expanded, _ in restored:
+            restore(expanded)
+        original = IMPORT.read_json(ROOT / 'evidence/shared-machine-catalog-20261015/machine-values-baseline.json')
+        self.assertEqual(original, IMPORT.machine_value_manifest(restored))
+
+    def test_compatibility_schema_rejects_retired_source_proof(self):
+        for row in self.document['compatibility']:
+            self.assertEqual({'species', 'sourceSpeciesId', 'compatibleItems'}, set(row))
+            self.assertEqual({'species', 'sourceSpeciesId', 'canLearn'},
+                             set(self.catalog.compatibility('pret:ITEM_TM39', row['species']['value'])))
+        bad = copy.deepcopy(self.document)
+        bad['compatibility'][0]['source'] = dict(path='retired-proof.h')
+        with self.assertRaisesRegex(ValueError, 'Unexpected compatibility fields'):
+            IMPORT.Catalog(bad)
+        cell = self.catalog.compatibility('pret:ITEM_TM39', 'pret:SPECIES_BULBASAUR')
+        cell['source'] = dict(path='retired-proof.h')
+        with self.assertRaisesRegex(ValueError, 'Unexpected compatibility fields'):
+            IMPORT.transform(cell, self.catalog, 'fixture.json', inherited='pret:ITEM_TM39')
 
     def test_all_386_by_58_cells_match_source_tokens_and_source_species_ids(self):
         raw = ROOT / IMPORT.RAW_PATH
         numbers = {m[1]: int(m[2]) for m in re.finditer(
             r'^#define (SPECIES_\w+)\s+(\d+)\b',
             (raw / 'include/constants/species.h').read_text(), re.M)}
-        source = (raw / 'src/data/pokemon/tmhm_learnsets.h').read_text()
-        entries = {}
-        symbol = None
-        for number, line in enumerate(source.splitlines(), 1):
-            entry = re.match(r'\s*\[(SPECIES_\w+)\]\s*=', line)
-            if entry:
-                symbol = entry[1]
-                self.assertNotIn(symbol, entries)
-                entries[symbol] = dict(items=set(), start=number, end=number)
-            if symbol is not None:
-                entries[symbol]['items'].update(re.findall(r'TMHM\(([TH]M\d\d)_', line))
-                entries[symbol]['end'] = number
-                if '),' in line:
-                    symbol = None
+        entries = source_learnsets()
         actual = 0
         for row in self.document['compatibility']:
             symbol = row['species']['value'][5:]
             self.assertEqual(numbers[symbol], row['sourceSpeciesId'])
-            self.assertEqual(entries[symbol]['start'], row['source']['startLine'])
-            self.assertEqual(entries[symbol]['end'], row['source']['endLine'])
             for machine in IMPORT.MACHINES:
                 cell = self.catalog.compatibility('pret:ITEM_' + machine, 'pret:' + symbol)
                 self.assertEqual(machine in entries[symbol]['items'], cell['canLearn'], (symbol, machine))
@@ -112,14 +152,12 @@ class SharedMachineCatalogImport(unittest.TestCase):
     def test_conflicting_compatibility_is_rejected_instead_of_deduplicated(self):
         item, species = 'pret:ITEM_TM39', 'pret:SPECIES_BULBASAUR'
         good = self.catalog.compatibility(item, species)
-        for mutate in ('canLearn', 'sourceSpeciesId', 'source'):
+        for mutate in ('canLearn', 'sourceSpeciesId'):
             bad = copy.deepcopy(good)
             if mutate == 'canLearn':
                 bad[mutate] = not bad[mutate]
-            elif mutate == 'sourceSpeciesId':
-                bad[mutate] += 1
             else:
-                bad['source']['startLine'] += 1
+                bad[mutate] += 1
             with self.subTest(mutate=mutate), self.assertRaisesRegex(ValueError, 'Conflicting compatibility'):
                 IMPORT.transform(bad, self.catalog, 'fixture.json', inherited=item)
         with self.assertRaisesRegex(ValueError, 'Missing item context'):

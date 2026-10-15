@@ -22,8 +22,7 @@ public sealed class SilphMachineCatalog
         "TM03","TM05","TM06","TM07","TM10","TM13","TM14","TM15","TM17","TM18","TM20","TM21","TM23",
         "TM24","TM25","TM27","TM29","TM32","TM34","TM42","TM43","TM44","TM45","HM03","HM04","HM06","HM07","HM08"
     }.ToImmutableHashSet(StringComparer.Ordinal);
-    private static readonly OpeningItemSourceRef LaprasSource = new("src/data/pokemon/tmhm_learnsets.h", "SPECIES_LAPRAS",
-        3077, 3104);
+
     public static SilphMachineCatalog Authenticate(SurfMachineCatalog predecessor, PewterMachineCatalog candidate,
         SilphOwnedPokemonCatalog pokemon)
     {
@@ -39,7 +38,7 @@ public sealed class SilphMachineCatalog
         {
             if (rows.IsDefault || rows.Length != 113 || before.Length != 112 ||
                 before.Where((cell, i) => !ReferenceEquals(cell, rows[i])).Any() ||
-                rows[112] != new PewterMachineCompatibility(SilphOwnedPokemonCatalog.Lapras, 131, LaprasMachines.Contains(item.Value[10..]), LaprasSource))
+                rows[112] != new PewterMachineCompatibility(SilphOwnedPokemonCatalog.Lapras, 131, LaprasMachines.Contains(item.Value[10..])))
                 throw new ArgumentException("silph_machine_inherited_rows");
         }
         Rows(old.Tm39.Item.Id, candidate.Compatibility, old.Compatibility);

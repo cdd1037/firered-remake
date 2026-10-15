@@ -56,9 +56,8 @@ internal static class SsAnneMachineRules
             for (int x = 0; x < 73; x++)
             {
                 var c = v.Compatibility[x]; var original = catalog.Compatibility[x];
-                if (c.Species != original.Species || c.SourceSpeciesId != original.SourceSpeciesId || c.Source != original.Source ||
-                    c.CanLearn != (e.Compatibility[x] == '1') || c.Source is not { Path: "src/data/pokemon/tmhm_learnsets.h" } ||
-                    c.Source.StartLine < 1 || c.Source.EndLine < c.Source.StartLine)
+                if (c.Species != original.Species || c.SourceSpeciesId != original.SourceSpeciesId ||
+                    c.CanLearn != (e.Compatibility[x] == '1'))
                     throw new NotSupportedException("S.S. Anne machine compatibility differs.");
             }
         }

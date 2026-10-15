@@ -96,7 +96,7 @@ public static class PewterMachineRules
         {
             var e = expected[n]; var c = catalog.Compatibility[n];
             if (c is null || c.Species != new SpeciesId("pret:SPECIES_" + e.Symbol) ||
-                c.SourceSpeciesId != e.Id || c.CanLearn != e.CanLearn || c.Source is null)
+                c.SourceSpeciesId != e.Id || c.CanLearn != e.CanLearn)
                 throw new NotSupportedException("Unsupported source TM39 compatibility.");
         }
         ValidateItem(catalog.Tm39, false);
@@ -181,7 +181,7 @@ public static class PewterMachineRules
             {
                 var c = value.Compatibility[s]; var old = catalog.Compatibility[s];
                 if (c is null || c.Species != old.Species || c.SourceSpeciesId != old.SourceSpeciesId ||
-                    c.CanLearn != compatible.Contains(c.Species) || c.Source != old.Source)
+                    c.CanLearn != compatible.Contains(c.Species))
                     throw new NotSupportedException("MtMoon machine source compatibility differs.");
             }
         }

@@ -79,7 +79,7 @@ def build(target, dependency, reference, check):
         need((row['width'], row['height'], row['sourceSpeciesId']) == (width, height, 142), 'League Aerodactyl dimensions differ')
         data = reuse(league_base + row['texturePath'])
         im = Image.open(io.BytesIO(data))
-        need(im.mode == 'RGBA' and im.size == (width, height) and im.tobytes() == rgba, 'Reused Aerodactyl PNG differs')
+        need(im.size == (width, height) and im.convert('RGBA').tobytes() == rgba, 'Reused Aerodactyl PNG differs')
         for key in ['speciesId', 'sourceSpeciesId', 'side', 'paletteVariant', 'x', 'y']:
             if key in fields:
                 need(row[key] == fields[key], 'Reused Aerodactyl source geometry differs')

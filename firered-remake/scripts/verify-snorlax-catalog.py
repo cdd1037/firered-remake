@@ -45,7 +45,7 @@ def main():
   im=Image.open(ROOT/'content/raw/pokefirered/037335f4'/sprite['sourceImagePath']);indices=list(im.get_flattened_data());lines=(ROOT/'content/raw/pokefirered/037335f4'/sprite['sourcePalettePath']).read_text().splitlines();colors=[list(map(int,x.split())) for x in lines[3:]]
   expected=bytes(c for i in indices for c in (*[(v//8)*255//31 for v in colors[i]],255 if i else 0))
   assert Image.open(io.BytesIO(pixels[sprite['texturePath']])).convert('RGBA').tobytes()==expected
-  decoded=Image.open(io.BytesIO(pixels[sprite['texturePath']]));assert decoded.mode=='RGBA' and decoded.size==(64,64) and decoded.tobytes()==expected
+  decoded=Image.open(io.BytesIO(pixels[sprite['texturePath']]));assert decoded.size==(64,64) and decoded.convert('RGBA').tobytes()==expected
  assert len(manifest['outputs'])==12 and manifest['dex']['weightHectograms']==4600
  print('PASS:31 pinned blobs; species143;14 natural moves;4 absent definitions;17 level fixtures;31 source TM/HM bits;4 independent sprite pixel oracles;12 exact art outputs;full Dex equality.')
 if __name__=='__main__':main()

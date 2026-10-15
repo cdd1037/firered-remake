@@ -121,8 +121,8 @@ class ImporterPngSemanticsTests(unittest.TestCase):
                                for channel in (i % 256, (i * 3) % 256, (i * 7) % 256, 0 if i % 3 == 0 else 255))
                 with Image.open(io.BytesIO(encoder(pixels))) as image:
                     self.assertEqual(size, image.size)
-                    self.assertEqual('RGBA', image.mode)
-                    self.assertEqual(pixels, image.tobytes())
+                    self.assertIn(image.mode, ('P', 'RGBA'))
+                    self.assertEqual(pixels, image.convert('RGBA').tobytes())
                 with self.assertRaises(ValueError):
                     encoder(pixels[:-1])
 

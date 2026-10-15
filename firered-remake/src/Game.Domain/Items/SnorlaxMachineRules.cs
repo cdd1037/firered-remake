@@ -6,7 +6,6 @@ namespace Game.Domain.Items;
 public static class SnorlaxMachineRules
 {
     public const string Profile = "firered-snorlax-machines-v1";
-    public const string SourcePath = "src/data/pokemon/tmhm_learnsets.h";
     public static bool CanLearn(ItemId item) => item.Value is "pret:ITEM_TM01" or "pret:ITEM_TM03" or "pret:ITEM_TM06" or
         "pret:ITEM_TM10" or "pret:ITEM_TM11" or "pret:ITEM_TM13" or "pret:ITEM_TM14" or "pret:ITEM_TM15" or "pret:ITEM_TM17" or
         "pret:ITEM_TM18" or "pret:ITEM_TM21" or "pret:ITEM_TM22" or "pret:ITEM_TM24" or "pret:ITEM_TM25" or "pret:ITEM_TM26" or
@@ -25,9 +24,8 @@ public static class SnorlaxMachineRules
         {
             if (machine.Compatibility.Length != 102) throw new NotSupportedException("snorlax_machine_compatibility_count");
             var row=machine.Compatibility[101];
-            var source=new OpeningItemSourceRef(SourcePath,"SPECIES_SNORLAX",3348,3378);
             if (row.Species!=new SpeciesId("pret:SPECIES_SNORLAX") || row.SourceSpeciesId!=143 ||
-                row.CanLearn!=CanLearn(machine.Machine.Item.Id) || row.Source!=source)
+                row.CanLearn!=CanLearn(machine.Machine.Item.Id))
                 throw new NotSupportedException("snorlax_machine_compatibility_source");
         }
     }

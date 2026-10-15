@@ -50,10 +50,7 @@ def inventory(generated: Path):
     return dict(sorted(images.items()))
 
 
-def encode_png(image: Image.Image):
-    output = io.BytesIO()
-    image.save(output, format='PNG', compress_level=9)
-    return output.getvalue()
+from image_io import encode_png
 
 
 def decode_indices(data: bytes, count: int):

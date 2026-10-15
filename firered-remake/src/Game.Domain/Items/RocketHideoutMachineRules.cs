@@ -7,7 +7,6 @@ public static class RocketHideoutMachineRules
 {
     public const string Profile = "firered-rocket-hideout-machines-v1";
     private const string KangaskhanBits = "110111111111010010";
-    private static readonly OpeningItemSourceRef KangaskhanSource = new("src/data/pokemon/tmhm_learnsets.h","SPECIES_KANGASKHAN",2696,2733);
     private static readonly (ItemId Item, MoveId Move, int MoveId, int Pp, HashSet<SpeciesId> Compatible)[] Added = [
         (new("pret:ITEM_TM12"),new("pret:MOVE_TAUNT"),269,20,"RATTATA RATICATE ONIX STEELIX MANKEY GYARADOS ZUBAT GOLBAT GRIMER VOLTORB KOFFING NIDOQUEEN NIDOKING ABRA KADABRA DROWZEE MEOWTH PERSIAN ELECTRODE HYPNO PRIMEAPE WEEZING MUK".Split(' ').Select(s => new SpeciesId("pret:SPECIES_" + s)).ToHashSet()),
         (new("pret:ITEM_TM21"),new("pret:MOVE_FRUSTRATION"),218,20,"BULBASAUR IVYSAUR VENUSAUR CHARMANDER CHARMELEON CHARIZARD SQUIRTLE WARTORTLE BLASTOISE BUTTERFREE BEEDRILL PIDGEY PIDGEOTTO PIDGEOT RATTATA RATICATE PIKACHU RAICHU SANDSHREW SANDSLASH GEODUDE GRAVELER GOLEM ONIX STEELIX SPEAROW FEAROW MANKEY EKANS NIDORAN_F NIDORINA NIDORAN_M NIDORINO JIGGLYPUFF GYARADOS ARBOK CLEFAIRY ZUBAT GOLBAT ODDISH PARAS PARASECT BELLSPROUT MAGNEMITE GRIMER VOLTORB KOFFING NIDOQUEEN NIDOKING CLEFABLE WIGGLYTUFF ABRA KADABRA MACHOP DROWZEE SHELLDER HORSEA GOLDEEN STARYU STARMIE SLOWPOKE GLOOM WEEPINBELL MEOWTH PERSIAN GROWLITHE PONYTA TENTACOOL DIGLETT DUGTRIO MAGNETON POLIWAG POLIWHIRL VULPIX CUBONE ELECTRODE HYPNO LICKITUNG MACHOKE MAROWAK PRIMEAPE RHYHORN SEADRA SEAKING TENTACRUEL VENOMOTH VENONAT WEEZING MUK VILEPLUME VICTREEBEL EXEGGCUTE TANGELA KANGASKHAN".Split(' ').Select(s => new SpeciesId("pret:SPECIES_" + s)).ToHashSet()),
@@ -31,7 +30,7 @@ public static class RocketHideoutMachineRules
                 throw new NotSupportedException("Rocket Hideout machine compatibility shape differs.");
             var cell = cells[98];
             if (cell.Species != new SpeciesId("pret:SPECIES_KANGASKHAN") || cell.SourceSpeciesId != 115 ||
-                cell.CanLearn != (KangaskhanBits[row] == '1') || cell.Source != KangaskhanSource)
+                cell.CanLearn != (KangaskhanBits[row] == '1'))
                 throw new NotSupportedException("Kangaskhan machine compatibility differs.");
             if (row < 15) continue;
             var expected = Added[row - 15]; var value = rows[row]; RocketHideoutItemRules.ValidateMachine(value.Machine);
@@ -40,7 +39,7 @@ public static class RocketHideoutMachineRules
             for (int index = 0; index < cells.Length; index++)
             {
                 var basis = catalog.Compatibility[index]; cell = cells[index];
-                if (cell.Species != basis.Species || cell.SourceSpeciesId != basis.SourceSpeciesId || cell.Source != basis.Source ||
+                if (cell.Species != basis.Species || cell.SourceSpeciesId != basis.SourceSpeciesId ||
                     cell.CanLearn != expected.Compatible.Contains(cell.Species))
                     throw new NotSupportedException("Rocket Hideout machine source compatibility differs.");
             }

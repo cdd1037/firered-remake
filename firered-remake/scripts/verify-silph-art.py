@@ -19,7 +19,7 @@ with tempfile.TemporaryDirectory(prefix='silph-art-rebuild-') as tmp:
   doc=json.loads(first['manifest.json'])
   for rel,b in first.items():
    if not rel.endswith('.png'):continue
-   image=Image.open(io.BytesIO(b));assert image.mode=='RGBA' and image.width>0 and image.height>0
+   image=Image.open(io.BytesIO(b)).convert('RGBA');assert image.width>0 and image.height>0
   passed.append(name+': every PNG decodes as RGBA')
  def rejected(path,work,label):
   target=cold/path;original=target.read_bytes();altered=bytearray(original);altered[len(altered)//2]^=1;target.write_bytes(altered)

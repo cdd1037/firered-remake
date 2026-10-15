@@ -12,8 +12,13 @@ chain. Icons remain in their existing external resources.
 - `sourceCommit`: the pinned local pret source commit
 - `machines`: `PewterAdditionalMachine` fields `machine`, `move`, `sourceMoveId`,
   and `movePp`, without a repeated `compatibility` array
-- `compatibility`: `species`, `sourceSpeciesId`, `source`, and `compatibleItems`
+- `compatibility`: `species`, `sourceSpeciesId`, and `compatibleItems`
   for each real species; all IDs retain the existing `{ "value": "pret:…" }` form
+
+Compatibility source-location proof is not part of the runtime schema. The
+source species numeric ID is retained, as are every species/item identifier,
+eligibility value, and ordered regional view. Source locations remain available
+from the pinned raw inputs and are reconstructed only by provenance tests.
 
 The absence of an item in a known species row means `CanLearn = false`. Unknown
 item/species IDs are errors. A compatibility row covers all 58 source machines,
@@ -80,9 +85,13 @@ hashes cover every field and array order in all 47 files, including icons and
 other fields outside machines. It is not a runtime asset authentication gate.
 
 The original whole-document snapshot remains unchanged. A separately captured
-`machine-values-baseline.json` preserves every typed definition, compatibility
-cell, source reference, and ordered view position. Its exact assertions run in
-tests, not as an ordinary regeneration gate. Removing unused `rulesSources` and
+`machine-values-baseline.json` preserves every original typed definition,
+compatibility cell, source reference, and ordered view position. Tests reconstruct
+the retired compatibility source locations from raw data and continue to verify
+this original baseline unchanged. A separate `machine-gameplay-baseline.json`
+was captured before source removal, omitting only compatibility `source` fields;
+it verifies every current machine value and view position. Their exact assertions
+run in tests, not as an ordinary regeneration gate. Removing unused `rulesSources` and
 updating source-only input inventories intentionally changes whole-document
 hashes without changing machine values. The machine baseline covers:
 141 original full-machine occurrences, 17,896 compatibility cells, 10,600 unique
@@ -90,11 +99,12 @@ item/species pairs, and 188 previously represented species. There were no
 conflicting definitions or compatibility/source values. The expanded source
 catalog now describes all 22,388 possible 386-by-58 compatibility cells.
 
-The eleven focused Python checks cover regeneration, exact machine round-trip,
+The thirteen focused Python checks cover regeneration, exact machine round-trip,
 all raw learnset cells/source IDs, HM08 admission boundaries, presentation
 preservation, conflicting definitions/cells, missing context, unknown IDs,
 invalid source tokens, duplicate JSON/catalog keys, independent target
-admissions, and rejection of expanded importer output. Additional tests run 41
+admissions, rejection of expanded importer output, source-free compatibility
+schema, and the original source-inclusive baseline. Additional tests run 41
 regional source converters using retained raw-byte fixtures and compare their
 compact machine views with runtime. These fixtures do not claim reference Git
 authentication or a full graphics/audio regeneration. The maintained .NET
@@ -103,5 +113,9 @@ resource-import suite invokes the checks through `MachineCatalog`.
 Measured in compact UTF-8 JSON, the same 47 original documents total 4,624,272
 bytes. Reference deduplication alone reduced them plus the shared catalog to 1,911,364
 bytes (58.7% less). After removing unused source-proof arrays, the 47 documents
-plus the catalog total 1,136,971 bytes (767,705 + 369,266), a net reduction of
-3,487,301 bytes, or 75.4%.
+plus the catalog totaled 1,136,971 bytes (767,705 + 369,266). Removing only the
+386 per-species compatibility source objects saves another 43,614 bytes, leaving
+1,093,357 bytes (767,705 + 325,652), a net reduction of 3,530,915 bytes, or 76.4%.
+`evidence/shared-machine-catalog-20261015/compatibility-source-removal.json`
+records the before/after catalog hashes and exact proof-independent parity. All
+47 regional JSON files are byte-for-byte unchanged by this latter removal.

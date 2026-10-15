@@ -28,9 +28,6 @@ public static class PretVermilionMachines
             var row=d.Rows[n];
             if(row.Item!=prior[n].Machine.Item.Id || row.Compatibility.Length!=2)
                 throw new InvalidDataException("Vermilion machine order differs.");
-            foreach(var c in row.Compatibility)
-                        if(c.Source.Path!="src/data/pokemon/tmhm_learnsets.h" || c.Source.StartLine<=0 || c.Source.EndLine<c.Source.StartLine)
-                    throw new InvalidDataException("Vermilion machine provenance differs.");
             machines.Add(prior[n] with{Compatibility=prior[n].Compatibility.AddRange(row.Compatibility)});
         }
         var result=old with{Profile=Profile,Compatibility=machines[0].Compatibility,AdditionalMachines=machines.Skip(1).ToImmutableArray()};

@@ -161,8 +161,7 @@ public sealed class PretVermilionGymRegion
                 Require(path == $"beam-metatiles/{id:x3}-{name}.png", "Vermilion Gym beam image path differs.");
                 var png = outputs[path];
                 Require(png.Length > 33 && png.AsSpan(0, 8).SequenceEqual(new byte[] { 137,80,78,71,13,10,26,10 }) &&
-                    BinaryPrimitives.ReadUInt32BigEndian(png.AsSpan(16, 4)) == 16 && BinaryPrimitives.ReadUInt32BigEndian(png.AsSpan(20, 4)) == 16 &&
-                    png[24] == 8 && png[25] == 6, "Vermilion Gym beam image format differs.");
+                    BinaryPrimitives.ReadUInt32BigEndian(png.AsSpan(16, 4)) == 16 && BinaryPrimitives.ReadUInt32BigEndian(png.AsSpan(20, 4)) == 16, "Vermilion Gym beam image format differs.");
                 return SafeFile(directory, path);
             }
             definitions.Add(id, new(id, attribute, behavior, behavior == 0 ? "MB_NORMAL" : "MB_" + behavior, terrain, encounter, layer, values,

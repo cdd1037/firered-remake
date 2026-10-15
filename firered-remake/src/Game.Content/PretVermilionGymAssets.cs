@@ -97,8 +97,8 @@ var generated = manifest.RootElement;
         for (int n = 0; n < 73; n++)
         {
             var prior = old.Compatibility[n]; var current = Document.Tm34.Compatibility[n];
-            Require(prior.Species == current.Species && prior.SourceSpeciesId == current.SourceSpeciesId && prior.Source == current.Source,
-                "Gym TM34 changed historical species/source order.");
+            Require(prior.Species == current.Species && prior.SourceSpeciesId == current.SourceSpeciesId,
+                "Gym TM34 changed species order.");
         }
         var result = old with { Profile = PewterMachineRules.VermilionGymProfile,AdditionalMachines = old.AdditionalMachines!.Value.Add(Document.Tm34) };
         PewterMachineRules.ValidateCatalog(result);

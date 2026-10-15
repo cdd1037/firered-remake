@@ -40,11 +40,9 @@ public sealed class SurfMachineCatalog
             for (int i = 0; i < 2; i++)
             {
                 var id = SurfOwnedPokemonCatalog.AdditionalSpecies[i];
-                var source = new OpeningItemSourceRef("src/data/pokemon/tmhm_learnsets.h", id.Value[5..],
-                    i == 0 ? 1207 : 1235, i == 0 ? 1233 : 1262);
                 string symbol = machine.Value[10..];
                 bool learns = PsyduckMachines.Contains(symbol) || i == 1 && symbol == "TM15";
-                if (rows[110+i] != new PewterMachineCompatibility(id, 54+i, learns, source))
+                if (rows[110+i] != new PewterMachineCompatibility(id, 54+i, learns))
                     throw new ArgumentException("surf_machine_source");
             }
         }

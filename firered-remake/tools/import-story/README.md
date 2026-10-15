@@ -15,3 +15,11 @@ Only `content/generated/story/runtime.json` is consumed by `PretCampaignCatalog.
 The runtime never invokes the compiler, reads the recipe or parses the original
 assembly/C files. Source paths and line numbers in instruction provenance remain
 for diagnostics; they are not read as files by the runtime.
+
+The schema-2 program encoding stores `SourcePath` once per program and `Line` on
+each instruction. The program ID supplies the usual source symbol; the nine
+fallthrough instructions crossing a label retain a sparse `SourceSymbol` override.
+`PretStoryRuntime.JsonOptions` is the shared importer/runtime codec. Decoding
+restores the exact `StorySource` used by dispatch and diagnostics without changing
+program IDs or instruction indexes. Old schema-1 resources are rejected; regenerate
+them with the command above.

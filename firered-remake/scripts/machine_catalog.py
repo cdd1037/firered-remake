@@ -77,7 +77,7 @@ def admission_item(project_root, relative_path, pointer):
 
 
 def admission_rows(project_root, relative_path, pointer):
-    """Typed source rows for importers that also need source species IDs."""
+    """Typed eligibility rows with source species IDs, without source-location proof."""
     catalog = load_catalog(project_root)
     return [catalog.compatibility(admission_item(project_root, relative_path, pointer), species)
             for species in admission_species(project_root, relative_path, pointer)]
